@@ -9,8 +9,12 @@ function login_auth($redirect=false) {
 
 	$opt = new TB_Options;
 
+	$ip = $_SERVER['REMOTE_ADDR'];
+	$auth_ips = $opt->get('auth_ips');
+	$ipauth = in_array($ip, explode(',', $auth_ips)) === true;
 	$hash = isset($_COOKIE['login']) ? $_COOKIE['login'] : '';
-	$loggedin = $hash && $hash === sha1(md5($_SERVER['REMOTE_ADDR']).$opt->get('login'));
+	$loggedin = $hash && $hash === sha1(md5($ip).$opt->get('login'));
+	$loggedin = $loggedin && $ipauth;
 	if(!$loggedin) {
 		if($redirect) {
 			$home = $opt->get('home');
