@@ -202,5 +202,17 @@ class TB_Posts {
 
 		return (int) $rows->fetch_array()[0];
 	}
+
+	public function have($id) {
+		global $tbdb;
+
+		$sql = "SELECT id FROM posts where id=".(int)$id;
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		return $rows->num_rows > 0; // 其实应该只能等于1的，如果有的话。
+	}
+
 }
 

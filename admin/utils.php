@@ -33,3 +33,11 @@ function parse_query_string($q){
 	return $r;
 }
 
+function is_email($e) {
+	return preg_match('/^.+@.+\..+$/', $e);
+}
+
+function tb_mysql_datetime() {
+	return date('Y-m-d H:i:s');
+}
+

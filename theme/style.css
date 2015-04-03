@@ -246,6 +246,7 @@ h3 {
 	clear: both;
 	overflow: hidden;
 	background-color: #f1f1f1;
+	box-shadow: 0px 0px 8px;
 }
 
 @media screen and (min-width: 801px) {
@@ -394,7 +395,7 @@ h3 {
 /* 评论标题 */
 #comment-title {
 	font-size: 2em;
-	padding: 0.8em;
+	padding: 0.8em 0.8em 0px 0.8em;
 	border-bottom: 1px solid #ccc;
 	margin-bottom: 0;
 }
@@ -421,6 +422,7 @@ h3 {
 
 #comment-list .comment-li .comment-meta {
 	padding-left: 54px;
+	height: 2.8em;
 }
 
 #comment-list .comment-li .comment-content {
@@ -438,106 +440,6 @@ h3 {
 
 #comment-list .comment-content p {
 	margin-top: 0;
-}
-
-/* 评论发表框 */
-#comment-form-div {
-	width: 400px;
-	height: 300px;
-	display: none;
-	position: absolute;
-	z-index: 100;
-	background-color: rgba(10,10,10, 0.8);
-	padding: 0px 10px 10px;
-	border: 1px solid purple;
-}
-
-/* 关闭和最大化按钮 */
-#comment-form-div .closebtn, #comment-form-div .maxbtn {
-	color: #D0D0D0;
-	z-index: 1000;
-	position: absolute;
-	width: 30px;
-	cursor: pointer;
-	height: 30px;
-}
-
-#comment-form-div .closebtn {
-	top: 3px;
-	right: 3px;
-}
-
-#comment-form-div .maxbtn {
-	top: 3px;
-	right: 33px;
-}
-
-#comment-form-div .closebtn:hover, #comment-form-div .maxbtn:hover {
-	color: #FFF;
-}
-
-#comment-form-div .closebtn i, #comment-form-div .maxbtn i {
-	margin-left: 11px;
-	margin-top: 7px;
-}
-
-/* 评论框标题 */
-#comment-form-div .comment-title {
-	position: relative;
-	text-align: center;
-	font-size: 2em;
-	color: white;
-}
-
-/* 必填项 */
-#comment-form .fields .field .needed {
-	color: red;
-}
-
-
-/* 评论内容框 */
-#comment-form .fields .field input[type="text"] {
-	width: 250px;
-}
-
-#comment-form .comment-content {
-	position: relative;
-	margin-bottom: 1em;
-}
-
-#comment-form .comment-content textarea {
-	width: 310px;
-	height: 100px;
-}
-
-#comment-content-2 {
-	border: 1px dashed gray;
-	color: white;
-	background-color: transparent;
-	display: none;
-	margin-top: 10px;
-	width: 384px;
-	height: 280px;
-}
-
-#comment-form .fields .field label, 
-#comment-form .fields .field input[type="text"], 
-#comment-form .comment-content textarea,
-#comment-form-div .comment-content label {
-	color: white;
-	font-family: Consolas, monospace;
-	padding-top: 7px;
-	background-color: transparent;
-}
-
-#comment-form-div .fields .field label,
-#comment-form-div .comment-content label {
-	padding-right: 4px;
-	font-size: 1.2em;
-}
-
-#comment-form .fields .field {
-	padding-bottom: 0.4em;
 }
 
 /* 评论提交 */
@@ -598,10 +500,189 @@ h3 {
 	background-color: rgba(60,60,60,0.6);
 }
 
+.comment-meta .nickname, .comment-meta .author {
+	font-size: 1.1em;
+	position: relative;
+	top: -4px;
+}
+
+.comment-meta .date {
+	margin: 0px;
+	font-size: 0.4em;
+	position: relative;
+	top: -8px;
+	color: gray;
+}
+
+/* 评论发表框 */
+
+/* 常规模式 */
+#comment-form-div.normal {
+	width: 400px;
+	height: 340px;
+	display: none;
+	position: absolute;
+	z-index: 100;
+	background-color: rgba(10,10,10, 0.8);
+	box-shadow: 0px 0px 8px;
+}
+
+#comment-form-div.normal .comment-form-div-1 {
+	padding: 10px;
+	display: block;
+}
+
+#comment-form-div.normal .comment-form-div-2 {
+	display: none;
+}
+
+/* 关闭和最大化按钮 */
+#comment-form-div .closebtn, #comment-form-div .maxbtn {
+	color: #D0D0D0;
+	z-index: 1000;
+	position: absolute;
+	width: 30px;
+	cursor: pointer;
+	height: 30px;
+}
+
+#comment-form-div .closebtn {
+	top: 3px;
+	right: 3px;
+}
+
+#comment-form-div .maxbtn {
+	top: 3px;
+	right: 33px;
+}
+
+#comment-form-div .closebtn:hover, #comment-form-div .maxbtn:hover {
+	color: #FFF;
+}
+
+#comment-form-div .closebtn i, #comment-form-div .maxbtn i {
+	margin-left: 11px;
+	margin-top: 7px;
+}
+
+/* 评论框标题 */
+#comment-form-div .comment-title {
+	position: relative;
+	text-align: center;
+	font-size: 2em;
+	color: white;
+}
+
+/* 必填项 */
+#comment-form .fields .field .needed {
+	color: red;
+}
 
 
+/* 评论内容框 */
+#comment-form .fields .field input[type="text"] {
+	width: 250px;
+}
+
+#comment-form .comment-content {
+	position: relative;
+	margin-bottom: 1em;
+}
+
+#comment-form .comment-content textarea {
+	width: 300px;
+	height: 114px;
+}
 
 
+#comment-form .fields .field label, 
+#comment-form .fields .field input[type="text"], 
+#comment-form .comment-content textarea,
+#comment-form-div .comment-content label {
+	color: white;
+	font-family: Consolas, monospace;
+	padding-top: 7px;
+	background-color: transparent;
+}
+
+#comment-form-div .fields .field label,
+#comment-form-div .comment-content label {
+	padding-right: 4px;
+	font-size: 1.2em;
+}
+
+#comment-form .fields .field {
+	padding-bottom: 0.4em;
+}
+
+#comment-form .fields .field input[type="text"] {
+	width: 240px;
+}
+
+/* 最大化模式 */
+#comment-form-div.maximized {
+	position: fixed;
+	z-index: 100;
+	background-color: rgba(10,10,10, 0.8);
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+#comment-form-div.maximized .comment-form-div-1 {
+	display: none;
+}
+
+#comment-form-div.maximized .comment-form-div-2 {
+	display: block;
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+	padding: 12px;
+}
+
+#comment-form-div.maximized div.dummy-textarea {
+	position: fixed;
+	top: 12px;
+	right: 12px;
+	bottom: 12px;
+	left: 12px;
+	padding: 12px;
+	border: 2px dashed #808080;
+	margin-top: 36px;
+}
+
+#comment-content-2 {
+	color: white;
+	font-family: Consolas, monospace;
+	padding-top: 7px;
+	background-color: transparent;
+	border: none;
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+/* 评论工具栏 */
+#comment-form-div.maximized .toolbar .font-inc,
+#comment-form-div.maximized .toolbar .font-dec,
+#comment-form-div.maximized .toolbar .close {
+	cursor: pointer;
+}
+
+#comment-form-div.maximized .toolbar .font-inc:hover,
+#comment-form-div.maximized .toolbar .font-dec:hover,
+#comment-form-div.maximized .toolbar .close:hover {
+	color: white;
+}
+
+#comment-form-div.maximized .toolbar .close {
+	margin-left: 1em;
+}
 
 
 

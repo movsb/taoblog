@@ -8,6 +8,7 @@
 		}
 	?></title>
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
+	<link rel="stylesheet" type="text/css" href="/theme/font-awesome-4.3.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="/admin/scripts/jquery-2.1.3.js"></script>
 	<style>
 		body {
@@ -33,7 +34,7 @@
 		<?php 
 			$the = $tbquery->the();
 			require('theme/content.php');
-			//require('theme/comments.php');
+			require('theme/comments.php');
 		?>
 	</div>
 <?php require_once('footer.php'); 
