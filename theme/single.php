@@ -16,6 +16,7 @@
 			transition: margin-left 1s;
 		}
 	</style>
+<?php apply_hooks('tb_head'); ?>
 </head>
 
 <body>

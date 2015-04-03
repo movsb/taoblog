@@ -5,7 +5,7 @@
 	</footer>
 </div>
 
-<?php //wp_footer(); ?>
+<?php apply_hooks('tb_footer'); ?>
 
 </body>
 </html>
