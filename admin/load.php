@@ -6,6 +6,7 @@ require_once('die.php');
 require_once('utils.php');
 
 require_once('hooks.php');
+require_once('plugin.php');
 
 require_once('db/dbbase.php');
 require_once('db/options.php');
@@ -20,6 +21,4 @@ $tbpost = new TB_Posts;
 $tbtax = new TB_Taxonomies;
 $tbcmts = new TB_Comments;
 $tbquery = new TB_Query;
-
-require_once(dirname(__FILE__).'/../plugins/content-from-file/content-from-file.php');
 
