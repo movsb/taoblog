@@ -17,11 +17,6 @@ body {
 	font-family: Consolas, monospace;
 }
 
-pre, .code-block, div.syntaxhighlighter {
-	overflow: auto !important;
-	max-height: 500px;
-}
-
 a {
 	text-decoration: none;
 }
@@ -388,6 +383,14 @@ h3 {
 
 .entry span.tiybtn:hover {
 	background-color: rgba(152, 63,63,1);
+}
+
+/* 代码片段 */
+div.code {
+	overflow: auto !important;
+	max-height: 500px;
+	white-space: pre;
+	font-family: Consolas, monospace;
 }
 
 /* 评论 */
