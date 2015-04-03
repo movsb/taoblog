@@ -27,6 +27,16 @@ $('#comment-form-div').keyup(function(e){
 		}
 	}
 });
+// 无公害评论内容
+function sanitize_content(c) {
+    c = c.replace(/&/g, '&amp;');
+    c = c.replace(/</g, '&lt;');
+    c = c.replace(/>/g, '&gt;');
+    c = c.replace(/'/g, '&#39;');
+    c = c.replace(/"/g, '&#34;');
+
+    return c;
+}
 
 // 从评论生成html内容
 function comment_item(cmt) {
@@ -44,7 +54,7 @@ function comment_item(cmt) {
 	}
 
 	s += '<p class="date">' + cmt.date + '</p>\n</div>\n';
-	s += '<div class="comment-content">\n' + cmt.content + '</div>\n';
+	s += '<div class="comment-content">' + sanitize_content(cmt.content) + '</div>\n';
 	s += '<div class="reply-to" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment_reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';
 

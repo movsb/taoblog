@@ -421,12 +421,12 @@ h3 {
 }
 
 #comment-list .comment-li .comment-meta {
-	padding-left: 54px;
+	margin-left: 54px;
 	height: 2.8em;
 }
 
 #comment-list .comment-li .comment-content {
-	padding-left: 54px;
+	margin-left: 54px;
 }
 
 #comment-list .comment-li .comment-replies {
@@ -438,8 +438,12 @@ h3 {
 	border-top: 1px dashed #ccc;
 }
 
-#comment-list .comment-content p {
+#comment-list .comment-content {
 	margin-top: 0;
+	font-family: Consolas, monospace;
+	white-space: pre;
+	overflow: auto;
+	max-height: 400px;
 }
 
 /* 评论提交 */
@@ -504,6 +508,10 @@ h3 {
 	font-size: 1.1em;
 	position: relative;
 	top: -4px;
+}
+
+.comment-meta .nickname {
+	color: black;
 }
 
 .comment-meta .date {
