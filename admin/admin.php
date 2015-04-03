@@ -24,7 +24,7 @@ function admin_header($arg=[]) {
 <head>
 	<meta charset="UTF-8" />
 	<link rel="stylesheet" type="text/css" href="styles/admin.css.php" />
-	<script type="text/javascript" src="scripts/jquery-2.1.3.js"></script>
+	<script type="text/javascript" src="scripts/jquery-2.1.3.min.js"></script>
 	<?php apply_hooks('admin_head'); ?>
 </head>
 <body>
