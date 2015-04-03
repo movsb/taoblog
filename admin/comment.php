@@ -27,9 +27,23 @@ function error($msg) {
 function cmt_get_cmt() {
 	global $tbcmts;
 	cmt_header_json();
+
+	$cmts = $tbcmts->get($_POST);
+	$flts = ['email', 'url', 'ip', 'agent', 'status'];
+	for($i=0; $i<count($cmts); $i++) {
+		foreach($flts as $f) {
+			unset($cmts[$i]->$f);
+		}
+		for($x=0; $x<count($cmts[$i]->children); $x++) {
+			foreach($flts as $f) {
+				unset($cmts[$i]->children[$x]->$f);
+			}
+		}
+	}
+
 	echo json_encode([
 		'errno'		=> 'success',
-		'cmts'		=> $tbcmts->get($_POST),
+		'cmts'		=> $cmts,
 		]);
 	die(0);
 }
