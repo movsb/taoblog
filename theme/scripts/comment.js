@@ -24,7 +24,7 @@ document.write(function(){/*
 				<i class="fa fa-info-circle"></i>
 				<span> 没有了！</span>
 			</span>
-			<input type="hidden" id="post-id" name="post-id" value="<?php echo $the->id; ?>" />
+			<input type="hidden" id="post-id" name="post-id" value="" />
 		</span>
 	</div>
 
@@ -107,6 +107,8 @@ document.write(function(){/*
 		</div-->
 	</div>
 */}.toString().slice(14,-3));
+
+$('#post-id').val(_post_id);
 
 $.fn.center = function () {
     this.css("position","fixed");
