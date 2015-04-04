@@ -1,4 +1,7 @@
-<!DOCTYPE html> 
+<?php
+	$home = $tbopt->get('home');
+	$the = $tbquery->the();
+?><!DOCTYPE html> 
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8" />
@@ -6,6 +9,7 @@
 		if($tbquery->count == 1) {
 			echo $tbquery->objs[0]->title;
 		}
+		echo ' - ',$tbopt->get('blog_name');
 	?></title>
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="/theme/font-awesome-4.3.0/css/font-awesome.min.css" />
@@ -16,6 +20,7 @@
 			transition: margin-left 1s;
 		}
 	</style>
+	<link rel="canonical" href="<?php echo $home,"/archives/$the->id.html"; ?>" />
 <?php apply_hooks('tb_head'); ?>
 </head>
 
@@ -33,7 +38,6 @@
 	</div>
 	<div id="content-full">
 		<?php 
-			$the = $tbquery->the();
 			require('theme/content.php');
 			require('theme/comments.php');
 		?>
