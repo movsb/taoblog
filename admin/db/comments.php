@@ -6,6 +6,7 @@ class TB_Comments {
 	public function insert(&$arg){
 		global $tbdb;
 		global $tbpost;
+		global $tbdate;
 
 		$def = [
 			'post_id'		=> false,
@@ -13,7 +14,7 @@ class TB_Comments {
 			'email'			=> false, 
 			'url'			=> '',
 			'ip'			=> $_SERVER['REMOTE_ADDR'],
-			'date'			=> tb_mysql_datetime(),
+			'date'			=> $tbdate->mysql_datetime_gmt(),
 			'content'		=> '',
 			'agent'			=> '',
 			'status'		=> 'public',
@@ -63,6 +64,7 @@ class TB_Comments {
 
 	public function &get_children($p){
 		global $tbdb;
+		global $tbdate;
 
 		$sql = "SELECT * FROM comments WHERE ancestor=".(int)$p;
 		$result = $tbdb->query($sql);
@@ -73,6 +75,7 @@ class TB_Comments {
 		$children = [];
 		while($obj = $result->fetch_object()){
 			$obj->avatar = '/theme/images/avatar1.png';
+			$obj->date = $tbdate->mysql_datetime_to_local($obj->date);
 			$children[] = $obj;
 		}
 
@@ -95,6 +98,7 @@ class TB_Comments {
 
 	public function &get(&$arg=[]) {
 		global $tbdb;
+		global $tbdate;
 
 		$defs = [
 			'id'		=> 0,
@@ -136,6 +140,7 @@ class TB_Comments {
 		$cmts = [];
 		while($obj = $result->fetch_object()){
 			$obj->avatar = '/theme/images/avatar1.png';
+			$obj->date = $tbdate->mysql_datetime_to_local($obj->date);
 			$cmts[] = $obj;
 		}
 

@@ -28,10 +28,11 @@ class TB_Posts {
 
 	public function insert($arg){
 		global $tbdb;
+		global $tbdate;
 
 		$def = [
-			'date' => '0000-00-00 00:00:00',
-			'modified' => '0000-00-00 00:00:00',
+			'date' => $tb->mysql_datetime_gmt(),
+			'modified' => $tb->mysql_datetime_gmt(),
 			'title' => '',
 			'content' => '',
 			'slug' => '',
@@ -68,6 +69,7 @@ class TB_Posts {
 
 	public function query(&$arg){
 		global $tbquery;
+		global $tbdate;
 
 		if(!is_array($arg))
 			return false;
@@ -77,33 +79,48 @@ class TB_Posts {
 			'password' => '', 'status' => '',
 			'noredirect'=>true,
 			'pageno' => 1,
+			'modified' => false,
 			];
+
 		$arg = tb_parse_args($defs, $arg);
+
+		if($arg['modified'] && !$tbdate->is_valid_mysql_datetime($arg['modified']))
+			return false;
 
 		$tbquery->pageno = (int)$arg['pageno'];
 
+		$queried_posts = [];
+
 		if($arg['p']){
 			$tbquery->type = 'post';
-			return $this->query_by_id($arg);
+			$queried_posts = $this->query_by_id($arg);
 		} else if($arg['slug']) {
 			if($arg['tax']) {
 				$tbquery->type = 'post';
-				return $this->query_by_slug($arg);
+				$queried_posts = $this->query_by_slug($arg);
 			} else {
 				$tbquery->type = 'page';
-				return $this->query_by_page($arg);
+				$queried_posts =  $this->query_by_page($arg);
 			}
 		} else if($arg['tax']) {
 			$tbquery->type = 'tax';
-			return $this->query_by_tax($arg);
+			$queried_posts =  $this->query_by_tax($arg);
 		} else if($arg['yy']) {
 			$tbquery->type = 'date';
-			return $this->queryy_by_date($arg);
+			$queried_posts = $this->queryy_by_date($arg);
 		} else {
 			$tbquery->type = 'home';
-			return $this->query_home($arg);
+			$queried_posts = $this->query_home($arg);
 		}
-		return false;
+
+		if(!is_array($queried_posts)) return false;
+
+		for($i=0; $i<count($queried_posts); $i++) {
+			$queried_posts[$i]->date = $tbdate->mysql_datetime_to_local($queried_posts[$i]->date);
+			$queried_posts[$i]->modified = $tbdate->mysql_datetime_to_local($queried_posts[$i]->modified);
+		}
+
+		return $queried_posts;
 	}
 
 	private function query_by_id(&$arg) {
@@ -113,6 +130,9 @@ class TB_Posts {
 
 		if($arg['noredirect']) {
 			$sql = "SELECT * FROM posts WHERE id=".intval($arg['p']);
+			if($arg['modified']) {
+				$sql .= " AND modified>'".$arg['modified']."'";
+			}
 			$rows = $tbdb->query($sql);
 			if(!$rows) return false;
 
@@ -179,6 +199,9 @@ class TB_Posts {
 		if(!$taxid) return false;
 
 		$sql = "SELECT * FROM posts WHERE taxonomy=$taxid AND slug='".$tbdb->real_escape_string($slug)."'";
+		if($arg['modified']) {
+			$sql .= " AND modified>'".$arg['modified']."'";
+		}
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;

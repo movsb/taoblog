@@ -1,6 +1,10 @@
 <?php
 	$home = $tbopt->get('home');
 	$the = $tbquery->the();
+
+	if(!preg_match('/[-]000/', $the->modified)){
+		header('Last-Modified: '.$tbdate->mysql_local_to_http_gmt($the->modified));
+	}
 ?><!DOCTYPE html> 
 <html lang="zh-CN">
 <head>

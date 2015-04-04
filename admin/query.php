@@ -13,6 +13,8 @@ class TB_Query {
 	public $pageno;
 	public $pages_per_page;
 
+	public $is_query_modification = false;
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page');
@@ -32,6 +34,7 @@ class TB_Query {
 		global $tbopt;
 		global $tbpost;
 		global $tbtax;
+		global $tbdate;
 
 		$this->parse_query_args();
 
@@ -60,6 +63,16 @@ class TB_Query {
 			$this->objs = null;
 
 			return false;
+		}
+
+
+		$this->is_query_modification = false;
+		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+			$modified = $tbdate->http_gmt_to_mysql_datetime_gmt($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+			if($tbdate->is_valid_mysql_datetime($modified)) {
+				$this->query['modified'] = $modified;
+				$this->is_query_modification = true;
+			}
 		}
 
 		$this->query = array_merge($this->query, parse_query_string($u));

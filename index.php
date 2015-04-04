@@ -7,8 +7,13 @@ if($tbquery->query() === false){
 }
 
 if(!$tbquery->have()){
-	require('theme/404.php');
-	die(0);
+	if(!$tbquery->is_query_modification) {
+		require('theme/404.php');
+		die(0);
+	} else {
+		header('HTTP/1.1 304 Not Modified');
+		die(0);
+	}
 }
 
 if($tbquery->type === 'home') {

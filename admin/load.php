@@ -4,6 +4,7 @@ require_once(dirname(__FILE__).'/../setup/config.php');
 
 require_once('die.php');
 require_once('utils.php');
+require_once('datetime.php');
 
 require_once('hooks.php');
 require_once('plugin.php');
@@ -21,4 +22,5 @@ $tbpost = new TB_Posts;
 $tbtax = new TB_Taxonomies;
 $tbcmts = new TB_Comments;
 $tbquery = new TB_Query;
+$tbdate = new TB_DateTime;
 
