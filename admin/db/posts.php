@@ -226,6 +226,16 @@ class TB_Posts {
 		return (int) $rows->fetch_array()[0];
 	}
 
+	public function get_title($id) {
+		global $tbdb;
+
+		$sql = "SELECT title FROM posts WHERE id=".(int)$id;
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		return $rows->fetch_array()[0];
+	}
+
 	public function have($id) {
 		global $tbdb;
 

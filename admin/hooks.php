@@ -33,7 +33,9 @@ function apply_hooks($flt, ...$args) {
 	$fs = $tbhooks->$flt;
 	foreach($fs as $f){
 		if(count($args)) {
-			$args[0] = call_user_func_array($f->func, $args);
+			if(!is_array($args[0])) {
+				$args[0] = call_user_func_array($f->func, $args);
+			}
 		} else {
 			$fn = $f->func;
 			$fn();

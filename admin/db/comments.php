@@ -60,7 +60,9 @@ class TB_Comments {
 				$stmt->close();
 
 				if($r) {
-					return $tbdb->insert_id;
+					$id = $tbdb->insert_id;
+					apply_hooks('comment_posted', 0, $arg);
+					return $id;
 				}
 			}
 		}

@@ -22,24 +22,31 @@ function error($msg) {
 		]);
 	die(-1);
 }
-	
 
-function cmt_get_cmt() {
-	global $tbcmts;
-	cmt_header_json();
-
-	$cmts = $tbcmts->get($_POST);
+function cmt_filter_cmt(&$cmts) {
 	$flts = ['email', 'url', 'ip', 'agent', 'status'];
 	for($i=0; $i<count($cmts); $i++) {
 		foreach($flts as $f) {
 			unset($cmts[$i]->$f);
 		}
-		for($x=0; $x<count($cmts[$i]->children); $x++) {
-			foreach($flts as $f) {
-				unset($cmts[$i]->children[$x]->$f);
+
+		if(isset($cmts[$i]->children)) {
+			for($x=0; $x<count($cmts[$i]->children); $x++) {
+				foreach($flts as $f) {
+					unset($cmts[$i]->children[$x]->$f);
+				}
 			}
 		}
 	}
+
+	return $cmts;
+}
+
+function cmt_get_cmt() {
+	global $tbcmts;
+	cmt_header_json();
+
+	$cmts = cmt_filter_cmt($tbcmts->get($_POST));
 
 	echo json_encode([
 		'errno'		=> 'success',
@@ -74,7 +81,7 @@ function cmt_post_cmt() {
 
 		echo json_encode([
 			'errno'	=> 'success',
-			'cmt'	=> $tbcmts->get($c)[0],
+			'cmt'	=> cmt_filter_cmt($tbcmts->get($c))[0],
 			]);
 		die(0);
 	} else {
