@@ -172,7 +172,8 @@ class TB_Posts {
 
 		$ppp = $tbquery->posts_per_page;
 
-		$sql = "SELECT * FROM posts LIMIT ".(((int)$arg['pageno']-1)*$ppp).','.(int)$ppp;
+		$sql = "SELECT * FROM posts ORDER BY date DESC LIMIT ".(((int)$arg['pageno']-1)*$ppp).','.(int)$ppp;
+		// FIXME: 语法错误
 		if($arg['status']){
 			$sql .= " AND status='".$tbdb->real_escape_string($arg['status'])."'";
 		}
