@@ -34,6 +34,13 @@ class TB_Comments {
 			return false;
 		}
 
+		$arg['url'] = '';
+
+		if(preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
+			$this->error = '昵称不应包含特殊字符。';
+			return false;
+		}
+
 		if(!$tbpost->have((int)$arg['post_id'])) {
 			$this->error = '此评论对应的文章不存在！';
 			return false;

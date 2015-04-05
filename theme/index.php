@@ -2,11 +2,8 @@
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8" />
-	<title><?php 
-		if($tbquery->count == 1) {
-			echo $tbquery->objs[0]->title;
-		}
-	?></title>
+	<title><?php echo $tbopt->get('blog_name');?></title>
+	<meta name="description" content="<?php echo $tbopt->get('blog_desc'); ?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="/theme/font-awesome-4.3.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="/admin/scripts/jquery-2.1.3.min.js"></script>
