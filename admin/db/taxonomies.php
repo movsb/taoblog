@@ -9,6 +9,8 @@ class TB_Taxonomy_Object {
 }
 
 class TB_Taxonomies {
+	public $error = '';
+
 	private function row_to_tax(&$r) {
 		$t = new TB_Taxonomy_Object;
 		$fs = ['id', 'name', 'slug', 'parent', 'ancestor'];
@@ -47,12 +49,35 @@ class TB_Taxonomies {
 		return $sons;
 	}		
 
-	public function add($name, $slug, $parent, $ancestor){
+	public function add(&$arg){
 		global $tbdb;
 		
+		if(!$arg['name'] || preg_match('# |	|\'|"|;|/|\\\\#', $arg['name'])) {
+			$this->error = '分类名不符合规范！';
+			return false;
+		}
+
+		if(!$arg['slug'] || preg_match('# |	|\'|"|;|/|\\\\#', $arg['slug'])) {
+			$this->error = '分类别名不符合规范！';
+			return false;
+		}
+
+		if((int)$arg['parent']!=0 && !$this->has($arg['parent'])) {
+			$this->error = '分类父ID不存在！';
+			return false;
+		}
+
+		$arg['ancestor'] = $this->get_ancestor($arg['parent'], true);
+
 		$sql = "INSERT INTO taxonomies (name,slug,parent,ancestor) VALUES (?,?,?,?)";
 		if(($stmt = $tbdb->prepare($sql)) 
-			&& $stmt->bind_param('ssii', $name, $slug, $parent, $ancestor)
+			&& $stmt->bind_param(
+				'ssii', 
+				$arg['name'],
+				$arg['slug'],
+				$arg['parent'],
+				$arg['ancestor']
+				)
 			&& $stmt->execute())
 		{
 			$stmt->close();
@@ -65,23 +90,42 @@ class TB_Taxonomies {
 			//return $tax[0];
 		}
 
+		$this->error = $stmt->error;
 		return false;
 	}
 
-	public function modify($id, $name, $slug, $parent, $ancestor){
+	public function update(&$arg){
 		global $tbdb;
 
-		if(!$this->has($id)) return false;
+		if(!$this->has($arg['id'])) {
+			$this->error = '此分类ID不存在！';
+			return false;
+		}
+
+		/*
+		if(intval($arg['parent'])>0 && !$this->has($arg['parent'])) {
+			$this->error = '此分类的父ID不存在！';
+			return false;
+		}
+
+		$arg['ancestor'] = $this->get_ancestor($arg['parent'], true);
+		*/
 		
-		$sql = "UPDATE taxonomies SET name=?,slug=?,parent=?,ancestor=? WHERE id=?";
+		$sql = "UPDATE taxonomies SET name=?,slug=? WHERE id=?";
 		if(($stmt = $tbdb->prepare($sql)) 
-			&& $stmt->bind_param('ssiii', $name, $slug, $parent, $ancestor, $id)
+			&& $stmt->bind_param('ssi',
+				$arg['name'],
+				$arg['slug'],
+				/*$arg['parent'],
+				$arg['ancestor'],*/
+				$arg['id'])
 			&& $stmt->execute())
 		{
 			$stmt->close();
 			return true;
 		}
 
+		$this->error = $tbdb->error;
 		return false;
 	}
 
@@ -108,7 +152,10 @@ class TB_Taxonomies {
 	public function del($id){
 		global $tbdb;
 
-		if(!$this->has($id)) return false;
+		if(!$this->has($id)) {
+			$this->error = '待删除的分类ID不存在！';
+			return false;
+		}
 
 		// 先取得孩子，全部递归删除
 		$sons = $this->get_sons_by_id($id);
@@ -165,14 +212,32 @@ class TB_Taxonomies {
 		return $rows->fetch_assoc()['id'];
 	}
 
-	public function get_ancestor($id) {
+	public function get_ancestor($id, $return_this_id_if_zero=false) {
 		global $tbdb;
-		
-		$sql = "SELECT ancestor FROM taxonomies LIMIT 1 WHERE id=".intval($id);
-		$rows = $tbdb->query($sql);
-		if(!$rows) return false;
 
-		return $rows->fetch_assoc()['ancestor'];
+		if((int)$id == 0) return 0;
+		
+		$sql = "SELECT ancestor FROM taxonomies WHERE id=".(int)$id;
+		$rows = $tbdb->query($sql);
+
+		if(!$rows) {
+			$this->error = $tbdb->error;
+			return false;
+		}
+
+		if(!$rows->num_rows){
+			$this->error = '待查询祖先的分类的ID不存在！';
+			return false;
+		}
+
+		$ancestor = $rows->fetch_object()->ancestor;
+		return $ancestor
+			? $ancestor
+			: ($return_this_id_if_zero 
+				? $id
+				: 0
+				)
+			;
 	}
 }
 

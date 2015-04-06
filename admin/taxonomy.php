@@ -33,9 +33,18 @@ function new_tax_html() { ?>
 		padding-bottom: 0.3em;
 	}
 
+	#tax-list tbody tr {
+		height: 60px;
+	}
+
+	#tax-list tbody td {
+		vertical-align: top;
+	}
+
+
 </style>
 
-<div id="new-tax" style="float: left; width: 400px; padding: 1em; background-color: orange; box-shadow: 2px 2px 4px #E07080;">
+<div id="new-tax" style="float: left; padding: 1em; background-color: orange; box-shadow: 2px 2px 4px #E07080;">
 <form method="post" id="new-tax-form">
 	<div>
 		<span>名字: </span>
@@ -64,8 +73,8 @@ function new_tax_html() { ?>
 	</script>
 </form>
 </div>
-<div id="tax-list" style="margin-left: 450px; padding: 1em; background-color: palevioletred; box-shadow: 2px 2px 4px purple;">
-<table style="width: 100%;">
+<div id="tax-list-div" style="margin-left: 450px; padding: 1em; background-color: palevioletred; box-shadow: 2px 2px 4px purple;">
+<table id="tax-list" style="width: 100%;">
 	<thead style="text-align: left;">
 		<tr>
 			<th>名字</th>
@@ -79,6 +88,22 @@ function new_tax_html() { ?>
 		</tr>
 	</tfoot>
 	<tbody>
+		<tr id="edit-tax" style="display: none;" colspan="2">
+			<td>
+				<p>编辑分类</p>
+				<form>
+					<span>名字：</span><input name="name" type="text"><br>
+					<span>别名：</span><input name="slug" type="text">
+					<div>
+						<button class="cancel">取消</button>
+						<input class="submit" type="submit" value="更新" />
+					</div>
+					<input type="hidden" name="do" value="" />
+					<input type="hidden" name="id" value="" />
+					<!--input type="hidden" name="parent" value="" /-->
+				</form>
+			</td>
+		</tr>
 		<tr id="tax-list-0" style="display: none;"><td></td><td></td></tr>
 	</tbody>
 </table>
@@ -96,43 +121,76 @@ admin_footer();
 
 else : // POST
 
+function tax_die_json($arg) {
+	header('HTTP/1.1 200 OK');
+	header('Content-Type: application/json');
+
+	echo json_encode($arg);
+	die(0);
+}
+
+require_once('login-auth.php');
+
+if(!login_auth()) {
+	tax_die_json([
+		'errno' => 'unauthorized',
+		'error' => '需要登录后才能进行该操作！',
+		]);
+}
+
+require_once('load.php');
+
 function tax_new_tax() {
 	
 
 }
 
 function tax_get_all() {
-	require_once(dirname(__FILE__).'/../setup/config.php');
-	require_once('db/dbbase.php');
-	require_once('db/taxonomies.php');
-
-	$GLOBALS['tbdb'] = $tbdb;
-
-	$tbtax = new TB_Taxonomies;
 	echo json_encode($tbtax->get());
 	die(0);
+}
+
+function tax_update(&$arg) {
+	global $tbtax;
+
+	$r = $tbtax->update($arg);
+	if(!$r) {
+		tax_die_json([
+			'errno' => 'error',
+			'error' => $tbtax->error
+			]);
+	}
+
+	tax_die_json([
+		'errno' => 'success'
+		]);
+}
+
+function tax_delete(&$arg) {
+	global $tbtax;
+
+	$r = $tbtax->del($arg['id']);
+	if(!$r) {
+		tax_die_json([
+			'errno' => 'error',
+			'error' => $tbtax->error,
+			]);
+	}
+
+	tax_die_json([
+		'errno' => 'success',
+		]);
 }
 
 $do = isset($_POST['do']) ? $_POST['do'] : '';
 if($do === 'get-all') {
 	tax_get_all();
 } else if($do === 'add-new') {
-	require_once(dirname(__FILE__).'/../setup/config.php');
-	require_once('db/dbbase.php');
-	require_once('db/taxonomies.php');
-
-	$GLOBALS['tbdb'] = $tbdb;
-
-	$tbtax = new TB_Taxonomies;
-	$name = $_POST['name'];
-	$slug = $_POST['slug'];
-	$parent = $_POST['parent'];
-	$ancestor = $tbtax->get_ancestor($parent);
-	$id = $tbtax->add($name, $slug, $parent, $ancestor);
+	$id = $tbtax->add($_POST);
 	if($id === false) {
 		echo json_encode([
 			'errno' => 'error',
-			'error' => '添加分类失败！'
+			'error' => $tbtax->error,
 			]);
 		die(0);
 	} else {
@@ -142,6 +200,10 @@ if($do === 'get-all') {
 			]);
 		die(0);
 	}
+} else if($do === 'update') {
+	tax_update($_POST);
+} else if($do === 'delete') {
+	tax_delete($_POST);
 }
 
 
