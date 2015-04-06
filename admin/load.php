@@ -24,3 +24,5 @@ $tbcmts = new TB_Comments;
 $tbquery = new TB_Query;
 $tbdate = new TB_DateTime;
 
+date_default_timezone_set('Asia/Chongqing');
+
