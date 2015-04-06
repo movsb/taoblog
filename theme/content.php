@@ -23,6 +23,6 @@
 
 	<div class="entry">
 		<?php echo $the->content; ?>
-	</div>
+	</div><!-- end entry -->
 </article>
 

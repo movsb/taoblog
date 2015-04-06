@@ -169,7 +169,7 @@ class TB_Comments {
 
 		if((int)$id == 0) return 0;
 
-		$sql = "SELECT parent,ancestor FROM comments WHERE id=".(int)$id;
+		$sql = "SELECT ancestor FROM comments WHERE id=".(int)$id;
 		$rows = $tbdb->query($sql);
 
 		if(!$rows) {
