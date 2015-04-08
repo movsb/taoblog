@@ -46,3 +46,14 @@ function apply_hooks($flt, ...$args) {
 		return $args[0];
 }
 
+function &get_hooks($flt) {
+	global $tbhooks;
+
+	$tmp = [];
+	if(!isset($tbhooks->$flt)){
+		return $tmp;
+	}
+
+	return $tbhooks->$flt;
+}
+

@@ -68,7 +68,7 @@ function new_tax_html() { ?>
 	</div>
 	<script><?php
 		global $tbtax;
-		echo 'var taxes = JSON.parse(\''.json_encode($tbtax->get()).'\');';
+		echo 'var taxes = JSON.parse(\''.json_encode($tbtax->get_hierarchically()).'\');';
 		?>
 	</script>
 </form>

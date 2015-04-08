@@ -35,6 +35,27 @@ class TB_Taxonomies {
 		return $taxes;
 	}
 
+	private function _get_hiera_loop(&$tax, $p, $taxes) {
+		foreach($taxes as $t) {
+			if($t->parent == $p) {
+				$tax->sons[] = $t;
+				$this->_get_hiera_loop($t, $t->id, $taxes);
+			}
+		}
+
+		return isset($tax->sons) ? $tax->sons : [];
+	}
+
+	public function get_hierarchically() {
+		if(($taxes = $this->get()) === false)
+			return false;
+		
+		$t = new stdClass;
+		$t = $this->_get_hiera_loop($t, 0, $taxes);
+
+		return $t;
+	}
+
 	private function get_sons_by_id($id){
 		global $tbdb;
 
@@ -131,6 +152,7 @@ class TB_Taxonomies {
 
 	public function has($id){
 		global $tbdb;
+		$id = (int)$id;
 		$sql = 'SELECT name FROM taxonomies WHERE id=?';
 		if(($stmt = $tbdb->prepare($sql))
 			&& $stmt->bind_param('i', $id)
