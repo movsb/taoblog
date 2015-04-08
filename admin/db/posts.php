@@ -140,7 +140,7 @@ class TB_Posts {
 				$r = $stmt->execute();
 				$stmt->close();
 
-				if($r) $tbdb->insert_id;
+				if($r) return $tbdb->insert_id;
 			} 
 		}
 
