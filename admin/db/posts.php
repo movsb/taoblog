@@ -15,6 +15,8 @@ class TB_PostObject {
 }
 
 class TB_Posts {
+	public $error = '';
+
 	private function row_to_post(&$r){
 		$p = new TB_PostObject;
 		$fs = ['id','date','modified','title','content', 'slug',
@@ -26,13 +28,73 @@ class TB_Posts {
 		return $p;
 	}
 
-	public function insert($arg){
+	public function update(&$arg){
 		global $tbdb;
 		global $tbdate;
+		global $tbtax;
 
 		$def = [
-			'date' => $tb->mysql_datetime_gmt(),
-			'modified' => $tb->mysql_datetime_gmt(),
+			'id'		=> 0,
+			'modified'	=> $tbdate->mysql_datetime_gmt(),
+			'title'		=> '',
+			'content'	=> '',
+			'slug'		=> '',
+			'taxonomy'	=> 1,
+		];
+
+		$arg = tb_parse_args($def, $arg);
+
+		if(!$this->have($arg['id'])) {
+			$this->error = '此文章不存在！';
+			return false;
+		}
+
+		if(!$arg['title']) {
+			$this->error = '标题不应为空！';
+			return false;
+		}
+
+		if(!$arg['content']) {
+			$this->error = '内容不应为空！';
+			return false;
+		}
+
+		if(!$arg['slug'] || preg_match('# |	|\'|"|;|/|\\\\|\\?|&|\.|<|>|:|@|\\$|%|\\^|\\*#', $arg['slug'])) {
+			$this->error = '文章别名不规范！';
+			return false;
+		}
+
+		if(!$tbtax->has((int)$arg['taxonomy'])) {
+			$this->error = '文章所属分类不存在！';
+			return false;
+		}
+
+		$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
+		if($stmt = $tbdb->prepare($sql)){
+			if($stmt->bind_param('ssssii',
+				$arg['modified'], $arg['title'], $arg['content'],$arg['slug'],
+				$arg['taxonomy'], $arg['id']))
+			{
+				$r = $stmt->execute();
+				$stmt->close();
+
+				if($r) return $r;
+			} 
+		}
+
+		$this->error = $stmt->error;
+
+		return false;
+	}
+
+	public function insert(&$arg){
+		global $tbdb;
+		global $tbdate;
+		global $tbtax;
+
+		$def = [
+			'date' => $tbdate->mysql_datetime_gmt(),
+			'modified' => $tbdate->mysql_datetime_gmt(),
 			'title' => '',
 			'content' => '',
 			'slug' => '',
@@ -44,6 +106,26 @@ class TB_Posts {
 		];
 
 		$arg = tb_parse_args($def, $arg);
+
+		if(!$arg['title']) {
+			$this->error = '标题不应为空！';
+			return false;
+		}
+
+		if(!$arg['content']) {
+			$this->error = '内容不应为空！';
+			return false;
+		}
+
+		if(!$arg['slug'] || preg_match('# |	|\'|"|;|/|\\\\|\\?|&|\\.|<|>|:|@|\\$|%|\\^|\\*#', $arg['slug'])) {
+			$this->error = '文章别名不规范！';
+			return false;
+		}
+
+		if(!$tbtax->has((int)$arg['taxonomy'])) {
+			$this->error = '文章所属分类不存在！';
+			return false;
+		}
 
 		$sql = "INSERT INTO posts (
 			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)
@@ -58,13 +140,13 @@ class TB_Posts {
 				$r = $stmt->execute();
 				$stmt->close();
 
-				return $r ? $tbdb->insert_id : $r;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
+				if($r) $tbdb->insert_id;
+			} 
 		}
+
+		$this->error = $stmt->error;
+
+		return false;
 	}
 
 	public function query(&$arg){

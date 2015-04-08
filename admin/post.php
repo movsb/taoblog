@@ -6,10 +6,81 @@ if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
 require_once('admin.php');
 
+function post_widget_tax_add(&$taxes, $tax=1) {
+	$s = '';
+	foreach($taxes as $t) {
+		$s .= '<li><label><input type="radio" style="position: relative; top: 2px;" name="taxonomy" value="'.$t->id.'"'.
+			($tax==$t->id?' checked="checked" ':' ').' /> '.$t->name."</label>\n";
+		if(isset($t->sons) && count($t->sons)) {
+			$s .= '<ul class="children" style="margin-left: 14px;">';
+			$s .= post_widget_tax_add($t->sons, $tax);
+			$s .= "</ul>\n";
+		}
+		$s .= '</li>'."\n";
+	}
+	return $s;
+}
+
+function post_widget_tax($p=null) {
+	global $tbtax;
+	$taxes = $tbtax->get_hierarchically();
+
+	$content = '<ul>'.post_widget_tax_add($taxes, ($p ? $p->taxonomy : 1)).'</ul>';
+
+	return [
+		'title' => '标题',
+		'content' => $content,
+		];
+}
+
+add_hook('post_widget', 'post_widget_tax');
+
+function post_widget_slug($p=null) {
+	return [
+		'title' => 'Slug',
+		'content' => '<input type="text" name="slug" value="'.($p ? htmlspecialchars($p->slug) : '').'" />',
+		];
+}
+
+add_hook('post_widget', 'post_widget_slug');
+
+function post_admin_head() { ?>
+<style>
+	.sidebar-right {
+
+	}
+
+	.sidebar-right input[type="text"] {
+		padding: 4px;
+	}
+
+	.sidebar-right .widget {
+		background-color: white;
+		border: 1px solid #ccc;
+		margin-bottom: 20px;
+	}
+
+	.sidebar-right .widget h3 {
+		padding: 4px 6px;
+		border-bottom: 1px solid #ccc;
+	}
+
+	.sidebar-right .widget-content {
+		padding: 10px;
+	}
+
+	.sidebar-right .widget ul {
+		list-style: none;
+	}
+</style>
+<?php }
+
+add_hook('admin_head', 'post_admin_head');
+
 function new_post_html($p=null){ ?>
 <div id="admin-post">
-	<form method="POST">
-		<div>
+	<form method="POST" autocomplete="off">
+		<div class="post" style="float: left;">
 			<div>
 				<h2>标题</h2>
 				<input type="text" name="title" value="<?php
@@ -18,14 +89,14 @@ function new_post_html($p=null){ ?>
 					}
 				?>" />
 			</div>
-			<div>
+			<!--div>
 				<h2>别名</h2>
 				<input type="text" name="slug" value="<?php
 					if($p) {
 						echo htmlspecialchars($p->slug);
 					}
 				?>" />
-			</div>
+			</div-->
 			<div>
 				<h2>内容</h2>
 				<textarea name="content" wrap="off" style="width: 500px; height: 300px;"><?php
@@ -39,9 +110,31 @@ function new_post_html($p=null){ ?>
 				<input type="submit" value="发表" />
 			</div>
 			<div>
-				<input type="hidden" name="do" value="new-post" />
+				<input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
+				<?php if($p) { ?><input type="hidden" name="id" value="<?php echo $p->id; ?>" /><?php } ?>
 			</div>
-		</div>
+		</div><!-- post -->
+		<div class="sidebar-right" style="float: right;">
+			<div class="widget widget-test">
+				<h3>测试</h3>
+				<div class="widget-content">
+					<input /><br>
+					<input />
+				</div>
+			</div>
+			<?php
+				$widgets = get_hooks('post_widget');
+				foreach($widgets as $wo) {
+					$fn = $wo->func;
+					$w = (object)$fn($p);
+					?>
+<div class="widget">
+	<h3><?php echo $w->title; ?></h3>
+	<div class="widget-content">
+		<?php echo $w->content; ?>
+	</div>
+</div><?php } ?>
+		</div><!-- sidebar right -->
 	</form>
 </div><!-- admin-post -->
 <?php } 
@@ -71,6 +164,23 @@ die(0);
 
 /* GET */ else :
 
+function post_die_json($arg) {
+	header('HTTP/1.1 200 OK');
+	header('Content-Type: application/json');
+
+	echo json_encode($arg);
+	die(0);
+}
+
+require_once('login-auth.php');
+
+if(!login_auth()) {
+	post_die_json([
+		'errno' => 'unauthorized',
+		'error' => '需要登录后才能进行该操作！',
+		]);
+}
+
 require_once('load.php');
 
 function post_new_post() {
@@ -78,33 +188,42 @@ function post_new_post() {
 	global $tbpost;
 	global $tbopt;
 
-	$title = $_POST['title'];
-	$content = $_POST['content'];
-	$slug = $_POST['slug'];
-
-	$p = compact('title', 'content', 'slug');
-
-	if(($id=$tbpost->insert($p))){
+	if(($id=$tbpost->insert($_POST))){
 		header('HTTP/1.1 302 Found');
 		header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id);
 		die(0);
 	} else {
-		$j = [ 'errno' => 'failed',];
-		tb_die(400, $tbdb->error);
+		$j = [ 'errno' => 'error', 'error' => $tbpost->error];
+		post_die_json($j);
 	}
 }
 
-if(!isset( $_POST['do'])){
-	tb_die(400, '未指定动作！');
+function post_update() {
+	global $tbdb;
+	global $tbpost;
+	global $tbopt;
+
+	$r = $tbpost->update($_POST);
+	if(!$r) {
+		post_die_json([
+			'errno' => 'error',
+			'error' => $tbpost->error
+			]);
+	}
+
+	header('HTTP/1.1 302 Updated');
+	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$_POST['id']);
+	die(0);
 }
 
-$do = str_replace('-','_','post-'.$_REQUEST['do']);
+$do = $_POST['do'];
 
-if(!function_exists($do)){
-	tb_die(400, "未找到函数($do)！");
+if($do == 'new') {
+	post_new_post();
+} else if($do == 'update') {
+	post_update();
 }
 
-$do();
 
 die(0);
 
