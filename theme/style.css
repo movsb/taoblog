@@ -319,8 +319,7 @@ h3 {
 }
 
 .entry p {
-	margin: 0px;
-	padding: 0px 0px 1em;
+	margin: 1em 0px;
 }
 
 .entry a {
@@ -389,6 +388,7 @@ h3 {
 .entry div.code-wrap {
 	max-height: 500px;
 	overflow: auto;
+	margin: 0.5em 0em;
 }
 
 .entry div.code-wrap table {
@@ -408,11 +408,14 @@ h3 {
 	background-color: #23241F;
 	color: white;
 	text-align: right;
+	border: none;
 	border-right: 3px solid yellowgreen;
+	width: 2em;
 }
 
 .entry div.code-wrap td.code {
 	padding: 0px !important;
+	border: none;
 }
 
 
@@ -421,6 +424,15 @@ h3 {
 	white-space: pre;
 	font-family: Consolas, monospace;
 	padding: 0.5em !important;
+}
+
+/* pre */
+.entry pre.shell {
+	font-family: Consolas, monospace;
+	padding: 8px;
+	background-color: #3B103B;
+	color: #DDD;
+	overflow: auto;
 }
 
 /* 评论 */
