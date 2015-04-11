@@ -7,6 +7,10 @@
 	overflow: auto;
 }
 
+.entry pre.shell .prompt {
+	color: #D80808;
+}
+
 .entry pre.shell .bold {
 	font-weight: bold;
 }
