@@ -411,6 +411,7 @@ h3 {
 	border: none;
 	border-right: 3px solid yellowgreen;
 	width: 2em;
+	min-width: 2em;	/* why need both here ? See: 476.html */
 }
 
 .entry div.code-wrap td.code {
