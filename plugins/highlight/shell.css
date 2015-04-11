@@ -1,0 +1,65 @@
+/* pre */
+.entry pre.shell {
+	font-family: Consolas, monospace;
+	padding: 8px;
+	background-color: #3B103B;
+	color: #DDD;
+	overflow: auto;
+}
+
+.entry pre.shell .bold {
+	font-weight: bold;
+}
+.entry pre.shell .underline {
+	text-decoration: underline;
+}
+.entry pre.shell .black {
+	color: black;
+}
+.entry pre.shell .red {
+	color: #BA0006;
+}
+.entry pre.shell .green {
+	color: #88BD30;
+}
+.entry pre.shell .yellow {
+	color: #BC9900;
+}
+.entry pre.shell .blue {
+	color: #4E87C5;
+}
+.entry pre.shell .magenta {
+	color: magenta;
+}
+.entry pre.shell .cyan {
+	color: cyan;
+}
+.entry pre.shell .white {
+	color: white;
+}
+
+.entry pre.shell .bgblack {
+	background-color: black;
+}
+.entry pre.shell .bgred {
+	background-color: #BA0006;
+}
+.entry pre.shell .bggreen {
+	background-color: #88BD30;
+}
+.entry pre.shell .bgyellow {
+	background-color: #BC9900;
+}
+.entry pre.shell .bgblue {
+	background-color: #4E87C5;
+}
+.entry pre.shell .bgmagenta {
+	background-color: magenta;
+}
+.entry pre.shell .bgcyan {
+	background-color: cyan;
+}
+.entry pre.shell .bgwhite {
+	background-color: white;
+}
+

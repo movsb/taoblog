@@ -419,21 +419,13 @@ h3 {
 }
 
 
-.entry div.code-wrap div.code {
+.entry div.code-wrap div.code, .entry div.code {
 	overflow: auto !important;
 	white-space: pre;
 	font-family: Consolas, monospace;
 	padding: 0.5em !important;
 }
 
-/* pre */
-.entry pre.shell {
-	font-family: Consolas, monospace;
-	padding: 8px;
-	background-color: #3B103B;
-	color: #DDD;
-	overflow: auto;
-}
 
 /* 评论 */
 
