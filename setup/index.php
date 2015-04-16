@@ -76,5 +76,20 @@ if(!$my->query($sql)){
 	tb_die(200, '无法创建表：taxonomies - '.$my->error);
 }
 
+// 创建表 文章样式和JavaScript表 post_snjs
+$sql = "CREATE TABLE IF NOT EXISTS post_snjs (
+	`id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`type` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	`tid` INT(20) UNSIGNED NOT NULL,
+	`value` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	PRIMARY KEY(`id`)
+	);";
+if(!$my->query($sql)) {
+	tb_die(200, '无法创建表：post_snjs - '.$my->error);
+}
+
+
+
+
 tb_die(200, '操作成功！');
 

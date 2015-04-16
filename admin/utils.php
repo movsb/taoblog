@@ -1,12 +1,6 @@
 <?php
 
 function tb_parse_args(&$def, &$arg) {
-	foreach($arg as $a => $v){
-		if(!isset($def[$a])){
-			unset($arg[$a]);
-		}
-	}
-
 	foreach($def as $a => $v){
 		if(!isset($arg[$a])){
 			$arg[$a] = $v;

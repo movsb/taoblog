@@ -27,11 +27,14 @@
 
 } else if($tbquery->is_post()) {?>
 	<script type="text/javascript">var _post_id = <?php echo $the->id; ?>;</script>
-	<link rel="canonical" href="<?php echo $home,"/archives/$the->id.html"; ?>" /><?php
-} else if($tbquery->is_page()) {?>
-	<link rel="canonical" href="<?php echo $home,"/$the->slug"; ?>" /><?php
-} ?>
-<?php apply_hooks('tb_head'); ?>
+	<link rel="canonical" href="<?php echo $home,"/archives/$the->id.html"; ?>" />
+<?php } else if($tbquery->is_page()) {?>
+	<link rel="canonical" href="<?php echo $home,"/$the->slug"; ?>" />
+<?php } 
+	if($tbquery->is_singular()) {
+		echo $snjs->tax->header,$snjs->post->header;
+	}
+	apply_hooks('tb_head'); ?>
 
 </head>
 

@@ -28,7 +28,7 @@ function post_widget_tax($p=null) {
 	$content = '<ul>'.post_widget_tax_add($taxes, ($p ? $p->taxonomy : 1)).'</ul>';
 
 	return [
-		'title' => '标题',
+		'title' => '分类',
 		'content' => $content,
 		];
 }
@@ -43,6 +43,21 @@ function post_widget_slug($p=null) {
 }
 
 add_hook('post_widget', 'post_widget_slug');
+
+function post_widget_snjs($p=null) {
+	global $tbsnjs;
+
+	if($p) $snjs = $tbsnjs->get_snjs($p->id);
+
+	$title = 'SnJS';
+	$content = '<textarea wrap="off" name="snjs_header">'.($p ? htmlspecialchars($snjs->post->header) : '').'</textarea><br>'
+		.'<textarea wrap="off" name="snjs_footer">'.($p ? htmlspecialchars($snjs->post->footer) : '').'</textarea>';
+
+	return compact('title', 'content');
+
+}
+
+add_hook('post_widget', 'post_widget_snjs');
 
 function post_admin_head() { ?>
 <style>
@@ -115,13 +130,6 @@ function new_post_html($p=null){ ?>
 			</div>
 		</div><!-- post -->
 		<div class="sidebar-right" style="float: right;">
-			<div class="widget widget-test">
-				<h3>测试</h3>
-				<div class="widget-content">
-					<input /><br>
-					<input />
-				</div>
-			</div>
 			<?php
 				$widgets = get_hooks('post_widget');
 				foreach($widgets as $wo) {
@@ -187,8 +195,10 @@ function post_new_post() {
 	global $tbdb;
 	global $tbpost;
 	global $tbopt;
+	global $tbsnjs;
 
 	if(($id=$tbpost->insert($_POST))){
+		$tbsnjs->insert($id);
 		header('HTTP/1.1 302 Found');
 		header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id);
 		die(0);
@@ -202,6 +212,7 @@ function post_update() {
 	global $tbdb;
 	global $tbpost;
 	global $tbopt;
+	global $tbsnjs;
 
 	$r = $tbpost->update($_POST);
 	if(!$r) {
@@ -210,6 +221,8 @@ function post_update() {
 			'error' => $tbpost->error
 			]);
 	}
+
+	$tbsnjs->update((int)$_POST['id']);
 
 	header('HTTP/1.1 302 Updated');
 	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$_POST['id']);
