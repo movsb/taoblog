@@ -23,7 +23,8 @@
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="/theme/font-awesome-4.3.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="/admin/scripts/jquery-2.1.3.min.js"></script>
-<?php if(!$tbquery->has()) {
+<?php if(!$tbquery->count) {
+
 } else if($tbquery->is_post()) {?>
 	<script type="text/javascript">var _post_id = <?php echo $the->id; ?>;</script>
 	<link rel="canonical" href="<?php echo $home,"/archives/$the->id.html"; ?>" /><?php
