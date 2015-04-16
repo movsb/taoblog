@@ -1,5 +1,5 @@
 if($('div.code').length) {
-	$('head').append('<link rel="stylesheet" type="text/css" href="/plugins/highlight/monokai_sublime.css" />');
+	$('head').append('<link rel="stylesheet" type="text/css" href="/plugins/highlight/default.css" />');
 	// jQuery will cause the underscore(_) query parameter added to the request
 	//$('head').append('<script type="text/javascript" src="/plugins/highlight/highlight.min.js"></script>');
 	//$.getScript('/plugins/highlight/highlight.min.js');
@@ -41,6 +41,7 @@ if($('div.code').length) {
 
 			hljs.highlightBlock(e);
 
+			/*
 			// 行号
 			var lines = (e.innerHTML.match(/\n/g) || []).length;
 			if(!e.innerHTML.match(/\n$/)) lines += 1;
@@ -51,6 +52,7 @@ if($('div.code').length) {
 			s += '</td><td class="code">' + e.outerHTML  + '</td></tr></table></div>';
 
 			$(e).replaceWith(s);
+			*/
 		});
 	},
 	100);

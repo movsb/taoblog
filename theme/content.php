@@ -1,24 +1,11 @@
 <article class="post">	
 	<div class="title">
-		<h1>
-		<div id="closebtn" style="background-color: purple; width: 1.2em; height: 1.2em; cursor: pointer; float: left; margin-right: 0.8em; margin-top: 0.2em;">
-		</div>
-		<a style="color: #234E40;" href="<?php echo $tbopt->get('home').'/'.($tbtax->tree_from_id($the->taxonomy)['slug']).$the->slug.'.html'; ?>" title="<?php echo $the->title; ?>"><?php echo $the->title; ?></a></h1>
-		<script>
-			$('#closebtn').click(function(){
-				var p = $('#panel');
-				if(p.css('width') == '0px') {
-					p.css('width', '250px').css('opacity', '1');
-					$('body').css('margin-left', '250px');
-				} else {
-					$('#panel').css('width', '0px').css('opacity', '0');
-					$('body').css('margin-left', '0px');
-				}
-			});
-		</script>
+		<h1><?php echo $the->title; ?></h1>
 	</div>
 
 	<div class="meta">
+		<span><i class="fa fa-mr fa-user"></i>女孩不哭</span>
+		<span><i class="fa fa-mr fa-calendar"></i><?php echo preg_split('/ /', $the->date)[0]; ?></span>
 	</div>
 
 	<div class="entry">
