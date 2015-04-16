@@ -1,32 +1,7 @@
 <?php
 
-class TB_PostObject {
-	public $id;
-	public $date;
-	public $modified;
-	public $title;
-	public $content;
-	public $slug;
-	public $type;
-	public $taxonomy;
-	public $status;
-	public $comment_status;
-	public $password;
-}
-
 class TB_Posts {
 	public $error = '';
-
-	private function row_to_post(&$r){
-		$p = new TB_PostObject;
-		$fs = ['id','date','modified','title','content', 'slug',
-			'type','taxonomy','status','comment_status','password'];
-		foreach($fs as $f){
-			$p->{$f} = $r[$f];
-		}
-
-		return $p;
-	}
 
 	public function update(&$arg){
 		global $tbdb;
@@ -160,7 +135,7 @@ class TB_Posts {
 			'yy' => '', 'mm' => '', 'dd' => '',
 			'password' => '', 'status' => '',
 			'noredirect'=>true,
-			'pageno' => 1,
+			'pageno' => '',
 			'modified' => false,
 			];
 
@@ -187,19 +162,21 @@ class TB_Posts {
 		} else if($arg['tax']) {
 			$tbquery->type = 'tax';
 			$queried_posts =  $this->query_by_tax($arg);
-		} else if($arg['yy']) {
-			$tbquery->type = 'date';
-			$queried_posts = $this->queryy_by_date($arg);
+		} else if($arg['yy'] || $arg['pageno']) {
+			$tbquery->type = 'archive';
+			$queried_posts = $this->query_by_date($arg);
 		} else {
 			$tbquery->type = 'home';
-			$queried_posts = $this->query_home($arg);
+			$queried_posts = [];
 		}
 
 		if(!is_array($queried_posts)) return false;
 
 		for($i=0; $i<count($queried_posts); $i++) {
-			$queried_posts[$i]->date = $tbdate->mysql_datetime_to_local($queried_posts[$i]->date);
-			$queried_posts[$i]->modified = $tbdate->mysql_datetime_to_local($queried_posts[$i]->modified);
+			if(isset($queried_posts[$i]->date))
+				$queried_posts[$i]->date = $tbdate->mysql_datetime_to_local($queried_posts[$i]->date);
+			if(isset($queried_posts[$i]->modified))
+				$queried_posts[$i]->modified = $tbdate->mysql_datetime_to_local($queried_posts[$i]->modified);
 		}
 
 		return $queried_posts;
@@ -219,14 +196,15 @@ class TB_Posts {
 			if(!$rows) return false;
 
 			$p = [];
-			if($r = $rows->fetch_assoc()){
-				$r['content'] = apply_hooks('the_content', $r['content']);
-				$p[] = $this->row_to_post($r);
+			if($r = $rows->fetch_object()){
+				$r->content = apply_hooks('the_content', $r->content);
+				$p[] = $r;
 			}
 
 			return $p;
 			
 		} else {
+			// FIXME: 删除
 			$sql = "SELECT taxonomy,slug FROM posts WHERE id=".intval($arg['p']);
 
 			$rows = $tbdb->query($sql);
@@ -248,24 +226,20 @@ class TB_Posts {
 		return [];
 	}
 
-	private function query_home($arg) {
+	private function query_by_date($arg) {
 		global $tbdb;
 		global $tbquery;
 
 		$ppp = $tbquery->posts_per_page;
 
 		$sql = "SELECT * FROM posts ORDER BY date DESC LIMIT ".(((int)$arg['pageno']-1)*$ppp).','.(int)$ppp;
-		// FIXME: 语法错误
-		if($arg['status']){
-			$sql .= " AND status='".$tbdb->real_escape_string($arg['status'])."'";
-		}
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
 		$p = [];
-		while($r = $rows->fetch_assoc()){
-			$p[] = $this->row_to_post($r);
+		while($r = $rows->fetch_object()){
+			$p[] = $r;
 		}
 
 		return $p;
@@ -290,8 +264,60 @@ class TB_Posts {
 		if(!$rows) return false;
 
 		$p = [];
-		while($r = $rows->fetch_assoc()){
-			$p[] = $this->row_to_post($r);
+		while($r = $rows->fetch_object()){
+			$p[] = $r;
+		}
+
+		return $p;
+
+	}
+
+	private function query_by_page($arg){
+		global $tbdb;
+
+		$slug = $arg['slug'];
+
+		$sql = "SELECT * FROM posts WHERE type='page' AND slug='".$tbdb->real_escape_string($slug)."'";
+		if($arg['modified']) {
+			$sql .= " AND modified>'".$arg['modified']."'";
+		}
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		$p = [];
+		while($r = $rows->fetch_object()){
+			$p[] = $r;
+		}
+
+		return $p;
+
+	}
+
+	private function query_by_tax($arg){
+		global $tbdb;
+		global $tbtax;
+		global $tbquery;
+
+		$tax = $arg['tax'];
+
+		$taxid = (int)$tbtax->id_from_tree($tax);
+		if(!$taxid) return false;
+
+		$tbquery->category = $tbtax->tree_from_id($taxid);
+
+		$sql = "SELECT * FROM posts WHERE taxonomy=$taxid";
+
+		$offsprings = $tbtax->get_offsprings($taxid);
+		foreach($offsprings as $os)
+			$sql .= " OR taxonomy=$os";
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		$p = [];
+		while($r = $rows->fetch_object()){
+			$p[] = $r;
 		}
 
 		return $p;

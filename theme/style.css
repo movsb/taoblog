@@ -86,9 +86,9 @@ h3 {
 }
 
 #head h1 {
-	margin: 0px;
+	margin: 0px 0px 8px;
 	font-weight: normal;
-	font-size: 40px;
+	font-size: 30px;
 	float: left;
 	cursor: pointer;
 }
@@ -147,6 +147,10 @@ h3 {
 
 .post .meta .fa {
 	margin-right: 5px;
+}
+
+.post .meta .category a {
+	color: inherit;
 }
 
 /* 文章内容 */
@@ -259,6 +263,7 @@ h3 {
 	padding: 0.5em !important;
 	border: 1px dashed purple;
 	border-radius: 8px;
+	background-color: #FDECFF;
 }
 
 

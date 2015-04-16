@@ -8,3 +8,12 @@ body {
 	color: white;
 }
 
+.recent-posts a {
+	color: white;
+	text-decoration: none;
+}
+
+.recent-posts a:hover {
+	text-decoration: underline;
+}
+

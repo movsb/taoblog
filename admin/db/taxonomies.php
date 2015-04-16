@@ -56,7 +56,7 @@ class TB_Taxonomies {
 		return $t;
 	}
 
-	private function get_sons_by_id($id){
+	public function get_sons_by_id($id){
 		global $tbdb;
 
 		$sql = "SELECT id FROM taxonomies WHERE parent=".intval($id);
@@ -69,6 +69,26 @@ class TB_Taxonomies {
 
 		return $sons;
 	}		
+
+	public function get_offsprings($id) {
+		$oss = [];
+
+		function loop(&$oss, $id, $that){
+			$sons = $that->get_sons_by_id($id);
+			if(!$sons) return;
+
+			foreach($sons as $son) {
+				$oss[] = $son;
+			}
+			foreach($sons as $son) {
+				loop($oss, $son, $that);
+			}
+		}
+
+		loop($oss, $id, $this);
+
+		return $oss;
+	}
 
 	public function add(&$arg){
 		global $tbdb;
@@ -190,20 +210,40 @@ class TB_Taxonomies {
 		return $tbdb->query($sql);
 	}
 
-	public function tree_from_id($id, $ns=' => ', $ss='/') {
+	public function link_from_slug(&$ns) {
+		$name = $ns['name'];
+		$slug = $ns['slug'];
+
+		$links = [];
+
+		foreach($name as $i => $n) {
+			$s = '/';
+			for($x=0; $x<=$i; $x++)
+				$s .= $slug[$x].'/';
+
+			$links[] = $s;
+		}
+
+		return $links;
+	}
+
+	public function tree_from_id($id) {
 		global $tbdb;
 
 		if(!$this->has($id)) return false;
 		
-		$slug = '';
-		$name = '';
+		$slug = [];
+		$name = [];
 		while($id) {
 			$t = $this->get($id)[0];
-			$slug = $t->slug.$ss.$slug;
-			$name = $t->name.$ns.$name;
+			$slug[] = $t->slug;
+			$name[] = $t->name;
 
 			$id = $t->parent;
 		}
+
+		$slug = array_reverse($slug);
+		$name = array_reverse($name);
 
 		return compact('slug', 'name');
 	}

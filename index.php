@@ -6,7 +6,7 @@ if($tbquery->query() === false){
 	tb_die(200, '未定义的查询！');
 }
 
-if(!$tbquery->have()){
+if(!$tbquery->have() && !$tbquery->is_home()){
 	if(!$tbquery->is_query_modification) {
 		require('theme/404.php');
 		die(0);
@@ -16,13 +16,14 @@ if(!$tbquery->have()){
 	}
 }
 
-if($tbquery->type === 'home') {
+if($tbquery->is_home()) {
 	require('theme/index.php');
-	die(0);
-} 
-
-if(in_array($tbquery->type,['post','page'])) {
+} else if($tbquery->is_singular()) {
 	require('theme/single.php');
-	die(0);
+} else if($tbquery->is_category()) {
+	require('theme/category.php');
+} else if($tbquery->is_archive()) {
+	require('theme/date.php');
 }
+
 

@@ -1,6 +1,8 @@
 <?php
 
 class TB_Query {
+	public $category;
+
 	public $type;
 	public $objs;
 
@@ -15,6 +17,37 @@ class TB_Query {
 
 	public $is_query_modification = false;
 
+	// 查询类别
+	public function is_home() {
+		return $this->type === 'home';
+	}
+
+	public function is_post() {
+		return $this->type === 'post';
+	}
+
+	public function is_page() {
+		return $this->type === 'page';
+	}
+
+	public function is_singular() {
+		return $this->is_post()
+			|| $this->is_page();
+	}
+
+	public function is_category() {
+		return $this->type === 'category'
+			|| $this->type === 'tax';
+	}
+
+	public function is_archive() {
+		return $this->type === 'archive';
+	}
+
+	public function is_404() {
+		return $this->type === '404';
+	}
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page');
@@ -25,7 +58,11 @@ class TB_Query {
 		return $this->count && $this->index<$this->count;
 	}
 
-	public function the() {
+	public function has() {
+		return $this->have();
+	}
+
+	public function &the() {
 		if($this->index >= $this->count) return false;
 		return $this->objs[$this->index++];
 	}
@@ -42,12 +79,13 @@ class TB_Query {
 			return false;
 
 		$rules = [
-			'^/archives/(\d+)\.html$' => 'p=$1',
-			'^/page/(\d+)$' => 'pageno=$1',
-			'^/(.+)/([^/]+)\.html$' => 'tax=$1&slug=$2',
-			'^/(.+)/$' => 'tax=$1',
-			'^/index.php$' => '',
-			'^/$' => '',
+			'^/archives/(\d+)\.html$'		=> 'p=$1',
+			'^/page/(\d+)$'					=> 'pageno=$1',
+			'^/(.+)/([^/]+)\.html$'			=> 'tax=$1&slug=$2',
+			'^/([0-9a-z]+)$'					=> 'slug=$1',
+			'^/(.+)/$'						=> 'tax=$1',
+			'^/index.php$'					=> '',
+			'^/$'							=> '',
 			];
 		
 		foreach($rules as $rule => $rewrite){
