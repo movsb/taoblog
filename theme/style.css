@@ -141,7 +141,7 @@ h3 {
 	clear: both;
 }
 
-.post .meta span{
+.post .meta span.item {
 	padding: 0px 5px;
 }
 
@@ -151,6 +151,11 @@ h3 {
 
 .post .meta .category a {
 	color: inherit;
+}
+
+.post .meta .font-sizing .inc,
+.post .meta .font-sizing .dec {
+	cursor: pointer;
 }
 
 /* 文章内容 */
