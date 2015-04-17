@@ -8,6 +8,8 @@ class TB_Post_SnJS {
 		$post->header = $_POST['snjs_header'];
 		$post->footer = $_POST['snjs_footer'];
 
+		if(!$post->header && !$post->footer) return;
+
 		$sql = "INSERT INTO post_snjs (type,tid,value) values ('post',?,?)";
 		if(($stmt = $tbdb->prepare($sql))
 			&& $stmt->bind_param('is', $id, json_encode($post))
@@ -25,6 +27,8 @@ class TB_Post_SnJS {
 		$snjs = new stdClass;
 		$snjs->header = $_POST['snjs_header'];
 		$snjs->footer = $_POST['snjs_footer'];
+
+		if(!$snjs->header && !$snjs->footer) return;
 
 		$sql = "UPDATE post_snjs SET value=? WHERE tid=".(int)$pid;
 		if(($stmt = $tbdb->prepare($sql))
