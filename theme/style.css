@@ -206,6 +206,14 @@ h3 {
 	border: 1px solid gray;
 }
 
+.entry table.no-border, .entry table.no-border td {
+	border: none;
+}
+
+.entry table.enlarge-first-td td:first-child {
+	padding-right: 1em;
+}
+
 /* 一些自定义的东东 */
 .entry span.tiybtn {
 	cursor: pointer;

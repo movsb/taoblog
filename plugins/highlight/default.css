@@ -8,7 +8,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   overflow-x: auto;
   padding: 0.5em;
   background: white;
-  color: black;
+  color: #333;
   -webkit-text-size-adjust: none;
 }
 
