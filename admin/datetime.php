@@ -1,9 +1,14 @@
 <?php
 
 class TB_DateTime {
-	// 基于当前时区的mysql格式的日期/时间格式
+	// mysql格式的日期/时间格式 -> GMT
 	public function  mysql_datetime_gmt($t=null) {
 		return gmdate('Y-m-d H:i:s', $t?$t:time());
+	}
+
+	// mysql 当前时间
+	public function mysql_datetime_local() {
+		return date('Y-m-d H:i:s');
 	}
 
 	// MySQL时间转换成HTTP协议的GMT格式
@@ -19,6 +24,10 @@ class TB_DateTime {
 
 	public function mysql_datetime_to_local($t) {
 		return date('Y-m-d H:i:s', strtotime($t.' GMT+0000'));
+	}
+
+	public function mysql_local_to_gmt($t) {
+		return gmdate('Y-m-d H:i:s', strtotime($t.' GMT+0800'));
 	}
 
 	public function mysql_local_to_http_gmt($t) {

@@ -10,7 +10,8 @@ class TB_Posts {
 
 		$def = [
 			'id'		=> 0,
-			'modified'	=> $tbdate->mysql_datetime_gmt(),
+			'date'		=> '',
+			'modified'	=> '',
 			'title'		=> '',
 			'content'	=> '',
 			'slug'		=> '',
@@ -44,17 +45,50 @@ class TB_Posts {
 			return false;
 		}
 
-		$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
-		if($stmt = $tbdb->prepare($sql)){
-			if($stmt->bind_param('ssssii',
-				$arg['modified'], $arg['title'], $arg['content'],$arg['slug'],
-				$arg['taxonomy'], $arg['id']))
-			{
-				$r = $stmt->execute();
-				$stmt->close();
+		if(!$arg['modified']) {
+			$arg['modified'] = $arg['date'] 
+			? $arg['date'] 
+			: $tbdate->mysql_datetime_local();
+		}
 
-				if($r) return $r;
-			} 
+		if($arg['date'] && !$tbdate->is_valid_mysql_datetime($arg['date']) 
+			|| !$tbdate->is_valid_mysql_datetime($arg['modified'])) 
+		{
+			$this->error = '无效的时间格式!';
+			return false;
+		}
+
+		// 转换成GMT时间
+		if($arg['date']) $arg['date'] = $tbdate->mysql_local_to_gmt($arg['date']);
+		if($arg['modified']) $arg['modified'] = $tbdate->mysql_local_to_gmt($arg['modified']);
+
+		if($arg['date']) {
+			$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
+			if($stmt = $tbdb->prepare($sql)){
+				if($stmt->bind_param('sssssii',
+					$arg['date'],$arg['modified'],
+					$arg['title'], $arg['content'],$arg['slug'],
+					$arg['taxonomy'], $arg['id']))
+				{
+					$r = $stmt->execute();
+					$stmt->close();
+
+					if($r) return $r;
+				} 
+			}
+		} else {
+			$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
+			if($stmt = $tbdb->prepare($sql)){
+				if($stmt->bind_param('ssssii',
+					$arg['modified'], $arg['title'], $arg['content'],$arg['slug'],
+					$arg['taxonomy'], $arg['id']))
+				{
+					$r = $stmt->execute();
+					$stmt->close();
+
+					if($r) return $r;
+				} 
+			}
 		}
 
 		$this->error = $stmt->error;
@@ -68,8 +102,8 @@ class TB_Posts {
 		global $tbtax;
 
 		$def = [
-			'date' => $tbdate->mysql_datetime_gmt(),
-			'modified' => $tbdate->mysql_datetime_gmt(),
+			'date' => $tbdate->mysql_datetime_local(),
+			'modified' => '',
 			'title' => '',
 			'content' => '',
 			'slug' => '',
@@ -101,6 +135,21 @@ class TB_Posts {
 			$this->error = '文章所属分类不存在！';
 			return false;
 		}
+
+		if(!$arg['modified']) {
+			$arg['modified'] = $arg['date'] 
+			? $arg['date'] 
+			: $tbdate->mysql_datetime_gmt();
+		}
+
+		if(!$tbdate->is_valid_mysql_datetime($arg['date']) || !$tbdate->is_valid_mysql_datetime($arg['modified'])) {
+			$this->error = '无效的时间格式!';
+			return false;
+		}
+
+		// 转换成GMT时间
+		$arg['date'] = $tbdate->mysql_local_to_gmt($arg['date']);
+		$arg['modified'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		$sql = "INSERT INTO posts (
 			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)

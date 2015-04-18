@@ -44,6 +44,18 @@ function post_widget_slug($p=null) {
 
 add_hook('post_widget', 'post_widget_slug');
 
+function post_widget_date($p=null) {
+	global $tbdate;
+
+	$title = '日期';
+	$content = '<input type="text" name="date" value="'.($p ? $p->date : $tbdate->mysql_datetime_local()).'"/><br>'
+		.'<input type="text" name="modified" value="'.($p ? $p->modified : $tbdate->mysql_datetime_local()).'" />';
+
+	return compact('title', 'content');
+}
+
+add_hook('post_widget', 'post_widget_date');
+
 function post_widget_snjs($p=null) {
 	global $tbsnjs;
 
