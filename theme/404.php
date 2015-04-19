@@ -1,3 +1,4 @@
+<?php header('HTTP/1.1 404 Not Found'); ?>
 <?php require('header.php'); ?>
 	<div class="err-404">		
 		<div style="text-align: center; padding: 4em;">
