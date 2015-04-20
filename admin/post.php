@@ -49,7 +49,7 @@ function post_widget_date($p=null) {
 
 	$title = '日期';
 	$content = '<input type="text" name="date" value="'.($p ? $p->date : $tbdate->mysql_datetime_local()).'"/><br>'
-		.'<input type="text" name="modified" value="'.($p ? $p->modified : $tbdate->mysql_datetime_local()).'" />';
+		.'<input type="text" name="modified" value="" />';
 
 	return compact('title', 'content');
 }
@@ -106,7 +106,7 @@ add_hook('admin_head', 'post_admin_head');
 
 function new_post_html($p=null){ ?>
 <div id="admin-post">
-	<form method="POST" autocomplete="off">
+	<form method="POST">
 		<div class="post" style="float: left;">
 			<div>
 				<h2>标题</h2>
@@ -156,6 +156,11 @@ function new_post_html($p=null){ ?>
 </div><?php } ?>
 		</div><!-- sidebar right -->
 	</form>
+	<?php if(!$p) {?>
+	<script type="text/javascript">
+		document.getElementsByTagName('form')[0].reset();
+	</script>
+	<?php } ?>
 </div><!-- admin-post -->
 <?php } 
 

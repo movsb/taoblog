@@ -46,9 +46,7 @@ class TB_Posts {
 		}
 
 		if(!$arg['modified']) {
-			$arg['modified'] = $arg['date'] 
-			? $arg['date'] 
-			: $tbdate->mysql_datetime_local();
+			$arg['modified'] = $tbdate->mysql_datetime_local();
 		}
 
 		if($arg['date'] && !$tbdate->is_valid_mysql_datetime($arg['date']) 
@@ -139,7 +137,7 @@ class TB_Posts {
 		if(!$arg['modified']) {
 			$arg['modified'] = $arg['date'] 
 			? $arg['date'] 
-			: $tbdate->mysql_datetime_gmt();
+			: $tbdate->mysql_datetime_local();
 		}
 
 		if(!$tbdate->is_valid_mysql_datetime($arg['date']) || !$tbdate->is_valid_mysql_datetime($arg['modified'])) {
