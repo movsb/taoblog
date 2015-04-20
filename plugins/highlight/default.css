@@ -20,7 +20,9 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   color: #008000;
 }
 
+.hljs-register,
 .hljs-keyword,
+.hljs-literal,
 .hljs-id,
 .hljs-built_in,.css
 .smalltalk .hljs-class,
@@ -35,11 +37,11 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   color: #00f;
 }
 
+.hljs-branch,
 .hljs-string,
 .hljs-title,
+.hljs-tag,
 .hljs-parent,
-.hljs-tag .hljs-value,
-.hljs-rule .hljs-value,
 .ruby .hljs-symbol,
 .ruby .hljs-symbol .hljs-string,
 .hljs-template_tag,
@@ -52,7 +54,16 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 .tex .hljs-formula,
 .coffeescript .hljs-attribute,
 .hljs-name {
-  color: #a31515;
+  color: #D8302A;
+}
+
+.hljs-attribute {
+	color: #2AADD8;
+}
+
+.hljs-tag .hljs-value,
+.hljs-rule .hljs-value {
+	color: #B09F02;
 }
 
 .ruby .hljs-string,
