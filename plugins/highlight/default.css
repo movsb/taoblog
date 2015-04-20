@@ -20,6 +20,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   color: #008000;
 }
 
+.hljs-register,
 .hljs-keyword,
 .hljs-literal,
 .hljs-id,
@@ -36,6 +37,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   color: #00f;
 }
 
+.hljs-branch,
 .hljs-string,
 .hljs-title,
 .hljs-tag,
