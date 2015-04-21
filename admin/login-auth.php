@@ -10,8 +10,9 @@ function login_auth_passwd($arg = []) {
 
 	$user = isset($arg['user']) ? $arg['user'] : '';
 	$passwd = isset($arg['passwd']) ? $arg['passwd'] : '';
+	$ip = $_SERVER['REMOTE_ADDR'];
 
-	if($user === 'twofei' && sha1(md5($passwd).sha1($passwd)) === $opt->get('login')) {
+	if($user === 'twofei' && $passwd === sha1(md5($ip).$opt->get('login'))) {
 		return true;
 	}
 
@@ -24,8 +25,6 @@ function login_auth($redirect=false) {
 	$opt = new TB_Options;
 
 	$ip = $_SERVER['REMOTE_ADDR'];
-	//$auth_ips = $opt->get('auth_ips');
-	//$ipauth = in_array($ip, explode(',', $auth_ips)) === true;
 	$ipauth = true;
 	$hash = isset($_COOKIE['login']) ? $_COOKIE['login'] : '';
 	$loggedin = $hash && $hash === sha1(md5($ip).$opt->get('login'));
