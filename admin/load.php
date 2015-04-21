@@ -6,6 +6,8 @@ require_once('die.php');
 require_once('utils.php');
 require_once('datetime.php');
 
+require_once('login-auth.php');
+
 require_once('hooks.php');
 require_once('plugin.php');
 
@@ -27,4 +29,6 @@ $tbdate = new TB_DateTime;
 $tbsnjs = new TB_Post_SnJS;
 
 date_default_timezone_set('Asia/Chongqing');
+
+$logged_in = login_auth_cookie();
 

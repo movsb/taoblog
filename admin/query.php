@@ -73,6 +73,8 @@ class TB_Query {
 		global $tbtax;
 		global $tbdate;
 
+		global $logged_in;
+
 		$this->parse_query_args();
 
 		if(preg_match('#(\'|"|;|\./|\\\\)#', $this->uri))
@@ -105,7 +107,7 @@ class TB_Query {
 
 
 		$this->is_query_modification = false;
-		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+		if(!$logged_in && isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
 			$modified = $tbdate->http_gmt_to_mysql_datetime_gmt($_SERVER['HTTP_IF_MODIFIED_SINCE']);
 			if($tbdate->is_valid_mysql_datetime($modified)) {
 				$this->query['modified'] = $modified;

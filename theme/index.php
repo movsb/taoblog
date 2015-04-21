@@ -12,7 +12,7 @@
 <body>
 <div id="wrapper">
 	<div style="margin: 2em;">
-		<span style="font-size: 3em;">女孩不哭</span>
+		<span style="font-size: 3em;"><?php echo $tbopt->get('blog_name'); ?></span>
 	</div>
 	<div class="recent-posts">
 		<h3 style="display: inline-block; border-bottom: 1px solid; padding: 0px 2em;">近期文章</h3>

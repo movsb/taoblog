@@ -13,6 +13,7 @@ $admin_left = '120px';
 }
 
 body {
+	font-family: "Microsoft YaHei";
 	padding-top: <?php echo $admin_top; ?>;
 	padding-left: <?php echo $admin_left; ?>;
 	background-color: #F1F1F1;

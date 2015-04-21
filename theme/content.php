@@ -4,7 +4,7 @@
 	</div>
 
 	<div class="meta">
-		<span class="item"><i class="fa fa-mr fa-user"></i>作者: 女孩不哭</span>
+		<span class="item"><i class="fa fa-mr fa-user"></i>作者: <?php echo $tbopt->get('nickname'); ?></span>
 		<span class="item"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo preg_split('/ /', $the->date)[0]; ?></span>
 		<span class="item category"><i class="fa fa-mr fa-folder"></i>分类: <?php 
 			$taxes = $tbtax->tree_from_id($the->taxonomy);
@@ -23,6 +23,11 @@
 			?><span class="dec"><i class="fa fa-minus"></i></span><?php
 			?><span class="inc"><i class="fa fa-plus"></i></span>
 		</span>
+		<?php if($logged_in) { ?>
+		<span class="item edit-post">
+			<i class="fa fa-mr fa-pencil"></i><span><a href="/admin/post.php?do=edit&id=<?php echo $the->id;?>">编辑</a></span>
+		</span>
+		<?php } ?>
 		<script>
 			$('.font-sizing').click(function(e){
 				var post = $('.entry');

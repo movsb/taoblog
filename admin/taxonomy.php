@@ -60,8 +60,8 @@ function new_tax_html() { ?>
 			<option class="tax-lv-0" id="tax-id-0" lv="0" value="0">--- 无 ---</option>
 		</select>
 	</div>
-	<div style="margin: 1em;">
-		<span id="add-new-tax" type="submit" class="btn" style="background-color: purple; padding: 1em;">增加</span>
+	<div style="margin: 1em; text-align: right;">
+		<span id="add-new-tax" type="submit" class="btn" style="background-color: purple; color: white; padding: 8px 12px; cursor: pointer;">增加</span>
 	</div>
 	<div style="display: none;">
 		<input type="hidden" name="do" value="add-new" />
