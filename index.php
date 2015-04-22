@@ -24,6 +24,7 @@ if($tbquery->is_home()) {
 	require('theme/category.php');
 } else if($tbquery->is_archive()) {
 	require('theme/date.php');
+} else if($tbquery->is_feed()) {
+	require('theme/feed.php');
 }
-
 

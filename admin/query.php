@@ -48,6 +48,10 @@ class TB_Query {
 		return $this->type === '404';
 	}
 
+	public function is_feed() {
+		return $this->type === 'feed';
+	}
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page');
@@ -84,7 +88,8 @@ class TB_Query {
 			'^/archives/(\d+)\.html$'		=> 'p=$1',
 			'^/page/(\d+)$'					=> 'pageno=$1',
 			'^/(.+)/([^/]+)\.html$'			=> 'tax=$1&slug=$2',
-			'^/([0-9a-z]+)$'					=> 'slug=$1',
+			'^/(feed|rss)(.xml)?$'				=> 'feed=1',
+			'^/([0-9a-z]+)$'				=> 'slug=$1',
 			'^/(.+)/$'						=> 'tax=$1',
 			'^/index.php$'					=> '',
 			'^/$'							=> '',

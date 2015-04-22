@@ -37,5 +37,9 @@ class TB_DateTime {
 	public function is_valid_mysql_datetime($t) {
 		return preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $t);
 	}
+
+	public function the_feed_date($t) {
+		return date('D, d M Y H:i:s', strtotime($t.' GMT+0000'));
+	}
 }
 

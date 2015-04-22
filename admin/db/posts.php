@@ -184,6 +184,7 @@ class TB_Posts {
 			'noredirect'=>true,
 			'pageno' => '',
 			'modified' => false,
+			'feed' => '',
 			];
 
 		$arg = tb_parse_args($defs, $arg);
@@ -211,6 +212,11 @@ class TB_Posts {
 			$queried_posts =  $this->query_by_tax($arg);
 		} else if($arg['yy'] || $arg['pageno']) {
 			$tbquery->type = 'archive';
+			$queried_posts = $this->query_by_date($arg);
+		} else if($arg['feed']) {
+			$tbquery->type = 'feed';
+			unset($arg);
+			$arg = ['pageno' => '1'];
 			$queried_posts = $this->query_by_date($arg);
 		} else {
 			$tbquery->type = 'home';

@@ -19,6 +19,7 @@ require_once('db/comments.php');
 require_once('db/post-snjs.php');
 
 require_once('query.php');
+require_once('canonical.php');
 
 $tbopt = new TB_Options;
 $tbpost = new TB_Posts;

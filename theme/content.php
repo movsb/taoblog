@@ -25,7 +25,7 @@
 		</span>
 		<?php if($logged_in) { ?>
 		<span class="item edit-post">
-			<i class="fa fa-mr fa-pencil"></i><span><a href="/admin/post.php?do=edit&id=<?php echo $the->id;?>">编辑</a></span>
+			<i class="fa fa-mr fa-pencil"></i><span><?php echo the_edit_post_link($the);?></span>
 		</span>
 		<?php } ?>
 		<script>

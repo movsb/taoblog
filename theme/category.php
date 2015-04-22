@@ -10,9 +10,9 @@ while($tbquery->has()){
 	<li class="cat-item">
 		<h2><a target="_blank" href="<?php 
 			if($the->type === 'post') {
-				echo $home,'/',implode('/',$tbtax->tree_from_id($the->taxonomy)['slug']),'/',$the->slug,'.html';
+				echo the_post_link($the);
 			} else if($the->type === 'page') {
-				echo $hoem,'/',$the->slug;
+				echo the_page_link($the);
 			}
 			?>"><?php echo $the->title;?></a></h2>
 	</li>

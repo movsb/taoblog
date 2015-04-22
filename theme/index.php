@@ -22,7 +22,7 @@
 			$posts = $tbpost->query($q);
 			if(is_array($posts) && count($posts)) {
 				foreach($posts as $p) {
-					$link = '/'.implode('/', $tbtax->tree_from_id($p->taxonomy)['slug']).'/'.$p->slug.'.html';
+					$link = the_post_link($p);
 					echo '<li><a href="'.$link.'">',$p->title,'</a></li>';
 				}
 			}
