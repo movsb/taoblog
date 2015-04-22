@@ -23,7 +23,7 @@ function feed_body() {
 ?>		<item>
 			<title><?php echo htmlspecialchars($the->title); ?></title>
 			<link><?php echo htmlspecialchars(the_post_link($the)); ?></link>
-			<description></description>
+			<description><?php echo htmlspecialchars($the->content); ?></description>
 			<pubDate><?php echo $tbdate->the_feed_date($the->date);?></pubDate>
 		</item>
 <?php

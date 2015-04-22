@@ -20,6 +20,7 @@
 
 		echo ' - ',$blog_name;
 	?></title>
+	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo $home,'/rss';?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="/theme/font-awesome-4.3.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="/admin/scripts/jquery-2.1.3.min.js"></script>

@@ -88,10 +88,10 @@ class TB_Query {
 			'^/archives/(\d+)\.html$'		=> 'p=$1',
 			'^/page/(\d+)$'					=> 'pageno=$1',
 			'^/(.+)/([^/]+)\.html$'			=> 'tax=$1&slug=$2',
-			'^/(feed|rss)(.xml)?$'				=> 'feed=1',
+			'^/(feed|rss)(\.xml)?$'				=> 'feed=1',
 			'^/([0-9a-z]+)$'				=> 'slug=$1',
 			'^/(.+)/$'						=> 'tax=$1',
-			'^/index.php$'					=> '',
+			'^/index\.php$'					=> '',
 			'^/$'							=> '',
 			];
 		
