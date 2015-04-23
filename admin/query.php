@@ -85,7 +85,7 @@ class TB_Query {
 			return false;
 
 		$rules = [
-			'^/archives/(\d+)\.html$'		=> 'p=$1',
+			'^/archives/(\d+)\.html$'		=> 'id=$1',
 			'^/page/(\d+)$'					=> 'pageno=$1',
 			'^/(.+)/([^/]+)\.html$'			=> 'tax=$1&slug=$2',
 			'^/(feed|rss)(\.xml)?$'				=> 'feed=1',
@@ -126,6 +126,12 @@ class TB_Query {
 			$this->query[$n] = urldecode($v);
 		}
 
+		$need_redirect = false;
+		if(isset($this->query['p'])) {
+			$this->query['id'] = (int)$this->query['p'];
+			$need_redirect = true;
+		}
+
 		$r = $tbpost->query($this->query);
 		if($r === false) return $r;
 
@@ -133,6 +139,13 @@ class TB_Query {
 
 		$this->count = count($this->objs);
 		$this->index = 0;
+
+		if($need_redirect && $this->count) {
+			$link = the_post_link($this->objs[0]);
+			header('HTTP/1.1 301 Moved Permanently');
+			header('Location: '.$link);
+			die(0);
+		}
 
 		return true;
 	}

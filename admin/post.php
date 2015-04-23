@@ -172,7 +172,7 @@ if(!$do) {
 	die(0);
 } else if($do === 'edit') {
 	$id = intval($_GET['id']);
-	$arg = ['p' => $id, 'noredirect'=>true];
+	$arg = ['id' => $id];
 	$post = $tbpost->query($arg);
 	if($post === false || empty($post)){
 		tb_die(200, '没有这篇文章！');

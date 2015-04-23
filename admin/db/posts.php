@@ -178,10 +178,9 @@ class TB_Posts {
 		if(!is_array($arg))
 			return false;
 
-		$defs = ['p' => '', 'tax' => '', 'slug' => '', 
+		$defs = ['id' => '', 'tax' => '', 'slug' => '', 
 			'yy' => '', 'mm' => '', 'dd' => '',
 			'password' => '', 'status' => '',
-			'noredirect'=>true,
 			'pageno' => '',
 			'modified' => false,
 			'feed' => '',
@@ -196,7 +195,7 @@ class TB_Posts {
 
 		$queried_posts = [];
 
-		if($arg['p']){
+		if($arg['id']){
 			$tbquery->type = 'post';
 			$queried_posts = $this->query_by_id($arg);
 		} else if($arg['slug']) {
@@ -240,43 +239,20 @@ class TB_Posts {
 		global $tbtax;
 		global $tbopt;
 
-		if($arg['noredirect']) {
-			$sql = "SELECT * FROM posts WHERE id=".intval($arg['p']);
-			if($arg['modified']) {
-				$sql .= " AND modified>'".$arg['modified']."'";
-			}
-			$rows = $tbdb->query($sql);
-			if(!$rows) return false;
+		$sql = "SELECT * FROM posts WHERE id=".intval($arg['id']);
+		if($arg['modified']) {
+			$sql .= " AND modified>'".$arg['modified']."'";
+		}
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
 
-			$p = [];
-			if($r = $rows->fetch_object()){
-				$r->content = apply_hooks('the_content', $r->content);
-				$p[] = $r;
-			}
-
-			return $p;
-			
-		} else {
-			// FIXME: 删除
-			$sql = "SELECT taxonomy,slug FROM posts WHERE id=".intval($arg['p']);
-
-			$rows = $tbdb->query($sql);
-			if(!$rows) return false;
-
-			if($r = $rows->fetch_assoc()){
-				$tax = $r['taxonomy'];
-				$slug = $r['slug'];
-				$tree = $tbtax->tree_from_id($tax);
-				if(!$tree) return false;
-
-				$tree = $tree['slug'];
-				header('HTTP/1.1 301 Moved Permanently');
-				header("Location: ".$tbopt->get('home')."/$tree$slug.html");
-				die(0);
-			}
+		$p = [];
+		if($r = $rows->fetch_object()){
+			$r->content = apply_hooks('the_content', $r->content);
+			$p[] = $r;
 		}
 
-		return [];
+		return $p;
 	}
 
 	private function query_by_date($arg) {
