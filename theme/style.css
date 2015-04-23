@@ -264,7 +264,7 @@ h3 {
 }
 
 
-.entry div.code-wrap pre.code, .entry pre.code {
+.entry div.code-wrap pre.code, .entry pre.code, .entry pre.shell {
 	overflow: auto !important;
 	white-space: pre;
 	font-family: Consolas, monospace;

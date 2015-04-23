@@ -1,12 +1,4 @@
 /* pre */
-.entry pre.shell {
-	font-family: Consolas, monospace;
-	padding: 8px;
-	background-color: #3B103B;
-	color: #DDD;
-	overflow: auto;
-}
-
 .entry pre.shell .prompt {
 	color: #D80808;
 }
