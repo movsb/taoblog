@@ -1,4 +1,4 @@
-if($('div.code').length) {
+if($('pre.code').length) {
 	$('head').append('<link rel="stylesheet" type="text/css" href="/plugins/highlight/default.css" />');
 	// jQuery will cause the underscore(_) query parameter added to the request
 	//$('head').append('<script type="text/javascript" src="/plugins/highlight/highlight.min.js"></script>');
@@ -21,7 +21,7 @@ if($('div.code').length) {
 
 		clearInterval(hljstmr);
 
-		$('div.code').each(function(i, e){
+		$('pre.code').each(function(i, e){
 			var that = $(this);
 			var ho = {};
 
@@ -35,6 +35,8 @@ if($('div.code').length) {
 			// 程序语言
 			if(that.attr('lang')) {
 				ho.languages = [that.attr('lang')];
+			} else {
+				return;
 			}
 
 			hljs.configure(ho);
