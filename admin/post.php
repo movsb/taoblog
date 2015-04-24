@@ -56,104 +56,113 @@ function post_widget_date($p=null) {
 
 add_hook('post_widget', 'post_widget_date');
 
-function post_widget_snjs($p=null) {
-	global $tbsnjs;
-
-	if($p) $snjs = $tbsnjs->get_snjs($p->id);
-
-	$title = 'SnJS';
-	$content = '<textarea wrap="off" name="snjs_header">'.($p ? htmlspecialchars($snjs->post->header) : '').'</textarea><br>'
-		.'<textarea wrap="off" name="snjs_footer">'.($p ? htmlspecialchars($snjs->post->footer) : '').'</textarea>';
-
-	return compact('title', 'content');
-
-}
-
-add_hook('post_widget', 'post_widget_snjs');
-
 function post_admin_head() { ?>
 <style>
-	.sidebar-right {
+	.sidebar {
 
 	}
 
-	.sidebar-right input[type="text"] {
+	.sidebar input[type="text"] {
 		padding: 4px;
 	}
 
-	.sidebar-right .widget {
+	.sidebar .widget {
 		background-color: white;
 		border: 1px solid #ccc;
 		margin-bottom: 20px;
 	}
 
-	.sidebar-right .widget h3 {
+	.sidebar .widget h3 {
 		padding: 4px 6px;
 		border-bottom: 1px solid #ccc;
 	}
 
-	.sidebar-right .widget-content {
+	.sidebar .widget-content {
 		padding: 10px;
 	}
 
-	.sidebar-right .widget ul {
+	.sidebar .widget ul {
 		list-style: none;
+	}
+
+	.post-area {
+		margin-bottom: 3em;
 	}
 </style>
 <?php }
 
 add_hook('admin_head', 'post_admin_head');
 
-function new_post_html($p=null){ ?>
-<div id="admin-post">
+function new_post_html($p=null){
+	// 先生成所有的挂件对象
+	// 因为分布在不同地方（hook对象无法保存这些分布）
+	$widgets = [];
+
+	$widget_objs = get_hooks('post_widget');
+	foreach($widget_objs as $wo) {
+		$fn = $wo->func;
+		$w = (object)$fn($p);
+
+		$dom = <<< DOM
+<div class="widget">
+	<h3>$w->title</h3>
+	<div class="widget-content">
+		$w->content
+	</div>
+</div> 
+DOM;
+		$widget = new stdClass;
+		$widget->dom = $dom;
+		$widget->pos = isset($w->position) ? $w->position : 'right';
+
+		$widgets[] = $widget;
+	}
+?><div id="admin-post">
 	<form method="POST">
 		<div class="post" style="float: left;">
-			<div>
-				<h2>标题</h2>
-				<input type="text" name="title" value="<?php
-					if($p) {
-						echo htmlspecialchars($p->title);
+			<div class="post-area">
+				<div>
+					<h2>标题</h2>
+					<input type="text" name="title" value="<?php
+						if($p) {
+							echo htmlspecialchars($p->title);
+						}
+					?>" />
+				</div>
+				<div>
+					<h2>内容</h2>
+					<textarea name="content" wrap="off" style="width: 500px; height: 300px;"><?php
+						if($p) {
+							echo htmlspecialchars($p->content);
+						}
+					?></textarea>
+				</div>
+				<div>
+					<input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
+					<?php if($p) { ?><input type="hidden" name="id" value="<?php echo $p->id; ?>" /><?php } ?>
+				</div>
+			</div><!-- post-area -->
+			<div class="sidebar sidebar-left">
+				<?php foreach($widgets as &$widget) {
+					if($widget->pos == 'left') {
+						echo $widget->dom;
 					}
-				?>" />
-			</div>
-			<!--div>
-				<h2>别名</h2>
-				<input type="text" name="slug" value="<?php
-					if($p) {
-						echo htmlspecialchars($p->slug);
-					}
-				?>" />
-			</div-->
-			<div>
-				<h2>内容</h2>
-				<textarea name="content" wrap="off" style="width: 500px; height: 300px;"><?php
-					if($p) {
-						echo htmlspecialchars($p->content);
-					}
-				?></textarea>
-			</div>
-			<div>
-				<input type="reset" value="清空" />
-				<input type="submit" value="发表" />
-			</div>
-			<div>
-				<input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
-				<?php if($p) { ?><input type="hidden" name="id" value="<?php echo $p->id; ?>" /><?php } ?>
+				} ?>
 			</div>
 		</div><!-- post -->
-		<div class="sidebar-right" style="float: right;">
-			<?php
-				$widgets = get_hooks('post_widget');
-				foreach($widgets as $wo) {
-					$fn = $wo->func;
-					$w = (object)$fn($p);
-					?>
-<div class="widget">
-	<h3><?php echo $w->title; ?></h3>
-	<div class="widget-content">
-		<?php echo $w->content; ?>
-	</div>
-</div><?php } ?>
+		<div class="sidebar sidebar-right" style="float: right;">
+			<div class="widget">
+				<h3>发表</h3>
+				<div class="widget-content">
+					<input type="reset" value="清空" />
+					<input type="submit" value="发表" />
+				</div>
+			</div>
+			<?php foreach($widgets as &$widget) {
+				if($widget->pos == 'right') {
+					echo $widget->dom;
+				}
+			} ?>
 		</div><!-- sidebar right -->
 	</form>
 	<?php if(!$p) {?>
@@ -212,10 +221,9 @@ function post_new_post() {
 	global $tbdb;
 	global $tbpost;
 	global $tbopt;
-	global $tbsnjs;
 
 	if(($id=$tbpost->insert($_POST))){
-		$tbsnjs->insert($id);
+		apply_hooks('post_posted', $id, $_POST);
 		header('HTTP/1.1 302 Found');
 		header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id);
 		die(0);
@@ -229,7 +237,6 @@ function post_update() {
 	global $tbdb;
 	global $tbpost;
 	global $tbopt;
-	global $tbsnjs;
 
 	$r = $tbpost->update($_POST);
 	if(!$r) {
@@ -239,10 +246,11 @@ function post_update() {
 			]);
 	}
 
-	$tbsnjs->update((int)$_POST['id']);
+	$id = (int)$_POST['id'];
+	apply_hooks('post_updated', $id, $_POST);
 
 	header('HTTP/1.1 302 Updated');
-	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$_POST['id']);
+	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id);
 	die(0);
 }
 

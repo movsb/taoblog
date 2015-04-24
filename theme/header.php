@@ -31,9 +31,7 @@
 <?php } else if($tbquery->is_page()) {?>
 
 <?php } 
-	if($tbquery->is_singular()) {
-		echo $snjs->tax->header,$snjs->post->header;
-	}
+
 	apply_hooks('tb_head'); ?>
 
 </head>

@@ -16,10 +16,11 @@ require_once('db/options.php');
 require_once('db/posts.php');
 require_once('db/taxonomies.php');
 require_once('db/comments.php');
-require_once('db/post-snjs.php');
 
 require_once('query.php');
 require_once('canonical.php');
+
+apply_hooks('tb_load');
 
 $tbopt = new TB_Options;
 $tbpost = new TB_Posts;
@@ -27,7 +28,6 @@ $tbtax = new TB_Taxonomies;
 $tbcmts = new TB_Comments;
 $tbquery = new TB_Query;
 $tbdate = new TB_DateTime;
-$tbsnjs = new TB_Post_SnJS;
 
 date_default_timezone_set('Asia/Chongqing');
 

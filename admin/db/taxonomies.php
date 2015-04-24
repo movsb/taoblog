@@ -70,6 +70,23 @@ class TB_Taxonomies {
 		return $sons;
 	}		
 
+	public function get_parents_ids($id) {
+		global $tbdb;
+
+		if(!$this->has($id)) return false;
+		
+		$parents = [];
+
+		while($id) {
+			$t = $this->get_parent_id($id);
+			if(!$t) break;
+			$parents[] = $t;
+			$id = $t;
+		}
+
+		return array_reverse($parents);
+	}
+
 	public function get_offsprings($id) {
 		$oss = [];
 
@@ -272,6 +289,22 @@ class TB_Taxonomies {
 		if(!$rows) return false;
 
 		return $rows->fetch_assoc()['id'];
+	}
+
+	public function get_parent_id($id) {
+		global $tbdb;
+
+		$id = (int)$id;
+		if(!$this->has($id)) return false;
+
+		$sql = "SELECT parent FROM taxonomies WHERE id=".$id;
+		$r = $tbdb->query($sql);
+		if(!$r || !is_a($r, 'mysqli_result') || !$r->num_rows || !($row = $r->fetch_object())) {
+			$this->error = 'Fatal ???'.$tbdb->error;
+			return false;
+		}
+
+		return (int)$row->parent;
 	}
 
 	public function get_ancestor($id, $return_this_id_if_zero=false) {

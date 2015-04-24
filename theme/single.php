@@ -8,8 +8,6 @@
 		header('Cache-Control: private');
 	}
 
-	$snjs = $tbsnjs->get_snjs($the->id, $the->taxonomy);
-
 require('header.php');
 require('content.php');
 require('comments.php');

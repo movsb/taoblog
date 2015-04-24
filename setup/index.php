@@ -76,20 +76,19 @@ if(!$my->query($sql)){
 	tb_die(200, '无法创建表：taxonomies - '.$my->error);
 }
 
-// 创建表 文章样式和JavaScript表 post_snjs
-$sql = "CREATE TABLE IF NOT EXISTS post_snjs (
+// 创建表 /分类/文章样式和JavaScript/关键字表 post_metas
+$sql = "CREATE TABLE IF NOT EXISTS post_metas (
 	`id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-	`type` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	`type` ENUM('post','page','tax'),
 	`tid` INT(20) UNSIGNED NOT NULL,
-	`value` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	`header` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	`footer` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	`keywords` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
 	PRIMARY KEY(`id`)
 	);";
 if(!$my->query($sql)) {
-	tb_die(200, '无法创建表：post_snjs - '.$my->error);
+	tb_die(200, '无法创建表：post_metas - '.$my->error);
 }
-
-
-
 
 tb_die(200, '操作成功！');
 
