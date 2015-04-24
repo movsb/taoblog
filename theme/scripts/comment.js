@@ -115,6 +115,22 @@ $.fn.center = function () {
     this.css("top", Math.max(0, ($(window).height() - $(this).outerHeight()) / 2) + 'px');
 	this.css("left", Math.max(0, ($(window).width() - $(this).outerWidth()) / 2) + 'px');
 	return this;
+};
+
+function theCookieObject() {
+	var cookie = {};
+	var all = document.cookie;
+	if(all == '') return cookie;
+	var list = all.split('; ');
+	for(var i=0; i<list.length; i++) {
+		var kk = list[i];
+		var p = kk.indexOf('=');
+		var name = kk.substring(0, p);
+		var value = kk.substring(p+1);
+		cookie[name] = decodeURIComponent(value);
+	}
+
+	return cookie;
 }
 
 // 加载评论总数
@@ -177,6 +193,13 @@ function comment_item(cmt) {
 function comment_reply_to(p){
 	$('#comment-form-post-id').val($('#post-id').val());
 	$('#comment-form-parent').val(p);
+
+	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
+	var cookie = theCookieObject();
+	$('#comment-form input[name=author]').val(cookie.tb_cmt_user);
+	$('#comment-form input[name=email]').val(cookie.tb_cmt_email);
+	$('#comment-form input[name=url]').val(cookie.tb_cmt_url);
+
 	$('#comment-form-div').center().fadeIn();
 }
 
@@ -246,8 +269,6 @@ $('#load-comments .load').click(function() {
 				);
 			} else {
 				cmt_loaded += cmts.length;
-				location.hash = '#comment-' + cmts[0].id;
-				setTimeout(function(){ location.hash = 'empty'; }, 1000);
 			}
 			$(load).removeAttr('loading');
 

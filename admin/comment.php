@@ -73,6 +73,12 @@ function cmt_post_cmt() {
 		die(-1);
 	}
 
+	// 如果评论成功，则保存用户的昵称和邮箱
+	// 使用localStorage应该会更好，但可能还未广泛应用
+	setcookie('tb_cmt_user',	$_POST['author'],	strtotime('+1 year'), '/');
+	setcookie('tb_cmt_email',	$_POST['email'],	strtotime('+1 year'), '/');
+	setcookie('tb_cmt_url',		$_POST['url'],		strtotime('+1 year'), '/');
+
 	if($ret_cmt) {
 		header('HTTP/1.1 200 OK');
 		header('Content-Type: application/json');
