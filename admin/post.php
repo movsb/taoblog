@@ -28,8 +28,9 @@ function post_widget_tax($p=null) {
 	$content = '<ul>'.post_widget_tax_add($taxes, ($p ? $p->taxonomy : 1)).'</ul>';
 
 	return [
-		'title' => '分类',
-		'content' => $content,
+		'title'		=> '分类',
+		'content'	=> $content,
+		'classname'	=> 'category',
 		];
 }
 
@@ -88,10 +89,34 @@ function post_admin_head() { ?>
 	.post-area {
 		margin-bottom: 3em;
 	}
+
+	.widget-category .widget-content {
+		max-height: 200px;
+		overflow: auto;
+	}
+
+	.widget-content input[type=text], .widget-content textarea {
+		padding: 4px;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
 </style>
 <?php }
 
 add_hook('admin_head', 'post_admin_head');
+
+function post_admin_footer() { ?>
+	<script type="text/javascript">
+		$('.widget h3').click(function(e) {
+			var div = e.target.nextElementSibling;
+			$(div).toggle();
+		});
+	</script>
+<?php
+}
+
+add_hook('admin_footer', 'post_admin_footer');
 
 function new_post_html($p=null){
 	// 先生成所有的挂件对象
@@ -102,9 +127,10 @@ function new_post_html($p=null){
 	foreach($widget_objs as $wo) {
 		$fn = $wo->func;
 		$w = (object)$fn($p);
+		$w->classname = isset($w->classname) ? $w->classname : 'widget';
 
 		$dom = <<< DOM
-<div class="widget">
+<div class="widget widget-$w->classname">
 	<h3>$w->title</h3>
 	<div class="widget-content">
 		$w->content
@@ -119,19 +145,29 @@ DOM;
 	}
 ?><div id="admin-post">
 	<form method="POST">
-		<div class="post" style="float: left;">
+		<div class="post" style="float: left; width: 100%; max-width: 75%;">
 			<div class="post-area">
-				<div>
+				<div style="margin-bottom: 1em;">
 					<h2>标题</h2>
-					<input type="text" name="title" value="<?php
+					<div>
+					<input style="padding: 8px; width: 100%; box-sizing: border-box;" type="text" name="title" value="<?php
 						if($p) {
 							echo htmlspecialchars($p->title);
 						}
 					?>" />
+					</div>
 				</div>
+				<?php if($p) {
+					$link = the_post_link($p);
+				?>
+				<div class="permanlink" style="margin-bottom: 1em;">
+					<span>固定链接：</span>
+					<a target="_blank" href="<?php echo $link; ?>"><?php echo $link; ?></a>
+				</div>
+				<?php } ?>
 				<div>
 					<h2>内容</h2>
-					<textarea name="content" wrap="off" style="width: 500px; height: 300px;"><?php
+					<textarea name="content" wrap="off" style="max-height: 2000px; height: 500px; min-height: 300px; width: 100%; padding: 4px; box-sizing: border-box;"><?php
 						if($p) {
 							echo htmlspecialchars($p->content);
 						}
