@@ -29,6 +29,7 @@ body {
 	right: 0px;
 	height: <?php echo $admin_top; ?>;
 	padding: 0px 0.5em 0px 0.5em;
+	z-index: 1; /* 不知道为什么分类那个radio老是跑到最上面来 */
 }
 
 #admin-top .logo {

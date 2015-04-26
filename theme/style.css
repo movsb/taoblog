@@ -7,7 +7,7 @@ Version: 9.9.9
 body {
 	color: #292929;
 	margin: 0 auto;
-	font: 13px "Microsoft YaHei",Helvetica,Arial;
+	font: 16px "Microsoft YaHei",Helvetica,Arial;
 }
 
 .mono, tt, code {
@@ -32,10 +32,10 @@ acronym, abbr {
 }
 
 blockquote {
-	background: transparent url(images/quote.png) no-repeat scroll 0 0;
 	font-style: italic;
-	margin: 5px 0 5px 0;
-	padding: 10px 15px 10px 60px;
+	margin: 0px 20px;
+	padding: 0.5em 1em;
+	background-color: bisque;
 }
 
 input:focus, a:focus, textarea:focus {
@@ -117,22 +117,15 @@ h6 { font-size: 1.0em; }
 	margin: 0px;
 	padding: 0.4em 0.5em 0px;
 	font-size: 1.7em;
+	color: #464646;
 }
-
-/*
-.post .title a, .page .title a {
-	display: block;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}*/
-
 
 /* 文章元数据 */
 .post .meta, .page .meta { 
 	padding: 5px 5px 5px;
 	border-top: 1px solid #ccc;
 	clear: both;
+	color: #5A5A5A;
 }
 
 .post .meta span.item {
@@ -172,6 +165,10 @@ h6 { font-size: 1.0em; }
 	margin-left: 3px;
 	margin-right: 3px;
 	border: 1px solid gray;
+}
+
+.entry .same-height {
+	line-height: 1.5em;
 }
 
 .entry .no-padding-bottom, .entry .npb {
@@ -269,6 +266,7 @@ h6 { font-size: 1.0em; }
 	background-color: #FDECFF;
 	line-height: 1.5em;
 	margin: 1em 0px;
+	max-height: 500px;
 }
 
 /* 目录 */
