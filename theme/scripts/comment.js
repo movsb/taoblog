@@ -91,31 +91,21 @@ document.write(function(){/*
 		<div class="comment-form-div-2">
 			<div class="toolbar" style="color: #C8C8C8; font-size: 24px;">
 				<span>评论: </span>
-				<div style="position: relative; text-align: right; right: 0px; top: -40px;">
+				<div class="right">
 					<span>字体: </span>
 					<span class="font-dec" title="减小字号"><i class="fa fa-minus"></i></span>
 					<span class="font-inc" title="增大字号"><i class="fa fa-plus"></i></span>&nbsp;
 					<span class="close" title="还原"><i class="fa fa-times"></i></span>
 				</div>
 			</div>
-			<div class="dummy-textarea">
+			<div class="textarea-wrapper">
 				<textarea id="comment-content-2" wrap="off"></textarea>
 			</div>
 		</div>
-		<!--div class="comment-form-div-data" style="display: none;">
-			<input type="hidden" name="maximized" value="false" />
-		</div-->
 	</div>
 */}.toString().slice(14,-3));
 
 $('#post-id').val(_post_id);
-
-$.fn.center = function () {
-    this.css("position","fixed");
-    this.css("top", Math.max(0, ($(window).height() - $(this).outerHeight()) / 2) + 'px');
-	this.css("left", Math.max(0, ($(window).width() - $(this).outerWidth()) / 2) + 'px');
-	return this;
-};
 
 function theCookieObject() {
 	var cookie = {};
@@ -200,7 +190,7 @@ function comment_reply_to(p){
 	$('#comment-form input[name=email]').val(cookie.tb_cmt_email);
 	$('#comment-form input[name=url]').val(cookie.tb_cmt_url);
 
-	$('#comment-form-div').center().fadeIn();
+	$('#comment-form-div').fadeIn();
 }
 
 // 为上一级评论添加div
@@ -455,7 +445,7 @@ $('#comment-form-div .maxbtn').click(function(){
 	$('#comment-form-div.maximized .toolbar .close').click(function(){
 		$('#comment-form-div').removeClass('maximized').attr('style','').addClass('normal');
 		$('#comment-content').val($('#comment-content-2').val());
-		$('#comment-form-div.normal').center().show();
+		$('#comment-form-div.normal').show();
 	});
 
 });
