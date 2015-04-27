@@ -20,10 +20,11 @@ function feed_body() {
 
 	while($tbquery->has()) {
 		$the = $tbquery->the();
+		$link = the_post_link($the);
 ?>		<item>
 			<title><?php echo htmlspecialchars($the->title); ?></title>
-			<link><?php echo htmlspecialchars(the_post_link($the)); ?></link>
-			<description><?php echo htmlspecialchars($the->content); ?></description>
+			<link><?php echo htmlspecialchars($link); ?></link>
+			<description>&lt;p style="color: red;"&gt;&lt;a href="<?php echo $link;?>"&gt;=== 阅读原文 ===&lt;/a&gt;&lt;/p&gt;<?php echo htmlspecialchars($the->content); ?></description>
 			<pubDate><?php echo $tbdate->the_feed_date($the->date);?></pubDate>
 		</item>
 <?php
