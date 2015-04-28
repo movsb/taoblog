@@ -118,8 +118,9 @@ class TB_Post_Metas {
 function postmetas_head() {
 	global $tbquery;
 	global $tbtax;
+	global $tbopt;
 
-	if(!$tbquery->is_singular() || !$tbquery->has()) {
+	if(!$tbquery->is_singular() || !$tbquery->count) {
 		return false;
 	}
 
@@ -161,7 +162,7 @@ function postmetas_head() {
 		$keywords_post = $metas->post ? $metas->post->keywords : '';
 		if($keywords_post) $keywords = $keywords_post . $keywords;
 	}
-	echo '	<meta name="keywords" content="'.$keywords.'" />'."\n";
+	echo '	<meta name="keywords" content="',$keywords,',',$tbopt->get('blog_name'),'" />'."\n";
 
 	// 依次输出header
 	foreach($tax_metas as $tm) {
