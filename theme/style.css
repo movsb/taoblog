@@ -437,6 +437,7 @@ h6 { font-size: 1.0em; }
 	top: 0px;
 	right: 0px;
 	bottom: 0px;
+	height: 100%;/* 不加这个Chrome无法工作，why? */
 	z-index: 1000;
 	display: none;
 }
