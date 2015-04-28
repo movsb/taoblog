@@ -23,7 +23,7 @@ function error($msg) {
 	die(-1);
 }
 
-function cmt_filter_cmt(&$cmts) {
+function &cmt_filter_cmt(&$cmts) {
 	$flts = ['email', 'url', 'ip', 'agent', 'status'];
 	for($i=0; $i<count($cmts); $i++) {
 		foreach($flts as $f) {
@@ -42,12 +42,29 @@ function cmt_filter_cmt(&$cmts) {
 	return $cmts;
 }
 
+function &cmt_set_avatar(&$cmts) {
+	for($i=0,$c=count($cmts); $i < $c; $i++) {
+		$cmts[$i]->avatar = md5(strtolower($cmts[$i]->email));
+
+		if(isset($cmts[$i]->children)) {
+			for($x=0,$xc=count($cmts[$i]->children); $x < $xc; $x++) {
+				$child = $cmts[$i]->children[$x];
+				$child->avatar = md5(strtolower($child->email));
+			}
+		}
+	}
+
+	return $cmts;
+}
+
 function cmt_get_cmt() {
 	global $tbcmts;
 	cmt_header_json();
 
-	$cmts = cmt_filter_cmt($tbcmts->get($_POST));
-
+	$cmts = $tbcmts->get($_POST);
+	$cmts = cmt_set_avatar($cmts);
+	$cmts = cmt_filter_cmt($cmts);
+	
 	echo json_encode([
 		'errno'		=> 'success',
 		'cmts'		=> $cmts,
@@ -85,9 +102,13 @@ function cmt_post_cmt() {
 
 		$c = ['id'=>$r];
 
+		$cmts = $tbcmts->get($c);
+		$cmts = cmt_set_avatar($cmts);
+		$cmts = cmt_filter_cmt($cmts);
+
 		echo json_encode([
 			'errno'	=> 'success',
-			'cmt'	=> cmt_filter_cmt($tbcmts->get($c))[0],
+			'cmt'	=> $cmts[0],
 			]);
 		die(0);
 	} else {

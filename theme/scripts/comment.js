@@ -156,12 +156,18 @@ function sanitize_content(c) {
     return c;
 }
 
+function comment_avatar(eh,sz) {
+	var host = 'https://secure.gravatar.com/avatar/';
+	return host + eh + '?s=' + sz;
+}
+
+
 // 从评论生成html内容
 function comment_item(cmt) {
 	var s = '';
 	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '">\n';
-	s += '<div class="comment-avatar" onclick="location.hash=\'#comment-'+cmt.id + '\';">'
-		+ '<img src="' + cmt.avatar + '" width="48px" height="48px"/>'
+	s += '<div class="comment-avatar">'
+		+ '<img src="' + comment_avatar(cmt.avatar, 48) + '" width="48px" height="48px"/>'
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 
@@ -418,11 +424,6 @@ $('#comment-content-2').keydown(function(e){
 		e.preventDefault();
 	}
 });
-
-if(/comment-/.test(location.hash)) {
-	alert('请点击“加载评论”来查看评论！');
-}
-
 
 
 $('#comment-form-div .closebtn').click(function(){

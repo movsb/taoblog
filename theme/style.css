@@ -7,7 +7,7 @@ Version: 9.9.9
 body {
 	color: #292929;
 	margin: 0 auto;
-	font: 16px "Microsoft YaHei",Helvetica,Arial;
+	font: 13px "lucida Grande",Verdana,"Microsoft YaHei";
 }
 
 .mono, tt, code {
