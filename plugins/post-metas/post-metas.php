@@ -119,7 +119,7 @@ function postmetas_head() {
 	global $tbquery;
 	global $tbtax;
 
-	if(!$tbquery->is_singular()) {
+	if(!$tbquery->is_singular() || !$tbquery->has()) {
 		return false;
 	}
 
@@ -173,6 +173,10 @@ function postmetas_head() {
 add_hook('tb_head', 'postmetas_head');
 
 function postmetas_footer() {
+	if(!isset($GLOBALS['postmetas'])) {
+		// 如果head没被成功调用
+		return;
+	}
 	$metas = $GLOBALS['postmetas'];
 
 	foreach($metas->tax as $tm)
