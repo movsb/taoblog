@@ -6,7 +6,8 @@ Version: 9.9.9
 /* 全局 */
 body {
 	color: #292929;
-	margin: 0 auto;
+	margin: 0px auto;
+	padding: 0px;
 	font: 13px Consolas,"Microsoft YaHei";
 }
 
@@ -102,12 +103,13 @@ h6 { font-size: 1.0em; }
 
 /* 内容 */
 #wrapper {
-	margin: 0px auto 10px;
+	margin: 0px auto;
 	clear: both;
 }
 
 #main {
 	max-width: 850px;
+	min-height: 550px;
 	margin: 0px auto 10px;
 }
 
@@ -715,18 +717,79 @@ h6 { font-size: 1.0em; }
 
 /* 底部 */
 #footer {
-	margin-top: 40px;
+	color: white;
+	background-color: rgb(0,121,116);
+	font-size: 13px;
+	min-height: 300px;
+	margin-top: 30px;
 }
 
-#iebar {
-	text-align: center;
-	font-size: 1.5em;
-	background: red;
-	color: white;
-	display: none;
-	position: fixed;
-	width: 100%;
-	top: 0px;
-	left: 0px;
+#footer .mb {
+	margin-bottom: 16px;
 }
+
+#footer .footer-wrapper {
+	box-sizing: border-box;
+	max-width: 850px;
+	margin: 0px auto;
+	padding: 10px;
+	height: 100%;
+}
+
+#footer .avatar {
+	width: 225px;
+	height: 100%;
+	float: left;
+}
+
+#footer .avatar .me {
+	height: 64px;
+	width: 64px;
+	border-radius: 32px;
+	display: block;
+	margin-bottom: 20px;
+}
+
+#footer .declaration {
+	color: #ccc;
+}
+
+@media screen and (min-width: 440px) {
+	#footer .column {
+		float: right;
+		border-left: 1px solid #149277;
+		padding: 0px 20px;
+		width: 200px;
+	}
+}
+@media screen and (max-width: 439px) {
+	#footer .column {
+		clear: both;
+	}
+}
+
+#footer .column {
+	max-height: 100%;
+	box-sizing: border-box;
+}
+
+#footer .column ul {
+	padding: 0px;
+	list-style: none;
+	line-height: 1.5em;
+}
+
+#footer .column ul a {
+	cursor: pointer;
+	text-decoration: none;
+	color: #ccc;
+}
+
+#footer .column ul a:hover {
+	text-decoration: none;
+	color: #C3AC00;
+}
+
+
+
 
