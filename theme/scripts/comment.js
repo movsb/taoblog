@@ -76,7 +76,7 @@ document.write(function(){/*
 					<span class="submitting">
 						<i class="fa fa-spin fa-spinner"></i>
 						<span> 正在提交...</span>
-					</span>'
+					</span>
 					<span class="succeeded">
 						<i class="fa fa-mr fa-info-circle"></i>
 						<span></span>

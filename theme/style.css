@@ -4,6 +4,11 @@ Version: 9.9.9
 -------------------------------------------- */
 
 /* 全局 */
+::-moz-selection {
+	color: white;
+	background-color: rgba(0,121,116,0.6);
+}
+
 body {
 	color: #292929;
 	margin: 0px auto;
@@ -73,7 +78,7 @@ h6 { font-size: 1.0em; }
 #header {
 	height: 120px;
 	padding: 2em;
-	background-color: rgba(0,121,116,0.8);
+	background-color: rgb(0,121,116);
 }
 
 #head {
@@ -276,15 +281,17 @@ h6 { font-size: 1.0em; }
 }
 
 /* 目录 */
-.entry div.toc {
-	position: fixed;
-	top: 20px;
-	right: 20px;
-	max-width: 300px;
-	background-color: rgba(138,111,133,0.7);
-	color: white;
-	padding: 10px;
-	border: 1px solid gray;
+@media screen and (min-width: 600px) {
+	.entry div.toc {
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		max-width: 300px;
+		background-color: rgba(138,111,133,0.7);
+		color: white;
+		padding: 10px;
+		border: 1px solid gray;
+	}
 }
 
 .entry div.toc h2, .entry div.toc h3 {
@@ -387,7 +394,7 @@ h6 { font-size: 1.0em; }
 }
 
 #comment-submit:hover {
-	background-color: rgba(113,113,113,0.9);
+	background-color: rgba(200,30,30,0.8);
 }
 
 /* 评论功能区 */
@@ -411,11 +418,11 @@ h6 { font-size: 1.0em; }
 	cursor: pointer;
 	border: none;
 	color: white;
-	background-color: rgba(60,60,60,0.3);
+	background-color: rgba(60,60,60,0.5);
 }
 
 #load-comments .load:hover, #post-comment .post-comment:hover {
-	background-color: rgba(60,60,60,0.6);
+	background-color: rgba(200,30,30,0.8);
 }
 
 .comment-meta .nickname, .comment-meta .author {
@@ -721,7 +728,7 @@ h6 { font-size: 1.0em; }
 	background-color: rgb(0,121,116);
 	font-size: 13px;
 	min-height: 300px;
-	margin-top: 30px;
+	margin-top: 100px;
 }
 
 #footer .mb {
@@ -789,7 +796,4 @@ h6 { font-size: 1.0em; }
 	text-decoration: none;
 	color: #C3AC00;
 }
-
-
-
 
