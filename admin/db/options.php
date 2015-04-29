@@ -1,7 +1,7 @@
 <?php
 
 class TB_Options {
-	public function get($name){
+	public function get($name, $def=''){
 		global $tbdb;
 		$sql = 'SELECT value FROM options where name=?';
 		if($stmt = $tbdb->prepare($sql)){
@@ -10,10 +10,11 @@ class TB_Options {
 			$stmt->bind_result($value);
 			$stmt->fetch();
 			$stmt->close();
-			return $value;
+
+			return $value ? $value : $def;
 		}
 
-		return false;
+		return $def;
 	}
 
 	public function set($name, $value){

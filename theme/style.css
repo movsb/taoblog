@@ -118,6 +118,25 @@ h6 { font-size: 1.0em; }
 	margin: 0px auto 10px;
 }
 
+/* 分类与日期查询 */
+#content .query {
+	padding: 0px 10px;
+}
+
+.date-query ul.item-list,
+.category-query ul.item-list {
+	list-style: none;
+	line-height: 2.5em;
+	padding: 0px;
+}
+
+.date-query ul.item-list .item h2,
+.category-query ul.item-list .item h2 {
+	margin: 0px;
+	font-size: 1.4em;
+}
+
+
 /* 文章 */
 .post, .pages {
 	margin-bottom: 15px;

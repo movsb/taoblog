@@ -1,20 +1,20 @@
 <?php
 
-function the_post_link(&$p) {
+function the_post_link(&$p, $home=true) {
 	global $tbopt;
 	global $tbtax;
 	
-	$home = $tbopt->get('home');
+	$home = $home ? $tbopt->get('home') : '';
 	$cats = implode('/', $tbtax->tree_from_id($p->taxonomy)['slug']);
 	$slug = $p->slug;
 
 	return $home.'/'.$cats.'/'.$slug.'.html';
 }
 
-function the_page_link(&$p) {
+function the_page_link(&$p, $home=true) {
 	global $tbopt;
 
-	$home = $tbopt->get('home');
+	$home = $home ? $tbopt->get('home') : '';
 
 	return $home.'/'.$p->slug;
 }

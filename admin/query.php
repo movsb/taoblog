@@ -54,8 +54,7 @@ class TB_Query {
 
 	public function __construct() {
 		global $tbopt;
-		$this->posts_per_page = (int)$tbopt->get('posts_per_page');
-		if(!$this->posts_per_page) $this->posts_per_page = 5;
+		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 10);
 	}
 
 	public function have() {

@@ -33,6 +33,7 @@
 				<ul>
 					<li><a>日志归档</a></li>
 					<li><a>日志分类</a></li>
+					<li><a target="_blank" href="<?php echo $tbopt->get('home'),'/rss'; ?>">订阅博客</a></li>
 				</ul>
 			</div>
 		</div>
