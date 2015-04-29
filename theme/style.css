@@ -114,7 +114,7 @@ h6 { font-size: 1.0em; }
 
 #main {
 	max-width: 850px;
-	min-height: 550px;
+	min-height: 400px;
 	margin: 0px auto 10px;
 }
 
@@ -136,6 +136,12 @@ h6 { font-size: 1.0em; }
 	font-size: 1.4em;
 }
 
+.date-query ul.item-list .item h2 .thedate,
+.category-query ul.item-list .item h2 .thedate {
+	margin-left: 0.5em;
+	font-size: 0.5em;
+}
+
 
 /* 文章 */
 .post, .pages {
@@ -152,7 +158,7 @@ h6 { font-size: 1.0em; }
 
 /* 文章元数据 */
 .post .meta, .page .meta { 
-	padding: 5px 5px 5px;
+	padding: 5px 10px;
 	border-top: 1px solid #ccc;
 	clear: both;
 	color: #5A5A5A;
@@ -185,6 +191,7 @@ h6 { font-size: 1.0em; }
 
 .entry p {
 	margin: 1em 0px;
+	text-indent: 2em;
 }
 
 .entry .line-code {
@@ -672,6 +679,7 @@ h6 { font-size: 1.0em; }
 #content .pagination .page-number:hover {
 	color: white;
 	background-color: rgba(146,146,146,0.7);
+	text-decoration: none;
 }
 
 #content .pagination .current {

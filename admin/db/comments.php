@@ -83,7 +83,6 @@ class TB_Comments {
 
 		$children = [];
 		while($obj = $result->fetch_object()){
-			$obj->avatar = '/theme/images/avatar1.png';
 			$obj->date = $tbdate->mysql_datetime_to_local($obj->date);
 			$children[] = $obj;
 		}

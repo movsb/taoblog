@@ -1,6 +1,8 @@
 <?php
 
 require('admin/load.php');
+require('theme/functions.php');
+
 
 if($tbquery->query() === false){
 	tb_die(200, '未定义的查询！');
@@ -22,7 +24,7 @@ if($tbquery->is_home()) {
 	require('theme/single.php');
 } else if($tbquery->is_category()) {
 	require('theme/category.php');
-} else if($tbquery->is_archive()) {
+} else if($tbquery->is_date()) {
 	require('theme/date.php');
 } else if($tbquery->is_feed()) {
 	require('theme/feed.php');

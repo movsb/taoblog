@@ -4,20 +4,8 @@
 	</div>
 
 	<div class="meta">
-		<span class="item"><i class="fa fa-mr fa-user"></i>作者: <?php echo $tbopt->get('nickname'); ?></span>
-		<span class="item"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo preg_split('/ /', $the->date)[0]; ?></span>
-		<span class="item category"><i class="fa fa-mr fa-folder"></i>分类: <?php 
-			$taxes = $tbtax->tree_from_id($the->taxonomy);
-			$links = $tbtax->link_from_slug($taxes);
-
-			$link_anchors = [];
-			foreach($taxes['name'] as $i=>$n) {
-				$link_anchors[] = '<a target="_blank" href="'.$links[$i].'">'.$n.'</a>';
-			}
-
-			echo implode(',', $link_anchors);
-
-			?></span>
+		<span class="item"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo the_meta_date(); ?></span>
+		<span class="item category"><i class="fa fa-mr fa-folder"></i>分类: <?php echo the_meta_category(); ?></span>
 		<span class="item font-sizing">
 			<i class="fa fa-mr fa-font"></i><span>字号: </span><?php
 			?><span class="dec"><i class="fa fa-minus"></i></span><?php

@@ -13,9 +13,14 @@
 		} else if($tbquery->is_singular()) {
 			echo $the->title;
 		} else if($tbquery->is_category()) {
+			echo "第{$tbquery->pageno}页 - ";
 			$names = $tbquery->category['name'];
 			$names = array_reverse($names);
 			echo implode(' - ', $names);
+		} else if($tbquery->is_date()) {
+			echo "第{$tbquery->pageno}页 - ";
+			if($tbquery->date->yy >= 1970) echo $tbquery->date->yy,'年';
+			if($tbquery->date->mm >= 1 && $tbquery->date->mm <= 12) echo $tbquery->date->mm,'月';
 		}
 
 		echo ' - ',$blog_name;

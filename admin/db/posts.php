@@ -178,10 +178,10 @@ class TB_Posts {
 		if(!is_array($arg))
 			return false;
 
-		$defs = ['id' => '', 'tax' => '', 'slug' => '', 
-			'yy' => '', 'mm' => '', 'dd' => '',
-			'password' => '', 'status' => '',
+		$defs = ['id' => '', 'tax' => '', 'slug' => '',
+			'yy' => '', 'mm' => '',
 			'pageno' => '',
+			'password' => '', 'status' => '',
 			'modified' => false,
 			'feed' => '',
 			];
@@ -191,7 +191,20 @@ class TB_Posts {
 		if($arg['modified'] && !$tbdate->is_valid_mysql_datetime($arg['modified']))
 			return false;
 
-		$tbquery->pageno = (int)$arg['pageno'];
+		if($arg['id'] && intval($arg['id']) <=0
+			|| $arg['yy'] && intval($arg['yy']) < 1970
+			|| $arg['mm'] && (intval($arg['mm'])<1 || intval($arg['mm'])>12)
+			|| $arg['pageno'] && intval($arg['pageno']) < 1)
+		{
+			return false;
+		}
+
+		$arg['id'] = (int)$arg['id'];
+		$arg['yy'] = (int)$arg['yy'];
+		$arg['mm'] = (int)$arg['mm'];
+		$arg['pageno'] = (int)$arg['pageno'];
+
+		$tbquery->pageno = max(1,$arg['pageno']);
 
 		$queried_posts = [];
 
@@ -209,13 +222,16 @@ class TB_Posts {
 		} else if($arg['tax']) {
 			$tbquery->type = 'tax';
 			$queried_posts =  $this->query_by_tax($arg);
-		} else if($arg['yy'] || $arg['pageno']) {
-			$tbquery->type = 'archive';
+		} else if($arg['yy']) {
+			$tbquery->type = 'date';
+			$queried_posts = $this->query_by_date($arg);
+		} else if($arg['pageno']) {
+			$tbquery->type = 'date';
 			$queried_posts = $this->query_by_date($arg);
 		} else if($arg['feed']) {
 			$tbquery->type = 'feed';
 			unset($arg);
-			$arg = ['pageno' => '1'];
+			$arg = ['pageno' => '1', 'yy'=>'', 'mm'=>''];
 			$queried_posts = $this->query_by_date($arg);
 		} else {
 			$tbquery->type = 'home';
@@ -225,10 +241,15 @@ class TB_Posts {
 		if(!is_array($queried_posts)) return false;
 
 		for($i=0; $i<count($queried_posts); $i++) {
-			if(isset($queried_posts[$i]->date))
-				$queried_posts[$i]->date = $tbdate->mysql_datetime_to_local($queried_posts[$i]->date);
-			if(isset($queried_posts[$i]->modified))
-				$queried_posts[$i]->modified = $tbdate->mysql_datetime_to_local($queried_posts[$i]->modified);
+			$p = &$queried_posts[$i];
+
+			if(isset($p->date))
+				$p->date = $tbdate->mysql_datetime_to_local($p->date);
+			if(isset($p->modified))
+				$p->modified = $tbdate->mysql_datetime_to_local($p->modified);
+
+			if(isset($p->content))
+				$p->content = apply_hooks('the_content', $p->content);
 		}
 
 		return $queried_posts;
@@ -248,7 +269,6 @@ class TB_Posts {
 
 		$p = [];
 		if($r = $rows->fetch_object()){
-			$r->content = apply_hooks('the_content', $r->content);
 			$p[] = $r;
 		}
 
@@ -259,9 +279,25 @@ class TB_Posts {
 		global $tbdb;
 		global $tbquery;
 
-		$ppp = $tbquery->posts_per_page;
+		$yy = (int)$arg['yy'];
+		$mm = (int)$arg['mm'];
 
-		$sql = "SELECT * FROM posts ORDER BY date DESC LIMIT ".(((int)$arg['pageno']-1)*$ppp).','.(int)$ppp;
+		$sql = "SELECT * FROM posts WHERE 1";
+		if($yy >= 1970) {
+			$sql .= " AND YEAR(date)=$yy";
+			if($mm >= 1 && $mm <= 12) {
+				$sql .= " AND MONTH(date)=$mm";
+			}
+		}
+
+		$tbquery->date = (object)['yy'=>$yy,'mm'=>$mm];
+
+		$ppp = (int)$tbquery->posts_per_page;
+		$pageno = intval($arg['pageno']);
+		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
+
+		$sql .= " ORDER BY date DESC";
+		$sql .= " LIMIT $offset,$ppp";
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -270,6 +306,8 @@ class TB_Posts {
 		while($r = $rows->fetch_object()){
 			$p[] = $r;
 		}
+
+		$tbquery->total = $this->get_count_of_date($yy, $mm);
 
 		return $p;
 	}
@@ -335,11 +373,18 @@ class TB_Posts {
 
 		$tbquery->category = $tbtax->tree_from_id($taxid);
 
+		$ppp = (int)$tbquery->posts_per_page;
+		$pageno = intval($arg['pageno']);
+		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
+
 		$sql = "SELECT * FROM posts WHERE taxonomy=$taxid";
 
 		$offsprings = $tbtax->get_offsprings($taxid);
 		foreach($offsprings as $os)
 			$sql .= " OR taxonomy=$os";
+
+		$sql .= " ORDER BY date DESC";
+		$sql .= " LIMIT $offset,$ppp";
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -349,19 +394,45 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
+		$tbquery->total = $this->get_count_of_taxes(array_merge([$taxid],$offsprings));
+
 		return $p;
 
 	}
 
-	public function get_count() {
+	public function get_count_of_taxes($taxes=[]) {
 		global $tbdb;
 
-		$sql = "SELECT count(*) FROM posts";
+		$sql = "SELECT count(id) as total FROM posts WHERE 0";
+		foreach($taxes as $t) {
+			$t = (int)$t;
+			$sql .= " OR taxonomy=$t";
+		}
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
-		return (int) $rows->fetch_array()[0];
+		return $rows->fetch_object()->total;
+	}
+
+	public function get_count_of_date($yy=0, $mm=0) {
+		global $tbdb;
+
+		$yy = (int)$yy;
+		$mm = (int)$mm;
+
+		$sql = "SELECT count(id) as total FROM posts WHERE 1";
+		if($yy>=1970) {
+			$sql .= " AND YEAR(date)=$yy";
+			if($mm >= 1 && $mm <= 12) {
+				$sql .= " AND MONTH(date)=$mm";
+			}
+		}
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		return $rows->fetch_object()->total;
 	}
 
 	public function get_title($id) {

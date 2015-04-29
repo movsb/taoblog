@@ -14,11 +14,13 @@ while($tbquery->has()){
 			} else if($the->type === 'page') {
 				echo the_page_link($the, false);
 			}
-			?>"><?php echo $the->title;?></a></h2></li>
+			?>"><?php echo $the->title;?></a><span class="thedate"><?php echo '(',preg_split('/ /',$the->date)[0],')'; ?></span></h2></li>
 <?php
 } ?>
 	</ul>
-</div><?php
+</div>
+<div class="pagination">
+<?php theme_gen_pagination();
 
 require('footer.php');
 

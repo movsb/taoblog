@@ -9,10 +9,12 @@ class TB_Query {
 	public $uri;
 	public $query;
 
+	public $total;
 	public $count;
 	private $index;
 
 	public $pageno;
+	public $pagenum;
 	public $pages_per_page;
 
 	public $is_query_modification = false;
@@ -40,8 +42,8 @@ class TB_Query {
 			|| $this->type === 'tax';
 	}
 
-	public function is_archive() {
-		return $this->type === 'archive';
+	public function is_date() {
+		return $this->type === 'date';
 	}
 
 	public function is_404() {
@@ -80,18 +82,18 @@ class TB_Query {
 
 		$this->parse_query_args();
 
-		if(preg_match('#(\'|"|;|\./|\\\\)#', $this->uri))
+		if(preg_match('#(\'|"|;|\./|\\\\|&|=|>|<)#', $this->uri))
 			return false;
 
 		$rules = [
-			'^/archives/(\d+)\.html$'		=> 'id=$1',
-			'^/page/(\d+)$'					=> 'pageno=$1',
-			'^/(.+)/([^/]+)\.html$'			=> 'tax=$1&slug=$2',
-			'^/(feed|rss)(\.xml)?$'				=> 'feed=1',
-			'^/([0-9a-z]+)$'				=> 'slug=$1',
-			'^/(.+)/$'						=> 'tax=$1',
-			'^/index\.php$'					=> '',
-			'^/$'							=> '',
+			'^/archives/(\d+)\.html$'						=> 'id=$1',
+			'^/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'		=> 'yy=$2&mm=$4&pageno=$6',
+			'^/(.+)/([^/]+)\.html$'							=> 'tax=$1&slug=$2',
+			'^/(feed|rss)(\.xml)?$'							=> 'feed=1',
+			'^/([0-9a-z]+)$'								=> 'slug=$1',
+			'^/(.+)/(page/(\d+))?$'							=> 'tax=$1&pageno=$3',
+			'^/index\.php$'									=> '',
+			'^/$'											=> '',
 			];
 		
 		foreach($rules as $rule => $rewrite){
@@ -138,6 +140,7 @@ class TB_Query {
 
 		$this->count = count($this->objs);
 		$this->index = 0;
+		$this->pagenum = (int)ceil($this->total / $this->posts_per_page);
 
 		if($need_redirect && $this->count) {
 			$link = the_post_link($this->objs[0]);

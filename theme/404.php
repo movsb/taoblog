@@ -8,7 +8,17 @@
 				} else if($tbquery->is_post()) {
 					echo '此文章不存在。';
 				} else if($tbquery->is_category()) {
-					echo '此分类下不存在相关文章。';
+					if($tbquery->pagenum && $tbquery->pageno > $tbquery->pagenum) {
+						echo '没有这么多页的文章！';
+					} else {
+						echo '此分类下不存在相关文章。';
+					}
+				} else if($tbquery->is_date()) {
+					if($tbquery->pagenum && $$tbquery->pageno > $tbquery->pagenum) {
+						echo '没有这么多页的文章！';
+					} else {
+						echo '此时段不存在相关文章。';
+					}
 				}
 			?></span>
 		</div>
