@@ -278,16 +278,20 @@ class TB_Posts {
 	private function query_by_date($arg) {
 		global $tbdb;
 		global $tbquery;
+		global $tbdate;
 
 		$yy = (int)$arg['yy'];
 		$mm = (int)$arg['mm'];
 
 		$sql = "SELECT * FROM posts WHERE 1";
 		if($yy >= 1970) {
-			$sql .= " AND YEAR(date)=$yy";
 			if($mm >= 1 && $mm <= 12) {
-				$sql .= " AND MONTH(date)=$mm";
+				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
+			} else {
+				$startend = $tbdate->the_year_startend_gmdate($yy);
 			}
+
+			$sql .= " AND date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
 
 		$tbquery->date = (object)['yy'=>$yy,'mm'=>$mm];
@@ -417,16 +421,21 @@ class TB_Posts {
 
 	public function get_count_of_date($yy=0, $mm=0) {
 		global $tbdb;
+		global $tbdate;
 
 		$yy = (int)$yy;
 		$mm = (int)$mm;
 
 		$sql = "SELECT count(id) as total FROM posts WHERE 1";
-		if($yy>=1970) {
-			$sql .= " AND YEAR(date)=$yy";
+
+		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
-				$sql .= " AND MONTH(date)=$mm";
+				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
+			} else {
+				$startend = $tbdate->the_year_startend_gmdate($yy);
 			}
+
+			$sql .= " AND date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
 
 		$rows = $tbdb->query($sql);
