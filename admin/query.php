@@ -8,6 +8,7 @@ class TB_Query {
 
 	public $uri;
 	public $query;
+	private $internal_query;
 
 	public $total;
 	public $count;
@@ -57,6 +58,7 @@ class TB_Query {
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 10);
+		$this->internal_query = [];
 	}
 
 	public function have() {
@@ -116,24 +118,20 @@ class TB_Query {
 		if(!$logged_in && isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
 			$modified = $tbdate->http_gmt_to_mysql_datetime_gmt($_SERVER['HTTP_IF_MODIFIED_SINCE']);
 			if($tbdate->is_valid_mysql_datetime($modified)) {
-				$this->query['modified'] = $modified;
+				$this->internal_query['modified'] = $modified;
 				$this->is_query_modification = true;
 			}
 		}
 
-		$this->query = array_merge($this->query, parse_query_string($u));
-
-		foreach($this->query as $n => $v){
-			$this->query[$n] = urldecode($v);
-		}
-
 		$need_redirect = false;
 		if(isset($this->query['p'])) {
-			$this->query['id'] = (int)$this->query['p'];
+			$this->internal_query['id'] = (int)$this->query['p'];
 			$need_redirect = true;
 		}
 
-		$r = $tbpost->query($this->query);
+		$this->internal_query = array_merge($this->internal_query, parse_query_string($u, false, false));
+
+		$r = $tbpost->query($this->internal_query);
 		if($r === false) return $r;
 
 		$this->objs = &$r;
@@ -164,7 +162,8 @@ class TB_Query {
 			$query = '';
 		}
 
-		$this->uri = sanitize_uri($uri);
+		// 都是解码后的值
+		$this->uri = urldecode(sanitize_uri($uri));
 		$this->query = parse_query_string($query);
 	}
 }
