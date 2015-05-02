@@ -106,6 +106,10 @@ h6 { font-size: 1.0em; }
 	font-family: Consolas,"Microsoft YaHei";
 }
 
+#head .social a {
+	color: inherit;
+}
+
 /* 内容 */
 #wrapper {
 	margin: 0px auto;

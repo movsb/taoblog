@@ -51,9 +51,9 @@
 				<p id="today_english_en">Your heart is full of fertile seeds, waiting to sprout.</p>
 			</div>
 			<div class="social" style="font-size: 2em;">
-				<span><a style="color: inherit;" title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
-				<span><a style="color: inherit;" title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
-				<span><a style="color: inherit;" title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.8em;"></i></a></span>
+				<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
+				<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
+				<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.8em;"></i></a></span>
 			</div>
 		</section>
 	</header>
