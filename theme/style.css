@@ -193,6 +193,25 @@ h6 { font-size: 1.0em; }
 	padding: 10px 15px 16px 15px;
 }
 
+.entry pre {
+	box-sizing: border-box;
+}
+
+.entry pre.wrap {
+	white-space: pre-wrap;
+}
+
+.entry pre.no-wrap {
+	white-space: pre;
+	overflow: auto;
+}
+
+.entry pre.quote {
+	padding: 1em;
+	border: 1px dashed #ccc;
+	background-color: aliceblue;
+}
+
 .entry p {
 	margin: 1em 0px;
 	text-indent: 2em;
