@@ -23,7 +23,7 @@
 		<h3 style="display: inline-block; border-bottom: 1px solid; padding: 0px 2em;">近期文章</h3>
 		<ul style="padding: 0px; margin: 0px; list-style: none;">
 		<?php
-			$q = ['pageno' => 1];
+			$q = ['pageno' => 1, 'no_content'=>true];
 			$posts = $tbpost->query($q);
 			if(is_array($posts) && count($posts)) {
 				foreach($posts as $p) {

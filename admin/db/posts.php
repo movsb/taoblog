@@ -184,6 +184,7 @@ class TB_Posts {
 			'password' => '', 'status' => '',
 			'modified' => false,
 			'feed' => '',
+			'no_content' => false,
 			];
 
 		$arg = tb_parse_args($defs, $arg);
@@ -221,17 +222,20 @@ class TB_Posts {
 			}
 		} else if($arg['tax']) {
 			$tbquery->type = 'tax';
+			$arg['no_content'] = true;
 			$queried_posts =  $this->query_by_tax($arg);
 		} else if($arg['yy']) {
 			$tbquery->type = 'date';
+			$arg['no_content'] = true;
 			$queried_posts = $this->query_by_date($arg);
 		} else if($arg['pageno']) {
 			$tbquery->type = 'date';
+			$arg['no_content'] = true;
 			$queried_posts = $this->query_by_date($arg);
 		} else if($arg['feed']) {
 			$tbquery->type = 'feed';
 			unset($arg);
-			$arg = ['pageno' => '1', 'yy'=>'', 'mm'=>''];
+			$arg = ['pageno' => '1', 'yy'=>'', 'mm'=>'', 'no_content'=>false];
 			$queried_posts = $this->query_by_date($arg);
 		} else {
 			$tbquery->type = 'home';
@@ -283,7 +287,9 @@ class TB_Posts {
 		$yy = (int)$arg['yy'];
 		$mm = (int)$arg['mm'];
 
-		$sql = "SELECT * FROM posts WHERE 1";
+		$content_filed = $arg['no_content'] ? '' : ',content';
+		$fields = "id,date,title$content_filed,slug,type,taxonomy";
+		$sql = "SELECT $fields FROM posts WHERE 1";
 		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
 				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
@@ -381,7 +387,9 @@ class TB_Posts {
 		$pageno = intval($arg['pageno']);
 		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
 
-		$sql = "SELECT * FROM posts WHERE taxonomy=$taxid";
+		$content_filed = $arg['no_content'] ? '' : ',content';
+		$fields = "id,date,title$content_filed,slug,type,taxonomy";
+		$sql = "SELECT $fields FROM posts WHERE taxonomy=$taxid";
 
 		$offsprings = $tbtax->get_offsprings($taxid);
 		foreach($offsprings as $os)
