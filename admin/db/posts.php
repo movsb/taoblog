@@ -57,14 +57,14 @@ class TB_Posts {
 		}
 
 		// 转换成GMT时间
-		if($arg['date']) $arg['date'] = $tbdate->mysql_local_to_gmt($arg['date']);
-		if($arg['modified']) $arg['modified'] = $tbdate->mysql_local_to_gmt($arg['modified']);
+		if($arg['date']) $arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
+		if($arg['modified']) $arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
-		if($arg['date']) {
+		if($arg['date_gmt']) {
 			$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
 			if($stmt = $tbdb->prepare($sql)){
 				if($stmt->bind_param('sssssii',
-					$arg['date'],$arg['modified'],
+					$arg['date_gmt'],$arg['modified_gmt'],
 					$arg['title'], $arg['content'],$arg['slug'],
 					$arg['taxonomy'], $arg['id']))
 				{
@@ -78,7 +78,7 @@ class TB_Posts {
 			$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
 			if($stmt = $tbdb->prepare($sql)){
 				if($stmt->bind_param('ssssii',
-					$arg['modified'], $arg['title'], $arg['content'],$arg['slug'],
+					$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
 					$arg['taxonomy'], $arg['id']))
 				{
 					$r = $stmt->execute();
@@ -100,7 +100,7 @@ class TB_Posts {
 		global $tbtax;
 
 		$def = [
-			'date' => $tbdate->mysql_datetime_local(),
+			'date' => '',
 			'modified' => '',
 			'title' => '',
 			'content' => '',
@@ -134,6 +134,10 @@ class TB_Posts {
 			return false;
 		}
 
+		if(!$arg['date']) {
+			$arg['date'] = $tbdate->mysql_datetime_local();
+		}
+
 		if(!$arg['modified']) {
 			$arg['modified'] = $arg['date'] 
 			? $arg['date'] 
@@ -146,15 +150,15 @@ class TB_Posts {
 		}
 
 		// 转换成GMT时间
-		$arg['date'] = $tbdate->mysql_local_to_gmt($arg['date']);
-		$arg['modified'] = $tbdate->mysql_local_to_gmt($arg['modified']);
+		$arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
+		$arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		$sql = "INSERT INTO posts (
 			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)
 			VALUES (?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('ssssssisis',
-				$arg['date'], $arg['modified'],
+				$arg['date_gmt'], $arg['modified_gmt'],
 				$arg['title'], $arg['content'],$arg['slug'],
 				$arg['type'], $arg['taxonomy'], $arg['status'],
 				$arg['comment_status'], $arg['password']))

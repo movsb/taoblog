@@ -131,6 +131,14 @@ class TB_Query {
 
 		$this->internal_query = array_merge($this->internal_query, parse_query_string($u, false, false));
 
+		// 处理RSS
+		if($this->is_query_modification && isset($this->internal_query['feed'])) {
+			if($tbdate->mysql_local_to_http_gmt($tbopt->get('last_post_time')) === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
+				header('HTTP/1.1 304 Not Modified');
+				die(0);
+			}
+		}
+
 		$r = $tbpost->query($this->internal_query);
 		if($r === false) return $r;
 

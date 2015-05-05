@@ -2,9 +2,17 @@
 
 function feed_header() {
 	global $tbopt;
+	global $tbdate;
 
 	header('HTTP/1.1 200 OK');
 	header('Content-Type: application/xml');
+
+	$last_post_time = $tbopt->get('last_post_time');
+	if($last_post_time) {
+		$last_post_time_hg = $tbdate->mysql_local_to_http_gmt($last_post_time);
+		header('Last-Modified: '.$last_post_time_hg);
+	}
+
 ?><?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 	<channel>

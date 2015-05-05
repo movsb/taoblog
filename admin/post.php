@@ -49,7 +49,7 @@ function post_widget_date($p=null) {
 	global $tbdate;
 
 	$title = '日期';
-	$content = '<input type="text" name="date" value="'.($p ? $p->date : $tbdate->mysql_datetime_local()).'"/><br>'
+	$content = '<input type="text" name="date" value="'.($p ? $p->date : '').'"/><br>'
 		.'<input type="text" name="modified" value="" />';
 
 	return compact('title', 'content');
@@ -252,6 +252,7 @@ if(!login_auth()) {
 }
 
 require_once('load.php');
+require_once('admin-hooks-post.php');
 
 function post_new_post() {
 	global $tbdb;

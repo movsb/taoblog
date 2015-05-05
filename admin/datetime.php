@@ -34,12 +34,16 @@ class TB_DateTime {
 		return gmdate('D, d M Y H:i:s \G\M\T', strtotime($t.' GMT+0800'));
 	}
 
+	public function http_gmt_now() {
+		return $this->mysql_local_to_http_gmt($this->mysql_datetime_local());
+	}
+
 	public function is_valid_mysql_datetime($t) {
 		return preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $t);
 	}
 
 	public function the_feed_date($t) {
-		return date('D, d M Y H:i:s', strtotime($t.' GMT+0000'));
+		return date('D, d M Y H:i:s', strtotime($t.' GMT+0800'));
 	}
 
 	public function next_month_date($yy, $mm) {
