@@ -7,6 +7,8 @@ class TB_Comments {
 		global $tbdb;
 		global $tbpost;
 		global $tbdate;
+		global $tbopt;
+		global $logged_in;
 
 		$def = [
 			'post_id'		=> false,
@@ -24,17 +26,32 @@ class TB_Comments {
 
 		$arg = tb_parse_args($def, $arg);
 
+		// TRIM
+		foreach(['author', 'email', 'url', 'content'] as &$f)
+			$arg[$f] = trim($arg[$f]);
+
 		if(!$arg['post_id']) {			$this->error = 'post_id 不能少！';	return false; } 
 		if(!$arg['author'])	{			$this->error = 'author 不能为空';	return false; }
 		if(!is_email($arg['email'])) {	$this->error = 'Email 不规范！';	return false; }
 		if(!$arg['content']) {			$this->error = '评论内容不能为空!';	return false; }
 
-		// ancestor字段只能系统设置
-		if(($arg['ancestor'] = $this->get_ancestor((int)$arg['parent'], true)) === false){
-			return false;
-		}
+		if(!$logged_in) {
+			$not_allowed_authors = explode(',', $tbopt->get('not_allowed_authors').','.$tbopt->get('nickname'));
+			foreach($not_allowed_authors as &$author) {
+				if(strncmp($author,'/',1)==0 && preg_match($author.'i', $arg['author']) || strcasecmp($author, $arg['author'])==0) {
+					$this->error = '您不应该使用此昵称。';
+					return false;
+				}
+			}
 
-		$arg['url'] = '';
+			$not_allowed_emails = explode(',', $tbopt->get('not_allowed_emails').','.$tbopt->get('email'));
+			foreach($not_allowed_emails as &$email) {
+				if(strncmp($email,'/',1)==0 && preg_match($email.'i', $arg['email']) || strcasecmp($email, $arg['email'])==0) {
+					$this->error = '您不应该使用此邮箱地址。';
+					return false;
+				}
+			}
+		}
 
 		if(preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
 			$this->error = '昵称不应包含特殊字符。';
@@ -43,6 +60,11 @@ class TB_Comments {
 
 		if(!$tbpost->have((int)$arg['post_id'])) {
 			$this->error = '此评论对应的文章不存在！';
+			return false;
+		}
+
+		// ancestor字段只能系统设置
+		if(($arg['ancestor'] = $this->get_ancestor((int)$arg['parent'], true)) === false){
 			return false;
 		}
 
