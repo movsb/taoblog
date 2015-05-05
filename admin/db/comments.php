@@ -61,7 +61,6 @@ class TB_Comments {
 
 				if($r) {
 					$id = $tbdb->insert_id;
-					apply_hooks('comment_posted', 0, $arg);
 					return $id;
 				}
 			}
