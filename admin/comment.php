@@ -96,12 +96,12 @@ function cmt_post_cmt() {
 	setcookie('tb_cmt_email',	$_POST['email'],	strtotime('+1 year'), '/');
 	setcookie('tb_cmt_url',		$_POST['url'],		strtotime('+1 year'), '/');
 
+	header('HTTP/1.1 200 OK');
+	header('Content-Type: application/json');
+
+	ob_start();
 	if($ret_cmt) {
-		header('HTTP/1.1 200 OK');
-		header('Content-Type: application/json');
-
 		$c = ['id'=>$r];
-
 		$cmts = $tbcmts->get($c);
 		$cmts = cmt_set_avatar($cmts);
 		$cmts = cmt_filter_cmt($cmts);
@@ -110,17 +110,19 @@ function cmt_post_cmt() {
 			'errno'	=> 'success',
 			'cmt'	=> $cmts[0],
 			]);
-		die(0);
 	} else {
-		header('HTTP/1.1 200 OK');
-		header('Content-Type: application/json');
-
 		echo json_encode([
 			'errno'	=> 'success',
 			'id'	=> $r,
 			]);
-		die(0);
 	}
+	header('Content-Length: '.ob_get_length());
+	header('Connection: close');
+	ob_end_flush();
+	fastcgi_finish_request();
+
+	apply_hooks('comment_posted', 0, $_POST);
+	die(0);
 }
 
 function cmt_get_count() {
