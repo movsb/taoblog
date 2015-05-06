@@ -52,7 +52,7 @@ document.write(function(){/*
 					<div class="field">
 						<label>邮箱</label>
 						<input type="text" name="email" />
-						<span class="needed">必填</span>
+						<span class="needed">必填(不公开)</span>
 					</div>
 					<div class="field">
 						<label>网址</label>
@@ -161,6 +161,11 @@ function comment_avatar(eh,sz) {
 	return host + eh + '?s=' + sz;
 }
 
+function comment_friendly_date(d) {
+	var year = d.substring(0,4);
+	var start = year == (new Date()).getFullYear() ? 5 : 0;
+	return d.substring(start, 16);
+}
 
 // 从评论生成html内容
 function comment_item(cmt) {
@@ -171,13 +176,13 @@ function comment_item(cmt) {
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 
-	if(cmt.author == 'anhbk@qq.com') {
-		s += '<span style="color: red;" class="author">楼主 </span>';
+	if(cmt.is_admin) {
+		s += '<span class="author">楼主 </span>';
 	} else {
 		s += '<span class="nickname">' + cmt.author + '</span>\n';
 	}
 
-	s += '<p class="date">' + cmt.date + '</p>\n</div>\n';
+	s += '<span class="date">' + comment_friendly_date(cmt.date) + '</span>\n</div>\n';
 	s += '<div class="comment-content">' + sanitize_content(cmt.content) + '</div>\n';
 	s += '<div class="reply-to" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment_reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';

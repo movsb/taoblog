@@ -24,47 +24,35 @@ function error($msg) {
 	die(-1);
 }
 
-function &cmt_filter_cmt(&$cmts) {
+function cmt_make_public(&$cmts) {
+	global $tbopt;
+	$admin_email = $tbopt->get('email');
+
 	$flts = ['email', 'url', 'ip', 'agent', 'status'];
-	for($i=0; $i<count($cmts); $i++) {
-		foreach($flts as $f) {
-			unset($cmts[$i]->$f);
-		}
-
-		if(isset($cmts[$i]->children)) {
-			for($x=0; $x<count($cmts[$i]->children); $x++) {
-				foreach($flts as $f) {
-					unset($cmts[$i]->children[$x]->$f);
-				}
-			}
-		}
-	}
-
-	return $cmts;
-}
-
-function &cmt_set_avatar(&$cmts) {
 	for($i=0,$c=count($cmts); $i < $c; $i++) {
-		$cmts[$i]->avatar = md5(strtolower($cmts[$i]->email));
+		$cmt = $cmts[$i];
+		$cmt->avatar = md5(strtolower($cmt->email));
+		$cmt->is_admin = strcasecmp($cmt->email, $admin_email)==0;
+		foreach($flts as &$f) unset($cmt->$f);
 
-		if(isset($cmts[$i]->children)) {
-			for($x=0,$xc=count($cmts[$i]->children); $x < $xc; $x++) {
-				$child = $cmts[$i]->children[$x];
+		if(isset($cmt->children)) {
+			for($x=0,$xc=count($cmt->children); $x < $xc; $x++) {
+				$child = $cmt->children[$x];
 				$child->avatar = md5(strtolower($child->email));
+				$child->is_admin = strcasecmp($child->email, $admin_email)==0;
+				foreach($flts as &$f) unset($child->$f);
 			}
 		}
 	}
-
 	return $cmts;
 }
 
 function cmt_get_cmt() {
 	global $tbcmts;
+
 	cmt_header_json();
 
-	$cmts = $tbcmts->get($_POST);
-	$cmts = cmt_set_avatar($cmts);
-	$cmts = cmt_filter_cmt($cmts);
+	$cmts = cmt_make_public($tbcmts->get($_POST));
 	
 	echo json_encode([
 		'errno'		=> 'success',
@@ -103,9 +91,7 @@ function cmt_post_cmt() {
 	ob_start();
 	if($ret_cmt) {
 		$c = ['id'=>$r];
-		$cmts = $tbcmts->get($c);
-		$cmts = cmt_set_avatar($cmts);
-		$cmts = cmt_filter_cmt($cmts);
+		$cmts = cmt_make_public($tbcmts->get($c));
 
 		echo json_encode([
 			'errno'	=> 'success',

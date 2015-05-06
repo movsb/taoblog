@@ -381,7 +381,7 @@ h6 { font-size: 1.0em; }
 }
 
 #comment-list .comment-li {
-	padding: 1em;
+	padding: 1em 0px 1em 1em;
 }
 
 #comment-list .comment-li .comment-avatar {
@@ -390,13 +390,18 @@ h6 { font-size: 1.0em; }
 	height: 48px;
 }
 
+#comment-list .comment-li .comment-avatar img {
+	border-radius: 4px;
+}
+
 #comment-list .comment-li .comment-meta {
 	margin-left: 54px;
-	height: 2.8em;
 }
 
 #comment-list .comment-li .comment-content {
 	margin-left: 54px;
+	margin-bottom: 1em;
+	padding-left: 0.4em;
 }
 
 #comment-list .comment-li .comment-replies {
@@ -404,7 +409,7 @@ h6 { font-size: 1.0em; }
 }
 
 #comment-list .comment-li .comment-replies li {
-	padding: 1em;
+	padding: 1em 0px 1em 1em;
 	border-top: 1px dashed #ccc;
 }
 
@@ -481,15 +486,19 @@ h6 { font-size: 1.0em; }
 }
 
 .comment-meta .nickname {
-	color: black;
+	color: #003B87;
+}
+
+.comment-meta .author {
+	color: #FF4040;
 }
 
 .comment-meta .date {
 	margin: 0px;
 	font-size: 0.4em;
 	position: relative;
-	top: -8px;
-	color: gray;
+	top: -4px;
+	color: #cfcfcf;
 }
 
 /* 评论发表框 */
@@ -605,7 +614,7 @@ h6 { font-size: 1.0em; }
 }
 
 #comment-form .fields .field input[type="text"] {
-	width: 240px;
+	width: 220px;
 }
 
 /* 最大化模式 */
