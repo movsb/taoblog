@@ -31,6 +31,7 @@ function post_widget_tax($p=null) {
 		'title'		=> '分类',
 		'content'	=> $content,
 		'classname'	=> 'category',
+		'types' => 'post',
 		];
 }
 
@@ -140,9 +141,15 @@ DOM;
 		$widget = new stdClass;
 		$widget->dom = $dom;
 		$widget->pos = isset($w->position) ? $w->position : 'right';
+		$widget->types = isset($w->types) ? $w->types : 'post,page';
 
 		$widgets[] = $widget;
 	}
+
+	$type = isset($_GET['type']) ? $_GET['type'] : '';
+	if(!in_array($type, ['post','page']))
+		$type = 'post';
+
 ?><div id="admin-post">
 	<form method="POST">
 		<div class="post" style="float: left; width: 100%; max-width: 75%;">
@@ -158,7 +165,7 @@ DOM;
 					</div>
 				</div>
 				<?php if($p) {
-					$link = the_post_link($p);
+					$link = $p->type=='post' ? the_post_link($p) : the_page_link($p);
 				?>
 				<div class="permanlink" style="margin-bottom: 1em;">
 					<span>固定链接：</span>
@@ -175,12 +182,13 @@ DOM;
 				</div>
 				<div>
 					<input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
+					<input type="hidden" name="type" value="<?php echo $p ? $p->type : $type; ?>" />
 					<?php if($p) { ?><input type="hidden" name="id" value="<?php echo $p->id; ?>" /><?php } ?>
 				</div>
 			</div><!-- post-area -->
 			<div class="sidebar sidebar-left">
 				<?php foreach($widgets as &$widget) {
-					if($widget->pos == 'left') {
+					if(in_array($type, explode(',',$widget->types)) && $widget->pos == 'left') {
 						echo $widget->dom;
 					}
 				} ?>
@@ -195,7 +203,7 @@ DOM;
 				</div>
 			</div>
 			<?php foreach($widgets as &$widget) {
-				if($widget->pos == 'right') {
+				if(in_array($type, explode(',',$widget->types)) && $widget->pos == 'right') {
 					echo $widget->dom;
 				}
 			} ?>
@@ -262,7 +270,7 @@ function post_new_post() {
 	if(($id=$tbpost->insert($_POST))){
 		apply_hooks('post_posted', $id, $_POST);
 		header('HTTP/1.1 302 Found');
-		header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id);
+		header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
 		die(0);
 	} else {
 		$j = [ 'errno' => 'error', 'error' => $tbpost->error];
@@ -287,7 +295,7 @@ function post_update() {
 	apply_hooks('post_updated', $id, $_POST);
 
 	header('HTTP/1.1 302 Updated');
-	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id);
+	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
 	die(0);
 }
 

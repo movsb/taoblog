@@ -27,6 +27,19 @@ function post_admin_left() {
 <?php 
 }
 
+add_hook('admin_left', 'page_admin_left');
+
+function page_admin_left() {
+?><li>
+	<a href="post.php?type=page">
+	<div class="menu">
+		发表页面
+	</div>
+	</a>
+</li>
+<?php 
+}
+
 add_hook('admin_left', 'tax_admin_left');
 
 function tax_admin_left() {

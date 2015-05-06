@@ -26,8 +26,8 @@
 			$q = ['pageno' => 1, 'no_content'=>true];
 			$posts = $tbpost->query($q);
 			if(is_array($posts) && count($posts)) {
-				foreach($posts as $p) {
-					$link = the_post_link($p);
+				foreach($posts as &$p) {
+					$link = $p->type == 'post' ? the_post_link($p) : the_page_link($p);
 					echo '<li><a href="'.$link.'">',$p->title,'</a></li>';
 				}
 			}

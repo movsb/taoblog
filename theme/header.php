@@ -31,10 +31,8 @@
 	<script type="text/javascript" src="/admin/scripts/jquery-2.1.3.min.js"></script>
 <?php if(!$tbquery->count) {
 
-} else if($tbquery->is_post()) {?>
+} else if($tbquery->is_singular()) {?>
 	<script type="text/javascript">var _post_id = <?php echo $the->id; ?>;</script>
-<?php } else if($tbquery->is_page()) {?>
-
 <?php } 
 
 	apply_hooks('tb_head'); ?>

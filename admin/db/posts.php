@@ -153,6 +153,10 @@ class TB_Posts {
 		$arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
 		$arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
+		// 页面无分类
+		if($arg['type'] == 'page')
+			$arg['taxonomy'] = 0;
+
 		$sql = "INSERT INTO posts (
 			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)
 			VALUES (?,?,?,?,?,?,?,?,?,?)";

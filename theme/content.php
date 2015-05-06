@@ -4,6 +4,7 @@
 	</div>
 
 	<div class="meta">
+		<?php if($the->type == 'post') { ?>
 		<span class="item"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo the_meta_date(); ?></span>
 		<span class="item category"><i class="fa fa-mr fa-folder"></i>分类: <?php echo the_meta_category(); ?></span>
 		<span class="item font-sizing">
@@ -11,6 +12,7 @@
 			?><span class="dec"><i class="fa fa-minus"></i></span><?php
 			?><span class="inc"><i class="fa fa-plus"></i></span>
 		</span>
+		<?php } ?>
 		<?php if($logged_in) { ?>
 		<span class="item edit-post">
 			<i class="fa fa-mr fa-pencil"></i><span><?php echo the_edit_post_link($the);?></span>
