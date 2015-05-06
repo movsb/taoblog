@@ -16,7 +16,7 @@ class TB_Comments {
 			'email'			=> false, 
 			'url'			=> '',
 			'ip'			=> $_SERVER['REMOTE_ADDR'],
-			'date'			=> $tbdate->mysql_datetime_gmt(),
+			'date'			=> $tbdate->mysql_datetime_local(),
 			'content'		=> '',
 			'agent'			=> '',
 			'status'		=> 'public',
@@ -68,13 +68,15 @@ class TB_Comments {
 			return false;
 		}
 
+		$arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
+
 		$sql = "INSERT INTO comments (
 			post_id,author,email,url,ip,date,content,agent,status,parent,ancestor)
 			VALUES (?,?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('issssssssii',
 				$arg['post_id'],	$arg['author'],		$arg['email'],
-				$arg['url'],		$arg['ip'],			$arg['date'], 
+				$arg['url'],		$arg['ip'],			$arg['date_gmt'], 
 				$arg['content'],	$arg['agent'],		$arg['status'],
 				$arg['parent'],		$arg['ancestor']))
 			{
@@ -210,6 +212,21 @@ class TB_Comments {
 				)
 			;
 	}
-}
 
+	public function &get_vars($filds, $where) {
+		global $tbdb;
+
+		$sql = "SELECT $filds FROM comments WHERE $where LIMIT 1";
+		$rows = $tbdb->query($sql);
+		if(!$rows) {
+			$this->error = $tbdb->error;
+			return false;
+		}
+
+		if(!$rows->num_rows) return null;
+
+		$r = $rows->fetch_object();
+		return $r;
+	}
+}
 
