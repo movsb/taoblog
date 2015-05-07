@@ -14,9 +14,9 @@
 			<div class="column about">
 				<h3>ABOUT</h3>
 				<ul>
-					<li><a>关于博客</a></li>
-					<li><a>留言反馈</a></li>
-					<li><a>关于我</a></li>
+					<li><a target="_blank" href="/blog">关于博客</a></li>
+					<li><a target="_blank" href="/echo">建议反馈</a></li>
+					<li><a target="_blank" href="/about">关于我</a></li>
 				</ul>
 			</div>
 			<div class="column links">

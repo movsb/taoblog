@@ -5,8 +5,15 @@ body {
 
 #wrapper {
 	text-align: center;
-	margin: 8em;
+	max-width: 500px;
+	max-height: 400px;
+	margin: auto;
 	color: white;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
 }
 
 .recent-posts a {

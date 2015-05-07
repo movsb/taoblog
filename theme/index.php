@@ -16,7 +16,7 @@
 
 <body>
 <div id="wrapper">
-	<div style="margin: 2em;">
+	<div style="">
 		<span style="font-size: 3em;"><?php echo $tbopt->get('blog_name'); ?></span>
 	</div>
 	<div class="recent-posts">
