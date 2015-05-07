@@ -206,7 +206,7 @@ add_hook('tb_footer', 'postmetas_footer');
 function postmetas_post_posted($id, $pr) {
 	$tbpm = new TB_Post_Metas;
 	
-	$tbpm->insert($id, 'post');
+	$tbpm->insert($id, $pr['type']);
 }
 
 add_hook('post_posted', 'postmetas_post_posted');
@@ -214,7 +214,7 @@ add_hook('post_posted', 'postmetas_post_posted');
 function postmetas_post_updated($id, $pr) {
 	$tbpm = new TB_Post_Metas;
 	
-	$tbpm->update($id, 'post');
+	$tbpm->update($id, $pr['type']);
 }
 
 add_hook('post_updated', 'postmetas_post_updated');
