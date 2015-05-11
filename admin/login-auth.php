@@ -51,6 +51,6 @@ function login_auth_cookie($redirect=false) {
 
 function login_auth_set_cookie($ip) {
 	$opt = new TB_Options;
-	setcookie('login', sha1(md5($ip).$opt->get('login')), 0, '/');
+	setcookie('login', sha1(md5($ip).$opt->get('login')), 0, '/', '', false, true);
 }
 
