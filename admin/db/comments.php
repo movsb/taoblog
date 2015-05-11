@@ -12,8 +12,8 @@ class TB_Comments {
 
 		$def = [
 			'post_id'		=> false,
-			'author'		=> false,
-			'email'			=> false, 
+			'author'		=> '',
+			'email'			=> '', 
 			'url'			=> '',
 			'ip'			=> $_SERVER['REMOTE_ADDR'],
 			'date'			=> $tbdate->mysql_datetime_local(),
@@ -31,9 +31,27 @@ class TB_Comments {
 			$arg[$f] = trim($arg[$f]);
 
 		if(!$arg['post_id']) {			$this->error = 'post_id 不能少！';	return false; } 
+
 		if(!$arg['author'])	{			$this->error = 'author 不能为空';	return false; }
-		if(!is_email($arg['email'])) {	$this->error = 'Email 不规范！';	return false; }
-		if(!$arg['content']) {			$this->error = '评论内容不能为空!';	return false; }
+		if(preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
+			$this->error = '昵称不应包含特殊字符。';
+			return false;
+		}
+
+		if(filter_var($arg['email'], FILTER_VALIDATE_EMAIL) === false) {
+			$this->error = 'Email 不规范！';
+			return false;
+		}
+
+		if($arg['url'] && filter_var($arg['url'], FILTER_VALIDATE_URL) === false) {
+			$this->error = '网址不规范！';
+			return false;
+		}
+
+		if(!$arg['content']) {
+			$this->error = '评论内容不能为空!';
+			return false; 
+		}
 
 		if(!$logged_in) {
 			$not_allowed_authors = explode(',', $tbopt->get('not_allowed_authors').','.$tbopt->get('nickname'));
@@ -51,11 +69,6 @@ class TB_Comments {
 					return false;
 				}
 			}
-		}
-
-		if(preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
-			$this->error = '昵称不应包含特殊字符。';
-			return false;
 		}
 
 		if(!$tbpost->have((int)$arg['post_id'])) {

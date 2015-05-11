@@ -414,7 +414,7 @@ h6 { font-size: 1.0em; }
 #comment-list .comment-content {
 	margin-top: 0;
 	font-family: Consolas, "Microsoft YaHei";
-	white-space: pre;
+	white-space: pre-wrap;
 	overflow: auto;
 	max-height: 400px;
 }
@@ -485,6 +485,10 @@ h6 { font-size: 1.0em; }
 
 .comment-meta .nickname {
 	color: #003B87;
+}
+
+.comment-meta .nickname a {
+	color: inherit;
 }
 
 .comment-meta .author {

@@ -10,10 +10,6 @@ function &tb_parse_args(&$def, &$arg) {
 	return $arg;
 }
 
-function sanitize_uri($uri){
-	return $uri;
-}
-
 function &parse_query_string($q, $dk=true, $dv=true){
 	$segs = explode('&', $q);
 	$r = [];
@@ -27,9 +23,5 @@ function &parse_query_string($q, $dk=true, $dv=true){
 	}
 	
 	return $r;
-}
-
-function is_email($e) {
-	return preg_match('/^.+@.+\..+$/', $e);
 }
 

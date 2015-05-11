@@ -179,7 +179,17 @@ function comment_item(cmt) {
 	if(cmt.is_admin) {
 		s += '<span class="author">楼主 </span>';
 	} else {
-		s += '<span class="nickname">' + cmt.author + '</span>\n';
+		var nickname;
+		if(typeof cmt.url == 'string' && cmt.url.length) {
+			if(!cmt.url.match(/^https?:\/\//i))
+				cmt.url = 'http://' + cmt.url;
+
+			nickname = '<a rel="nofollow" target="_blank" href="' + cmt.url + '">' + cmt.author + '</a>'
+		} else {
+			nickname = cmt.author;
+		}
+
+		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
 	s += '<span class="date">' + comment_friendly_date(cmt.date) + '</span>\n</div>\n';
@@ -282,6 +292,8 @@ $('#load-comments .load').click(function() {
 			$(load).removeAttr('loading');
 	},1500));
 });
+
+$('#load-comments .load').click();
 
 // Ajax评论提交
 $('#comment-submit').click(function() {

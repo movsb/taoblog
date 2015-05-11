@@ -159,7 +159,7 @@ class TB_Query {
 	}
 
 	private function parse_query_args(){
-		$full_uri = $_SERVER['REQUEST_URI'];
+		$full_uri = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
 		$pos = strpos($full_uri, '?');
 		if($pos !== false){
 			$uri = substr($full_uri, 0, $pos);
@@ -171,7 +171,7 @@ class TB_Query {
 		}
 
 		// 都是解码后的值
-		$this->uri = urldecode(sanitize_uri($uri));
+		$this->uri = urldecode($uri);
 		$this->query = parse_query_string($query);
 	}
 }
