@@ -204,6 +204,7 @@ class TB_Comments {
 		if((int)$id == 0) return 0;
 
 		$sql = "SELECT ancestor FROM comments WHERE id=".(int)$id;
+		$sql .= " LIMIT 1";
 		$rows = $tbdb->query($sql);
 
 		if(!$rows) {

@@ -3,7 +3,7 @@
 class TB_Options {
 	public function get($name, $def=''){
 		global $tbdb;
-		$sql = 'SELECT value FROM options where name=?';
+		$sql = 'SELECT value FROM options WHERE name=? LIMIT 1';
 		if($stmt = $tbdb->prepare($sql)){
 			$stmt->bind_param('s', $name);
 			$stmt->execute();
@@ -20,7 +20,7 @@ class TB_Options {
 	public function set($name, $value){
 		global $tbdb;
 		if($this->has($name)){
-			$sql = 'UPDATE options SET value=? WHERE name=?';
+			$sql = 'UPDATE options SET value=? WHERE name=? LIMIT 1';
 			if($stmt = $tbdb->prepare($sql)){
 				$stmt->bind_param('ss', $value, $name);
 				return $stmt->execute();
@@ -38,7 +38,7 @@ class TB_Options {
 
 	public function has($name){
 		global $tbdb;
-		$sql = 'SELECT name FROM options WHERE name=?';
+		$sql = 'SELECT name FROM options WHERE name=? LIMIT 1';
 		if($stmt = $tbdb->prepare($sql)){
 			$stmt->bind_param('s', $name);
 			$stmt->execute();
@@ -51,7 +51,7 @@ class TB_Options {
 
 	public function del($name) {
 		global $tbdb;
-		$sql = 'DELETE FROM options WHERE name=?';
+		$sql = 'DELETE FROM options WHERE name=? LIMIT 1';
 		if($stmt = $tbdb->prepare($sql)){
 			$stmt->bind_param('s', $name);
 			return $stmt->execute();

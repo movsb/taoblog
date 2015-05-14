@@ -61,7 +61,7 @@ class TB_Posts {
 		if($arg['modified']) $arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		if($arg['date_gmt']) {
-			$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
+			$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
 			if($stmt = $tbdb->prepare($sql)){
 				if($stmt->bind_param('sssssii',
 					$arg['date_gmt'],$arg['modified_gmt'],
@@ -75,7 +75,7 @@ class TB_Posts {
 				} 
 			}
 		} else {
-			$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=?";
+			$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
 			if($stmt = $tbdb->prepare($sql)){
 				if($stmt->bind_param('ssssii',
 					$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
@@ -276,6 +276,7 @@ class TB_Posts {
 		if($arg['modified']) {
 			$sql .= " AND modified>'".$arg['modified']."'";
 		}
+		$sql .= " LIMIT 1";
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
@@ -344,6 +345,7 @@ class TB_Posts {
 		if($arg['modified']) {
 			$sql .= " AND modified>'".$arg['modified']."'";
 		}
+		$sql .= " LIMIT 1";
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -366,6 +368,7 @@ class TB_Posts {
 		if($arg['modified']) {
 			$sql .= " AND modified>'".$arg['modified']."'";
 		}
+		$sql .= " LIMIT 1";
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -464,6 +467,7 @@ class TB_Posts {
 		global $tbdb;
 
 		$sql = "SELECT title FROM posts WHERE id=".(int)$id;
+		$sql .= " LIMIT 1";
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
@@ -474,6 +478,7 @@ class TB_Posts {
 		global $tbdb;
 
 		$sql = "SELECT id FROM posts where id=".(int)$id;
+		$sql .= " LIMIT 1";
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;

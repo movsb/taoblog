@@ -13,7 +13,7 @@ class TB_Post_Metas {
 		}
 
 		$tid = (int)$tid;
-		$sql = "SELECT id FROM post_metas WHERE type='$type' AND tid=$tid";
+		$sql = "SELECT id FROM post_metas WHERE type='$type' AND tid=$tid LIMIT 1";
 		$r = $tbdb->query($sql);
 		if(!$r || !is_a($r, 'mysqli_result')) {
 			$this->error = $tbdb->error;
@@ -78,6 +78,7 @@ class TB_Post_Metas {
 		}
 
 		$sql = "UPDATE post_metas SET header=?,footer=?,keywords=? WHERE type='$type' AND tid=".(int)$tid;
+		$sql .= " LIMIT 1";
 		if(($stmt = $tbdb->prepare($sql))
 			&& $stmt->bind_param('sss', $header, $footer, $keywords)
 			&& $stmt->execute()

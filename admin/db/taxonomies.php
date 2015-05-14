@@ -24,7 +24,10 @@ class TB_Taxonomies {
 		global $tbdb;
 		
 		$sql = "SELECT * FROM taxonomies";
-		if($id) $sql .= " WHERE id=".intval($id);
+		if($id) {
+			$sql .= " WHERE id=".intval($id);
+			$sql .= " LIMIT 1";
+		}
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
@@ -160,22 +163,11 @@ class TB_Taxonomies {
 			return false;
 		}
 
-		/*
-		if(intval($arg['parent'])>0 && !$this->has($arg['parent'])) {
-			$this->error = '此分类的父ID不存在！';
-			return false;
-		}
-
-		$arg['ancestor'] = $this->get_ancestor($arg['parent'], true);
-		*/
-		
-		$sql = "UPDATE taxonomies SET name=?,slug=? WHERE id=?";
+		$sql = "UPDATE taxonomies SET name=?,slug=? WHERE id=? LIMIT 1";
 		if(($stmt = $tbdb->prepare($sql)) 
 			&& $stmt->bind_param('ssi',
 				$arg['name'],
 				$arg['slug'],
-				/*$arg['parent'],
-				$arg['ancestor'],*/
 				$arg['id'])
 			&& $stmt->execute())
 		{
@@ -190,7 +182,7 @@ class TB_Taxonomies {
 	public function has($id){
 		global $tbdb;
 		$id = (int)$id;
-		$sql = 'SELECT name FROM taxonomies WHERE id=?';
+		$sql = 'SELECT name FROM taxonomies WHERE id=? LIMIT 1';
 		if(($stmt = $tbdb->prepare($sql))
 			&& $stmt->bind_param('i', $id)
 			&& $stmt->execute() )
@@ -224,6 +216,7 @@ class TB_Taxonomies {
 
 		// 最后删除自己
 		$sql = "DELETE FROM taxonomies WHERE id=".intval($id);
+		$sql .= " LIMIT 1";
 		return $tbdb->query($sql);
 	}
 
@@ -273,7 +266,7 @@ class TB_Taxonomies {
 		
 		$sql = "SELECT id FROM taxonomies WHERE slug='".$tbdb->real_escape_string($ts[count($ts)-1])."'";
 		if(count($ts) == 1) {
-			$sql .= " AND parent=0";
+			$sql .= " AND parent=0 LIMIT 1";
 		} else {
 			$sql .= " AND parent IN (";
 			for($i=count($ts)-2; $i>0; --$i) {
@@ -298,6 +291,7 @@ class TB_Taxonomies {
 		if(!$this->has($id)) return false;
 
 		$sql = "SELECT parent FROM taxonomies WHERE id=".$id;
+		$sql .= " LIMIT 1";
 		$r = $tbdb->query($sql);
 		if(!$r || !is_a($r, 'mysqli_result') || !$r->num_rows || !($row = $r->fetch_object())) {
 			$this->error = 'Fatal ???'.$tbdb->error;
@@ -313,6 +307,7 @@ class TB_Taxonomies {
 		if((int)$id == 0) return 0;
 		
 		$sql = "SELECT ancestor FROM taxonomies WHERE id=".(int)$id;
+		$sql .= " LIMIT 1";
 		$rows = $tbdb->query($sql);
 
 		if(!$rows) {
