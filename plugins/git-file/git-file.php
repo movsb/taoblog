@@ -2,7 +2,7 @@
 
 add_hook('the_content', 'gf_content_hook');
 
-$gf_files_dir = dirname(__FILE__).'/git-files/';
+$gf_files_dir = dirname(__FILE__).'/taoblog-posts/posts/';
 
 function gf_content_hook($content, $id) {
 	global $gf_files_dir;
