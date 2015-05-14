@@ -231,6 +231,10 @@ if(!$do) {
 		tb_die(200, '没有这篇文章！');
 	}
 
+	// 输出编辑内容之前过滤
+	if(isset($post[0]->content))
+		$post[0]->content = apply_hooks('edit_the_content', $post[0]->content, $post[0]->id);
+
 	admin_header();
 	new_post_html($post[0]);
 	admin_footer();

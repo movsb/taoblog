@@ -259,9 +259,6 @@ class TB_Posts {
 				$p->date = $tbdate->mysql_datetime_to_local($p->date);
 			if(isset($p->modified))
 				$p->modified = $tbdate->mysql_datetime_to_local($p->modified);
-
-			if(isset($p->content))
-				$p->content = apply_hooks('the_content', $p->content);
 		}
 
 		return $queried_posts;

@@ -142,6 +142,14 @@ class TB_Query {
 		$r = $tbpost->query($this->internal_query);
 		if($r === false) return $r;
 
+		// 输出内容之前过滤
+		for($i=0; $i<count($r); $i++) {
+			$p = &$r[$i];
+
+			if(isset($p->content))
+				$p->content = apply_hooks('the_content', $p->content, $p->id);
+		}
+
 		$this->objs = &$r;
 
 		$this->count = count($this->objs);
