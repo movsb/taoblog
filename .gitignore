@@ -1,6 +1,4 @@
-/theme/font-awesome-*
-/admin/scripts/jquery-*
 *~
 *.swp
-/setup/config.php
+/contents/
 

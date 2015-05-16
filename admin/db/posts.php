@@ -13,7 +13,6 @@ class TB_Posts {
 			'date'		=> '',
 			'modified'	=> '',
 			'title'		=> '',
-			'content'	=> '',
 			'slug'		=> '',
 			'taxonomy'	=> 1,
 		];
@@ -27,11 +26,6 @@ class TB_Posts {
 
 		if(!$arg['title']) {
 			$this->error = '标题不应为空！';
-			return false;
-		}
-
-		if(!$arg['content']) {
-			$this->error = '内容不应为空！';
 			return false;
 		}
 
@@ -61,11 +55,11 @@ class TB_Posts {
 		if($arg['modified']) $arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		if($arg['date_gmt']) {
-			$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+			$sql = "UPDATE posts SET date=?,modified=?,title=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
 			if($stmt = $tbdb->prepare($sql)){
 				if($stmt->bind_param('sssssii',
 					$arg['date_gmt'],$arg['modified_gmt'],
-					$arg['title'], $arg['content'],$arg['slug'],
+					$arg['title'],$arg['slug'],
 					$arg['taxonomy'], $arg['id']))
 				{
 					$r = $stmt->execute();
@@ -75,10 +69,10 @@ class TB_Posts {
 				} 
 			}
 		} else {
-			$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+			$sql = "UPDATE posts SET modified=?,title=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
 			if($stmt = $tbdb->prepare($sql)){
 				if($stmt->bind_param('ssssii',
-					$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
+					$arg['modified_gmt'], $arg['title'],$arg['slug'],
 					$arg['taxonomy'], $arg['id']))
 				{
 					$r = $stmt->execute();
@@ -103,7 +97,6 @@ class TB_Posts {
 			'date' => '',
 			'modified' => '',
 			'title' => '',
-			'content' => '',
 			'slug' => '',
 			'type' => 'post',
 			'taxonomy' => 1,
@@ -116,11 +109,6 @@ class TB_Posts {
 
 		if(!$arg['title']) {
 			$this->error = '标题不应为空！';
-			return false;
-		}
-
-		if(!$arg['content']) {
-			$this->error = '内容不应为空！';
 			return false;
 		}
 
@@ -158,12 +146,12 @@ class TB_Posts {
 			$arg['taxonomy'] = 0;
 
 		$sql = "INSERT INTO posts (
-			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)
+			date,modified,title,slug,type,taxonomy,status,comment_status,password)
 			VALUES (?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('ssssssisis',
 				$arg['date_gmt'], $arg['modified_gmt'],
-				$arg['title'], $arg['content'],$arg['slug'],
+				$arg['title'],$arg['slug'],
 				$arg['type'], $arg['taxonomy'], $arg['status'],
 				$arg['comment_status'], $arg['password']))
 			{
@@ -279,6 +267,8 @@ class TB_Posts {
 
 		$p = [];
 		if($r = $rows->fetch_object()){
+			$file = @file_get_contents(TBPATH.'contents/posts/'.$r->id.'.html');
+			$r->content = $file ? $file : '<p>&lt;empty /&gt;</p>';
 			$p[] = $r;
 		}
 
@@ -293,8 +283,9 @@ class TB_Posts {
 		$yy = (int)$arg['yy'];
 		$mm = (int)$arg['mm'];
 
-		$content_filed = $arg['no_content'] ? '' : ',content';
-		$fields = "id,date,title$content_filed,slug,type,taxonomy";
+		$no_content = (bool)$arg['no_content'];
+
+		$fields = "id,date,title,slug,type,taxonomy";
 		$sql = "SELECT $fields FROM posts WHERE 1";
 		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
@@ -320,6 +311,10 @@ class TB_Posts {
 
 		$p = [];
 		while($r = $rows->fetch_object()){
+			if(!$no_content) {
+				$file = @file_get_contents(TBPATH.'contents/posts/'.$r->id.'.html');
+				$r->content = $file ? $file : '<p>&lt;empty /&gt;</p>';
+			}
 			$p[] = $r;
 		}
 
@@ -349,6 +344,8 @@ class TB_Posts {
 
 		$p = [];
 		while($r = $rows->fetch_object()){
+			$file = @file_get_contents(TBPATH.'contents/posts/'.$r->id.'.html');
+			$r->content = $file ? $file : '<p>&lt;empty /&gt;</p>';
 			$p[] = $r;
 		}
 
@@ -372,6 +369,8 @@ class TB_Posts {
 
 		$p = [];
 		while($r = $rows->fetch_object()){
+			$file = @file_get_contents(TBPATH.'contents/posts/'.$r->id.'.html');
+			$r->content = $file ? $file : '<p>&lt;empty /&gt;</p>';
 			$p[] = $r;
 		}
 
@@ -395,8 +394,9 @@ class TB_Posts {
 		$pageno = intval($arg['pageno']);
 		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
 
-		$content_filed = $arg['no_content'] ? '' : ',content';
-		$fields = "id,date,title$content_filed,slug,type,taxonomy";
+		$no_content = (bool)$arg['no_content'];
+
+		$fields = "id,date,title,slug,type,taxonomy";
 		$sql = "SELECT $fields FROM posts WHERE taxonomy=$taxid";
 
 		$offsprings = $tbtax->get_offsprings($taxid);
@@ -411,6 +411,10 @@ class TB_Posts {
 
 		$p = [];
 		while($r = $rows->fetch_object()){
+			if(!$no_content) {
+				$file = @file_get_contents(TBPATH.'contents/posts/'.$r->id.'.html');
+				$r->content = $file ? $file : '<p>&lt;empty /&gt;</p>';
+			}
 			$p[] = $r;
 		}
 
