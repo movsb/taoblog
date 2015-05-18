@@ -157,8 +157,7 @@ function sanitize_content(c) {
 }
 
 function comment_avatar(eh,sz) {
-	var host = 'https://secure.gravatar.com/avatar/';
-	return host + eh + '?s=' + sz;
+	return '/theme/avatar.php?' + encodeURIComponent(eh + '?s=' + sz);
 }
 
 function comment_friendly_date(d) {
