@@ -28,7 +28,16 @@ function pm_mail($recipient, $nickname, $subject, $body) {
 	$mail->Subject = $subject;
 	$mail->Body    = $body;
 
-	return $mail->send();
+	if(!$mail->send()) {
+		$log = TBPATH.'plugins/phpmailer/error.log';
+		if(($fd = fopen($log, 'a'))) {
+			fwrite($fd, $recipient.': '.$mail->ErrorInfo.' --- '.$body);
+			fclose($fd);
+		}
+		return false;
+	}
+
+	return true;
 }
 
 function pm_notify_admin(&$arg) {
