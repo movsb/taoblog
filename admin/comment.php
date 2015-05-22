@@ -28,7 +28,7 @@ function cmt_make_public(&$cmts) {
 	global $tbopt;
 	$admin_email = $tbopt->get('email');
 
-	$flts = ['email', 'ip', 'agent', 'status'];
+	$flts = ['email', 'ip', 'status'];
 	for($i=0,$c=count($cmts); $i < $c; $i++) {
 		$cmt = $cmts[$i];
 		$cmt->avatar = md5(strtolower($cmt->email));

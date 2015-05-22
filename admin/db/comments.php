@@ -18,7 +18,6 @@ class TB_Comments {
 			'ip'			=> $_SERVER['REMOTE_ADDR'],
 			'date'			=> $tbdate->mysql_datetime_local(),
 			'content'		=> '',
-			'agent'			=> '',
 			'status'		=> 'public',
 			'parent'		=> false,
 			//'ancestor'	=> false,
@@ -84,13 +83,13 @@ class TB_Comments {
 		$arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
 
 		$sql = "INSERT INTO comments (
-			post_id,author,email,url,ip,date,content,agent,status,parent,ancestor)
+			post_id,author,email,url,ip,date,content,status,parent,ancestor)
 			VALUES (?,?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('issssssssii',
 				$arg['post_id'],	$arg['author'],		$arg['email'],
 				$arg['url'],		$arg['ip'],			$arg['date_gmt'], 
-				$arg['content'],	$arg['agent'],		$arg['status'],
+				$arg['content'],	$arg['status'],
 				$arg['parent'],		$arg['ancestor']))
 			{
 				$r = $stmt->execute();
