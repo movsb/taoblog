@@ -185,6 +185,10 @@ h6 { font-size: 1.0em; }
 	cursor: pointer;
 }
 
+.post .meta .author {
+	display: none;
+}
+
 /* 文章内容 */
 .entry {
 	display: block;

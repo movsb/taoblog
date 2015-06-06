@@ -5,7 +5,8 @@
 
 	<div class="meta">
 		<?php if($the->type == 'post') { ?>
-		<span class="item"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo the_meta_date(); ?></span>
+		<span class="item author"><i class="fa fa-mr fa-user"></i>作者: <?php echo $tbopt->get('author'); ?></span>
+		<span class="item date"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo the_meta_date(); ?></span>
 		<span class="item category"><i class="fa fa-mr fa-folder"></i>分类: <?php echo the_meta_category(); ?></span>
 		<span class="item font-sizing">
 			<i class="fa fa-mr fa-font"></i><span>字号: </span><?php

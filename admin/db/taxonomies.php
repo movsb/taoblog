@@ -1,39 +1,22 @@
 <?php
 
-class TB_Taxonomy_Object {
-	public $id;
-	public $name;
-	public $slug;
-	public $parent;
-	public $ancestor;
-}
-
 class TB_Taxonomies {
 	public $error = '';
-
-	private function row_to_tax(&$r) {
-		$t = new TB_Taxonomy_Object;
-		$fs = ['id', 'name', 'slug', 'parent', 'ancestor'];
-		foreach($fs as $f){
-			$t->{$f} = $r[$f];
-		}
-		return $t;
-	}
 
 	public function get($id=0) {
 		global $tbdb;
 		
 		$sql = "SELECT * FROM taxonomies";
 		if($id) {
-			$sql .= " WHERE id=".intval($id);
-			$sql .= " LIMIT 1";
+			$id = (int)$id;
+			$sql .= " WHERE id=$id LIMIT 1";
 		}
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
 		$taxes = [];
-		while($t = $rows->fetch_assoc())
-			$taxes[] = $this->row_to_tax($t);
+		while($t = $rows->fetch_object())
+			$taxes[] = $t;
 
 		return $taxes;
 	}
@@ -67,8 +50,8 @@ class TB_Taxonomies {
 		if(!$rows) return false;
 
 		$sons = [];
-		while($r = $rows->fetch_assoc())
-			$sons[] = $r['id'];
+		while($r = $rows->fetch_object())
+			$sons[] = $r->id;
 
 		return $sons;
 	}		
@@ -144,11 +127,6 @@ class TB_Taxonomies {
 			$stmt->close();
 			$id = $tbdb->insert_id;
 			return $id;
-			//$tax = $this->get($id);
-			//if(!$tax || !is_array($tax))
-			//	return false;
-
-			//return $tax[0];
 		}
 
 		$this->error = $stmt->error;
@@ -182,17 +160,8 @@ class TB_Taxonomies {
 	public function has($id){
 		global $tbdb;
 		$id = (int)$id;
-		$sql = 'SELECT name FROM taxonomies WHERE id=? LIMIT 1';
-		if(($stmt = $tbdb->prepare($sql))
-			&& $stmt->bind_param('i', $id)
-			&& $stmt->execute() )
-		{
-			$ret = $stmt->get_result();
-			$stmt->close();
-			return $ret!==false && $ret->num_rows>0;
-		}
-
-		return false;
+		$sql = "SELECT name FROM taxonomies WHERE id=$id LIMIT 1";
+		return ($rs = $tbdb->query($sql)) && $rs->num_rows > 0;
 	}
 
 	/* 按ID删除某个分类
@@ -215,8 +184,7 @@ class TB_Taxonomies {
 		}
 
 		// 最后删除自己
-		$sql = "DELETE FROM taxonomies WHERE id=".intval($id);
-		$sql .= " LIMIT 1";
+		$sql = "DELETE FROM taxonomies WHERE id=$id LIMIT 1";
 		return $tbdb->query($sql);
 	}
 
@@ -281,7 +249,7 @@ class TB_Taxonomies {
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
-		return $rows->fetch_assoc()['id'];
+		return $rows->fetch_object()->id;
 	}
 
 	public function get_parent_id($id) {
@@ -290,8 +258,7 @@ class TB_Taxonomies {
 		$id = (int)$id;
 		if(!$this->has($id)) return false;
 
-		$sql = "SELECT parent FROM taxonomies WHERE id=".$id;
-		$sql .= " LIMIT 1";
+		$sql = "SELECT parent FROM taxonomies WHERE id=$id LIMIT 1";
 		$r = $tbdb->query($sql);
 		if(!$r || !is_a($r, 'mysqli_result') || !$r->num_rows || !($row = $r->fetch_object())) {
 			$this->error = 'Fatal ???'.$tbdb->error;
@@ -305,9 +272,9 @@ class TB_Taxonomies {
 		global $tbdb;
 
 		if((int)$id == 0) return 0;
+		$id = (int)$id;
 		
-		$sql = "SELECT ancestor FROM taxonomies WHERE id=".(int)$id;
-		$sql .= " LIMIT 1";
+		$sql = "SELECT ancestor FROM taxonomies WHERE id=$id LIMIT 1";
 		$rows = $tbdb->query($sql);
 
 		if(!$rows) {
@@ -328,6 +295,22 @@ class TB_Taxonomies {
 				: 0
 				)
 			;
+	}
+
+	public function &get_vars($fields, $where) {
+		global $tbdb;
+
+		$sql = "SELECT $fields FROM taxonomies WHERE $where LIMIT 1";
+		$rows = $tbdb->query($sql);
+		if(!$rows) {
+			$this->error = $tbdb->error;
+			return false;
+		}
+
+		if(!$rows->num_rows) return null;
+
+		$r = $rows->fetch_object();
+		return $r;
 	}
 }
 
