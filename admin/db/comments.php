@@ -84,9 +84,9 @@ class TB_Comments {
 
 		$sql = "INSERT INTO comments (
 			post_id,author,email,url,ip,date,content,status,parent,ancestor)
-			VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+			VALUES (?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
-			if($stmt->bind_param('issssssssii',
+			if($stmt->bind_param('isssssssii',
 				$arg['post_id'],	$arg['author'],		$arg['email'],
 				$arg['url'],		$arg['ip'],			$arg['date_gmt'], 
 				$arg['content'],	$arg['status'],
