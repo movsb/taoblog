@@ -6,7 +6,7 @@ Version: 9.9.9
 /* 全局 */
 ::-moz-selection {
 	color: white;
-	background-color: rgba(0,121,116,0.6);
+	background-color: #f66;
 }
 
 body {
@@ -76,16 +76,28 @@ h6 { font-size: 1.0em; }
 /* 头部 */
 
 #header {
-	height: 120px;
-	padding: 20px;
+	box-sizing: border-box;
+	position: fixed;
+	left: 0px;
+	top: 0px;
+	bottom: 0px;
+	width: 300px;
+	padding: 10px;
 	background-color: rgb(0,121,116);
+	overflow: auto;
+}
+
+#header .center {
+	text-align: center;
+}
+
+#header .copy {
+	color: white;
 }
 
 #head {
 	clear: both;
-	padding: 0px 10px 5px 10px;
 	color: white;
-	max-width: 850px;
 	margin: 0px auto;
 }
 
@@ -93,7 +105,6 @@ h6 { font-size: 1.0em; }
 	margin: 0px 0px 8px;
 	font-weight: normal;
 	font-size: 30px;
-	float: left;
 	cursor: pointer;
 }
 
@@ -117,8 +128,12 @@ h6 { font-size: 1.0em; }
 }
 
 #main {
-	max-width: 850px;
 	min-height: 400px;
+	margin-left: 300px;
+}
+
+#content {
+	max-width: 850px;
 	margin: 0px auto 10px;
 }
 
@@ -154,9 +169,9 @@ h6 { font-size: 1.0em; }
 
 .post .title h1, .page .title h1 {
 	float: left;
-	margin: 0px;
+	margin: 0px 0px 10px;
 	padding: 0.4em 0.5em 0px;
-	font-size: 1.7em;
+	font-size: 2.5em;
 	color: #464646;
 }
 
@@ -792,8 +807,7 @@ h6 { font-size: 1.0em; }
 	color: white;
 	background-color: rgb(0,121,116);
 	font-size: 13px;
-	min-height: 300px;
-	margin-top: 100px;
+	margin-top: 30px;
 }
 
 #footer .mb {
@@ -802,42 +816,19 @@ h6 { font-size: 1.0em; }
 
 #footer .footer-wrapper {
 	box-sizing: border-box;
-	max-width: 850px;
 	margin: 0px auto;
-	padding: 10px;
-	height: 100%;
 }
 
-#footer .avatar {
-	width: 225px;
-	height: 100%;
-	float: left;
-}
-
-#footer .avatar .me {
+#head .me {
 	height: 64px;
 	width: 64px;
 	border-radius: 32px;
-	display: block;
 	margin-bottom: 20px;
+	cursor: pointer;
 }
 
 #footer .declaration {
 	color: #ccc;
-}
-
-@media screen and (min-width: 440px) {
-	#footer .column {
-		float: right;
-		border-left: 1px solid #149277;
-		padding: 0px 20px;
-		width: 200px;
-	}
-}
-@media screen and (max-width: 439px) {
-	#footer .column {
-		clear: both;
-	}
 }
 
 #footer .column {
@@ -860,6 +851,10 @@ h6 { font-size: 1.0em; }
 #footer .column ul a:hover {
 	text-decoration: none;
 	color: #C3AC00;
+}
+
+#footer .copy {
+	text-align: center;
 }
 
 /* 回到顶部 */
