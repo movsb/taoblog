@@ -1,5 +1,8 @@
 		</div><!-- content -->	
 	</section>
+	<div id="mobile-footer">
+		<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>
+	</div>
 </div><!-- wrapper -->
 
 <?php apply_hooks('tb_footer'); ?>
