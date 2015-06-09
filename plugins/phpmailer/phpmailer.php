@@ -80,12 +80,14 @@ function pm_comment_posted($unused1, $a) {
 	global $tbpost;
 	global $tbcmts;
 
+	$admin_email = $tbopt->get('email');
+
 	$arg = (object)$a;
 
 	$arg->post_title = $tbpost->get_title((int)$arg->post_id);
 
 	// 通知站长
-	if($arg->email != $tbopt->get('email')) {
+	if($arg->email != $admin_email) {
 		pm_notify_admin($arg);
 	}
 
@@ -95,7 +97,7 @@ function pm_comment_posted($unused1, $a) {
 
 	while($parent > 0) {
 		$pc = $tbcmts->get_vars('author,email', "id=$parent");
-		if(is_object($pc)) {
+		if(is_object($pc) && $pc->email != $admin_email) {
 			$arg->parents[] = $pc;
 		}
 		break; // 暂时不通知父父级评论
