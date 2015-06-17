@@ -73,6 +73,32 @@ h6 { font-size: 1.0em; }
 	margin-right: 0.5em;
 }
 
+/* 按钮 */
+.btn {
+	background-color: #D2D8BE;
+	border: 1px solid gray;
+	border-radius: 4px;
+	box-sizing: border-box;
+	padding: 0.5em 1em;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	user-select: none;
+	cursor: pointer;
+	color: #855525;
+}
+
+.btn:hover {
+	background-color: #855525;
+	color: white;
+}
+
+/* 不可选 */
+.no-sel {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	user-select: none;
+}
+
 /* 头部 */
 
 @media screen and (min-width: 851px) {
@@ -347,20 +373,6 @@ h6 { font-size: 1.0em; }
 
 .entry table.enlarge-first-td td:first-child {
 	padding-right: 1em;
-}
-
-/* 一些自定义的东东 */
-.entry span.tiybtn {
-	cursor: pointer;
-	color: white;
-	background-color: rgba(152,63,63,0.7);
-	margin: 0.4em;
-	padding: 0.3em;
-	display: inline-block;
-}
-
-.entry span.tiybtn:hover {
-	background-color: rgba(152, 63,63,1);
 }
 
 /* 代码片段 */

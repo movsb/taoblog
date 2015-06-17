@@ -3,7 +3,7 @@
 		<h1><?php echo $the->title; ?></h1>
 	</div>
 
-	<div class="meta">
+	<div class="meta no-sel">
 		<?php if($the->type == 'post') { ?>
 		<span class="item author"><i class="fa fa-mr fa-user"></i>作者: <?php echo $tbopt->get('author'); ?></span>
 		<span class="item date"><i class="fa fa-mr fa-calendar"></i>日期: <?php echo the_meta_date(); ?></span>

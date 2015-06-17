@@ -1,7 +1,7 @@
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
-		<i class="fa fa-mr fa-comments"></i>评论(<span class="loaded">0</span>/<span class="total">0</span>)
+		<i class="fa fa-mr fa-comments"></i>评论<span class="no-sel">(<span class="loaded">0</span>/<span class="total">0</span>)</span>
 	</h3>
 
 	<!-- 评论列表  -->
@@ -12,10 +12,10 @@ document.write(function(){/*
 	<!-- 评论功能区  -->
 	<div class="comment-func">
 		<span id="post-comment">
-			<span class="post-comment">发表评论</span>
+			<span class="post-comment no-sel">发表评论</span>
 		</span>
 		<span id="load-comments">
-			<span class="load">加载评论</span>
+			<span class="load no-sel">加载评论</span>
 			<span class="loading">
 				<i class="fa fa-spin fa-spinner"></i> 
 				<span> 加载中...</span>
@@ -31,15 +31,17 @@ document.write(function(){/*
 	<!-- 评论框 -->
 	<div id="comment-form-div" class="normal">
 		<div class="comment-form-div-1">
-			<div class="closebtn" title="关闭">
-				<i class="fa fa-times"></i>
-			</div>
-			<div class="maxbtn" title="最大化">
-				<i class="fa fa-plus"></i>
-			</div>
+			<div class="no-sel">
+				<div class="closebtn" title="关闭">
+					<i class="fa fa-times"></i>
+				</div>
+				<div class="maxbtn" title="最大化">
+					<i class="fa fa-plus"></i>
+				</div>
 
-			<div class="comment-title">
-				<span>评论</span>
+				<div class="comment-title">
+					<span>评论</span>
+				</div>
 			</div>
 
 			<form id="comment-form" action="/admin/comment.php">
@@ -72,7 +74,7 @@ document.write(function(){/*
 				</div>
 
 				<div class="comment-submit">
-					<span id="comment-submit">发表评论</span>
+					<span id="comment-submit" class="no-sel">发表评论</span>
 					<span class="submitting">
 						<i class="fa fa-spin fa-spinner"></i>
 						<span> 正在提交...</span>
@@ -89,7 +91,7 @@ document.write(function(){/*
 			</form>
 		</div>
 		<div class="comment-form-div-2">
-			<div class="toolbar" style="color: #C8C8C8; font-size: 24px;">
+			<div class="toolbar no-sel" style="color: #C8C8C8; font-size: 24px;">
 				<span>评论: </span>
 				<div class="right">
 					<span>字体: </span>
