@@ -1,5 +1,7 @@
 <?php
 
+$start_time = microtime();
+
 require('admin/load.php');
 require('theme/functions.php');
 
@@ -7,6 +9,9 @@ require('theme/functions.php');
 if($tbquery->query() === false){
 	tb_die(200, '未定义的查询！');
 }
+
+// https://css-tricks.com/snippets/php/count-script-excecution-time/
+$execution_time = sprintf('%.5f', microtime() - $start_time);
 
 if(!$tbquery->have() && !$tbquery->is_home()){
 	if(!$tbquery->is_query_modification) {
