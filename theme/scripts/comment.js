@@ -11,21 +11,10 @@ document.write(function(){/*
 
 	<!-- 评论功能区  -->
 	<div class="comment-func">
-		<span id="post-comment">
-			<span class="post-comment no-sel">发表评论</span>
-		</span>
-		<span id="load-comments">
-			<span class="load no-sel">加载评论</span>
-			<span class="loading">
-				<i class="fa fa-spin fa-spinner"></i> 
-				<span> 加载中...</span>
-			</span>
-			<span class="none">
-				<i class="fa fa-info-circle"></i>
-				<span> 没有了！</span>
-			</span>
-			<input type="hidden" id="post-id" name="post-id" value="" />
-		</span>
+		<span id="post-comment" class="post-comment no-sel btn">发表评论</span>
+		<span id="load-comments" class="load-comments no-sel btn">加载评论</span>
+		&nbsp;<span id="loading-status"></span>
+		<input type="hidden" id="post-id" name="post-id" value="" />
 	</div>
 
 	<!-- 评论框 -->
@@ -75,18 +64,7 @@ document.write(function(){/*
 
 				<div class="comment-submit">
 					<span id="comment-submit" class="no-sel">发表评论</span>
-					<span class="submitting">
-						<i class="fa fa-spin fa-spinner"></i>
-						<span> 正在提交...</span>
-					</span>
-					<span class="succeeded">
-						<i class="fa fa-mr fa-info-circle"></i>
-						<span></span>
-					</span>
-					<span class="failed">
-						<i class="fa fa-mr fa-info-circle"></i>
-						<span></span>
-					</span>
+					&nbsp;<span id="submitting-status"><span>
 				</div>
 			</form>
 		</div>
@@ -134,19 +112,6 @@ $.post(
 	}
 );
 
-// 评论框
-$('#comment-form-div').keyup(function(e){
-	if(e.keyCode==27) {
-		if($('#comment-form-div .comment-form-div-data input[name="maximized"]').val() === 'true'){
-			$('#comment-content').val($('#comment-content-2').val());
-			$('#comment-content-2').hide();
-			$('#comment-form-div .comment-form-div-1').show();
-			$('#comment-form-div .comment-form-div-data input[name="maximized"]').val('false');
-		} else {
-			$(this).fadeOut();
-		}
-	}
-});
 // 无公害评论内容
 function sanitize_content(c) {
     c = c.replace(/&/g, '&amp;');
@@ -195,7 +160,7 @@ function comment_item(cmt) {
 
 	s += '<span class="date">' + comment_friendly_date(cmt.date) + '</span>\n</div>\n';
 	s += '<div class="comment-content">' + sanitize_content(cmt.content) + '</div>\n';
-	s += '<div class="reply-to" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment_reply_to('+cmt.id+');return false;">回复</a></div>';
+	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment_reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';
 
 	return s;
@@ -246,13 +211,13 @@ function comment_append_children(ch, p) {
 }
 
 // 加载按钮
-$('#load-comments .load').click(function() {
+$('#load-comments').click(function() {
 	if($(this).attr('loading') === 'true')
 		return;
 
 	var load = this;
 	$(this).attr('loading', 'true');
-	$('#load-comments .loading').show();
+	$('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
 	$.post(
 		'/admin/comment.php',
 		'do=get-cmt&count=5&offset=' + cmt_loaded
@@ -270,12 +235,12 @@ $('#load-comments .load').click(function() {
 				ch_count += cmts[i].children.length;
 			}
 
-			$('#load-comments .loading').hide();
+			$('#loading-status').text('');
 
 			if(cmts.length == 0) {
-				$('#load-comments .none').show();
+				$('#loading-status').html('<i class="fa fa-info-circle"></i><span>没有了！</span>');
 				setTimeout(function(){
-						$('#load-comments .none').hide();
+						$('#loading-status').text('');
 					},
 					1500
 				);
@@ -294,14 +259,14 @@ $('#load-comments .load').click(function() {
 	},1500));
 });
 
-$('#load-comments .load').click();
+$('#load-comments').click();
 
 // Ajax评论提交
 $('#comment-submit').click(function() {
 	var timeout = 1500;
 
 	$(this).attr('disabled', 'disabled');
-	$('#comment-form .comment-submit .submitting').show();
+	$('#submitting-status').html('<i class="fa fa-spin fa-spinner"></i>正在提交...');
 	$.post(
 		$('#comment-form')[0].action,
 		$('#comment-form').serialize()+'&return_cmt=1',
@@ -319,43 +284,30 @@ $('#comment-submit').click(function() {
 				}
 				$('#comment-'+data.cmt.id).fadeIn();
 				$('#comment-content').val('');
-				$('#comment-form .comment-submit .succeeded span').text('评论成功！');
-				$('#comment-form .comment-submit .succeeded').show();
+				$('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>评论成功！');
 				setTimeout(function() {
 						$('#comment-form-div').fadeOut();
-						$('#comment-form .comment-submit .succeeded').hide();
+						$('#submitting-status').text('');
 					},
 					timeout
 				);
 			} else {
-				console.log(data.error);
-				$('#comment-form .comment-submit .failed span').text(data.error);
-				$('#comment-form .comment-submit .failed').show();
+				$('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>' + data.error);
 				setTimeout(function() {
-						$('.form-submit .failed').hide();
+						$('#submitting-status').text('');
 					},
 					timeout
 				);
 			}
-
-			$('#comment-form .comment-submit .submitting').hide();
 		},
 		'json'
 	)
 	.fail(function(xhr, sta, e){
-		$('#comment-form .comment-submit .submitting').hide();
-		var info = $('#comment-form .comment-submit .failed span');
-		if(xhr.status == '409'){
-			info.text('请不要过快地提交，或提交相同的评论！');
-		} else {
-			info.text('未知错误！');
-		}
-		$('#comment-form .comment-submit .failed').show();
+		$('#submitting-status').text('未知错误！');
 	})
 	.always(setTimeout(function(){
-			$('#comment-form .comment-submit .submitting').hide();
+			$('#submitting-status').text('');
 			$('#comment-submit').removeAttr('disabled');
-			$('#comment-form .comment-submit .failed').hide();
 		},
 		timeout
 	));

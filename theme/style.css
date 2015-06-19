@@ -551,29 +551,6 @@ h6 { font-size: 1.0em; }
 	margin: 2em;
 }
 
-/* 加载评论 & 发表评论 */
-#load-comments .loading {
-	display: none;
-	color: red;
-}
-
-#load-comments .none {
-	display: none;
-	color: green;
-}
-
-#load-comments .load, #post-comment .post-comment {
-	padding: 6px;
-	cursor: pointer;
-	border: none;
-	color: white;
-	background-color: rgba(60,60,60,0.5);
-}
-
-#load-comments .load:hover, #post-comment .post-comment:hover {
-	background-color: rgba(200,30,30,0.8);
-}
-
 .comment-meta .nickname, .comment-meta .author {
 	font-size: 1.1em;
 	position: relative;
@@ -601,6 +578,9 @@ h6 { font-size: 1.0em; }
 }
 
 /* 评论发表框 */
+#submitting-status {
+	color: white;
+}
 
 /* 常规模式 */
 #comment-form-div.normal {
@@ -667,6 +647,7 @@ h6 { font-size: 1.0em; }
 	text-align: center;
 	font-size: 2em;
 	color: white;
+	cursor: default;
 }
 
 /* 必填项 */
