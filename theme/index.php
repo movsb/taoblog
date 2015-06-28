@@ -11,7 +11,7 @@ function the_recent_posts() {
 		echo '<h2>近期文章: </h2>',PHP_EOL;
 		echo '<ul style="font-size: 1.2em; list-style: none;">';
 		foreach($posts as &$p) {
-			$link = $p->type == 'post' ? the_post_link($p) : the_page_link($p);
+			$link = the_link($p);
 			echo '<li><a href="'.$link.'">',$p->title,'</a></li>',"\n";
 		}
 		echo '</ul>';

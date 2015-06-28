@@ -157,7 +157,7 @@ class TB_Query {
 		$this->pagenum = (int)ceil($this->total / $this->posts_per_page);
 
 		if($need_redirect && $this->count) {
-			$link = the_post_link($this->objs[0]);
+			$link = the_link($this->objs[0]);
 			header('HTTP/1.1 301 Moved Permanently');
 			header('Location: '.$link);
 			die(0);

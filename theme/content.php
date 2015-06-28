@@ -16,7 +16,7 @@
 		<?php } ?>
 		<?php if($logged_in) { ?>
 		<span class="item edit-post">
-			<i class="fa fa-mr fa-pencil"></i><span><?php echo the_edit_post_link($the);?></span>
+			<i class="fa fa-mr fa-pencil"></i><span><?php echo the_edit_link($the);?></span>
 		</span>
 		<?php } ?>
 		<script>

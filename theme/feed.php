@@ -28,7 +28,7 @@ function feed_body() {
 
 	while($tbquery->has()) {
 		$the = $tbquery->the();
-		$link = the_post_link($the);
+		$link = the_link($the);
 ?>		<item>
 			<title><?php echo htmlspecialchars($the->title); ?></title>
 			<link><?php echo htmlspecialchars($link); ?></link>

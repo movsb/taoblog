@@ -165,7 +165,7 @@ DOM;
 					</div>
 				</div>
 				<?php if($p) {
-					$link = $p->type=='post' ? the_post_link($p) : the_page_link($p);
+					$link = the_link($p);
 				?>
 				<div class="permanlink" style="margin-bottom: 1em;">
 					<span>固定链接：</span>

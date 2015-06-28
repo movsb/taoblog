@@ -1,25 +1,28 @@
 <?php
 
-function the_post_link(&$p, $home=true) {
+function the_link(&$p, $home=true) {
 	global $tbopt;
 	global $tbtax;
-	
-	$home = $home ? $tbopt->get('home') : '';
-	$cats = implode('/', $tbtax->tree_from_id($p->taxonomy)['slug']);
-	$slug = $p->slug;
-
-	return $home.'/'.$cats.'/'.$slug.'.html';
-}
-
-function the_page_link(&$p, $home=true) {
 	global $tbopt;
 
 	$home = $home ? $tbopt->get('home') : '';
+	$link = '';
 
-	return $home.'/'.$p->slug;
+	if($p->type === 'post') {
+		$cats = implode('/', $tbtax->tree_from_id($p->taxonomy)['slug']);
+		$slug = $p->slug;
+
+		$link = $home.'/'.$cats.'/'.$slug.'.html';
+	} else if($p->type === 'page') {
+		$link = $home.'/'.$p->slug;
+	} else {
+		$link = '/';
+	}
+
+	return $link;
 }
 
-function the_edit_post_link(&$p, $ret_anchor = true) {
+function the_edit_link(&$p, $ret_anchor = true) {
 	$link = '/admin/post.php?do=edit&id='.(int)$p->id.'&type='.$p->type;
 
 	return $ret_anchor
