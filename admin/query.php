@@ -88,11 +88,12 @@ class TB_Query {
 			return false;
 
 		$rules = [
+			'^/(\d+)(/)?$'									=> 'short=1&id=$1&slash=$2',
 			'^/archives/(\d+)\.html$'						=> 'id=$1',
 			'^/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'		=> 'yy=$2&mm=$4&pageno=$6',
-			'^/(.+)/([^/]+)\.html$'							=> 'tax=$1&slug=$2',
+			'^/(.+)/([^/]+)\.html$'							=> 'long=1&tax=$1&slug=$2',
 			'^/(feed|rss)(\.xml)?$'							=> 'feed=1',
-			'^/([0-9a-zA-Z\-_]+)$'								=> 'slug=$1',
+			'^/([0-9a-zA-Z\-_]+)$'							=> 'slug=$1',
 			'^/(.+)/(page/(\d+))?$'							=> 'tax=$1&pageno=$3',
 			'^/index\.php$'									=> '',
 			'^/$'											=> '',
@@ -130,6 +131,18 @@ class TB_Query {
 		}
 
 		$this->internal_query = array_merge($this->internal_query, parse_query_string($u, false, false));
+
+		// 把长链接301到短链接
+		if(isset($this->internal_query['long'])) {
+			$need_redirect = true;
+		}
+
+		// 把类似 "/1234" 重定向到 "/12324/"
+		if(isset($this->internal_query['short']) && !$this->internal_query['slash']) {
+			header('HTTP/1.1 301 Moved Permanently');
+			header('Location: /'.$this->internal_query['id'].'/');
+			die(0);
+		}
 
 		// 处理RSS
 		if($this->is_query_modification && isset($this->internal_query['feed'])) {

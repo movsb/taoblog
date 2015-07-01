@@ -9,10 +9,7 @@ function the_link(&$p, $home=true) {
 	$link = '';
 
 	if($p->type === 'post') {
-		$cats = implode('/', $tbtax->tree_from_id($p->taxonomy)['slug']);
-		$slug = $p->slug;
-
-		$link = $home.'/'.$cats.'/'.$slug.'.html';
+		$link = $home.'/'.$p->id.'/';
 	} else if($p->type === 'page') {
 		$link = $home.'/'.$p->slug;
 	} else {

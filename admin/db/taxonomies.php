@@ -247,7 +247,7 @@ class TB_Taxonomies {
 		}
 
 		$rows = $tbdb->query($sql);
-		if(!$rows) return false;
+		if(!$rows || !$rows->num_rows) return false;
 
 		return $rows->fetch_object()->id;
 	}
