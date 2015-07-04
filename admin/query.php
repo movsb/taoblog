@@ -90,7 +90,7 @@ class TB_Query {
 		$rules = [
 			'^/(\d+)(/)?$'									=> 'short=1&id=$1&slash=$2',
 			'^/archives/(\d+)\.html$'						=> 'id=$1',
-			'^/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'		=> 'yy=$2&mm=$4&pageno=$6',
+			'^/date/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'		=> 'yy=$2&mm=$4&pageno=$6',
 			'^/(.+)/([^/]+)\.html$'							=> 'long=1&tax=$1&slug=$2',
 			'^/(feed|rss)(\.xml)?$'							=> 'feed=1',
 			'^/([0-9a-zA-Z\-_]+)$'							=> 'slug=$1',

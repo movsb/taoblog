@@ -57,8 +57,8 @@ function the_meta_date() {
 
 	$dd = preg_split('/-/', preg_split('/ /', $the->date)[0]);;
 
-	$link  = '<a target="_blank" href="/'.$dd[0].'/">'.$dd[0].'</a>-';
-	$link .= '<a target="_blank" href="/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>-';
+	$link  = '<a target="_blank" href="/date/'.$dd[0].'/">'.$dd[0].'</a>-';
+	$link .= '<a target="_blank" href="/date/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>-';
 	$link .= $dd[2];
 
 	return $link;
