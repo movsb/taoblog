@@ -109,9 +109,12 @@ h6 { font-size: 1.0em; }
 		top: 0px;
 		bottom: 0px;
 		width: 300px;
-		padding: 10px;
 		background-color: rgb(0,121,116);
 		overflow: auto;
+	}
+
+	#header-wrapper {
+		padding: 10px;
 	}
 
 	#header .mobile {
@@ -126,11 +129,14 @@ h6 { font-size: 1.0em; }
 		position: fixed;
 		left: 0px;
 		top: 0px;
-		height: 60px;
+		height: 40px;
 		width: 100%;
-		padding: 5px;
 		background-color: rgb(0,121,116);
 		box-shadow: 0px 0px 3px;
+	}
+
+	#header-wrapper {
+		padding: 5px;
 	}
 
 	#header .desktop {
@@ -143,15 +149,16 @@ h6 { font-size: 1.0em; }
 	padding: 0px;
 	margin: 0px;
 	position: relative;
-	top: -14px;
+	top: -8px;
 	color: white;
 	cursor: pointer;
+	font-size: 20px;
 }
 
 #header .mobile .me {
-	height: 50px;
-	width: 50px;
-	border-radius: 25px;
+	height: 30px;
+	width: 30px;
+	border-radius: 15px;
 	cursor: pointer;
 }
 
@@ -159,7 +166,7 @@ h6 { font-size: 1.0em; }
 	display: inline;
 	float: right;
 	position: relative;
-	top: 12px;
+	top: 3px;
 }
 
 #header .mobile .social i {
@@ -214,7 +221,7 @@ h6 { font-size: 1.0em; }
 
 @media screen and (max-width: 850px) {
 	#wrapper {
-		margin-top: 60px;
+		margin-top: 30px;
 	}
 }
 
@@ -301,7 +308,16 @@ h6 { font-size: 1.0em; }
 	display: block;
 	color: #292929;
 	text-align: justify;
-	padding: 0px 15px 16px 15px;
+}
+@media screen and (max-width: 850px) {
+	.entry {
+		padding: 0px 0px 16px;
+	}
+}
+@media screen and (min-width: 851px) {
+	.entry {
+		padding: 0px 15px 16px;
+	}
 }
 
 .entry pre {

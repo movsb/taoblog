@@ -45,64 +45,66 @@
 <body>
 <div id="wrapper">
 	<header id="header">
-		<div class="desktop">
-			<section id="head">
-				<div class="center">
-					<img class="me home-a" src="/theme/images/me.png" />
-					<h1 class="home-a"><?php echo $blog_name; ?></h1>
-					<script>
-						$('.home-a').click(function() {
-							location.href = location.protocol + '//' + location.host;
-						});
-					</script>
-					<div class="social" style="font-size: 2em;">
-						<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
-						<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
-						<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.8em; position: relative; top: -1px;"></i></a></span>
+		<div id="header-wrapper">
+			<div class="desktop">
+				<section id="head">
+					<div class="center">
+						<img class="me home-a" src="/theme/images/me.png" />
+						<h1 class="home-a"><?php echo $blog_name; ?></h1>
+						<script>
+							$('.home-a').click(function() {
+								location.href = location.protocol + '//' + location.host;
+							});
+						</script>
+						<div class="social" style="font-size: 2em;">
+							<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
+							<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
+							<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.8em; position: relative; top: -1px;"></i></a></span>
+						</div>
 					</div>
-				</div>
-			</section>
-			<div class="footer center" id="footer">
-				<div class="footer-wrapper">
-					<div class="column about">
-						<h3>ABOUT</h3>
-						<ul>
-							<li><a href="/blog">关于博客</a></li>
-							<li><a href="/echo">建议反馈</a></li>
-							<li><a href="/about">关于我</a></li>
-							<li><a target="_blank" href="<?php echo $tbopt->get('home'),'/rss'; ?>">订阅博客</a></li>
-						</ul>
+				</section>
+				<div class="footer center" id="footer">
+					<div class="footer-wrapper">
+						<div class="column about">
+							<h3>ABOUT</h3>
+							<ul>
+								<li><a href="/blog">关于博客</a></li>
+								<li><a href="/echo">建议反馈</a></li>
+								<li><a href="/about">关于我</a></li>
+								<li><a target="_blank" href="<?php echo $tbopt->get('home'),'/rss'; ?>">订阅博客</a></li>
+							</ul>
+						</div>
+						<div class="column links">
+							<h3>LINKS</h3>
+							<ul>
+								<li><a title="自学去 - 一个免费的自学网站~" target="_blank" href="http://www.zixue7.com">自学去</a></li>
+								<li><a title="小谢的博客" target="_blank" href="http://memorycat.com">小写adc</a></li>
+								<li><a title="网事如风的博客" target="_blank" href="http://godebug.org">网事如风</a></li>
+								<li><a title="道不行-技术、文学、评论、吐槽" target="_blank" href="http://www.daobuxing.com">道不行</a></li>
+							</ul>
+						</div>
 					</div>
-					<div class="column links">
-						<h3>LINKS</h3>
-						<ul>
-							<li><a title="自学去 - 一个免费的自学网站~" target="_blank" href="http://www.zixue7.com">自学去</a></li>
-							<li><a title="小谢的博客" target="_blank" href="http://memorycat.com">小写adc</a></li>
-							<li><a title="网事如风的博客" target="_blank" href="http://godebug.org">网事如风</a></li>
-							<li><a title="道不行-技术、文学、评论、吐槽" target="_blank" href="http://www.daobuxing.com">道不行</a></li>
-						</ul>
+				</div><!-- footer -->
+				<div class="copy center">
+					<div class="copyright mb">
+						<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>
 					</div>
-				</div>
-			</div><!-- footer -->
-			<div class="copy center">
-				<div class="copyright mb">
-					<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>
 				</div>
 			</div>
-		</div>
-		<div class="mobile">
-			<img class="me home-a" src="/theme/images/me.png" />
-			<h1 class="home-a"><?php echo $blog_name; ?></h1>
-			<div class="social" style="font-size: 2em;">
-				<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
-				<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
-				<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.78em; position: relative; top: -2px;"></i></a></span>
+			<div class="mobile">
+				<img class="me home-a" src="/theme/images/me.png" />
+				<h1 class="home-a"><?php echo $blog_name; ?></h1>
+				<div class="social" style="font-size: 2em;">
+					<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
+					<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
+					<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.78em; position: relative; top: -2px;"></i></a></span>
+				</div>
+				<script>
+					$('.home-a').click(function() {
+						location.href = location.protocol + '//' + location.host;
+					});
+				</script>
 			</div>
-			<script>
-				$('.home-a').click(function() {
-					location.href = location.protocol + '//' + location.host;
-				});
-			</script>
 		</div>
 	</header>
 
