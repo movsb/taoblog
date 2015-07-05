@@ -101,15 +101,19 @@ h6 { font-size: 1.0em; }
 
 /* 头部 */
 
+#header {
+	box-sizing: border-box;
+	position: fixed;
+	left: 0px;
+	top: 0px;
+	background-color: rgb(0,121,116);
+	z-index: 100;
+}
+
 @media screen and (min-width: 851px) {
 	#header {
-		box-sizing: border-box;
-		position: fixed;
-		left: 0px;
-		top: 0px;
 		bottom: 0px;
 		width: 300px;
-		background-color: rgb(0,121,116);
 		overflow: auto;
 	}
 
@@ -125,13 +129,8 @@ h6 { font-size: 1.0em; }
 
 @media screen and (max-width: 850px) {
 	#header {
-		box-sizing: border-box;
-		position: fixed;
-		left: 0px;
-		top: 0px;
 		height: 40px;
 		width: 100%;
-		background-color: rgb(0,121,116);
 		box-shadow: 0px 0px 3px;
 	}
 
@@ -270,8 +269,8 @@ h6 { font-size: 1.0em; }
 	float: left;
 	margin: 0px 0px 10px;
 	padding: 0.4em 0.5em 0px;
-	font-size: 2.5em;
-	color: #464646;
+	font-size: 2em;
+	color: #9f4545;
 }
 
 /* 文章元数据 */
@@ -301,6 +300,12 @@ h6 { font-size: 1.0em; }
 
 .post .meta .author {
 	display: none;
+}
+
+@media screen and (max-width: 600px) {
+	.post .meta .label {
+		display: none;
+	}
 }
 
 /* 文章内容 */
@@ -346,11 +351,10 @@ h6 { font-size: 1.0em; }
 .entry .line-code {
 	display: inline;
 	font-family: Consolas, monospace;
-	padding-left: 3px;
-	padding-right: 3px;
-	margin-left: 3px;
-	margin-right: 3px;
-	border: 1px solid gray;
+	padding: 5px;
+	margin: 0px 3px;
+	border: 1px solid rgb(201,163,163);
+	border-radius: 3px;
 }
 
 .entry .same-height {

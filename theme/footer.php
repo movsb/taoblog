@@ -15,13 +15,13 @@
 	<script>
 		window.onscroll = function() {
 			if(window.scrollY > 160) {
-					$("#back-to-top").fadeIn(500);
-				} else {
-					$("#back-to-top").fadeOut(500);
-				}
-			};
+				$("#back-to-top").fadeIn(500);
+			} else {
+				$("#back-to-top").fadeOut(500);
+			}
+		};
 		$('#back-to-top').click(function(){
-			$('html').animate({
+			$('html,body').animate({
 				scrollTop: 0
 			}, 300);
 		});
