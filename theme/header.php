@@ -80,7 +80,6 @@
 								<li><a title="自学去 - 一个免费的自学网站~" target="_blank" href="http://www.zixue7.com">自学去</a></li>
 								<li><a title="小谢的博客" target="_blank" href="http://memorycat.com">小写adc</a></li>
 								<li><a title="网事如风的博客" target="_blank" href="http://godebug.org">网事如风</a></li>
-								<li><a title="道不行-技术、文学、评论、吐槽" target="_blank" href="http://www.daobuxing.com">道不行</a></li>
 							</ul>
 						</div>
 					</div>

@@ -108,6 +108,7 @@ h6 { font-size: 1.0em; }
 	top: 0px;
 	background-color: rgb(0,121,116);
 	z-index: 100;
+	transition: left 0.5s ease;
 }
 
 @media screen and (min-width: 851px) {
@@ -124,7 +125,6 @@ h6 { font-size: 1.0em; }
 	#header .mobile {
 		display: none;
 	}
-
 }
 
 @media screen and (max-width: 850px) {
@@ -139,6 +139,10 @@ h6 { font-size: 1.0em; }
 	}
 
 	#header .desktop {
+		display: none;
+	}
+
+	#footer-toolbar .reading-mode {
 		display: none;
 	}
 }
@@ -227,6 +231,7 @@ h6 { font-size: 1.0em; }
 @media screen and (min-width: 851px) {
 	#main {
 		margin-left: 300px;
+		transition: margin-left 0.5s;
 	}
 }
 
@@ -953,15 +958,44 @@ h6 { font-size: 1.0em; }
 	}
 }
 
+/* 底部工具栏 */
+.footer-toolbar {
+	position: fixed;
+	right: 10px;
+	bottom: 10px;
+	box-sizing: border-box;
+}
+
+#tips {
+	position: fixed;
+	right: 10px;
+	top: 10px;
+	max-width: 200px;
+	padding: 1em;
+	border: 1px solid #f66;
+	border-radius: 4px;
+	background-color: rgba(255,100,100,0.93);
+	color: white;
+	z-index: 1000;
+	display: none;
+}
+
+/* 阅读模式 */
+.reading-mode {
+	font-size: 30px;
+	height: 30px;
+	cursor: pointer;
+}
 
 /* 回到顶部 */
 .back-to-top {
 	display: none;
-	box-sizing: border-box;
-	position: fixed;
-	right: 10px;
-	bottom: 10px;
 	font-size: 30px;
+	height: 30px;
 	cursor: pointer;
+}
+
+.back-to-top:hover {
+	color: #f66;
 }
 
