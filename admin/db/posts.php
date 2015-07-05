@@ -45,12 +45,15 @@ class TB_Posts {
 			return false;
 		}
 
-		if(!$arg['modified']) {
-			$arg['modified'] = $tbdate->mysql_datetime_local();
+		$modified = &$arg['modified'];
+		if(!$modified) {
+			$modified = $tbdate->mysql_datetime_local();
+		} else if($modified === '-') {
+			$modified = '';
 		}
 
 		if($arg['date'] && !$tbdate->is_valid_mysql_datetime($arg['date']) 
-			|| !$tbdate->is_valid_mysql_datetime($arg['modified'])) 
+			|| $modified && !$tbdate->is_valid_mysql_datetime($modified)) 
 		{
 			$this->error = '无效的时间格式!';
 			return false;
@@ -61,31 +64,62 @@ class TB_Posts {
 		if($arg['modified']) $arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		if($arg['date_gmt']) {
-			$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
-			if($stmt = $tbdb->prepare($sql)){
-				if($stmt->bind_param('sssssii',
-					$arg['date_gmt'],$arg['modified_gmt'],
-					$arg['title'], $arg['content'],$arg['slug'],
-					$arg['taxonomy'], $arg['id']))
-				{
-					$r = $stmt->execute();
-					$stmt->close();
+			if($arg['modified']) {
+				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				if($stmt = $tbdb->prepare($sql)){
+					if($stmt->bind_param('sssssii',
+						$arg['date_gmt'],$arg['modified_gmt'],
+						$arg['title'], $arg['content'],$arg['slug'],
+						$arg['taxonomy'], $arg['id']))
+					{
+						$r = $stmt->execute();
+						$stmt->close();
 
-					if($r) return $r;
-				} 
+						if($r) return $r;
+					} 
+				}
+			} else {
+				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				if($stmt = $tbdb->prepare($sql)){
+					if($stmt->bind_param('ssssii',
+						$arg['date_gmt'],
+						$arg['title'], $arg['content'],$arg['slug'],
+						$arg['taxonomy'], $arg['id']))
+					{
+						$r = $stmt->execute();
+						$stmt->close();
+
+						if($r) return $r;
+					} 
+				}
 			}
 		} else {
-			$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
-			if($stmt = $tbdb->prepare($sql)){
-				if($stmt->bind_param('ssssii',
-					$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
-					$arg['taxonomy'], $arg['id']))
-				{
-					$r = $stmt->execute();
-					$stmt->close();
+			if($arg['modified']) {
+				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				if($stmt = $tbdb->prepare($sql)){
+					if($stmt->bind_param('ssssii',
+						$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
+						$arg['taxonomy'], $arg['id']))
+					{
+						$r = $stmt->execute();
+						$stmt->close();
 
-					if($r) return $r;
-				} 
+						if($r) return $r;
+					} 
+				}
+			} else {
+				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				if($stmt = $tbdb->prepare($sql)){
+					if($stmt->bind_param('sssii',
+						$arg['title'], $arg['content'],$arg['slug'],
+						$arg['taxonomy'], $arg['id']))
+					{
+						$r = $stmt->execute();
+						$stmt->close();
+
+						if($r) return $r;
+					} 
+				}
 			}
 		}
 
