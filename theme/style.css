@@ -349,7 +349,9 @@ h6 { font-size: 1.0em; }
 }
 
 .entry .line-code {
+	white-space: pre-wrap;
 	display: inline;
+	line-height: 2em;
 	font-family: Consolas, monospace;
 	padding: 5px;
 	margin: 0px 3px;
