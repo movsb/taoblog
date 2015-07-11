@@ -9,6 +9,8 @@ function theme_gen_pagination() {
 	$start = max(1, $pageno-5);
 	$end = min($pagenum, $pageno + 5);
 
+	echo '<div class="pagination no-sel">',"\n";
+
 	if($pageno > 1) echo '<a href="'.($pageno-1).'" class="page-number">上一页</a>';
 
 		for($i=$start; $i < $pageno; $i++) {

@@ -3,6 +3,10 @@
 require('header.php');
 ?>
 <div class="query category-query">
+	<h2><?php
+		$names = $tbquery->category['name'];
+		echo '分类 `',implode(',', $names),'` 下的归档：';
+	?></h2>
 	<ul class="item-list">
 <?php
 while($tbquery->has()){
@@ -15,7 +19,7 @@ while($tbquery->has()){
 } ?>
 	</ul>
 </div>
-<div class="pagination">
+
 <?php theme_gen_pagination();
 
 require('footer.php');

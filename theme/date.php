@@ -3,6 +3,11 @@
 require('header.php');
 ?>
 <div class="query date-query">
+	<h2><?php
+		if($tbquery->date->yy) echo $tbquery->date->yy,'年';
+		if($tbquery->date->mm) echo $tbquery->date->mm,'月';
+		echo '的归档（第',$tbquery->pageno,'页）：';
+	?></h2>
 	<ul class="item-list">
 <?php
 while($tbquery->has()){
@@ -23,7 +28,7 @@ while($tbquery->has()){
 } ?>
 	</ul>
 </div>
-<div class="pagination">
+
 <?php theme_gen_pagination();
 
 require('footer.php');
