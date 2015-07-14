@@ -31,6 +31,8 @@ if($tbquery->is_home()) {
 	require('theme/category.php');
 } else if($tbquery->is_date()) {
 	require('theme/date.php');
+} else if($tbquery->is_tag()) {
+	require('theme/tag.php');
 } else if($tbquery->is_feed()) {
 	require('theme/feed.php');
 }

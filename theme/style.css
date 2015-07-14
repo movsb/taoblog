@@ -245,21 +245,18 @@ h6 { font-size: 1.0em; }
 	padding: 0px 10px;
 }
 
-.date-query ul.item-list,
-.category-query ul.item-list {
+.query ul.item-list {
 	list-style: none;
 	line-height: 2.5em;
 	padding: 0px;
 }
 
-.date-query ul.item-list .item h2,
-.category-query ul.item-list .item h2 {
+.query ul.item-list .item h2 {
 	margin: 0px;
 	font-size: 1.4em;
 }
 
-.date-query ul.item-list .item h2 .thedate,
-.category-query ul.item-list .item h2 .thedate {
+.query ul.item-list .item h2 .thedate {
 	margin-left: 0.5em;
 	font-size: 0.5em;
 }

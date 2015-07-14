@@ -47,6 +47,10 @@ class TB_Query {
 		return $this->type === 'date';
 	}
 
+	public function is_tag() {
+		return $this->type === 'tag';
+	}
+
 	public function is_404() {
 		return $this->type === '404';
 	}
@@ -90,8 +94,9 @@ class TB_Query {
 		$rules = [
 			'^/(\d+)(/)?$'									=> 'short=1&id=$1&slash=$2',
 			'^/archives/(\d+)\.html$'						=> 'id=$1',
-			'^/date/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'		=> 'yy=$2&mm=$4&pageno=$6',
+			'^/date/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'	=> 'yy=$2&mm=$4&pageno=$6',
 			'^/(.+)/([^/]+)\.html$'							=> 'long=1&tax=$1&slug=$2',
+			'^/tags/(.+)$'									=> 'tags=$1',
 			'^/(feed|rss)(\.xml)?$'							=> 'feed=1',
 			'^/([0-9a-zA-Z\-_]+)$'							=> 'slug=$1',
 			'^/(.+)/(page/(\d+))?$'							=> 'tax=$1&pageno=$3',

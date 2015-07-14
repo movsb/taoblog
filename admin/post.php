@@ -37,9 +37,24 @@ function post_widget_tax($p=null) {
 
 add_hook('post_widget', 'post_widget_tax');
 
+function post_widget_tag($p=null) {
+	$tag = $p ? join(',', $p->tag_names) : '';
+
+	$title = '标签';
+	$classname = 'tags';
+	$types = 'post';
+	$content = <<<EOD
+<input type="text" name="tags" value="$tag" />
+EOD;
+
+	return compact('title', 'classname', 'types', 'content');
+}
+
+add_hook('post_widget', 'post_widget_tag');
+
 function post_widget_slug($p=null) {
 	return [
-		'title' => 'Slug',
+		'title' => '别名',
 		'content' => '<input type="text" name="slug" value="'.($p ? htmlspecialchars($p->slug) : '').'" />',
 		];
 }

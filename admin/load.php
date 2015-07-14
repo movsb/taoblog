@@ -16,6 +16,7 @@ require_once('db/options.php');
 require_once('db/posts.php');
 require_once('db/taxonomies.php');
 require_once('db/comments.php');
+require_once('db/tags.php');
 
 require_once('query.php');
 require_once('canonical.php');
@@ -28,6 +29,7 @@ $tbtax = new TB_Taxonomies;
 $tbcmts = new TB_Comments;
 $tbquery = new TB_Query;
 $tbdate = new TB_DateTime;
+$tbtag = new TB_Tags;
 
 date_default_timezone_set('Asia/Chongqing');
 

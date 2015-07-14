@@ -89,5 +89,26 @@ if(!$my->query($sql)) {
 	tb_die(200, '无法创建表：post_metas - '.$my->error);
 }
 
+// 创建表 tag标签/post_tags
+$sql = "CREATE TABLE IF NOT EXISTS tags (
+	`id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	PRIMARY KEY(`id`),
+	UNIQUE KEY(`name`)
+	);";
+if(!$my->query($sql)) {
+	tb_die(200, '无法创建表：tags - '.$my->error);
+}
+
+$sql = "CREATE TABLE IF NOT EXISTS post_tags (
+	`id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`post_id` INT(20) UNSIGNED NOT NULL,
+	`tag_id` INT(20) UNSIGNED NOT NULL,
+	PRIMARY KEY(`id`)
+	);";
+if(!$my->query($sql)) {
+	tb_die(200, '无法创建表：post_tags - '.$my->error);
+}
+
 tb_die(200, '操作成功！');
 

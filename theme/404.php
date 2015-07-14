@@ -19,6 +19,12 @@
 					} else {
 						echo '此时段不存在相关文章。';
 					}
+				} else if($tbquery->is_tag()) {
+					if($tbquery->pagenum && $tbquery->pageno > $tbquery->pagenum) {
+						echo '没有这么多页的文章！';
+					} else {
+						echo '此标签下不存在相关文章。';
+					}
 				}
 			?></span>
 		</div>

@@ -7,6 +7,7 @@ class TB_Posts {
 		global $tbdb;
 		global $tbdate;
 		global $tbtax;
+		global $tbtag;
 
 		$def = [
 			'id'		=> 0,
@@ -63,6 +64,8 @@ class TB_Posts {
 		if($arg['date']) $arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
 		if($arg['modified']) $arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
+		$succeed = false;
+
 		if($arg['date_gmt']) {
 			if($arg['modified']) {
 				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
@@ -75,7 +78,7 @@ class TB_Posts {
 						$r = $stmt->execute();
 						$stmt->close();
 
-						if($r) return $r;
+						if($r) $succeed = true;;
 					} 
 				}
 			} else {
@@ -89,7 +92,7 @@ class TB_Posts {
 						$r = $stmt->execute();
 						$stmt->close();
 
-						if($r) return $r;
+						if($r) $succeed = true;;
 					} 
 				}
 			}
@@ -104,7 +107,7 @@ class TB_Posts {
 						$r = $stmt->execute();
 						$stmt->close();
 
-						if($r) return $r;
+						if($r) $succeed = true;;
 					} 
 				}
 			} else {
@@ -117,21 +120,26 @@ class TB_Posts {
 						$r = $stmt->execute();
 						$stmt->close();
 
-						if($r) return $r;
+						if($r) $succeed = true;;
 					} 
 				}
 			}
 		}
 
-		$this->error = $stmt->error;
-
-		return false;
+		if($succeed) {
+			$tbtag->update_post_tags((int)$arg['id'], $arg['tags']);
+			return true;
+		} else {
+			$this->error = $stmt->error;
+			return false;
+		}
 	}
 
 	public function insert(&$arg){
 		global $tbdb;
 		global $tbdate;
 		global $tbtax;
+		global $tbtag;
 
 		$def = [
 			'date' => '',
@@ -143,7 +151,8 @@ class TB_Posts {
 			'taxonomy' => 1,
 			'status' => 'public',
 			'comment_status' => 1,
-			'password' => ''
+			'password' => '',
+			'tags' => '',
 		];
 
 		$arg = tb_parse_args($def, $arg);
@@ -205,7 +214,12 @@ class TB_Posts {
 				$r = $stmt->execute();
 				$stmt->close();
 
-				if($r) return $tbdb->insert_id;
+				if($r) {
+					$iid = $tbdb->insert_id;
+
+					$tbtag->update_post_tags($iid, $arg['tags']);
+					return $iid;
+				}
 			} 
 		}
 
@@ -228,6 +242,7 @@ class TB_Posts {
 			'modified' => false,
 			'feed' => '',
 			'no_content' => false,
+			'tags' => '',
 			];
 
 		$arg = tb_parse_args($defs, $arg);
@@ -280,6 +295,9 @@ class TB_Posts {
 			unset($arg);
 			$arg = ['pageno' => '1', 'yy'=>'', 'mm'=>'', 'no_content'=>false];
 			$queried_posts = $this->query_by_date($arg);
+		} else if($arg['tags']) {
+			$tbquery->type = 'tag';
+			$queried_posts = $this->query_by_tags($arg);
 		} else {
 			$tbquery->type = 'home';
 			$queried_posts = [];
@@ -294,6 +312,8 @@ class TB_Posts {
 				$p->date = $tbdate->mysql_datetime_to_local($p->date);
 			if(isset($p->modified))
 				$p->modified = $tbdate->mysql_datetime_to_local($p->modified);
+
+			$p->tag_names = $this->the_tag_names($p->id);
 		}
 
 		return $queried_posts;
@@ -314,6 +334,29 @@ class TB_Posts {
 
 		$p = [];
 		if($r = $rows->fetch_object()){
+			$p[] = $r;
+		}
+
+		return $p;
+	}
+
+	private function query_by_tags(&$arg) {
+		global $tbdb;
+		global $tbquery;
+		
+		$tags = $tbdb->real_escape_string($arg['tags']);
+		$tbquery->tags = $tags;
+		
+		$sql = "SELECT posts.* FROM posts,post_tags,tags ";
+		$sql .= " WHERE posts.id=post_tags.post_id AND post_tags.tag_id=tags.id AND tags.name='$tags'";
+
+		$results = $tbdb->query($sql);
+		if(!$results) return false;
+
+		$rows = $results;
+
+		$p = [];
+		while($r = $rows->fetch_object()) {
 			$p[] = $r;
 		}
 
@@ -532,6 +575,12 @@ class TB_Posts {
 
 		$r = $rows->fetch_object();
 		return $r;
+	}
+
+	private function &the_tag_names($id) {
+		global $tbtag;
+
+		return $tbtag->get_post_tag_names($id);
 	}
 
 }

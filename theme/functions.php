@@ -66,6 +66,19 @@ function the_meta_date() {
 	return $link;
 }
 
+function the_meta_tag() {
+	global $the;
+
+	$tags = &$the->tag_names;
+	$as = [];
+
+	foreach($tags as &$t) {
+		$as[] = '<a target="_blank" href="/tags/'.urlencode($t).'">'.$t.'</a>';
+	}
+
+	return join(', ', $as);
+}
+
 function today_english() {
 	$today = [];
 
