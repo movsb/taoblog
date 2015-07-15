@@ -583,5 +583,19 @@ class TB_Posts {
 		return $tbtag->get_post_tag_names($id);
 	}
 
+	public function &get_all_posts_id() {
+		global $tbdb;
+
+		$sql = "SELECT id FROM posts WHERE type='post' AND status='public' ORDER BY date DESC";
+
+		$ids = [];
+		$rows = $tbdb->query($sql);
+		if(!$rows) return $ids;
+		
+		while($r = $rows->fetch_object())
+			$ids[] = $r->id;
+
+		return $ids;
+	}
 }
 

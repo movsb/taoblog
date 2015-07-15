@@ -59,6 +59,10 @@ class TB_Query {
 		return $this->type === 'feed';
 	}
 
+	public function is_sitemap() {
+		return $this->type === 'sitemap';
+	}
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 10);
@@ -98,6 +102,7 @@ class TB_Query {
 			'^/(.+)/([^/]+)\.html$'							=> 'long=1&tax=$1&slug=$2',
 			'^/tags/(.+)$'									=> 'tags=$1',
 			'^/(feed|rss)(\.xml)?$'							=> 'feed=1',
+			'^/sitemap\.xml$'								=> 'sitemap=1',
 			'^/([0-9a-zA-Z\-_]+)$'							=> 'slug=$1',
 			'^/(.+)/(page/(\d+))?$'							=> 'tax=$1&pageno=$3',
 			'^/index\.php$'									=> '',
@@ -155,6 +160,12 @@ class TB_Query {
 				header('HTTP/1.1 304 Not Modified');
 				die(0);
 			}
+		}
+
+		// 处理 sitemap
+		if(isset($this->internal_query['sitemap'])) {
+			$this->type = 'sitemap';
+			return true;
 		}
 
 		$r = $tbpost->query($this->internal_query);
