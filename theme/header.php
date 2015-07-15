@@ -30,6 +30,9 @@
 
 		echo ' - ',$blog_name;
 	?></title>
+	<?php if($tbquery->is_home()) {
+		echo '<meta name="keywords" content="', $tbopt->get('keywords'), '" />', PHP_EOL;
+} ?>
 	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo $home,'/rss';?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="/theme/font-awesome-4.3.0/css/font-awesome.min.css" />
