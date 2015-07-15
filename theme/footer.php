@@ -1,4 +1,7 @@
 		</div><!-- content -->	
+		<script>
+			$('.entry img, .entry img').wrap('<div class="img-wrapper"/>');
+		</script>
 	</section>
 	<div id="mobile-footer">
 		<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>
@@ -6,10 +9,6 @@
 </div><!-- wrapper -->
 
 <?php apply_hooks('tb_footer'); ?>
-
-<div style="display: none;">
-	<script src="http://js.users.51.la/17768957.js"></script>
-</div>
 
 <div class="tips" id="tips">
 	<span></span>
@@ -82,6 +81,18 @@
 			});
 		</script>
 	</div>
+</div>
+<div style="display: none;">
+	<script src="http://js.users.51.la/17768957.js"></script>
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		ga('create', 'UA-65174773-1', 'auto');
+		ga('send', 'pageview');
+	</script>
 </div>
 </body>
 </html>
