@@ -241,5 +241,20 @@ class TB_Comments {
 		$r = $rows->fetch_object();
 		return $r;
 	}
+
+	public function &get_recent_comments() {
+		global $tbdb;
+
+		$cmts = [];
+
+		$sql = "SELECT * FROM comments ORDER BY date DESC LIMIT 10";
+		$rows = $tbdb->query($sql);
+		if(!$rows) return $cmts;
+
+		while($r = $rows->fetch_object())
+			$cmts[] = $r;
+
+		return $cmts;
+	}
 }
 

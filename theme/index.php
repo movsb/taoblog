@@ -18,10 +18,28 @@ function the_recent_posts() {
 	}
 }
 
+function the_recent_comments() {
+	global $tbcmts;
+	global $tbpost;
+
+	$cmts = $tbcmts->get_recent_comments();
+	if(is_array($cmts) && count($cmts)) {
+		echo '<h2>近期评论</h2>',PHP_EOL;
+		echo '<ul style="list-style: none;">';
+		foreach($cmts as $c) {
+			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
+			echo '<li style="margin-bottom: 8px;"><span style="color: green">',$c->author,'</span>: ',htmlspecialchars($c->content),
+				' --- 《','<a href="/',$c->post_id,'/">',$title,'</a>》','</li>',PHP_EOL;
+		}
+		echo '</ul>';
+	}
+}
+
 require('header.php');
 
 today_english();
 the_recent_posts();
+the_recent_comments();
 
 ?>
 
