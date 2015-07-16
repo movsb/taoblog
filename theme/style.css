@@ -478,6 +478,19 @@ h6 { font-size: 1.0em; }
 	margin-bottom: 0px;
 }
 
+/* 相关文章推荐 */
+.post .related h3 {
+	padding: 0.8em 0.8em 0px;
+	border-bottom: 1px solid #ccc;
+}
+
+.post .related ol {
+	padding-left: 4em;
+}
+
+.post .related a {
+	color: inherit;
+}
 
 /* 评论 */
 

@@ -270,6 +270,10 @@ class TB_Posts {
 		if($arg['id']){
 			$tbquery->type = 'post';
 			$queried_posts = $this->query_by_id($arg);
+			// 查询相关文章
+			if(count($queried_posts)) {
+				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
+			}
 		} else if($arg['slug']) {
 			if($arg['tax']) {
 				$tbquery->type = 'post';
@@ -596,6 +600,34 @@ class TB_Posts {
 			$ids[] = $r->id;
 
 		return $ids;
+	}
+
+	public function &get_related_posts($id) {
+		global $tbdb;
+		global $tbtag;
+
+		$id = (int)$id;
+
+		$posts = [];
+
+		$tagids = $tbtag->get_post_tag_ids($id);
+		if(!$tagids || !count($tagids))
+			return $posts;
+
+		$in_tags = join(',', $tagids);
+		
+		$select = "SELECT p.id,p.title,count(p.id) as relevance FROM posts p,post_tags pt ";
+		$where = " WHERE pt.post_id!=$id AND p.id=pt.post_id AND pt.tag_id in ($in_tags) ";
+		$sql = $select . $where . 'GROUP BY p.id ORDER BY relevance DESC LIMIT 5';
+
+		$rows = $tbdb->query($sql);
+		if(!$rows || !$rows->num_rows)
+			return $posts;
+
+		while($r = $rows->fetch_object())
+			$posts[] = $r;
+
+		return $posts;
 	}
 }
 

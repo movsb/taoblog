@@ -47,6 +47,24 @@ class TB_Tags {
 		return $names;
 	}
 
+	public function &get_post_tag_ids($id) {
+		global $tbdb;
+
+		$id = (int)$id;
+		$sql = "SELECT tag_id FROM post_tags WHERE post_id=$id";
+
+		$ids = [];
+
+		$results = $tbdb->query($sql);
+		if(!$results) return $ids;
+
+		while($n = $results->fetch_object()) {
+			$ids[] = $n->tag_id;
+		}
+
+		return $ids;
+	}
+
 	/*
 	  更新文章的标签列表
 
