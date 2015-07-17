@@ -1,7 +1,4 @@
 		</div><!-- content -->	
-		<script>
-			$('.entry img, .entry img').wrap('<div class="img-wrapper"/>');
-		</script>
 	</section>
 	<div id="mobile-footer">
 		<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>

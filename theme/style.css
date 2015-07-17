@@ -377,8 +377,16 @@ h6 { font-size: 1.0em; }
 	margin-top: 1em;
 }
 
+.entry img {
+	max-width: 100%;
+}
+
 .entry img:hover {
 	box-shadow: 0px 0px 3px;
+}
+
+.entry img.shadow {
+	box-shadow: 0px 0px 2px;
 }
 
 /* 文章表格 */
