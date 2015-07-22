@@ -629,5 +629,13 @@ class TB_Posts {
 
 		return $posts;
 	}
+
+	public function the_next_id() {
+		global $tbdb;
+
+		$sql = "SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='posts' AND table_schema = DATABASE()";
+
+		return $tbdb->query($sql)->fetch_object()->AUTO_INCREMENT;
+	}
 }
 

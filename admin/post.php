@@ -135,6 +135,8 @@ function post_admin_footer() { ?>
 add_hook('admin_footer', 'post_admin_footer');
 
 function new_post_html($p=null){
+	global $tbpost;
+
 	// 先生成所有的挂件对象
 	// 因为分布在不同地方（hook对象无法保存这些分布）
 	$widgets = [];
@@ -185,6 +187,13 @@ DOM;
 				<div class="permanlink" style="margin-bottom: 1em;">
 					<span>固定链接：</span>
 					<a target="_blank" href="<?php echo $link; ?>"><?php echo $link; ?></a>
+				</div>
+				<?php } else {
+					$next_id = $tbpost->the_next_id();
+				?>
+				<div class="permalink_id" style="margin-bottom: 1em;">
+					<span>文章ID：</span>
+					<span><?php echo $next_id; ?></span>
 				</div>
 				<?php } ?>
 				<div>
