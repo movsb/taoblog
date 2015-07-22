@@ -6,6 +6,12 @@ require_once(dirname(__FILE__).'/../setup/config.php');
 require_once('db/dbbase.php');
 require_once('db/options.php');
 
+if(!login_auth_ip()) {
+	header('HTTP/1.1 302 Unauthorized access');
+	header('Location: /');
+	die(0);
+}
+
 function login_html($url='') { ?>
 <!DOCTYPE html>
 <html>

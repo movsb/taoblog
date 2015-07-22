@@ -19,15 +19,35 @@ function login_auth_passwd($arg = []) {
 	return false;
 }
 
+function login_auth_ip() {
+	require_once('db/options.php');
+
+	$opt = new TB_Options;
+
+	$ipauth = false;
+	$ip = $_SERVER['REMOTE_ADDR'];
+	$auth_ips = explode(',', $opt->get('auth_ips'));
+	foreach($auth_ips as &$aip) {
+		if($aip && preg_match($aip, $ip)) {
+			$ipauth = true;
+			break;
+		}
+	}
+
+	return $ipauth;
+}
+
 function login_auth($redirect=false) {
 	require_once('db/options.php');
 
 	$opt = new TB_Options;
 
+	$ipauth = login_auth_ip();
+
 	$ip = $_SERVER['REMOTE_ADDR'];
-	$ipauth = true;
 	$hash = isset($_COOKIE['login']) ? $_COOKIE['login'] : '';
 	$loggedin = $hash && $hash === sha1(md5($ip).$opt->get('login'));
+
 	$loggedin = $loggedin && $ipauth;
 	if(!$loggedin) {
 		if($redirect) {
