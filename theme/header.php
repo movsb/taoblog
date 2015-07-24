@@ -56,7 +56,7 @@
 				<section id="head">
 					<div class="center">
 						<img class="me home-a" src="/theme/images/me.png" />
-						<h1 class="home-a"><?php echo $blog_name; ?></h1>
+						<h6 class="home-a"><?php echo $blog_name; ?></h6>
 						<script>
 							$('.home-a').click(function() {
 								location.href = location.protocol + '//' + location.host;
@@ -98,7 +98,7 @@
 			</div>
 			<div class="mobile">
 				<img class="me home-a" src="/theme/images/me.png" />
-				<h1 class="home-a"><?php echo $blog_name; ?></h1>
+				<h6 class="home-a"><?php echo $blog_name; ?></h6>
 				<div class="social" style="font-size: 2em;">
 					<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
 					<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>

@@ -147,7 +147,7 @@ h6 { font-size: 1.0em; }
 	}
 }
 
-#header .mobile h1 {
+#header .mobile h6 {
 	display: inline;
 	padding: 0px;
 	margin: 0px;
@@ -190,7 +190,7 @@ h6 { font-size: 1.0em; }
 	margin: 0px auto;
 }
 
-#head h1 {
+#head h6 {
 	margin: 0px 0px 8px;
 	font-weight: normal;
 	font-size: 30px;
