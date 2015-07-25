@@ -80,14 +80,27 @@
 								<li><a target="_blank" href="<?php echo $tbopt->get('home'),'/rss'; ?>">订阅博客</a></li>
 							</ul>
 						</div>
-						<div class="column links">
-							<h3>LINKS</h3>
-							<ul>
-								<li><a title="自学去 - 一个免费的自学网站~" target="_blank" href="http://www.zixue7.com">自学去</a></li>
-								<li><a title="小谢的博客" target="_blank" href="http://memorycat.com">小写adc</a></li>
-								<li><a title="网事如风的博客" target="_blank" href="http://godebug.org">网事如风</a></li>
-							</ul>
-						</div>
+						<?php
+							$links_json = $tbopt->get('links');
+							$links_json = '' ? '[]' : $links_json;
+							$links = json_decode($links_json);
+
+							if(count($links)) {?>
+								<div class="column links">
+									<h3>LINKS</h3>
+									<ul><?php
+										$i = 0;
+										foreach($links as &$link) {
+											echo '<li><a title="', $link->title, '" ',
+												'target="_blank" href="', $link->href, '">', 
+												$link->name, '</a></li>', PHP_EOL;
+
+											if(++$i >= 5) break;
+										}
+									?></ul>
+								</div>
+							<?php }
+						?>
 					</div>
 				</div><!-- footer -->
 				<div class="copy center">
