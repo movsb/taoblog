@@ -87,22 +87,6 @@ document.write(function(){/*
 
 $('#post-id').val(_post_id);
 
-function theCookieObject() {
-	var cookie = {};
-	var all = document.cookie;
-	if(all == '') return cookie;
-	var list = all.split('; ');
-	for(var i=0; i<list.length; i++) {
-		var kk = list[i];
-		var p = kk.indexOf('=');
-		var name = kk.substring(0, p);
-		var value = kk.substring(p+1);
-		cookie[name] = decodeURIComponent(value);
-	}
-
-	return cookie;
-}
-
 // 加载评论总数
 $.post(
 	'/admin/comment.php',
@@ -172,10 +156,11 @@ function comment_reply_to(p){
 	$('#comment-form-parent').val(p);
 
 	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
-	var cookie = theCookieObject();
-	$('#comment-form input[name=author]').val(cookie.tb_cmt_user);
-	$('#comment-form input[name=email]').val(cookie.tb_cmt_email);
-	$('#comment-form input[name=url]').val(cookie.tb_cmt_url);
+	if(window.localStorage) {
+		$('#comment-form input[name=author]').val(localStorage.getItem('cmt_author'));
+		$('#comment-form input[name=email]').val(localStorage.getItem('cmt_email'));
+		$('#comment-form input[name=url]').val(localStorage.getItem('cmt_url'));
+	}
 
 	$('#comment-form-div').fadeIn();
 }
@@ -261,6 +246,18 @@ $('#load-comments').click(function() {
 
 $('#load-comments').click();
 
+function cmt_save_info() {
+	if(window.localStorage) {
+		localStorage.setItem('cmt_author', $('#comment-form input[name=author]').val());
+		localStorage.setItem('cmt_email', $('#comment-form input[name=email]').val());
+		localStorage.setItem('cmt_url', $('#comment-form input[name=url]').val());
+	} else {
+		if(typeof show_tips == 'function') {
+			show_tips('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
+		}
+	}
+}
+
 // Ajax评论提交
 $('#comment-submit').click(function() {
 	var timeout = 1500;
@@ -288,6 +285,7 @@ $('#comment-submit').click(function() {
 				setTimeout(function() {
 						$('#comment-form-div').fadeOut();
 						$('#submitting-status').text('');
+						cmt_save_info();
 					},
 					timeout
 				);
