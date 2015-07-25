@@ -42,6 +42,12 @@
 } else if($tbquery->is_singular()) {?>
 	<link rel="canonical" href="<?php echo the_link($the);?>" />
 	<script type="text/javascript">var _post_id = <?php echo $the->id; ?>;</script>
+	<script type="text/javascript">if(window.localStorage) { 
+		if(localStorage.getItem('font-size')) {
+			document.write('<style>.entry { font-size: ' + localStorage.getItem('font-size') + '; }</style>');
+		}
+	}
+	</script>
 <?php } 
 
 	apply_hooks('tb_head'); ?>

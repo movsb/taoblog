@@ -25,9 +25,15 @@
 				var post = $('.entry');
 				var cl = e.target.classList;
 				if(cl.contains('inc') || cl.contains('fa-plus')) {
-					post.css('font-size', parseFloat(post.css('font-size')) * 1.2 + 'px');
+					var newSize = parseFloat(post.css('font-size')) * 1.2 + 'px';
+					post.css('font-size', newSize);
+					if(window.localStorage) localStorage.setItem('font-size', newSize);
+					if(typeof show_tips == 'function') show_tips(newSize);
 				} else if(cl.contains('dec') || cl.contains('fa-minus')) {
-					post.css('font-size', Math.max(8, parseFloat(post.css('font-size')) / 1.2) + 'px');
+					var newSize = Math.max(8, parseFloat(post.css('font-size')) / 1.2) + 'px';
+					post.css('font-size', newSize);
+					if(window.localStorage) localStorage.setItem('font-size', newSize);
+					if(typeof show_tips == 'function') show_tips(newSize);
 				}
 			});
 		</script>
