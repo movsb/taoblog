@@ -106,7 +106,7 @@ h6 { font-size: 1.0em; }
 	position: fixed;
 	left: 0px;
 	top: 0px;
-	background-color: rgb(0,121,116);
+	background-color: rgba(0,0,0,0.8);
 	z-index: 100;
 	transition: left 0.5s ease;
 }
@@ -909,7 +909,6 @@ h6 { font-size: 1.0em; }
 /* 底部 */
 #footer {
 	color: white;
-	background-color: rgb(0,121,116);
 	font-size: 13px;
 	margin-top: 30px;
 }
