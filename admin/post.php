@@ -225,6 +225,7 @@ DOM;
 					<input type="reset" value="清空" onclick="return confirm('确定清空吗？');" />
 					<input id="btn-preview" type="button" value="预览" />
 					<input type="submit" value="发表" />
+					<input id="baidu-push" type="button" value="推送到百度" />
 					<script>
 						$('#btn-preview').click(function() {
 							var form = $('#form-post');
@@ -235,6 +236,30 @@ DOM;
 							form.submit();
 							form.attr('target', '');
 							ido.val(doval);
+						});
+
+						$('#baidu-push').click(function() {
+							if(!confirm('确定要推送到百度吗？')) return;
+							var ido = $('input[name=do]').val();
+							if(ido != 'update') {
+								alert('请先发表之后再推送。');
+								return;
+							}
+
+							var post_id = $('input[name=id]').val();
+							$.post(
+								'/admin/post.php',
+								'do=baidu-push&post-id=' + post_id,
+								function(data) {
+									var s = '成功！\n\n';
+									s += '剩余: ' + data.remain;
+									alert(s);
+								}
+							).error(function(xhr, sta, msg) {
+								var s = '失败！\n\n';
+								s += '信息: ' + JSON.parse(xhr.responseText).message;
+								alert(s);
+							});
 						});
 					</script>
 				</div>
@@ -345,6 +370,35 @@ function post_preview() {
 	die(0);
 }
 
+function post_push_to_baidu() {
+	global $tbopt;
+
+	$home = $tbopt->get('home');
+
+	$post_url = $home . '/' . $_POST['post-id'] . '/';
+	$api = 'http://data.zz.baidu.com/urls?site='.$home.'&token=' . BAIDU_PUSH_TOKEN;
+
+	$ch = curl_init();
+	$options =  array(
+		CURLOPT_URL => $api,
+		CURLOPT_POST => true,
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_POSTFIELDS => $post_url,
+		CURLOPT_HTTPHEADER => array('Content-Type: text/plain'),
+	);
+	curl_setopt_array($ch, $options);
+	$result = curl_exec($ch);
+
+	$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	header("HTTP/1.1 $code");
+	header('Content-Type: application/json');
+	header('Content-Length: '.strlen($result));
+
+	echo $result;
+
+	die(0);
+}
+
 $do = $_POST['do'];
 
 if($do == 'new') {
@@ -353,8 +407,9 @@ if($do == 'new') {
 	post_update();
 } else if($do == 'preview') {
 	post_preview();
+} else if($do == 'baidu-push') {
+	post_push_to_baidu();
 }
-
 
 die(0);
 
