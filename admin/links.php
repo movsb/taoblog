@@ -11,7 +11,7 @@ global $tbopt;
 $links = $tbopt->get('links');
 if(empty($links)) $links = '[]';?>
 <script type="text/javascript">
-	var links = JSON.parse('<?php echo $links; ?>');
+	var links = JSON.parse('<?php echo str_replace(['\\','\''], ['\\\\','\\\''], $links); ?>');
 </script>
 <div class="link-list" id="link-list">
 <h2>已有链接</h2>
@@ -45,10 +45,18 @@ if(empty($links)) $links = '[]';?>
 	});
 
 	function add_new_link(name, title, href, after) {
+		function encode(s) {
+			return s.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#39;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+		}
+
 		var html = '<li>';
-		html += '<label for="name">名字</label>&nbsp;<input type="text" name="name" value="'+ name +'"/>&nbsp&nbsp;';
-		html += '<label for="title">说明</label>&nbsp;<input type="text" name="title" value="'+ title +'"/>&nbsp&nbsp;';
-		html += '<label for="href">链接</label>&nbsp;<input type="text" name="href" value="'+ href +'"/>';
+		html += '<label for="name">名字</label>&nbsp;<input type="text" name="name" value="'+ encode(name) + '"/>&nbsp&nbsp;';
+		html += '<label for="title">说明</label>&nbsp;<input type="text" name="title" value="'+ encode(title) + '"/>&nbsp&nbsp;';
+		html += '<label for="href">链接</label>&nbsp;<input type="text" name="href" value="'+ encode(href) + '"/>';
 		html += '&nbsp;&nbsp&nbsp;<button class="del-link">删除</button>';
 		html += '</li>';
 
