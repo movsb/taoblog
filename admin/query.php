@@ -171,6 +171,11 @@ class TB_Query {
 		$r = $tbpost->query($this->internal_query);
 		if($r === false) return $r;
 
+		// 页面不能通过id访问，重定向到slug
+		if(isset($this->internal_query['short']) && count($r) && $r[0]->type == 'page'){
+			$need_redirect = true;
+		}
+
 		// 输出内容之前过滤
 		for($i=0; $i<count($r); $i++) {
 			$p = &$r[$i];
