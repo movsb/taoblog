@@ -37,17 +37,12 @@
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="http://libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="http://libs.useso.com/js/jquery/2.1.1/jquery.min.js"></script>
+	<script type="text/javascript" src="/theme/scripts/header.js"></script>
 <?php if(!$tbquery->count) {
 
 } else if($tbquery->is_singular()) {?>
 	<link rel="canonical" href="<?php echo the_link($the);?>" />
 	<script type="text/javascript">var _post_id = <?php echo $the->id; ?>;</script>
-	<script type="text/javascript">if(window.localStorage) { 
-		if(localStorage.getItem('font-size')) {
-			document.write('<style>.entry { font-size: ' + localStorage.getItem('font-size') + '; }</style>');
-		}
-	}
-	</script>
 <?php } 
 
 	apply_hooks('tb_head'); ?>
@@ -63,11 +58,6 @@
 					<div class="center">
 						<img class="me home-a" src="/theme/images/me.png" />
 						<h6 class="home-a"><?php echo $blog_name; ?></h6>
-						<script>
-							$('.home-a').click(function() {
-								location.href = location.protocol + '//' + location.host;
-							});
-						</script>
 						<div class="social" style="font-size: 2em;">
 							<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
 							<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
@@ -123,11 +113,6 @@
 					<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
 					<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.78em; position: relative; top: -2px;"></i></a></span>
 				</div>
-				<script>
-					$('.home-a').click(function() {
-						location.href = location.protocol + '//' + location.host;
-					});
-				</script>
 			</div>
 		</div>
 	</header>
