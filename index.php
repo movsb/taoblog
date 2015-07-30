@@ -1,5 +1,23 @@
 <?php
 
+if(preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) {
+	header('HTTP/1.1 503 IE was history');
+	header('Content-Type: text/html');
+?><!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>IE was history</title>
+</head>
+<body>
+<p style="font-size: 2em;"><del>Internet Explorer</del> was history.</p>
+<p style="color: red;">Please consider using another web browser like <b>fx</b>.</p>
+</body>
+</html>
+<?php
+	die(0);
+}
+
 $start_time = microtime();
 
 require('admin/load.php');
