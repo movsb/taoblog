@@ -15,6 +15,7 @@
 		<i class="fa fa-plus-circle"></i>
 	</div>
 </div>
+<div class="img-view" id="img-view"><img /></div>
 <div style="display: none;">
 	<script src="http://js.users.51.la/17768957.js"></script>
 	<script>
