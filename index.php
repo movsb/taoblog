@@ -1,6 +1,6 @@
 <?php
 
-if(preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) {
+if(preg_match('/MSIE|Trident/', $_SERVER['HTTP_USER_AGENT'])) {
 	header('HTTP/1.1 503 IE was history');
 	header('Content-Type: text/html');
 ?><!doctype html>
