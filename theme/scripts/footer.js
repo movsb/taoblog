@@ -114,3 +114,30 @@ $('.home-a').click(function() {
 	});
 })();
 
+/* 目录展开与隐藏 */
+(function() {
+	if($('.entry .toc').length == 0) return;
+
+	function hide_toc(hide) {
+		var hide_toc = $('#hide-toc');
+		var toc_ul = $('.entry .toc > ul');
+
+		if(hide) {
+			hide_toc.text('[显示]');
+			toc_ul.hide();
+		} else {
+			hide_toc.text('[隐藏]');
+			toc_ul.show();
+		}
+	}
+
+	$('.entry .toc h2, .entry .toc h3').replaceWith('<div><h2 style="float: left; margin-right: 20px;">目录</h2><span id="hide-toc" class="no-sel" style="float: right; cursor: pointer;"></span><div style="clear: both;"></div></div>');
+
+	hide_toc(true);
+
+	$('#hide-toc').click(function() {
+		var hidden = $('.entry .toc > ul').css('display') == 'none';
+		hide_toc(!hidden);
+	});
+})();
+
