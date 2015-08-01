@@ -37,12 +37,12 @@ document.write(function(){/*
 				<div class="fields">
 					<div class="field">
 						<label>昵称</label>
-						<input type="text" name="author" />
+						<input type="text" name="author" required/>
 						<span class="needed">必填</span>
 					</div>
 					<div class="field">
 						<label>邮箱</label>
-						<input type="text" name="email" />
+						<input type="text" name="email" required/>
 						<span class="needed">必填(不公开)</span>
 					</div>
 					<div class="field">
@@ -59,11 +59,11 @@ document.write(function(){/*
 				<div class="comment-content">
 					<label style="position: absolute;">评论</label>
 					<label style="visibility: hidden;">评论</label> <!-- 别问我，我想静静 -->
-					<textarea id="comment-content" name="content" wrap="off"></textarea>
+					<textarea id="comment-content" name="content" wrap="off" required></textarea>
 				</div>
 
 				<div class="comment-submit">
-					<span id="comment-submit" class="no-sel">发表评论</span>
+					<input type="submit" id="comment-submit" class="no-sel" value="发表评论" />
 					&nbsp;<span id="submitting-status"><span>
 				</div>
 			</form>

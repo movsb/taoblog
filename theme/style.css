@@ -563,7 +563,7 @@ h6 { font-size: 1.0em; }
 
 /* 评论提交 */
 #comment-submit {
-	padding: 8px;
+	padding: 6px;
 	background-color: rgba(113,113,113,0.7);
 	color: white;
 	cursor: pointer;
