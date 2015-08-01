@@ -94,10 +94,9 @@ $opt1 = new TB_Options;
 
 $do = isset($_GET['do']) ? $_GET['do'] : '';
 if($do === 'logout') {
-	header('HTTP/1.1 200 Logged Out');
+	header('HTTP/1.1 302 Logged Out');
 	setcookie('login','',time()-1, '/');
-	//header('Location: '.$opt1->get('home').'/admin/login.php');
-	login_html();
+	header('Location: '.$opt1->get('home').'/admin/login.php');
 	die(0);
 } else {
 	if(login_auth()){
