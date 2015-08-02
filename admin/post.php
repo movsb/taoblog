@@ -66,7 +66,7 @@ function post_widget_date($p=null) {
 
 	$title = '日期';
 	$content = '<input type="text" name="date" value="'.($p ? $p->date : '').'"/><br>'
-		.'<input type="text" name="modified" value="-" />';
+		.'<input type="text" name="modified" value="'.($p ? '-' : '').'" />';
 
 	return compact('title', 'content');
 }
