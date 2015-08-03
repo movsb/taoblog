@@ -80,7 +80,7 @@ class TB_Tags {
 		global $tbdb;
 
 		$oldts = $this->get_post_tag_names($id);
-		$newts = explode(',', $tags);
+		$newts = $tags ? explode(',', $tags) : [];
 
 		$deleted = []; // 删除的
 		$added = []; // 新增加的
