@@ -1,5 +1,10 @@
 <?php
 
+if(!isset($_SERVER['HTTP_USER_AGENT'])) {
+	header('HTTP/1.1 400 Good Request');
+	die(-1);
+}
+
 if(preg_match('/MSIE|Trident/', $_SERVER['HTTP_USER_AGENT'])) {
 	header('HTTP/1.1 503 IE was history');
 	header('Content-Type: text/html');
