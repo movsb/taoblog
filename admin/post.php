@@ -186,7 +186,18 @@ DOM;
 				?>
 				<div class="permanlink" style="margin-bottom: 1em;">
 					<span>固定链接：</span>
-					<a target="_blank" href="<?php echo $link; ?>"><?php echo $link; ?></a>
+					<a id="permalink" href="<?php echo $link; ?>"><?php echo $link; ?></a>
+					<script type="text/javascript">
+						var new_window = null;
+						$('#permalink').click(function() {
+							if(!new_window || new_window.closed) {
+								new_window = window.open($('#permalink').prop('href'));
+							} else {
+								new_window.location.href = $('#permalink').prop('href');
+							}
+							return false;
+						});
+					</script>
 				</div>
 				<?php } else {
 					$next_id = $tbpost->the_next_id();
