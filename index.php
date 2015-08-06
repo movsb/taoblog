@@ -17,6 +17,7 @@ if(preg_match('/MSIE|Trident/', $_SERVER['HTTP_USER_AGENT'])) {
 <body>
 <p style="font-size: 2em;"><del>Internet Explorer</del> was history.</p>
 <p style="color: red;">Please consider using another web browser like <b>fx</b>.</p>
+<p style="color: red;">抱歉，本网站站长由于能力过分有限，无法将网站支持在 IE 浏览器上。请考虑换用其它浏览器，然后重新访问。</p>
 </body>
 </html>
 <?php
