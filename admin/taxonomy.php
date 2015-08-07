@@ -170,6 +170,7 @@ function tax_update(&$arg) {
 function tax_delete(&$arg) {
 	global $tbtax;
 
+	/*
 	$r = $tbtax->del($arg['id']);
 	if(!$r) {
 		tax_die_json([
@@ -180,6 +181,12 @@ function tax_delete(&$arg) {
 
 	tax_die_json([
 		'errno' => 'success',
+		]);
+	*/
+
+	tax_die_json([
+		'errno' => 'error',
+		'error' => '当前不支持分类的删除。',
 		]);
 }
 
