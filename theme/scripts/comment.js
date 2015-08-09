@@ -398,6 +398,13 @@ $('#comment-form-div .closebtn').click(function(){
 		$('#comment-form-div').fadeOut();
 });
 
+// hide comment box when ESC key pressed
+window.addEventListener('keyup', function(e) {
+	if(e.keyCode == 27) {
+		$('#comment-form-div').fadeOut();
+	}
+});
+
 $('#comment-form-div .maxbtn').click(function(){
 	$('#comment-content-2').val($('#comment-content').val());
 	$('#comment-form-div').removeClass('normal').attr('style','').addClass('maximized');
