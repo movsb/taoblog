@@ -95,23 +95,37 @@ $('.home-a').click(function() {
 	var body = $('body');
 	var imgdiv = $('#img-view');
 
-	imgdiv.click(function() {
-		body.css('max-height', 'none');
-		body.css('overflow', 'auto');
+	function view_image(ele, show) {
+		if(show) {
+			$('#img-view img').attr('src', ele.src);
+			body.css('max-height', window.innerHeight);
+			body.css('overflow', 'hidden');
+			imgdiv.show();
+		} else {
+			body.css('max-height', 'none');
+			body.css('overflow', 'auto');
 
-		imgdiv.hide();
-	});
-
-	function view_image(e) {
-		$('#img-view img').attr('src', e.src);
-		body.css('max-height', window.innerHeight);
-		body.css('overflow', 'hidden');
-		imgdiv.show();
+			imgdiv.hide();
+		}
 	}
 
 	$('.entry img').click(function(e) {
-		view_image(this);
+		view_image(this, true);
+
+		var f = function(e) {
+			if(e.keyCode == 27) {
+				view_image(null, false);
+				window.removeEventListener('keyup', f);
+			}
+		};
+
+		window.addEventListener('keyup', f);
 	});
+
+	imgdiv.click(function() {
+		view_image(null, false);
+	});
+
 })();
 
 /* 目录展开与隐藏 */
