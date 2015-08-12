@@ -350,6 +350,14 @@ h6 { font-size: 1.0em; }
 	margin: 1em 0px;
 }
 
+.entry a.external {
+	margin-left: 5px;
+	padding-left: 18px;
+	background-image: url(/theme/images/external-anchor.png);
+	background-repeat: no-repeat;
+	background-position: left center;
+}
+
 .entry .line-code {
 	white-space: pre-wrap;
 	display: inline;
