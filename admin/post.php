@@ -237,7 +237,7 @@ DOM;
 				</div>
 				<?php } ?>
 				<div>
-					<h2>内容</h2>
+					<div><h2 style="float: left; margin-right: 10px;">内容</h2><span id="msg" style="position: relative; top: 6px;"></span></div>
 					<div class="textarea-wrap">
 						<textarea id="content" name="content" wrap="off"><?php
 							if($p) {
@@ -251,6 +251,14 @@ DOM;
 									$('.textarea-wrap').toggleClass('fullscreen');
 									e.preventDefault();
 									return false;
+								} else if(e.keyCode == 83) { // s
+									if(e.originalEvent.ctrlKey == true) { // ctrl + s
+										localStorage.setItem('post_content', $('#content').val());
+										$('#msg').html('(<span style="color: green;">草稿已保存</span>)').show();
+										setTimeout(function(){$('#msg').fadeOut();},1000);
+										e.preventDefault();
+										return false;
+									}
 								}
 							});
 						</script>
