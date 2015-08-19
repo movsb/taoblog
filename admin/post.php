@@ -117,6 +117,35 @@ function post_admin_head() { ?>
 		box-sizing: border-box;
 	}
 
+	#content {
+		max-height: 2000px;
+		height: 500px;
+		min-height: 300px;
+		width: 100%;
+		padding: 4px;
+		box-sizing: border-box;
+	}
+
+	.fullscreen {
+		position: fixed;
+		left: 0px;
+		top: 0px;
+		width: 100%;
+		height: 100%;
+		z-index: 1000;
+		padding: 1px;
+		box-sizing: border-box;
+	}
+
+	.fullscreen #content {
+		width: 100%;
+		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
+		box-sizing: border-box;
+		padding: 6px;
+	}
+
 </style>
 <?php }
 
@@ -209,11 +238,23 @@ DOM;
 				<?php } ?>
 				<div>
 					<h2>内容</h2>
-					<textarea name="content" wrap="off" style="max-height: 2000px; height: 500px; min-height: 300px; width: 100%; padding: 4px; box-sizing: border-box;"><?php
-						if($p) {
-							echo htmlspecialchars($p->content);
-						}
-					?></textarea>
+					<div class="textarea-wrap">
+						<textarea id="content" name="content" wrap="off"><?php
+							if($p) {
+								echo htmlspecialchars($p->content);
+							}
+						?></textarea>
+						<script>
+							// 无法使用 keyup，因为 keyup 是在默认事件调用之后才被调用
+							$('#content').on('keydown', function(e) {
+								if(e.keyCode == 122) { // f11
+									$('.textarea-wrap').toggleClass('fullscreen');
+									e.preventDefault();
+									return false;
+								}
+							});
+						</script>
+					</div>
 				</div>
 				<div>
 					<input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
