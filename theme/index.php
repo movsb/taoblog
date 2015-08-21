@@ -9,7 +9,7 @@ function the_recent_posts() {
 	$posts = $tbpost->query($q);
 	if(is_array($posts) && count($posts)) {
 		echo '<h2>近期文章</h2>',PHP_EOL;
-		echo '<ul style="font-size: 1.2em; list-style: none;">';
+		echo '<ul style="list-style: none;">';
 		foreach($posts as &$p) {
 			$link = the_link($p);
 			echo '<li><a href="'.$link.'">',$p->title,'</a></li>',"\n";
