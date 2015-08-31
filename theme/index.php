@@ -48,6 +48,11 @@ the_recent_comments();
 	<p>改来改去，还是觉得不喜欢现在的风格。怎么办？</p>
 </div>
 
+<div>
+	<h2>状态</h2>
+	<p>服务器开始运行于2015年4月1日，已经运行 <span id="server-run-time">?</span> 天。</p>
+</div>
+
 <?php
 
 require('footer.php');
