@@ -30,7 +30,7 @@ a:hover {
 }
 
 a, input, submit, textarea, button {
-	transition: all 0.4s ease-out;
+	transition: all 0.2s ease-out;
 }
 
 acronym, abbr {
@@ -397,6 +397,25 @@ h6 { font-size: 1.0em; }
 	box-shadow: 0px 0px 2px;
 }
 
+/* 色彩 */
+.entry .fg-black    { color: black; }
+.entry .fg-blue     { color: blue; }
+.entry .fg-green    { color: green; }
+.entry .fg-aqua     { color: aqua; }
+.entry .fg-red      { color: red; }
+.entry .fg-magenta  { color: magenta; }
+.entry .fg-yellow   { color: yellow; }
+.entry .fg-white    { color: white; }
+
+.entry .bg-black    { background-color: black; }
+.entry .bg-blue     { background-color: blue; }
+.entry .bg-green    { background-color: green; }
+.entry .bg-aqua     { background-color: aqua; }
+.entry .bg-red      { background-color: red; }
+.entry .bg-magenta  { background-color: magenta; }
+.entry .bg-yellow   { background-color: yellow; }
+.entry .bg-white    { background-color: white; }
+
 /* 文章表格 */
 .entry table {
 	border: 1px solid gray;
@@ -471,8 +490,8 @@ h6 { font-size: 1.0em; }
 		top: 20px;
 		right: 20px;
 		max-width: 300px;
-		background-color: rgba(138,111,133,0.7);
-		color: white;
+		color: #141414;
+		background-color: rgba(255,255,255,0.9);
 		padding: 10px;
 		border: 1px solid gray;
 	}

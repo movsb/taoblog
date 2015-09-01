@@ -153,6 +153,12 @@ $('.home-a').click(function() {
 		var hidden = $('.entry .toc > ul').css('display') == 'none';
 		hide_toc(!hidden);
 	});
+
+    window.addEventListener('keyup', function(e) {
+        if(e.keyCode == 27) {
+            hide_toc(true);
+        }
+    });
 })();
 
 /* 服务器运行时间 */
