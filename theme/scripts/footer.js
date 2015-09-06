@@ -161,6 +161,21 @@ $('.home-a').click(function() {
     });
 })();
 
+/* pre 的双击全选与全窗口 */
+(function() {
+    $('.entry pre').on('dblclick', function(e) {
+        if(e.target.tagName == 'PRE') {
+            var selection = window.getSelection();
+            var range = document.createRange();
+            range.selectNodeContents(e.target);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            e.preventDefault();
+            return;
+        }
+    });
+})();
+
 /* 服务器运行时间 */
 // http://www.htmlgoodies.com/html5/javascript/calculating-the-difference-between-two-dates-in-javascript.html
 (function() {

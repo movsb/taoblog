@@ -358,6 +358,14 @@ h6 { font-size: 1.0em; }
 	background-position: left center;
 }
 
+.entry a:not([href]) {
+    color: inherit;
+}
+
+.entry a:not([href]):hover {
+    cursor: default;
+}
+
 .entry .line-code {
 	white-space: pre-wrap;
 	display: inline;
@@ -477,10 +485,10 @@ h6 { font-size: 1.0em; }
 	padding: 0.5em !important;
 	border-left: 6px solid #8D7474;
 	border-radius: 2px;
-	background-color: #E0E0E0;
+	background-color: #ECECEC;
 	line-height: 1.5em;
 	margin: 1em 0px;
-	max-height: 500px;
+	max-height: 1000px;
 }
 
 /* 目录 */
