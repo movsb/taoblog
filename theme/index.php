@@ -50,7 +50,7 @@ the_recent_comments();
 
 <div>
 	<h2>状态</h2>
-	<p>服务器开始运行于2015年4月1日，已经运行 <span id="server-run-time">?</span> 天。</p>
+	<p>服务器开始运行于2014年12月24日，已经运行 <span id="server-run-time">?</span> 天。</p>
 </div>
 
 <?php

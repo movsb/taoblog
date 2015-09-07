@@ -193,7 +193,7 @@ $('.home-a').click(function() {
 		return Math.round(diff_ms / one_day);
 	}
 
-	var start = new Date(2015, 4-1, 1);
+	var start = new Date(2014, 12-1, 24);
 	var now = new Date();
 
 	var days = date_between(start, now);
