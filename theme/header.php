@@ -70,9 +70,9 @@
 						<div class="column about">
 							<h3>ABOUT</h3>
 							<ul>
-								<li><a href="/blog">关于博客</a></li>
-								<li><a href="/echo">建议反馈</a></li>
 								<li><a href="/about">关于我</a></li>
+								<li><a href="/blog">博客程序</a></li>
+								<li><a href="/echo">建议反馈</a></li>
 								<li><a target="_blank" href="<?php echo $tbopt->get('home'),'/rss'; ?>">订阅博客</a></li>
 							</ul>
 						</div>
@@ -88,7 +88,7 @@
 										$i = 0;
 										foreach($links as &$link) {
 											echo '<li><a title="', $link->title, '" ',
-												'target="_blank" href="', $link->href, '">', 
+												'target="_blank" rel="nofollow" href="', $link->href, '">', 
 												$link->name, '</a></li>', PHP_EOL;
 
 											if(++$i >= 5) break;

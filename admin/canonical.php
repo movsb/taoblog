@@ -4,6 +4,7 @@ function the_link(&$p, $home=true) {
 	global $tbopt;
 	global $tbtax;
 	global $tbopt;
+    global $tbpost;
 
 	$home = $home ? $tbopt->get('home') : '';
 	$link = '';
@@ -11,7 +12,7 @@ function the_link(&$p, $home=true) {
 	if($p->type === 'post') {
 		$link = $home.'/'.$p->id.'/';
 	} else if($p->type === 'page') {
-		$link = $home.'/'.$p->slug;
+		$link = $home.$tbpost->get_the_parents_string($p->id).'/'.$p->slug;
 	} else {
 		$link = '/';
 	}

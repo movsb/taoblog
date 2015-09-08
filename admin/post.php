@@ -37,6 +37,25 @@ function post_widget_tax($p=null) {
 
 add_hook('post_widget', 'post_widget_tax');
 
+function post_widget_page_parents($p=null) {
+    global $tbpost;
+    if($p) {
+        $v = $tbpost->get_the_parents_string($p->id);
+        if($v) {
+            $v = substr($v, 1);
+            $v = implode(',', explode('/',$v));
+        }
+    }
+    $content = '<input type="text" name="page_parents" value="'.($p ? $v : '').'" />';
+
+    return [
+        'title' => '父页面',
+        'content' => $content,
+    ];
+}
+
+add_hook('post_widget', 'post_widget_page_parents');
+
 function post_widget_tag($p=null) {
 	$tag = $p ? join(',', $p->tag_names) : '';
 

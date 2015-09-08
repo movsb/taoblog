@@ -60,6 +60,7 @@ input, textarea, button {
 h1,h2,h3,h4,h5,h6 {
 	margin: 1rem 0px; 
 	font-weight: 400;
+    font-family: Consolas, 黑体;
 }
 
 h1 { font-size: 2.0em; }

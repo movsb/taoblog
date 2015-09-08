@@ -17,6 +17,7 @@ class TB_Posts {
 			'content'	=> '',
 			'slug'		=> '',
 			'taxonomy'	=> 1,
+            'page_parents'  => '',
 		];
 
 		$arg = tb_parse_args($def, $arg);
@@ -45,6 +46,25 @@ class TB_Posts {
 			$this->error = '文章所属分类不存在！';
 			return false;
 		}
+
+        $type = $this->get_vars('type', 'id='.(int)$arg['id']);
+        if(!$type) return false;
+        if($type->type == 'page') {
+            $parents = $arg['page_parents'];
+            if($parents) {
+                $parents = explode(',', $parents);
+                $pid = $this->get_the_last_parents_id($parents);
+                if($pid === false) {
+                    $this->error = '父页面不存在';
+                    return false;
+                } else {
+                    $arg['taxonomy'] = $pid;
+                }
+            } else {
+                $arg['taxonomy'] = 0;
+            }
+        }
+
 
 		$modified = &$arg['modified'];
 		if(!$modified) {
@@ -153,6 +173,7 @@ class TB_Posts {
 			'comment_status' => 1,
 			'password' => '',
 			'tags' => '',
+            'page_parents' => '',
 		];
 
 		$arg = tb_parse_args($def, $arg);
@@ -178,6 +199,23 @@ class TB_Posts {
 			return false;
 		}
 
+        $type = $arg['type'];
+        if($type == 'page') {
+            $parents = $arg['page_parents'];
+            if($parents) {
+                $parents = explode(',', $parents);
+                $pid = $this->get_the_last_parents_id($parents);
+                if($pid === false) {
+                    $this->error = '父页面不存在';
+                    return false;
+                } else {
+                    $arg['taxonomy'] = $pid;
+                }
+            } else {
+                $arg['taxonomy'] = 0;
+            }
+        }
+
 		if(!$arg['date']) {
 			$arg['date'] = $tbdate->mysql_datetime_local();
 		}
@@ -196,10 +234,6 @@ class TB_Posts {
 		// 转换成GMT时间
 		$arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
 		$arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
-
-		// 页面无分类
-		if($arg['type'] == 'page')
-			$arg['taxonomy'] = 0;
 
 		$sql = "INSERT INTO posts (
 			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)
@@ -236,6 +270,7 @@ class TB_Posts {
 			return false;
 
 		$defs = ['id' => '', 'tax' => '', 'slug' => '',
+            'parents' => '', 'page' => '',
 			'yy' => '', 'mm' => '',
 			'pageno' => '',
 			'password' => '', 'status' => '',
@@ -275,13 +310,11 @@ class TB_Posts {
 				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
 			}
 		} else if($arg['slug']) {
-			if($arg['tax']) {
-				$tbquery->type = 'post';
-				$queried_posts = $this->query_by_slug($arg);
-			} else {
-				$tbquery->type = 'page';
-				$queried_posts =  $this->query_by_page($arg);
-			}
+            $tbquery->type = 'post';
+            $queried_posts = $this->query_by_slug($arg);
+        } else if($arg['page']) {
+            $tbquery->type = 'page';
+            $queried_posts = $this->query_by_page($arg);
 		} else if($arg['tax']) {
 			$tbquery->type = 'tax';
 			$arg['no_content'] = true;
@@ -441,9 +474,15 @@ class TB_Posts {
 	private function query_by_page($arg){
 		global $tbdb;
 
-		$slug = $arg['slug'];
+        $parents = $arg['parents'];
+        $parents = strlen($parents) ? explode('/', substr($parents, 1)) : [];
+        $pid = $this->get_the_last_parents_id($parents);
 
-		$sql = "SELECT * FROM posts WHERE type='page' AND slug='".$tbdb->real_escape_string($slug)."'";
+        if($pid === false) return false;
+        
+		$slug = $arg['page'];
+
+		$sql = "SELECT * FROM posts WHERE type='page' AND taxonomy=$pid AND slug='".$tbdb->real_escape_string($slug)."'";
 		if($arg['modified']) {
 			$sql .= " AND modified>'".$arg['modified']."'";
 		}
@@ -636,6 +675,70 @@ class TB_Posts {
 		$sql = "SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='posts' AND table_schema = DATABASE()";
 
 		return $tbdb->query($sql)->fetch_object()->AUTO_INCREMENT;
-	}
+    }
+
+    // 通过父页面树得到最后一个父页面的id（也就是当前待查询页面的id的父页面）
+    // 比如：uri -> /aaa/bbb/ccc/ddd
+    // 则 传入 ['aaa', 'bbb', 'ccc], 传出 ccc 的id
+    public function get_the_last_parents_id($parents) {
+        global $tbdb;
+
+        if(count($parents) <= 0) return 0;
+
+        $sql = "SELECT id FROM posts WHERE slug='".$tbdb->real_escape_string($parents[count($parents)-1])."'";
+        if(count($parents) == 1) {
+            $sql .= " AND taxonomy=0 LIMIT 1";
+        } else {
+            $sql .= " AND taxonomy IN (";
+            for($i=count($parents)-2; $i>0; --$i)
+                $sql .= "SELECT id FROM posts WHERE slug='".$tbdb->real_escape_string($parents[$i])."' AND taxonomy IN (";
+            $sql .= "SELECT id FROM posts WHERE slug='".$tbdb->real_escape_string($parents[0])."'";
+            for($i=count($parents)-1; $i > 0; --$i)
+                $sql .= ")";
+        }
+
+        $rows = $tbdb->query($sql);
+        if(!$rows || !$rows->num_rows) return false;
+
+        return $rows->fetch_object()->id;
+    }
+
+    // 得到父页面uri
+    // 比如：page -> ddd，其父为 aaa -> bbb -> ccc
+    // 则返回 /aaa/bbb/ccc，则最终的uri应为：/aaa/bbb/ccc/ddd
+    public function get_the_parents_string($id) {
+        global $tbdb;
+
+        $id = (int)$id;
+
+        $get_id = function ($id) use ($tbdb){
+            $id = (int)$id;
+            $sql = "SELECT type,taxonomy,slug FROM posts WHERE id=$id LIMIT 1";
+            $rows = $tbdb->query($sql);
+            if(!$rows || !$rows->num_rows) return false;
+
+            $o = $rows->fetch_object();
+            if($o->type != 'page') return false;
+
+            return $o;
+        };
+
+        $uri = [];
+        while($id) {
+            $t = $get_id($id);
+            if($t === false) return false;
+
+            $uri[] = $t->slug;
+
+            $id = $t->taxonomy;
+        }
+
+        // remove this
+        unset($uri[0]);
+
+        $uri = implode('/', array_reverse($uri));
+
+        return $uri ? '/'.$uri : '';
+    }
 }
 
