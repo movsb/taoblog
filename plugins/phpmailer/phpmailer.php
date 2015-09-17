@@ -44,7 +44,7 @@ function pm_notify_admin(&$arg) {
 	global $tbopt;
 
 	$subject = '[新博文评论] '.$arg->post_title;
-	$link = $tbopt->get('home').'/?p='.$arg->post_id;
+	$link = $tbopt->get('home').'/?p='.$arg->post_id.'#comments';
 
 	$body = "<b>您的博文“{$arg->post_title}”有新的评论啦！</b><br><br>";
 	$body .= "<b>链接：</b>{$link}<br>";
@@ -61,7 +61,7 @@ function pm_notify_user(&$arg) {
 	global $tbopt;
 
 	$subject = '[回复评论] '.$arg->post_title;
-	$link = $tbopt->get('home').'/?p='.$arg->post_id;
+	$link = $tbopt->get('home').'/?p='.$arg->post_id.'#comments';
 
 	$body = "<b>您在博文“{$arg->post_title}”的评论有新的回复啦！</b><br><br>";
 	$body .= "<b>链接：</b>{$link}<br>";
