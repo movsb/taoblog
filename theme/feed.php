@@ -32,7 +32,7 @@ function feed_body() {
 ?>		<item>
 			<title><?php echo htmlspecialchars($the->title); ?></title>
 			<link><?php echo htmlspecialchars($link); ?></link>
-			<description>&lt;p style="color: red;"&gt;&lt;a href="<?php echo $link;?>"&gt;=== 阅读原文 ===&lt;/a&gt;&lt;/p&gt;<?php echo htmlspecialchars($the->content); ?></description>
+			<description><![CDATA[<p style="color: red;"><a href="<?php echo $link;?>">=== 阅读原文 ==</a></p><?php echo $the->content; ?>]]></description>
 			<pubDate><?php echo $tbdate->the_feed_date($the->date);?></pubDate>
 		</item>
 <?php
