@@ -193,7 +193,15 @@ class TB_Query {
 		if($need_redirect && $this->count) {
 			$link = the_link($this->objs[0]);
 			header('HTTP/1.1 301 Moved Permanently');
-			header('Location: '.$link.'?'.$_SERVER['QUERY_STRING']);
+
+            // 干掉可能导致无限重定向的p参数
+            unset($_GET['p']);
+            $query = [];
+            foreach($_GET as $k=>$v)
+                $query[] = $k.'='.$v;
+            $query = implode('&', $query);
+
+			header('Location: '.$link.($query ? '?'.$query : ''));
 			die(0);
 		}
 
