@@ -11,8 +11,8 @@ document.write(function(){/*
 
 	<!-- 评论功能区  -->
 	<div class="comment-func">
-		<span id="post-comment" class="post-comment no-sel btn">发表评论</span>
-		<span id="load-comments" class="load-comments no-sel btn">加载评论</span>
+		<button id="post-comment" class="post-comment no-sel btn">发表评论</button>
+		<button id="load-comments" class="load-comments no-sel btn">加载评论</button>
 		&nbsp;<span id="loading-status"></span>
 		<input type="hidden" id="post-id" name="post-id" value="" />
 	</div>
@@ -37,12 +37,12 @@ document.write(function(){/*
 				<div class="fields">
 					<div class="field">
 						<label>昵称</label>
-						<input type="text" name="author" required/>
+						<input type="text" name="author"/>
 						<span class="needed">必填</span>
 					</div>
 					<div class="field">
 						<label>邮箱</label>
-						<input type="text" name="email" required/>
+						<input type="text" name="email"/>
 						<span class="needed">必填(不公开)</span>
 					</div>
 					<div class="field">
@@ -59,7 +59,7 @@ document.write(function(){/*
 				<div class="comment-content">
 					<label style="position: absolute;">评论</label>
 					<label style="visibility: hidden;">评论</label> <!-- 别问我，我想静静 -->
-					<textarea id="comment-content" name="content" wrap="off" required></textarea>
+					<textarea id="comment-content" name="content" wrap="off"></textarea>
 				</div>
 
 				<div class="comment-submit">

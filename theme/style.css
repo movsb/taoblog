@@ -76,11 +76,9 @@ h6 { font-size: 1.0em; }
 
 /* 按钮 */
 .btn {
-	background-color: #D2D8BE;
 	border: 1px solid gray;
 	border-radius: 4px;
 	box-sizing: border-box;
-	padding: 0.5em 1em;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	user-select: none;
@@ -599,7 +597,7 @@ h6 { font-size: 1.0em; }
 
 /* 评论提交 */
 #comment-submit {
-	padding: 6px;
+	padding: 5px;
 	background-color: rgba(113,113,113,0.7);
 	color: white;
 	cursor: pointer;
@@ -660,7 +658,7 @@ h6 { font-size: 1.0em; }
 
 /* 评论发表框 */
 #submitting-status {
-	color: white;
+    font-size: 1.2em;
 }
 
 /* 常规模式 */
@@ -676,9 +674,10 @@ h6 { font-size: 1.0em; }
 }
 
 #comment-form-div.normal .comment-form-div-1 {
-	background-color: rgba(0,0,0,0.8);
-	box-shadow: 0px 0px 8px;
+	background-color: rgba(255,255,255,0.95);
 	padding: 10px;
+    border: 1px solid grey;
+    box-shadow: 0px 0px 2px;
 	display: block;
 	width: 360px;
 	height: 300px;
@@ -695,7 +694,7 @@ h6 { font-size: 1.0em; }
 
 /* 关闭和最大化按钮 */
 #comment-form-div .closebtn, #comment-form-div .maxbtn {
-	color: #D0D0D0;
+	color: #AAA7A7;
 	z-index: 1000;
 	position: absolute;
 	width: 30px;
@@ -714,7 +713,7 @@ h6 { font-size: 1.0em; }
 }
 
 #comment-form-div .closebtn:hover, #comment-form-div .maxbtn:hover {
-	color: #FFF;
+	color: #323232;
 }
 
 #comment-form-div .closebtn i, #comment-form-div .maxbtn i {
@@ -727,7 +726,7 @@ h6 { font-size: 1.0em; }
 	position: relative;
 	text-align: center;
 	font-size: 2em;
-	color: white;
+	color: #a53535;
 	cursor: default;
 }
 
@@ -758,7 +757,7 @@ h6 { font-size: 1.0em; }
 #comment-form .fields .field input[type="text"], 
 #comment-form .comment-content textarea,
 #comment-form-div .comment-content label {
-	color: white;
+	color: #500000;
 	font-family: Consolas, "Microsoft YaHei";
 	padding-top: 7px;
 	background-color: transparent;
