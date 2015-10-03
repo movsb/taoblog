@@ -22,11 +22,19 @@ body {
 
 a {
 	text-decoration: none;
-	color: #009C96;
+	color: #005782;
 }
 
 a:hover {
 	text-decoration: underline;
+}
+
+a:active {
+	color: #faa700;
+}
+
+a:visited {
+	color: #800080;
 }
 
 a, input, submit, textarea, button {
@@ -347,6 +355,7 @@ h6 { font-size: 1.0em; }
 
 .entry p {
 	margin: 1em 0px;
+	line-height: 1.5em;
 }
 
 .entry a.external {
@@ -427,10 +436,12 @@ h6 { font-size: 1.0em; }
 .entry table {
 	border: 1px solid gray;
 	border-collapse: collapse;
+	margin: 1em;
 }
 
-.entry table td {
+.entry table td, .entry table th {
 	border: 1px solid gray;
+	padding: 0.5em;
 }
 
 .entry table.no-border, .entry table.no-border td {
@@ -482,7 +493,6 @@ h6 { font-size: 1.0em; }
 	white-space: pre;
 	font-family: Consolas, monospace;
 	padding: 0.5em !important;
-	border-left: 6px solid #8D7474;
 	border-radius: 2px;
 	background-color: #ECECEC;
 	line-height: 1.5em;
