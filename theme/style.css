@@ -13,6 +13,7 @@ body {
 	color: #292929;
 	margin: 0px auto;
 	padding: 0px;
+	font-family: sans-serif;
 	font: 13px Consolas,"Microsoft YaHei";
 }
 
@@ -436,7 +437,7 @@ h6 { font-size: 1.0em; }
 .entry table {
 	border: 1px solid gray;
 	border-collapse: collapse;
-	margin: 1em;
+	margin: 1em 0px;
 }
 
 .entry table td, .entry table th {
@@ -709,7 +710,7 @@ h6 { font-size: 1.0em; }
 	position: absolute;
 	width: 30px;
 	cursor: pointer;
-	height: 30px;
+	height: 20px;
 }
 
 #comment-form-div .closebtn {
@@ -738,6 +739,7 @@ h6 { font-size: 1.0em; }
 	font-size: 2em;
 	color: #a53535;
 	cursor: default;
+	top: -5px;
 }
 
 /* 必填项 */
