@@ -113,13 +113,14 @@ $('.home-a').click(function() {
 		view_image(this, true);
 
 		var f = function(e) {
-			if(e.keyCode == 27) {
+			if(e.keyCode == 27 || e.keyCode == 32) {
 				view_image(null, false);
-				window.removeEventListener('keyup', f);
+				window.removeEventListener('keydown', f);
+                e.preventDefault();
 			}
 		};
 
-		window.addEventListener('keyup', f);
+		window.addEventListener('keydown', f);
 	});
 
 	imgdiv.click(function() {
