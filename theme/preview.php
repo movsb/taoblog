@@ -21,4 +21,5 @@ defined('TBPATH') or die('Silence is golden.');
 </div>
 </body>
 </html>
+<?php
 
