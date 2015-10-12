@@ -408,6 +408,7 @@ h6 { font-size: 1.0em; }
 
 .entry img:hover {
 	box-shadow: 0px 0px 3px;
+    cursor: zoom-in;
 }
 
 .entry img.shadow {
@@ -1074,6 +1075,7 @@ h6 { font-size: 1.0em; }
 	right: 0px;
 	bottom: 0px;
 	overflow: auto;
+    cursor: zoom-out;
 }
 
 #img-view img {
