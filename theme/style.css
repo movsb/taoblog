@@ -105,6 +105,7 @@ h6 { font-size: 1.0em; }
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	user-select: none;
+    cursor: default;
 }
 
 /* 头部 */
