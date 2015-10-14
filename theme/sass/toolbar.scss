@@ -1,0 +1,62 @@
+/* 底部工具栏 */
+.footer-toolbar {
+	position: fixed;
+	right: 10px;
+	bottom: 10px;
+	box-sizing: border-box;
+}
+
+#tips {
+	position: fixed;
+	right: 10px;
+	top: 10px;
+	max-width: 200px;
+	padding: 1em;
+	box-shadow: 0px 0px 1px;
+	border-radius: 4px;
+	background-color: rgba(255,100,100,0.93);
+	color: white;
+	z-index: 1000;
+	display: none;
+}
+
+/* 阅读模式 */
+.reading-mode {
+	font-size: 30px;
+	height: 30px;
+	cursor: pointer;
+}
+
+/* 回到顶部 */
+.back-to-top {
+	display: none;
+	font-size: 30px;
+	height: 30px;
+	cursor: pointer;
+    &:hover {
+        color: #f66;
+    }
+}
+
+/* 图片查看 */
+#img-view {
+	position: fixed;
+	z-index: 1000000;
+	display: none;
+	background-color: rgba(0,0,0,0.85);
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	overflow: auto;
+    cursor: zoom-out;
+    img {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        margin: auto;
+    }
+}
+

@@ -1,0 +1,124 @@
+/* 头部 */
+
+#header {
+	box-sizing: border-box;
+	position: fixed;
+	left: 0px;
+	top: 0px;
+	background-color: rgba(0,0,0,0.8);
+	z-index: 100;
+	transition: left 0.5s ease;
+}
+
+@media screen and (min-width: 851px) {
+	#header {
+		bottom: 0px;
+		width: 300px;
+		overflow: auto;
+	}
+
+	#header-wrapper {
+		padding: 10px;
+	}
+
+	#header .mobile {
+		display: none;
+	}
+}
+
+@media screen and (max-width: 850px) {
+	#header {
+		height: 40px;
+		width: 100%;
+		box-shadow: 0px 0px 3px;
+	}
+
+	#header-wrapper {
+		padding: 5px;
+	}
+
+	#header .desktop {
+		display: none;
+	}
+
+	#footer-toolbar .reading-mode {
+		display: none;
+	}
+}
+
+#header {
+    .mobile {
+        h6 {
+            display: inline;
+            padding: 0px;
+            margin: 0px;
+            position: relative;
+            top: -8px;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .me {
+            height: 30px;
+            width: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .social {
+            display: inline;
+            float: right;
+            position: relative;
+            top: 3px;
+        }
+
+        .social i {
+            color: white;
+        }
+    }
+
+
+    .center {
+        text-align: center;
+    }
+
+    .copy {
+        color: white;
+    }
+}
+
+#head {
+	clear: both;
+	color: white;
+	margin: 0px auto;
+
+    h6 {
+        margin: 0px 0px 8px;
+        font-weight: normal;
+        font-size: 30px;
+        cursor: pointer;
+    }
+
+    .description {
+        font-size: 12px;
+        clear: left;
+
+        p#today_english_en {
+            font-family: Consolas,"Microsoft YaHei";
+        }
+    }
+
+    .social a {
+        color: inherit;
+    }
+
+    .me {
+        height: 64px;
+        width: 64px;
+        border-radius: 32px;
+        margin-bottom: 20px;
+        cursor: pointer;
+    }
+}
+

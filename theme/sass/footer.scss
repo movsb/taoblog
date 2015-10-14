@@ -1,0 +1,58 @@
+/* 底部 */
+#footer {
+	color: white;
+	font-size: 13px;
+	margin-top: 30px;
+
+    .mb {
+        margin-bottom: 16px;
+    }
+
+    .footer-wrapper {
+        box-sizing: border-box;
+        margin: 0px auto;
+    }
+
+    .declaration {
+        color: #ccc;
+    }
+
+    .column {
+        max-height: 100%;
+        box-sizing: border-box;
+        ul {
+            padding: 0px;
+            list-style: none;
+            line-height: 1.5em;
+            a {
+                cursor: pointer;
+                text-decoration: none;
+                color: #ccc;
+                &:hover {
+                    text-decoration: none;
+                    color: #C3AC00;
+                }
+            }
+        }
+    }
+
+    .copy {
+        text-align: center;
+    }
+}
+
+@media screen and (min-width: 851px) {
+	#mobile-footer {
+		display: none;
+	}
+}
+
+@media screen and (max-width: 850px) {
+	#mobile-footer {
+		border-top: 1px solid #ccc;
+		margin-top: 10px;
+		padding: 10px;
+		text-align: center;
+	}
+}
+

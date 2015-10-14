@@ -1,0 +1,354 @@
+/* 内容 */
+#wrapper {
+	margin: 0px auto;
+	clear: both;
+	min-width: 100px;
+	padding: 10px;
+}
+
+#main {
+	min-height: 400px;
+}
+
+@media screen and (max-width: 850px) {
+	#wrapper {
+		margin-top: 30px;
+	}
+}
+
+@media screen and (min-width: 851px) {
+	#main {
+		margin-left: 300px;
+		transition: margin-left 0.5s;
+	}
+}
+
+#content {
+	max-width: 850px;
+	margin: 0px auto 10px;
+}
+
+/* 分类与日期查询 */
+.query {
+	padding: 0px 10px;
+
+    ul.item-list {
+        list-style: none;
+        line-height: 2.5em;
+        padding: 0px;
+
+        .item h2 {
+            margin: 0px;
+            font-size: 1.4em;
+
+            .thedate {
+                margin-left: 0.5em;
+                font-size: 0.5em;
+            }
+        }
+    }
+}
+
+
+/* 文章 */
+.post, .pages {
+	margin-bottom: 15px;
+
+    .title h1 {
+        float: left;
+        margin: 0px 0px 10px;
+        padding: 0.4em 0.5em 0px;
+        font-size: 2em;
+        color: #9f4545;
+    }
+
+    /* 文章元数据 */
+    .meta { 
+        padding: 5px 10px;
+        border-top: 1px solid #ccc;
+        clear: both;
+        color: #5A5A5A;
+
+        span.item {
+            padding: 0px 5px;
+        }
+
+        .fa {
+            margin-right: 5px;
+        }
+
+        .item a {
+            color: inherit;
+        }
+
+        .font-sizing {
+            .inc, .dec {
+                cursor: pointer;
+            }
+        }
+
+        .author {
+            display: none;
+        }
+    }
+}
+
+@media screen and (max-width: 600px) {
+	.post .meta .label {
+		display: none;
+	}
+}
+
+/* 文章内容 */
+@media screen and (max-width: 850px) {
+	.entry {
+		padding: 0px 0px 16px;
+	}
+}
+@media screen and (min-width: 851px) {
+	.entry {
+		padding: 0px 15px 16px;
+	}
+}
+
+.entry {
+	display: block;
+	color: #292929;
+	text-align: justify;
+
+     pre {
+        box-sizing: border-box;
+
+        &.wrap {
+            white-space: pre-wrap;
+        }
+
+        &.no-wrap {
+            white-space: pre;
+            overflow: auto;
+        }
+
+        &.quote {
+            padding: 1em;
+            border: 1px dashed #ccc;
+            background-color: aliceblue;
+        }
+    }
+
+    p {
+        margin: 1em 0px;
+        line-height: 1.5em;
+    }
+
+    a {
+        &.external {
+            margin-left: 5px;
+            padding-left: 18px;
+            background-image: url(/theme/images/external-anchor.png);
+            background-repeat: no-repeat;
+            background-position: left center;
+        }
+
+        &:not([href]) {
+            color: inherit;
+
+            &:hover {
+                cursor: default;
+            }
+        }
+    }
+
+    .line-code {
+        white-space: pre-wrap;
+        display: inline;
+        line-height: 2em;
+        font-family: Consolas, monospace;
+        padding: 5px;
+        margin: 0px 3px;
+        border: 1px solid rgb(201,163,163);
+        border-radius: 3px;
+    }
+
+    .same-height {
+        line-height: 1.5em;
+    }
+
+
+    img {
+        max-width: 100%;
+
+        &:hover {
+            box-shadow: 0px 0px 3px;
+            cursor: zoom-in;
+        }
+
+        &.shadow {
+            box-shadow: 0px 0px 2px;
+        }
+    }
+
+    /* 色彩 */
+    .fg-black    { color: black; }
+    .fg-blue     { color: blue; }
+    .fg-green    { color: green; }
+    .fg-aqua     { color: aqua; }
+    .fg-red      { color: red; }
+    .fg-magenta  { color: magenta; }
+    .fg-yellow   { color: yellow; }
+    .fg-white    { color: white; }
+
+    .bg-black    { background-color: black; }
+    .bg-blue     { background-color: blue; }
+    .bg-green    { background-color: green; }
+    .bg-aqua     { background-color: aqua; }
+    .bg-red      { background-color: red; }
+    .bg-magenta  { background-color: magenta; }
+    .bg-yellow   { background-color: yellow; }
+    .bg-white    { background-color: white; }
+
+    /* 文章表格 */
+    table {
+        border: 1px solid gray;
+        border-collapse: collapse;
+        margin: 1em 0px;
+
+        td, th {
+            border: 1px solid gray;
+            padding: 0.5em;
+        }
+
+        &.no-border, &.no-border td {
+            border: none;
+        }
+
+        &.enlarge-first-td td:first-child {
+            padding-right: 1em;
+        }
+    }
+
+    /* 代码片段 */
+    div.code-wrap {
+        max-height: 500px;
+        overflow: auto;
+        margin: 0.5em 0em;
+
+        table {
+            border: none;
+            width: 100%;
+            border-collapse: collapse;
+
+            tr {
+                line-height: 1.1em;
+                vertical-align: top;
+                font-family: Consolas, monospace;
+            }
+
+            td.gutter {
+                padding: 0.5em !important;
+                background-color: #23241F;
+                color: white;
+                text-align: right;
+                border: none;
+                border-right: 3px solid yellowgreen;
+                width: 2em;
+                min-width: 2em;	/* why need both here ? See: 476.html */
+            }
+
+            td.code {
+                padding: 0px !important;
+                border: none;
+            }
+        }
+    }
+}
+
+.entry {
+    div.code-wrap pre.code, pre.code, pre.shell {
+        overflow: auto !important;
+        white-space: pre;
+        font-family: Consolas, monospace;
+        padding: 0.5em !important;
+        border-radius: 2px;
+        background-color: #ECECEC;
+        line-height: 1.5em;
+        margin: 1em 0px;
+        max-height: 1000px;
+    }
+}
+
+/* 目录 */
+@media screen and (min-width: 600px) {
+	.entry div.toc {
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		max-width: 300px;
+		color: #141414;
+		background-color: rgba(255,255,255,0.9);
+		padding: 10px;
+		border: 1px solid gray;
+	}
+}
+
+.entry {
+    div.toc {
+        h2, h3 {
+            margin: 0px;
+            font-size: 20px;
+        }
+
+        a {
+            color: inherit;
+            font-family: Consolas,"Microsoft YaHei";
+            font-size: 12px;
+        }
+
+        ul:first-of-type {
+            padding-left: 2em;
+            margin-bottom: 0px;
+        }
+    }
+}
+
+/* 相关文章推荐 */
+.post .related {
+    h3 {
+        padding: 0.8em 0.8em 0px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    ol {
+        padding-left: 4em;
+    }
+
+    a {
+        color: inherit;
+    }
+}
+
+/* 分页 */
+#content .pagination {
+	border-top: 1px solid #ccc;
+	padding: 20px;
+	text-align: center;
+
+    .page-number,
+    .current {
+        padding: 3px 6px;
+        cursor: pointer;
+        margin-right: 0.5em;
+        color: inherit;
+    }
+
+    .page-number:hover {
+        color: white;
+        background-color: rgba(146,146,146,0.7);
+        text-decoration: none;
+    }
+
+    .current {
+        color: white;
+        background-color: rgba(146,146,146,0.5);
+    }
+}
+

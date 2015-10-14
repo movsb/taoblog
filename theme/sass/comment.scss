@@ -1,0 +1,341 @@
+/* 评论 */
+
+/* 评论标题 */
+#comment-title {
+	font-size: 1.5em;
+	padding: 0.8em 0.8em 0px 0.8em;
+	border-bottom: 1px solid #ccc;
+	margin-bottom: 0;
+}
+
+/* 评论列表 */
+#comment-list {
+	padding: 0;
+	list-style: none;
+
+    .comment-replies ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    .comment-avatar {
+        cursor: pointer;
+    }
+
+
+    .comment-li {
+        padding: 1em 0px 1em 1em;
+
+        .comment-avatar {
+            float: left;
+            width: 48px;
+            height: 48px;
+
+            img {
+                border-radius: 4px;
+            }
+        }
+
+        .comment-meta {
+            margin-left: 54px;
+        }
+
+        .comment-content {
+            margin-left: 54px;
+            margin-bottom: 1em;
+            padding-left: 0.4em;
+        }
+
+        .comment-replies {
+            margin-left: 48px;
+        }
+
+        .comment-replies li {
+            padding: 1em 0px 1em 1em;
+            border-top: 1px dashed #ccc;
+        }
+
+        .comment-content {
+            margin-top: 0;
+            font-family: Consolas, "Microsoft YaHei";
+            white-space: pre-wrap;
+            overflow: auto;
+            max-height: 400px;
+        }
+    }
+}
+
+/* 评论提交 */
+#comment-submit {
+	padding: 5px;
+	background-color: rgba(113,113,113,0.7);
+	color: white;
+	cursor: pointer;
+
+    &:hover {
+        background-color: rgba(200,30,30,0.8);
+    }
+}
+
+#comment-form {
+    .comment-submit {
+        .submitting {
+            display: none;
+            color: red;
+            margin-left: 1em;
+        }
+
+        .succeeded {
+            display: none;
+            color: green;
+            margin-left: 1em;
+        }
+
+        .failed {
+            display: none;
+            color: red;
+            margin-left: 1em;
+        }
+    }
+}
+
+/* 评论功能区 */
+#comments .comment-func {
+	margin: 2em;
+}
+
+.comment-meta {
+    .nickname, .author {
+        font-size: 1.1em;
+        position: relative;
+        top: -4px;
+    }
+
+    .nickname {
+        color: #003B87;
+
+        a {
+            color: inherit;
+        }
+    }
+
+    .author {
+        color: #FF4040;
+    }
+
+    .date {
+        margin: 0px;
+        font-size: 0.9em;
+        position: relative;
+        top: -4px;
+        color: #cfcfcf;
+    }
+}
+
+/* 评论发表框 */
+#submitting-status {
+    font-size: 1.2em;
+}
+
+/* 常规模式 */
+#comment-form-div {
+    &.normal {
+        position: fixed;
+        left: 0px;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        height: 100%;/* 不加这个Chrome无法工作，why? */
+        z-index: 1000;
+        display: none;
+    }
+
+    &.normal {
+        .comment-form-div-1 {
+            background-color: rgba(255,255,255,0.95);
+            padding: 10px;
+            border: 1px solid grey;
+            box-shadow: 0px 0px 2px;
+            display: block;
+            width: 360px;
+            height: 300px;
+            position: relative;
+            top: 50%;
+            margin: auto;
+            transform: translateY(-50%);
+            font-size: 0.7em;
+        }
+
+        .comment-form-div-2 {
+            display: none;
+        }
+    }
+
+    /* 关闭和最大化按钮 */
+    .closebtn, .maxbtn {
+        color: #AAA7A7;
+        z-index: 1000;
+        position: absolute;
+        top: 3px;
+        cursor: pointer;
+        height: 20px;
+        width: 20px;
+    }
+
+    .closebtn {
+        right: 3px;
+    }
+
+    .maxbtn {
+        right: 30px;
+    }
+
+    .closebtn, .maxbtn {
+        &:hover {
+            color: #323232;
+        }
+        i {
+            position: relative;
+            left: 6px;
+            top: 2px;
+        }
+    }
+
+    /* 评论框标题 */
+    .comment-title {
+        position: relative;
+        text-align: center;
+        font-size: 2em;
+        color: #a53535;
+        cursor: default;
+        top: -5px;
+    }
+}
+
+/* 必填项 */
+#comment-form {
+    .fields {
+        .field {
+            padding-bottom: 0.4em;
+            .needed {
+                color: red;
+            }
+
+            /* 评论内容框 */
+            input[type="text"] {
+                width: 250px;
+            }
+
+            input[type="text"] {
+                width: 220px;
+            }
+
+            label {
+                padding-right: 4px;
+                font-size: 1.2em;
+            }
+        }
+    }
+
+    .comment-content {
+        position: relative;
+        margin-bottom: 1em;
+
+        label {
+            padding-right: 4px;
+            font-size: 1.2em;
+        }
+
+        textarea {
+            width: 300px;
+            height: 114px;
+            resize: none;
+        }
+    }
+}
+
+
+#comment-form .fields .field label, 
+#comment-form .fields .field input[type="text"], 
+#comment-form .comment-content textarea,
+#comment-form-div .comment-content label {
+	color: #500000;
+	font-family: Consolas, "Microsoft YaHei";
+	padding-top: 7px;
+	background-color: transparent;
+}
+
+/* 最大化模式 */
+#comment-form-div {
+    &.maximized {
+        position: fixed;
+        z-index: 100;
+        background-color: rgba(10,10,10, 0.8);
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+
+        .comment-form-div-1 {
+            display: none;
+        }
+
+        .comment-form-div-2 {
+            display: block;
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            bottom: 0px;
+            left: 0px;
+            padding: 12px;
+        }
+
+        .textarea-wrapper {
+            position: absolute;
+            top: 46px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+        }
+
+        /* 评论工具栏 */
+        .toolbar {
+            position: relative;
+
+            .right {
+                position: absolute;
+                text-align: right;
+                right: 0px;
+                display: inline-block;
+            }
+
+            .font-inc,
+            .font-dec,
+            .close {
+                cursor: pointer;
+
+                &:hover {
+                    color: white;
+                }
+            }
+
+            .close {
+                margin-left: 1em;
+            }
+        }
+    }
+}
+	
+#comment-content-2 {
+	color: white;
+	font-family: Consolas,"Microsoft YaHei";
+	padding-top: 7px;
+	background-color: transparent;
+	border: 2px dashed #ccc;
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	max-height: 100%;
+	max-width: 100%;
+}
+
