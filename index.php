@@ -46,7 +46,11 @@ if($tbquery->query() === false){
 // https://css-tricks.com/snippets/php/count-script-excecution-time/
 $execution_time = sprintf('%.5f', microtime() - $start_time);
 
-if(!$tbquery->have() && !$tbquery->is_home() && !$tbquery->is_sitemap()){
+if(!$tbquery->have() 
+    && !$tbquery->is_home() 
+    && !$tbquery->is_sitemap()
+    && !$tbquery->is_archive()
+){
 	if(!$tbquery->is_query_modification) {
 		require('theme/404.php');
 		die(0);
@@ -70,5 +74,7 @@ if($tbquery->is_home()) {
 	require('theme/feed.php');
 } else if($tbquery->is_sitemap()) {
 	require('theme/sitemap.php');
+} else if($tbquery->is_archive()) {
+    require('theme/archive.php');
 }
 

@@ -63,6 +63,10 @@ class TB_Query {
 		return $this->type === 'sitemap';
 	}
 
+    public function is_archive() {
+        return $this->type === 'archive';
+    }
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 10);
@@ -103,6 +107,7 @@ class TB_Query {
 			'^/tags/(.+)$'                                      => 'tags=$1',
 			'^/(feed|rss)(\.xml)?$'                             => 'feed=1',
 			'^/sitemap\.xml$'                                   => 'sitemap=1',
+            '^/archives$'                                       => 'archives=1',
 			'^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
 			'^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
 			'^/index\.php$'                                     => '',
@@ -167,6 +172,12 @@ class TB_Query {
 			$this->type = 'sitemap';
 			return true;
 		}
+
+        // 处理归档
+        if(isset($this->internal_query['archives'])) {
+            $this->type = 'archive'; // 没有 s
+            return true;
+        }
 
 		$r = $tbpost->query($this->internal_query);
 		if($r === false) return $r;

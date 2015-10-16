@@ -10,6 +10,8 @@
 	<title><?php
 		if($tbquery->is_home()) {
 			echo '首页';
+        } else if($tbquery->is_archive()) {
+            echo '文章归档';
 		} else if(!$tbquery->count) {
 			echo '404';
 		} else if($tbquery->is_singular()) {

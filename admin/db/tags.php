@@ -138,5 +138,21 @@ class TB_Tags {
 
 		return true;
 	}
-	
+
+    // 此函数用来获取所有的标签及其拥有的文章数
+    // 正确返回：[{name: x},{name, x}]
+    public function list_all_tags() {
+        global $tbdb;
+
+        $sql = "SELECT t.name,COUNT(pt.id) as size FROM post_tags pt,tags t WHERE pt.tag_id=t.id GROUP BY t.id" /* ORDER BY size DESC LIMIT ? */;
+        $results = $tbdb->query($sql);
+        if(!$results) return false;
+
+        $tag_objs = [];
+        while($to = $results->fetch_object())
+            $tag_objs[] = $to;
+
+        return $tag_objs;
+    }
 }
+
