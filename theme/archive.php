@@ -8,9 +8,9 @@ function list_all_cats() {
         $s = '';
         foreach($taxes as $t) {
             $has_sons = isset($t->sons) && count($t->sons);
-            $s .= '<li class="'.($has_sons ? 'parent ' : 'child').'">'
+            $s .= '<li data-id="'.$t->id.'" class="'.($has_sons ? 'parent ' : 'child').'">'
                 .($has_sons ? '<span class="expandable">&gt;</span>&nbsp;' : '<span class="dash">-</span>&nbsp;')
-                .'<span style="cursor: pointer;">'.$t->name."</span>\n";
+                .'<span class="title">'.$t->name."</span>\n";
             if($has_sons) {
                 $s .= '<ul>';
                 $s .= _tax_add($t->sons);
@@ -54,11 +54,43 @@ require('header.php');
 
 function tb_footer_hook() { ?>
 <script>
+    function get_posts_by_id(cid, li) {
+        $.get('/admin/ajax.php',
+            'do=get_cat_posts&cid=' + cid,
+            function(data) {
+                if(data.errno == 'ok') {
+                    li.append('<ul class="posts"/>');
+                    var posts = li.find('>ul.posts');
+                    var ps = data.posts;
+                    for(var i=0; i< ps.length; i++) {
+                        var p = ps[i];
+                        var s = '<li><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                        posts.append(s);
+                    }
+                }
+                else {
+                    alert(data.error);
+                }
+            }
+        );
+    }
+
     $('.cats').on('click',function(e) {
         var target = $(e.target);
         if(target.hasClass('expandable')) {
             target.parent().find('>ul').toggle();
             target.toggleClass('expanded');
+        }
+        else if(target.hasClass('title')) {
+            if(target.attr('data-clicked') == '1') {
+                target.parent().find('>ul').toggle();
+            }
+            else {
+                var li = $(target.parent());
+                var cid = li.attr('data-id');
+                get_posts_by_id(cid, li);
+                target.attr('data-clicked','1');
+            }
         }
         e.stopPropagation();
     });

@@ -740,5 +740,35 @@ class TB_Posts {
 
         return $uri ? '/'.$uri : '';
     }
+
+	public function get_cat_posts($cid){
+		global $tbdb;
+		global $tbtax;
+		global $tbquery;
+
+        $cid = (int)$cid;
+        if($cid <= 0) return false;
+
+		$fields = "id,date,title";
+		$sql = "SELECT $fields FROM posts WHERE taxonomy=$cid";
+
+		/*$offsprings = $tbtax->get_offsprings($cid);
+		foreach($offsprings as $os)
+			$sql .= " OR taxonomy=$os";
+         */
+
+		$sql .= " ORDER BY date DESC";
+		//$sql .= " LIMIT $offset,$ppp";
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		$p = [];
+		while($r = $rows->fetch_object()){
+			$p[] = $r;
+		}
+
+		return $p;
+	}
 }
 
