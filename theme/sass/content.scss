@@ -78,6 +78,31 @@
             }
         }
     }
+    .cats {
+        ul {
+            list-style: none;
+            li {
+                span {
+                    cursor: pointer;
+                    &.dash {
+                        display: inline-block;
+                        padding: 0px 4px 1px;
+                    }
+
+                    &.expandable {
+                        display: inline-block;
+                        padding: 0px 4px 1px;
+                        &.expanded {
+                            transform: rotateZ(36deg);
+                        }
+                    }
+                }
+            }
+            li.parent > ul {
+                display: none;
+            }
+        }
+    }
 }
 
 /* 文章 */

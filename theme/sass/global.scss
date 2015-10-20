@@ -37,8 +37,11 @@ a, input, textarea, button {
     transition: all 0.2s ease-out;
 }
 
-button::-moz-focus-inner {
-    border: 0;
+button, input[type=submit] {
+    border: none;
+    &::-moz-focus-inner {
+        //border: 0;
+    }
 }
 
 acronym, abbr {
@@ -49,10 +52,6 @@ input, a, textarea {
     &:focus {
         outline: none;
     }
-}
-
-input[type=submit] {
-    border: none;
 }
 
 input, textarea, button {
