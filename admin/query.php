@@ -154,8 +154,9 @@ class TB_Query {
 
 		// 把类似 "/1234" 重定向到 "/12324/"
 		if(isset($this->internal_query['short']) && !$this->internal_query['slash']) {
+            $query = isset($_SERVER['QUERY_STRING']) && strlen($_SERVER['QUERY_STRING']) ? '?'.$_SERVER['QUERY_STRING'] : '';
 			header('HTTP/1.1 301 Moved Permanently');
-			header('Location: /'.$this->internal_query['id'].'/?'.$_SERVER['QUERY_STRING']);
+			header('Location: /'.$this->internal_query['id'].'/'.$query);
 			die(0);
 		}
 
