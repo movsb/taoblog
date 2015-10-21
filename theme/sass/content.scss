@@ -82,30 +82,22 @@
         ul {
             list-style: none;
             line-height: 1.5em;
+            padding-left: 2em;
+            display: none;
+            &.roots {
+                padding-left: 0px;
+                display: block;
+            }
             li {
-                span {
-                    cursor: pointer;
-                    &.dash {
-                        display: inline-block;
-                        padding: 0px 4px 1px;
-                    }
-
-                    &.expandable {
-                        display: inline-block;
-                        padding: 0px 4px 1px;
-                        &.expanded {
-                            transform: rotateZ(45deg);
+                &.folder {
+                    > .folder-name {
+                        cursor: pointer;
+                        &.fa {
+                            width: 1em;
+                            margin-right: 6px;
                         }
                     }
                 }
-            }
-            li.parent > ul {
-                padding-left: 2em;
-                display: none;
-            }
-
-            .posts > li {
-                color: blue;
             }
         }
     }

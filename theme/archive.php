@@ -7,22 +7,19 @@ function list_all_cats() {
     function _tax_add(&$taxes) {
         $s = '';
         foreach($taxes as $t) {
-            $has_sons = isset($t->sons) && count($t->sons);
-            $s .= '<li data-id="'.$t->id.'" class="'.($has_sons ? 'parent ' : 'child').'">'
-                .($has_sons ? '<span class="expandable">&gt;</span>&nbsp;' : '<span class="dash">-</span>&nbsp;')
-                .'<span class="title">'.$t->name."</span>\n";
-            if($has_sons) {
-                $s .= '<ul>';
+            $s .= '<li data-cid="'.$t->id.'" class="folder">'
+                . '<i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.$t->name.'</span>'
+                . '<ul>';
+            if(isset($t->sons))
                 $s .= _tax_add($t->sons);
-                $s .= "</ul>\n";
-            }
+            $s .= "</ul>\n";
             $s .= '</li>'."\n";
         }
         return $s;
     }
 
 
-	$content = '<ul>'._tax_add($taxes).'</ul>';
+	$content = '<ul class="roots">'._tax_add($taxes).'</ul>';
     echo $content;
 }
 
@@ -54,42 +51,39 @@ require('header.php');
 
 function tb_footer_hook() { ?>
 <script>
-    function get_posts_by_id(cid, li) {
-        $.get('/admin/ajax.php',
-            'do=get_cat_posts&cid=' + cid,
-            function(data) {
-                if(data.errno == 'ok') {
-                    li.append('<ul class="posts"/>');
-                    var posts = li.find('>ul.posts');
-                    var ps = data.posts;
-                    for(var i=0; i< ps.length; i++) {
-                        var p = ps[i];
-                        var s = '<li><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
-                        posts.append(s);
-                    }
-                }
-                else {
-                    alert(data.error);
-                }
-            }
-        );
-    }
-
     $('.cats').on('click',function(e) {
-        var target = $(e.target);
-        if(target.hasClass('expandable')) {
-            target.parent().find('>ul').toggle();
-            target.toggleClass('expanded');
-        }
-        else if(target.hasClass('title')) {
-            if(target.attr('data-clicked') == '1') {
-                target.parent().find('>ul').toggle();
-            }
-            else {
-                var li = $(target.parent());
-                var cid = li.attr('data-id');
-                get_posts_by_id(cid, li);
-                target.attr('data-clicked','1');
+        var t = $(e.target);
+        if(t.hasClass('folder-name')) {
+            var li = t.parent();
+            var ul = li.find('>ul');
+            var fa = li.find('>.folder-name.fa');
+            ul.toggle();
+            fa.toggleClass('fa-folder-open-o');
+            fa.toggleClass('fa-folder-o');
+            if(li.attr('data-clicked') != '1') {
+                li.attr('data-clicked', '1');
+                ul.append('<li class="loading"><i class="fa fa-cog fa-spin"></i>&nbsp;正在加载...</li>');
+                var cid = li.attr('data-cid');
+                $.get('/admin/ajax.php',
+                    'do=get_cat_posts&cid=' + cid,
+                    function(data) {
+                        if(data.errno == 'ok') {
+                            var ps = data.posts;
+                            for(var i=0; i< ps.length; i++) {
+                                var p = ps[i];
+                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                                ul.append(s);
+                            }
+                            if(ps.length == 0)
+                                ul.append('<li class="none">（没有文章）</li>');
+                        }
+                        else {
+                            alert(data.error);
+                        }
+                    }
+                ).always(function() {
+                    ul.find('li.loading').remove();
+                });
             }
         }
         e.stopPropagation();

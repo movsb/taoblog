@@ -22,11 +22,11 @@ a {
     &:hover {
         text-decoration: underline;
     }
-    &:active {
-        color: #faa700;
-    }
     &:visited {
         color: #800080;
+    }
+    &:active {
+        color: #faa700;
     }
     &:focus {
         outline: none;
