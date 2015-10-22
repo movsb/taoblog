@@ -58,6 +58,25 @@ function ajax_get_date_posts() {
         ]);
 }
 
+function ajax_get_tag_posts() {
+    global $tbpost;
+    $tag = isset($_REQUEST['tag']) ? $_REQUEST['tag'] : '';
+    if(!strlen($tag)) {
+        ajax_die(400, '空标签');
+    }
+
+    $posts = $tbpost->get_tag_posts($tag);
+    if(!is_array($posts)) {
+        ajax_die(400, '获取失败');
+        return false;
+    }
+
+    ajax_done([
+        'errno'     => 'ok',
+        'posts'     => $posts,
+        ]);
+}
+
 if(!isset( $_REQUEST['do'])){
 	ajax_die(400, '未指定动作！');
 }

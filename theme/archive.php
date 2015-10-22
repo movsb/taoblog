@@ -41,13 +41,17 @@ function list_all_cats() {
 
 function list_all_tags() {
     global $tbtag;
-
     $tags = $tbtag->list_all_tags();
+
+    echo '<ul class="roots">';
     foreach($tags as &$t) {
-        echo '<a href="/tags/',urlencode($t->name),'">',htmlspecialchars($t->name),
-            '<span>', $t->size,'</span>','</a>';
+        echo '<li class="tag" data-name="', urlencode($t->name),'">';
+        echo    '<i class="tag-name fa fa-tag"></i>';
+        echo    '<span class="tag-name">',htmlspecialchars($t->name),'(',$t->size,')</span>';
+        echo    '<ul></ul>';
+        echo '</li>';
     }
-    unset($t);
+    echo '</ul>';
 }
 
 require('header.php');
@@ -121,6 +125,40 @@ function tb_footer_hook() { ?>
                 var mm = li.attr('data-mm');
                 $.get('/admin/ajax.php',
                     'do=get_date_posts&yy=' + yy + '&mm=' + mm,
+                    function(data) {
+                        if(data.errno == 'ok') {
+                            var ps = data.posts;
+                            for(var i=0; i< ps.length; i++) {
+                                var p = ps[i];
+                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                                ul.append(s);
+                            }
+                            if(ps.length == 0)
+                                ul.append('<li class="none">（没有文章）</li>');
+                        }
+                        else {
+                            alert(data.error);
+                        }
+                    }
+                ).always(function() {
+                    ul.find('li.loading').remove();
+                });
+            }
+        }
+        e.stopPropagation();
+    });
+    $('.tags').on('click',function(e) {
+        var t = $(e.target);
+        if(t.hasClass('tag-name')) {
+            var li = t.parent();
+            var ul = li.find('>ul');
+            ul.toggle();
+            if(li.attr('data-clicked') != '1') {
+                li.attr('data-clicked', '1');
+                ul.append('<li class="loading"><i class="fa fa-cog fa-spin"></i>&nbsp;正在加载...</li>');
+                var name = li.attr('data-name');
+                $.get('/admin/ajax.php',
+                    'do=get_tag_posts&tag=' + name,
                     function(data) {
                         if(data.errno == 'ok') {
                             var ps = data.posts;

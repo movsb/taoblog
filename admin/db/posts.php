@@ -796,7 +796,6 @@ class TB_Posts {
     // query_by_date 改的
 	public function get_date_posts($yy, $mm) {
 		global $tbdb;
-		global $tbquery;
 		global $tbdate;
 
 		$yy = (int)$yy;
@@ -821,6 +820,25 @@ class TB_Posts {
 
 		$p = [];
 		while($r = $rows->fetch_object()){
+			$p[] = $r;
+		}
+
+		return $p;
+	}
+
+    // query_by_tags 改的
+	public function get_tag_posts($tag) {
+		global $tbdb;
+		
+		$tag = $tbdb->real_escape_string($tag);
+		$sql = "SELECT posts.id,posts.date,posts.title FROM posts,post_tags,tags ";
+		$sql .= " WHERE posts.id=post_tags.post_id AND post_tags.tag_id=tags.id AND tags.name='$tag'"; // TODO WHERE
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		$p = [];
+		while($r = $rows->fetch_object()) {
 			$p[] = $r;
 		}
 
