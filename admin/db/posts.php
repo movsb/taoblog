@@ -556,6 +556,20 @@ class TB_Posts {
 		return $rows->fetch_object()->total;
 	}
 
+    // 虽然名字跟上下两个很像，并完全不是在同一个时间段写的，功能貌似也并不相同
+    public function get_count_of_cats_all() {
+        global $tbdb;
+        $sql = "SELECT count(id) count,taxonomy FROM `posts` WHERE 1 GROUP BY taxonomy";
+        $rows = $tbdb->query($sql);
+        if(!$rows) return false;
+
+        $ca = [];
+        while($r = $rows->fetch_object())
+            $ca[$r->taxonomy] = $r->count;
+
+        return $ca;
+    }
+
 	public function get_count_of_date($yy=0, $mm=0) {
 		global $tbdb;
 		global $tbdate;

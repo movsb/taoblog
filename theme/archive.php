@@ -17,26 +17,32 @@ function list_all_dates() {
     echo '</ul>';
 }
 
+// 这代码加这命名加这逻辑，我估计你得看醉，反正我是醉了
 function list_all_cats() {
 	global $tbtax;
+    global $tbpost;
 	$taxes = $tbtax->get_hierarchically();
+    $cat_posts = $tbpost->get_count_of_cats_all();
 
-    function _tax_add(&$taxes) {
+    $_tax_add = function( &$taxes,&$count_of_func) use($cat_posts,&$_tax_add) {
+        $count_of_func = 0;
         $s = '';
         foreach($taxes as $t) {
-            $s .= '<li data-cid="'.$t->id.'" class="folder">'
-                . '<i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.$t->name.'</span>'
-                . '<ul>';
+            $post_count_of_cat = isset($cat_posts[$t->id]) ? $cat_posts[$t->id] : 0;
+            $s1 = '<li data-cid="'.$t->id.'" class="folder"><i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.$t->name.'(';
+            $s2 = ')</span><ul>';
+            $s3 = '';
+            $child_count_of_func = 0;
             if(isset($t->sons))
-                $s .= _tax_add($t->sons);
-            $s .= '</ul>';
-            $s .= '</li>';
+                $s3 = $_tax_add($t->sons, $child_count_of_func);
+            $s4 = '</ul></li>';
+            $s .= $s1.$post_count_of_cat.(isset($t->sons) ? '/'.($post_count_of_cat+$child_count_of_func) : '').$s2.$s3.$s4;
+            $count_of_func += $post_count_of_cat + $child_count_of_func;
         }
         return $s;
-    }
+    };
 
-
-    echo '<ul class="roots">',_tax_add($taxes),'</ul>';
+    echo '<ul class="roots">',$_tax_add($taxes, $count_of_total/*not used*/),'</ul>';
 }
 
 function list_all_tags() {
