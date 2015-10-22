@@ -1,5 +1,22 @@
 <?php
 
+function list_all_dates() {
+    global $tbpost;
+    $dd = $tbpost->get_date_archives();
+
+    echo '<ul class="roots">';
+    foreach(array_reverse($dd, true) as $yy => &$ya) {
+        foreach(array_reverse($ya, true) as $mm => $n) {
+            echo '<li class="year-month" data-yy="',$yy,'" data-mm="',$mm,'">';
+            echo    '<i class="datetime fa fa-clock-o"></i>';
+            echo    '<span class="datetime">',$yy,'年',($mm<10?'0':''),$mm,'月(',$n,')</span>';
+            echo    '<ul></ul>';
+            echo '</li>';
+        }
+    }
+    echo '</ul>';
+}
+
 function list_all_cats() {
 	global $tbtax;
 	$taxes = $tbtax->get_hierarchically();
@@ -19,8 +36,7 @@ function list_all_cats() {
     }
 
 
-	$content = '<ul class="roots">'._tax_add($taxes).'</ul>';
-    echo $content;
+    echo '<ul class="roots">',_tax_add($taxes),'</ul>';
 }
 
 function list_all_tags() {
@@ -45,6 +61,10 @@ require('header.php');
         <h2>分类</h2>
         <?php list_all_cats(); ?>
     </div>
+    <div class="date no-sel">
+        <h2>日期</h2>
+        <?php list_all_dates(); ?>
+    </div>
 </div>
 
 <?php
@@ -66,6 +86,41 @@ function tb_footer_hook() { ?>
                 var cid = li.attr('data-cid');
                 $.get('/admin/ajax.php',
                     'do=get_cat_posts&cid=' + cid,
+                    function(data) {
+                        if(data.errno == 'ok') {
+                            var ps = data.posts;
+                            for(var i=0; i< ps.length; i++) {
+                                var p = ps[i];
+                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                                ul.append(s);
+                            }
+                            if(ps.length == 0)
+                                ul.append('<li class="none">（没有文章）</li>');
+                        }
+                        else {
+                            alert(data.error);
+                        }
+                    }
+                ).always(function() {
+                    ul.find('li.loading').remove();
+                });
+            }
+        }
+        e.stopPropagation();
+    });
+    $('.date').on('click',function(e) {
+        var t = $(e.target);
+        if(t.hasClass('datetime')) {
+            var li = t.parent();
+            var ul = li.find('>ul');
+            ul.toggle();
+            if(li.attr('data-clicked') != '1') {
+                li.attr('data-clicked', '1');
+                ul.append('<li class="loading"><i class="fa fa-cog fa-spin"></i>&nbsp;正在加载...</li>');
+                var yy = li.attr('data-yy');
+                var mm = li.attr('data-mm');
+                $.get('/admin/ajax.php',
+                    'do=get_date_posts&yy=' + yy + '&mm=' + mm,
                     function(data) {
                         if(data.errno == 'ok') {
                             var ps = data.posts;

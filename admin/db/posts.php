@@ -770,5 +770,61 @@ class TB_Posts {
 
 		return $p;
 	}
+
+    public function get_date_archives() {
+        global $tbdb;
+        $sql = "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year, month(date) month FROM (SELECT id,DATE_ADD(date, INTERVAL 8 HOUR) date FROM posts) x) x GROUP BY year,month;";
+        $rows = $tbdb->query($sql);
+        if(!$rows) return false;
+
+        $dd = [];
+        // $r = {year:2011, month: 2, count: 3}
+        while($r = $rows->fetch_object())
+            $dd[] = $r;
+
+        $x = [];
+        foreach($dd as $d) {
+            if(!isset($x[$d->year])) {
+                $x[$d->year] = [];
+            }
+            $x[$d->year][$d->month] = $d->count;
+        }
+
+        return $x;
+    }
+
+    // query_by_date 改的
+	public function get_date_posts($yy, $mm) {
+		global $tbdb;
+		global $tbquery;
+		global $tbdate;
+
+		$yy = (int)$yy;
+		$mm = (int)$mm;
+
+		$fields = "id,date,title";
+		$sql = "SELECT $fields FROM posts WHERE 1";     // TODO where
+		if($yy >= 1970) {
+			if($mm >= 1 && $mm <= 12) {
+				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
+			} else {
+				$startend = $tbdate->the_year_startend_gmdate($yy);
+			}
+
+			$sql .= " AND date>='{$startend->start}' AND date<='{$startend->end}'";
+		}
+
+		$sql .= " ORDER BY date DESC";
+
+		$rows = $tbdb->query($sql);
+		if(!$rows) return false;
+
+		$p = [];
+		while($r = $rows->fetch_object()){
+			$p[] = $r;
+		}
+
+		return $p;
+	}
 }
 
