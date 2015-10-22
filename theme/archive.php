@@ -29,8 +29,8 @@ function list_all_cats() {
                 . '<ul>';
             if(isset($t->sons))
                 $s .= _tax_add($t->sons);
-            $s .= "</ul>\n";
-            $s .= '</li>'."\n";
+            $s .= '</ul>';
+            $s .= '</li>';
         }
         return $s;
     }
@@ -57,18 +57,9 @@ function list_all_tags() {
 require('header.php');
 ?>
 <div class="archives">
-    <div class="tags no-sel">
-        <h2>标签</h2>
-        <?php list_all_tags(); ?>
-    </div>
-    <div class="cats no-sel">
-        <h2>分类</h2>
-        <?php list_all_cats(); ?>
-    </div>
-    <div class="date no-sel">
-        <h2>日期</h2>
-        <?php list_all_dates(); ?>
-    </div>
+    <div class="tags no-sel"><h2>标签</h2><?php list_all_tags(); ?></div>
+    <div class="cats no-sel"><h2>分类</h2><?php list_all_cats(); ?></div>
+    <div class="date no-sel"><h2>日期</h2><?php list_all_dates(); ?></div>
 </div>
 
 <?php

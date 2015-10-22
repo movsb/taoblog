@@ -3,6 +3,11 @@
     background-color: #f66;
 }
 
+.clearfix {
+    clear: both;
+    display: block;
+}
+
 body {
     color: #292929;
     margin: 0px auto;

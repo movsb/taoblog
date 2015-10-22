@@ -38,6 +38,12 @@ function the_recent_comments() {
 require('header.php');
 
 today_english();
+?>
+<div>
+    <h2>文章归档</h2>
+    <p><a href="/archives">全部文章的归档页面，按标签、按分类、按日期。</a></p>
+</div>
+<?php
 the_recent_posts();
 the_recent_comments();
 

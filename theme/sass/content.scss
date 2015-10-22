@@ -51,6 +51,14 @@
 
 /* 文章归档页面 */
 .archives {
+    overflow: hidden;
+    > div:nth-child(n) {
+        float: left;
+        width: 30%;
+        margin-right: 2%;
+        min-width: 200px;
+    }
+
     .tags {
         ul {
             list-style: none;
