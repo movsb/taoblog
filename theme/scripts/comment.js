@@ -1,3 +1,4 @@
+console.log('评论功能自第1版实现功能之后就几乎没有再改过，所以代码看起来极其乱，希望你看得下去。');
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
@@ -98,13 +99,11 @@ $.post(
 
 // 无公害评论内容
 function sanitize_content(c) {
-    c = c.replace(/&/g, '&amp;');
-    c = c.replace(/</g, '&lt;');
-    c = c.replace(/>/g, '&gt;');
-    c = c.replace(/'/g, '&#39;');
-    c = c.replace(/"/g, '&#34;');
-
-    return c;
+    return c.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/'/g, '&#39;')
+        .replace(/"/g, '&#34;');
 }
 
 function comment_avatar(eh,sz) {
