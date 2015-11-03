@@ -51,6 +51,7 @@ function post_widget_page_parents($p=null) {
     return [
         'title' => '父页面',
         'content' => $content,
+        'types' => 'page',
     ];
 }
 

@@ -764,7 +764,7 @@ class TB_Posts {
         if($cid <= 0) return false;
 
 		$fields = "id,date,title";
-		$sql = "SELECT $fields FROM posts WHERE taxonomy=$cid";
+		$sql = "SELECT $fields FROM posts WHERE taxonomy=$cid AND type='post'";
 
 		/*$offsprings = $tbtax->get_offsprings($cid);
 		foreach($offsprings as $os)
@@ -787,7 +787,7 @@ class TB_Posts {
 
     public function get_date_archives() {
         global $tbdb;
-        $sql = "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year, month(date) month FROM (SELECT id,DATE_ADD(date, INTERVAL 8 HOUR) date FROM posts) x) x GROUP BY year,month;";
+        $sql = "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year, month(date) month FROM (SELECT id,DATE_ADD(date, INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month;";
         $rows = $tbdb->query($sql);
         if(!$rows) return false;
 
@@ -816,7 +816,7 @@ class TB_Posts {
 		$mm = (int)$mm;
 
 		$fields = "id,date,title";
-		$sql = "SELECT $fields FROM posts WHERE 1";     // TODO where
+		$sql = "SELECT $fields FROM posts WHERE 1 AND type='post'";     // TODO where
 		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
 				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
@@ -846,7 +846,7 @@ class TB_Posts {
 		
 		$tag = $tbdb->real_escape_string($tag);
 		$sql = "SELECT posts.id,posts.date,posts.title FROM posts,post_tags,tags ";
-		$sql .= " WHERE posts.id=post_tags.post_id AND post_tags.tag_id=tags.id AND tags.name='$tag'"; // TODO WHERE
+		$sql .= " WHERE type='post' AND posts.id=post_tags.post_id AND post_tags.tag_id=tags.id AND tags.name='$tag'"; // TODO WHERE
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
