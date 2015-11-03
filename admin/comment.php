@@ -106,19 +106,10 @@ function cmt_post_cmt() {
 	die(0);
 }
 
-function cmt_get_count() {
-	global $tbcmts;
-
-	echo $tbcmts->get_count((int)$_POST['post_id']);
-
-	die(0);
-}
-
 $do = isset($_POST['do']) ? $_POST['do'] : '';
 
 if($do == 'get-cmt') cmt_get_cmt();
 if($do == 'post-cmt') cmt_post_cmt();
-if($do == 'get-count') cmt_get_count();
 
 endif;
 

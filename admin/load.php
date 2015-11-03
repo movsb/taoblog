@@ -18,6 +18,8 @@ require_once('db/taxonomies.php');
 require_once('db/comments.php');
 require_once('db/tags.php');
 
+require_once('db-hooks.php');
+
 require_once('query.php');
 require_once('canonical.php');
 

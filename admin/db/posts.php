@@ -278,6 +278,7 @@ class TB_Posts {
 			'feed' => '',
 			'no_content' => false,
 			'tags' => '',
+            'comments' => '',
 			];
 
 		$arg = tb_parse_args($defs, $arg);

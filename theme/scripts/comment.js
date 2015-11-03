@@ -87,15 +87,7 @@ document.write(function(){/*
 */}.toString().slice(14,-3));
 
 $('#post-id').val(_post_id);
-
-// 加载评论总数
-$.post(
-	'/admin/comment.php',
-	'do=get-count&post_id=' + $('#post-id').val(),
-	function(data) {
-		$('#comment-title .total').text(data);
-	}
-);
+$('#comment-title .total').text(_comment_count);
 
 // 无公害评论内容
 function sanitize_content(c) {

@@ -100,19 +100,19 @@ class TB_Query {
 			return false;
 
 		$rules = [
-			'^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
-			'^/archives/(\d+)\.html$'                           => 'id=$1',
-			'^/date/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'       => 'yy=$2&mm=$4&pageno=$6',
-			'^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
-			'^/tags/(.+)$'                                      => 'tags=$1',
-			'^/(feed|rss)(\.xml)?$'                             => 'feed=1',
-			'^/sitemap\.xml$'                                   => 'sitemap=1',
+            '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
+            '^/archives/(\d+)\.html$'                           => 'id=$1',
+            '^/date/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'       => 'yy=$2&mm=$4&pageno=$6',
+            '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
+            '^/tags/(.+)$'                                      => 'tags=$1',
+            '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
+            '^/sitemap\.xml$'                                   => 'sitemap=1',
             '^/archives$'                                       => 'archives=1',
-			'^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
-			'^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
-			'^/index\.php$'                                     => '',
-			'^/$'                                               => '',
-			];
+            '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
+            '^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
+            '^/index\.php$'                                     => '',
+            '^/$'                                               => '',
+            ];
 		
 		foreach($rules as $rule => $rewrite){
 			$pattern = '#'.$rule.'#';

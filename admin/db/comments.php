@@ -127,18 +127,6 @@ class TB_Comments {
 		return $children;
 	}
 
-	public function get_count($post_id=0) {
-		global $tbdb;
-
-		$sql =  "SELECT count(*) FROM comments WHERE 1";
-		if($post_id > 0) $sql .= " AND post_id=".(int)$post_id;
-
-		$r = $tbdb->query($sql);
-		if(!$r) return false;
-
-		return (int)$r->fetch_assoc()['count(*)'];
-	}
-
 	public function &get(&$arg=[]) {
 		global $tbdb;
 		global $tbdate;

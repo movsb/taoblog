@@ -35,6 +35,7 @@ $sql = "CREATE TABLE IF NOT EXISTS `posts` (
 	`status` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL, 
 	`comment_status` INT(1) UNSIGNED DEFAULT 1,
 	`password` CHAR(40) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+	`comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
 	PRIMARY KEY(`id`)
 	);";
 
