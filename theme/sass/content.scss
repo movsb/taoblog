@@ -1,9 +1,6 @@
 /* 内容 */
 #wrapper {
-	margin: 0px auto;
-	clear: both;
-	min-width: 100px;
-	padding: 10px;
+
 }
 
 #main {
@@ -11,21 +8,22 @@
 }
 
 @media screen and (max-width: 850px) {
-	#wrapper {
-		margin-top: 30px;
-	}
+    #content {
+        margin: 60px 1em 1em;
+    }
 }
 
 @media screen and (min-width: 851px) {
 	#main {
+        padding: 10px;
 		margin-left: 300px;
 		transition: margin-left 0.5s;
 	}
-}
+    #content {
+        max-width: 850px;
+        margin: 0px auto 10px;
+    }
 
-#content {
-	max-width: 850px;
-	margin: 0px auto 10px;
 }
 
 /* 分类与日期查询 */
@@ -134,23 +132,27 @@
 .post, .pages {
 	margin-bottom: 15px;
 
-    .title h1 {
-        float: left;
-        margin: 0px 0px 10px;
-        padding: 0.4em 0.5em 0px;
-        font-size: 2em;
-        color: #9f4545;
+    /* 文章标题 */
+    .title {
+        overflow: hidden;
+
+        h1 {
+            float: left;
+            margin: 0px 0px 10px;
+            padding: 0.4em 0.5em 0px;
+            font-size: 2em;
+            color: #9f4545;
+        }
     }
 
     /* 文章元数据 */
     .meta { 
         padding: 5px 10px;
         border-top: 1px solid #ccc;
-        clear: both;
         color: #5A5A5A;
 
         span.item {
-            padding: 0px 5px;
+            margin: 0px 5px;
         }
 
         .fa {

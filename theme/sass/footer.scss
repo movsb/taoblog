@@ -1,6 +1,5 @@
 /* 底部 */
 #footer {
-	color: white;
 	font-size: 13px;
 	margin-top: 30px;
 
@@ -14,7 +13,7 @@
     }
 
     .declaration {
-        color: #ccc;
+
     }
 
     .column {
@@ -25,12 +24,12 @@
             list-style: none;
             line-height: 1.5em;
             a {
+                color: inherit;
                 cursor: pointer;
                 text-decoration: none;
-                color: #ccc;
                 &:hover {
                     text-decoration: none;
-                    color: #C3AC00;
+
                 }
             }
         }

@@ -53,7 +53,7 @@
 
 <body>
 <div id="wrapper">
-	<header id="header">
+	<header id="header" class="no-sel">
 		<div id="header-wrapper">
 			<div class="desktop">
 				<section id="head">

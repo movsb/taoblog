@@ -5,7 +5,6 @@
 	position: fixed;
 	left: 0px;
 	top: 0px;
-	background-color: rgba(0,0,0,0.8);
 	z-index: 100;
 	transition: left 0.5s ease;
 }
@@ -19,6 +18,13 @@
 
 	#header-wrapper {
 		padding: 10px;
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        left: 0px;
+        border-right: 1px solid #f66;
+        background-color: white;
 	}
 
 	#header .mobile {
@@ -28,13 +34,14 @@
 
 @media screen and (max-width: 850px) {
 	#header {
-		height: 40px;
+		height: 50px;
 		width: 100%;
-		box-shadow: 0px 0px 3px;
 	}
 
 	#header-wrapper {
 		padding: 5px;
+        background-color: white;
+		box-shadow: 0px 0px 3px;
 	}
 
 	#header .desktop {
@@ -54,7 +61,6 @@
             margin: 0px;
             position: relative;
             top: -8px;
-            color: white;
             cursor: pointer;
             font-size: 20px;
         }
@@ -74,7 +80,7 @@
         }
 
         .social i {
-            color: white;
+
         }
     }
 
@@ -84,13 +90,12 @@
     }
 
     .copy {
-        color: white;
+
     }
 }
 
 #head {
 	clear: both;
-	color: white;
 	margin: 0px auto;
 
     h6 {
@@ -117,8 +122,13 @@
         height: 64px;
         width: 64px;
         border-radius: 32px;
-        margin-bottom: 20px;
         cursor: pointer;
+        margin-bottom: 0px;
+        transition: transform 300ms ease-in;
+
+        &:hover {
+            transform: rotateZ(360deg);
+        }
     }
 }
 
