@@ -95,18 +95,20 @@ $('.home-a').click(function() {
 (function() {
 	var body = $('body');
 	var imgdiv = $('#img-view');
+    var img = $('#img-view > img');
 
 	function view_image(ele, show) {
-        var img = $('#img-view img');
 		if(show) {
 			body.css('max-height', window.innerHeight);
 			body.css('overflow', 'hidden');
 			img.attr('src', ele.src);
             img.css('left', (parseInt(imgdiv.css('width'))-parseInt(img.prop('naturalWidth')))/2 + 'px');
             img.css('top', (parseInt(imgdiv.css('height'))-parseInt(img.prop('naturalHeight')))/2 + 'px');
+            img.css('width', img.prop('naturalWidth') + 'px');
+            img.css('height', img.prop('naturalHeight') + 'px');
 			imgdiv.show();
 		} else {
-            // 以下两行清除因拖动导致的设置
+            // 以下四行清除因拖动导致的设置
 			img.css('left', '0px');
 			img.css('top', '0px');
 			body.css('max-height', 'none');
@@ -138,7 +140,7 @@ $('.home-a').click(function() {
     window.imgview = {};
     imgview.dragging = false;
 
-    $('#img-view img').on('mousedown', function(e) {
+    img.on('mousedown', function(e) {
         var target = e.target;
         imgview.offset_x = e.clientX;
         imgview.offset_y = e.clientY;
@@ -152,7 +154,7 @@ $('.home-a').click(function() {
         return false;
     });
 
-    $('#img-view img').on('mousemove', function(e) {
+    img.on('mousemove', function(e) {
         if(!imgview.dragging) return;
 
         var target = e.target;
@@ -163,21 +165,47 @@ $('.home-a').click(function() {
         return false;
     });
 
-    $('#img-view img').on('mouseup', function(e) {
+    img.on('mouseup', function(e) {
 
         imgview.dragging = false;
         e.preventDefault();
         return false;
     });
 
-    $('#img-view img').on('click', function(e) {
+    img.on('click', function(e) {
         e.preventDefault();
         return false;
     });
 
-    $('#img-view img').on('dblclick', function(e) {
+    img.on('dblclick', function(e) {
         view_image(null, false);
         
+        e.preventDefault();
+        return false;
+    });
+
+    img.on('transitionend', function(){
+        img.css('transition', '');
+    });
+
+    imgdiv.on('wheel', function(e) {
+        var left = parseInt(img.css('left'));
+        var top = parseInt(img.css('top'));
+        var width = parseInt(img.css('width'));
+        var height = parseInt(img.css('height'));
+        var zoomin = e.originalEvent.deltaY < 0;
+
+        var new_width = zoomin ? width * 2 : width / 2;
+        var new_height = zoomin ? height * 2 : height / 2;
+
+        if(new_width > 0 && new_height > 0) {
+            img.css('transition', 'all 0.5s linear 0s');
+            img.css('left', left + (width - new_width) / 2 + 'px');
+            img.css('top', top + (height - new_height) / 2 + 'px');
+            img.css('width', new_width + 'px');
+            img.css('height', new_height + 'px');
+        }
+
         e.preventDefault();
         return false;
     });
