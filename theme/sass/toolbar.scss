@@ -51,12 +51,10 @@
 	overflow: auto;
     cursor: zoom-out;
     img {
-        position: absolute;
+        cursor: move;
+        position: relative;
         left: 0px;
         top: 0px;
-        right: 0px;
-        bottom: 0px;
-        margin: auto;
     }
 }
 

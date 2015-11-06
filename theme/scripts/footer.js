@@ -90,21 +90,29 @@ $('.home-a').click(function() {
 	}
 })();
 
-/* 点击图片放大 */
+/* 点击图片放大 & 拖动浏览*/
+/* 写得超级烂，完全没管性能 */
 (function() {
 	var body = $('body');
 	var imgdiv = $('#img-view');
 
 	function view_image(ele, show) {
+        var img = $('#img-view img');
 		if(show) {
-			$('#img-view img').attr('src', ele.src);
 			body.css('max-height', window.innerHeight);
 			body.css('overflow', 'hidden');
+			img.attr('src', ele.src);
+            img.css('left', (parseInt(imgdiv.css('width'))-parseInt(img.prop('naturalWidth')))/2 + 'px');
+            img.css('top', (parseInt(imgdiv.css('height'))-parseInt(img.prop('naturalHeight')))/2 + 'px');
 			imgdiv.show();
 		} else {
+            // 以下两行清除因拖动导致的设置
+			img.css('left', '0px');
+			img.css('top', '0px');
 			body.css('max-height', 'none');
 			body.css('overflow', 'auto');
 
+            imgview.dragging = false;
 			imgdiv.hide();
 		}
 	}
@@ -127,6 +135,52 @@ $('.home-a').click(function() {
 		view_image(null, false);
 	});
 
+    window.imgview = {};
+    imgview.dragging = false;
+
+    $('#img-view img').on('mousedown', function(e) {
+        var target = e.target;
+        imgview.offset_x = e.clientX;
+        imgview.offset_y = e.clientY;
+
+        imgview.coord_x = parseInt(target.style.left);
+        imgview.coord_y = parseInt(target.style.top);
+
+        imgview.dragging =true;
+
+        e.preventDefault();
+        return false;
+    });
+
+    $('#img-view img').on('mousemove', function(e) {
+        if(!imgview.dragging) return;
+
+        var target = e.target;
+        target.style.left = imgview.coord_x + e.clientX - imgview.offset_x + 'px';
+        target.style.top = imgview.coord_y + e.clientY - imgview.offset_y + 'px';
+
+        e.preventDefault();
+        return false;
+    });
+
+    $('#img-view img').on('mouseup', function(e) {
+
+        imgview.dragging = false;
+        e.preventDefault();
+        return false;
+    });
+
+    $('#img-view img').on('click', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    $('#img-view img').on('dblclick', function(e) {
+        view_image(null, false);
+        
+        e.preventDefault();
+        return false;
+    });
 })();
 
 /* 目录展开与隐藏 */
