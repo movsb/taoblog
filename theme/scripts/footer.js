@@ -108,11 +108,13 @@ $('.home-a').click(function() {
             img.css('height', img.prop('naturalHeight') + 'px');
 			imgdiv.show();
 		} else {
-            // 以下四行清除因拖动导致的设置
+            // 以下两行清除因拖动导致的设置
 			img.css('left', '0px');
 			img.css('top', '0px');
 			body.css('max-height', 'none');
 			body.css('overflow', 'auto');
+            // 清除旋转
+            img.css('transform','');
 
             imgview.dragging = false;
 			imgdiv.hide();
@@ -139,16 +141,26 @@ $('.home-a').click(function() {
 
     window.imgview = {};
     imgview.dragging = false;
+    imgview.degree = 0;
 
     img.on('mousedown', function(e) {
         var target = e.target;
-        imgview.offset_x = e.clientX;
-        imgview.offset_y = e.clientY;
 
-        imgview.coord_x = parseInt(target.style.left);
-        imgview.coord_y = parseInt(target.style.top);
+        if(e.which == 1) {  // left button
+            imgview.offset_x = e.clientX;
+            imgview.offset_y = e.clientY;
 
-        imgview.dragging =true;
+            imgview.coord_x = parseInt(target.style.left);
+            imgview.coord_y = parseInt(target.style.top);
+
+            imgview.dragging =true;
+        } else {    // middle button
+            imgview.degree += 90;
+            if(imgview.degree >= 360)
+                imgview.degree = 0;
+            img.css('transition', 'transform 0.5s linear');
+            img.css('transform', 'rotateZ(' + imgview.degree + 'deg)');
+        }
 
         e.preventDefault();
         return false;
