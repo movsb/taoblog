@@ -201,6 +201,8 @@ $('.home-a').click(function() {
     });
 
     imgdiv.on('wheel', function(e) {
+        var x = e.originalEvent.clientX;
+        var y = e.originalEvent.clientY;
         var left = parseInt(img.css('left'));
         var top = parseInt(img.css('top'));
         var width = parseInt(img.css('width'));
@@ -212,8 +214,8 @@ $('.home-a').click(function() {
 
         if(new_width > 0 && new_height > 0) {
             img.css('transition', 'all 0.5s linear 0s');
-            img.css('left', left + (width - new_width) / 2 + 'px');
-            img.css('top', top + (height - new_height) / 2 + 'px');
+            img.css('left', left + (width - new_width) * ((x-left)/width) + 'px');
+            img.css('top', top + (height - new_height) * ((y-top)/height) + 'px');
             img.css('width', new_width + 'px');
             img.css('height', new_height + 'px');
         }
