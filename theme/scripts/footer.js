@@ -211,11 +211,17 @@ $('.home-a').click(function() {
 
         var new_width = zoomin ? width * 2 : width / 2;
         var new_height = zoomin ? height * 2 : height / 2;
+        var new_left = x >= left && x < left + width
+            ? left + (width - new_width) * ((x-left)/width)
+            : left + (width - new_width) / 2;
+        var new_top = y >= top && y <= top + height
+            ? top + (height - new_height) * ((y-top)/height)
+            : top + (height - new_height) / 2;
 
         if(new_width > 0 && new_height > 0) {
             img.css('transition', 'all 0.5s linear 0s');
-            img.css('left', left + (width - new_width) * ((x-left)/width) + 'px');
-            img.css('top', top + (height - new_height) * ((y-top)/height) + 'px');
+            img.css('left', new_left + 'px');
+            img.css('top', new_top + 'px');
             img.css('width', new_width + 'px');
             img.css('height', new_height + 'px');
         }
