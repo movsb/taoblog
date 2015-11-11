@@ -14,8 +14,8 @@
 	padding: 1em;
 	box-shadow: 0px 0px 1px;
 	border-radius: 4px;
-	background-color: rgba(255,100,100,0.93);
-	color: white;
+	background-color: $toolbar_tips_bg;
+	color: $toolbar_tips_fg;
 	z-index: 1000;
 	display: none;
 }
@@ -34,7 +34,7 @@
 	height: 30px;
 	cursor: pointer;
     &:hover {
-        color: #f66;
+        color: $toolbar_back_to_top_hover_fg;
     }
 }
 
@@ -43,7 +43,7 @@
 	position: fixed;
 	z-index: 1000000;
 	display: none;
-	background-color: rgba(0,0,0,0.85);
+	background-color: $toolbar_imgview_bg;
 	left: 0px;
 	top: 0px;
 	right: 0px;

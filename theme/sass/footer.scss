@@ -24,7 +24,7 @@
             list-style: none;
             line-height: 1.5em;
             a {
-                color: inherit;
+                color: $footer_column_ul_a_fg;
                 cursor: pointer;
                 text-decoration: none;
                 &:hover {
@@ -48,7 +48,7 @@
 
 @media screen and (max-width: 850px) {
 	#mobile-footer {
-		border-top: 1px solid #ccc;
+		border-top: 1px solid $border_color;
 		margin-top: 10px;
 		padding: 10px;
 		text-align: center;

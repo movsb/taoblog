@@ -1,6 +1,6 @@
 ::-moz-selection {
-    color: white;
-    background-color: #f66;
+    color: $selection_fg;
+    background-color: $selection_bg;
 }
 
 .clearfix {
@@ -9,7 +9,8 @@
 }
 
 body {
-    color: #292929;
+    color: $body_fg;
+    background-color: $body_bg;
     margin: 0px auto;
     padding: 0px;
     font: 13px Consolas, "Microsoft YaHei", sans-serif {
@@ -23,15 +24,15 @@ body {
 
 a {
     text-decoration: none;
-    color: #005782;
+    color: $a_fg;
     &:hover {
         text-decoration: underline;
     }
     &:visited {
-        color: #800080;
+        color: $a_visited_fg;
     }
     &:active {
-        color: #faa700;
+        color: $a_active_fg;
     }
     &:focus {
         outline: none;
@@ -45,12 +46,12 @@ a, input, textarea, button {
 button, input[type=submit] {
     border: none;
     &::-moz-focus-inner {
-        //border: 0;
+        border: 0;
     }
 }
 
 acronym, abbr {
-    border-bottom: 1px dashed #ccc;
+    border-bottom: 1px dashed $border_color;
 }
 
 input, a, textarea {
@@ -60,7 +61,7 @@ input, a, textarea {
 }
 
 input, textarea, button {
-    border: 1px solid #ccc;
+    border: 1px solid $border_color;
     padding: 5px 7px;
 }
 
@@ -100,12 +101,12 @@ h6 { font-size: 1.0em; }
 	user-select: none;
     padding: 6px;
 	cursor: pointer;
-	color: white;
+	color: $btn_fg;
     transition: all 0s;
-    background-color: rgba(60,60,60,0.6);
+    background-color: $btn_bg;
 
     &:hover {
-        background-color: rgba(20,20,20,0.7);
+        background-color: $btn_hover_bg;
     }
 }
 

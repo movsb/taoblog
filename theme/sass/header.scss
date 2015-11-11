@@ -23,8 +23,8 @@
         right: 0px;
         bottom: 0px;
         left: 0px;
-        border-right: 1px solid #f66;
-        background-color: white;
+        border-right: 1px solid $header_wrapper_desktop_border_right;
+        background-color: $header_wrapper_desktop_bg;
 	}
 
 	#header .mobile {
@@ -40,7 +40,7 @@
 
 	#header-wrapper {
 		padding: 5px;
-        background-color: white;
+        background-color: $header_wrapper_mobile_bg;
 		box-shadow: 0px 0px 3px;
 	}
 

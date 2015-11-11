@@ -4,7 +4,7 @@
 #comment-title {
 	font-size: 1.5em;
 	padding: 0.8em 0.8em 0px 0.8em;
-	border-bottom: 1px solid #ccc;
+	border-bottom: 1px solid $border_color;
 	margin-bottom: 0;
 }
 
@@ -54,7 +54,7 @@
 
         .comment-replies li {
             padding: 1em 0px 1em 1em;
-            border-top: 1px dashed #ccc;
+            border-top: 1px dashed $comment_func_border;
         }
 
         .comment-content {
@@ -70,32 +70,29 @@
 /* 评论提交 */
 #comment-submit {
 	padding: 5px;
-	background-color: rgba(113,113,113,0.7);
-	color: white;
+	background-color: $comment_submit_bg;
+	color: $comment_submit_fg;
 	cursor: pointer;
 
     &:hover {
-        background-color: rgba(200,30,30,0.8);
+        background-color: $comment_submit_hover_bg;
     }
 }
 
 #comment-form {
     .comment-submit {
         .submitting {
-            display: none;
-            color: red;
+            color: $comment_submit_submitting_fg;
             margin-left: 1em;
         }
 
         .succeeded {
-            display: none;
-            color: green;
+            color: $comment_submit_succeeded_fg;
             margin-left: 1em;
         }
 
         .failed {
-            display: none;
-            color: red;
+            color: $comment_submit_failed_fg;
             margin-left: 1em;
         }
     }
@@ -114,7 +111,7 @@
     }
 
     .nickname {
-        color: #003B87;
+        color: $comment_nickname_fg;
 
         a {
             color: inherit;
@@ -122,7 +119,7 @@
     }
 
     .author {
-        color: #FF4040;
+        color: $comment_author_fg;
     }
 
     .date {
@@ -130,7 +127,7 @@
         font-size: 0.9em;
         position: relative;
         top: -4px;
-        color: #cfcfcf;
+        color: $comment_date_fg;
     }
 }
 
@@ -194,7 +191,7 @@
 
     .closebtn, .maxbtn {
         &:hover {
-            color: #323232;
+            color: $comment_sysbtn_hover_fg;
         }
         i {
             position: relative;
@@ -208,7 +205,7 @@
         position: relative;
         text-align: center;
         font-size: 2em;
-        color: #a53535;
+        color: $comment_title_fg;
         cursor: default;
         top: -5px;
     }
@@ -220,7 +217,7 @@
         .field {
             padding-bottom: 0.4em;
             .needed {
-                color: red;
+                color: $comment_needed_fg;
             }
 
             /* 评论内容框 */
@@ -329,11 +326,11 @@
 }
 	
 #comment-content-2 {
-	color: white;
+	color: $comment_content_2_fg;
 	font-family: Consolas,"Microsoft YaHei";
 	padding-top: 7px;
-	background-color: transparent;
-	border: 2px dashed #ccc;
+	background-color: $comment_content_2_bg;
+	border: 2px dashed $border_color;
 	box-sizing: border-box;
 	width: 100%;
 	height: 100%;
