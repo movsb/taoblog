@@ -190,6 +190,16 @@ $('.home-a').click(function() {
         return false;
     });
 
+    imgdiv.on('mousemove', function(e) {
+        if(imgview.dragging) {
+            img.css('left', imgview.coord_x + e.clientX - imgview.offset_x + 'px');
+            img.css('top', imgview.coord_y + e.clientY - imgview.offset_y + 'px');
+            return false;
+        }
+
+        return true;
+    });
+
     img.on('click', function(e) {
         e.preventDefault();
         return false;
