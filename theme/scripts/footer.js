@@ -99,6 +99,20 @@ $('.home-a').click(function() {
 
 	function view_image(ele, show) {
 		if(show) {
+            // tips
+            var tip_times_total = 1;
+            var tip_times = +img.attr('data-times') || 0;
+
+            if(tip_times == 0)
+                $('#img-view .tip').text('左键拖动，中键旋转，滚动缩放；双击图片或单击空白区域退出。');
+
+            if(tip_times < tip_times_total) {
+                tip_times++;
+                img.attr('data-times', tip_times);
+            } else if(tip_times == tip_times_total) {
+                $('#img-view > .tip').hide();
+            }
+
 			body.css('max-height', window.innerHeight);
 			body.css('overflow', 'hidden');
 			img.attr('src', ele.src);
