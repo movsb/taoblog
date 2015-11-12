@@ -144,6 +144,11 @@ $('.home-a').click(function() {
     imgview.degree = 0;
 
     img.on('mousedown', function(e) {
+        if(img.prop('data-busy') == '1') {
+            e.preventDefault();
+            return false;
+        }
+
         var target = e.target;
 
         if(e.which == 1) {  // left button
@@ -158,7 +163,8 @@ $('.home-a').click(function() {
             imgview.degree += 90;
             if(imgview.degree >= 360)
                 imgview.degree = 0;
-            img.css('transition', 'transform 0.5s linear');
+            img.prop('data-busy', '1');
+            img.css('transition', 'transform 0.3s linear');
             img.css('transform', 'rotateZ(' + imgview.degree + 'deg)');
         }
 
@@ -198,9 +204,15 @@ $('.home-a').click(function() {
 
     img.on('transitionend', function(){
         img.css('transition', '');
+        img.prop('data-busy', '');
     });
 
     imgdiv.on('wheel', function(e) {
+        if(img.prop('data-busy') == '1') {
+            e.preventDefault();
+            return false;
+        }
+
         var x = e.originalEvent.clientX;
         var y = e.originalEvent.clientY;
         var left = parseInt(img.css('left'));
@@ -209,8 +221,10 @@ $('.home-a').click(function() {
         var height = parseInt(img.css('height'));
         var zoomin = e.originalEvent.deltaY < 0;
 
-        var new_width = zoomin ? width * 2 : width / 2;
-        var new_height = zoomin ? height * 2 : height / 2;
+        var scale = 1.5;
+
+        var new_width = zoomin ? width * scale : width / scale;
+        var new_height = zoomin ? height * scale : height / scale;
         var new_left = x >= left && x < left + width
             ? left + (width - new_width) * ((x-left)/width)
             : left + (width - new_width) / 2;
@@ -219,7 +233,8 @@ $('.home-a').click(function() {
             : top + (height - new_height) / 2;
 
         if(new_width > 0 && new_height > 0) {
-            img.css('transition', 'all 0.5s linear 0s');
+            img.prop('data-busy', '1');
+            img.css('transition', 'all 0.3s linear 0s');
             img.css('left', new_left + 'px');
             img.css('top', new_top + 'px');
             img.css('width', new_width + 'px');
