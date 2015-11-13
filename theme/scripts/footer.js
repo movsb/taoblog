@@ -96,6 +96,32 @@ $('.home-a').click(function() {
 	var body = $('body');
 	var imgdiv = $('#img-view');
     var img = $('#img-view > img');
+    var images = $('.entry img');
+    var image_index = -1;
+    var key_handler_added = false;
+
+    function key_handler(e) {
+        if(e.keyCode == 27 || e.keyCode == 32) {
+            view_image(null, false);
+            e.preventDefault();
+        } else if(e.keyCode == 37 || e.keyCode == 38) {
+            next_image(-1);
+            e.preventDefault();
+        } else if(e.keyCode == 39 || e.keyCode == 40) {
+            next_image(1);
+            e.preventDefault();
+        }
+    };
+
+    function set_current_image(ele) {
+        for(var i=0; i<images.length; i++) {
+            if(ele == images[i]) {
+                image_index = i;
+                console.log(image_index);
+                break;
+            }
+        }
+    }
 
 	function view_image(ele, show) {
 		if(show) {
@@ -104,7 +130,7 @@ $('.home-a').click(function() {
             var tip_times = +img.attr('data-times') || 0;
 
             if(tip_times == 0)
-                $('#img-view .tip').text('左键拖动，中键旋转，滚动缩放；双击图片或单击空白区域退出。');
+                $('#img-view .tip').text('左键拖动，中键旋转，滚动缩放，上下左右切换；双击图片或单击空白区域退出。');
 
             if(tip_times < tip_times_total) {
                 tip_times++;
@@ -133,20 +159,34 @@ $('.home-a').click(function() {
             imgview.dragging = false;
 			imgdiv.hide();
 		}
+
+        if(show) {
+            if(!key_handler_added) {
+                window.addEventListener('keydown', key_handler);
+                key_handler_added = true;
+            }
+        } else {
+            if(key_handler_added){
+                window.removeEventListener('keydown', key_handler);
+                key_handler_added = false;
+            }
+        }
 	}
 
+    function next_image(dir) {
+        image_index += dir > 0 ? 1 : -1;
+        if(image_index > images.length-1) image_index = images.length - 1;
+        if(image_index < 0) image_index = 0;
+        if(image_index < images.length) {
+            var img = images[image_index];
+            view_image(img, true);
+            console.log(image_index);
+        }
+    }
+
 	$('.entry img').click(function(e) {
+        set_current_image(this);
 		view_image(this, true);
-
-		var f = function(e) {
-			if(e.keyCode == 27 || e.keyCode == 32) {
-				view_image(null, false);
-				window.removeEventListener('keydown', f);
-                e.preventDefault();
-			}
-		};
-
-		window.addEventListener('keydown', f);
 	});
 
 	imgdiv.click(function() {
@@ -158,7 +198,7 @@ $('.home-a').click(function() {
     imgview.degree = 0;
 
     img.on('mousedown', function(e) {
-        if(img.prop('data-busy') == '1') {
+        if(img.attr('data-busy') == '1') {
             e.preventDefault();
             return false;
         }
@@ -177,7 +217,7 @@ $('.home-a').click(function() {
             imgview.degree += 90;
             if(imgview.degree >= 360)
                 imgview.degree = 0;
-            img.prop('data-busy', '1');
+            img.attr('data-busy', '1');
             img.css('transition', 'transform 0.3s linear');
             img.css('transform', 'rotateZ(' + imgview.degree + 'deg)');
         }
@@ -228,11 +268,11 @@ $('.home-a').click(function() {
 
     img.on('transitionend', function(){
         img.css('transition', '');
-        img.prop('data-busy', '');
+        img.attr('data-busy', '');
     });
 
     imgdiv.on('wheel', function(e) {
-        if(img.prop('data-busy') == '1') {
+        if(img.attr('data-busy') == '1') {
             e.preventDefault();
             return false;
         }
@@ -257,7 +297,7 @@ $('.home-a').click(function() {
             : top + (height - new_height) / 2;
 
         if(new_width > 0 && new_height > 0) {
-            img.prop('data-busy', '1');
+            img.attr('data-busy', '1');
             img.css('transition', 'all 0.3s linear 0s');
             img.css('left', new_left + 'px');
             img.css('top', new_top + 'px');
