@@ -117,7 +117,6 @@ $('.home-a').click(function() {
         for(var i=0; i<images.length; i++) {
             if(ele == images[i]) {
                 image_index = i;
-                console.log(image_index);
                 break;
             }
         }
@@ -180,7 +179,6 @@ $('.home-a').click(function() {
         if(image_index < images.length) {
             var img = images[image_index];
             view_image(img, true);
-            console.log(image_index);
         }
     }
 
