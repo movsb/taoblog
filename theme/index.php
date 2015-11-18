@@ -2,6 +2,26 @@
 $home = $tbopt->get('home');
 $blog_name = $tbopt->get('blog_name');
 
+function the_recent_shuoshuos() {
+    global $tbshuoshuo;
+
+    $sss = $tbshuoshuo->get_latest(10);
+    if(count($sss) == 0) return false;
+
+    echo '<h2>近期说说</h2>',PHP_EOL;
+    echo '<ul>';
+    foreach($sss as &$ss) {
+        echo '<li>',
+            '<p>',$ss->content,
+            ' <span>(',substr($ss->date,5,11),')</span>',
+            '</p>',
+            '</li>';
+    }
+    echo '</ul>';
+
+
+}
+
 function the_recent_posts() {
 	global $tbpost;
 
@@ -38,17 +58,16 @@ function the_recent_comments() {
 require('header.php');
 
 today_english();
-?>
-<div>
-    <h2>文章归档</h2>
-    <p><a href="/archives">全部文章的归档页面，按标签、按分类、按日期。</a></p>
-</div>
-<?php
+the_recent_shuoshuos();
 the_recent_posts();
 the_recent_comments();
 
 ?>
 
+<div>
+    <h2>文章归档</h2>
+    <p><a href="/archives">全部文章的归档页面，按标签、按分类、按日期。</a></p>
+</div>
 <div>
 	<h2>又换风格了</h2>
 	<p>改来改去，还是觉得不喜欢现在的风格。怎么办？</p>

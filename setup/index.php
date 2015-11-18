@@ -111,5 +111,18 @@ if(!$my->query($sql)) {
 	tb_die(200, '无法创建表：post_tags - '.$my->error);
 }
 
+// 创建表 我的说说/shuoshuo
+$sql = "CREATE TABLE IF NOT EXISTS shuoshuo (
+    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `content` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+	`date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
+	`comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
+	PRIMARY KEY(`id`)
+    );";
+if(!$my->query($sql)) {
+    tb_die(200, '无法创建表：shuoshuo - '.$my->error);
+}
+
+//-----------------------------------------------------------------------------
 tb_die(200, '操作成功！');
 

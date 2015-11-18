@@ -17,6 +17,7 @@ require_once('db/posts.php');
 require_once('db/taxonomies.php');
 require_once('db/comments.php');
 require_once('db/tags.php');
+require_once('db/shuoshuo.php');
 
 require_once('db-hooks.php');
 
@@ -32,6 +33,7 @@ $tbcmts = new TB_Comments;
 $tbquery = new TB_Query;
 $tbdate = new TB_DateTime;
 $tbtag = new TB_Tags;
+$tbshuoshuo = new TB_Shuoshuo;
 
 date_default_timezone_set('Asia/Chongqing');
 

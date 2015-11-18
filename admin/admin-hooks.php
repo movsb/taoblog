@@ -6,7 +6,7 @@ add_hook('admin_left', 'admin_home_page');
 
 function admin_home_page() {
 ?><li>
-	<a href="index.php">
+	<a href="/">
 	<div class="menu">
 		首页
 	</div>
@@ -14,6 +14,20 @@ function admin_home_page() {
 </li>
 <?php 
 }
+
+add_hook('admin_left', 'shuoshuo_admin_left');
+
+function shuoshuo_admin_left() {
+?><li>
+    <a href="shuoshuo.php">
+    <div class="menu">
+        发表说说
+    </div>
+    </a>
+</li>
+<?php
+}
+
 add_hook('admin_left', 'post_admin_left');
 
 function post_admin_left() {
