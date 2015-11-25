@@ -86,6 +86,7 @@ document.write(function(){/*
 	</div>
 */}.toString().slice(14,-3));
 
+
 /* 暂时解决：304只会判断文章内容是否修改，而未管其它代码，所以有时候会JS执行错误 */
 if(typeof(_comment_count) == 'undefined') {
     alert('因博客版本临时升级，您需要按 Ctrl + F5 强制刷新页面才能正确显示。');
@@ -94,31 +95,180 @@ if(typeof(_comment_count) == 'undefined') {
 $('#post-id').val(_post_id);
 $('#comment-title .total').text(_comment_count);
 
-// 无公害评论内容
-function sanitize_content(c) {
+
+function Comment() {
+    this._loaded = 0;       // 已加载评论数
+    this._loaded_ch = 0;
+}
+
+Comment.prototype.init = function() {
+    var self = this;
+
+    // 发表评论按钮
+    $('#post-comment').click(function(){
+        self.reply_to(0);
+    });
+
+    // 加载按钮
+    $('#load-comments').click(function() {
+        if($(this).attr('loading') === 'true')
+            return;
+
+        var load = this;
+        $(this).attr('loading', 'true');
+        $('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
+        $.post(
+            '/admin/comment.php',
+            'do=get-cmt&count=5&offset=' + self._loaded
+                + '&post_id=' + $('#post-id').val(),
+            function(data) {
+                var cmts = data.cmts || [];
+                var ch_count = 0;
+                for(var i=0; i<cmts.length; i++){
+                    $('#comment-list').append(self.gen_comment_item(cmts[i]));
+                    $('#comment-'+cmts[i].id).fadeIn();
+                    self.add_reply_div(cmts[i].id);
+
+                    self.append_children(cmts[i].children, cmts[i].id);
+
+                    ch_count += cmts[i].children.length;
+                }
+
+                $('#loading-status').text('');
+
+                if(cmts.length == 0) {
+                    $('#loading-status').html('<i class="fa fa-info-circle"></i><span>没有了！</span>');
+                    setTimeout(function(){
+                            $('#loading-status').text('');
+                        },
+                        1500
+                    );
+                } else {
+                    self._loaded += cmts.length;
+                }
+                $(load).removeAttr('loading');
+
+                self._loaded_ch += ch_count;
+                $('#comment-title .loaded').text(self._loaded + self._loaded_ch);
+            },
+            'json'
+        )
+        .always(setTimeout(function(){
+                $(load).removeAttr('loading');
+        },1500));
+    });
+
+    $('#load-comments').click();
+
+    // Ajax评论提交
+    $('#comment-submit').click(function() {
+        var timeout = 1500;
+
+        $(this).attr('disabled', 'disabled');
+        $('#submitting-status').html('<i class="fa fa-spin fa-spinner"></i>正在提交...');
+        $.post(
+            $('#comment-form')[0].action,
+            $('#comment-form').serialize()+'&return_cmt=1',
+            function(data){
+                if(data.errno == 'success') {
+                    var parent = $('#comment-form input[name="parent"]').val();
+                    if(parent == 0) {
+                        $('#comment-list').append(self.gen_comment_item(data.cmt));
+                        // 没有父评论，避免二次加载。
+                        self._loaded ++;
+
+                    } else {
+                        self.add_reply_div(parent);
+                        $('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(data.cmt));
+                    }
+                    $('#comment-'+data.cmt.id).fadeIn();
+                    $('#comment-content').val('');
+                    $('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>评论成功！');
+                    setTimeout(function() {
+                            $('#comment-form-div').fadeOut();
+                            $('#submitting-status').text('');
+                            self.save_info();
+                        },
+                        timeout
+                    );
+                } else {
+                    $('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>' + data.error);
+                    setTimeout(function() {
+                            $('#submitting-status').text('');
+                        },
+                        timeout
+                    );
+                }
+            },
+            'json'
+        )
+        .fail(function(xhr, sta, e){
+            $('#submitting-status').text('未知错误！');
+        })
+        .always(setTimeout(function(){
+                $('#submitting-status').text('');
+                $('#comment-submit').removeAttr('disabled');
+            },
+            timeout
+        ));
+        return false;
+    });
+
+    $('#comment-form-div .closebtn').click(function(){
+            $('#comment-form-div').fadeOut();
+    });
+
+    // hide comment box when ESC key pressed
+    window.addEventListener('keyup', function(e) {
+        if(e.keyCode == 27) {
+            $('#comment-form-div').fadeOut();
+        }
+    });
+
+    $('#comment-form-div .maxbtn').click(function(){
+        $('#comment-content-2').val($('#comment-content').val());
+        $('#comment-form-div').removeClass('normal').attr('style','').addClass('maximized');
+        $('#comment-form-div.maximized .toolbar .font-inc').click(function(){
+            var ta = $('#comment-content-2');
+            ta.css('font-size', parseFloat(ta.css('font-size'))*1.2 + 'px');
+        });
+
+        $('#comment-form-div.maximized .toolbar .font-dec').click(function(){
+            var ta = $('#comment-content-2');
+            ta.css('font-size', Math.max(8,parseFloat(ta.css('font-size'))/1.2) + 'px');
+        });
+
+        $('#comment-form-div.maximized .toolbar .close').click(function(){
+            $('#comment-form-div').removeClass('maximized').attr('style','').addClass('normal');
+            $('#comment-content').val($('#comment-content-2').val());
+            $('#comment-form-div.normal').show();
+        });
+
+    });
+};
+
+Comment.prototype.gen_avatar = function(eh, sz) {
+	return '/theme/avatar.php?' + encodeURIComponent(eh + '?s=' + sz);
+};
+
+Comment.prototype.sanitize_content = function(c) {
     return c.replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/'/g, '&#39;')
-        .replace(/"/g, '&#34;');
-}
+        ;
+};
 
-function comment_avatar(eh,sz) {
-	return '/theme/avatar.php?' + encodeURIComponent(eh + '?s=' + sz);
-}
-
-function comment_friendly_date(d) {
+Comment.prototype.friendly_date = function(d) {
 	var year = d.substring(0,4);
 	var start = year == (new Date()).getFullYear() ? 5 : 0;
 	return d.substring(start, 16);
-}
+};
 
-// 从评论生成html内容
-function comment_item(cmt) {
+Comment.prototype.gen_comment_item = function(cmt) {
 	var s = '';
 	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '">\n';
 	s += '<div class="comment-avatar">'
-		+ '<img src="' + comment_avatar(cmt.avatar, 48) + '" width="48px" height="48px"/>'
+		+ '<img src="' + this.gen_avatar(cmt.avatar, 48) + '" width="48px" height="48px"/>'
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 
@@ -138,16 +288,15 @@ function comment_item(cmt) {
 		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
-	s += '<span class="date">' + comment_friendly_date(cmt.date) + '</span>\n</div>\n';
-	s += '<div class="comment-content">' + sanitize_content(cmt.content) + '</div>\n';
-	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment_reply_to('+cmt.id+');return false;">回复</a></div>';
+	s += '<span class="date">' + this.friendly_date(cmt.date) + '</span>\n</div>\n';
+	s += '<div class="comment-content">' + this.sanitize_content(cmt.content) + '</div>\n';
+	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment.reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';
 
 	return s;
-}
+};
 
-// 弹出回复框
-function comment_reply_to(p){
+Comment.prototype.reply_to = function(p){
 	$('#comment-form-post-id').val($('#post-id').val());
 	$('#comment-form-parent').val(p);
 
@@ -159,90 +308,31 @@ function comment_reply_to(p){
 	}
 
 	$('#comment-form-div').fadeIn();
-}
+};
 
 // 为上一级评论添加div
-function comment_add_reply_div(id){
+Comment.prototype.add_reply_div = function(id){
 	if($('#comment-'+id+' .comment-replies').length === 0){
 		$('#comment-'+id).append('<div class="comment-replies" id="comment-reply-'+id+'"><ol></ol></div>');
 	}
-}
+};
 
-// 发表评论按钮
-$('#post-comment').click(function(){
-	comment_reply_to(0);
-});
-
-// 保存 加载进度/加载总数
-var cmt_loaded = 0;
-var cmt_loaded_ch = 0;
-
-function comment_append_children(ch, p) {
+Comment.prototype.append_children = function(ch, p) {
 	for(var i=0; i<ch.length; i++){
 		if(!ch[i]) continue;
 
 		if(ch[i].parent == p) {
-			$('#comment-reply-'+p + ' ol:first').append(comment_item(ch[i]));
+			$('#comment-reply-'+p + ' ol:first').append(this.gen_comment_item(ch[i]));
 			$('#comment-'+ch[i].id).fadeIn();
-			comment_add_reply_div(ch[i].id);
-			comment_append_children(ch, ch[i].id);
+			this.add_reply_div(ch[i].id);
+			this.append_children(ch, ch[i].id);
 			delete ch[i];
 		}
 	}
-}
+};
 
-// 加载按钮
-$('#load-comments').click(function() {
-	if($(this).attr('loading') === 'true')
-		return;
 
-	var load = this;
-	$(this).attr('loading', 'true');
-	$('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
-	$.post(
-		'/admin/comment.php',
-		'do=get-cmt&count=5&offset=' + cmt_loaded
-			+ '&post_id=' + $('#post-id').val(),
-		function(data) {
-			var cmts = data.cmts || [];
-			var ch_count = 0;
-			for(var i=0; i<cmts.length; i++){
-				$('#comment-list').append(comment_item(cmts[i]));
-				$('#comment-'+cmts[i].id).fadeIn();
-				comment_add_reply_div(cmts[i].id);
-
-				comment_append_children(cmts[i].children, cmts[i].id);
-
-				ch_count += cmts[i].children.length;
-			}
-
-			$('#loading-status').text('');
-
-			if(cmts.length == 0) {
-				$('#loading-status').html('<i class="fa fa-info-circle"></i><span>没有了！</span>');
-				setTimeout(function(){
-						$('#loading-status').text('');
-					},
-					1500
-				);
-			} else {
-				cmt_loaded += cmts.length;
-			}
-			$(load).removeAttr('loading');
-
-			cmt_loaded_ch += ch_count;
-			$('#comment-title .loaded').text(cmt_loaded + cmt_loaded_ch);
-		},
-		'json'
-	)
-	.always(setTimeout(function(){
-			$(load).removeAttr('loading');
-	},1500));
-});
-
-$('#load-comments').click();
-
-function cmt_save_info() {
+Comment.prototype.save_info = function() {
 	if(window.localStorage) {
 		localStorage.setItem('cmt_author', $('#comment-form input[name=author]').val());
 		localStorage.setItem('cmt_email', $('#comment-form input[name=email]').val());
@@ -252,173 +342,8 @@ function cmt_save_info() {
 			show_tips('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
 		}
 	}
-}
+};
 
-// Ajax评论提交
-$('#comment-submit').click(function() {
-	var timeout = 1500;
-
-	$(this).attr('disabled', 'disabled');
-	$('#submitting-status').html('<i class="fa fa-spin fa-spinner"></i>正在提交...');
-	$.post(
-		$('#comment-form')[0].action,
-		$('#comment-form').serialize()+'&return_cmt=1',
-		function(data){
-			if(data.errno == 'success') {
-				var parent = $('#comment-form input[name="parent"]').val();
-				if(parent == 0) {
-					$('#comment-list').append(comment_item(data.cmt));
-					// 没有父评论，避免二次加载。
-					cmt_loaded ++;
-
-				} else {
-					comment_add_reply_div(parent);
-					$('#comment-reply-'+parent + ' ol:first').append(comment_item(data.cmt));
-				}
-				$('#comment-'+data.cmt.id).fadeIn();
-				$('#comment-content').val('');
-				$('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>评论成功！');
-				setTimeout(function() {
-						$('#comment-form-div').fadeOut();
-						$('#submitting-status').text('');
-						cmt_save_info();
-					},
-					timeout
-				);
-			} else {
-				$('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>' + data.error);
-				setTimeout(function() {
-						$('#submitting-status').text('');
-					},
-					timeout
-				);
-			}
-		},
-		'json'
-	)
-	.fail(function(xhr, sta, e){
-		$('#submitting-status').text('未知错误！');
-	})
-	.always(setTimeout(function(){
-			$('#submitting-status').text('');
-			$('#comment-submit').removeAttr('disabled');
-		},
-		timeout
-	));
-	return false;
-});
-
-// 评论输入框允许TAB键
-function enableTabIndent(t,e){
-	if(e.keyCode === 9){
-		var start = t.selectionStart;
-		var end = t.selectionEnd;
-
-		var that = $(t);
-
-		var value = that.val();
-		var before = value.substring(0, start);
-		var after = value.substring(end);
-		var selArray = value.substring(start, end).split('\n');
-
-		var isIndent = !e.shiftKey;
-
-		if(isIndent){
-			if(start === end || selArray.length === 1){
-				that.val(before + '\t' + after);
-				t.selectionStart = t.selectionEnd = start + 1;
-			} else {
-				var sel = '\t' + selArray.join('\n\t');
-				that.val(before + sel + after);
-				t.selectionStart = start + 1;
-				t.selectionEnd = end + selArray.length; 
-			}
-		} else {
-			var reduceEnd = 0;
-			var reduceStart = false;
-
-			if(selArray.length > 1) {
-				selArray.forEach(function(x, i, a){
-					if(i>0 && x.length>0 &&  x[0]==='\t'){
-						a[i] = x.substring(1);
-						reduceEnd++;
-					}
-				});
-				sel = selArray.join('\n');
-			} else {
-				sel = selArray[0];
-			}
-
-			var b1 = '',b2 = '';
-			if(before.length){
-				var npos = before.lastIndexOf('\n');
-				if(npos !== -1){
-					b1 = before.substring(0, npos+1);
-					b2 = before.substring(npos+1);
-				} else {
-					b1 = '';
-					b2 = before;
-				}
-
-				sel = b2 + sel;
-			}
-
-			if(sel.length && sel[0]==='\t'){
-				sel = sel.substring(1);
-				reduceStart = true;
-			}
-
-			that.val(b1 + sel + after);
-			t.selectionStart = start + (reduceStart ? -1 : 0);
-			t.selectionEnd = end - (reduceEnd + (reduceStart ? 1 : 0));
-		}
-		return true;
-	}
-	return false;
-}
-
-$('#comment-content').keydown(function(e){
-	if(enableTabIndent(this, e)){
-		e.preventDefault();
-	}
-});
-
-$('#comment-content-2').keydown(function(e){
-	if(enableTabIndent(this, e)){
-		e.preventDefault();
-	}
-});
-
-
-$('#comment-form-div .closebtn').click(function(){
-		$('#comment-form-div').fadeOut();
-});
-
-// hide comment box when ESC key pressed
-window.addEventListener('keyup', function(e) {
-	if(e.keyCode == 27) {
-		$('#comment-form-div').fadeOut();
-	}
-});
-
-$('#comment-form-div .maxbtn').click(function(){
-	$('#comment-content-2').val($('#comment-content').val());
-	$('#comment-form-div').removeClass('normal').attr('style','').addClass('maximized');
-	$('#comment-form-div.maximized .toolbar .font-inc').click(function(){
-		var ta = $('#comment-content-2');
-		ta.css('font-size', parseFloat(ta.css('font-size'))*1.2 + 'px');
-	});
-
-	$('#comment-form-div.maximized .toolbar .font-dec').click(function(){
-		var ta = $('#comment-content-2');
-		ta.css('font-size', Math.max(8,parseFloat(ta.css('font-size'))/1.2) + 'px');
-	});
-
-	$('#comment-form-div.maximized .toolbar .close').click(function(){
-		$('#comment-form-div').removeClass('maximized').attr('style','').addClass('normal');
-		$('#comment-content').val($('#comment-content-2').val());
-		$('#comment-form-div.normal').show();
-	});
-
-});
+var comment = new Comment();
+comment.init();
 
