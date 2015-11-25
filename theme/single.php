@@ -10,6 +10,5 @@
 
 require('header.php');
 require('content.php');
-require('comments.php');
 require('footer.php');
 

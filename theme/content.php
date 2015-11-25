@@ -1,12 +1,12 @@
-<article class="post">	
+<article class="post" itemscope itemtype="http://schema.org/Article">	
 	<div class="title">
-		<h1><?php echo $the->title; ?></h1>
+		<h1 itemprop="name"><?php echo $the->title; ?></h1>
 	</div>
 
 	<div class="meta no-sel">
 		<?php if($the->type == 'post') { ?>
-		<span class="item tag"><i class="fa fa-mr fa-tag"></i><span class="label">标签: </span><?php echo the_meta_tag(); ?></span>
-		<span class="item author"><i class="fa fa-mr fa-user"></i><span class="label">作者: </span><?php echo $tbopt->get('author'); ?></span>
+		<span class="item tag"><i class="fa fa-mr fa-tag"></i><span class="label">标签: </span><span itemprop="keywords"><?php echo the_meta_tag(); ?></span></span>
+		<span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person"><i class="fa fa-mr fa-user"></i><span class="label">作者: </span><span itemprop="name"><?php echo $tbopt->get('author'); ?></span></span>
 		<span class="item date"><i class="fa fa-mr fa-calendar"></i><span class="label">日期: </span><?php echo the_meta_date(); ?></span>
 		<span class="item category"><i class="fa fa-mr fa-folder"></i><span class="label">分类: </span><?php echo the_meta_category(); ?></span>
 		<span class="item font-sizing"><i class="fa fa-mr fa-font"></i><span><span class="label">字号: </span></span><?php
@@ -18,7 +18,7 @@
 		<?php } ?>
 	</div>
 
-	<div class="entry">
+	<div class="entry" itemprop="articleBody">
 		<?php echo $the->content; ?>
 	</div><!-- end entry -->
 
@@ -35,5 +35,11 @@
 			echo '</ol>',PHP_EOL;
 		} ?>
 	</div><!-- end related -->
+
+    <!-- comments begin -->
+    <div id="comments">
+        <script src="/theme/scripts/comment.js"></script>
+    </div>
+    <!-- comments end -->
 </article>
 

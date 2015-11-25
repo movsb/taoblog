@@ -2,7 +2,7 @@ console.log('评论功能自第1版实现功能之后就几乎没有再改过，
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
-		<i class="fa fa-mr fa-comments"></i>评论<span class="no-sel">(<span class="loaded">0</span>/<span class="total">0</span>)</span>
+		<i class="fa fa-mr fa-comments"></i>评论<span class="no-sel">(<span class="loaded">0</span>/<span class="total" itemprop="commentCount">0</span>)</span>
 	</h3>
 
 	<!-- 评论列表  -->
@@ -266,7 +266,7 @@ Comment.prototype.friendly_date = function(d) {
 
 Comment.prototype.gen_comment_item = function(cmt) {
 	var s = '';
-	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '">\n';
+	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '" itemprop="comment">\n';
 	s += '<div class="comment-avatar">'
 		+ '<img src="' + this.gen_avatar(cmt.avatar, 48) + '" width="48px" height="48px"/>'
 		+ '</div>\n';
