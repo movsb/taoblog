@@ -20,7 +20,7 @@ document.write(function(){/*
 
 	<!-- 评论框 -->
 	<div id="comment-form-div" class="normal">
-		<div class="comment-form-div-1">
+		<div class="comment-form-div-1 no-sel">
 			<div class="no-sel">
 				<div class="closebtn" title="关闭">
 					<i class="fa fa-times"></i>

@@ -68,14 +68,10 @@ the_recent_comments();
     <h2>文章归档</h2>
     <p><a href="/archives">全部文章的归档页面，按标签、按分类、按日期。</a></p>
 </div>
-<div>
-	<h2>又换风格了</h2>
-	<p>改来改去，还是觉得不喜欢现在的风格。怎么办？</p>
-</div>
 
 <div>
 	<h2>状态</h2>
-	<p>服务器开始运行于2014年12月24日，已经运行 <span id="server-run-time">?</span> 天。</p>
+	<p>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</p>
 </div>
 
 <?php
