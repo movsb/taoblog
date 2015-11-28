@@ -27,6 +27,14 @@
 		ga('create', 'UA-65174773-1', 'auto');
 		ga('send', 'pageview');
 	</script>
+    <script>
+        (function(){
+            var bp = document.createElement('script');
+            bp.src = '//push.zhanzhang.baidu.com/push.js';
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(bp, s);
+        })();
+    </script>
 </div>
 <script src="/theme/scripts/footer.js"></script>
 </body>

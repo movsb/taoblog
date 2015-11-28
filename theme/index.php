@@ -2,6 +2,16 @@
 $home = $tbopt->get('home');
 $blog_name = $tbopt->get('blog_name');
 
+function the_baidu_search() {
+?>
+<div>
+<h2>站内搜索</h2>
+<div style="padding: 0px 2em;">
+<script type="text/javascript">(function(){document.write(unescape('%3Cdiv id="bdcs"%3E%3C/div%3E'));var bdcs = document.createElement('script');bdcs.type = 'text/javascript';bdcs.async = true;bdcs.src = 'http://znsv.baidu.com/customer_search/api/js?sid=6111287814214412158' + '&plate_url=' + encodeURIComponent(window.location.href) + '&t=' + Math.ceil(new Date()/3600000);var s = document.getElementsByTagName('script')[0];s.parentNode.insertBefore(bdcs, s);})();</script>
+</div>
+</div>
+<?php
+}
 function the_recent_shuoshuos() {
     global $tbshuoshuo;
 
@@ -58,6 +68,7 @@ function the_recent_comments() {
 require('header.php');
 
 today_english();
+the_baidu_search();
 the_recent_shuoshuos();
 the_recent_posts();
 the_recent_comments();
