@@ -67,7 +67,6 @@ function the_recent_comments() {
 
 require('header.php');
 
-today_english();
 the_baidu_search();
 the_recent_shuoshuos();
 the_recent_posts();
