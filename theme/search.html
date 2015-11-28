@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>谷歌站内搜索</title>
+<style>
+    #wrapper {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        width: 500px;
+        height: 300px;
+        margin: auto;
+    }
+</style>
+</head>
+<body>
+<div id="wrapper">
+<div style="text-align: center;"><img width="272" height="92" src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png" /></div>
+<script>
+  (function() {
+    var cx = '014332636556948810867:r1yplmmx68k';
+    var gcse = document.createElement('script');
+    gcse.type = 'text/javascript';
+    gcse.async = true;
+    gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+        '//cse.google.com/cse.js?cx=' + cx;
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(gcse, s);
+  })();
+</script>
+<gcse:search></gcse:search>
+</div>
+</body>
+</html>
+

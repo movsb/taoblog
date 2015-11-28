@@ -73,6 +73,7 @@
 							<h3>ABOUT</h3>
 							<ul>
 								<li><a href="/about">关于我</a></li>
+                                <li><a href="/search">站内搜索</a></li>
                                 <li><a href="/archives">博客归档</a></li>
 								<li><a href="/blog">博客程序</a></li>
 								<li><a href="/echo">建议反馈</a></li>
