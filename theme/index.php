@@ -67,7 +67,8 @@ function the_recent_comments() {
 
 require('header.php');
 
-the_baidu_search();
+if(!$is_ssl)
+    the_baidu_search();
 the_recent_shuoshuos();
 the_recent_posts();
 the_recent_comments();

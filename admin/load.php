@@ -38,4 +38,5 @@ $tbshuoshuo = new TB_Shuoshuo;
 date_default_timezone_set('Asia/Chongqing');
 
 $logged_in = login_auth_cookie();
+$is_ssl = $_SERVER['SERVER_PORT'] == 443;
 
