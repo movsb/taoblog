@@ -41,7 +41,7 @@ function the_recent_posts() {
 		echo '<h2>近期文章</h2>',PHP_EOL;
 		echo '<ul style="list-style: none;">';
 		foreach($posts as &$p) {
-			$link = the_link($p);
+			$link = the_link($p, false);
 			echo '<li><a href="'.$link.'">',$p->title,'</a></li>',"\n";
 		}
 		echo '</ul>';
@@ -67,7 +67,8 @@ function the_recent_comments() {
 
 require('header.php');
 
-the_baidu_search();
+if(!$is_ssl)
+    the_baidu_search();
 the_recent_shuoshuos();
 the_recent_posts();
 the_recent_comments();

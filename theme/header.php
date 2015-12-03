@@ -37,8 +37,8 @@
 } ?>
 	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo $home,'/rss';?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
-	<link rel="stylesheet" type="text/css" href="http://libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" />
-	<script type="text/javascript" src="http://libs.useso.com/js/jquery/2.1.1/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />
+	<script type="text/javascript" src="//ajax.lug.ustc.edu.cn/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 	<script type="text/javascript" src="/theme/scripts/header.js"></script>
 <?php if(!$tbquery->count) {
 
