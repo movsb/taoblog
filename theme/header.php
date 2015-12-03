@@ -35,7 +35,7 @@
 	<?php if($tbquery->is_home()) {
 		echo '<meta name="keywords" content="', $tbopt->get('keywords'), '" />', PHP_EOL;
 } ?>
-	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo $home,'/rss';?>" />
+	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo '/rss';?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="//ajax.lug.ustc.edu.cn/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -77,7 +77,7 @@
                                 <li><a href="/archives">博客归档</a></li>
 								<li><a href="/blog">博客程序</a></li>
 								<li><a href="/echo">建议反馈</a></li>
-								<li><a target="_blank" href="<?php echo $tbopt->get('home'),'/rss'; ?>">订阅博客</a></li>
+								<li><a target="_blank" href="<?php echo '/rss'; ?>">订阅博客</a></li>
 							</ul>
 						</div>
 						<?php
