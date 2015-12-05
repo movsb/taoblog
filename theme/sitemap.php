@@ -11,8 +11,9 @@ function sitemap_header() {
 function sitemap_body() {
 	global $tbpost;
 	global $tbopt;
+    global $tbmain;
 
-	$home = $tbopt->get('home');
+	$home = $tbmain->home;
 	$ids = $tbpost->get_all_posts_id();
 
 	foreach($ids as $id) {

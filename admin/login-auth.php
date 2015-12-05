@@ -51,7 +51,8 @@ function login_auth($redirect=false) {
 	$loggedin = $loggedin && $ipauth;
 	if(!$loggedin) {
 		if($redirect) {
-			$home = $opt->get('home');
+            $is_ssl = $_SERVER['SERVER_PORT'] == 443;
+			$home = ($is_ssl ? 'https://' : 'http://') . $opt->get('home');
 			$url = $home.'/admin/login.php?url='.urlencode($_SERVER['REQUEST_URI']);
 
 			header('HTTP/1.1 302 Login Required');

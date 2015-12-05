@@ -17,7 +17,7 @@
 </div>
 <div class="img-view" id="img-view"><img /><div class="tip"></div></div>
 <div style="display: none;">
-<?php if(!$is_ssl) echo '<script src="http://js.users.51.la/17768957.js"></script>'; ?>
+<?php if(!$tbmain->is_ssl) echo '<script src="http://js.users.51.la/17768957.js"></script>'; ?>
 	<script>
 		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -27,7 +27,7 @@
 		ga('create', 'UA-65174773-1', 'auto');
 		ga('send', 'pageview');
 	</script>
-    <?php if(!$is_ssl) : ?>
+    <?php if(!$tbmain->is_ssl) : ?>
     <script>
         (function(){
             var bp = document.createElement('script');

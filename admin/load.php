@@ -19,6 +19,8 @@ require_once('db/comments.php');
 require_once('db/tags.php');
 require_once('db/shuoshuo.php');
 
+require_once('tbmain.php');
+
 require_once('db-hooks.php');
 
 require_once('query.php');
@@ -34,9 +36,9 @@ $tbquery = new TB_Query;
 $tbdate = new TB_DateTime;
 $tbtag = new TB_Tags;
 $tbshuoshuo = new TB_Shuoshuo;
+$tbmain = new TB_Main;
 
 date_default_timezone_set('Asia/Chongqing');
 
 $logged_in = login_auth_cookie();
-$is_ssl = $_SERVER['SERVER_PORT'] == 443;
 

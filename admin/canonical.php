@@ -5,8 +5,9 @@ function the_link(&$p, $home=true) {
 	global $tbtax;
 	global $tbopt;
     global $tbpost;
+    global $tbmain;
 
-	$home = $home ? $tbopt->get('home') : '';
+	$home = $home ? $tbmain->home : '';
 	$link = '';
 
 	if($p->type === 'post') {

@@ -90,19 +90,17 @@ function login_html($url='') { ?>
 
 if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
-$opt1 = new TB_Options;
-
 $do = isset($_GET['do']) ? $_GET['do'] : '';
 if($do === 'logout') {
 	header('HTTP/1.1 302 Logged Out');
 	setcookie('login','',time()-1, '/');
-	header('Location: '.$opt1->get('home').'/admin/login.php');
+	header('Location: login.php');
 	die(0);
 } else {
 	if(login_auth()){
 		header('HTTP/1.1 302 Login Success');
 
-		$url = isset($_GET['url']) ? $_GET['url'] : $opt1->get('home').'/admin/';
+		$url = isset($_GET['url']) ? $_GET['url'] : '/admin/';
 		header('Location: '.$url);
 		die(0);
 	} else {
@@ -119,9 +117,7 @@ if(!login_auth_passwd($_POST)) {
 	die(0);
 }
 
-$opt1 = new TB_Options;
-
-$url = isset($_POST['url']) ? $_POST['url'] : $opt1->get('home').'/admin/';
+$url = isset($_POST['url']) ? $_POST['url'] : '/admin/';
 header('HTTP/1.1 302 OK');
 header('Location: '.$url);
 login_auth_set_cookie($_SERVER['REMOTE_ADDR']);

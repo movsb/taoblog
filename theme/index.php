@@ -1,5 +1,4 @@
 <?php
-$home = $tbopt->get('home');
 $blog_name = $tbopt->get('blog_name');
 
 function the_baidu_search() {
@@ -67,7 +66,7 @@ function the_recent_comments() {
 
 require('header.php');
 
-if(!$is_ssl)
+if(!$tbmain->is_ssl)
     the_baidu_search();
 the_recent_shuoshuos();
 the_recent_posts();

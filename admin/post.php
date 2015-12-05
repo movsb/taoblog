@@ -409,14 +409,13 @@ require_once('load.php');
 require_once('admin-hooks-post.php');
 
 function post_new_post() {
-	global $tbdb;
 	global $tbpost;
-	global $tbopt;
+	global $tbmain;
 
 	if(($id=$tbpost->insert($_POST))){
 		apply_hooks('post_posted', $id, $_POST);
 		header('HTTP/1.1 302 Found');
-		header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
+		header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
 		die(0);
 	} else {
 		$j = [ 'errno' => 'error', 'error' => $tbpost->error];
@@ -425,9 +424,8 @@ function post_new_post() {
 }
 
 function post_update() {
-	global $tbdb;
 	global $tbpost;
-	global $tbopt;
+    global $tbmain;
 
 	$r = $tbpost->update($_POST);
 	if(!$r) {
@@ -441,7 +439,7 @@ function post_update() {
 	apply_hooks('post_updated', $id, $_POST);
 
 	header('HTTP/1.1 302 Updated');
-	header('Location: '.$tbopt->get('home').'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
+	header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
 	die(0);
 }
 
@@ -451,9 +449,9 @@ function post_preview() {
 }
 
 function post_push_to_baidu() {
-	global $tbopt;
+	global $tbmain;
 
-	$home = $tbopt->get('home');
+	$home = $tbmain->home;
 
 	$post_url = $home . '/' . $_POST['post-id'] . '/';
 	$api = 'http://data.zz.baidu.com/urls?site='.$home.'&token=' . BAIDU_PUSH_TOKEN;

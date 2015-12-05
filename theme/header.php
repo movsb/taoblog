@@ -1,5 +1,4 @@
 <?php
-	$home = $tbopt->get('home');
 	$blog_name = $tbopt->get('blog_name');
 
 ?><!DOCTYPE html> 
