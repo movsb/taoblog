@@ -96,10 +96,10 @@
 
 #head {
 	clear: both;
-	margin: 0px auto;
+    margin-top: 20px;
 
     h6 {
-        margin: 0px 0px 8px;
+        margin: 0px 0px 20px;
         font-weight: normal;
         font-size: 30px;
         cursor: pointer;
@@ -123,7 +123,7 @@
         width: 64px;
         border-radius: 32px;
         cursor: pointer;
-        margin-bottom: 0px;
+        margin-bottom: 15px;
         transition: transform 300ms ease-in;
 
         &:hover {

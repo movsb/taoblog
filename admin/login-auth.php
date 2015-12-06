@@ -19,7 +19,12 @@ function login_auth_passwd($arg = []) {
 	return false;
 }
 
+// 后期将取消非HTTPS登录许可，也就不再需要验证IP
 function login_auth_ip() {
+    $is_ssl = $_SERVER['SERVER_PORT'] == 443;
+
+    if($is_ssl) return true;
+
 	require_once('db/options.php');
 
 	$opt = new TB_Options;
@@ -42,6 +47,8 @@ function login_auth($redirect=false) {
 
 	$opt = new TB_Options;
 
+    $is_ssl = $_SERVER['SERVER_PORT'] == 443;
+
 	$ipauth = login_auth_ip();
 
 	$ip = $_SERVER['REMOTE_ADDR'];
@@ -51,7 +58,6 @@ function login_auth($redirect=false) {
 	$loggedin = $loggedin && $ipauth;
 	if(!$loggedin) {
 		if($redirect) {
-            $is_ssl = $_SERVER['SERVER_PORT'] == 443;
 			$home = ($is_ssl ? 'https://' : 'http://') . $opt->get('home');
 			$url = $home.'/admin/login.php?url='.urlencode($_SERVER['REQUEST_URI']);
 
