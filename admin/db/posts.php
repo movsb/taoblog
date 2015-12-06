@@ -313,6 +313,10 @@ class TB_Posts {
 		} else if($arg['slug']) {
             $tbquery->type = 'post';
             $queried_posts = $this->query_by_slug($arg);
+			// 查询相关文章
+			if(count($queried_posts)) {
+				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
+			}
         } else if($arg['page']) {
             $tbquery->type = 'page';
             $queried_posts = $this->query_by_page($arg);

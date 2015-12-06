@@ -1,9 +1,6 @@
 <?php
 
 function the_link(&$p, $home=true) {
-	global $tbopt;
-	global $tbtax;
-	global $tbopt;
     global $tbpost;
     global $tbmain;
 
@@ -19,6 +16,15 @@ function the_link(&$p, $home=true) {
 	}
 
 	return $link;
+}
+
+function the_id_link(&$p, $home=true) {
+    global $tbpost;
+    global $tbmain;
+
+    $home = $home ? $tbmain->home : '';
+
+	return $home . '/' . $p->id . '/';
 }
 
 function the_edit_link(&$p, $ret_anchor = true) {

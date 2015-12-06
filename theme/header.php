@@ -42,7 +42,8 @@
 <?php if(!$tbquery->count) {
 
 } else if($tbquery->is_singular()) {?>
-	<link rel="canonical" href="<?php echo the_link($the);?>" />
+    <link rel="canonical" href="<?php echo the_link($the);?>" />
+    <base href="<?php echo the_id_link($the);?>" />
     <script type="text/javascript">var _post_id = <?php echo $the->id; ?>;var _comment_count = <?php echo $the->comments; ?>;</script>
 <?php } 
 

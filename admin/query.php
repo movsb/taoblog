@@ -147,11 +147,6 @@ class TB_Query {
 
 		$this->internal_query = array_merge($this->internal_query, parse_query_string($u, false, false));
 
-		// 把长链接301到短链接
-		if(isset($this->internal_query['long'])) {
-			$need_redirect = true;
-		}
-
 		// 把类似 "/1234" 重定向到 "/12324/"
 		if(isset($this->internal_query['short']) && !$this->internal_query['slash']) {
             $query = isset($_SERVER['QUERY_STRING']) && strlen($_SERVER['QUERY_STRING']) ? '?'.$_SERVER['QUERY_STRING'] : '';
