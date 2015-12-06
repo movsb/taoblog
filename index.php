@@ -4,16 +4,6 @@ if(!isset($_SERVER['HTTP_USER_AGENT'])) {
 	die(-1);
 }
 
-// maintenance mode
-// https://yoast.com/http-503-site-maintenance-seo/
-if(file_exists('MAINTENANCE')) {
-    header('HTTP/1.1 503 In Maintenance');
-    header('Content-Type: text/plain; charset=utf-8');
-    header('Retry-After: 300');
-    echo '网站维护中，请稍后再访问...';
-    die(-1);
-}
-
 if(preg_match('/MSIE|Trident/', $_SERVER['HTTP_USER_AGENT'])		// IE
 	&& !preg_match('/spider/i', $_SERVER['HTTP_USER_AGENT'])		// Spider, like stupid 360 haosou
 	&& !(isset($_GET['iexplore']) && $_GET['iexplore'] == 'true')	// ! still use ie
@@ -47,6 +37,16 @@ $start_time = microtime();
 
 require('admin/load.php');
 require('theme/functions.php');
+
+// maintenance mode
+// https://yoast.com/http-503-site-maintenance-seo/
+if(!login_auth() && file_exists('MAINTENANCE')) {
+    header('HTTP/1.1 503 In Maintenance');
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Retry-After: 300');
+    echo '网站维护中，请稍后再访问...';
+    die(-1);
+}
 
 
 if($tbquery->query() === false){
