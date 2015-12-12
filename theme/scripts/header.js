@@ -58,9 +58,3 @@ function show_tips(so) {
 	}
 }
 
-/* 读取字体大小 */
-if(localStorage.getItem('font-size')) {
-	document.write('<style>.entry { font-size: ' + localStorage.getItem('font-size') + '; }</style>');
-}
-
-

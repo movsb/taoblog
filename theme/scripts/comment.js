@@ -248,7 +248,7 @@ Comment.prototype.init = function() {
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {
-	return '/theme/avatar.php?' + encodeURIComponent(eh + '?s=' + sz);
+	return '/theme/avatar.php?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
 };
 
 Comment.prototype.sanitize_content = function(c) {
