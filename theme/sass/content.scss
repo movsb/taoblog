@@ -15,7 +15,7 @@
 
 @media screen and (min-width: 851px) {
 	#main {
-        padding: 10px;
+        padding: 2em;
 		margin-left: 300px;
 		transition: margin-left 0.5s;
 	}
@@ -137,37 +137,19 @@
         overflow: hidden;
 
         h1 {
-            float: left;
-            margin: 0px 0px 10px;
-            padding: 0.4em 0.5em 0px;
-            font-size: 2em;
+            font-size: 2.5em;
             color: $post_title_fg;
-            text-shadow: 0px 0px 1px;
         }
     }
 
     /* 文章元数据 */
     .meta { 
-        padding: 5px 10px;
-        border-top: 1px solid #ccc;
         color: $post_meta_fg;
+        margin: 2em 0px 0px;
 
-        span.item {
-            margin: 0px 5px;
-        }
-
-        .fa {
-            margin-right: 5px;
-        }
-
-        .item a {
+        a {
             color: inherit;
-        }
-
-        .font-sizing {
-            .inc, .dec {
-                cursor: pointer;
-            }
+            text-decoration: underline;
         }
 
         .author {
@@ -190,7 +172,7 @@
 }
 @media screen and (min-width: 851px) {
 	.entry {
-		padding: 0px 15px 16px;
+		padding-bottom: 16px;
 	}
 }
 
@@ -198,6 +180,7 @@
 	display: block;
 	color: $post_content_fg;
 	text-align: justify;
+    margin-bottom: 3em;
 
      pre {
         box-sizing: border-box;
@@ -376,13 +359,14 @@
 
 /* 相关文章推荐 */
 .post .related {
+    margin-bottom: 3em;
     h3 {
-        padding: 0.8em 0.8em 0px;
         border-bottom: 1px solid $border_color;
     }
 
     ol {
         padding-left: 4em;
+        line-height: 1.7em;
     }
 
     a {

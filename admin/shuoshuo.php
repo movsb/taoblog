@@ -11,7 +11,7 @@ $content = $id > 0 ? $tbshuoshuo->get($id) : '';
 ?>
 <form method="post" style="margin-bottom: 2em;">
 <h2>发表说说</h2>
-<textarea name="content" style="display: block;"><?php echo $content;?></textarea>
+<textarea name="content" style="display: block; min-width: 400px; min-height: 150px;"><?php echo $content;?></textarea>
 <input type="submit" value="发表" />
 <input type="hidden" name="do" value="<?php echo $id > 0 ? 'update' : 'new';?>" />
 <input type="hidden" name="id" value="<?php echo $id;?>" />

@@ -57,7 +57,7 @@ function the_recent_comments() {
 		echo '<ul style="list-style: none;">';
 		foreach($cmts as $c) {
 			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
-			echo '<li style="margin-bottom: 8px;"><span style="color: green">',$c->author,'</span>: ',htmlspecialchars($c->content),
+			echo '<li style="margin-bottom: 8px;"><b>',$c->author,'</b>: ',htmlspecialchars($c->content),
 				' --- 《','<a href="/',$c->post_id,'/">',$title,'</a>》','</li>',PHP_EOL;
 		}
 		echo '</ul>';

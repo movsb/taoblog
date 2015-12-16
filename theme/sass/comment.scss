@@ -1,9 +1,12 @@
 /* 评论 */
 
+#comments {
+    margin-bottom: 3em;
+}
+
 /* 评论标题 */
 #comment-title {
 	font-size: 1.5em;
-	padding: 0.8em 0.8em 0px 0.8em;
 	border-bottom: 1px solid $border_color;
 	margin-bottom: 0;
 }
