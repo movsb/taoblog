@@ -280,7 +280,8 @@ Comment.prototype.gen_comment_item = function(cmt) {
 			if(!cmt.url.match(/^https?:\/\//i))
 				cmt.url = 'http://' + cmt.url;
 
-			nickname = '<a rel="nofollow" target="_blank" href="' + cmt.url + '">' + cmt.author + '</a>'
+            nickname = '<i class="fa fa-home"></i>';
+			nickname += '<a rel="nofollow" target="_blank" href="' + cmt.url + '">' + cmt.author + '</a>';
 		} else {
 			nickname = cmt.author;
 		}
