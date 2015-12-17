@@ -113,7 +113,7 @@ Comment.prototype.init = function() {
         $('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
         $.post(
             '/admin/comment.php',
-            'do=get-cmt&count=5&offset=' + self._loaded
+            'do=get-cmt&count=10&offset=' + self._loaded
                 + '&post_id=' + $('#post-id').val(),
             function(data) {
                 var cmts = data.cmts || [];
@@ -151,8 +151,6 @@ Comment.prototype.init = function() {
                 $(load).removeAttr('loading');
         },1500));
     });
-
-    $('#load-comments').click();
 
     // Ajax评论提交
     $('#comment-submit').click(function() {
@@ -239,6 +237,22 @@ Comment.prototype.init = function() {
         });
 
     });
+
+    $(window).on('scroll', function() {
+        self.load_essential_comments();
+    });
+
+    $(window).on('load', function() {
+        self.load_essential_comments();       
+    });
+};
+
+Comment.prototype.load_essential_comments = function() {
+    if(this._loaded + this._loaded_ch < _comment_count
+        && window.scrollY + window.innerHeight + 50 >= document.body.scrollHeight) 
+    {
+        this.load_comments();
+    }
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {
@@ -337,6 +351,10 @@ Comment.prototype.save_info = function() {
 			show_tips('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
 		}
 	}
+};
+
+Comment.prototype.load_comments = function() {
+    $('#load-comments').click();
 };
 
 var comment = new Comment();
