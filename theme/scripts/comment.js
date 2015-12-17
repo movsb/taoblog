@@ -86,12 +86,6 @@ document.write(function(){/*
 	</div>
 */}.toString().slice(14,-3));
 
-
-/* 暂时解决：304只会判断文章内容是否修改，而未管其它代码，所以有时候会JS执行错误 */
-if(typeof(_comment_count) == 'undefined') {
-    alert('因博客版本临时升级，您需要按 Ctrl + F5 强制刷新页面才能正确显示。');
-}
-
 $('#post-id').val(_post_id);
 $('#comment-title .total').text(_comment_count);
 
