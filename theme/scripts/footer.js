@@ -202,7 +202,8 @@ $('.home-a').click(function() {
         }
 
         var target = e.target;
-
+        
+        // http://stackoverflow.com/a/2725963
         if(e.which == 1) {  // left button
             imgview.offset_x = e.clientX;
             imgview.offset_y = e.clientY;
@@ -211,7 +212,7 @@ $('.home-a').click(function() {
             imgview.coord_y = parseInt(target.style.top);
 
             imgview.dragging =true;
-        } else {    // middle button
+        } else if(e.which == 2) {    // middle button
             imgview.degree += 90;
             if(imgview.degree >= 360)
                 imgview.degree = 0;
@@ -360,10 +361,10 @@ $('.home-a').click(function() {
 // http://www.htmlgoodies.com/html5/javascript/calculating-the-difference-between-two-dates-in-javascript.html
 (function() {
 	function date_between(date1, date2) {
-		// get one day in milliseconds
+		// get one day in millisecond
 		var one_day = 24*60*60*1000;
 
-		// convert to milliseconds
+		// convert to millisecond
 		var date1_ms = date1.getTime();
 		var date2_ms = date2.getTime();
 
