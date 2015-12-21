@@ -98,10 +98,12 @@ function pm_comment_posted($unused1, $a) {
 	$arg->parents = [];
 
 	while($parent > 0) {
-		$pc = $tbcmts->get_vars('author,email', "id=$parent");
-		if(is_object($pc) && $pc->email != $admin_email) {
+		$pc = $tbcmts->get_vars('id,author,email', "id=$parent");
+		if(is_object($pc) && $pc->email != $admin_email && $pc->email != $arg->email) {
 			$arg->parents[] = $pc;
 		}
+
+        $parent = $pc->id;
 		break; // 暂时不通知父父级评论
 	}
 
