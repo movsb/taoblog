@@ -175,8 +175,9 @@ class TB_Query {
             return true;
         }
 
+        // 查询文章
 		$r = $tbpost->query($this->internal_query);
-		if($r === false) return $r;
+		if($r === false || !is_array($r)) return $r;
 
 		// 页面不能通过id访问，重定向到slug
 		if(isset($this->internal_query['short']) && count($r) && $r[0]->type == 'page'){

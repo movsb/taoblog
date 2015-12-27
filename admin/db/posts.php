@@ -307,14 +307,14 @@ class TB_Posts {
 			$tbquery->type = 'post';
 			$queried_posts = $this->query_by_id($arg);
 			// 查询相关文章
-			if(count($queried_posts)) {
+			if(is_array($queried_posts) && count($queried_posts)) {
 				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
 			}
 		} else if($arg['slug']) {
             $tbquery->type = 'post';
             $queried_posts = $this->query_by_slug($arg);
 			// 查询相关文章
-			if(count($queried_posts)) {
+			if(is_array($queried_posts) && count($queried_posts)) {
 				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
 			}
         } else if($arg['page']) {

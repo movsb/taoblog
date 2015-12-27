@@ -15,7 +15,7 @@ function the_recent_shuoshuos() {
     global $tbshuoshuo;
 
     $sss = $tbshuoshuo->get_latest(10);
-    if(count($sss) == 0) return false;
+    if(!is_array($sss) || count($sss) == 0) return false;
 
     echo '<h2>近期说说</h2>',PHP_EOL;
     echo '<ul>';
