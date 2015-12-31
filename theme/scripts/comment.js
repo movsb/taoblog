@@ -128,6 +128,9 @@ Comment.prototype.init = function() {
                     ch_count += cmts[i].children.length;
                 }
 
+                if(typeof(jQuery)=='function' && typeof(jQuery.timeago)=='function')
+                    jQuery('.comment-meta .date').timeago();
+
                 $('#loading-status').text('');
 
                 if(cmts.length == 0) {
@@ -297,7 +300,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
-	s += '<span class="date">' + this.friendly_date(cmt.date) + '</span>\n</div>\n';
+    s += '<time class="date" datetime="' + cmt.date + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
 	s += '<div class="comment-content">' + this.sanitize_content(cmt.content) + '</div>\n';
 	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment.reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';

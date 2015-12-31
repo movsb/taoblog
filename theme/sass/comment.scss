@@ -116,6 +116,9 @@
     .nickname {
         color: $comment_nickname_fg;
 
+        i.fa {
+            margin-right: 3px;
+        }
         a {
             color: inherit;
         }
