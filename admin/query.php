@@ -108,8 +108,8 @@ class TB_Query {
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/sitemap\.xml$'                                   => 'sitemap=1',
             '^/archives$'                                       => 'archives=1',
-            '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
+            '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
             '^/$'                                               => '',
             ];
