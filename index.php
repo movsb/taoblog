@@ -60,6 +60,7 @@ if(!$tbquery->have()
     && !$tbquery->is_home() 
     && !$tbquery->is_sitemap()
     && !$tbquery->is_archive()
+    && !$tbquery->is_shuoshuo()
 ){
 	if(!$tbquery->is_query_modification) {
 		require('theme/404.php');
@@ -86,5 +87,7 @@ if($tbquery->is_home()) {
 	require('theme/sitemap.php');
 } else if($tbquery->is_archive()) {
     require('theme/archive.php');
+} else if($tbquery->is_shuoshuo()) {
+    require('theme/shuoshuo.php');
 }
 

@@ -67,6 +67,10 @@ class TB_Query {
         return $this->type === 'archive';
     }
 
+    public function is_shuoshuo() {
+        return $this->type === 'shuoshuo';
+    }
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 10);
@@ -107,6 +111,7 @@ class TB_Query {
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/sitemap\.xml$'                                   => 'sitemap=1',
+            '^/shuoshuo$'                                       => 'shuoshuo=1',
             '^/archives$'                                       => 'archives=1',
             '^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
@@ -172,6 +177,12 @@ class TB_Query {
         // 处理归档
         if(isset($this->internal_query['archives'])) {
             $this->type = 'archive'; // 没有 s
+            return true;
+        }
+
+        // 处理说说
+        if(isset($this->internal_query['shuoshuo'])) {
+            $this->type = 'shuoshuo';
             return true;
         }
 
