@@ -28,15 +28,17 @@ require_once('canonical.php');
 
 apply_hooks('tb_load');
 
-$tbopt = new TB_Options;
-$tbpost = new TB_Posts;
-$tbtax = new TB_Taxonomies;
-$tbcmts = new TB_Comments;
-$tbquery = new TB_Query;
-$tbdate = new TB_DateTime;
-$tbtag = new TB_Tags;
-$tbshuoshuo = new TB_Shuoshuo;
-$tbmain = new TB_Main;
+$tbopt          = new TB_Options;
+$tbpost         = new TB_Posts;
+$tbtax          = new TB_Taxonomies;
+$tbcmts         = new TB_Comments;
+$tbquery        = new TB_Query;
+$tbdate         = new TB_DateTime;
+$tbtag          = new TB_Tags;
+$tbshuoshuo     = new TB_Shuoshuo;
+$tbsscmt        = new TB_ShuoshuoComments;
+
+$tbmain         = new TB_Main;
 
 date_default_timezone_set('Asia/Chongqing');
 

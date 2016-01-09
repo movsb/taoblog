@@ -77,11 +77,13 @@ function shuoshuo_die_json($arg) {
 
 require_once('login-auth.php');
 
-if(!login_auth()) {
-	shuoshuo_die_json([
-		'errno' => 'unauthorized',
-		'error' => '需要登录后才能进行该操作！',
-		]);
+function auth() {
+    if(!login_auth()) {
+        shuoshuo_die_json([
+            'errno' => 'unauthorized',
+            'error' => '需要登录后才能进行该操作！',
+            ]);
+    }
 }
 
 require_once('load.php');
@@ -90,6 +92,7 @@ require_once('load.php');
 $do = isset($_POST['do']) ? $_POST['do'] : '';
 
 if($do == 'new') {
+    auth();
     $r = $tbshuoshuo->post($_POST['content']);
     if($r === false)
         shuoshuo_die_json([
@@ -102,6 +105,7 @@ if($do == 'new') {
     die(0);
 }
 else if($do == 'update') {
+    auth();
     $r = $tbshuoshuo->update((int)$_POST['id'], $_POST['content']);
     if($r === false)
         shuoshuo_die_json([
@@ -114,6 +118,7 @@ else if($do == 'update') {
     die(0);
 }
 else if($do == 'delete') {
+    auth();
     $r = $tbshuoshuo->del((int)$_POST['id']);
     if($r === false)
         shuoshuo_die_json([
@@ -126,6 +131,23 @@ else if($do == 'delete') {
             'errno' => 'ok',
             ]);
     die(0);
+}
+else if($do == 'post-comment') {
+    $r = $tbsscmt->post($_POST['sid'], $_POST['author'], $_POST['content']);
+    if($r === false) {
+        shuoshuo_die_json([
+            'errno' => 'failed',
+            'error' => $tbsscmt->error,
+        ]);
+    }
+    else {
+        // 当前不作任何处理，直接返回
+        shuoshuo_die_json([
+            'errno' => 'ok',
+            'author' => htmlspecialchars($_POST['author']),
+            'content' => htmlspecialchars($_POST['content']),
+        ]);
+    }
 }
 
 die(0);
