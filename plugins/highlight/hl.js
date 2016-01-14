@@ -6,7 +6,7 @@ if($('pre.code').length) {
 	(function(){
 		var head = document.getElementsByTagName('head')[0];
 		var s = document.createElement('script');
-		s.src = '/plugins/highlight/highlight.min.js';
+		s.src = '//blog-10005538.file.myqcloud.com/highlight.pack.js';
 		head.appendChild(s);
 	})();
 
@@ -32,29 +32,13 @@ if($('pre.code').length) {
 				ho.tabReplace = '    ';
 			}
 
-			// 程序语言
-			if(that.attr('lang')) {
-				ho.languages = [that.attr('lang')];
-			} else {
-				return;
-			}
+            // 程序语言
+            if(that.attr('lang')) {
+                ho.languages = [that.attr('lang')];
+            }
 
 			hljs.configure(ho);
-
 			hljs.highlightBlock(e);
-
-			/*
-			// 行号
-			var lines = (e.innerHTML.match(/\n/g) || []).length;
-			if(!e.innerHTML.match(/\n$/)) lines += 1;
-			var s = '<div class="code-wrap"><table><tr><td class="gutter">';
-			for(var i=1; i<lines; i++)
-				s += '<span>' + i + '</span><br />';
-			s += '<span>' + lines + '</span>';
-			s += '</td><td class="code">' + e.outerHTML  + '</td></tr></table></div>';
-
-			$(e).replaceWith(s);
-			*/
 		});
 	},
 	100);
