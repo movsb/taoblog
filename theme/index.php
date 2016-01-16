@@ -31,7 +31,7 @@ function the_recent_shuoshuos() {
         $cmts = $tbsscmt->get($ss->id);
         foreach($cmts as &$cmt) {
             echo '<li>';
-            echo '<b class="author">',htmlspecialchars($cmt->author),'</b>: ';
+            echo '<span class="author">',htmlspecialchars($cmt->author),'</span>: ';
             echo '<span class="content">',htmlspecialchars($cmt->content),'</span>';
             echo '</li>';
         }
@@ -81,7 +81,7 @@ function the_recent_shuoshuos() {
                 function(data) {
                     if(data.errno == 'ok') {
                         var s = '<li>'
-                            + '<b class="author">' + data.author + '</b>: '
+                            + '<span class="author">' + data.author + '</span>: '
                             + '<span class="content">' + data.content + '</span>'
                             + '</li>';
                         $('#shuoshuo-'+sid+' .comment-list').append(s);
