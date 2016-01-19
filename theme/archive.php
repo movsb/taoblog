@@ -60,6 +60,19 @@ function list_all_tags() {
     echo '</ul>';
 }
 
+function tb_head_hook() { ?>
+<style>
+    .archives a {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        max-width: 100%;
+    }
+</style>
+<?php }
+add_hook('tb_head', 'tb_head_hook');
+
 require('header.php');
 ?>
 <div class="archives">
@@ -92,7 +105,7 @@ function tb_footer_hook() { ?>
                             var ps = data.posts;
                             for(var i=0; i< ps.length; i++) {
                                 var p = ps[i];
-                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/" title="'+p.title+'">'+ p.title + '</a></li>';
                                 ul.append(s);
                             }
                             if(ps.length == 0)
@@ -127,7 +140,7 @@ function tb_footer_hook() { ?>
                             var ps = data.posts;
                             for(var i=0; i< ps.length; i++) {
                                 var p = ps[i];
-                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/" title="'+p.title+'">'+ p.title + '</a></li>';
                                 ul.append(s);
                             }
                             if(ps.length == 0)
@@ -161,7 +174,7 @@ function tb_footer_hook() { ?>
                             var ps = data.posts;
                             for(var i=0; i< ps.length; i++) {
                                 var p = ps[i];
-                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/">'+ p.title + '</a></li>';
+                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/" title="'+p.title+'">'+ p.title + '</a></li>';
                                 ul.append(s);
                             }
                             if(ps.length == 0)
