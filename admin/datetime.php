@@ -34,6 +34,10 @@ class TB_DateTime {
 		return gmdate('D, d M Y H:i:s \G\M\T', strtotime($t.' GMT+0800'));
 	}
 
+    public function mysql_local_to_timestamp($t) {
+        return strtotime($t.' GMT+0800');
+    }
+
 	public function http_gmt_now() {
 		return $this->mysql_local_to_http_gmt($this->mysql_datetime_local());
 	}
