@@ -23,23 +23,7 @@ function login_auth_passwd($arg = []) {
 function login_auth_ip() {
     $is_ssl = $_SERVER['SERVER_PORT'] == 443;
 
-    if($is_ssl) return true;
-
-	require_once('db/options.php');
-
-	$opt = new TB_Options;
-
-	$ipauth = false;
-	$ip = $_SERVER['REMOTE_ADDR'];
-	$auth_ips = explode(',', $opt->get('auth_ips'));
-	foreach($auth_ips as &$aip) {
-		if($aip && preg_match($aip, $ip)) {
-			$ipauth = true;
-			break;
-		}
-	}
-
-	return $ipauth;
+    return $is_ssl;
 }
 
 function login_auth($redirect=false) {
@@ -78,6 +62,6 @@ function login_auth_cookie($redirect=false) {
 
 function login_auth_set_cookie($ip) {
 	$opt = new TB_Options;
-	setcookie('login', sha1(md5($ip).$opt->get('login')), 0, '/', '', false, true);
+	setcookie('login', sha1(md5($ip).$opt->get('login')), 0, '/', '', true, true);
 }
 
