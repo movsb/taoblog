@@ -143,6 +143,18 @@ function the_recent_comments() {
 	}
 }
 
+function tb_head() {?>
+<style>
+    #shuoshuo .post-shuoshuo-comment {
+        display: none;
+    }
+    #shuoshuo li:hover .post-shuoshuo-comment {
+        display: inline-block;
+    }
+</style>
+<?php }
+add_hook('tb_head', 'tb_head');
+
 require('header.php');
 
 if(!$tbmain->is_ssl)
