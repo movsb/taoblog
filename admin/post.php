@@ -212,7 +212,7 @@ DOM;
 		$widgets[] = $widget;
 	}
 
-	$type = isset($_GET['type']) ? $_GET['type'] : '';
+	$type = $p ? $p->type : isset($_GET['type']) ? $_GET['type'] : '';
 	if(!in_array($type, ['post','page']))
 		$type = 'post';
 
@@ -415,7 +415,7 @@ function post_new_post() {
 	if(($id=$tbpost->insert($_POST))){
 		apply_hooks('post_posted', $id, $_POST);
 		header('HTTP/1.1 302 Found');
-		header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
+		header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id);
 		die(0);
 	} else {
 		$j = [ 'errno' => 'error', 'error' => $tbpost->error];
@@ -439,7 +439,7 @@ function post_update() {
 	apply_hooks('post_updated', $id, $_POST);
 
 	header('HTTP/1.1 302 Updated');
-	header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id.'&type='.$_POST['type']);
+	header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id);
 	die(0);
 }
 
