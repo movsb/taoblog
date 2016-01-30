@@ -53,6 +53,13 @@
 	}
 }
 
+@media screen and (min-width: 851px) {
+    #header .desktop {
+        min-height: 98%;
+        position: relative;
+    }
+}
+
 #header {
     .mobile {
         h6 {
@@ -90,7 +97,9 @@
     }
 
     .copy {
-
+        width: 100%;
+        position: absolute;
+        bottom: 6px;
     }
 }
 

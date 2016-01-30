@@ -102,6 +102,8 @@
 							<?php }
 						?>
 					</div>
+                    <div style="height: 2em;">
+                    </div>
 				</div><!-- footer -->
 				<div class="copy center">
 					<div class="copyright mb">
