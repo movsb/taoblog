@@ -147,10 +147,10 @@ function the_recent_comments() {
 function tb_head() {?>
 <style>
     #shuoshuo .post-shuoshuo-comment {
-        display: none;
+        visibility: hidden;
     }
     #shuoshuo li:hover .post-shuoshuo-comment {
-        display: inline-block;
+        visibility: visible;
     }
 </style>
 <?php }
