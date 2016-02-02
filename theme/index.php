@@ -24,7 +24,7 @@ function the_recent_shuoshuos() {
     foreach($sss as &$ss) {
         echo '<li id="shuoshuo-', $ss->id, '">';
         echo '<p>', $ss->content, ' <span>(', substr($ss->date,5,11), ')</span>',
-            '<i style="margin-left: 4px; cursor: pointer;" class="fa fa-pencil-square-o post-shuoshuo-comment" data-id="',$ss->id,'"></i>','</p>';
+            '<i title="发表评论" style="margin-left: 4px; cursor: pointer;" class="fa fa-pencil-square-o post-shuoshuo-comment" data-id="',$ss->id,'"></i>','</p>';
         echo '<div>';
         // 读取评论列表
         echo '<ul class="comment-list">';
@@ -40,6 +40,7 @@ function the_recent_shuoshuos() {
         echo '</li>';
     }
     echo '</ul>';
+    echo '<p style="padding-left: 2em;"><a href="/shuoshuo">查看全部说说。</a></p>';
 ?>
 <form id="shuoshuo-comment-form" method="post" action="/admin/shuoshuo.php" style="display: none;">
     <input type="submit" value="评论" style="display: none;"/>
@@ -167,12 +168,12 @@ the_recent_comments();
 
 <div>
     <h2>文章归档</h2>
-    <p><a href="/archives">全部文章的归档页面，按标签、按分类、按日期。</a></p>
+    <p style="padding-left: 2em;"><a href="/archives">全部文章的归档页面，按标签、按分类、按日期。</a></p>
 </div>
 
 <div>
 	<h2>状态</h2>
-	<p>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</p>
+	<p style="padding-left: 2em;">服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</p>
 </div>
 
 <?php

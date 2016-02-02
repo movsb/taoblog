@@ -212,7 +212,7 @@ DOM;
 		$widgets[] = $widget;
 	}
 
-	$type = $p ? $p->type : isset($_GET['type']) ? $_GET['type'] : '';
+	$type = $p ? $p->type : (isset($_GET['type']) ? $_GET['type'] : '');
 	if(!in_array($type, ['post','page']))
 		$type = 'post';
 
