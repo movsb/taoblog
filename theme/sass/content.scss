@@ -1,29 +1,11 @@
 /* 内容 */
-#wrapper {
-
-}
-
 #main {
-	min-height: 400px;
+
 }
 
-@media screen and (max-width: 850px) {
-    #content {
-        margin: 60px 1em 1em;
-    }
-}
-
-@media screen and (min-width: 851px) {
-	#main {
-        padding: 2em;
-		margin-left: 300px;
-		transition: margin-left 0.5s;
-	}
-    #content {
-        /*max-width: 850px;
-        margin: 0px auto 10px;*/
-    }
-
+#content {
+    max-width: 850px;
+    margin: auto;
 }
 
 /* 分类与日期查询 */
@@ -156,12 +138,6 @@
             display: none;
         }
     }
-}
-
-@media screen and (max-width: 600px) {
-	.post .meta .label {
-		display: none;
-	}
 }
 
 /* 文章内容 */
@@ -400,6 +376,51 @@
     .current {
         color: $pagination_current_fg;
         background-color: $pagination_current_bg;
+    }
+}
+
+.post, .page {
+    a {
+        text-decoration: none;
+        color: $a_fg;
+        &:hover {
+            text-decoration: underline;
+        }
+        &:visited {
+            color: $a_visited_fg;
+        }
+        &:active {
+            color: $a_active_fg;
+        }
+        &:focus {
+            outline: none;
+        }
+    }
+
+    a, input, textarea, button {
+        transition: all 0.2s ease-out;
+    }
+
+    button, input[type=submit] {
+        border: none;
+        &::-moz-focus-inner {
+            border: 0;
+        }
+    }
+
+    acronym, abbr {
+        border-bottom: 1px dashed $border_color;
+    }
+
+    input, a, textarea {
+        &:focus {
+            outline: none;
+        }
+    }
+
+    input, textarea, button {
+        border: 1px solid $border_color;
+        padding: 5px 7px;
     }
 }
 

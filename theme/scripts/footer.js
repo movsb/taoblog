@@ -13,6 +13,7 @@ $('#back-to-top').click(function(){
 });
 
 /*  阅读模式 */
+/*
 var in_reading_mode = false;
 
 function toggle_reading_mode() {
@@ -40,6 +41,7 @@ function toggle_reading_mode() {
 $('#reading-mode').click(function() {
 	toggle_reading_mode();
 });
+*/
 
 /* 字体大小调整 */
 $('.font-sizing').click(function(e){

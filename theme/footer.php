@@ -1,8 +1,5 @@
 		</div><!-- content -->	
 	</section>
-	<div id="mobile-footer">
-		<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>
-	</div>
 </div><!-- wrapper -->
 
 <?php apply_hooks('tb_footer'); ?>
@@ -11,7 +8,7 @@
 	<div class="back-to-top" id="back-to-top" title="回到顶端">
 		<i class="fa fa-arrow-circle-up"></i>
 	</div>
-	<div class="reading-mode no-sel" id="reading-mode" title="阅读模式">
+	<div style="display: none;" class="reading-mode no-sel" id="reading-mode" title="阅读模式">
 		<i class="fa fa-plus-circle"></i>
 	</div>
 </div>

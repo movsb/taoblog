@@ -53,74 +53,24 @@
 
 <body>
 <div id="wrapper">
-	<header id="header" class="no-sel">
-		<div id="header-wrapper">
-			<div class="desktop">
-				<section id="head">
-					<div class="center">
-						<img class="me home-a" src="/theme/images/me.png" />
-						<h6 class="home-a"><?php echo $blog_name; ?></h6>
-						<div class="social" style="font-size: 2em;">
-							<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
-							<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
-							<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.8em; position: relative; top: -1px;"></i></a></span>
-						</div>
-					</div>
-				</section>
-				<div class="footer center" id="footer">
-					<div class="footer-wrapper">
-						<div class="column about">
-							<h3>ABOUT</h3>
-							<ul>
-								<li><a href="/about">关于我</a></li>
-                                <li><a href="/search">站内搜索</a></li>
-                                <li><a href="/archives">博客归档</a></li>
-								<li><a href="/blog">博客程序</a></li>
-								<li><a href="/echo">建议反馈</a></li>
-								<li><a target="_blank" href="<?php echo '/rss'; ?>">订阅博客</a></li>
-							</ul>
-						</div>
-						<?php
-							$links_json = $tbopt->get('links');
-							$links_json = '' ? '[]' : $links_json;
-							$links = json_decode($links_json);
+    <!-- 头部 -->
+	<header id="header">
+        <div class="content">
+            <h2 class="sitename"><a href="/"><?php echo $blog_name; ?></a></h2>
+            <p class="motto">时光是琥珀，泪一滴滴被反锁。</p>
+            <div class="nav">
+                <ol>
+                    <li><a href="/">首页</a></li>
+                    <li><a href="https://github.com/movsb" rel="nofollow" target="_blank">同性相亲</a></li>
+                    <li><a href="/search" title="Google站内搜索">站内搜索</a></li>
+                    <li><a href="/archives">文章归档</a></li>
+                    <li><a href="/blog">博客程序</a></li>
+                    <li><a href="/echo">建议反馈</a></li>
+                    <li><a href="/rss">博客订阅</a></li>
+                </ol>
+            </div>
+        </div>
 
-							if(count($links)) {?>
-								<div class="column links">
-									<h3>LINKS</h3>
-									<ul><?php
-										$i = 0;
-										foreach($links as &$link) {
-											echo '<li><a title="', $link->title, '" ',
-												'target="_blank" rel="nofollow" href="', $link->href, '">', 
-												$link->name, '</a></li>', PHP_EOL;
-
-											if(++$i >= 5) break;
-										}
-									?></ul>
-								</div>
-							<?php }
-						?>
-					</div>
-                    <div style="height: 2em;">
-                    </div>
-				</div><!-- footer -->
-				<div class="copy center">
-					<div class="copyright mb">
-						<span>&copy; <?php echo date('Y'),' ',$tbopt->get('author'); ?></span>
-					</div>
-				</div>
-			</div>
-			<div class="mobile">
-				<img class="me home-a" src="/theme/images/me.png" />
-				<h6 class="home-a"><?php echo $blog_name; ?></h6>
-				<div class="social" style="font-size: 2em;">
-					<span><a title="RSS" target="_blank" href="/rss"><i class="fa fa-rss"></i></a></span>
-					<span><a title="GitHub" target="_blank" href="https://github.com/movsb"><i class="fa fa-github"></i></a></span>
-					<span><a title="QQ" target="_blank" href="http://sighttp.qq.com/authd?IDKEY=b19745b9da616a000d2db5731672dd06b575204bf1bbf9c2"><i class="fa fa-qq" style="font-size: 0.78em; position: relative; top: -2px;"></i></a></span>
-				</div>
-			</div>
-		</div>
 	</header>
 
 	<section id="main">

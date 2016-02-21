@@ -152,6 +152,34 @@ function tb_head() {?>
     #shuoshuo li:hover .post-shuoshuo-comment {
         visibility: visible;
     }
+
+#main a {
+  text-decoration: none;
+  color: #005782; }
+#main a:hover {
+    text-decoration: underline; }
+#main  a:visited {
+    color: #cc0066; }
+#main  a:focus {
+    outline: none; }
+
+a, input, textarea, button {
+  transition: all 0.2s ease-out; }
+
+button, input[type=submit] {
+  border: none; }
+  button::-moz-focus-inner, input[type=submit]::-moz-focus-inner {
+    border: 0; }
+
+acronym, abbr {
+  border-bottom: 1px dashed #ccc; }
+
+input:focus, a:focus, textarea:focus {
+  outline: none; }
+
+input, textarea, button {
+      border: 1px solid #ccc;
+        padding: 5px 7px; }
 </style>
 <?php }
 add_hook('tb_head', 'tb_head');
