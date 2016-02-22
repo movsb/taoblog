@@ -61,7 +61,7 @@
             <div class="nav">
                 <ol>
                     <li><a href="/">首页</a></li>
-                    <li><a href="https://github.com/movsb" rel="nofollow" target="_blank">同性相亲</a></li>
+                    <li><a title="GitHub" href="https://github.com/movsb" rel="nofollow" target="_blank">同性交友</a></li>
                     <li><a href="/search" title="Google站内搜索">站内搜索</a></li>
                     <li><a href="/archives">文章归档</a></li>
                     <li><a href="/blog">博客程序</a></li>
