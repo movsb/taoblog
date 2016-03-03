@@ -1,12 +1,14 @@
 /* 头部 */
+#header .content {
+    max-width: 850px;
+    margin: auto;
+    padding: 2em 1em 0;
+}
+
 #header {
     background-color: rgba(0,0,0,0.7);
 
     .content {
-        max-width: 850px;
-        padding: 2em 0px 0px 0px;
-        margin: auto;
-
         h2 {
             margin: 0px;
             color: white;

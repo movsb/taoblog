@@ -6,6 +6,7 @@
 #content {
     max-width: 850px;
     margin: auto;
+    padding: 0 1em;
 }
 
 /* 分类与日期查询 */
@@ -119,6 +120,7 @@
         overflow: hidden;
 
         h1 {
+            margin: 2rem 0px 1.5rem;
             font-size: 2em;
             color: $post_title_fg;
         }
