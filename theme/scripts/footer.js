@@ -12,37 +12,6 @@ $('#back-to-top').click(function(){
 	}, 300);
 });
 
-/*  阅读模式 */
-/*
-var in_reading_mode = false;
-
-function toggle_reading_mode() {
-	var header = $('#header');
-	var main = $('#main');
-	var icon = $('#reading-mode i');
-
-	if(!in_reading_mode) {
-		header.css('left', '-300px');
-		main.css('margin-left', '0px');
-		icon.css('color', '#f66');
-	} else {
-		header.css('left', '0px');
-		main.css('margin-left', '300px');
-		icon.css('color', 'inherit');
-	}
-
-	in_reading_mode = !in_reading_mode;
-
-	show_tips(in_reading_mode 
-		? '<b>已进入阅读模式。</b><br/>您可以点击右下角的“+”号退出阅读模式。'
-		: '已退出阅读模式。');
-}
-
-$('#reading-mode').click(function() {
-	toggle_reading_mode();
-});
-*/
-
 /* 字体大小调整 */
 $('.font-sizing').click(function(e){
 	var post = $('.entry');

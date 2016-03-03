@@ -8,9 +8,6 @@
 	<div class="back-to-top" id="back-to-top" title="回到顶端">
 		<i class="fa fa-arrow-circle-up"></i>
 	</div>
-	<div style="display: none;" class="reading-mode no-sel" id="reading-mode" title="阅读模式">
-		<i class="fa fa-plus-circle"></i>
-	</div>
 </div>
 <div class="img-view" id="img-view"><img /><div class="tip"></div></div>
 <div style="display: none;">
