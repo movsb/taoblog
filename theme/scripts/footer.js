@@ -353,3 +353,29 @@ $('.home-a').click(function() {
 	$('#server-run-time').text(days);
 })();
 
+/* 表情图片 */
+(function() {
+    $('.entry i.smiley').each(function(i, e) {
+        var that = $(this);
+        var link = that.attr('data-link');
+        if(!link) return;
+
+        var spec = link.match(/(\d+)\.(.+)/);
+        if(!spec || spec.length < 3) return;
+
+        function __make_ele(spec) {
+            if(spec[1] == 1) { // QQ
+                var s = '<img src="/smileys/qq/' + spec[2] + '.gif"';
+                s += ' alt="' + $('<div/>').text(that.text()).html() + '" />';
+                return s;
+            }
+
+            return "";
+        }
+
+        var the_ele = __make_ele(spec);
+        if(the_ele)
+            that.replaceWith(the_ele);
+    });
+})();
+
