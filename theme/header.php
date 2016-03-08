@@ -5,7 +5,7 @@
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 	<title><?php
 		if($tbquery->is_home()) {
 			echo '首页';
@@ -57,7 +57,7 @@
 	<header id="header">
         <div class="content">
             <h2 class="sitename"><a href="/"><?php echo $blog_name; ?></a></h2>
-            <p class="motto">时光是琥珀，泪一滴滴被反锁。</p>
+            <p class="motto">青春是段跌跌撞撞的旅行，拥有着后知后觉的美丽。</p>
             <div class="nav">
                 <ol>
                     <li><a href="/">首页</a></li>
