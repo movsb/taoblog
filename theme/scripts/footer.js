@@ -67,7 +67,7 @@ $('.home-a').click(function() {
 	var body = $('body');
 	var imgdiv = $('#img-view');
     var img = $('#img-view > img');
-    var images = $('.entry img');
+    var images = $('.entry img:not(.nz)');
     var image_index = -1;
     var key_handler_added = false;
 
@@ -153,7 +153,7 @@ $('.home-a').click(function() {
         }
     }
 
-	$('.entry img').click(function(e) {
+	$('.entry img:not(.nz)').click(function(e) {
         set_current_image(this);
 		view_image(this, true);
 	});
@@ -365,7 +365,7 @@ $('.home-a').click(function() {
 
         function __make_ele(spec) {
             if(spec[1] == 1) { // QQ
-                var s = '<img src="/smileys/qq/' + spec[2] + '.gif"';
+                var s = '<img class="nz smiley" src="/smileys/qq/' + spec[2] + '.gif"';
                 s += ' alt="' + $('<div/>').text(that.text()).html() + '" />';
                 return s;
             }
