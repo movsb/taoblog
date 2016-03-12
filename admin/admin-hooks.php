@@ -67,16 +67,3 @@ function tax_admin_left() {
 <?php 
 }
 
-add_hook('admin_left', 'links_admin_left');
-
-function links_admin_left() {
-?><li>
-    <a href="links.php">
-	<div class="menu">
-	    友情链接
-	</div>
-	</a>
-</li>
-<?php
-}
-
