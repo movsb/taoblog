@@ -24,7 +24,7 @@ function admin_header($arg=[]) {
 <head>
 	<meta charset="UTF-8" />
 	<link rel="stylesheet" type="text/css" href="styles/admin.css.php" />
-	<script type="text/javascript" src="//ajax.lug.ustc.edu.cn/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+	<script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 	<?php apply_hooks('admin_head'); ?>
 </head>
 <body>
