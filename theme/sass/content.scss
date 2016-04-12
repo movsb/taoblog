@@ -178,6 +178,10 @@
             border: 1px dashed #ccc;
             background-color: $post_pre_quote_bg;
         }
+
+        &.mono {
+            font-family: Consolas, monospace;
+        }
     }
 
     p {
