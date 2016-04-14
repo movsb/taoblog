@@ -379,3 +379,10 @@ $('.home-a').click(function() {
     });
 })();
 
+/* posts have background-image set */
+(function() {
+    if($('#wrapper').css('background-image')) {
+        $('#content').css('opacity', '0.95');
+    }
+})();
+
