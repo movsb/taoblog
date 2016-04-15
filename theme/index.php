@@ -149,7 +149,7 @@ function tb_head() {?>
 #main a:hover {
     text-decoration: underline; }
 #main  a:visited {
-    color: #cc0066; }
+    color: #924646; }
 #main  a:focus {
     outline: none; }
 

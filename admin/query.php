@@ -73,7 +73,7 @@ class TB_Query {
 
 	public function __construct() {
 		global $tbopt;
-		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 10);
+		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 20);
 		$this->internal_query = [];
 	}
 

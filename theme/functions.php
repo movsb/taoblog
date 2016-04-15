@@ -59,9 +59,9 @@ function the_meta_date() {
 
 	$dd = preg_split('/-/', preg_split('/ /', $the->date)[0]);;
 
-	$link  = '<a target="_blank" href="/date/'.$dd[0].'/">'.$dd[0].'</a>-';
-	$link .= '<a target="_blank" href="/date/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>-';
-	$link .= $dd[2];
+	$link  = '<a target="_blank" href="/date/'.$dd[0].'/">'.$dd[0].'</a>年';
+	$link .= '<a target="_blank" href="/date/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>月';
+	$link .= $dd[2].'日';
 
 	return $link;
 }
@@ -76,6 +76,8 @@ function the_meta_tag() {
 		$as[] = '<a target="_blank" href="/tags/'.urlencode($t).'">'.$t.'</a>';
 	}
 
-	return join(', ', $as);
+    $ts = join(', ', $as);
+    
+    return $ts ? $ts : "（没有）";
 }
 
