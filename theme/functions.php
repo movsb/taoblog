@@ -51,7 +51,7 @@ function the_meta_category() {
 		$link_anchors[] = '<a target="_blank" href="'.$links[$i].'">'.$n.'</a>';
 	}
 
-	return implode(',', $link_anchors);
+	return '<span class="value">'.implode(', ', $link_anchors).'</span>';
 }
 
 function the_meta_date() {
@@ -63,7 +63,7 @@ function the_meta_date() {
 	$link .= '<a target="_blank" href="/date/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>月';
 	$link .= $dd[2].'日';
 
-	return $link;
+	return '<span class="value">'.$link.'</span>';
 }
 
 function the_meta_tag() {
@@ -78,6 +78,6 @@ function the_meta_tag() {
 
     $ts = join(', ', $as);
     
-    return $ts ? $ts : "（没有）";
+    return '<span class="value">'.($ts ? $ts : "（没有）").'</span>';
 }
 

@@ -121,6 +121,7 @@
             margin: 2rem 0px 1.5rem;
             font-size: 2em;
             color: $post_title_fg;
+            text-shadow: 0px 0px 1px;
         }
     }
 
@@ -131,12 +132,19 @@
 
     /* 文章元数据 */
     .meta { 
-        color: $post_meta_fg;
         margin: 2em 0px 0px;
 
         a {
             color: inherit;
             text-decoration: underline;
+
+            &:visited {
+                color: inherit;
+            }
+        }
+
+        .value {
+            color: $post_meta_fg;
         }
 
         .author {
@@ -359,10 +367,6 @@
         padding-left: 4em;
         line-height: 1.7em;
     }
-
-    a {
-        color: inherit;
-    }
 }
 
 /* 分页 */
@@ -418,10 +422,6 @@
         &::-moz-focus-inner {
             border: 0;
         }
-    }
-
-    acronym, abbr {
-        border-bottom: 1px dashed $border_color;
     }
 
     input, a, textarea {
