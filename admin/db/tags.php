@@ -92,7 +92,8 @@ class TB_Tags {
 		}
 
 		foreach($newts as $n) {
-			if(!in_array($n, $oldts)) {
+            $n = trim($n);
+			if($n && !in_array($n, $oldts)) {
 				$added[] = $n;
 			}
 		}
