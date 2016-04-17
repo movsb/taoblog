@@ -1,4 +1,5 @@
 <?php
+global $tbopt;
 $blog_name = $tbopt->get('blog_name');
 
 function the_recent_shuoshuos() {
@@ -190,6 +191,12 @@ the_recent_comments();
 <div>
 	<h2>状态</h2>
 	<p style="padding-left: 2em;">服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</p>
+    <p style="padding-left: 2em;">博客归档：<?php
+        echo '文章数：', $tbopt->get('post_count', '?');
+        echo '，页面数：', $tbopt->get('page_count', '?');
+        echo '，评论数：', $tbopt->get('comment_count', '?');
+        echo '。';
+    ?></p>
 </div>
 
 <?php
