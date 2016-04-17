@@ -15,3 +15,16 @@ function ahp_last_post_time($id, $post) {
 
 add_hook('post_posted', 'ahp_last_post_time');
 
+function ahp_update_post_count() {
+    global $tbopt;
+    global $tbpost;
+
+    $post_count = $tbpost->get_count_of_type('post');
+    $page_count = $tbpost->get_count_of_type('page');
+
+    $tbopt->set('post_count', $post_count);
+    $tbopt->set('page_count', $page_count);
+}
+
+add_hook('post_posted', 'ahp_update_post_count');
+

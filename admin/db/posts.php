@@ -863,5 +863,15 @@ class TB_Posts {
 
 		return $p;
 	}
+
+    public function get_count_of_type($type) {
+        global $tbdb;
+    
+        $type = $tbdb->real_escape_string($type);
+        $sql = "SELECT count(*) as size FROM posts WHERE type='$type'";
+        $rows = $tbdb->query($sql);
+        if(!$rows) return 0;
+        return $rows->fetch_object()->size;
+    }
 }
 

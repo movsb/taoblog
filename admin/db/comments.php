@@ -244,5 +244,13 @@ class TB_Comments {
 
 		return $cmts;
 	}
+
+    public function get_count_of_comments() {
+        global $tbdb;
+
+        $sql = "SELECT count(*) as size FROM comments";
+        $rows = $tbdb->query($sql);
+        return $rows ? $rows->fetch_object()->size : 0;
+    }
 }
 
