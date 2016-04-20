@@ -873,5 +873,25 @@ class TB_Posts {
         if(!$rows) return 0;
         return $rows->fetch_object()->size;
     }
+
+    public function rsync_post($pid, $content, $modification_time) {
+        global $tbdb;
+
+        $sql = "UPDATE posts SET content=?,modified=? WHERE id=? LIMIT 1";
+        if($stmt = $tbdb->prepare($sql)) {
+            if($stmt->bind_param('ssi', $content, $modification_time, $pid)) {
+                $r = $stmt->execute();
+
+                if($r) {
+                    $ok = $stmt->affected_rows == 1;
+                    $stmt->close();
+                    return $ok;
+                }
+            }
+            $stmt->close();
+        }
+
+        return false;
+    }
 }
 

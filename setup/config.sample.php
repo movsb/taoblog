@@ -12,3 +12,5 @@ define('BAIDU_PUSH_TOKEN',  'baidu_push_token');        /* 百度推送TOKEN，�
 define('PHPMAILER_EMAIL',   'email');                   /* QQ域名邮箱的邮件地址及用户名 */
 define('PHPMAILER_PASSWD',  'pass');
 
+define('RSYNC_DIR',         TBPATH . 'rsync');          /* directory from rsync posts */
+
