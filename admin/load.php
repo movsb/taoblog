@@ -46,5 +46,7 @@ date_default_timezone_set('Asia/Chongqing');
 
 $logged_in = login_auth_cookie();
 
-rsync_posts();
+if($logged_in) {
+    rsync_posts();
+}
 
