@@ -19,52 +19,72 @@ function login_html($url='') { ?>
 <head>
 	<meta charset="UTF-8" />
 	<title>登录 - TaoBlog</title>
-	<style>
-		body {
-			background-color: #646464;
-		}
+    <style>
+body {
+    padding: 0px;
+    margin: 0px;
+}
 
-		#wrap {
-			margin: 12.5% auto;
-			background-color: #F1F1F1;
-			width: 300px;
-		}
+#wrapper {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
 
-		#login {
-			width: 300px;
-			height: 188px;
-			box-shadow: 0px 0px 10px;
-		}
+#login-form {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    right: 0;
+    width: 300px;
+    margin: auto;
+    border: 1px solid gray;
+    transform: translateY(-50%);
+}
 
-		#login .title {
-			height: 32px;
-			font-size: 1.5em;
-			text-align: center;
-			padding: 0.2em;
-		}
+#title {
+    font-size: 20px;
+    text-align: center;
+    height: 3em;
+    line-height: 3em;
+}
 
-		#login .input input[type="text"], #login .input input[type="password"] {
-			border: 1px solid #ccc;
-			padding: 6px;
-		}
+#input-wrapper {
+    padding: 0 1.5em 1em 1.5em;
+}
+
+.input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5em;
+    line-height: 1em;
+    margin-bottom: 0.5em;
+    border: 1px solid gray;
+}
+
+.btn {
+    line-height: 1.8em;
+    font-size: 1em;   
+}
 
 	</style>
 </head>
 <body>
-<div id="wrap">
-	<form method="post" id="login">
-		<div class="title">
-			登录
-		</div>
-		<div style="padding: 10px 20px 10px;">
-			<div class="input" style="text-align: center; margin-bottom: 15px;">
-				<input type="text" name="user" placeholder="用户名" style="margin-bottom: 10px; width: 248px;"/>
-				<input type="password" name="passwd" placeholder="密码" style="width: 248px;"/>
-			</div>	
-			<div class="submit" style="text-align: right;">
-				<input type="submit" value="登录" style="padding: 4px 6px;"/>
-			</div>
-		</div>
+<div id="wrapper">
+	<form method="post" id="login-form">
+		<div id="title">登录</div>
+        <div id="input-wrapper">
+            <div>
+                <input class="input" type="text" name="user" placeholder="用户名" />
+                <input class="input" type="password" name="passwd" placeholder="密码" />
+            </div>	
+            <div class="submit" style="text-align: right;">
+                <input class="btn" type="submit" value="登录" />
+                <input class="btn" type="button" value="取消" onclick="location.href='/';" />
+            </div>
+        </div>
 		<div class="hidden">
 		<?php if($url) { ?>
 			<input type="hidden" name="url" value="<?php echo $url; ?>" />
