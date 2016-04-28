@@ -67,3 +67,16 @@ function tax_admin_left() {
 <?php 
 }
 
+add_hook('admin_left', 'admin_logout');
+
+function admin_logout() {
+?><li>
+    <a href="login.php?do=logout">
+    <div class="menu">
+        退出
+    </div>
+    </a>
+</li>
+<?php
+}
+
