@@ -46,7 +46,7 @@ date_default_timezone_set('Asia/Chongqing');
 
 $logged_in = login_auth_cookie();
 
-if($logged_in) {
+if($logged_in && $_SERVER['DOCUMENT_URI'] == '/admin/index.php') {
     rsync_posts();
 }
 
