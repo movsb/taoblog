@@ -4,28 +4,30 @@ require_once(dirname(__FILE__).'/../setup/config.php');
 require_once('die.php');
 require_once('db/dbbase.php');
 
+// 用于登录页面的验证
 function login_auth_passwd($arg = []) {
 	require_once('db/options.php');
 	$opt = new TB_Options;
 
-	$user = isset($arg['user']) ? $arg['user'] : '';
-	$passwd = isset($arg['passwd']) ? $arg['passwd'] : '';
-	$ip = $_SERVER['REMOTE_ADDR'];
+    $saved_login = explode(',', $opt->get('login'));
+    if($saved_login === false || count($saved_login) != 2)
+        return false;
 
-	if($user === 'twofei' && $passwd === sha1(md5($ip).$opt->get('login'))) {
+    $saved_user     = $saved_login[0];
+    $saved_passwd   = $saved_login[1];
+
+	$user           = isset($arg['user']) ? $arg['user'] : '';
+	$passwd         = isset($arg['passwd']) ? $arg['passwd'] : '';
+
+	if($user === $saved_user && sha1($passwd) === $saved_passwd) {
 		return true;
 	}
-
-	return false;
+    else {
+        return false;
+    }
 }
 
-// 后期将取消非HTTPS登录许可，也就不再需要验证IP
-function login_auth_ip() {
-    $is_ssl = $_SERVER['SERVER_PORT'] == 443;
-
-    return $is_ssl;
-}
-
+// 用于通过cookie认证客户端
 function login_auth($redirect=false) {
 	require_once('db/options.php');
 
@@ -33,13 +35,11 @@ function login_auth($redirect=false) {
 
     $is_ssl = $_SERVER['SERVER_PORT'] == 443;
 
-	$ipauth = login_auth_ip();
-
 	$ip = $_SERVER['REMOTE_ADDR'];
-	$hash = isset($_COOKIE['login']) ? $_COOKIE['login'] : '';
-	$loggedin = $hash && $hash === sha1(md5($ip).$opt->get('login'));
+	$cookie_login = isset($_COOKIE['login']) ? $_COOKIE['login'] : '';
 
-	$loggedin = $loggedin && $ipauth;
+	$loggedin = $is_ssl && $cookie_login && $cookie_login === sha1($ip.$opt->get('login'));
+
 	if(!$loggedin) {
 		if($redirect) {
 			$home = ($is_ssl ? 'https://' : 'http://') . $opt->get('home');
@@ -56,12 +56,10 @@ function login_auth($redirect=false) {
 	}
 }
 
-function login_auth_cookie($redirect=false) {
-	return login_auth($redirect);
-}
-
+// 用于在登录成功之后设置客户端认证的cookie
+// 保存的是 sha1(ip + login)
 function login_auth_set_cookie($ip) {
 	$opt = new TB_Options;
-	setcookie('login', sha1(md5($ip).$opt->get('login')), 0, '/', '', true, true);
+	setcookie('login', sha1($ip.$opt->get('login')), 0, '/', '', true, true);
 }
 

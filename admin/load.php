@@ -44,7 +44,7 @@ $tbmain         = new TB_Main;
 
 date_default_timezone_set('Asia/Chongqing');
 
-$logged_in = login_auth_cookie();
+$logged_in = login_auth();
 
 if($logged_in && $_SERVER['DOCUMENT_URI'] == '/admin/index.php') {
     rsync_posts();

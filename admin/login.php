@@ -6,7 +6,8 @@ require_once(dirname(__FILE__).'/../setup/config.php');
 require_once('db/dbbase.php');
 require_once('db/options.php');
 
-if(!login_auth_ip()) {
+// 登录相关的请求全部在 https 下进行
+if($_SERVER['SERVER_PORT'] != 443) {
 	header('HTTP/1.1 302 Unauthorized access');
 	header('Location: /');
 	die(0);
@@ -48,8 +49,6 @@ function login_html($url='') { ?>
 		}
 
 	</style>
-	<script type="text/javascript" src="scripts/md5.js"></script>
-	<script type="text/javascript" src="scripts/sha1.js"></script>
 </head>
 <body>
 <div id="wrap">
@@ -60,8 +59,7 @@ function login_html($url='') { ?>
 		<div style="padding: 10px 20px 10px;">
 			<div class="input" style="text-align: center; margin-bottom: 15px;">
 				<input type="text" name="user" placeholder="用户名" style="margin-bottom: 10px; width: 248px;"/>
-				<input type="password" id="passwd-fake" placeholder="密码" style="width: 248px;"/>
-				<input type="hidden" id="passwd" name="passwd" value="" />
+				<input type="password" name="passwd" placeholder="密码" style="width: 248px;"/>
 			</div>	
 			<div class="submit" style="text-align: right;">
 				<input type="submit" value="登录" style="padding: 4px 6px;"/>
@@ -71,17 +69,8 @@ function login_html($url='') { ?>
 		<?php if($url) { ?>
 			<input type="hidden" name="url" value="<?php echo $url; ?>" />
 		<?php } ?>
-			<input type="hidden" id="passwd-token" value="<?php echo md5($_SERVER['REMOTE_ADDR']); ?>" />
 		</div>
 	</form>
-	<script type="text/javascript">
-		document.getElementById('login').onsubmit = function() {
-			var passwd = document.getElementById('passwd-fake').value;
-			var hash = CryptoJS.SHA1(CryptoJS.MD5(passwd).toString() + CryptoJS.SHA1(passwd).toString()).toString();
-			hash = CryptoJS.SHA1(document.getElementById('passwd-token').value + hash).toString();
-			document.getElementById('passwd').value = hash;
-		};
-	</script>
 </div>
 </body>
 </html>
@@ -94,6 +83,8 @@ $do = isset($_GET['do']) ? $_GET['do'] : '';
 if($do === 'logout') {
 	header('HTTP/1.1 302 Logged Out');
 	setcookie('login','',time()-1, '/');
+    // 转到登录页面以验证成功退出
+    // 如果没有成功退出，那么会因认证成功而转到管理员页面
 	header('Location: login.php');
 	die(0);
 } else {
