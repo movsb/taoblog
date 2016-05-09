@@ -1,6 +1,6 @@
 <?php
 if(!isset($_SERVER['HTTP_USER_AGENT'])) {
-	header('HTTP/1.1 400 Good Request');
+	header('HTTP/1.1 400 Bad Request');
 	die(-1);
 }
 
@@ -50,7 +50,7 @@ if(!login_auth() && file_exists('MAINTENANCE')) {
 
 
 if($tbquery->query() === false){
-	tb_die(200, '未定义的查询！');
+	tb_die(400, '未定义的查询！');
 }
 
 // https://css-tricks.com/snippets/php/count-script-excecution-time/
