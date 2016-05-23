@@ -57,7 +57,7 @@
 	<header id="header">
         <div class="content">
             <h2 class="sitename"><a href="/"><?php echo $blog_name; ?></a></h2>
-            <p class="motto">青春是段跌跌撞撞的旅行，拥有着后知后觉的美丽。</p>
+            <p class="motto">命运好幽默，让爱的人都沉默。</p>
             <div class="nav">
                 <ol>
                     <li><a href="/">首页</a></li>
@@ -68,6 +68,9 @@
                     <li><a href="/blog">博客程序</a></li>
                     <li><a href="/echo">建议反馈</a></li>
                     <li><a href="/rss">博客订阅</a></li>
+                    <?php if($logged_in) {
+                        echo '<li><a href="/admin/">管理后台</a></l>',PHP_EOL;
+                    } ?>
                 </ol>
             </div>
         </div>
