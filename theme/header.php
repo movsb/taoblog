@@ -69,7 +69,7 @@
                     <li><a href="/echo">建议反馈</a></li>
                     <li><a href="/rss">博客订阅</a></li>
                     <?php if($logged_in) {
-                        echo '<li><a href="/admin/">管理后台</a></l>',PHP_EOL;
+                        echo '<li><a href="/admin/">管理后台</a></li>',PHP_EOL;
                     } ?>
                 </ol>
             </div>
