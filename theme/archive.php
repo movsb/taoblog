@@ -76,9 +76,9 @@ add_hook('tb_head', 'tb_head_hook');
 require('header.php');
 ?>
 <div class="archives">
-    <div class="tags no-sel"><h2>标签</h2><?php list_all_tags(); ?></div>
-    <div class="cats no-sel"><h2>分类</h2><?php list_all_cats(); ?></div>
-    <div class="date no-sel"><h2>日期</h2><?php list_all_dates(); ?></div>
+    <div class="tags"><h2>标签</h2><?php list_all_tags(); ?></div>
+    <div class="cats"><h2>分类</h2><?php list_all_cats(); ?></div>
+    <div class="date"><h2>日期</h2><?php list_all_dates(); ?></div>
 </div>
 
 <?php
