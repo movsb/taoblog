@@ -9,16 +9,17 @@ class TB_Posts {
 		global $tbtax;
 		global $tbtag;
 
-		$def = [
-			'id'		=> 0,
-			'date'		=> '',
-			'modified'	=> '',
-			'title'		=> '',
-			'content'	=> '',
-			'slug'		=> '',
-			'taxonomy'	=> 1,
+        $def = [
+            'id'		    => 0,
+            'date'		    => '',
+            'modified'	    => '',
+            'title'		    => '',
+            'content'	    => '',
+            'slug'		    => '',
+            'taxonomy'	    => 1,
             'page_parents'  => '',
-		];
+            'status'        => 'public',
+        ];
 
 		$arg = tb_parse_args($def, $arg);
 
@@ -46,6 +47,11 @@ class TB_Posts {
 			$this->error = '文章所属分类不存在！';
 			return false;
 		}
+
+        if(!in_array($arg['status'], ['public', 'draft'])) {
+            $this->error = '文章发表状态不正确。';
+            return false;
+        }
 
         $type = $this->get_vars('type', 'id='.(int)$arg['id']);
         if(!$type) return false;
@@ -88,12 +94,12 @@ class TB_Posts {
 
 		if($arg['date_gmt']) {
 			if($arg['modified']) {
-				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('sssssii',
+					if($stmt->bind_param('sssssisi',
 						$arg['date_gmt'],$arg['modified_gmt'],
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -102,12 +108,12 @@ class TB_Posts {
 					} 
 				}
 			} else {
-				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('ssssii',
+					if($stmt->bind_param('ssssisi',
 						$arg['date_gmt'],
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -118,11 +124,11 @@ class TB_Posts {
 			}
 		} else {
 			if($arg['modified']) {
-				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('ssssii',
+					if($stmt->bind_param('ssssisi',
 						$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -131,11 +137,11 @@ class TB_Posts {
 					} 
 				}
 			} else {
-				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('sssii',
+					if($stmt->bind_param('sssisi',
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -161,20 +167,20 @@ class TB_Posts {
 		global $tbtax;
 		global $tbtag;
 
-		$def = [
-			'date' => '',
-			'modified' => '',
-			'title' => '',
-			'content' => '',
-			'slug' => '',
-			'type' => 'post',
-			'taxonomy' => 1,
-			'status' => 'public',
-			'comment_status' => 1,
-			'password' => '',
-			'tags' => '',
-            'page_parents' => '',
-		];
+        $def = [
+            'date'              => '',
+            'modified'          => '',
+            'title'             => '',
+            'content'           => '',
+            'slug'              => '',
+            'type'              => 'post',
+            'taxonomy'          => 1,
+            'status'            => 'public',
+            'comment_status'    => 1,
+            'password'          => '',
+            'tags'              => '',
+            'page_parents'      => '',
+        ];
 
 		$arg = tb_parse_args($def, $arg);
 
@@ -198,6 +204,11 @@ class TB_Posts {
 			$this->error = '文章所属分类不存在！';
 			return false;
 		}
+
+        if(!in_array($arg['status'], ['public', 'draft'])) {
+            $this->error = '文章发表状态不正确。';
+            return false;
+        }
 
         $type = $arg['type'];
         if($type == 'page') {
@@ -269,16 +280,22 @@ class TB_Posts {
 		if(!is_array($arg))
 			return false;
 
-		$defs = ['id' => '', 'tax' => '', 'slug' => '',
-            'parents' => '', 'page' => '',
-			'yy' => '', 'mm' => '',
-			'pageno' => '',
-			'password' => '', 'status' => '',
-			'modified' => false,
-			'feed' => '',
-			'no_content' => false,
-			'tags' => '',
-            'comments' => '',
+        $defs = [
+            'id'            => '',
+            'tax'           => '',
+            'slug'          => '',
+            'parents'       => '',
+            'page'          => '',
+            'yy'            => '',
+            'mm'            => '',
+			'pageno'        => '',
+            'password'      => '',
+            'status'        => 'public',      // 字符串或数组
+			'modified'      => false,
+			'feed'          => '',
+			'no_content'    => false,
+			'tags'          => '',
+            'comments'      => '',
 			];
 
 		$arg = tb_parse_args($defs, $arg);
@@ -293,6 +310,14 @@ class TB_Posts {
 		{
 			return false;
 		}
+
+        $status = $arg['status'];
+        if((!is_string($status) && !is_array($status))
+            || (is_string($status) && !in_array($status, ['public', 'draft']))
+            || (is_array($status) && count(array_intersect($status, ['public', 'draft'])) != count($status))
+        ){
+            return false;
+        }
 
 		$arg['id'] = (int)$arg['id'];
 		$arg['yy'] = (int)$arg['yy'];
@@ -378,6 +403,7 @@ class TB_Posts {
 
         $sql['limit'] = 1;
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -406,6 +432,7 @@ class TB_Posts {
         $sql['where'][] = "post_tags.tag_id=tags.id";
         $sql['where'][] = "tags.name='$tags'";
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$results = $tbdb->query($sql);
@@ -456,6 +483,7 @@ class TB_Posts {
         $sql['orderby'] = 'date DESC';
         $sql['limit']   = "$offset,$ppp";
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -494,6 +522,7 @@ class TB_Posts {
 
         $sql['limit']   = 1;
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -533,6 +562,7 @@ class TB_Posts {
 
         $sql['limit']   = 1;
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -583,6 +613,7 @@ class TB_Posts {
         $sql['limit']   = $ppp;
         $sql['offset']  = $offset;
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -612,6 +643,7 @@ class TB_Posts {
             $sql['where'][] = "taxonomy=$t";
 		}
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -629,6 +661,7 @@ class TB_Posts {
         $sql['from']    = 'posts';
         $sql['groupby'] = 'taxonomy';
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -663,6 +696,7 @@ class TB_Posts {
             $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -726,6 +760,7 @@ class TB_Posts {
         $sql['where']   = "type='post'";
         $sql['orderby'] = 'date DESC';
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$ids = [];
@@ -765,6 +800,7 @@ class TB_Posts {
         $sql['orderby'] = 'relevance DESC';
         $sql['limit']   = 5;
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -865,6 +901,7 @@ class TB_Posts {
         $sql['where'][] = "type='post'";
         $sql['orderby'] = 'date DESC';
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -887,6 +924,7 @@ class TB_Posts {
         $sql['where']   = [];
         $sql['where'][] = "type='post'";
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
         $sql = "SELECT year,month,count(id) count FROM ("
@@ -939,6 +977,7 @@ class TB_Posts {
 
         $sql['orderby'] = 'date DESC';
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -967,6 +1006,7 @@ class TB_Posts {
         $sql['where'][] = 'post_tags.tag_id=tags.id';
         $sql['where'][] = "tags.name='$tag'";
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
@@ -991,6 +1031,7 @@ class TB_Posts {
         $sql['where']   = [];
         $sql['where'][] = "type='$type'";
 
+        $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);

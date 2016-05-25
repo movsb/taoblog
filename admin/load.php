@@ -22,6 +22,7 @@ require_once('db/shuoshuo.php');
 require_once('tbmain.php');
 
 require_once('db-hooks.php');
+require_once('global-hooks.php');
 
 require_once('query.php');
 require_once('canonical.php');
