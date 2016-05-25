@@ -25,3 +25,64 @@ function &parse_query_string($q, $dk=true, $dv=true){
 	return $r;
 }
 
+function make_query_string($fields) {
+    $defs = [
+        'select'    => '',
+        'from'      => '',
+        'where'     => null,
+        'groupby'   => null,
+        'having'    => null,
+        'orderby'   => null,
+        'limit'     => null,
+        'offset'    => null,
+    ];
+
+    $f = tb_parse_args($defs, $fields);
+
+    $sql = 'SELECT ' . $f['select'] . ' FROM ' . $f['from'];
+
+    if($f['where']) {
+        if(is_string($f['where'])) {
+            if(strlen($f['where'])) {
+                $sql .= ' WHERE ' . $f['where'];
+            }
+        }
+        else if(is_array($f['where'])) {
+            $cond = '';
+
+            foreach($f['where'] as $v) {
+                if(is_string($v)) {
+                    $cond .= ' AND (' . $v . ')';
+                }
+            }
+
+            if($cond) {
+                $sql .= ' WHERE 1' . $cond;
+            }
+        }
+    }
+
+    if($f['groupby']) {
+        $sql .= ' GROUP BY ' . $f['groupby'];
+    }
+
+    if($f['having']) {
+        $sql .= ' HAVING ' . $f['having'];
+    }
+
+    if($f['orderby']) {
+        $sql .= ' ORDER BY ' . $f['orderby'];
+    }
+
+    if($f['limit']) {
+        if($f['offset']) {
+            $sql .= ' LIMIT ' . $f['limit'] . ',' . $f['offset'];
+        }
+        else {
+            $sql .= ' LIMIT ' . $f['limit'];
+        }
+    }
+
+    return $sql;
+}
+

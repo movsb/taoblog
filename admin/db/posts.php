@@ -366,11 +366,20 @@ class TB_Posts {
 		global $tbtax;
 		global $tbopt;
 
-		$sql = "SELECT * FROM posts WHERE id=".intval($arg['id']);
+        $sql = array();
+        $sql['select']  = '*';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = 'id=' . intval($arg['id']);
+        
 		if($arg['modified']) {
-			$sql .= " AND modified>'".$arg['modified']."'";
+			$sql['where'][] = "modified>'".$arg['modified']."'";
 		}
-		$sql .= " LIMIT 1";
+
+        $sql['limit'] = 1;
+
+        $sql = make_query_string($sql);
+
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
 
@@ -389,8 +398,15 @@ class TB_Posts {
 		$tags = $tbdb->real_escape_string($arg['tags']);
 		$tbquery->tags = $tags;
 		
-		$sql = "SELECT posts.* FROM posts,post_tags,tags ";
-		$sql .= " WHERE posts.id=post_tags.post_id AND post_tags.tag_id=tags.id AND tags.name='$tags'";
+        $sql = array();
+        $sql['select']  = 'posts.*';
+        $sql['from']    = 'posts,post_tags,tags';
+        $sql['where']   = [];
+        $sql['where'][] = "posts.id=post_tags.post_id";
+        $sql['where'][] = "post_tags.tag_id=tags.id";
+        $sql['where'][] = "tags.name='$tags'";
+
+        $sql = make_query_string($sql);
 
 		$results = $tbdb->query($sql);
 		if(!$results) return false;
@@ -415,7 +431,12 @@ class TB_Posts {
 
 		$content_filed = $arg['no_content'] ? '' : ',content';
 		$fields = "id,date,title$content_filed,slug,type,taxonomy";
-		$sql = "SELECT $fields FROM posts WHERE 1";
+
+        $sql = array();
+        $sql['select']  = $fields;
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+
 		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
 				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
@@ -423,7 +444,7 @@ class TB_Posts {
 				$startend = $tbdate->the_year_startend_gmdate($yy);
 			}
 
-			$sql .= " AND date>='{$startend->start}' AND date<='{$startend->end}'";
+            $sql['where'] = "date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
 
 		$tbquery->date = (object)['yy'=>$yy,'mm'=>$mm];
@@ -432,8 +453,10 @@ class TB_Posts {
 		$pageno = intval($arg['pageno']);
 		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
 
-		$sql .= " ORDER BY date DESC";
-		$sql .= " LIMIT $offset,$ppp";
+        $sql['orderby'] = 'date DESC';
+        $sql['limit']   = "$offset,$ppp";
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -458,11 +481,20 @@ class TB_Posts {
 		$taxid = $tbtax->id_from_tree($tax);
 		if(!$taxid) return false;
 
-		$sql = "SELECT * FROM posts WHERE taxonomy=$taxid AND slug='".$tbdb->real_escape_string($slug)."'";
+        $sql = array();
+        $sql['select']  = '*';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = "taxonomy=$taxid";
+        $sql['where'][] = "slug='".$tbdb->real_escape_string($slug)."'";
+
 		if($arg['modified']) {
-			$sql .= " AND modified>'".$arg['modified']."'";
+            $sql['where'][] = "modified>'".$arg['modified']."'";
 		}
-		$sql .= " LIMIT 1";
+
+        $sql['limit']   = 1;
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -487,11 +519,21 @@ class TB_Posts {
         
 		$slug = $arg['page'];
 
-		$sql = "SELECT * FROM posts WHERE type='page' AND taxonomy=$pid AND slug='".$tbdb->real_escape_string($slug)."'";
+        $sql = array();
+        $sql['select']  = '*';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = "type='page'";
+        $sql['where'][] = "taxonomy=$pid";
+        $sql['where'][] = "slug='".$tbdb->real_escape_string($slug)."'";
+
 		if($arg['modified']) {
-			$sql .= " AND modified>'".$arg['modified']."'";
+            $sql['where'][] = "modified>'".$arg['modified']."'";
 		}
-		$sql .= " LIMIT 1";
+
+        $sql['limit']   = 1;
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -517,20 +559,31 @@ class TB_Posts {
 
 		$tbquery->category = $tbtax->tree_from_id($taxid);
 
-		$ppp = (int)$tbquery->posts_per_page;
-		$pageno = intval($arg['pageno']);
-		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
+        $sql = array();
 
 		$content_filed = $arg['no_content'] ? '' : ',content';
 		$fields = "id,date,title$content_filed,slug,type,taxonomy";
-		$sql = "SELECT $fields FROM posts WHERE taxonomy=$taxid";
 
+        $sql['select']  = $fields;
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+
+        $s = "taxonomy=$taxid";
 		$offsprings = $tbtax->get_offsprings($taxid);
 		foreach($offsprings as $os)
-			$sql .= " OR taxonomy=$os";
+			$s .= " OR taxonomy=$os";
 
-		$sql .= " ORDER BY date DESC";
-		$sql .= " LIMIT $offset,$ppp";
+        $sql['where'][] = $s;
+
+        $sql['oderby']  = 'date DESC';
+
+		$ppp = (int)$tbquery->posts_per_page;
+		$pageno = intval($arg['pageno']);
+		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
+        $sql['limit']   = $ppp;
+        $sql['offset']  = $offset;
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -549,11 +602,17 @@ class TB_Posts {
 	public function get_count_of_taxes($taxes=[]) {
 		global $tbdb;
 
-		$sql = "SELECT count(id) as total FROM posts WHERE 0";
+        $sql = array();
+        $sql['select']  = 'count(id) as total';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+
 		foreach($taxes as $t) {
 			$t = (int)$t;
-			$sql .= " OR taxonomy=$t";
+            $sql['where'][] = "taxonomy=$t";
 		}
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -564,7 +623,14 @@ class TB_Posts {
     // 虽然名字跟上下两个很像，并完全不是在同一个时间段写的，功能貌似也并不相同
     public function get_count_of_cats_all() {
         global $tbdb;
-        $sql = "SELECT count(id) count,taxonomy FROM `posts` WHERE 1 GROUP BY taxonomy";
+
+        $sql = array();
+        $sql['select']  = 'count(id) count,taxonomy';
+        $sql['from']    = 'posts';
+        $sql['groupby'] = 'taxonomy';
+
+        $sql = make_query_string($sql);
+
         $rows = $tbdb->query($sql);
         if(!$rows) return false;
 
@@ -582,7 +648,10 @@ class TB_Posts {
 		$yy = (int)$yy;
 		$mm = (int)$mm;
 
-		$sql = "SELECT count(id) as total FROM posts WHERE 1";
+        $sql = array();
+        $sql['select']  = 'count(id) as total';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
 
 		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
@@ -591,8 +660,10 @@ class TB_Posts {
 				$startend = $tbdate->the_year_startend_gmdate($yy);
 			}
 
-			$sql .= " AND date>='{$startend->start}' AND date<='{$startend->end}'";
+            $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -648,7 +719,14 @@ class TB_Posts {
 	public function &get_all_posts_id() {
 		global $tbdb;
 
-		$sql = "SELECT id FROM posts WHERE type='post' AND status='public' ORDER BY date DESC";
+        $sql = array();
+        $sql['select']  = 'id';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where']   = "type='post'";
+        $sql['orderby'] = 'date DESC';
+
+        $sql = make_query_string($sql);
 
 		$ids = [];
 		$rows = $tbdb->query($sql);
@@ -674,9 +752,20 @@ class TB_Posts {
 
 		$in_tags = join(',', $tagids);
 		
-		$select = "SELECT p.id,p.title,count(p.id) as relevance FROM posts p,post_tags pt ";
-		$where = " WHERE pt.post_id!=$id AND p.id=pt.post_id AND pt.tag_id in ($in_tags) ";
-		$sql = $select . $where . 'GROUP BY p.id ORDER BY relevance DESC LIMIT 5';
+        $sql = array();
+        $sql['select']  = 'p.id,p.title,count(p.id) as relevance';
+        $sql['from']    = 'posts p, post_tags pt';
+
+        $sql['where'] = [];
+        $sql['where'][] = "pt.post_id!=$id";
+        $sql['where'][] = "p.id=pt.post_id";
+        $sql['where'][] = "pt.tag_id in ($in_tags)";
+
+        $sql['groupby'] = 'p.id';
+        $sql['orderby'] = 'relevance DESC';
+        $sql['limit']   = 5;
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows || !$rows->num_rows)
@@ -768,16 +857,15 @@ class TB_Posts {
         $cid = (int)$cid;
         if($cid <= 0) return false;
 
-		$fields = "id,date,title";
-		$sql = "SELECT $fields FROM posts WHERE taxonomy=$cid AND type='post'";
+        $sql = array();
+        $sql['select']  = 'id,date,title';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = "taxonomy=$cid";
+        $sql['where'][] = "type='post'";
+        $sql['orderby'] = 'date DESC';
 
-		/*$offsprings = $tbtax->get_offsprings($cid);
-		foreach($offsprings as $os)
-			$sql .= " OR taxonomy=$os";
-         */
-
-		$sql .= " ORDER BY date DESC";
-		//$sql .= " LIMIT $offset,$ppp";
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -792,7 +880,20 @@ class TB_Posts {
 
     public function get_date_archives() {
         global $tbdb;
-        $sql = "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year, month(date) month FROM (SELECT id,DATE_ADD(date, INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month;";
+
+        $sql = array();
+        $sql['select']  = 'id,DATE_ADD(date, INTERVAL 8 HOUR) date';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = "type='post'";
+
+        $sql = make_query_string($sql);
+
+        $sql = "SELECT year,month,count(id) count FROM ("
+            . "SELECT id,date,year(date) year, month(date) month FROM ("
+            . $sql
+            .') x) x GROUP BY year,month;';
+
         $rows = $tbdb->query($sql);
         if(!$rows) return false;
 
@@ -820,8 +921,12 @@ class TB_Posts {
 		$yy = (int)$yy;
 		$mm = (int)$mm;
 
-		$fields = "id,date,title";
-		$sql = "SELECT $fields FROM posts WHERE 1 AND type='post'";     // TODO where
+        $sql = array();
+        $sql['select']  = 'id,date,title';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = "type='post'";
+
 		if($yy >= 1970) {
 			if($mm >= 1 && $mm <= 12) {
 				$startend = $tbdate->the_month_startend_gmdate($yy, $mm);
@@ -829,10 +934,12 @@ class TB_Posts {
 				$startend = $tbdate->the_year_startend_gmdate($yy);
 			}
 
-			$sql .= " AND date>='{$startend->start}' AND date<='{$startend->end}'";
+            $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
 
-		$sql .= " ORDER BY date DESC";
+        $sql['orderby'] = 'date DESC';
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -850,8 +957,17 @@ class TB_Posts {
 		global $tbdb;
 		
 		$tag = $tbdb->real_escape_string($tag);
-		$sql = "SELECT posts.id,posts.date,posts.title FROM posts,post_tags,tags ";
-		$sql .= " WHERE type='post' AND posts.id=post_tags.post_id AND post_tags.tag_id=tags.id AND tags.name='$tag'"; // TODO WHERE
+
+        $sql = array();
+        $sql['select']  = 'posts.id,posts.date,posts.title';
+        $sql['from']    = 'posts,post_tags,tags';
+        $sql['where']   = [];
+        $sql['where'][] = "type='post'";
+        $sql['where'][] = 'posts.id=post_tags.post_id';
+        $sql['where'][] = 'post_tags.tag_id=tags.id';
+        $sql['where'][] = "tags.name='$tag'";
+
+        $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
 		if(!$rows) return false;
@@ -868,7 +984,15 @@ class TB_Posts {
         global $tbdb;
     
         $type = $tbdb->real_escape_string($type);
-        $sql = "SELECT count(*) as size FROM posts WHERE type='$type'";
+
+        $sql = array();
+        $sql['select']  = 'count(*) as size';
+        $sql['from']    = 'posts';
+        $sql['where']   = [];
+        $sql['where'][] = "type='$type'";
+
+        $sql = make_query_string($sql);
+
         $rows = $tbdb->query($sql);
         if(!$rows) return 0;
         return $rows->fetch_object()->size;
