@@ -56,10 +56,16 @@ function login_auth($redirect=false) {
 	}
 }
 
+// 用于生成认证 cookie，独立出来的原因是 api 部分会用到
+function login_gen_cookie() {
+	$opt = new TB_Options;
+    return sha1($_SERVER['REMOTE_ADDR'].$opt->get('login'));
+}
+
 // 用于在登录成功之后设置客户端认证的cookie
 // 保存的是 sha1(ip + login)
-function login_auth_set_cookie($ip) {
+function login_auth_set_cookie() {
 	$opt = new TB_Options;
-	setcookie('login', sha1($ip.$opt->get('login')), 0, '/', '', true, true);
+	setcookie('login', login_gen_cookie(), 0, '/', '', true, true);
 }
 

@@ -131,7 +131,7 @@ if(!login_auth_passwd($_POST)) {
 $url = isset($_POST['url']) ? $_POST['url'] : '/admin/';
 header('HTTP/1.1 302 OK');
 header('Location: '.$url);
-login_auth_set_cookie($_SERVER['REMOTE_ADDR']);
+login_auth_set_cookie();
 die(0);
 
 endif;
