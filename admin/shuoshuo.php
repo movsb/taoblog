@@ -7,7 +7,7 @@ require_once('admin.php');
 admin_header();
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$content = $id > 0 ? $tbshuoshuo->get($id) : '';
+$content = $id > 0 ? $tbshuoshuo->get($id)->content : '';
 ?>
 <form method="post" style="margin-bottom: 2em;">
 <h2>发表说说</h2>

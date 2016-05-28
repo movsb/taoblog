@@ -33,9 +33,9 @@ class TB_Shuoshuo {
         if($stmt = $tbdb->prepare($sql)) {
             if($stmt->bind_param('s', $content)) {
                 $r = $stmt->execute();
-                $ars = $stmt->affected_rows;
+                $ars = $stmt->affected_rows; // 貌似无需判断
 
-                return $r && $ars == 1;
+                return $r;
             }
         }
 
@@ -53,12 +53,25 @@ class TB_Shuoshuo {
 
     public function get($id) {
         global $tbdb;
+        global $tbdate;
 
         $id = (int)$id;
-        $sql = "SELECT content FROM shuoshuo WHERE id=$id";
+        $sql = "SELECT * FROM shuoshuo WHERE id=$id";
         $rows = $tbdb->query($sql);
         if(!$rows) return $shuoshuos;
-        return $rows->fetch_object()->content;
+
+        $ss = $rows->fetch_object();
+        $ss->date = $tbdate->mysql_datetime_to_local($ss->date);
+        return $ss;
+    }
+
+    public function has($id) {
+        global $tbdb;
+
+        $id = (int)$id;
+        $sql = "SELECT id FROM shuoshuo WHERE id=$id";
+        $rows = $tbdb->query($sql);
+        return $rows !== false && $rows->num_rows == 1;
     }
 
     public function &get_latest($count) {
