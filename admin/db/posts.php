@@ -617,8 +617,7 @@ class TB_Posts {
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
-		if(!$rows) return false;
-
+		if(!$rows) return false; 
 		$p = [];
 		while($r = $rows->fetch_object()){
 			$p[] = $r;
@@ -1045,6 +1044,26 @@ class TB_Posts {
         $sql = "UPDATE posts SET content=?,modified=? WHERE id=? LIMIT 1";
         if($stmt = $tbdb->prepare($sql)) {
             if($stmt->bind_param('ssi', $content, $modification_time, $pid)) {
+                $r = $stmt->execute();
+
+                if($r) {
+                    $ok = $stmt->affected_rows == 1;
+                    $stmt->close();
+                    return $ok;
+                }
+            }
+            $stmt->close();
+        }
+
+        return false;
+    }
+
+    public function tmp_update_content($pid, $content) {
+        global $tbdb;
+
+        $sql = "UPDATE posts SET content=? WHERE id=? LIMIT 1";
+        if($stmt = $tbdb->prepare($sql)) {
+            if($stmt->bind_param('si', $content, $pid)) {
                 $r = $stmt->execute();
 
                 if($r) {
