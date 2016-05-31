@@ -8,16 +8,23 @@ import json
 from subprocess import call
 
 class TaoBlog:
-    host    = 'https://blog.twofei.com'
-    login   = '' 
-    verify  = True
+    _host    = 'https://blog.twofei.com'
+    _login   = ''
+    _verify  = True
 
-    def main(self):
+    def method(self, name):
+        return self._host + '/api/' + name.replace('.', '/')
+
+    def post(self, method, data):
+        return requests.post(self.method(method), data=data, verify=self._verify)
+
+    def login(self):
         username = input('Username: ')
         password = getpass.getpass('Password: ')
 
+        print('Logging, please wait ...')
         data = {'user': username, 'passwd': password}
-        r = requests.post(self.host + '/api/login/auth', data=data, verify=self.verify)
+        r = self.post('login.auth', data)
         if r.status_code != 200:
             sys.exit(-1)
 
@@ -27,21 +34,10 @@ class TaoBlog:
             sys.exit(-1)
 
         self.login = r["data"]["login"]
+        print('Login success, cookie: %s' % self.login)
 
-        print('cookie: ', self.login)
-
-        while True:
-            id = input("Post id to udpate: ")
-            f = open('p'+id+'/index.html', 'rb')
-            content = f.read()
-
-            r = requests.post(self.host + '/api/post/update', {'id': id, 'content': content}, cookies={'login': self.login}, verify=self.verify)
-            r = json.loads(r.text)
-
-            if r["ret"] != 0:
-                print("update error.");
-            else:
-                print("update succeeded.");
+    def main(self):
+        self.login()
 
 if __name__ == '__main__':
     blog = TaoBlog()
