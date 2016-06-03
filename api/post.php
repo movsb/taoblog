@@ -35,6 +35,22 @@ if($api->method == 'update') {
         "ret" => $r,
     ]);
 }
+elseif($api->method == 'get') {
+    $id = (int)check_arg('id');
+    $posts = $tbpost->query(compact('id'));
+
+    if($posts === false || !count($posts)) {
+        api_die([
+            "ret" => -1,
+            "msg" => "",
+        ]);
+    }
+
+    api_die([
+        "ret" => 0,
+        "data" => $posts[0],
+    ]);
+}
 else {
     api_bad_method();
 }

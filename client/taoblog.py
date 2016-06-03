@@ -8,15 +8,16 @@ import json
 from subprocess import call
 
 class TaoBlog:
-    _host    = 'https://blog.twofei.com'
+    _host    = 'https://local.twofei.com'
     _login   = ''
-    _verify  = True
+    _verify  = False
 
     def method(self, name):
         return self._host + '/api/' + name.replace('.', '/')
 
     def post(self, method, data):
-        return requests.post(self.method(method), data=data, verify=self._verify)
+        cookies ={'login': self._login}
+        return requests.post(self.method(method), cookies=cookies, data=data, verify=self._verify)
 
     def login(self):
         username = input('Username: ')
@@ -33,11 +34,29 @@ class TaoBlog:
             print(r["msg"])
             sys.exit(-1)
 
-        self.login = r["data"]["login"]
-        print('Login success, cookie: %s' % self.login)
+        self._login = r["data"]["login"]
+        print('Login success, cookie: %s' % self._login)
+
+    def help(self):
+        text = ('1. 发表说说\n'
+                '2. 修改文章'
+                )
+        print(text)
+
+    def cmd(self):
+        while True:
+            n = input("输入选项：")
+            if n == "1":
+                t = input("说说内容：")
+                r = self.post('shuoshuo.post', data={'content': t})
+                print(r.text)
+            pass
+        pass
 
     def main(self):
         self.login()
+        self.help()
+        self.cmd()
 
 if __name__ == '__main__':
     blog = TaoBlog()
