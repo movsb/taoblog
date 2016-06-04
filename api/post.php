@@ -36,6 +36,7 @@ if($api->method == 'update') {
 
     api_die([
         "ret" => $r,
+        "msg" => $tbpost->error,
     ]);
 }
 elseif($api->method == 'get') {

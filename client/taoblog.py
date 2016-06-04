@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import requests
 import getpass
@@ -11,6 +12,7 @@ class TaoBlog:
     _host    = 'https://local.twofei.com'
     _login   = ''
     _verify  = False
+    _root    = '/home/twofei/Desktop/posts'
 
     def method(self, name):
         return self._host + '/api/' + name.replace('.', '/')
@@ -38,18 +40,51 @@ class TaoBlog:
         print('Login success, cookie: %s' % self._login)
 
     def help(self):
-        text = ('1. 发表说说\n'
-                '2. 修改文章'
+        text = ('1. 更新文章到远程\n'
+                '2. 更新文章到本地'
                 )
         print(text)
+
+    def get_post_content(self, id):
+        path = "%s/%s.html" % (self._root, id)
+        if not os.path.exists(path):
+            path = "%s/%s/index.html" % (self._root, id)
+            if not os.path.exists(path):
+                print("doesn't exist: ", path)
+                sys.exit(-1)
+            pass
+
+        fp = open(path, 'rb')
+        content = fp.read()
+        fp.close()
+
+        return content
+
+    def save_post_content(self, id, content):
+        path = "%s/%s.html" % (self._root, id)
+        if not os.path.exists(path):
+            path = "%s/%s/index.html" % (self._root, id)
+            if not os.path.exists(path):
+                path = "%s/%s.html" % (self._root, id)
+
+        fp = open(path, 'wb')
+        fp.write(bytes(content,'UTF-8'))
+        fp.close()
 
     def cmd(self):
         while True:
             n = input("输入选项：")
             if n == "1":
-                t = input("说说内容：")
-                r = self.post('shuoshuo.post', data={'content': t})
+                id = input("文章ID: ")
+                content = self.get_post_content(id)
+                r = self.post('post.update', data={'id': id, 'content': content})
                 print(r.text)
+            elif n == "2":
+                id = input("文章ID: ")
+                r = self.post('post.get', data={'id': id})
+                r = json.loads(r.text)
+                self.save_post_content(id, r["data"]["content"])
+
             pass
         pass
 

@@ -1060,22 +1060,23 @@ class TB_Posts {
 
     public function tmp_update_content($pid, $content) {
         global $tbdb;
+        global $tbdate;
 
-        $sql = "UPDATE posts SET content=? WHERE id=? LIMIT 1";
+        $r = false;
+
+        $sql = "UPDATE posts SET content=?,modified=? WHERE id=? LIMIT 1";
         if($stmt = $tbdb->prepare($sql)) {
-            if($stmt->bind_param('si', $content, $pid)) {
+			$modified = $tbdate->mysql_datetime_local();
+            if($stmt->bind_param('ssi', $content, $modified, $pid)) {
                 $r = $stmt->execute();
-
-                if($r) {
-                    $ok = $stmt->affected_rows == 1;
-                    $stmt->close();
-                    return $ok;
+                if(!$r) {
+                    $this->error = $stmt->error;
                 }
             }
             $stmt->close();
         }
 
-        return false;
+        return $r;
     }
 }
 
