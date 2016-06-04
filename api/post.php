@@ -11,7 +11,10 @@ function check_arg($arg) {
             "msg" => "expect argument `$arg'",
         ]);
     }
-    else { return $_REQUEST[$arg]; } }
+    else {
+        return $_REQUEST[$arg];
+    }
+}
 
 function check_existence() {
     global $tbshuoshuo;
@@ -49,6 +52,14 @@ elseif($api->method == 'get') {
     api_die([
         "ret" => 0,
         "data" => $posts[0],
+    ]);
+}
+elseif($api->method == 'get_id') {
+    api_die([
+        "ret" => 0,
+        "data" => [
+            "id" => $tbpost->the_next_id(),
+        ],
     ]);
 }
 else {
