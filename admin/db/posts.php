@@ -756,7 +756,7 @@ class TB_Posts {
         $sql['select']  = 'id';
         $sql['from']    = 'posts';
         $sql['where']   = [];
-        $sql['where']   = "type='post'";
+        $sql['where'][] = "type='post'";
         $sql['orderby'] = 'date DESC';
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
