@@ -1,0 +1,9 @@
+使用如下 HTML 代码：
+<div class="toc">
+    <h2>目录</h2>
+    <ul>
+        <li><a href="#锚点1">名称1</a></li>
+        <li><a href="#锚点2">名称2</a></li>
+    </ul>
+</div>
+
