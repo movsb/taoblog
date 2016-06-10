@@ -1066,7 +1066,7 @@ class TB_Posts {
 
         $sql = "UPDATE posts SET content=?,modified=? WHERE id=? LIMIT 1";
         if($stmt = $tbdb->prepare($sql)) {
-			$modified = $tbdate->mysql_datetime_local();
+			$modified = $tbdate->mysql_datetime_gmt();
             if($stmt->bind_param('ssi', $content, $modified, $pid)) {
                 $r = $stmt->execute();
                 if(!$r) {
