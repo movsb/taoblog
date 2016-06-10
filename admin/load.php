@@ -27,8 +27,6 @@ require_once('global-hooks.php');
 require_once('query.php');
 require_once('canonical.php');
 
-require_once('rsync.php');
-
 apply_hooks('tb_load');
 
 $tbopt          = new TB_Options;
@@ -46,8 +44,4 @@ $tbmain         = new TB_Main;
 date_default_timezone_set('Asia/Chongqing');
 
 $logged_in = login_auth();
-
-if($logged_in && $_SERVER['DOCUMENT_URI'] == '/admin/index.php') {
-    rsync_posts();
-}
 
