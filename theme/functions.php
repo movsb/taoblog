@@ -62,6 +62,7 @@ function the_meta_date() {
 	$link  = '<a target="_blank" href="/date/'.$dd[0].'/">'.$dd[0].'</a>年';
 	$link .= '<a target="_blank" href="/date/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>月';
 	$link .= $dd[2].'日';
+    $link .= '（<a href="'.REVISION_ROOT.'/'.$the->id.(strpos($the->content, '<img')!==false?'/index':'').'.html">历史版本</a>）';
 
 	return '<span class="value">'.$link.'</span>';
 }
