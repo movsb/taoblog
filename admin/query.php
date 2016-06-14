@@ -145,7 +145,7 @@ class TB_Query {
                 // 检查实体标签
                 $etag = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? $_SERVER['HTTP_IF_NONE_MATCH'] : '';
                 if($etag) {
-                    $version = $tbopt->get('version');
+                    $version = TB_VERSION;
                     if(!preg_match("/$version-/", $etag)) {
                         unset($this->internal_query['modified']);
                         $this->is_query_modification = false;
