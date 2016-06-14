@@ -14,3 +14,5 @@ define('PHPMAILER_PASSWD',  'pass');
 
 define('RSYNC_DIR',         TBPATH . 'rsync');          /* directory from rsync posts */
 
+define('REVISION_ROOT',     'https://github.com/<user>/<repo>/commits/master'); /* 文章版本库根目录 */
+
