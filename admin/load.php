@@ -1,5 +1,7 @@
 <?php 
 
+define('TB_VERSION', '1.0.2');
+
 require_once(dirname(__FILE__).'/../setup/config.php');
 
 require_once('die.php');

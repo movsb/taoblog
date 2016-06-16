@@ -29,11 +29,14 @@ function feed_body() {
 
 	while($tbquery->has()) {
 		$the = $tbquery->the();
+        $title = $the->title;
 		$link = the_link($the);
+        $content = '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', $the->content) . ']]>';
+
 ?>		<item>
 			<title><?php echo htmlspecialchars($the->title); ?></title>
 			<link><?php echo htmlspecialchars($link); ?></link>
-			<description><![CDATA[<p style="color: red;"><a href="<?php echo $link;?>">=== 阅读原文 ==</a></p><?php echo $the->content; ?>]]></description>
+			<description><?php echo $content; ?></description>
 			<pubDate><?php echo $tbdate->the_feed_date($the->date);?></pubDate>
 		</item>
 <?php
