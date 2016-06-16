@@ -165,6 +165,15 @@
 	}
 }
 
+@media screen and (max-width: 850px) {
+	.entry img {
+        width: unset !important;
+        height: unset !important;
+        max-width: 100%;
+        max-height: 100%;
+	}
+}
+
 .entry {
 	display: block;
 	color: $post_content_fg;
@@ -236,11 +245,10 @@
 
     img {
         max-width: 100%;
-        box-sizing: border-box;
+        box-sizing: content-box;
+        border: 1px solid transparent;
 
         &:not(.nz) {
-            border: 1px solid transparent;
-
             &:hover {
                 border: 1px solid #f66;
                 cursor: zoom-in;
