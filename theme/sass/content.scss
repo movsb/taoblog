@@ -181,8 +181,11 @@
     margin-bottom: 3em;
 
      pre {
-        font-family: inherit;
         box-sizing: border-box;
+
+        &:not(.code) {
+            font-family: inherit;
+        }
 
         &.wrap {
             white-space: pre-wrap;
