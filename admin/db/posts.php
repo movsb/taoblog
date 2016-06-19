@@ -471,7 +471,7 @@ class TB_Posts {
 				$startend = $tbdate->the_year_startend_gmdate($yy);
 			}
 
-            $sql['where'] = "date>='{$startend->start}' AND date<='{$startend->end}'";
+            $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
 		}
 
 		$tbquery->date = (object)['yy'=>$yy,'mm'=>$mm];
