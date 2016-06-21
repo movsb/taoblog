@@ -12,28 +12,6 @@ $('#back-to-top').click(function(){
 	}, 300);
 });
 
-/* 字体大小调整 */
-$('.font-sizing').click(function(e){
-	var post = $('.entry');
-	var cl = e.target.classList;
-	if(cl.contains('inc') || cl.contains('fa-plus')) {
-		var newSize = parseFloat(post.css('font-size')) * 1.2 + 'px';
-		post.css('font-size', newSize);
-		if(window.localStorage) localStorage.setItem('font-size', newSize);
-		if(typeof show_tips == 'function') show_tips('字体大小: '+newSize);
-	} else if(cl.contains('dec') || cl.contains('fa-minus')) {
-		var newSize = Math.max(8, parseFloat(post.css('font-size')) / 1.2) + 'px';
-		post.css('font-size', newSize);
-		if(window.localStorage) localStorage.setItem('font-size', newSize);
-		if(typeof show_tips == 'function') show_tips('字体大小: '+newSize);
-	}
-});
-
-/* 主页链接 */
-$('.home-a').click(function() {
-	location.href = location.protocol + '//' + location.host;
-});
-
 /* RSS订阅提示 */
 (function() {
 	if(!window.localStorage) return;
