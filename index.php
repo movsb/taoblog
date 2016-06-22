@@ -1,36 +1,8 @@
 <?php
+
 if(!isset($_SERVER['HTTP_USER_AGENT'])) {
 	header('HTTP/1.1 400 Bad Request');
 	die(-1);
-}
-
-if(preg_match('/MSIE|Trident/', $_SERVER['HTTP_USER_AGENT'])		// IE
-	&& !preg_match('/spider/i', $_SERVER['HTTP_USER_AGENT'])		// Spider, like stupid 360 haosou
-	&& !(isset($_GET['iexplore']) && $_GET['iexplore'] == 'true')	// ! still use ie
-	){
-	header('HTTP/1.1 503 IE was history');
-	header('Content-Type: text/html');
-?><!doctype html>
-<html>
-<head>
-<meta charset="UTF-8" />
-<title>IE was history</title>
-</head>
-<body>
-<p style="font-size: 2em;"><del>Internet Explorer</del> was history.</p>
-<p style="color: red;">Please consider using another web browser like <b>fx</b>.</p>
-<p style="color: red;">抱歉，本网站站长由于能力过分有限，无法将网站支持在 IE 浏览器上。请考虑换用其它浏览器，然后重新访问。</p>
-<p>不管了，依然使用 IE 访问：<a href="<?php
-	echo $_SERVER['REQUEST_URI'];
-	if(isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING']) {
-		echo '&iexplore=true';
-	} else {
-		echo '?iexplore=true';
-	}?>">点击访问</a></p>
-</body>
-</html>
-<?php
-	die(0);
 }
 
 $start_time = microtime();
