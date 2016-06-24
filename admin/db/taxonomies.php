@@ -111,6 +111,11 @@ class TB_Taxonomies {
 			return false;
 		}
 
+        if($this->has_child((int)$arg['parent'], $arg['slug'])) {
+            $this->error = '此父分类下已有别名为 `'.$arg['slug'].'\' 的子分类。';
+            return false;
+        }
+
 		$arg['ancestor'] = $this->get_ancestor($arg['parent'], true);
 
 		$sql = "INSERT INTO taxonomies (name,slug,parent,ancestor) VALUES (?,?,?,?)";
@@ -163,6 +168,23 @@ class TB_Taxonomies {
 		$sql = "SELECT name FROM taxonomies WHERE id=$id LIMIT 1";
 		return ($rs = $tbdb->query($sql)) && $rs->num_rows > 0;
 	}
+
+    /*
+     * 判断某个父分类下是否存在某个 slug 的子分类
+     *
+     * 同一个父分类（包括ID为0的根分类）下不能存在slug 相同的子分类，需加以判断。
+     * 这里只判断 slug 是否存在，不判断 name。slug 不同，name 一般就不同了。索引分类
+     * 文章时是按照 slug 来搜索的，所以就算 name 相同也无关紧要。
+     */
+    public function has_child($pid, $slug) {
+        global $tbdb;
+
+        $pid = (int)$pid;
+        $slug = $tbdb->real_escape_string($slug);
+
+        $sql = "SELECT id FROM taxonomies WHERE parent=$pid and slug='$slug' LIMIT 1";
+        return ($rs = $tbdb->query($sql)) && $rs->num_rows > 0;
+    }
 
 	/* 按ID删除某个分类
 		需要删除的有：
