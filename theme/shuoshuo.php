@@ -1,6 +1,6 @@
 <?php
 
-require('admin/load.php');
+defined('TBPATH') or die('Silence is golden.');
 
 function get_all_shuoshuos() {
 	global $tbdb;
