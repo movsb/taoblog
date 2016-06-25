@@ -49,12 +49,17 @@
 	right: 0px;
 	bottom: 0px;
     cursor: zoom-out;
+
     img {
         cursor: move;
         position: relative;
         left: 0px;
         top: 0px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select:none;
     }
+
     .tip {
         position: absolute;
         left: 0px;
