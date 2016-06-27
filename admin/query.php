@@ -71,6 +71,17 @@ class TB_Query {
         return $this->type === 'shuoshuo';
     }
 
+    // 临时使用，待寻找更好的解决办法
+    public function push_404() {
+        $this->type_origin = $this->type;
+        $this->type = '404';
+    }
+
+    // 临时使用，待寻找更好的解决办法
+    public function pop_404() {
+        $this->type = $this->type_origin;
+    }
+
 	public function __construct() {
 		global $tbopt;
 		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 20);

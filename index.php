@@ -43,23 +43,13 @@ if(!$tbquery->have()
 	}
 }
 
-if($tbquery->is_home()) {
-	require('theme/index.php');
-} else if($tbquery->is_singular()) {
-	require('theme/single.php');
-} else if($tbquery->is_category()) {
-	require('theme/category.php');
-} else if($tbquery->is_date()) {
-	require('theme/date.php');
-} else if($tbquery->is_tag()) {
-	require('theme/tag.php');
-} else if($tbquery->is_feed()) {
-	require('theme/feed.php');
-} else if($tbquery->is_sitemap()) {
-	require('theme/sitemap.php');
-} else if($tbquery->is_archive()) {
-    require('theme/archive.php');
-} else if($tbquery->is_shuoshuo()) {
-    require('theme/shuoshuo.php');
-}
+if($tbquery->is_home())             require('theme/index.php');
+else if($tbquery->is_singular())    require('theme/single.php');
+else if($tbquery->is_category())    require('theme/category.php');
+else if($tbquery->is_date())        require('theme/date.php');
+else if($tbquery->is_tag())         require('theme/tag.php');
+else if($tbquery->is_feed())        require('theme/feed.php');
+else if($tbquery->is_sitemap())     require('theme/sitemap.php');
+else if($tbquery->is_archive())     require('theme/archive.php');
+else if($tbquery->is_shuoshuo())    require('theme/shuoshuo.php');
 
