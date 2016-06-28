@@ -47,7 +47,7 @@ function list_all_cats() {
 
 function list_all_tags() {
     global $tbtag;
-    $tags = $tbtag->list_all_tags();
+    $tags = $tbtag->list_all_tags(30);
 
     echo '<ul class="roots">';
     foreach($tags as &$t) {
