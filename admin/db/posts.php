@@ -177,7 +177,6 @@ class TB_Posts {
             'taxonomy'          => 1,
             'status'            => 'public',
             'comment_status'    => 1,
-            'password'          => '',
             'tags'              => '',
             'page_parents'      => '',
         ];
@@ -247,14 +246,14 @@ class TB_Posts {
 		$arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		$sql = "INSERT INTO posts (
-			date,modified,title,content,slug,type,taxonomy,status,comment_status,password)
-			VALUES (?,?,?,?,?,?,?,?,?,?)";
+			date,modified,title,content,slug,type,taxonomy,status,comment_status)
+			VALUES (?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('ssssssisis',
 				$arg['date_gmt'], $arg['modified_gmt'],
 				$arg['title'], $arg['content'],$arg['slug'],
 				$arg['type'], $arg['taxonomy'], $arg['status'],
-				$arg['comment_status'], $arg['password']))
+				$arg['comment_status']))
 			{
 				$r = $stmt->execute();
 				$stmt->close();
@@ -289,7 +288,6 @@ class TB_Posts {
             'yy'            => '',
             'mm'            => '',
 			'pageno'        => '',
-            'password'      => '',
             'status'        => 'public',      // 字符串或数组
 			'modified'      => false,
 			'feed'          => '',
