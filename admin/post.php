@@ -194,7 +194,7 @@ function new_post_html($p=null){
 	foreach($widget_objs as $wo) {
 		$fn = $wo->func;
 		$w = (object)$fn($p);
-		$w->classname = isset($w->classname) ? $w->classname : 'widget';
+		$w->classname = $w->classname ?? 'widget';
 
 		$dom = <<< DOM
 <div class="widget widget-$w->classname">
@@ -206,13 +206,13 @@ function new_post_html($p=null){
 DOM;
 		$widget = new stdClass;
 		$widget->dom = $dom;
-		$widget->pos = isset($w->position) ? $w->position : 'right';
-		$widget->types = isset($w->types) ? $w->types : 'post,page';
+		$widget->pos = $w->position ?? 'right';
+		$widget->types = $w->types ?? 'post,page';
 
 		$widgets[] = $widget;
 	}
 
-	$type = $p ? $p->type : (isset($_GET['type']) ? $_GET['type'] : '');
+	$type = $p ? $p->type : ($_GET['type'] ?? '');
 	if(!in_array($type, ['post','page']))
 		$type = 'post';
 
@@ -338,7 +338,7 @@ DOM;
 </div><!-- admin-post -->
 <?php } 
 
-$do = isset($_GET['do']) ? $_GET['do'] : '';
+$do = $_GET['do'] ?? '';
 if(!$do) {
 	admin_header();
 	new_post_html();

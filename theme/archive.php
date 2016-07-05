@@ -28,7 +28,7 @@ function list_all_cats() {
         $count_of_func = 0;
         $s = '';
         foreach($taxes as $t) {
-            $post_count_of_cat = isset($cat_posts[$t->id]) ? $cat_posts[$t->id] : 0;
+            $post_count_of_cat = $cat_posts[$t->id] ?? 0;
             $s1 = '<li data-cid="'.$t->id.'" class="folder"><i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.$t->name.'(';
             $s2 = ')</span><ul>';
             $s3 = '';

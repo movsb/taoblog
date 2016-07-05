@@ -65,7 +65,7 @@ function cmt_post_cmt() {
 	global $tbcmts;
 	global $tbdb;
 
-	$ret_cmt = (int)(isset($_POST['return_cmt']) ? $_POST['return_cmt'] : '');
+	$ret_cmt = (int)($_POST['return_cmt'] ?? '');
 	
 	$r = $tbcmts->insert($_POST);
 	if(!$r) {
@@ -106,7 +106,7 @@ function cmt_post_cmt() {
 	die(0);
 }
 
-$do = isset($_POST['do']) ? $_POST['do'] : '';
+$do = $_POST['do'] ?? '';
 
 if($do == 'get-cmt') cmt_get_cmt();
 if($do == 'post-cmt') cmt_post_cmt();

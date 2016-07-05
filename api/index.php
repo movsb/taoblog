@@ -35,8 +35,8 @@ function check_login() {
         ]);
     }
 
-    $user = isset($_REQUEST['user']) ? $_REQUEST['user'] : '';
-    $passwd = isset($_REQUEST['passwd']) ? $_REQUEST['passwd'] : '';
+    $user = $_REQUEST['user'] ?? '';
+    $passwd = $_REQUEST['passwd'] ?? '';
 
     $arg = compact('user', 'passwd');
 

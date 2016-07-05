@@ -16,8 +16,8 @@ function login_auth_passwd($arg = []) {
     $saved_user     = $saved_login[0];
     $saved_passwd   = $saved_login[1];
 
-	$user           = isset($arg['user']) ? $arg['user'] : '';
-	$passwd         = isset($arg['passwd']) ? $arg['passwd'] : '';
+	$user           = $arg['user'] ?? '';
+	$passwd         = $arg['passwd'] ?? '';
 
 	if($user === $saved_user && sha1($passwd) === $saved_passwd) {
 		return true;
@@ -36,7 +36,7 @@ function login_auth($redirect=false) {
     $is_ssl = $_SERVER['SERVER_PORT'] == 443;
 
 	$ip = $_SERVER['REMOTE_ADDR'];
-	$cookie_login = isset($_COOKIE['login']) ? $_COOKIE['login'] : '';
+	$cookie_login = $_COOKIE['login'] ?? '';
 
 	$loggedin = $is_ssl && $cookie_login && $cookie_login === sha1($ip.$opt->get('login'));
 

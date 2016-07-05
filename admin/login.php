@@ -99,7 +99,7 @@ body {
 
 if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
-$do = isset($_GET['do']) ? $_GET['do'] : '';
+$do = $_GET['do'] ?? '';
 if($do === 'logout') {
 	header('HTTP/1.1 302 Logged Out');
 	setcookie('login','',time()-1, '/');
@@ -111,11 +111,11 @@ if($do === 'logout') {
 	if(login_auth()){
 		header('HTTP/1.1 302 Login Success');
 
-		$url = isset($_GET['url']) ? $_GET['url'] : '/admin/';
+		$url = $_GET['url'] ?? '/admin/';
 		header('Location: '.$url);
 		die(0);
 	} else {
-		$url = isset($_GET['url']) ? $_GET['url'] : '';
+		$url = $_GET['url'] ?? '';
 		login_html($url);
 		die(0);
 	}
@@ -128,7 +128,7 @@ if(!login_auth_passwd($_POST)) {
 	die(0);
 }
 
-$url = isset($_POST['url']) ? $_POST['url'] : '/admin/';
+$url = $_POST['url'] ?? '/admin/';
 header('HTTP/1.1 302 OK');
 header('Location: '.$url);
 login_auth_set_cookie();

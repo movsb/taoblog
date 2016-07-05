@@ -6,7 +6,7 @@ require_once('admin.php');
 
 admin_header();
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = (int)($_GET['id'] ?? 0);
 $content = $id > 0 ? $tbshuoshuo->get($id)->content : '';
 ?>
 <form method="post" style="margin-bottom: 2em;">
@@ -89,7 +89,7 @@ function auth() {
 require_once('load.php');
 
 
-$do = isset($_POST['do']) ? $_POST['do'] : '';
+$do = $_POST['do'] ?? '';
 
 if($do == 'new') {
     auth();

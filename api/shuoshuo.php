@@ -47,10 +47,7 @@ elseif($api->method == 'del') {
     ]);
 }
 elseif($api->method == 'get-latest') {
-    $count = 10;
-    if(isset($_REQUEST['n'])) {
-        $count = (int)$_REQUEST['n'];
-    }
+    $count = (int)($_REQUEST['n'] ?? 10);
 
     if($count < 0) {
         api_die([

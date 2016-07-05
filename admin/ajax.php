@@ -23,7 +23,7 @@ require('load.php');
 
 function ajax_get_cat_posts() {
     global $tbpost;
-    $cid = isset($_REQUEST['cid']) ? (int)$_REQUEST['cid']: 0;
+    $cid = (int)($_REQUEST['cid'] ?? 0);
     $posts = $tbpost->get_cat_posts($cid);
     if(!is_array($posts)) {
         ajax_die('err','获取失败');
@@ -37,8 +37,8 @@ function ajax_get_cat_posts() {
 
 function ajax_get_date_posts() {
     global $tbpost;
-    $yy = isset($_REQUEST['yy']) ? (int)$_REQUEST['yy'] : 0;
-    $mm = isset($_REQUEST['mm']) ? (int)$_REQUEST['mm'] : 0;
+    $yy = (int)($_REQUEST['yy'] ?? 0);
+    $mm = (int)($_REQUEST['mm'] ?? 0);
 
     if ($yy < 1970                  // 我假装我的博客也是诞生于大纪元1970年，有问题么:-)
         || ($mm < 1 || $mm > 12)    // 听说公司发15个月的工资，我很happy！
@@ -60,7 +60,7 @@ function ajax_get_date_posts() {
 
 function ajax_get_tag_posts() {
     global $tbpost;
-    $tag = isset($_REQUEST['tag']) ? $_REQUEST['tag'] : '';
+    $tag = $_REQUEST['tag'] ?? '';
     if(!strlen($tag)) {
         ajax_die(400, '空标签');
     }

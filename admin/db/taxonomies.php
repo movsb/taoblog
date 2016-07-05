@@ -29,7 +29,7 @@ class TB_Taxonomies {
 			}
 		}
 
-		return isset($tax->sons) ? $tax->sons : [];
+		return $tax->sons ?? [];
 	}
 
 	public function get_hierarchically() {

@@ -190,7 +190,7 @@ function tax_delete(&$arg) {
 		]);
 }
 
-$do = isset($_POST['do']) ? $_POST['do'] : '';
+$do = $_POST['do'] ?? '';
 if($do === 'get-all') {
 	tax_get_all();
 } else if($do === 'add-new') {
