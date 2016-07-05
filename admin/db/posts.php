@@ -19,6 +19,7 @@ class TB_Posts {
             'taxonomy'	    => 1,
             'page_parents'  => '',
             'status'        => 'public',
+            'metas'         => '',
         ];
 
 		$arg = tb_parse_args($def, $arg);
@@ -94,12 +95,12 @@ class TB_Posts {
 
 		if($arg['date_gmt']) {
 			if($arg['modified']) {
-				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('sssssisi',
+					if($stmt->bind_param('sssssissi',
 						$arg['date_gmt'],$arg['modified_gmt'],
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -108,12 +109,12 @@ class TB_Posts {
 					} 
 				}
 			} else {
-				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('ssssisi',
+					if($stmt->bind_param('ssssissi',
 						$arg['date_gmt'],
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -124,11 +125,11 @@ class TB_Posts {
 			}
 		} else {
 			if($arg['modified']) {
-				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('ssssisi',
+					if($stmt->bind_param('ssssissi',
 						$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -137,11 +138,11 @@ class TB_Posts {
 					} 
 				}
 			} else {
-				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=?,status=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('sssisi',
+					if($stmt->bind_param('sssissi',
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -179,6 +180,7 @@ class TB_Posts {
             'comment_status'    => 1,
             'tags'              => '',
             'page_parents'      => '',
+            'metas'             => '',
         ];
 
 		$arg = tb_parse_args($def, $arg);
@@ -246,14 +248,14 @@ class TB_Posts {
 		$arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		$sql = "INSERT INTO posts (
-			date,modified,title,content,slug,type,taxonomy,status,comment_status)
-			VALUES (?,?,?,?,?,?,?,?,?)";
+			date,modified,title,content,slug,type,taxonomy,status,comment_status,metas)
+			VALUES (?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
-			if($stmt->bind_param('ssssssisis',
+			if($stmt->bind_param('ssssssisiss',
 				$arg['date_gmt'], $arg['modified_gmt'],
 				$arg['title'], $arg['content'],$arg['slug'],
 				$arg['type'], $arg['taxonomy'], $arg['status'],
-				$arg['comment_status']))
+				$arg['comment_status'], $arg['metas']))
 			{
 				$r = $stmt->execute();
 				$stmt->close();
@@ -375,10 +377,18 @@ class TB_Posts {
 
 			if(isset($p->date))
 				$p->date = $tbdate->mysql_datetime_to_local($p->date);
+
 			if(isset($p->modified))
 				$p->modified = $tbdate->mysql_datetime_to_local($p->modified);
 
 			$p->tag_names = $this->the_tag_names($p->id);
+
+            if(isset($p->metas)) {
+                $d = json_decode($p->metas);
+                $p->metas_raw = $d ? $p->metas : '{}';
+                $p->metas_obj = $d ? $d : new stdClass;
+                unset($p->metas);
+            }
 		}
 
 		return $queried_posts;

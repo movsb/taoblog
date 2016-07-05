@@ -35,6 +35,7 @@ $sql = "CREATE TABLE IF NOT EXISTS `posts` (
     `status` ENUM('public', 'draft'),
 	`comment_status` INT(1) UNSIGNED DEFAULT 1,
 	`comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
+	`metas` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
 	PRIMARY KEY(`id`)
 	);";
 

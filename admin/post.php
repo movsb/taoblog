@@ -1,10 +1,92 @@
 <?php
 
-$admin_url = 'post.php';
-
 if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
 require_once('admin.php');
+
+function post_widget_metas($p=null) {
+    $metas = str_replace(['\\','\''], ['\\\\','\\\''], $p ? $p->metas_raw : '{}');
+    $title = '自定义';
+    $classname = 'metas';
+    $content = <<< DOM
+<label>类型：</label>
+<select class="keys">
+    <option>&lt;新建&gt;</option>
+</select>
+<span class="new">
+    <input class="key" type="text" style="width: 100px;" />
+    <button class="ok">添加</button>
+</span>
+<textarea class="content" style="margin-top: 10px; height: 200px; display: block;"></textarea>
+
+<input type="hidden" name="metas" value="" />
+
+<script>
+(function() {
+    var keys = $('.widget-metas .keys');
+    var metas = JSON.parse('$metas');
+    var newf = $('.widget-metas .new');
+    var content = $('.widget-metas .content');
+
+    $('.widget-metas input[name=metas]').val('$metas');
+
+    for(var key in metas) {
+        keys.append($('<option>', {value: key, text: key}));
+    }
+
+    var prev_key = '';
+
+    function save_prev() {
+        if(prev_key) {
+            metas[prev_key] = content.val();
+        }
+    }
+
+    content.on('blur', function() {
+        save_prev();
+        $('.widget-metas input[name=metas]').val(JSON.stringify(metas));
+    });
+
+    keys.on('change', function() {
+        var i = this.selectedIndex;
+
+
+        if(i == 0) {
+            newf.css('visibility', 'visible');
+            prev_key = '';
+            content.val('');
+        }
+        else {
+            newf.css('visibility', 'hidden');
+            prev_key = keys[0].options[i].value;
+            content.val(metas[prev_key]);
+        }
+
+    });
+
+    $('.widget-metas .new .ok').on('click', function() {
+        var key = $('.widget-metas .new .key').val().trim();
+        if(key == '' || metas.hasOwnProperty(key)) {
+            alert('为空或已经存在。');
+            return false;
+        }
+
+        keys.append($('<option>', {value: key, text: key}));
+        keys.val(key);
+        prev_key = key;
+        content.focus();
+        newf.css('visibility', 'hidden');
+
+        return false;
+    });
+})();
+</script>
+DOM;
+
+    return compact('title', 'content', 'classname');
+}
+
+add_hook('post_widget', 'post_widget_metas');
 
 function post_widget_tax_add(&$taxes, $tax=1) {
 	$s = '';
@@ -306,8 +388,8 @@ DOM;
 					<input id="btn-preview" type="button" value="预览" />
 					<input type="submit" value="发表为" />
                     <select name="status">
-                        <option value="public"<?php if($p && $p->status == 'public') echo 'selected'; ?>>公开</option>
-                        <option value="draft"<?php if($p && $p->status == 'draft') echo 'selected'; ?>>草稿</option>
+                        <option value="public"<?php if($p && $p->status == 'public') echo ' selected'; ?>>公开</option>
+                        <option value="draft"<?php if($p && $p->status == 'draft') echo ' selected'; ?>>草稿</option>
                     </select>
 					<script>
 						$('#btn-preview').click(function() {
