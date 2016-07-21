@@ -385,24 +385,11 @@ DOM;
 				<h3>发表</h3>
 				<div class="widget-content">
 					<input type="reset" value="清空" onclick="return confirm('确定清空吗？');" />
-					<input id="btn-preview" type="button" value="预览" />
 					<input type="submit" value="发表为" />
                     <select name="status">
                         <option value="public"<?php if($p && $p->status == 'public') echo ' selected'; ?>>公开</option>
                         <option value="draft"<?php if($p && $p->status == 'draft') echo ' selected'; ?>>草稿</option>
                     </select>
-					<script>
-						$('#btn-preview').click(function() {
-							var form = $('#form-post');
-							var ido = $('input[name=do]');
-							var doval = ido.val();
-							ido.val('preview');
-							form.attr('target', '_blank');
-							form.submit();
-							form.attr('target', '');
-							ido.val(doval);
-						});
-					</script>
 				</div>
 			</div>
 			<?php foreach($widgets as &$widget) {
@@ -504,19 +491,12 @@ function post_update() {
 	die(0);
 }
 
-function post_preview() {
-	@include TBPATH.'theme/preview.php';
-	die(0);
-}
-
 $do = $_POST['do'];
 
 if($do == 'new') {
 	post_new_post();
 } else if($do == 'update') {
 	post_update();
-} else if($do == 'preview') {
-	post_preview();
 }
 
 die(0);
