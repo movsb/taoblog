@@ -12,33 +12,6 @@ $('#back-to-top').click(function(){
 	}, 300);
 });
 
-/* RSS订阅提示 */
-(function() {
-	if(!window.localStorage) return;
-
-	if(document.referrer == '') {
-		var ert = parseInt(localStorage.getItem('empty_referrer_times') || 0);
-		if( ert == -1) return;
-
-		ert += 1;
-		localStorage.setItem('empty_referrer_times', ert);
-
-		if(ert >= 15) {
-			show_tips({
-				timeout: 5000,
-				content: '<b>RSS订阅</b><br/>亲，你已经直接访问本博客 <b>' + ert + '</b> 次啦，考虑<a href="/rss" target="_blank" style="color: blue;">订阅</a>本博客吧～(<a class="dont" style="cursor: pointer; color: blue;">不再提示</a>)',
-				click: function(ob) {
-					var target = ob.event.target;
-					if(target.classList.contains('dont')) {
-						localStorage.setItem('empty_referrer_times', -1);
-						ob.dismiss();
-					}
-				}}
-			);
-		}
-	}
-})();
-
 /* 点击图片放大 & 拖动浏览*/
 /* 写得超级烂，完全没管性能 */
 (function() {

@@ -38,7 +38,6 @@
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
 	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />
 	<script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
-	<script type="text/javascript" src="/theme/scripts/header.js"></script>
 <?php if(!$tbquery->count) {
 
 } else if($tbquery->is_singular()) {?>

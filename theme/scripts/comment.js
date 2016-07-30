@@ -1,4 +1,3 @@
-console.log('评论功能自第1版实现功能之后就几乎没有再改过，所以代码看起来极其乱，希望你看得下去。');
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
