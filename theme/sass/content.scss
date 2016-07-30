@@ -5,7 +5,7 @@
 
 #content {
     max-width: 850px;
-    min-width: 500px;
+    min-width: 200px;
     margin: auto;
     padding: 0 1em;
 }
@@ -203,7 +203,7 @@
         }
 
         &.mono {
-            font-family: Consolas, monospace;
+            font-family: Microsoft Yahei Mono, Consolas, monospace;
         }
     }
 
@@ -234,17 +234,12 @@
         white-space: pre-wrap;
         display: inline;
         line-height: 2em;
-        font-family: Consolas, monospace;
+        font-family: Microsoft Yahei Mono, Consolas, monospace;
         padding: 5px;
         margin: 0px 3px;
         border: 1px solid $post_line_code_border_color;
         border-radius: 3px;
     }
-
-    .same-height {
-        line-height: 1.5em;
-    }
-
 
     img {
         max-width: 100%;
@@ -253,7 +248,7 @@
 
         &:not(.nz) {
             &:hover {
-                border: 1px solid #f66;
+                border: 1px solid #ff608d;
                 cursor: zoom-in;
             }
         }
@@ -297,7 +292,7 @@
             tr {
                 line-height: 1.1em;
                 vertical-align: top;
-                font-family: Consolas, monospace;
+                font-family: Microsoft Yahei Mono, Consolas, monospace;
             }
 
             td.gutter {
@@ -323,7 +318,7 @@
     div.code-wrap pre.code, pre.code, pre.shell {
         overflow: auto !important;
         white-space: pre;
-        font-family: Consolas, monospace;
+        font-family: Microsoft Yahei Mono, Consolas, monospace;
         padding: 0.5em !important;
         border-radius: 2px;
         background-color: $post_code_bg;
@@ -356,7 +351,7 @@
 
         a {
             color: inherit;
-            font-family: Consolas,"Microsoft YaHei";
+            font-family: Microsoft Yahei Mono, Consolas,"Microsoft YaHei";
             font-size: 12px;
         }
 

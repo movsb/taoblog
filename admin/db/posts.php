@@ -251,7 +251,7 @@ class TB_Posts {
 			date,modified,title,content,slug,type,taxonomy,status,comment_status,metas)
 			VALUES (?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
-			if($stmt->bind_param('ssssssisiss',
+			if($stmt->bind_param('ssssssisis',
 				$arg['date_gmt'], $arg['modified_gmt'],
 				$arg['title'], $arg['content'],$arg['slug'],
 				$arg['type'], $arg['taxonomy'], $arg['status'],

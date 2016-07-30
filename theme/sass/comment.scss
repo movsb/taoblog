@@ -62,7 +62,7 @@
 
         .comment-content {
             margin-top: 0;
-            font-family: Consolas, "Microsoft YaHei";
+            font-family: Microsoft Yahei Mono, Consolas, "Microsoft YaHei";
             white-space: pre-wrap;
             overflow: auto;
             max-height: 400px;
@@ -265,7 +265,7 @@
 #comment-form .comment-content textarea,
 #comment-form-div .comment-content label {
 	color: #500000;
-	font-family: Consolas, "Microsoft YaHei";
+	font-family: Mocrosoft Yahei Mono, Consolas, "Microsoft YaHei";
 	padding-top: 7px;
 	background-color: transparent;
 }
@@ -333,7 +333,7 @@
 	
 #comment-content-2 {
 	color: $comment_content_2_fg;
-	font-family: Consolas,"Microsoft YaHei";
+	font-family: Microsoft Yahei Mono, Consolas,"Microsoft YaHei";
 	padding-top: 7px;
 	background-color: $comment_content_2_bg;
 	border: 2px dashed $border_color;
