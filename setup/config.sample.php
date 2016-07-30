@@ -10,5 +10,3 @@ define('DB_PASSWORD',       'taoblog');                 /* 数据库密码 */
 define('PHPMAILER_EMAIL',   'email');                   /* QQ域名邮箱的邮件地址及用户名 */
 define('PHPMAILER_PASSWD',  'pass');
 
-define('REVISION_ROOT',     'https://github.com/<user>/<repo>/commits/master'); /* 文章版本库根目录 */
-

@@ -210,23 +210,7 @@ class TB_Taxonomies {
 		return $tbdb->query($sql);
 	}
 
-	public function link_from_slug(&$ns) {
-		$name = $ns['name'];
-		$slug = $ns['slug'];
-
-		$links = [];
-
-		foreach($name as $i => $n) {
-			$s = '/';
-			for($x=0; $x<=$i; $x++)
-				$s .= $slug[$x].'/';
-
-			$links[] = $s;
-		}
-
-		return $links;
-	}
-
+    // TODO 删除
 	public function tree_from_id($id) {
 		global $tbdb;
 

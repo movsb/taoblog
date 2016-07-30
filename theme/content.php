@@ -13,7 +13,7 @@
         <?php if($the->type == 'post') { ?>
         <div class="meta clearfix">
             <span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name"><?php echo $tbopt->get('author'); ?></span></span>
-            发表于：<?php echo the_meta_date();?>，分类：<?php echo the_meta_category();?>，标签：<span itemprop="keywords"><?php echo the_meta_tag();?></span>
+            发表于：<?php echo the_meta_date();?>，标签：<span itemprop="keywords"><?php echo the_meta_tag();?></span>
         </div>
         <?php } ?>
 	</div><!-- end entry -->

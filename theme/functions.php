@@ -39,32 +39,12 @@ function theme_gen_pagination() {
 <?php
 }
 
-function the_meta_category() {
-	global $tbtax;
-	global $the;
-
-	$taxes = $tbtax->tree_from_id($the->taxonomy);
-	$links = $tbtax->link_from_slug($taxes);
-
-	$link_anchors = [];
-	foreach($taxes['name'] as $i=>$n) {
-		$link_anchors[] = '<a target="_blank" href="'.$links[$i].'">'.$n.'</a>';
-	}
-
-	return '<span class="value">'.implode(', ', $link_anchors).'</span>';
-}
-
 function the_meta_date() {
 	global $the;
 
 	$dd = preg_split('/-/', preg_split('/ /', $the->date)[0]);;
-
-	$link  = '<a target="_blank" href="/date/'.$dd[0].'/">'.$dd[0].'</a>年';
-	$link .= '<a target="_blank" href="/date/'.$dd[0].'/'.$dd[1].'/">'.$dd[1].'</a>月';
-	$link .= $dd[2].'日';
-    $link .= '（<a href="'.REVISION_ROOT.'/'.$the->id.(strpos($the->content, '<img')!==false?'/index':'').'.html">历史版本</a>）';
-
-	return '<span class="value">'.$link.'</span>';
+    $tt = sprintf('%d年%d月%d日', $dd[0], $dd[1], $dd[2]);
+	return '<span class="value">'.$tt.'</span>';
 }
 
 function the_meta_tag() {
@@ -74,10 +54,10 @@ function the_meta_tag() {
 	$as = [];
 
 	foreach($tags as &$t) {
-		$as[] = '<a target="_blank" href="/tags/'.urlencode($t).'">'.$t.'</a>';
+		$as[] = '<a href="/tags/'.urlencode($t).'">'.htmlspecialchars($t).'</a>';
 	}
 
-    $ts = join(', ', $as);
+    $ts = join(' · ', $as);
     
     return '<span class="value">'.($ts ? $ts : "（没有）").'</span>';
 }
