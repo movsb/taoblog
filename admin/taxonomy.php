@@ -107,7 +107,7 @@ function new_tax_html() { ?>
 		<tr id="tax-list-0" style="display: none;"><td></td><td></td></tr>
 	</tbody>
 </table>
-<script src="ta.js">
+<script src="scripts/taxonomy.js">
 </script>
 </div>
 <?php }
