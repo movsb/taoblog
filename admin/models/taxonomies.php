@@ -5,7 +5,7 @@ class TB_Taxonomies {
 
 	public function get($id=0) {
 		global $tbdb;
-		
+
 		$sql = "SELECT * FROM taxonomies";
 		if($id) {
 			$id = (int)$id;
@@ -35,7 +35,7 @@ class TB_Taxonomies {
 	public function get_hierarchically() {
 		if(($taxes = $this->get()) === false)
 			return false;
-		
+
 		$t = new stdClass;
 		$t = $this->_get_hiera_loop($t, 0, $taxes);
 
@@ -54,13 +54,13 @@ class TB_Taxonomies {
 			$sons[] = $r->id;
 
 		return $sons;
-	}		
+	}
 
 	public function get_parents_ids($id) {
 		global $tbdb;
 
 		if(!$this->has($id)) return false;
-		
+
 		$parents = [];
 
 		while($id) {
@@ -95,7 +95,7 @@ class TB_Taxonomies {
 
 	public function add(&$arg){
 		global $tbdb;
-		
+
 		if(!$arg['name'] || preg_match('# |	|\'|"|;|/|\\\\#', $arg['name'])) {
 			$this->error = '分类名不符合规范！';
 			return false;
@@ -119,9 +119,9 @@ class TB_Taxonomies {
 		$arg['ancestor'] = $this->get_ancestor($arg['parent'], true);
 
 		$sql = "INSERT INTO taxonomies (name,slug,parent,ancestor) VALUES (?,?,?,?)";
-		if(($stmt = $tbdb->prepare($sql)) 
+		if(($stmt = $tbdb->prepare($sql))
 			&& $stmt->bind_param(
-				'ssii', 
+				'ssii',
 				$arg['name'],
 				$arg['slug'],
 				$arg['parent'],
@@ -147,7 +147,7 @@ class TB_Taxonomies {
 		}
 
 		$sql = "UPDATE taxonomies SET name=?,slug=? WHERE id=? LIMIT 1";
-		if(($stmt = $tbdb->prepare($sql)) 
+		if(($stmt = $tbdb->prepare($sql))
 			&& $stmt->bind_param('ssi',
 				$arg['name'],
 				$arg['slug'],
@@ -215,7 +215,7 @@ class TB_Taxonomies {
 		global $tbdb;
 
 		if(!$this->has($id)) return false;
-		
+
 		$slug = [];
 		$name = [];
 		while($id) {
@@ -237,7 +237,7 @@ class TB_Taxonomies {
 
 		$ts = preg_split('~/~', $tree, -1, PREG_SPLIT_NO_EMPTY);
 		if(count($ts)<1) return false;
-		
+
 		$sql = "SELECT id FROM taxonomies WHERE slug='".$tbdb->real_escape_string($ts[count($ts)-1])."'";
 		if(count($ts) == 1) {
 			$sql .= " AND parent=0 LIMIT 1";
@@ -279,7 +279,7 @@ class TB_Taxonomies {
 
 		if((int)$id == 0) return 0;
 		$id = (int)$id;
-		
+
 		$sql = "SELECT ancestor FROM taxonomies WHERE id=$id LIMIT 1";
 		$rows = $tbdb->query($sql);
 
@@ -296,7 +296,7 @@ class TB_Taxonomies {
 		$ancestor = $rows->fetch_object()->ancestor;
 		return $ancestor
 			? $ancestor
-			: ($return_this_id_if_zero 
+			: ($return_this_id_if_zero
 				? $id
 				: 0
 				)

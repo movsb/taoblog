@@ -13,17 +13,17 @@ require_once('login-auth.php');
 require_once('hooks.php');
 require_once('plugin.php');
 
-require_once('db/dbbase.php');
-require_once('db/options.php');
-require_once('db/posts.php');
-require_once('db/taxonomies.php');
-require_once('db/comments.php');
-require_once('db/tags.php');
-require_once('db/shuoshuo.php');
+require_once('models/base.php');
+require_once('models/options.php');
+require_once('models/posts.php');
+require_once('models/taxonomies.php');
+require_once('models/comments.php');
+require_once('models/tags.php');
+require_once('models/shuoshuo.php');
 
 require_once('tbmain.php');
 
-require_once('db-hooks.php');
+require_once('models-hooks.php');
 require_once('global-hooks.php');
 
 require_once('query.php');

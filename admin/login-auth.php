@@ -2,11 +2,11 @@
 
 require_once(dirname(__FILE__).'/../setup/config.php');
 require_once('die.php');
-require_once('db/dbbase.php');
+require_once('models/base.php');
 
 // 用于登录页面的验证
 function login_auth_passwd($arg = []) {
-	require_once('db/options.php');
+	require_once('models/options.php');
 	$opt = new TB_Options;
 
     $saved_login = explode(',', $opt->get('login'));
@@ -29,7 +29,7 @@ function login_auth_passwd($arg = []) {
 
 // 用于通过cookie认证客户端
 function login_auth($redirect=false) {
-	require_once('db/options.php');
+	require_once('models/options.php');
 
 	$opt = new TB_Options;
 

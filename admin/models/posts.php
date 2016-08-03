@@ -80,8 +80,8 @@ class TB_Posts {
 			$modified = '';
 		}
 
-		if($arg['date'] && !$tbdate->is_valid_mysql_datetime($arg['date']) 
-			|| $modified && !$tbdate->is_valid_mysql_datetime($modified)) 
+		if($arg['date'] && !$tbdate->is_valid_mysql_datetime($arg['date'])
+			|| $modified && !$tbdate->is_valid_mysql_datetime($modified))
 		{
 			$this->error = '无效的时间格式!';
 			return false;
@@ -106,7 +106,7 @@ class TB_Posts {
 						$stmt->close();
 
 						if($r) $succeed = true;;
-					} 
+					}
 				}
 			} else {
 				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
@@ -120,7 +120,7 @@ class TB_Posts {
 						$stmt->close();
 
 						if($r) $succeed = true;;
-					} 
+					}
 				}
 			}
 		} else {
@@ -135,7 +135,7 @@ class TB_Posts {
 						$stmt->close();
 
 						if($r) $succeed = true;;
-					} 
+					}
 				}
 			} else {
 				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
@@ -148,7 +148,7 @@ class TB_Posts {
 						$stmt->close();
 
 						if($r) $succeed = true;;
-					} 
+					}
 				}
 			}
 		}
@@ -233,8 +233,8 @@ class TB_Posts {
 		}
 
 		if(!$arg['modified']) {
-			$arg['modified'] = $arg['date'] 
-			? $arg['date'] 
+			$arg['modified'] = $arg['date']
+			? $arg['date']
 			: $tbdate->mysql_datetime_local();
 		}
 
@@ -266,7 +266,7 @@ class TB_Posts {
 					$tbtag->update_post_tags($iid, $arg['tags']);
 					return $iid;
 				}
-			} 
+			}
 		}
 
 		$this->error = $stmt->error;
@@ -404,7 +404,7 @@ class TB_Posts {
         $sql['from']    = 'posts';
         $sql['where']   = [];
         $sql['where'][] = 'id=' . intval($arg['id']);
-        
+
 		if($arg['modified']) {
 			$sql['where'][] = "modified>'".$arg['modified']."'";
 		}
@@ -428,10 +428,10 @@ class TB_Posts {
 	private function query_by_tags(&$arg) {
 		global $tbdb;
 		global $tbquery;
-		
+
 		$tags = $tbdb->real_escape_string($arg['tags']);
 		$tbquery->tags = $tags;
-		
+
         $sql = array();
         $sql['select']  = 'posts.*';
         $sql['from']    = 'posts,post_tags,tags';
@@ -506,7 +506,7 @@ class TB_Posts {
 
 		return $p;
 	}
-	
+
 	private function query_by_slug($arg){
 		global $tbdb;
 		global $tbtax;
@@ -553,7 +553,7 @@ class TB_Posts {
         $pid = $this->get_the_last_parents_id($parents);
 
         if($pid === false) return false;
-        
+
 		$slug = $arg['page'];
 
         $sql = array();
@@ -625,7 +625,7 @@ class TB_Posts {
         $sql = make_query_string($sql);
 
 		$rows = $tbdb->query($sql);
-		if(!$rows) return false; 
+		if(!$rows) return false;
 		$p = [];
 		while($r = $rows->fetch_object()){
 			$p[] = $r;
@@ -773,7 +773,7 @@ class TB_Posts {
 		$ids = [];
 		$rows = $tbdb->query($sql);
 		if(!$rows) return $ids;
-		
+
 		while($r = $rows->fetch_object())
 			$ids[] = $r->id;
 
@@ -793,7 +793,7 @@ class TB_Posts {
 			return $posts;
 
 		$in_tags = join(',', $tagids);
-		
+
         $sql = array();
         $sql['select']  = 'p.id,p.title,count(p.id) as relevance';
         $sql['from']    = 'posts p, post_tags pt';
@@ -1001,7 +1001,7 @@ class TB_Posts {
     // query_by_tags 改的
 	public function get_tag_posts($tag) {
 		global $tbdb;
-		
+
 		$tag = $tbdb->real_escape_string($tag);
 
         $sql = array();
@@ -1029,7 +1029,7 @@ class TB_Posts {
 
     public function get_count_of_type($type) {
         global $tbdb;
-    
+
         $type = $tbdb->real_escape_string($type);
 
         $sql = array();

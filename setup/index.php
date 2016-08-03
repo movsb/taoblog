@@ -5,7 +5,7 @@ die('Setup: Silence is golden.');
 
 require_once(dirname(__FILE__).'/../admin/die.php');
 require_once('config.php');
-require_once(dirname(__FILE__).'/../admin/db/dbbase.php');
+require_once(dirname(__FILE__).'/../admin/models/base.php');
 
 $my = $tbdb;
 

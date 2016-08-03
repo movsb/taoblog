@@ -34,7 +34,7 @@ class TB_Options {
 		}
 
 		return false;
-	}		
+	}
 
 	public function has($name){
 		global $tbdb;

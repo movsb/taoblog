@@ -13,7 +13,7 @@ class TB_Comments {
 		$def = [
 			'post_id'		=> false,
 			'author'		=> '',
-			'email'			=> '', 
+			'email'			=> '',
 			'url'			=> '',
 			'ip'			=> $_SERVER['REMOTE_ADDR'],
 			'date'			=> $tbdate->mysql_datetime_local(),
@@ -29,7 +29,7 @@ class TB_Comments {
 		foreach(['author', 'email', 'url', 'content'] as &$f)
 			$arg[$f] = trim($arg[$f]);
 
-		if(!$arg['post_id']) {			$this->error = 'post_id 不能少！';	return false; } 
+		if(!$arg['post_id']) {			$this->error = 'post_id 不能少！';	return false; }
 
 		if(!$arg['author'])	{			$this->error = 'author 不能为空';	return false; }
 		if(preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
@@ -49,7 +49,7 @@ class TB_Comments {
 
 		if(!$arg['content']) {
 			$this->error = '评论内容不能为空!';
-			return false; 
+			return false;
 		}
 
 		if(!$logged_in) {
@@ -88,7 +88,7 @@ class TB_Comments {
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('isssssssii',
 				$arg['post_id'],	$arg['author'],		$arg['email'],
-				$arg['url'],		$arg['ip'],			$arg['date_gmt'], 
+				$arg['url'],		$arg['ip'],			$arg['date_gmt'],
 				$arg['content'],	$arg['status'],
 				$arg['parent'],		$arg['ancestor']))
 			{
@@ -123,7 +123,7 @@ class TB_Comments {
 		}
 
 		$result->free();
-		
+
 		return $children;
 	}
 
@@ -207,7 +207,7 @@ class TB_Comments {
 		$ancestor = $rows->fetch_object()->ancestor;
 		return $ancestor
 			? $ancestor
-			: ($return_this_id_if_zero 
+			: ($return_this_id_if_zero
 				? $id
 				: 0
 				)
