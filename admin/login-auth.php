@@ -1,7 +1,7 @@
 <?php
 
 require_once(dirname(__FILE__).'/../setup/config.php');
-require_once('die.php');
+require_once('utils/die.php');
 require_once('models/base.php');
 
 // 用于登录页面的验证

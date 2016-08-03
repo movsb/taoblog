@@ -3,7 +3,7 @@
 // 请在安装成功之后取消注释下面一条语句
 die('Setup: Silence is golden.');
 
-require_once(dirname(__FILE__).'/../admin/die.php');
+require_once(dirname(__FILE__).'/../admin/utils/die.php');
 require_once('config.php');
 require_once(dirname(__FILE__).'/../admin/models/base.php');
 

@@ -4,13 +4,13 @@ define('TB_VERSION', '1.0.3');
 
 require_once(dirname(__FILE__).'/../setup/config.php');
 
-require_once('die.php');
-require_once('utils.php');
-require_once('datetime.php');
+require_once('utils/die.php');
+require_once('utils/utils.php');
+require_once('utils/datetime.php');
 
 require_once('login-auth.php');
 
-require_once('hooks.php');
+require_once('utils/hooks.php');
 require_once('plugin.php');
 
 require_once('models/base.php');
