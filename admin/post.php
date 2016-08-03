@@ -454,7 +454,6 @@ if(!login_auth()) {
 }
 
 require_once('load.php');
-require_once('admin-hooks-post.php');
 
 function post_new_post() {
 	global $tbpost;

@@ -8,7 +8,6 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') :
 else :
 
 require_once('load.php');
-require_once('admin-hooks-comment.php');
 
 function  cmt_header_json() {
 	header('HTTP/1.1 200 Not OK');

@@ -23,8 +23,8 @@ require_once('models/shuoshuo.php');
 
 require_once('tbmain.php');
 
-require_once('models-hooks.php');
-require_once('global-hooks.php');
+require_once('hooks/comment.php');
+require_once('hooks/post.php');
 
 require_once('query.php');
 require_once('canonical.php');

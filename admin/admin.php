@@ -6,7 +6,7 @@ login_auth(true);
 
 require_once('load.php');
 
-require_once('admin-hooks.php');
+require_once('hooks/admin.php');
 
 function the_header() {
 	header('HTTP/1.1 200 OK');
