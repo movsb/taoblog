@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * 该程序用来获取所有公开的文章，按日期排序，独立使用
+ * 临时使用，不久的将来（一定）会删除掉
+ *
+ */
+
 require('admin/load.php');
 
 function get_all_posts() {
@@ -32,5 +38,4 @@ function get_all_posts() {
 </body>
 </html>
 <?php
-
 

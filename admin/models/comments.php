@@ -1,8 +1,24 @@
 <?php
 
-class TB_Comments {
-	public $error = '';
+/*
+ * 数据库评论模块
+ *
+ * 该模块用来管理数据库评论表
+ *
+ */
 
+class TB_Comments {
+	public $error = ''; // 用来保存操作过程中的错误消息
+
+    /*
+     * 向表中插入一条评论内容
+     *
+     * @param array &$arg 评论内容数组
+     *
+     * @return  如果插入成功，则返回数值型的键ID值。
+     *          否则返回 false，$this->error 可以取得错误原因。
+     *
+     */
 	public function insert(&$arg){
 		global $tbdb;
 		global $tbpost;
@@ -20,25 +36,27 @@ class TB_Comments {
 			'content'		=> '',
 			'status'		=> 'public',
 			'parent'		=> false,
-			//'ancestor'	=> false,
 		];
 
 		$arg = tb_parse_args($def, $arg);
 
-		// TRIM
+        /* < 表单数据验证与过滤 */
+
 		foreach(['author', 'email', 'url', 'content'] as &$f)
 			$arg[$f] = trim($arg[$f]);
 
-		if(!$arg['post_id']) {			$this->error = 'post_id 不能少！';	return false; }
+        if(!$arg['post_id']) {
+            $this->error = '文章编号不能少！';
+            return false;
+        }
 
-		if(!$arg['author'])	{			$this->error = 'author 不能为空';	return false; }
-		if(preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
-			$this->error = '昵称不应包含特殊字符。';
+		if(!$arg['author'] || preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
+			$this->error = '昵称不能为空或包含特殊字符。';
 			return false;
 		}
 
 		if(filter_var($arg['email'], FILTER_VALIDATE_EMAIL) === false) {
-			$this->error = 'Email 不规范！';
+			$this->error = '邮箱地址不规范！';
 			return false;
 		}
 
@@ -52,6 +70,8 @@ class TB_Comments {
 			return false;
 		}
 
+        // 未登录时不能随意填写昵称或邮箱地址（以防可能的冒充作者
+        // 这两个变量的值保存在设置表中，细节请参考 /doc/设置字段
 		if(!$logged_in) {
 			$not_allowed_authors = explode(',', $tbopt->get('not_allowed_authors').','.$tbopt->get('nickname'));
 			foreach($not_allowed_authors as &$author) {
@@ -75,22 +95,25 @@ class TB_Comments {
 			return false;
 		}
 
-		// ancestor字段只能系统设置
+		// 评论的祖先ancestor字段只能系统设置
 		if(($arg['ancestor'] = $this->get_ancestor((int)$arg['parent'], true)) === false){
 			return false;
 		}
 
 		$arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
 
+        /* > 表单数据验证与过滤 */
+
+        // 向数据库中写入评论
 		$sql = "INSERT INTO comments (
 			post_id,author,email,url,ip,date,content,status,parent,ancestor)
 			VALUES (?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
 			if($stmt->bind_param('isssssssii',
-				$arg['post_id'],	$arg['author'],		$arg['email'],
-				$arg['url'],		$arg['ip'],			$arg['date_gmt'],
-				$arg['content'],	$arg['status'],
-				$arg['parent'],		$arg['ancestor']))
+                $arg['post_id'],    $arg['author'], $arg['email'],
+                $arg['url'],        $arg['ip'],     $arg['date_gmt'],
+                $arg['content'],    $arg['status'],
+                $arg['parent'],     $arg['ancestor']))
 			{
 				$r = $stmt->execute();
 				$stmt->close();
@@ -106,6 +129,15 @@ class TB_Comments {
 		return false;
 	}
 
+    /*
+     * 取得属于某个祖先下的所有子评论
+     *
+     * @param   (int) $p 祖先评论的编号
+     *
+     * @return  成功返回子评论一维数组（即：无层次关系），失败返回 false
+     *
+     * @fixme   修正：内部失败时可能返回 false
+     */
 	public function &get_children($p){
 		global $tbdb;
 		global $tbdate;
@@ -127,6 +159,24 @@ class TB_Comments {
 		return $children;
 	}
 
+    /*
+     * 获取某条特定的评论或某篇文章的评论
+     *
+     * 指定评论编号时，以评论编号为准。否则以文章编号为准。两者不同时使用
+     * 会同时获取每条评论的所有子评论，无层次关系，需要自行处理层次关系
+     *
+     * @param   array $arg
+     *      可能使用的字段：
+     *          id      某个特定编号的评论
+     *          offset  指定获取评论的偏移
+     *          count   指定要获取多少个一级评论
+     *          post_id 指定要获取哪篇文章的评论
+     *          order   结果编号排序：asc 为 升序，其它为降序
+     *
+     * @return  成功返回获取到的评论，失败返回 false
+     *
+     * @fixme   根据函数返回值类型，不能返回 false
+     */
 	public function &get(&$arg=[]) {
 		global $tbdb;
 		global $tbdate;
@@ -185,6 +235,15 @@ class TB_Comments {
 		return $cmts;
 	}
 
+    /*
+     * 获取某条评论的祖先评论的编号
+     *
+     * @param   (int)   $id 评论编号
+     * @param   (bool)  $return_this_id_if_zero
+     *      如果祖先不存在是返回 $id 还是 0。
+     *
+     * @return  成功返回编号，失败返回 false
+     */
 	public function get_ancestor($id, $return_this_id_if_zero=false) {
 		global $tbdb;
 
@@ -214,6 +273,7 @@ class TB_Comments {
 			;
 	}
 
+    /* 内部使用，暂不说明 */
 	public function &get_vars($fields, $where) {
 		global $tbdb;
 
@@ -230,6 +290,15 @@ class TB_Comments {
 		return $r;
 	}
 
+    /*
+     * 获取近期评论（无层次关系）
+     *
+     * 条数为 10 条，暂时写死了
+     *
+     * @return  近期评论数组。若失败，返回空数组。
+     *
+     * @fixme   把默认获取条数写进数据库设置中
+     */
 	public function &get_recent_comments() {
 		global $tbdb;
 
@@ -245,6 +314,11 @@ class TB_Comments {
 		return $cmts;
 	}
 
+    /*
+     * 获取所有文章（包括未公开发表的）的评论总数
+     *
+     * @return  若成功，返回评论总数。若失败，返回 0。
+     */
     public function get_count_of_comments() {
         global $tbdb;
 
