@@ -43,7 +43,7 @@ document.write(function(){/*
 					<div class="field">
 						<label>邮箱</label>
 						<input type="text" name="email"/>
-						<span class="needed">必填(不公开)</span>
+						<span class="needed">必填(<span title="邮箱仅用于展示与其关联的 gravatar 头像与通知评论回复。邮箱地址以 MD5 的形式公开，博主不会以其它任何形式使用您的邮箱地址。">公开?</span>)</span>
 					</div>
 					<div class="field">
 						<label>网址</label>
