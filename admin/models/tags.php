@@ -118,9 +118,9 @@ class TB_Tags {
      *
      * @param int $id       文章编号
      *
-     * @param array $tags   标签列表（逗号分隔）
+     * @param string $tags  标签列表（逗号分隔）
      *
-     * @return 无返回值
+     * @return 始终返回true
      */
     public function update_post_tags($id, $tags) {
         global $tbdb;
@@ -162,6 +162,8 @@ class TB_Tags {
 
             $this->insert_post_tag($id, $tid);
         }
+
+        return true;
     }
 
     /*

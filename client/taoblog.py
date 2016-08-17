@@ -41,7 +41,9 @@ class TaoBlog:
 
     def help(self):
         text = ('1. 更新文章到远程\n'
-                '2. 更新文章到本地'
+                '2. 更新文章到本地\n'
+                '3. 获取文章标签列表\n'
+                '4. 更新文章标签列表'
                 )
         print(text)
 
@@ -79,11 +81,23 @@ class TaoBlog:
                 content = self.get_post_content(id)
                 r = self.post('post.update', data={'id': id, 'content': content})
                 print(r.text)
+
             elif n == "2":
                 id = input("文章ID: ")
                 r = self.post('post.get', data={'id': id})
                 r = json.loads(r.text)
                 self.save_post_content(id, r["data"]["content"])
+
+            elif n == "3":
+                id = input("文章ID: ")
+                r = self.post('tag.get', data={'pid': id})
+                print(r.text)
+
+            elif n == "4":
+                id = input("文章ID: ")
+                tags = input("新的标签列表: ")
+                r = self.post('tag.update', data={'pid': id, 'tags': tags})
+                print(r.text)
 
             pass
         pass
