@@ -172,7 +172,7 @@ function postmetas_head() {
 		$keywords_post = $metas->post ? $metas->post->keywords : '';
 		if($keywords_post) $keywords = $keywords_post . $keywords;
 	}
-	echo '	<meta name="keywords" content="',$keywords,',',$tbopt->get('blog_name'),'" />'."\n";
+	echo '	<meta name="keywords" content="',htmlspecialchars($keywords),',',htmlspecialchars($tbopt->get('blog_name')),'" />'."\n";
 
 	if($ispost) {
 		// 依次输出header

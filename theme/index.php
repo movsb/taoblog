@@ -22,8 +22,8 @@ function the_recent_shuoshuos() {
         $cmts = $tbsscmt->get($ss->id);
         foreach($cmts as &$cmt) {
             echo '<li>';
-            echo '<span class="author">',htmlspecialchars($cmt->author),'</span>: ';
-            echo '<span class="content">',htmlspecialchars($cmt->content),'</span>';
+            echo '<span class="author">',$cmt->author,'</span>: ';
+            echo '<span class="content">',$cmt->content,'</span>';
             echo '</li>';
         }
         echo '</ul>';
@@ -112,7 +112,7 @@ function the_recent_posts() {
 		echo '<ul style="list-style: none;">';
 		foreach($posts as &$p) {
 			$link = the_link($p, false);
-			echo '<li><a href="'.$link.'">',$p->title,'</a></li>',"\n";
+			echo '<li><a href="'.$link.'">',htmlspecialchars($p->title),'</a></li>',"\n";
 		}
 		echo '</ul>';
 	}
@@ -129,7 +129,7 @@ function the_recent_comments() {
 		foreach($cmts as $c) {
 			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
 			echo '<li style="margin-bottom: 8px;"><b>',$c->author,'</b>: ',htmlspecialchars($c->content),
-				' --- 《','<a href="/',$c->post_id,'/">',$title,'</a>》','</li>',PHP_EOL;
+				' --- 《','<a href="/',$c->post_id,'/">',htmlspecialchars($title),'</a>》','</li>',PHP_EOL;
 		}
 		echo '</ul>';
 	}

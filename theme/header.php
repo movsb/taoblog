@@ -14,25 +14,25 @@
 		} else if(!$tbquery->count) {
 			echo '404';
 		} else if($tbquery->is_singular()) {
-			echo $the->title;
+			echo htmlspecialchars($the->title);
 		} else if($tbquery->is_category()) {
 			echo "第{$tbquery->pageno}页 - ";
 			$names = $tbquery->category['name'];
 			$names = array_reverse($names);
-			echo implode(' - ', $names);
+			echo htmlspecialchars(implode(' - ', $names));
 		} else if($tbquery->is_date()) {
 			echo "第{$tbquery->pageno}页 - ";
 			if($tbquery->date->yy >= 1970) echo $tbquery->date->yy,'年';
 			if($tbquery->date->mm >= 1 && $tbquery->date->mm <= 12) echo $tbquery->date->mm,'月';
 		} else if($tbquery->is_tag()) {
 			echo "第{$tbquery->pageno}页 - ";
-			echo $tbquery->tags;
+			echo htmlspecialchars($tbquery->tags);
 		}
 
-		echo ' - ',$blog_name;
+		echo ' - ', htmlspecialchars($blog_name);
 	?></title>
 	<?php if($tbquery->is_home()) {
-		echo '<meta name="keywords" content="', $tbopt->get('keywords'), '" />', PHP_EOL;
+		echo '<meta name="keywords" content="', htmlspecialchars($tbopt->get('keywords')), '" />', PHP_EOL;
 } ?>
 	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo '/rss';?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
@@ -55,7 +55,7 @@
     <!-- 头部 -->
 	<header id="header">
         <div class="content">
-            <h2 class="sitename"><a href="/"><?php echo $blog_name; ?></a></h2>
+            <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
             <p class="motto">不忘初心，方得始终。</p>
             <div class="nav">
                 <ol>

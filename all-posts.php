@@ -17,7 +17,7 @@ function get_all_posts() {
 
 	if($results) {
 		while($row = $results->fetch_object()) {
-			echo '<li><a target="_blank" href="/',$row->id,'/">',$row->title,'</a></li>',"\n";
+			echo '<li><a target="_blank" href="/',$row->id,'/">',htmlspecialchars($row->title),'</a></li>',"\n";
 		}
 	}
 }
@@ -26,7 +26,7 @@ function get_all_posts() {
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>所有文章 - <?php echo $tbopt->get('blog_name'); ?></title>
+<title>所有文章 - <?php echo htmlspecialchars($tbopt->get('blog_name')); ?></title>
 </head>
 <body>
 <h1>所有文章：</h1>

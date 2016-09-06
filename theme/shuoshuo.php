@@ -20,7 +20,7 @@ function get_all_shuoshuos() {
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>所有说说 - <?php echo $tbopt->get('blog_name'); ?></title>
+<title>所有说说 - <?php echo htmlspecialchars($tbopt->get('blog_name')); ?></title>
 </head>
 <body>
 <h1>所有说说：</h1>

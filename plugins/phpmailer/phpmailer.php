@@ -44,16 +44,19 @@ function pm_notify_admin(&$arg) {
     global $tbopt;
     global $tbmain;
 
+    $title_encoded = htmlspecialchars($arg->post_title);
+    $content_encoded = htmlspecialchars($arg->content);
+
     $subject = '[新博文评论] '.$arg->post_title;
     $link = $tbmain->home.'/?p='.$arg->post_id.'#comments';
 
-    $body = "<b>您的博文“{$arg->post_title}”有新的评论啦！</b><br><br>";
+    $body = "<b>您的博文“{$title_encoded}”有新的评论啦！</b><br><br>";
     $body .= "<b>链接：</b>{$link}<br>";
     $body .= "<b>作者：</b>{$arg->author}<br>";
     $body .= "<b>邮箱：</b>{$arg->email}<br>";
     $body .= "<b>网址：</b>{$arg->url}<br>";
     $body .= "<b>时间：</b>{$arg->date}<br>";
-    $body .= "<b>内容：</b>{$arg->content}<br>";
+    $body .= "<b>内容：</b>{$content_encoded}<br>";
 
     return pm_mail($tbopt->get('email'), $tbopt->get('nickname'), $subject, $body);
 }
@@ -62,14 +65,17 @@ function pm_notify_user(&$arg) {
     global $tbopt;
     global $tbmain;
 
+    $title_encoded = htmlspecialchars($arg->post_title);
+    $content_encoded = htmlspecialchars($arg->content);
+
     $subject = '[回复评论] '.$arg->post_title;
     $link = $tbmain->home.'/?p='.$arg->post_id.'#comments';
 
-    $body = "<b>您在博文“{$arg->post_title}”的评论有新的回复啦！</b><br><br>";
+    $body = "<b>您在博文“{$title_encoded}”的评论有新的回复啦！</b><br><br>";
     $body .= "<b>链接：</b>{$link}<br>";
     $body .= "<b>作者：</b>{$arg->author}<br>";
     $body .= "<b>时间：</b>{$arg->date}<br>";
-    $body .= "<b>内容：</b>{$arg->content}<br>";
+    $body .= "<b>内容：</b>{$content_encoded}<br>";
     $body .= "<br>该邮件为系统自动发出，请勿直接回复该邮件。<br>";
 
     foreach($arg->parents as &$pc) {

@@ -87,7 +87,7 @@ body {
         </div>
 		<div class="hidden">
 		<?php if($url) { ?>
-			<input type="hidden" name="url" value="<?php echo $url; ?>" />
+			<input type="hidden" name="url" value="<?php echo htmlspecialchars($url); ?>" />
 		<?php } ?>
 		</div>
 	</form>

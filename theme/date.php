@@ -15,7 +15,7 @@ while($tbquery->has()){
 ?>
 	<li class="item cat-item"><h2><a target="_blank" href="<?php 
 			echo the_link($the, false);
-			?>"><?php echo $the->title;?></a><span class="thedate"><?php
+			?>"><?php echo htmlspecialchars($the->title);?></a><span class="thedate"><?php
 				$dd = preg_split('/-/', preg_split('/ /', $the->date)[0]);
 
 				echo '(';

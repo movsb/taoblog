@@ -21,6 +21,7 @@ function list_all_dates() {
 function list_all_cats() {
 	global $tbtax;
     global $tbpost;
+
 	$taxes = $tbtax->get_hierarchically();
     $cat_posts = $tbpost->get_count_of_cats_all();
 
@@ -29,14 +30,20 @@ function list_all_cats() {
         $s = '';
         foreach($taxes as $t) {
             $post_count_of_cat = $cat_posts[$t->id] ?? 0;
-            $s1 = '<li data-cid="'.$t->id.'" class="folder"><i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.$t->name.'(';
+
+            $s1 = '<li data-cid="'.$t->id.'" class="folder"><i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.htmlspecialchars($t->name).'(';
             $s2 = ')</span><ul>';
             $s3 = '';
+
             $child_count_of_func = 0;
+
             if(isset($t->sons))
                 $s3 = $_tax_add($t->sons, $child_count_of_func);
+
             $s4 = '</ul></li>';
+
             $s .= $s1.$post_count_of_cat.(isset($t->sons) ? '/'.($post_count_of_cat+$child_count_of_func) : '').$s2.$s3.$s4;
+
             $count_of_func += $post_count_of_cat + $child_count_of_func;
         }
         return $s;
@@ -51,7 +58,7 @@ function list_all_tags() {
 
     echo '<ul class="roots">';
     foreach($tags as &$t) {
-        echo '<li class="tag" data-name="', urlencode($t->name),'">';
+        echo '<li class="tag" data-name="', htmlspecialchars($t->name),'">';
         echo    '<i class="tag-name fa fa-tag"></i>';
         echo    '<span class="tag-name">',htmlspecialchars($t->name),'(',$t->size,')</span>';
         echo    '<ul></ul>';

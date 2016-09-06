@@ -1,6 +1,6 @@
 <article class="post" itemscope itemtype="http://schema.org/Article">	
 	<div class="title clearfix">
-		<h1 itemprop="name"><?php echo $the->title; ?></h1>
+		<h1 itemprop="name"><?php echo htmlspecialchars($the->title); ?></h1>
 	</div>
 
     <?php if($logged_in) { ?>
@@ -12,7 +12,7 @@
 
         <?php if($the->type == 'post') { ?>
         <div class="meta clearfix">
-            <span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name"><?php echo $tbopt->get('author'); ?></span></span>
+            <span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name"><?php echo htmlspecialchars($tbopt->get('author')); ?></span></span>
             发表于：<?php echo the_meta_date();?>，标签：<span itemprop="keywords"><?php echo the_meta_tag();?></span>
         </div>
         <?php } ?>
@@ -29,7 +29,7 @@
 
 			$ps = &$tbquery->related_posts;
 			foreach($ps as $p) {
-				echo '<li><a href="/',$p->id,'/">', $p->title, '</a></li>', PHP_EOL;
+				echo '<li><a href="/',$p->id,'/">', htmlspecialchars($p->title), '</a></li>', PHP_EOL;
 			}
 
 			echo '</ol>',PHP_EOL;

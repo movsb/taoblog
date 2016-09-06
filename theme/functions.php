@@ -54,7 +54,7 @@ function the_meta_tag() {
 	$as = [];
 
 	foreach($tags as &$t) {
-		$as[] = '<a href="/tags/'.urlencode($t).'">'.htmlspecialchars($t).'</a>';
+		$as[] = '<a href="/tags/'.htmlspecialchars(urlencode($t)).'">'.htmlspecialchars($t).'</a>';
 	}
 
     $ts = join(' · ', $as);
