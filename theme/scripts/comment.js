@@ -86,10 +86,9 @@ document.write(function(){/*
 */}.toString().slice(14,-3));
 
 $('#post-id').val(_post_id);
-$('#comment-title .total').text(_comment_count);
-
 
 function Comment() {
+    this._count  =0;
     this._loaded = 0;       // 已加载评论数
     this._loaded_ch = 0;
 }
@@ -245,16 +244,27 @@ Comment.prototype.init = function() {
     });
 
     $(window).on('load', function() {
-        self.load_essential_comments();       
+        self.get_count(function() {
+            self.load_essential_comments();
+        });
     });
 };
 
 Comment.prototype.load_essential_comments = function() {
-    if(this._loaded + this._loaded_ch < _comment_count
+    if(this._loaded + this._loaded_ch < this._count
         && window.scrollY + window.innerHeight + 50 >= document.body.scrollHeight) 
     {
         this.load_comments();
     }
+};
+
+Comment.prototype.get_count = function(callback) {
+    var self = this;
+    $.post('/admin/comment.php', 'do=get-count&post_id=' + $('#post-id').val(), function(data) {
+        self._count = data.count;
+        $('#comment-title .total').text(self._count);
+        callback();
+    }, 'json');
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {
