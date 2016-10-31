@@ -293,7 +293,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	s += '<div class="comment-meta">\n';
 
 	if(cmt.is_admin) {
-		s += '<span class="author">楼主 </span>';
+		s += '<span class="author">博主 </span>';
 	} else {
 		var nickname;
 		if(typeof cmt.url == 'string' && cmt.url.length) {

@@ -121,6 +121,9 @@ function the_recent_posts() {
 function the_recent_comments() {
 	global $tbcmts;
 	global $tbpost;
+    global $tbopt;
+
+    $admin_email = $tbopt->get('email');
 
 	$cmts = $tbcmts->get_recent_comments();
 	if(is_array($cmts) && count($cmts)) {
@@ -128,7 +131,9 @@ function the_recent_comments() {
 		echo '<ul style="list-style: none;">';
 		foreach($cmts as $c) {
 			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
-			echo '<li style="margin-bottom: 8px;"><b>',$c->author,'</b>: ',htmlspecialchars($c->content),
+            $author = strcasecmp($c->email, $admin_email) == 0 ? '博主' : $c->author;
+
+			echo '<li style="margin-bottom: 8px;"><b>', htmlspecialchars($author),'</b>: ',htmlspecialchars($c->content),
 				' --- 《','<a href="/',$c->post_id,'/">',htmlspecialchars($title),'</a>》','</li>',PHP_EOL;
 		}
 		echo '</ul>';
