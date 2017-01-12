@@ -27,7 +27,6 @@ index.php	| 网站索引文件，整个博客系统从这里开始运行
 robots.txt	| 搜索引擎收录规则文件
 favicon.ico	| 网站图标
 README.md	| 此文件
-all-posts.php	| 一个独立的程序，用来列举所有的文章
 admin/		| 博客程序目录、后台目录
 api/		| 为第三方客户端提供的接口 API 实现
 client/		| 一个用 Python 写的第三方博客管理工具
@@ -35,9 +34,11 @@ docs/		| 一些文档
 plugins/	| 插件目录
 setup/		| 安装脚本目录、配置文件目录
 theme/		| 博客主题内容生成目录
+backups/    | 一些备份文件
 
 
 # 联系我
-QQ: 191035066（雨纷纷）
+QQ: 191035066（~tao ♪）
 
 EM: admin@twofei.com
+
