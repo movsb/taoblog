@@ -23,7 +23,7 @@ function admin_header($arg=[]) {
 <html>
 <head>
 	<meta charset="UTF-8" />
-	<link rel="stylesheet" type="text/css" href="styles/admin.css.php" />
+	<link rel="stylesheet" type="text/css" href="styles/admin.css" />
 	<script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 	<?php apply_hooks('admin_head'); ?>
 </head>

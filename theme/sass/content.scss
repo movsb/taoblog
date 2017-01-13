@@ -178,6 +178,7 @@
 	color: $post_content_fg;
 	text-align: justify;
     margin-bottom: 3em;
+    line-height: 2em;
 
      pre {
         box-sizing: border-box;
@@ -208,7 +209,6 @@
 
     p {
         margin: 1em 0px;
-        line-height: 1.5em;
     }
 
     a {
@@ -338,6 +338,7 @@
 		background-color: $toc_bg;
 		padding: 10px;
 		border: 1px solid $toc_border_color;
+        line-height: 1.5em;
 	}
 }
 

@@ -1,0 +1,43 @@
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+body {
+	font-family: "Microsoft YaHei";
+	padding-left: 80px;
+	background-color: #F1F1F1;
+}
+
+#admin-left {
+	background-color: black;
+	color: white;
+	position: fixed;
+	left: 0px;
+	top: 0;
+	bottom: 0px;
+	width: 80px;
+}
+
+#admin-left ul {
+	list-style: none;
+}
+
+#admin-left ul li .menu {
+	padding: 0.4em;
+}
+
+#admin-left ul li:hover {
+	background-color: gray;
+}
+
+#admin-left ul a {
+	text-decoration: none;
+	color: inherit;
+	outline: 0px none;
+}
+
+#admin-wrap {
+	padding: 1em;
+}
+
