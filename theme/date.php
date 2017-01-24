@@ -15,15 +15,7 @@ while($tbquery->has()){
 ?>
 	<li class="item cat-item"><h2><a target="_blank" href="<?php 
 			echo the_link($the, false);
-			?>"><?php echo htmlspecialchars($the->title);?></a><span class="thedate"><?php
-				$dd = preg_split('/-/', preg_split('/ /', $the->date)[0]);
-
-				echo '(';
-				if(!$tbquery->date->yy) echo $dd[0],'年';
-				if(!$tbquery->date->mm) echo $dd[1],'月';
-
-				echo $dd[2],'日)';
-			?></span></h2></li>
+			?>"><?php echo htmlspecialchars($the->title);?></a></h2></li>
 <?php
 } ?>
 	</ul>

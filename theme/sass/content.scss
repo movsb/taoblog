@@ -16,17 +16,12 @@
 
     ul.item-list {
         list-style: none;
-        line-height: 2.5em;
-        padding: 0px;
+        line-height: 1.5em;
+        padding: 0 1em;
 
         .item h2 {
             margin: 0px;
-            font-size: 1.4em;
-
-            .thedate {
-                margin-left: 0.5em;
-                font-size: 0.5em;
-            }
+            font-size: 1em;
         }
     }
 }
