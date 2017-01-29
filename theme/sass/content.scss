@@ -275,6 +275,7 @@
     /* 代码片段 */
     div.code-wrap {
         max-height: 500px;
+        max-height: 100vh;
         overflow: auto;
         margin: 0.5em 0em;
 
@@ -319,6 +320,7 @@
         line-height: 1.5em;
         margin: 1em 0px;
         max-height: 1000px;
+        max-height: 100vh;
     }
 }
 
@@ -354,6 +356,13 @@
             padding-left: 2em;
             margin-bottom: 0px;
         }
+    }
+
+    object.pdf {
+        width: 100%;
+        height: 600px;
+        height: 100vh;
+        opacity: 0.8;
     }
 }
 

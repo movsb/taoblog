@@ -52,6 +52,8 @@
 
 <body>
 <div id="wrapper">
+    <div id="blog_skin" class="<?php if($logged_in) echo 'admin';?>">
+    </div>
     <!-- 头部 -->
 	<header id="header">
         <div class="content">

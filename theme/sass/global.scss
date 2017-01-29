@@ -79,3 +79,15 @@ h6 { font-size: 1.0em; }
     }
 }
 
+#blog_skin.admin {
+    background-image: url(/monv.jpg);
+    background-size: cover;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.3;
+    z-index: -1;
+}
+
