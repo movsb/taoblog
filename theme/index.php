@@ -2,106 +2,6 @@
 global $tbopt;
 $blog_name = $tbopt->get('blog_name');
 
-function the_recent_shuoshuos() {
-    global $tbshuoshuo;
-    global $tbsscmt;
-
-    $sss = $tbshuoshuo->get_latest(10);
-    if(!is_array($sss) || count($sss) == 0) return false;
-
-    echo '<div id="shuoshuo">';
-    echo '<h2>近期说说</h2>',PHP_EOL;
-    echo '<ul>';
-    foreach($sss as &$ss) {
-        echo '<li id="shuoshuo-', $ss->id, '">';
-        echo '<p>', $ss->content, ' <span>(', substr($ss->date,5,11), ')</span>',
-            '<i title="发表评论" style="margin-left: 4px; cursor: pointer;" class="fa fa-pencil-square-o post-shuoshuo-comment" data-id="',$ss->id,'"></i>','</p>';
-        echo '<div>';
-        // 读取评论列表
-        echo '<ul class="comment-list">';
-        $cmts = $tbsscmt->get($ss->id);
-        foreach($cmts as &$cmt) {
-            echo '<li>';
-            echo '<span class="author">',$cmt->author,'</span>: ';
-            echo '<span class="content">',$cmt->content,'</span>';
-            echo '</li>';
-        }
-        echo '</ul>';
-        echo '</div>';
-        echo '</li>';
-    }
-    echo '</ul>';
-    echo '<p style="padding-left: 2em;"><a href="/shuoshuo">查看全部说说。</a></p>';
-?>
-<form id="shuoshuo-comment-form" method="post" action="/admin/shuoshuo.php" style="display: none;">
-    <input type="submit" value="评论" style="display: none;"/>
-    <input type="hidden" name="do" value="post-comment" />
-    <input type="hidden" name="sid" value="" />
-    <input type="text" name="author" required placeholder="昵称" style="width: 100px;"/>
-    <input type="text" name="content" required placeholder="内容" />
-    <input type="button" id="cancel-shuoshuo-comment" value="取消" />
-</form>
-    <script type="text/javascript">
-        $('#shuoshuo-comment-form input[name=author]').val(localStorage.getItem('shuoshuo-author'));
-
-        $('#cancel-shuoshuo-comment').on('click', function() {
-            var form = $('#shuoshuo-comment-form');
-            form.find('input[name=content]').val('');
-            form.hide();
-        });
-
-        $('.post-shuoshuo-comment').on('click', function() {
-            var sid     = $(this).attr('data-id');
-            var from    = '#shuoshuo-comment-form';
-            var to      = '#shuoshuo-'+sid+' .comment-list';
-            $(from + '> input[name=sid]').val(sid);
-            $(from).detach().appendTo(to).show();
-        });
-        
-        $('#shuoshuo-comment-form').on('submit', function() {
-            var self = $(this);
-
-            if(self.attr('data-busy') == '1')
-                return false;
-
-            self.attr('data-busy', '1');
-
-            var sid = $(this).find('input[name=sid]').val();
-
-            $.post(self.attr('action'),
-                self.serialize(),
-                function(data) {
-                    if(data.errno == 'ok') {
-                        var s = '<li>'
-                            + '<span class="author">' + data.author + '</span>: '
-                            + '<span class="content">' + data.content + '</span>'
-                            + '</li>';
-                        $('#shuoshuo-'+sid+' .comment-list').append(s);
-                        self.find('input[name=content]').val('');
-                        localStorage.setItem('shuoshuo-author', self.find('input[name=author]').val());
-                    }
-                    else {
-                        alert(data.error);
-                    }
-                },
-                'json'
-            )
-            .fail(function(xhr, sta, e) {
-                alert('未知错误！');
-            })
-            .always(function() {
-                $('#shuoshuo-comment-form').hide();
-                self.attr('data-busy','');
-            });
-
-            return false;
-        });
-    </script>
-</div>
-<!-- #shuoshuo end -->
-<?php
-}
-
 function the_recent_posts() {
 	global $tbpost;
 
@@ -142,13 +42,6 @@ function the_recent_comments() {
 
 function tb_head() {?>
 <style>
-    #shuoshuo .post-shuoshuo-comment {
-        visibility: hidden;
-    }
-    #shuoshuo li:hover .post-shuoshuo-comment {
-        visibility: visible;
-    }
-
 #main a {
   text-decoration: none;
   color: #005782; }
@@ -182,7 +75,6 @@ add_hook('tb_head', 'tb_head');
 
 require('header.php');
 
-the_recent_shuoshuos();
 the_recent_posts();
 the_recent_comments();
 

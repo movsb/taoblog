@@ -11,8 +11,6 @@
 			echo '首页';
         } else if($tbquery->is_archive()) {
             echo '文章归档';
-		} else if(!$tbquery->count) {
-			echo '404';
 		} else if($tbquery->is_singular()) {
 			echo htmlspecialchars($the->title);
 		} else if($tbquery->is_category()) {
@@ -27,7 +25,11 @@
 		} else if($tbquery->is_tag()) {
 			echo "第{$tbquery->pageno}页 - ";
 			echo htmlspecialchars($tbquery->tags);
-		}
+        } else if($tbquery->is_memory()) {
+            echo '说说';
+		} else if(!$tbquery->count) {
+			echo '404';
+        }
 
 		echo ' - ', htmlspecialchars($blog_name);
 	?></title>

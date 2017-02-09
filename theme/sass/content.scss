@@ -157,6 +157,7 @@
 @media screen and (min-width: 851px) {
 	.entry {
 		padding-bottom: 16px;
+        line-height: 2em;
 	}
 }
 
@@ -173,7 +174,6 @@
 	color: $post_content_fg;
 	text-align: justify;
     margin-bottom: 3em;
-    line-height: 2em;
 
      pre {
         box-sizing: border-box;
@@ -195,6 +195,7 @@
             padding: 1em;
             border: 1px dashed #ccc;
             background-color: $post_pre_quote_bg;
+            white-space: pre-wrap;
         }
 
         &.mono {

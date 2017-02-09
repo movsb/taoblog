@@ -21,55 +21,18 @@ class TB_Query {
 	public $is_query_modification = false;
 
 	// 查询类别
-	public function is_home() {
-		return $this->type === 'home';
-	}
-
-	public function is_post() {
-		return $this->type === 'post';
-	}
-
-	public function is_page() {
-		return $this->type === 'page';
-	}
-
-	public function is_singular() {
-		return $this->is_post()
-			|| $this->is_page();
-	}
-
-	public function is_category() {
-		return $this->type === 'category'
-			|| $this->type === 'tax';
-	}
-
-	public function is_date() {
-		return $this->type === 'date';
-	}
-
-	public function is_tag() {
-		return $this->type === 'tag';
-	}
-
-	public function is_404() {
-		return $this->type === '404';
-	}
-
-	public function is_feed() {
-		return $this->type === 'feed';
-	}
-
-	public function is_sitemap() {
-		return $this->type === 'sitemap';
-	}
-
-    public function is_archive() {
-        return $this->type === 'archive';
-    }
-
-    public function is_shuoshuo() {
-        return $this->type === 'shuoshuo';
-    }
+	public function is_home()       { return $this->type === 'home'; }
+	public function is_post()       { return $this->type === 'post'; }
+	public function is_page()       { return $this->type === 'page'; }
+	public function is_singular()   { return $this->is_post() || $this->is_page(); }
+	public function is_category()   { return $this->type === 'category' || $this->type === 'tax'; }
+	public function is_date()       { return $this->type === 'date'; }
+	public function is_tag()        { return $this->type === 'tag'; }
+	public function is_404()        { return $this->type === '404'; }
+	public function is_feed()       { return $this->type === 'feed'; }
+	public function is_sitemap()    { return $this->type === 'sitemap'; } 
+    public function is_archive()    { return $this->type === 'archive'; }
+    public function is_memory()     { return $this->type === 'memory'; }
 
     // 临时使用，待寻找更好的解决办法
     public function push_404() {
@@ -122,7 +85,7 @@ class TB_Query {
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/sitemap\.xml$'                                   => 'sitemap=1',
-            '^/shuoshuo$'                                       => 'shuoshuo=1',
+            '^/memory$'                                         => 'memory=1',
             '^/archives$'                                       => 'archives=1',
             '^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
@@ -202,8 +165,8 @@ class TB_Query {
         }
 
         // 处理说说
-        if(isset($this->internal_query['shuoshuo'])) {
-            $this->type = 'shuoshuo';
+        if(isset($this->internal_query['memory'])) {
+            $this->type = 'memory';
             return true;
         }
 

@@ -32,7 +32,7 @@ if(!$tbquery->have()
     && !$tbquery->is_home() 
     && !$tbquery->is_sitemap()
     && !$tbquery->is_archive()
-    && !$tbquery->is_shuoshuo()
+    && !$tbquery->is_memory()
 ){
 	if(!$tbquery->is_query_modification) {
 		require('theme/404.php');
@@ -51,5 +51,5 @@ else if($tbquery->is_tag())         require('theme/tag.php');
 else if($tbquery->is_feed())        require('theme/feed.php');
 else if($tbquery->is_sitemap())     require('theme/sitemap.php');
 else if($tbquery->is_archive())     require('theme/archive.php');
-else if($tbquery->is_shuoshuo())    require('theme/shuoshuo.php');
+else if($tbquery->is_memory())      require('theme/memory.php');
 
