@@ -33,8 +33,8 @@ function the_recent_comments() {
 			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
             $author = strcasecmp($c->email, $admin_email) == 0 ? '博主' : $c->author;
 
-			echo '<li style="margin-bottom: 8px;"><b>', htmlspecialchars($author),'</b>: ',htmlspecialchars($c->content),
-				' --- 《','<a href="/',$c->post_id,'/">',htmlspecialchars($title),'</a>》','</li>',PHP_EOL;
+			echo '<li style="margin-bottom: 8px; overflow: hidden;"><b>', htmlspecialchars($author),'</b>: ',htmlspecialchars($c->content),
+				'<span style="float: right;">《','<a href="/',$c->post_id,'/">',htmlspecialchars($title),'</a>》</span>','</li>',PHP_EOL;
 		}
 		echo '</ul>';
 	}
