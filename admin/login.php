@@ -19,6 +19,7 @@ function login_html($url='') { ?>
 <head>
 	<meta charset="UTF-8" />
 	<title>登录 - TaoBlog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
     <style>
 body {
     padding: 0px;

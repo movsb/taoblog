@@ -24,14 +24,12 @@ function admin_header($arg=[]) {
 <head>
 	<meta charset="UTF-8" />
 	<link rel="stylesheet" type="text/css" href="styles/admin.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 	<script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 	<?php apply_hooks('admin_head'); ?>
 </head>
 <body>
 <div>
-	<div id="admin-top">
-		<?php apply_hooks('admin_top'); ?>
-	</div>
 	<div id="admin-left">
 		<ul>
 <?php 

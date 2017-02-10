@@ -22,7 +22,7 @@ if($id > 0) {
 ?>
 <form id="form" method="post" style="margin-bottom: 2em;">
 <h2>发表说说</h2>
-<textarea name="content" style="display: block; min-width: 400px; min-height: 150px;"><?php echo htmlspecialchars($content);?></textarea>
+<textarea name="content" style="display: block; min-width: 300px; min-height: 150px;"><?php echo htmlspecialchars($content);?></textarea>
 <p>位置： <span class="position"><?php echo $geo_addr, '（', $geo_lat,',',$geo_lng, '）'; ?></span></p>
     <select name="addr">
         <option value="<?php echo htmlspecialchars($geo_addr);?>"><?php echo  htmlspecialchars($geo_addr);?></option>
@@ -55,7 +55,7 @@ if($id > 0) {
             if(data.status === 0 || data.status === '1') {
                 var r = data.result || data.regeocode;
                 (r.pois || []).forEach(function(poi) {
-                    var all = (poi.name || poi.title) + '（' + (poi.addr || poi.address) + '）';
+                    var all = poi.name || poi.title;
                     var opt = $('<option/>');
                     opt.attr({'value': all}).text(all);
                     addr.append(opt);

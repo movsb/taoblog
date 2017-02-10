@@ -221,7 +221,7 @@ function post_admin_head() { ?>
 
 	#content {
 		max-height: 2000px;
-		height: 500px;
+		height: 50vh;
 		min-height: 300px;
 		width: 100%;
 		padding: 4px;
@@ -248,6 +248,30 @@ function post_admin_head() { ?>
 		padding: 6px;
 	}
 
+#form-post {
+    display: flex;
+}
+
+.post {
+    flex: 1;
+}
+.sidebar-right {
+    flex: 1;
+}
+
+@media screen and (min-width: 851px) {
+    .sidebar-right {
+        max-width: 280px;
+    }
+    .post {
+        margin-right: 1em;
+    }
+}
+@media screen and (max-width: 850px) {
+    #form-post {
+        flex-direction: column;
+    }
+}
 </style>
 <?php }
 
@@ -300,7 +324,7 @@ DOM;
 
 ?><div id="admin-post">
 	<form method="POST" id="form-post">
-		<div class="post" style="float: left; width: 100%; max-width: 75%;">
+		<div class="post">
 			<div class="post-area">
 				<div style="margin-bottom: 1em;">
 					<h2>标题</h2>
@@ -380,7 +404,7 @@ DOM;
 				} ?>
 			</div>
 		</div><!-- post -->
-		<div class="sidebar sidebar-right" style="float: right;">
+		<div class="sidebar sidebar-right">
 			<div class="widget">
 				<h3>发表</h3>
 				<div class="widget-content">

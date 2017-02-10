@@ -5,26 +5,41 @@
 
 body {
 	font-family: "Microsoft YaHei";
-	padding-left: 80px;
 	background-color: #F1F1F1;
 }
 
+@media screen and (min-width: 851px) {
 #admin-left {
-	background-color: black;
-	color: white;
-	position: fixed;
-	left: 0px;
-	top: 0;
-	bottom: 0px;
-	width: 80px;
+    background-color: black;
+    color: white;
+    position: fixed;
+    left: 0px;
+    top: 0;
+    bottom: 0px;
+    width: 80px;
+}
+#admin-wrap {
+    margin-left: 80px;
+}
 }
 
+@media screen and (max-width: 850px) {
+#admin-left {
+    background-color: black;
+    color: white;
+}
+#admin-left > ul > li {
+    float: left;
+}
 #admin-left ul {
 	list-style: none;
+    overflow: hidden;
+}
 }
 
 #admin-left ul li .menu {
 	padding: 0.4em;
+    display: inline-block;
 }
 
 #admin-left ul li:hover {
