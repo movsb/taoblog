@@ -4,6 +4,21 @@ if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
 require_once('admin.php');
 
+function post_widget_tag($p=null) {
+	$tag = $p ? join(',', $p->tag_names) : '';
+
+	$title = '标签';
+	$classname = 'tags';
+	$types = 'post';
+	$content = <<<EOD
+<input type="text" name="tags" value="$tag" />
+EOD;
+
+	return compact('title', 'classname', 'types', 'content');
+}
+
+add_hook('post_widget', 'post_widget_tag');
+
 function post_widget_metas($p=null) {
     $metas = str_replace(['\\','\''], ['\\\\','\\\''], $p ? $p->metas_raw : '{}');
     $title = '自定义';
@@ -138,21 +153,6 @@ function post_widget_page_parents($p=null) {
 }
 
 add_hook('post_widget', 'post_widget_page_parents');
-
-function post_widget_tag($p=null) {
-	$tag = $p ? join(',', $p->tag_names) : '';
-
-	$title = '标签';
-	$classname = 'tags';
-	$types = 'post';
-	$content = <<<EOD
-<input type="text" name="tags" value="$tag" />
-EOD;
-
-	return compact('title', 'classname', 'types', 'content');
-}
-
-add_hook('post_widget', 'post_widget_tag');
 
 function post_widget_slug($p=null) {
 	return [

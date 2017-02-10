@@ -196,7 +196,7 @@ if($do == 'new') {
     if($r === false)
         shuoshuo_die_json([
             'errno' => 'failed',
-            'error' => 'failed',
+            'error' => $tbshuoshuo->error,
             ]);
 
     header('HTTP/1.1 302 Found');
@@ -209,7 +209,7 @@ else if($do == 'update') {
     if($r === false)
         shuoshuo_die_json([
             'errno' => 'failed',
-            'error' => 'failed',
+            'error' => $tbshuoshuo->error,
             ]);
 
     header('HTTP/1.1 302 Found');
@@ -222,7 +222,7 @@ else if($do == 'delete') {
     if($r === false)
         shuoshuo_die_json([
             'errno' => 'failed',
-            'error' => 'failed',
+            'error' => $tbshuoshuo->error,
             ]);
 
     else

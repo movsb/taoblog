@@ -20,7 +20,7 @@ class TB_Shuoshuo {
             }
         }
 
-        $this->error = $stmt->error;
+        $this->error = $tbdb->error or $stmt->error;
         return false;
     }
 

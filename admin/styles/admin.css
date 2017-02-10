@@ -50,6 +50,8 @@ body {
 	text-decoration: none;
 	color: inherit;
 	outline: 0px none;
+    display: block;
+    padding: 4px;
 }
 
 #admin-wrap {
