@@ -34,11 +34,9 @@ function login_auth($redirect=false) {
 	$opt = new TB_Options;
 
     $is_ssl = $_SERVER['SERVER_PORT'] == 443;
-
-	$ip = $_SERVER['REMOTE_ADDR'];
 	$cookie_login = $_COOKIE['login'] ?? '';
 
-	$loggedin = $is_ssl && $cookie_login && $cookie_login === sha1($ip.$opt->get('login'));
+	$loggedin = $is_ssl && $cookie_login && $cookie_login === login_gen_cookie();
 
 	if(!$loggedin) {
 		if($redirect) {
@@ -59,11 +57,13 @@ function login_auth($redirect=false) {
 // 用于生成认证 cookie，独立出来的原因是 api 部分会用到
 function login_gen_cookie() {
 	$opt = new TB_Options;
-    return sha1($_SERVER['REMOTE_ADDR'].$opt->get('login'));
+    $agent = $_SERVER['HTTP_USER_AGENT'];
+    $login = $opt->get('login');
+    return sha1($agent.$login);
 }
 
 // 用于在登录成功之后设置客户端认证的cookie
-// 保存的是 sha1(ip + login)
+// 保存的是 sha1(UA + login)
 function login_auth_set_cookie() {
 	$opt = new TB_Options;
 	setcookie('login', login_gen_cookie(), 0, '/', '', true, true);
