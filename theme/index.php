@@ -9,7 +9,7 @@ function the_recent_posts() {
 	$posts = $tbpost->query($q);
 	if(is_array($posts) && count($posts)) {
 		echo '<h2>近期文章</h2>',PHP_EOL;
-		echo '<ul style="list-style: none;">';
+		echo '<ul>';
 		foreach($posts as &$p) {
 			$link = the_link($p, false);
 			echo '<li><a href="'.$link.'">',htmlspecialchars($p->title),'</a></li>',"\n";
@@ -28,7 +28,7 @@ function the_recent_comments() {
 	$cmts = $tbcmts->get_recent_comments();
 	if(is_array($cmts) && count($cmts)) {
 		echo '<h2>近期评论</h2>',PHP_EOL;
-		echo '<ul style="list-style: none;">';
+		echo '<ul>';
 		foreach($cmts as $c) {
 			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
             $author = strcasecmp($c->email, $admin_email) == 0 ? '博主' : $c->author;
@@ -69,6 +69,16 @@ input:focus, a:focus, textarea:focus {
 input, textarea, button {
       border: 1px solid #ccc;
         padding: 5px 7px; }
+
+#content > ul {
+    list-style: none;
+}
+
+@media screen and (max-width: 850px) {
+#content > ul {
+    padding: 0px;
+}
+}
 </style>
 <?php }
 add_hook('tb_head', 'tb_head');

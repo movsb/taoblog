@@ -353,6 +353,10 @@
             font-size: 12px;
         }
 
+        a.active {
+            text-decoration: underline;
+        }
+
         ul:first-of-type {
             padding-left: 2em;
             margin-bottom: 0px;

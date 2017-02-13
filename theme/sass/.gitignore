@@ -1,5 +1,2 @@
-*
-!*.scss
-!.gitignore
-!README.md
+/.sass-cache/
 
