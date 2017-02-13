@@ -261,7 +261,9 @@ function post_admin_head() { ?>
 
 @media screen and (min-width: 851px) {
     .sidebar-right {
+        width: 280px;
         max-width: 280px;
+        min-width: 280px;
     }
     .post {
         margin-right: 1em;
@@ -273,7 +275,9 @@ function post_admin_head() { ?>
     }
 }
 </style>
-<?php }
+<?php
+    apply_hooks('admin:post:head');
+}
 
 add_hook('admin_head', 'post_admin_head');
 
@@ -285,6 +289,7 @@ function post_admin_footer() { ?>
 		});
 	</script>
 <?php
+    apply_hooks('admin:post:foot');
 }
 
 add_hook('admin_footer', 'post_admin_footer');
@@ -363,7 +368,7 @@ DOM;
 				</div>
 				<?php } ?>
 				<div>
-					<div><h2 style="float: left; margin-right: 10px;">内容</h2><span id="msg" style="position: relative; top: 6px;"></span></div>
+					<div><h2 style="display: inline-block; margin-right: 10px;">内容</h2><span id="msg" style="position: relative; top: 6px;"></span></div>
 					<div class="textarea-wrap">
 						<textarea id="content" name="content" wrap="off"><?php
 							if($p) {
