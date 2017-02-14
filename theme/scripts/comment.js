@@ -271,11 +271,13 @@ Comment.prototype.gen_avatar = function(eh, sz) {
 	return '/theme/avatar.php?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
 };
 
-Comment.prototype.sanitize_content = function(c) {
-    return c.replace(/&/g, '&amp;')
+Comment.prototype.normalize_content = function(c) {
+    var s = c.replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         ;
+    s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code" lang="$2">\n$3</pre>');
+    return s;
 };
 
 Comment.prototype.friendly_date = function(d) {
@@ -310,7 +312,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	}
 
     s += '<time class="date" datetime="' + cmt.date + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
-	s += '<div class="comment-content">' + this.sanitize_content(cmt.content) + '</div>\n';
+	s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
 	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment.reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';
 

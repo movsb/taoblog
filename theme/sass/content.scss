@@ -310,7 +310,7 @@
     }
 }
 
-.entry {
+.entry, #comments {
     div.code-wrap pre.code, pre.code, pre.shell {
         overflow: auto !important;
         white-space: pre;

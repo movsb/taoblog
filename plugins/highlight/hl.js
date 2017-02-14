@@ -33,12 +33,18 @@ if($('pre.code').length) {
 			}
 
             // 程序语言
-            if(that.attr('lang')) {
-                ho.languages = [that.attr('lang')];
+            var lang = that.attr('lang');
+            if(lang == '-' || lang == 'none') {
+                console.log('忽略代码高亮：', e);
+                return;
+            }
+            else if(lang) {
+                ho.languages = [lang];
             }
 
 			hljs.configure(ho);
 			hljs.highlightBlock(e);
+            console.log('高亮：', e, ho);
 		});
 	},
 	100);

@@ -29,6 +29,7 @@ function post_head() {
                 border: 1px solid gray;
                 font-family: Microsoft YaHei Mono, monospace;
                 font-size: 13px;
+                height: 50vh;
             }
         </style>
     <?php }

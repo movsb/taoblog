@@ -14,7 +14,7 @@ while($tbquery->has()){
 ?>
 	<li class="item cat-item"><h2><a target="_blank" href="<?php 
 			echo the_link($the, false);
-			?>"><?php echo htmlspecialchars($the->title);?></a>></h2></li>
+			?>"><?php echo htmlspecialchars($the->title);?></a></h2></li>
 <?php
 } ?>
 	</ul>
