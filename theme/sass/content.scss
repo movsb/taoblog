@@ -272,46 +272,10 @@
             padding-right: 1em;
         }
     }
-
-    /* 代码片段 */
-    div.code-wrap {
-        max-height: 500px;
-        max-height: 100vh;
-        overflow: auto;
-        margin: 0.5em 0em;
-
-        table {
-            border: none;
-            width: 100%;
-            border-collapse: collapse;
-
-            tr {
-                line-height: 1.1em;
-                vertical-align: top;
-                font-family: Microsoft Yahei Mono, Consolas, monospace;
-            }
-
-            td.gutter {
-                padding: 0.5em !important;
-                background-color: #23241F;
-                color: white;
-                text-align: right;
-                border: none;
-                border-right: 3px solid yellowgreen;
-                width: 2em;
-                min-width: 2em;	/* why need both here ? See: 476.html */
-            }
-
-            td.code {
-                padding: 0px !important;
-                border: none;
-            }
-        }
-    }
 }
 
 .entry, #comments {
-    div.code-wrap pre.code, pre.code, pre.shell {
+    pre.code, pre.shell {
         overflow: auto !important;
         white-space: pre;
         font-family: Microsoft Yahei Mono, Consolas, monospace;
@@ -322,6 +286,7 @@
         margin: 1em 0px;
         max-height: 1000px;
         max-height: 100vh;
+        text-shadow: 0 0 1px rgba(0,0,0,0.2);
     }
 }
 

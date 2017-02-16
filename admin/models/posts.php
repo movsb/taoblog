@@ -331,16 +331,20 @@ class TB_Posts {
 		if($arg['id']){
 			$tbquery->type = 'post';
 			$queried_posts = $this->query_by_id($arg);
-			// 查询相关文章
+
 			if(is_array($queried_posts) && count($queried_posts)) {
 				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
+                $queried_posts[0]->page_view++;
+                $this->increase_page_view_count($queried_posts[0]->id);
 			}
 		} else if($arg['slug']) {
             $tbquery->type = 'post';
             $queried_posts = $this->query_by_slug($arg);
-			// 查询相关文章
+
 			if(is_array($queried_posts) && count($queried_posts)) {
 				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
+                $queried_posts[0]->page_view++;
+                $this->increase_page_view_count($queried_posts[0]->id);
 			}
         } else if($arg['page']) {
             $tbquery->type = 'page';
@@ -1065,6 +1069,12 @@ class TB_Posts {
         }
 
         return $r;
+    }
+
+    public function increase_page_view_count(int $pid) {
+        global $tbdb;
+        $sql = "UPDATE posts SET page_view=page_view+1 WHERE id=".$pid." LIMIT 1";
+        $tbdb->query($sql);
     }
 }
 
