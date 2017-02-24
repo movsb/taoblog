@@ -8,7 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 	<title><?php
 		if($tbquery->is_home()) {
-			echo '首页';
+
         } else if($tbquery->is_archive()) {
             echo '文章归档';
 		} else if($tbquery->is_singular()) {
@@ -31,7 +31,8 @@
 			echo '404';
         }
 
-		echo ' - ', htmlspecialchars($blog_name);
+        if(!$tbquery->is_home()) echo ' - ';
+		echo htmlspecialchars($blog_name);
 	?></title>
 	<?php if($tbquery->is_home()) {
 		echo '<meta name="keywords" content="', htmlspecialchars($tbopt->get('keywords')), '" />', PHP_EOL;
