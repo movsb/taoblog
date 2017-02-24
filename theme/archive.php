@@ -92,112 +92,118 @@ require('header.php');
 
 function tb_footer_hook() { ?>
 <script>
-    $('.cats').on('click',function(e) {
-        var t = $(e.target);
-        if(t.hasClass('folder-name')) {
-            var li = t.parent();
-            var ul = li.find('>ul');
-            var fa = li.find('>.folder-name.fa');
-            ul.toggle();
-            fa.toggleClass('fa-folder-open-o');
-            fa.toggleClass('fa-folder-o');
-            if(li.attr('data-clicked') != '1') {
-                li.attr('data-clicked', '1');
-                ul.append('<li class="loading"><i class="fa fa-cog fa-spin"></i>&nbsp;正在加载...</li>');
-                var cid = li.attr('data-cid');
-                $.get('/admin/ajax.php',
-                    'do=get_cat_posts&cid=' + cid,
-                    function(data) {
-                        if(data.errno == 'ok') {
-                            var ps = data.posts;
-                            for(var i=0; i< ps.length; i++) {
-                                var p = ps[i];
-                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/" title="'+p.title+'">'+ p.title + '</a></li>';
-                                ul.append(s);
-                            }
-                            if(ps.length == 0)
-                                ul.append('<li class="none">（没有文章）</li>');
-                        }
-                        else {
-                            alert(data.error);
-                        }
-                    }
-                ).always(function() {
-                    ul.find('li.loading').remove();
-                });
-            }
+function gen_entry(p) {
+    return $('<li/>')
+        .attr('class', 'title')
+        .append($('<a/>')
+            .attr('target', '_blank')
+            .attr('href', '/' + p.id + '/')
+            .attr('title', p.title)
+            .text(p.title)
+        );
+}
+
+function get_entries_callback(data, ul) {
+    if(data.errno == 'ok') {
+        var ps = data.posts;
+        for(var i=0; i< ps.length; i++) {
+            ul.append(gen_entry(ps[i]));
         }
-        e.stopPropagation();
-    });
-    $('.date').on('click',function(e) {
-        var t = $(e.target);
-        if(t.hasClass('datetime')) {
-            var li = t.parent();
-            var ul = li.find('>ul');
-            ul.toggle();
-            if(li.attr('data-clicked') != '1') {
-                li.attr('data-clicked', '1');
-                ul.append('<li class="loading"><i class="fa fa-cog fa-spin"></i>&nbsp;正在加载...</li>');
-                var yy = li.attr('data-yy');
-                var mm = li.attr('data-mm');
-                $.get('/admin/ajax.php',
-                    'do=get_date_posts&yy=' + yy + '&mm=' + mm,
-                    function(data) {
-                        if(data.errno == 'ok') {
-                            var ps = data.posts;
-                            for(var i=0; i< ps.length; i++) {
-                                var p = ps[i];
-                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/" title="'+p.title+'">'+ p.title + '</a></li>';
-                                ul.append(s);
-                            }
-                            if(ps.length == 0)
-                                ul.append('<li class="none">（没有文章）</li>');
-                        }
-                        else {
-                            alert(data.error);
-                        }
-                    }
-                ).always(function() {
-                    ul.find('li.loading').remove();
-                });
-            }
+        if(ps.length == 0) {
+            ul.append($('<li/>')
+                .attr('class', 'none')
+                .text('（没有文章）')
+            );
         }
-        e.stopPropagation();
-    });
-    $('.tags').on('click',function(e) {
-        var t = $(e.target);
-        if(t.hasClass('tag-name')) {
-            var li = t.parent();
-            var ul = li.find('>ul');
-            ul.toggle();
-            if(li.attr('data-clicked') != '1') {
-                li.attr('data-clicked', '1');
-                ul.append('<li class="loading"><i class="fa fa-cog fa-spin"></i>&nbsp;正在加载...</li>');
-                var name = li.attr('data-name');
-                $.get('/admin/ajax.php',
-                    'do=get_tag_posts&tag=' + name,
-                    function(data) {
-                        if(data.errno == 'ok') {
-                            var ps = data.posts;
-                            for(var i=0; i< ps.length; i++) {
-                                var p = ps[i];
-                                var s = '<li class="title"><a target="_blank" href="/' + p.id + '/" title="'+p.title+'">'+ p.title + '</a></li>';
-                                ul.append(s);
-                            }
-                            if(ps.length == 0)
-                                ul.append('<li class="none">（没有文章）</li>');
-                        }
-                        else {
-                            alert(data.error);
-                        }
-                    }
-                ).always(function() {
-                    ul.find('li.loading').remove();
-                });
-            }
+    }
+    else {
+        alert(data.error);
+    }
+}
+
+function toggle_loading(ul, on) {
+    return on
+        ? ul.append($('<li/>')
+            .attr('class', 'loading')
+            .append($('<i/>')
+                .attr('class', 'fa fa-cog fa-spin')
+                )
+            .append($('<span/>').text(' 正在加载...'))
+            )
+        : ul.find('li.loading').remove()
+        ;
+}
+
+$('.cats').on('click',function(e) {
+    var t = $(e.target);
+    if(t.hasClass('folder-name')) {
+        var li = t.parent();
+        var ul = li.find('>ul');
+        var fa = li.find('>.folder-name.fa');
+        ul.toggle();
+        fa.toggleClass('fa-folder-open-o');
+        fa.toggleClass('fa-folder-o');
+        if(li.attr('data-clicked') != '1') {
+            li.attr('data-clicked', '1');
+            toggle_loading(ul, true);
+            var cid = li.attr('data-cid');
+            $.get('/admin/ajax.php',
+                'do=get_cat_posts&cid=' + cid,
+                function(data) {
+                    get_entries_callback(data, ul);
+                }
+            ).always(function() {
+                toggle_loading(ul, false);
+            });
         }
-        e.stopPropagation();
-    });
+    }
+    e.stopPropagation();
+});
+$('.date').on('click',function(e) {
+    var t = $(e.target);
+    if(t.hasClass('datetime')) {
+        var li = t.parent();
+        var ul = li.find('>ul');
+        ul.toggle();
+        if(li.attr('data-clicked') != '1') {
+            li.attr('data-clicked', '1');
+            toggle_loading(ul, true);
+            var yy = li.attr('data-yy');
+            var mm = li.attr('data-mm');
+            $.get('/admin/ajax.php',
+                'do=get_date_posts&yy=' + yy + '&mm=' + mm,
+                function(data) {
+                    get_entries_callback(data, ul);
+                }
+            ).always(function() {
+                toggle_loading(ul, false);
+            });
+        }
+    }
+    e.stopPropagation();
+});
+$('.tags').on('click',function(e) {
+    var t = $(e.target);
+    if(t.hasClass('tag-name')) {
+        var li = t.parent();
+        var ul = li.find('>ul');
+        ul.toggle();
+        if(li.attr('data-clicked') != '1') {
+            li.attr('data-clicked', '1');
+            toggle_loading(ul, true);
+            var name = li.attr('data-name');
+            $.get('/admin/ajax.php',
+                'do=get_tag_posts&tag=' + encodeURIComponent(name),
+                function(data) {
+                    get_entries_callback(data, ul);
+                }
+            ).always(function() {
+                toggle_loading(ul, false);
+            });
+        }
+    }
+    e.stopPropagation();
+});
 </script>
 <?php
 }
