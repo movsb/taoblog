@@ -8,8 +8,10 @@
     <?php } ?>
 
 	<div class="entry clearfix" itemprop="articleBody">
-		<?php echo $the->content; ?>
-
+        <?php
+            $is_preview = ($_POST['do'] ?? '') === 'preview';
+            echo $is_preview ? $_POST['content'] : $the->content;
+        ?>
         <?php if($the->type == 'post') { ?>
         <div class="meta clearfix">
             <span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name"><?php echo htmlspecialchars($tbopt->get('author')); ?></span></span>

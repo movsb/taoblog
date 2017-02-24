@@ -1,3 +1,3 @@
 #!/bin/bash
-scss --style compressed style.scss ../style.css
+sass --style compressed style.scss ../style.css
 
