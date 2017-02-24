@@ -413,8 +413,22 @@ DOM;
 			<div class="widget">
 				<h3>发表</h3>
 				<div class="widget-content">
-					<input type="reset" value="清空" onclick="return confirm('确定清空吗？');" />
-					<input type="submit" value="发表为" />
+                    <?php if($p) { ?>
+                    <input type="button" onclick="do_preview()" value="预览" />
+                    <script>
+                        function do_preview() {
+                            var form = $('#form-post');
+                            form.attr('target', '_blank');
+                            form.attr('action', '/<?php echo $p->id; ?>/');
+                            form.find('input[name=do]').val('preview');
+                            form.submit();
+                            form.attr('target', '')
+                            form.attr('action', '')
+                            form.find('input[name=do]').val('update');
+                        }
+                    </script>
+                    <?php } ?>
+					<input type="submit" value="发表" />
                     <select name="status">
                         <option value="public"<?php if($p && $p->status == 'public') echo ' selected'; ?>>公开</option>
                         <option value="draft"<?php if($p && $p->status == 'draft') echo ' selected'; ?>>草稿</option>
@@ -428,11 +442,9 @@ DOM;
 			} ?>
 		</div><!-- sidebar right -->
 	</form>
-	<?php if(!$p) {?>
 	<script type="text/javascript">
 		document.getElementsByTagName('form')[0].reset();
 	</script>
-	<?php } ?>
 </div><!-- admin-post -->
 <?php } 
 
