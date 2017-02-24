@@ -320,8 +320,9 @@ $('#back-to-top').click(function(){
 
 /* pre 的双击全选与全窗口 */
 (function() {
-    $('.entry pre').on('dblclick', function(e) {
-        if(e.target.tagName == 'PRE') {
+    $('.entry pre, .entry code').on('dblclick', function(e) {
+        var t = e.target.tagName;
+        if(t == 'PRE' || t == 'CODE') {
             var selection = window.getSelection();
             var range = document.createRange();
             range.selectNodeContents(e.target);
@@ -390,4 +391,3 @@ $('#back-to-top').click(function(){
         $('#content').css('opacity', '0.95');
     }
 })();
-

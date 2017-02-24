@@ -175,6 +175,18 @@
 	text-align: justify;
     margin-bottom: 3em;
 
+    code {
+        color: #505050;
+        background-color: white;
+        text-shadow: 0 0 1px rgba(0,0,0,0.22);
+        padding: 0.1em 0.6em;
+        margin: 0.1em 0px;
+        border: 1px solid #ff608d33;
+        border-radius: 5px;
+        display: inline-block;
+        line-height: 1.5em;
+    }
+
      pre {
         box-sizing: border-box;
 
@@ -223,17 +235,6 @@
                 cursor: default;
             }
         }
-    }
-
-    .line-code {
-        white-space: pre-wrap;
-        display: inline;
-        line-height: 2em;
-        font-family: Microsoft Yahei Mono, Consolas, monospace;
-        padding: 5px;
-        margin: 0px 3px;
-        border: 1px solid $post_line_code_border_color;
-        border-radius: 3px;
     }
 
     img {
@@ -333,6 +334,10 @@
         height: 600px;
         height: 100vh;
         opacity: 0.8;
+    }
+
+    li {
+        text-align: initial;
     }
 }
 
