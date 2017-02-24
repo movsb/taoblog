@@ -1,26 +1,17 @@
 /* 头部 */
 
-@media screen and (max-width: 850px) {
-    #header .content {
-        background-color: rgba(0,0,0,0.6);
-    }
-}
-
-@media screen and (min-width: 851px) {
-    #header {
-        background-color: rgba(0,0,0,0.6);
-    }
-}
-
-#header .content {
-    max-width: 850px;
-    min-width: 200px;
-    margin: auto;
-    padding: 2em 1em 0;
-}
-
 #header {
     .content {
+        max-width: 850px;
+        min-width: 200px;
+        margin: auto;
+        padding: 2em 1em 0;
+        overflow: hidden;
+
+        .padding {
+            position: relative;
+        }
+
         h2 {
             margin: 0px;
             color: white;
@@ -37,14 +28,11 @@
             }
         }
 
-        p.motto {
+        .motto {
             color: white;
-            padding-left: 2em;
         }
 
         .nav {
-            overflow: hidden;
-
             a {
                 transition: all 0.2s;
                 text-decoration: none;
@@ -71,8 +59,6 @@
                 margin: 0px 0px 1px;
                 padding-left: 0px;
                 list-style: none;
-                float: right;
-                clear: right;
 
                 > li {
                     display: inline-block;
@@ -80,6 +66,48 @@
                     color: #A0A0A0;
                     line-height: 2em;
                 }
+            }
+        }
+
+        .search {
+            .icon {
+                color: #fff6;
+            }
+
+            input {
+                color: #fff6;
+                border-color: #a9a9a933;
+                background-color: transparent;
+                margin-left: -2em;
+                padding-left: 2em;
+                width: 100px;
+            }
+        }
+    }
+}
+
+@media screen and (max-width: 850px) {
+    #header .content {
+        background-color: rgba(0,0,0,0.6);
+        text-align: center;
+    }
+}
+
+@media screen and (min-width: 851px) {
+    #header {
+        background-color: rgba(0,0,0,0.6);
+        .content {
+            .motto {
+                padding-left: 2em;
+            }
+            .nav {
+                float: right;
+                clear: both;
+            }
+            .search {
+                position: absolute;
+                right: 10px;
+                top: 10px;
             }
         }
     }

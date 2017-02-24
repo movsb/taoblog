@@ -60,23 +60,27 @@
     <!-- 头部 -->
 	<header id="header">
         <div class="content">
-            <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
-            <p class="motto">不忘初心，方得始终。</p>
-            <div class="nav">
-                <ol>
-                    <li><a href="/">首页</a></li>
-                    <li><a href="/friends">朋友们</a></li>
-                    <li><a title="GitHub" href="https://github.com/movsb" rel="nofollow" target="_blank">同性交友</a></li>
-                    <li><a href="https://repo.twofei.com">个人仓库</a></li>
-                    <li><a href="/search" title="Google站内搜索">站内搜索</a></li>
-                    <li><a href="/archives">文章归档</a></li>
-                    <li><a href="/blog">博客程序</a></li>
-                    <li><a href="/echo">建议反馈</a></li>
-                    <li><a href="/rss">博客订阅</a></li>
-                    <?php if($logged_in) {
-                        echo '<li><a href="/admin/">管理后台</a></li>',PHP_EOL;
-                    } ?>
-                </ol>
+            <div class="padding">
+                <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
+                <p class="motto">不忘初心，方得始终</p>
+                <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
+                    <i class="icon fa fa-search"></i>
+                    <input name="q" placeholder="Google Search" />
+                </form>
+                <div class="nav">
+                    <ol>
+                        <li><a href="/">首页</a></li>
+                        <li><a href="/friends">朋友们</a></li>
+                        <li><a title="GitHub" href="https://github.com/movsb" rel="nofollow" target="_blank">同性交友</a></li>
+                        <li><a href="/archives">文章归档</a></li>
+                        <li><a href="/blog">博客程序</a></li>
+                        <li><a href="/echo">建议反馈</a></li>
+                        <li><a href="/rss">博客订阅</a></li>
+                        <?php if($logged_in) {
+                            echo '<li><a href="/admin/">管理后台</a></li>',PHP_EOL;
+                        } ?>
+                    </ol>
+                </div>
             </div>
         </div>
 
