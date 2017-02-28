@@ -3,4 +3,6 @@
 /Release/
 
 /*.VC.*db
+/.vs/
+
 

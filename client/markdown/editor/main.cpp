@@ -37,7 +37,6 @@ class PreviewWindow
         MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         MESSAGE_HANDLER(WM_SIZE, OnSize)
         MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
-        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBackground)
     END_MSG_MAP()
 
@@ -113,15 +112,6 @@ protected:
         return 0;
     }
 
-    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-    {
-        if(wParam == VK_F11) {
-            ToggleFullscreen();
-        }
-        bHandled = FALSE;
-        return 0;
-    }
-
     LRESULT OnEraseBackground(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
         return TRUE;
@@ -171,7 +161,6 @@ class EditorWindow
         MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         MESSAGE_HANDLER(WM_SIZE, OnSize)
         MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
-        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBackground)
     END_MSG_MAP()
 
@@ -245,15 +234,6 @@ protected:
         return 0;
     }
 
-    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-    {
-        if(wParam == VK_F11) {
-            ToggleFullscreen();
-        }
-        bHandled = FALSE;
-        return 0;
-    }
-
     LRESULT OnEraseBackground(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
     {
         return TRUE;
@@ -290,7 +270,7 @@ protected:
 
     void ToggleFullscreen()
     {
-        DWORD dwStyle = GetWindowLongPtr(GWL_STYLE);
+        LONG_PTR dwStyle = GetWindowLongPtr(GWL_STYLE);
         if(dwStyle & WS_POPUP) {
             dwStyle &= ~WS_POPUP;
             dwStyle |= WS_OVERLAPPEDWINDOW;
