@@ -48,16 +48,26 @@ class TaoBlog:
         print(text)
 
     def get_post_content(self, id):
-        path = "%s/%s.html" % (self._root, id)
-        if not os.path.exists(path):
-            path = "%s/%s/content.html" % (self._root, id)
-            if not os.path.exists(path):
-                path = "%s/%s/index.html" % (self._root, id)
-                if not os.path.exists(path):
-                    print("doesn't exist: ", path)
-                    sys.exit(-1)
-                pass
-            pass
+        """
+            有以下几种路径搜索方式：
+                <id>.md         ->  content.html
+                <id>.html       ->  <id>.html
+                <id>/index.md   ->  <id>/content.html
+                <id>/index.html ->  <id>/index.html
+        """
+
+        if os.path.exists("%s/%s.md" % (self._root, id)):
+            path = "content.html"
+        elif os.path.exists("%s/%s.html" % (self._root, id)):
+            path = "%s.html" % id
+        elif os.path.exists("%s/%s/index.md" % (self._root, id)):
+            path = "%s/content.html" % id
+        elif os.path.exists("%s/%s/index.html" % (self._root, id)):
+            path = "%s/index.html" % id
+        else:
+            exit(-1)
+
+        path = self._root + "/" + path
 
         fp = open(path, 'rb')
         content = fp.read()
