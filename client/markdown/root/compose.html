@@ -21,6 +21,22 @@ body {
     height: 100vh;
 }
 </style>
+<script>
+    var renderer = new marked.Renderer();
+    renderer.code = function(code, lang) {
+        var beg = '<pre class="code" lang="' + (lang === undefined ? '' : lang) + '">\n';
+        var text = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var end = '\n</pre>';
+        return beg + text + end;
+    }
+    renderer.hr = function() {
+        return '<hr/>';
+    }
+    renderer.br = function() {
+        return '<br/>';
+    }
+    marked.setOptions({renderer: renderer});
+</script>
 </head>
 <body>
     <textarea id="content"></textarea>
