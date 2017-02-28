@@ -9,10 +9,10 @@ import json
 from subprocess import call
 
 class TaoBlog:
-    _host    = 'https://local.twofei.com'
+    _host    = 'https://blog.twofei.com'
     _login   = ''
-    _verify  = False
-    _root    = '/home/twofei/Desktop/posts'
+    _verify  = True
+    _root    = '.'
 
     def method(self, name):
         return self._host + '/api/' + name.replace('.', '/')
@@ -50,10 +50,13 @@ class TaoBlog:
     def get_post_content(self, id):
         path = "%s/%s.html" % (self._root, id)
         if not os.path.exists(path):
-            path = "%s/%s/index.html" % (self._root, id)
+            path = "%s/%s/content.html" % (self._root, id)
             if not os.path.exists(path):
-                print("doesn't exist: ", path)
-                sys.exit(-1)
+                path = "%s/%s/index.html" % (self._root, id)
+                if not os.path.exists(path):
+                    print("doesn't exist: ", path)
+                    sys.exit(-1)
+                pass
             pass
 
         fp = open(path, 'rb')
@@ -110,4 +113,5 @@ class TaoBlog:
 if __name__ == '__main__':
     blog = TaoBlog()
     blog.main()
+
 
