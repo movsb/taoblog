@@ -137,7 +137,7 @@ protected:
 
     void ToggleFullscreen()
     {
-        DWORD dwStyle = GetWindowLongPtr(GWL_STYLE);
+        LONG_PTR dwStyle = GetWindowLongPtr(GWL_STYLE);
         if(dwStyle & WS_POPUP) {
             dwStyle &= ~WS_POPUP;
             dwStyle |= WS_OVERLAPPEDWINDOW;
