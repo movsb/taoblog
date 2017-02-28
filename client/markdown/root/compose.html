@@ -30,6 +30,12 @@ body {
             keyMap: 'vim',
             lineWrapping: true,
             extraKeys: {
+                'F4': function(cm) {
+                    var content = external.open();
+                    if(content) {
+                        cm.setValue(content)
+                    }
+                },
                 'F5': function(cm) {
                     var content = cm.getValue();
                     var html = marked(content);

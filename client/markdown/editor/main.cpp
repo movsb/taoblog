@@ -1,6 +1,13 @@
 #include <string>
 #include <functional>
 #include <fstream>
+#include <cstdio>
+#include <string>
+#include <atlbase.h>
+#include <shobjidl.h>
+#include <windows.h>
+#include <memory>
+#include <codecvt>
 
 #include <atlbase.h>
 #include <atlwin.h>
@@ -12,12 +19,37 @@ namespace taoblog {
 
 #define BIND(c, f) std::bind(&c::f, this, std::placeholders::_1, std::placeholders::_2)
 
+typedef std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> U8U16Cvt;
+
 std::wstring app_path()
 {
     wchar_t path[MAX_PATH];
     ::GetModuleFileName(nullptr, path, _countof(path));
     *wcsrchr(path, L'\\') = L'\0';
     return path;
+}
+
+static std::wstring file_open_dialog(HWND hOwner)
+{
+    std::wstring ret;
+    CComPtr<IFileOpenDialog> spFileOpenDialog;
+    if(SUCCEEDED(spFileOpenDialog.CoCreateInstance(__uuidof(FileOpenDialog)))) {
+        FILEOPENDIALOGOPTIONS options;
+        if(SUCCEEDED(spFileOpenDialog->GetOptions(&options))) {
+            spFileOpenDialog->SetOptions(options | FOS_FORCEFILESYSTEM);
+            if(SUCCEEDED(spFileOpenDialog->Show(hOwner))) {
+                CComPtr<IShellItem> spResult;
+                if(SUCCEEDED(spFileOpenDialog->GetResult(&spResult))) {
+                    wchar_t* name;
+                    if(SUCCEEDED(spResult->GetDisplayName(SIGDN_FILESYSPATH, &name))) {
+                        ret = name;
+                        CoTaskMemFree(name);
+                    }
+                }
+            }
+        }
+    }
+    return std::move(ret);
 }
 
 struct IMessageFilter
@@ -192,6 +224,7 @@ protected:
     {
         _pwbc = CreateBroserInstance();
         _pwbc->Create(m_hWnd);
+        _pwbc->AddCallable(L"open", BIND(EditorWindow, OnOpen));
         _pwbc->AddCallable(L"preview", BIND(EditorWindow, OnPreview));
         _pwbc->AddCallable(L"save", BIND(EditorWindow, OnSave));
         _pwbc->AddCallable(L"export", BIND(EditorWindow, OnExport));
@@ -240,6 +273,30 @@ protected:
     }
 
 protected:
+    taoblog::ComRet OnOpen(taoblog::DispParamsVisitor args, VARIANT* result)
+    {
+        auto path = file_open_dialog(m_hWnd);
+        if(path.empty()) return E_ABORT;
+
+        std::ifstream file(path, std::ios::binary);
+        if(!file.is_open()) return E_FAIL;
+
+        _curr_dir = path.substr(0, path.find_last_of(L"/\\"));
+
+        file.seekg(0, std::ios::end);
+        auto size = (size_t)file.tellg();
+        file.seekg(0, std::ios::beg);
+        auto buf = std::make_unique<char[]>(size+1);
+        file.read(buf.get(), size);
+        buf.get()[size] = L'\0';
+
+        auto wbuf = U8U16Cvt().from_bytes(buf.get());
+
+        result->vt = VT_BSTR;
+        result->bstrVal = ::SysAllocString(wbuf.c_str());
+        return S_OK;
+    }
+
     taoblog::ComRet OnPreview(taoblog::DispParamsVisitor args, VARIANT* result)
     {
         auto prewnd = new PreviewWindow(args[0].bstrVal);
@@ -250,9 +307,15 @@ protected:
 
     taoblog::ComRet OnSave(taoblog::DispParamsVisitor args, VARIANT* result)
     {
-        auto str = std::wstring(args[0].bstrVal);
-        auto path = app_path() + L"\\content.md";
-        std::wofstream file(path, std::ios::binary | std::ios::trunc);
+        if(_curr_dir.empty()) {
+            MessageBox(L"没有选择文件。");
+            return E_ABORT;
+        }
+
+        auto wstr = std::wstring(args[0].bstrVal);
+        auto str = U8U16Cvt().to_bytes(wstr);
+        auto path = _curr_dir + L"\\index.md";
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
         file << str;
         file.close();
         return S_OK;
@@ -260,9 +323,15 @@ protected:
 
     taoblog::ComRet OnExport(taoblog::DispParamsVisitor args, VARIANT* result)
     {
-        auto str = std::wstring(args[0].bstrVal);
-        auto path = app_path() + L"\\content.html";
-        std::wofstream file(path, std::ios::binary | std::ios::trunc);
+        if(_curr_dir.empty()) {
+            MessageBox(L"没有选择文件。");
+            return E_ABORT;
+        }
+
+        auto wstr = std::wstring(args[0].bstrVal);
+        auto str = U8U16Cvt().to_bytes(wstr);
+        auto path = _curr_dir + L"\\content.html";
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
         file << str;
         file.close();
         return S_OK;
@@ -291,6 +360,7 @@ public:
 protected:
     IWebBrowserContainer* _pwbc;
     RECT _rc_restore;
+    std::wstring _curr_dir;
 };
 
 }
