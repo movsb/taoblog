@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="codemirror.css" />
+<script src="codemirror.js"></script>
+<script src="markdown.js"></script>
+<script src="vim.js"></script>
+<link rel="stylesheet" href="dialog.css" />
+<script src="dialog.js"></script>
+<script src="marked.min.js"></script>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.CodeMirror {
+    font-family: Microsoft YaHei Mono, monospace;
+    font-size: 13px;
+    height: 100vh;
+}
+</style>
+<script>
+    var renderer = new marked.Renderer();
+    renderer.code = function(code, lang) {
+        var beg = '<pre class="code" lang="' + (lang === undefined ? '' : lang) + '">\n';
+        var text = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var end = '\n</pre>';
+        return beg + text + end;
+    }
+    renderer.hr = function() {
+        return '<hr/>';
+    }
+    renderer.br = function() {
+        return '<br/>';
+    }
+    marked.setOptions({renderer: renderer});
+</script>
+</head>
+<body>
+    <textarea id="content"></textarea>
+    <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById('content'), {
+            lineNumbers: true,
+            keyMap: 'vim',
+            lineWrapping: true,
+            extraKeys: {
+                'F4': function(cm) {
+                    var content = external.open();
+                    if(content) {
+                        cm.setValue(content)
+                    }
+                },
+                'F5': function(cm) {
+                    var content = cm.getValue();
+                    var html = marked(content);
+                    external.preview(html);
+                },
+                'F6': function(cm) {
+                    var content = cm.getValue();
+                    external.save(content);
+                },
+                'F7': function(cm) {
+                    var content = cm.getValue();
+                    var html = marked(content);
+                    external.export(html);
+                },
+        
+            },
+        });
+    </script>
+</body>
+</html>
