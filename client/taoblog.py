@@ -52,6 +52,7 @@ class TaoBlog:
             有以下几种路径搜索方式：
                 <id>.md         ->  content.html
                 <id>.html       ->  <id>.html
+                <id>/README.md  ->  <id>/content.html
                 <id>/index.md   ->  <id>/content.html
                 <id>/index.html ->  <id>/index.html
         """
@@ -60,6 +61,8 @@ class TaoBlog:
             path = "content.html"
         elif os.path.exists("%s/%s.html" % (self._root, id)):
             path = "%s.html" % id
+        elif os.path.exists("%s/%s/README.md" % (self._root, id)):
+            path = "%s/content.html" % id
         elif os.path.exists("%s/%s/index.md" % (self._root, id)):
             path = "%s/content.html" % id
         elif os.path.exists("%s/%s/index.html" % (self._root, id)):

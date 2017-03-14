@@ -314,7 +314,7 @@ protected:
 
         auto wstr = std::wstring(args[0].bstrVal);
         auto str = U8U16Cvt().to_bytes(wstr);
-        auto path = _curr_dir + L"\\index.md";
+        auto path = _curr_dir + L"\\README.md";
         std::ofstream file(path, std::ios::binary | std::ios::trunc);
         file << str;
         file.close();
