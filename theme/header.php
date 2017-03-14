@@ -39,7 +39,7 @@
 } ?>
 	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo '/rss';?>" />
 	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
-	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />
+    <?php if ($tbquery->is_archive()) { echo '<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />'; } ?>
 	<script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 <?php if(!$tbquery->count) {
 

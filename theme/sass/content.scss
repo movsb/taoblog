@@ -189,6 +189,7 @@
 
      pre {
         box-sizing: border-box;
+        overflow: auto;
 
         &:not(.code) {
             font-family: inherit;
@@ -200,7 +201,6 @@
 
         &.no-wrap {
             white-space: pre;
-            overflow: auto;
         }
 
         &.quote {
