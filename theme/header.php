@@ -64,8 +64,8 @@
                 <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
                 <p class="motto">不忘初心，方得始终</p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
-                    <i class="icon fa fa-search"></i>
-                    <input name="q" placeholder="Google Search" />
+                    <img src="/theme/images/search.svg" class="icon" width="18px" height="19px"/><!--
+                    --><input name="q" placeholder="Google Search" />
                 </form>
                 <div class="nav">
                     <ol>

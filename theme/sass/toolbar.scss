@@ -30,11 +30,12 @@
 /* 回到顶部 */
 .back-to-top {
 	display: none;
-	font-size: 30px;
-	height: 30px;
 	cursor: pointer;
+    -moz-user-select: none;
+    user-select: none;
+    filter: opacity(70%);
     &:hover {
-        color: $toolbar_back_to_top_hover_fg;
+        filter: opacity(100%);
     }
 }
 
