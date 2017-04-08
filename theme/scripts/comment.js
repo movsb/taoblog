@@ -20,67 +20,31 @@ document.write(function(){/*
 	<!-- 评论框 -->
 	<div id="comment-form-div" class="normal">
 		<div class="comment-form-div-1 no-sel">
-			<div class="no-sel">
+			<div class="no-sel" class="nc">
 				<div class="closebtn" title="关闭">
-					<i class="fa fa-times"></i>
+                    <img src="/theme/images/close.svg" width="20" height="20"/>
 				</div>
-				<div class="maxbtn" title="最大化">
-					<i class="fa fa-plus"></i>
-				</div>
-
 				<div class="comment-title">
 					<span>评论</span>
 				</div>
 			</div>
 
-			<form id="comment-form" action="/admin/comment.php">
-				<div class="fields">
-					<div class="field">
-						<label>昵称</label>
-						<input type="text" name="author"/>
-						<span class="needed">必填</span>
-					</div>
-					<div class="field">
-						<label>邮箱</label>
-						<input type="text" name="email"/>
-						<span class="needed">必填(<span title="邮箱仅用于展示与其关联的 gravatar 头像与通知评论回复。邮箱地址以 MD5 的形式公开，博主不会以其它任何形式使用您的邮箱地址。">公开?</span>)</span>
-					</div>
-					<div class="field">
-						<label>网址</label>
-						<input type="text" name="url" />
-					</div>
-					<div style="display: none;">
-						<input id="comment-form-post-id" type="hidden" name="post_id" value="" />
-						<input id="comment-form-parent"  type="hidden" name="parent" value="" />
-						<input type="hidden" name="do" value="post-cmt" />
-					</div>
-				</div>
+			<form id="comment-form" action="/admin/comment.php" method="post">
+                <div style="display: none;">
+                    <input id="comment-form-post-id" type="hidden" name="post_id" value="" />
+                    <input id="comment-form-parent"  type="hidden" name="parent" value="" />
+                    <input type="hidden" name="do" value="post-cmt" />
+                </div>
 
-				<div class="comment-content">
-					<label style="position: absolute;">评论</label>
-					<label style="visibility: hidden;">评论</label> <!-- 别问我，我想静静 -->
-					<textarea id="comment-content" name="content" wrap="off"></textarea>
-				</div>
+                <textarea id="comment-content" name="content" wrap="off"></textarea>
 
-				<div class="comment-submit">
+                <div class="fields">
+                    <input type="text" name="author" placeholder="昵称" />
+                    <input type="text" name="email" placeholder="邮箱（不公开）"/>
+                    <input type="text" name="url" placeholder="个人站点" />
 					<input type="submit" id="comment-submit" class="no-sel" value="发表评论" />
-					&nbsp;<span id="submitting-status"><span>
-				</div>
+                </div>
 			</form>
-		</div>
-		<div class="comment-form-div-2">
-			<div class="toolbar no-sel" style="color: #C8C8C8; font-size: 24px;">
-				<span>评论: </span>
-				<div class="right">
-					<span>字体: </span>
-					<span class="font-dec" title="减小字号"><i class="fa fa-minus"></i></span>
-					<span class="font-inc" title="增大字号"><i class="fa fa-plus"></i></span>&nbsp;
-					<span class="close" title="还原"><i class="fa fa-times"></i></span>
-				</div>
-			</div>
-			<div class="textarea-wrapper">
-				<textarea id="comment-content-2" wrap="off"></textarea>
-			</div>
 		</div>
 	</div>
 */}.toString().slice(14,-3));
@@ -158,7 +122,7 @@ Comment.prototype.init = function() {
         var timeout = 1500;
 
         $(this).attr('disabled', 'disabled');
-        $('#submitting-status').html('<i class="fa fa-spin fa-spinner"></i>正在提交...');
+        $('#comment-submit').val('提交中...');
         $.post(
             $('#comment-form')[0].action,
             $('#comment-form').serialize()+'&return_cmt=1',
@@ -176,34 +140,26 @@ Comment.prototype.init = function() {
                     }
                     $('#comment-'+data.cmt.id).fadeIn();
                     $('#comment-content').val('');
-                    $('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>评论成功！');
-                    setTimeout(function() {
-                            $('#comment-form-div').fadeOut();
-                            $('#submitting-status').text('');
-                            self.save_info();
-                        },
-                        timeout
-                    );
+                    $('#comment-form-div').fadeOut();
+                    self.save_info();
                 } else {
-                    $('#submitting-status').html('<i class="fa fa-mr fa-info-circle"></i>' + data.error);
-                    setTimeout(function() {
-                            $('#submitting-status').text('');
-                        },
-                        timeout
-                    );
+                    alert(data.error);
                 }
             },
             'json'
         )
-        .fail(function(xhr, sta, e){
-            $('#submitting-status').text('未知错误！');
-        })
-        .always(setTimeout(function(){
-                $('#submitting-status').text('');
+        .fail(
+            function(xhr, sta, e){
+                alert('未知错误！');
+            }
+        )
+        .always(
+            function(){
+                $('#comment-submit').val('发表评论');
                 $('#comment-submit').removeAttr('disabled');
-            },
-            timeout
-        ));
+            }
+        );
+
         return false;
     });
 
@@ -216,27 +172,6 @@ Comment.prototype.init = function() {
         if(e.keyCode == 27) {
             $('#comment-form-div').fadeOut();
         }
-    });
-
-    $('#comment-form-div .maxbtn').click(function(){
-        $('#comment-content-2').val($('#comment-content').val());
-        $('#comment-form-div').removeClass('normal').attr('style','').addClass('maximized');
-        $('#comment-form-div.maximized .toolbar .font-inc').click(function(){
-            var ta = $('#comment-content-2');
-            ta.css('font-size', parseFloat(ta.css('font-size'))*1.2 + 'px');
-        });
-
-        $('#comment-form-div.maximized .toolbar .font-dec').click(function(){
-            var ta = $('#comment-content-2');
-            ta.css('font-size', Math.max(8,parseFloat(ta.css('font-size'))/1.2) + 'px');
-        });
-
-        $('#comment-form-div.maximized .toolbar .close').click(function(){
-            $('#comment-form-div').removeClass('maximized').attr('style','').addClass('normal');
-            $('#comment-content').val($('#comment-content-2').val());
-            $('#comment-form-div.normal').show();
-        });
-
     });
 
     $(window).on('scroll', function() {

@@ -70,12 +70,12 @@ input, textarea, button {
       border: 1px solid #ccc;
         padding: 5px 7px; }
 
-#content > ul {
+#content > ul, .status > ul {
     list-style: none;
 }
 
 @media screen and (max-width: 850px) {
-#content > ul {
+#content > ul, .status > ul {
     padding: 0px;
 }
 }
@@ -90,15 +90,17 @@ the_recent_comments();
 
 ?>
 
-<div>
+<div class="status">
 	<h2>状态</h2>
-	<p style="padding-left: 2em;">服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</p>
-    <p style="padding-left: 2em;">博客归档：<?php
+    <ul>
+	<li>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</li>
+    <li>博客归档：<?php
         echo '文章数：', $tbopt->get('post_count', '?');
         echo '，页面数：', $tbopt->get('page_count', '?');
         echo '，评论数：', $tbopt->get('comment_count', '?');
         echo '。';
-    ?></p>
+    ?></li>
+    </ul>
 </div>
 
 <?php
