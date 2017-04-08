@@ -11,6 +11,7 @@ $content = '';
 $geo_lat = 0;
 $geo_lng = 0;
 $geo_addr= '';
+$date    = '';
 
 if($id > 0) {
     $item = $tbshuoshuo->get($id);
@@ -18,15 +19,19 @@ if($id > 0) {
     $geo_lat = $item->geo_lat;
     $geo_lng = $item->geo_lng;
     $geo_addr= $item->geo_addr;
+    $date    = $item->date;
 }
 ?>
 <form id="form" method="post" style="margin-bottom: 2em;">
 <h2>发表说说</h2>
 <textarea name="content" style="display: block; min-width: 300px; min-height: 150px;"><?php echo htmlspecialchars($content);?></textarea>
-<p>位置： <span class="position"><?php echo $geo_addr, '（', $geo_lat,',',$geo_lng, '）'; ?></span></p>
+<p>时间：<input type="text" name="date" value="<?php echo $date; ?>" /></p>
+<p>坐标： <span class="position"><?php echo $geo_addr, '（', $geo_lat,',',$geo_lng, '）'; ?></span></p>
+<p>位置：
     <select name="addr">
         <option value="<?php echo htmlspecialchars($geo_addr);?>"><?php echo  htmlspecialchars($geo_addr);?></option>
     </select>
+</p>
     <input type="hidden" name="lat" value="<?php echo $geo_lat;?>" />
     <input type="hidden" name="lng" value="<?php echo $geo_lng;?>" />
     <script>

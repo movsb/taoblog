@@ -1,11 +1,18 @@
 <?php
 
 class TB_Shuoshuo {
-    public function post($post, $date='') {
+    public function post($post) {
         global $tbdb;
         global $tbdate;
 
-        if(!$date) $date = $tbdate->mysql_datetime_gmt();
+        $date = $post['date'];
+        if(!$date) $date = $tbdate->mysql_datetime_local();
+        if(!$tbdate->is_valid_mysql_datetime($date)) {
+            $this->error = '无效时间。';
+            return false;
+        }
+
+        $date = $tbdate->mysql_local_to_gmt($date);
 
         $sql = "INSERT INTO shuoshuo (content,geo_lat,geo_lng,geo_addr,date) VALUES(?,?,?,?,?)";
         if($stmt = $tbdb->prepare($sql)) {
