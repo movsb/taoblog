@@ -24,9 +24,16 @@ function memory_admin_head()
     marked.setOptions({renderer: renderer});
 </script>
 <?php
+    apply_hooks('admin:memory:head');
 }
 
 add_hook('admin_head', 'memory_admin_head');
+
+function memory_admin_foot() {
+    apply_hooks('admin:memory:foot');
+}
+
+add_hook('admin_footer', 'memory_admin_foot');
 
 admin_header();
 
@@ -50,7 +57,7 @@ if($id > 0) {
 ?>
 <form id="form" method="post" style="margin-bottom: 2em;">
 <h2>发表说说</h2>
-<textarea name="source" style="display: block; min-width: 300px; min-height: 150px;"><?php echo htmlspecialchars($source ? $source : $content);?></textarea>
+<textarea id="source" name="source" style="display: block; min-width: 300px; min-height: 150px;"><?php echo htmlspecialchars($source ? $source : $content);?></textarea>
 <input type="hidden" name="content" value="" />
 <p>时间：<input type="text" name="date" value="<?php echo $date; ?>" /></p>
 <p>坐标： <span class="position"><?php echo $geo_addr, '（', $geo_lat,',',$geo_lng, '）'; ?></span></p>
