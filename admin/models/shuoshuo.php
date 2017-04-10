@@ -14,9 +14,9 @@ class TB_Shuoshuo {
 
         $date = $tbdate->mysql_local_to_gmt($date);
 
-        $sql = "INSERT INTO shuoshuo (content,geo_lat,geo_lng,geo_addr,date) VALUES(?,?,?,?,?)";
+        $sql = "INSERT INTO shuoshuo (content,geo_lat,geo_lng,geo_addr,date,source) VALUES(?,?,?,?,?)";
         if($stmt = $tbdb->prepare($sql)) {
-            if($stmt->bind_param('sddss', $post['content'], $post['lat'], $post['lng'], $post['addr'],  $date)) {
+            if($stmt->bind_param('sddsss', $post['content'], $post['lat'], $post['lng'], $post['addr'],  $date, $post['source'])) {
                 $r = $stmt->execute();
                 $stmt->close();
 
@@ -45,9 +45,9 @@ class TB_Shuoshuo {
 
         $date = $tbdate->mysql_local_to_gmt($date);
 
-        $sql = "UPDATE shuoshuo SET content=?,geo_lat=?,geo_lng=?,geo_addr=?,date=? WHERE id=$id";
+        $sql = "UPDATE shuoshuo SET content=?,geo_lat=?,geo_lng=?,geo_addr=?,date=?,source=? WHERE id=$id";
         if($stmt = $tbdb->prepare($sql)) {
-            if($stmt->bind_param('sddss', $post['content'], $post['lat'], $post['lng'], $post['addr'], $date)) {
+            if($stmt->bind_param('sddsss', $post['content'], $post['lat'], $post['lng'], $post['addr'], $date, $post['source'])) {
                 $r = $stmt->execute();
                 $ars = $stmt->affected_rows; // 貌似无需判断
 

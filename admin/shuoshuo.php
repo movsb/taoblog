@@ -4,10 +4,35 @@ if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
 require_once('admin.php');
 
+function memory_admin_head()
+{?>
+<script src="scripts/marked.js"></script>
+<script>
+    var renderer = new marked.Renderer();
+    // renderer.code = function(code, lang) {
+    //     var beg = '<pre class="code" lang="' + (lang === undefined ? '' : lang) + '">\n';
+    //     var text = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    //     var end = '\n</pre>';
+    //     return beg + text + end;
+    // }
+    renderer.hr = function() {
+        return '<hr/>';
+    }
+    renderer.br = function() {
+        return '<br/>';
+    }
+    marked.setOptions({renderer: renderer});
+</script>
+<?php
+}
+
+add_hook('admin_head', 'memory_admin_head');
+
 admin_header();
 
 $id = (int)($_GET['id'] ?? 0);
 $content = '';
+$source = '';
 $geo_lat = 0;
 $geo_lng = 0;
 $geo_addr= '';
@@ -16,6 +41,7 @@ $date    = '';
 if($id > 0) {
     $item = $tbshuoshuo->get($id);
     $content = $item->content;
+    $source  = $item->source;
     $geo_lat = $item->geo_lat;
     $geo_lng = $item->geo_lng;
     $geo_addr= $item->geo_addr;
@@ -24,7 +50,8 @@ if($id > 0) {
 ?>
 <form id="form" method="post" style="margin-bottom: 2em;">
 <h2>发表说说</h2>
-<textarea name="content" style="display: block; min-width: 300px; min-height: 150px;"><?php echo htmlspecialchars($content);?></textarea>
+<textarea name="source" style="display: block; min-width: 300px; min-height: 150px;"><?php echo htmlspecialchars($source ? $source : $content);?></textarea>
+<input type="hidden" name="content" value="" />
 <p>时间：<input type="text" name="date" value="<?php echo $date; ?>" /></p>
 <p>坐标： <span class="position"><?php echo $geo_addr, '（', $geo_lat,',',$geo_lng, '）'; ?></span></p>
 <p>位置：
@@ -116,6 +143,13 @@ if($id > 0) {
             get_detail_location(<?php echo $geo_lat,',',$geo_lng; ?>);
         <?php endif; ?>
     </script>
+<script>
+$('#form').submit(function() {
+    $('#form input[name="content"]').val(marked($('#form textarea[name="source"]').val()));
+    return true;
+});
+</script>
+
 <input type="hidden" name="do" value="<?php echo $id > 0 ? 'update' : 'new';?>" />
 <input type="hidden" name="id" value="<?php echo $id;?>" />
 <p><input type="submit" value="发表" /></p>
@@ -128,7 +162,7 @@ if($id > 0) {
 
     echo '<ul id="shuoshuos" style="list-style: none;">';
     foreach($sss as &$ss) {
-        echo '<li data-id="',$ss->id,'"><p>',$ss->content,'</p>','<span>',$ss->date,'</span>';
+        echo '<li data-id="',$ss->id,'">',$ss->content,'<span>',$ss->date,'</span>';
         echo '<button class="edit">编辑</button><button class="delete">删除</button></li>';
     }
     echo '</ul>';

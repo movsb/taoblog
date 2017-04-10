@@ -121,6 +121,7 @@ $sql = "CREATE TABLE IF NOT EXISTS shuoshuo (
     `geo_lng` FLOAT(10,6) NOT NULL DEFAULT 0,
     `geo_addr` VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
 	`comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
+    `source` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
 	PRIMARY KEY(`id`)
     );";
 if(!$my->query($sql)) {
