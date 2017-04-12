@@ -147,6 +147,8 @@
             width: 400px;
             min-width: 400px;
             min-height: 200px;
+            max-width: 90%;
+            max-height: 90%;
         }
 
         @media screen and (max-width: 500px) {
@@ -159,7 +161,6 @@
         top: 50%;
         margin: auto;
         transform: translateY(-50%);
-        font-size: 0.7em;
         resize: both;
         overflow: auto;
 
@@ -190,7 +191,7 @@
         .comment-title {
             position: relative;
             text-align: center;
-            font-size: 2em;
+            font-size: 1.5em;
             color: $comment_title_fg;
             cursor: default;
             top: -5px;
@@ -236,6 +237,8 @@
                 margin: 0px;
                 min-width: 50px;
                 resize: none;
+                font-family: inherit;
+                font-size: inherit;
                 flex: 1;
             }
         }
