@@ -14,7 +14,7 @@ class TB_Shuoshuo {
 
         $date = $tbdate->mysql_local_to_gmt($date);
 
-        $sql = "INSERT INTO shuoshuo (content,geo_lat,geo_lng,geo_addr,date,source) VALUES(?,?,?,?,?)";
+        $sql = "INSERT INTO shuoshuo (content,geo_lat,geo_lng,geo_addr,date,source) VALUES(?,?,?,?,?,?)";
         if($stmt = $tbdb->prepare($sql)) {
             if($stmt->bind_param('sddsss', $post['content'], $post['lat'], $post['lng'], $post['addr'],  $date, $post['source'])) {
                 $r = $stmt->execute();
