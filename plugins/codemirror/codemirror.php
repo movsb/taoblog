@@ -81,7 +81,8 @@ function memory_head() {
 function memory_foot() {
     if(!is_mobile()) { ?>
         <script>
-            CodeMirror.fromTextArea(document.getElementById('source'), {
+            var textarea = document.getElementById('source');
+            var codemirror = CodeMirror.fromTextArea(textarea, {
                 lineNumbers: true,
                 keyMap: 'vim',
                 lineWrapping: true,
@@ -90,6 +91,10 @@ function memory_foot() {
                         cm.setOption('fullScreen', !cm.getOption('fullScreen'));
                     },
                 },
+            });
+
+            codemirror.on('blur', function(cm) {
+                textarea.value = cm.getValue();
             });
         </script>
     <?php }
