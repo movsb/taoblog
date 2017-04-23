@@ -5,8 +5,6 @@ if(!isset($_SERVER['HTTP_USER_AGENT'])) {
 	die(-1);
 }
 
-$start_time = microtime();
-
 require('admin/load.php');
 require('theme/functions.php');
 
@@ -24,9 +22,6 @@ if(!login_auth() && file_exists('MAINTENANCE')) {
 if($tbquery->query() === false){
 	tb_die(400, '未定义的查询！');
 }
-
-// https://css-tricks.com/snippets/php/count-script-excecution-time/
-$execution_time = sprintf('%.5f', microtime() - $start_time);
 
 if(!$tbquery->have() 
     && !$tbquery->is_home() 
