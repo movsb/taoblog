@@ -33,7 +33,7 @@ function login_auth($redirect=false) {
 
 	$opt = new TB_Options;
 
-    $is_ssl = $_SERVER['SERVER_PORT'] == 443;
+    $is_ssl = ($_SERVER['HTTPS'] ?? 'off') === 'on';
 	$cookie_login = $_COOKIE['login'] ?? '';
 
 	$loggedin = $is_ssl && $cookie_login && $cookie_login === login_gen_cookie();

@@ -7,7 +7,7 @@ require_once('models/base.php');
 require_once('models/options.php');
 
 // 登录相关的请求全部在 https 下进行
-if($_SERVER['SERVER_PORT'] != 443) {
+if(($_SERVER['HTTPS'] ?? 'off') !== 'on') {
 	header('HTTP/1.1 302 Unauthorized access');
 	header('Location: /');
 	die(0);
