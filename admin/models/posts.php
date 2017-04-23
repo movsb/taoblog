@@ -20,6 +20,8 @@ class TB_Posts {
             'page_parents'  => '',
             'status'        => 'public',
             'metas'         => '',
+            'source'        => '',
+            'source_type'   => 'html',
         ];
 
 		$arg = tb_parse_args($def, $arg);
@@ -51,6 +53,11 @@ class TB_Posts {
 
         if(!in_array($arg['status'], ['public', 'draft'])) {
             $this->error = '文章发表状态不正确。';
+            return false;
+        }
+
+        if(!in_array($arg['source_type'], ['html', 'markdown'])) {
+            $this->error = '文章源类型不正确。';
             return false;
         }
 
@@ -95,12 +102,14 @@ class TB_Posts {
 
 		if($arg['date_gmt']) {
 			if($arg['modified']) {
-				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET date=?,modified=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=?,source=?,source_type=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('sssssissi',
+					if($stmt->bind_param('sssssissssi',
 						$arg['date_gmt'],$arg['modified_gmt'],
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'],
+                        $arg['source'], $arg['source_type'],
+                        $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -109,12 +118,14 @@ class TB_Posts {
 					}
 				}
 			} else {
-				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET date=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=?,source=?,source_type=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('ssssissi',
+					if($stmt->bind_param('ssssissssi',
 						$arg['date_gmt'],
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'],
+                        $arg['source'], $arg['source_type'],
+                        $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -125,11 +136,13 @@ class TB_Posts {
 			}
 		} else {
 			if($arg['modified']) {
-				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET modified=?,title=?,content=?,slug=?,taxonomy=?,status=?,metas=?,source=?,source_type=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
 					if($stmt->bind_param('ssssissi',
 						$arg['modified_gmt'], $arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'],
+                        $arg['source'], $arg['source_type'],
+                        $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -138,11 +151,13 @@ class TB_Posts {
 					}
 				}
 			} else {
-				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=?,status=?,metas=? WHERE id=? LIMIT 1";
+				$sql = "UPDATE posts SET title=?,content=?,slug=?,taxonomy=?,status=?,metas=?,source=?,source_type=? WHERE id=? LIMIT 1";
 				if($stmt = $tbdb->prepare($sql)){
-					if($stmt->bind_param('sssissi',
+					if($stmt->bind_param('sssissssi',
 						$arg['title'], $arg['content'],$arg['slug'],
-						$arg['taxonomy'], $arg['status'], $arg['metas'], $arg['id']))
+						$arg['taxonomy'], $arg['status'], $arg['metas'],
+                        $arg['source'], $arg['source_type'],
+                        $arg['id']))
 					{
 						$r = $stmt->execute();
 						$stmt->close();
@@ -181,6 +196,8 @@ class TB_Posts {
             'tags'              => '',
             'page_parents'      => '',
             'metas'             => '',
+            'source'            => '',
+            'source_type'       => 'html',
         ];
 
 		$arg = tb_parse_args($def, $arg);
@@ -208,6 +225,11 @@ class TB_Posts {
 
         if(!in_array($arg['status'], ['public', 'draft'])) {
             $this->error = '文章发表状态不正确。';
+            return false;
+        }
+
+        if(!in_array($arg['source_type'], ['html', 'markdown'])) {
+            $this->error = '文章源类型不正确。';
             return false;
         }
 
@@ -248,14 +270,18 @@ class TB_Posts {
 		$arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
 
 		$sql = "INSERT INTO posts (
-			date,modified,title,content,slug,type,taxonomy,status,comment_status,metas)
-			VALUES (?,?,?,?,?,?,?,?,?,?)";
+			date,modified,title,content,slug,type,taxonomy,status,comment_status,metas,source,source_type)
+			VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 		if($stmt = $tbdb->prepare($sql)){
-			if($stmt->bind_param('ssssssisis',
+			if($stmt->bind_param(
+                'ssssssisisss',
 				$arg['date_gmt'], $arg['modified_gmt'],
 				$arg['title'], $arg['content'],$arg['slug'],
 				$arg['type'], $arg['taxonomy'], $arg['status'],
-				$arg['comment_status'], $arg['metas']))
+				$arg['comment_status'], $arg['metas'],
+                $arg['source'], $arg['source_type']
+                )
+            )
 			{
 				$r = $stmt->execute();
 				$stmt->close();

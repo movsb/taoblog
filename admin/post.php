@@ -176,6 +176,23 @@ function post_widget_date($p=null) {
 add_hook('post_widget', 'post_widget_date');
 
 function post_admin_head() { ?>
+<script src="scripts/marked.js"></script>
+<script>
+    var renderer = new marked.Renderer();
+    renderer.code = function(code, lang) {
+        var beg = '<pre class="code" lang="' + (lang === undefined ? '' : lang) + '">\n';
+        var text = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var end = '\n</pre>';
+        return beg + text + end;
+    }
+    renderer.hr = function() {
+        return '<hr/>';
+    }
+    renderer.br = function() {
+        return '<br/>';
+    }
+    marked.setOptions({renderer: renderer});
+</script>
 <style>
 	.sidebar {
 
@@ -219,33 +236,13 @@ function post_admin_head() { ?>
 		box-sizing: border-box;
 	}
 
-	#content {
+	#source {
 		max-height: 2000px;
 		height: 50vh;
 		min-height: 300px;
 		width: 100%;
 		padding: 4px;
 		box-sizing: border-box;
-	}
-
-	.fullscreen {
-		position: fixed;
-		left: 0px;
-		top: 0px;
-		width: 100%;
-		height: 100%;
-		z-index: 1000;
-		padding: 1px;
-		box-sizing: border-box;
-	}
-
-	.fullscreen #content {
-		width: 100%;
-		height: 100%;
-		max-width: 100%;
-		max-height: 100%;
-		box-sizing: border-box;
-		padding: 6px;
 	}
 
 #form-post {
@@ -368,31 +365,14 @@ DOM;
 				</div>
 				<?php } ?>
 				<div>
-					<div><h2 style="display: inline-block; margin-right: 10px;">内容</h2><span id="msg" style="position: relative; top: 6px;"></span></div>
+					<h2>内容</h2>
 					<div class="textarea-wrap">
-						<textarea id="content" name="content" wrap="off"><?php
+                        <input type="hidden" id="content" name="content"/>
+						<textarea id="source" name="source" wrap="off"><?php
 							if($p) {
-								echo htmlspecialchars($p->content);
+								echo htmlspecialchars($p->source ? $p->source : $p->content);
 							}
 						?></textarea>
-						<script>
-							// 无法使用 keyup，因为 keyup 是在默认事件调用之后才被调用
-							$('#content').on('keydown', function(e) {
-								if(e.keyCode == 122) { // f11
-									$('.textarea-wrap').toggleClass('fullscreen');
-									e.preventDefault();
-									return false;
-								} else if(e.keyCode == 83) { // s
-									if(e.originalEvent.ctrlKey == true) { // ctrl + s
-										localStorage.setItem('post_content', $('#content').val());
-										$('#msg').html('(<span style="color: green;">草稿已保存</span>)').show();
-										setTimeout(function(){$('#msg').fadeOut();},1000);
-										e.preventDefault();
-										return false;
-									}
-								}
-							});
-						</script>
 					</div>
 				</div>
 				<div>
@@ -433,6 +413,11 @@ DOM;
                         <option value="public"<?php if($p && $p->status == 'public') echo ' selected'; ?>>公开</option>
                         <option value="draft"<?php if($p && $p->status == 'draft') echo ' selected'; ?>>草稿</option>
                     </select>
+                    <select name="source_type">
+                        <?php if($p && $p->source_type === '') $p->source_type = 'html'; ?>
+                        <option value="html"<?php if($p && $p->source_type == 'html') echo ' selected'; ?>>HTML</option>
+                        <option value="markdown"<?php if($p && $p->source_type == 'markdown') echo ' selected'; ?>>Markdown</option>
+                    </select>
 				</div>
 			</div>
 			<?php foreach($widgets as &$widget) {
@@ -441,6 +426,24 @@ DOM;
 				}
 			} ?>
 		</div><!-- sidebar right -->
+        <script>
+            $('#form-post').submit(function() {
+                var source = $('#source');
+                var content = $('input[name="content"]');
+                var type = $('select[name="source_type"]').val();
+                if(type == 'html') {
+                    content.val(source.val());
+                }
+                else if(type == 'markdown') {
+                    var result = marked(source.val());
+                    content.val(result);
+                }
+                else {
+                    alert('bad source type.');
+                    return false;
+                }
+            });
+        </script>
 	</form>
 	<script type="text/javascript">
 		document.getElementsByTagName('form')[0].reset();
