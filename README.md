@@ -33,7 +33,7 @@ client/		| 一个用 Python 写的第三方博客管理工具
 docs/		| 一些文档
 plugins/	| 插件目录
 setup/		| 安装脚本目录、配置文件目录
-theme/		| 博客主题内容生成目录
+themes/		| 各主题文件
 backups/    | 一些备份文件
 
 

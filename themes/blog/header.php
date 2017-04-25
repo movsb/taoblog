@@ -38,7 +38,7 @@
 		echo '<meta name="keywords" content="', htmlspecialchars($tbopt->get('keywords')), '" />', PHP_EOL;
 } ?>
 	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo '/rss';?>" />
-	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
+	<link rel="stylesheet" type="text/css" href="/themes/blog/style.css" />
     <?php if ($tbquery->is_archive()) { echo '<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />'; } ?>
 	<script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 <?php if(!$tbquery->count) {
@@ -64,7 +64,7 @@
                 <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
                 <p class="motto">不忘初心，方得始终</p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
-                    <img src="/theme/images/search.svg" class="icon" /><!--
+                    <img src="/themes/blog/images/search.svg" class="icon" /><!--
                     --><input name="q" placeholder="Google Search" />
                 </form>
                 <div class="nav">

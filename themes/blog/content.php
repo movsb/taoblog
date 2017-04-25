@@ -40,7 +40,7 @@
 
     <!-- comments begin -->
     <div id="comments" class="clearfix">
-        <script src="/theme/scripts/comment.js"></script>
+        <script src="/themes/blog/scripts/comment.js"></script>
     </div>
     <!-- comments end -->
 </article>

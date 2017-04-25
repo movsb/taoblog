@@ -22,7 +22,7 @@ document.write(function(){/*
 		<div class="comment-form-div-1 no-sel">
 			<div class="no-sel" class="nc">
 				<div class="closebtn" title="关闭">
-                    <img src="/theme/images/close.svg" width="20" height="20"/>
+                    <img src="/themes/blog/images/close.svg" width="20" height="20"/>
 				</div>
 				<div class="comment-title">
 					<span>评论</span>
@@ -203,7 +203,7 @@ Comment.prototype.get_count = function(callback) {
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {
-	return '/theme/avatar.php?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
+	return '/themes/blog/avatar.php?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
 };
 
 Comment.prototype.emotions = ["狗狗", "偷笑", "冷汗", "卖萌", "可爱", "呲牙", "喷血", "嘘", "坏笑", "小纠结", "尴尬", "幽灵", "微笑", "惊喜", "惊恐", "惊讶", "憨笑", "我最美", "托腮", "抠鼻", "拥抱", "撇嘴", "擦汗", "敲打", "斜眼笑", "无奈", "晕", "泪奔", "流汗", "流泪", "玫瑰", "疑问", "笑哭", "衰", "调皮", "阴险", "难过", "骚扰"];
@@ -213,7 +213,7 @@ Comment.prototype.normalize_content = function(c) {
     s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code" lang="$2">\n$3</pre>');
     s = s.replace(/\[([^\x20-\x7E]{1,3})\]/gm, function(all,alt) {
             if(Comment.prototype.emotions.indexOf(alt) != -1)
-                return $('<img/>').attr('alt', all).attr('src', '/theme/emotions/' + alt + '.png')[0].outerHTML;
+                return $('<img/>').attr('alt', all).attr('src', '/themes/blog/emotions/' + alt + '.png')[0].outerHTML;
             else
                 return all;
         });
