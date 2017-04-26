@@ -1,0 +1,248 @@
+/* 评论 */
+
+#comments {
+    overflow: hidden;
+}
+
+/* 评论标题 */
+#comment-title {
+	font-size: 1.5em;
+	border-bottom: 1px solid $border_color;
+	margin-bottom: 0;
+}
+
+/* 评论列表 */
+#comment-list {
+	padding: 0;
+	list-style: none;
+
+    .comment-replies ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    .comment-avatar {
+        cursor: pointer;
+    }
+
+
+    .comment-li {
+        padding: 1em 0px 1em 1em;
+
+        .comment-avatar {
+            float: left;
+            width: 48px;
+            height: 48px;
+
+            img {
+                border-radius: 4px;
+            }
+        }
+
+        .comment-meta {
+            margin-left: 54px;
+            margin-bottom: 6px;
+        }
+
+        @media screen and (min-width: 501px) {
+            .comment-replies {
+                margin-left: 1em;
+            }
+        }
+
+        @media screen and (min-width: 601px) {
+            .comment-replies {
+                margin-left: 1em;
+            }
+        }
+
+        .comment-content {
+            margin-left: 54px;
+            margin-bottom: 0.5em;
+            margin-top: 0;
+            padding-left: 0.4em;
+            font-family: Microsoft Yahei Mono, Consolas, "Microsoft YaHei";
+            white-space: pre-wrap;
+            overflow: auto;
+            max-height: 400px;
+        }
+
+        .comment-replies li {
+            padding: 1em 0px 0em 1em;
+            border-top: 1px dashed $comment_func_border;
+        }
+
+		.reply-to {
+			margin-bottom: 0.5em;
+		}
+    }
+}
+
+/* 评论提交 */
+#comment-submit {
+	padding: 5px;
+	background-color: $comment_submit_bg;
+	color: $comment_submit_fg;
+	cursor: pointer;
+
+    &:hover {
+        background-color: $comment_submit_hover_bg;
+    }
+}
+
+/* 评论功能区 */
+#comments .comment-func {
+	margin: 2em;
+}
+
+.comment-meta {
+    .nickname, .author {
+        font-size: 1.1em;
+        position: relative;
+        top: -4px;
+    }
+
+    .nickname {
+        color: $comment_nickname_fg;
+
+        i.fa {
+            margin-right: 3px;
+        }
+        a {
+            color: inherit;
+        }
+    }
+
+    .author {
+        color: $comment_author_fg;
+    }
+
+    .date {
+        margin: 0px;
+        font-size: 0.9em;
+        position: relative;
+        top: -4px;
+        color: $comment_date_fg;
+    }
+}
+
+#comment-form-div {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    height: 100%;/* 不加这个Chrome无法工作，why? */
+    z-index: 1000;
+    display: none;
+
+    .comment-form-div-1 {
+        background-color: rgba(255,255,255,0.95);
+        padding: 10px;
+        border: 1px solid grey;
+        box-shadow: 0px 0px 2px;
+        display: block;
+
+        @media screen and (min-width: 501px) {
+            width: 400px;
+            min-width: 400px;
+            min-height: 200px;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        @media screen and (max-width: 500px) {
+            width: unset !important;
+            height: unset !important;
+            min-height: 300px;
+        }
+
+        position: relative;
+        top: 50%;
+        margin: auto;
+        transform: translateY(-50%);
+        resize: both;
+        overflow: auto;
+
+        .nc {
+            height: 28px;
+        }
+
+        .closebtn {
+            color: #AAA7A7;
+            z-index: 1000;
+            position: absolute;
+            top: 3px;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+            right: 3px;
+            &:hover {
+                color: $comment_sysbtn_hover_fg;
+            }
+            img {
+                opacity: 0.3;
+                &:hover {
+                    opacity: 0.6;
+                }
+            }
+        }
+
+        .comment-title {
+            position: relative;
+            text-align: center;
+            font-size: 1.5em;
+            color: $comment_title_fg;
+            cursor: default;
+            top: -5px;
+        }
+
+        #comment-form {
+            overflow: hidden;
+            display: flex;
+            position: absolute;
+            left: 10px;
+            top: 38px;
+            right: 10px;
+            bottom: 10px;
+
+            @media screen and (max-width: 500px) {
+                flex-direction: column;
+            }
+
+            .fields {
+                flex: 1;
+
+                @media screen and (min-width: 501px) {
+                    width: 150px;
+                    max-width: 150px;
+                    padding: 0px 0px 0px 1em;
+                }
+
+                @media screen and (max-width: 500px) {
+                    margin-top: 1em;
+                }
+
+                > input[type="text"] {
+                    margin-bottom: 8px;
+                    display: block;
+                    box-sizing: border-box;
+                    width: 100%;
+                    max-width: 100%;
+                }
+            }
+
+
+            textarea {
+                margin: 0px;
+                min-width: 50px;
+                resize: none;
+                font-family: inherit;
+                font-size: inherit;
+                flex: 1;
+            }
+        }
+    }
+}
+
+

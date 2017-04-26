@@ -1,0 +1,57 @@
+/* 底部 */
+#footer {
+	font-size: 13px;
+	margin-top: 30px;
+
+    .mb {
+        margin-bottom: 16px;
+    }
+
+    .footer-wrapper {
+        box-sizing: border-box;
+        margin: 0px auto;
+    }
+
+    .declaration {
+
+    }
+
+    .column {
+        max-height: 100%;
+        box-sizing: border-box;
+        ul {
+            padding: 0px;
+            list-style: none;
+            line-height: 1.5em;
+            a {
+                color: $footer_column_ul_a_fg;
+                cursor: pointer;
+                text-decoration: none;
+                &:hover {
+                    text-decoration: none;
+
+                }
+            }
+        }
+    }
+
+    .copy {
+        text-align: center;
+    }
+}
+
+@media screen and (min-width: 851px) {
+	#mobile-footer {
+		display: none;
+	}
+}
+
+@media screen and (max-width: 850px) {
+	#mobile-footer {
+		border-top: 1px solid $border_color;
+		margin-top: 10px;
+		padding: 10px;
+		text-align: center;
+	}
+}
+
