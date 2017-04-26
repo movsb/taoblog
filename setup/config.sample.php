@@ -2,6 +2,7 @@
 
 define('TBPATH',            dirname(__FILE__).'/../');
 
+define('TB_PRIVATE',        FALSE);                     /* 是否对外开放 */
 define('TB_THEME',          'blog');                    /* 主题 */
 
 define('DB_HOST',           'localhost');               /* 主机名 */

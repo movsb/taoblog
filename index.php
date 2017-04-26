@@ -13,6 +13,11 @@ function theme_file($f)
 require('admin/load.php');
 require(theme_file('functions.php'));
 
+// 是否对外开放
+if(TB_PRIVATE === TRUE) {
+    login_auth(true);
+}
+
 // maintenance mode
 // https://yoast.com/http-503-site-maintenance-seo/
 if(!login_auth() && file_exists('MAINTENANCE')) {
