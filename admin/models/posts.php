@@ -300,110 +300,13 @@ class TB_Posts {
 		return false;
 	}
 
-	public function query(&$arg){
+	private function after_posts_query(array $posts) {
 		global $tbquery;
 		global $tbdate;
 
-		if(!is_array($arg))
-			return false;
 
-        $defs = [
-            'id'            => '',
-            'tax'           => '',
-            'slug'          => '',
-            'parents'       => '',
-            'page'          => '',
-            'yy'            => '',
-            'mm'            => '',
-			'pageno'        => '',
-            'status'        => 'public',      // 字符串或数组
-			'modified'      => false,
-			'feed'          => '',
-			'no_content'    => false,
-			'tags'          => '',
-            'comments'      => '',
-			];
-
-		$arg = tb_parse_args($defs, $arg);
-
-		if($arg['modified'] && !$tbdate->is_valid_mysql_datetime($arg['modified']))
-			return false;
-
-		if($arg['id'] && intval($arg['id']) <=0
-			|| $arg['yy'] && intval($arg['yy']) < 1970
-			|| $arg['mm'] && (intval($arg['mm'])<1 || intval($arg['mm'])>12)
-			|| $arg['pageno'] && intval($arg['pageno']) < 1)
-		{
-			return false;
-		}
-
-        $status = $arg['status'];
-        if((!is_string($status) && !is_array($status))
-            || (is_string($status) && !in_array($status, ['public', 'draft']))
-            || (is_array($status) && count(array_intersect($status, ['public', 'draft'])) != count($status))
-        ){
-            return false;
-        }
-
-		$arg['id'] = (int)$arg['id'];
-		$arg['yy'] = (int)$arg['yy'];
-		$arg['mm'] = (int)$arg['mm'];
-		$arg['pageno'] = (int)$arg['pageno'];
-
-		$tbquery->pageno = max(1,$arg['pageno']);
-
-		$queried_posts = [];
-
-		if($arg['id']){
-			$tbquery->type = 'post';
-			$queried_posts = $this->query_by_id($arg);
-
-			if(is_array($queried_posts) && count($queried_posts)) {
-				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
-                $queried_posts[0]->page_view++;
-                $this->increase_page_view_count($queried_posts[0]->id);
-			}
-		} else if($arg['slug']) {
-            $tbquery->type = 'post';
-            $queried_posts = $this->query_by_slug($arg);
-
-			if(is_array($queried_posts) && count($queried_posts)) {
-				$tbquery->related_posts = $this->get_related_posts($queried_posts[0]->id);
-                $queried_posts[0]->page_view++;
-                $this->increase_page_view_count($queried_posts[0]->id);
-			}
-        } else if($arg['page']) {
-            $tbquery->type = 'page';
-            $queried_posts = $this->query_by_page($arg);
-		} else if($arg['tax']) {
-			$tbquery->type = 'tax';
-			$arg['no_content'] = true;
-			$queried_posts =  $this->query_by_tax($arg);
-		} else if($arg['yy']) {
-			$tbquery->type = 'date';
-			$arg['no_content'] = true;
-			$queried_posts = $this->query_by_date($arg);
-		} else if($arg['pageno']) {
-			$tbquery->type = 'date';
-			$arg['no_content'] = true;
-			$queried_posts = $this->query_by_date($arg);
-		} else if($arg['feed']) {
-			$tbquery->type = 'feed';
-			unset($arg);
-			$arg = ['pageno' => '1', 'yy'=>'', 'mm'=>'', 'no_content'=>false];
-			$queried_posts = $this->query_by_date($arg);
-		} else if($arg['tags']) {
-			$tbquery->type = 'tag';
-			$queried_posts = $this->query_by_tags($arg);
-		} else {
-			$tbquery->type = 'home';
-			$queried_posts = [];
-		}
-
-		if(!is_array($queried_posts)) return false;
-
-		for($i=0; $i<count($queried_posts); $i++) {
-			$p = &$queried_posts[$i];
+		for($i=0; $i<count($posts); $i++) {
+			$p = &$posts[$i];
 
 			if(isset($p->date))
 				$p->date = $tbdate->mysql_datetime_to_local($p->date);
@@ -421,10 +324,13 @@ class TB_Posts {
             }
 		}
 
-		return $queried_posts;
+		return $posts;
 	}
 
-	private function query_by_id(&$arg) {
+    // 根据 id 查询单篇文章
+    // 未查询到文章时返回 false 或 []
+    // 查询到文章时返回数组（仅一篇文章）
+	public function query_by_id(int $id, string $modified) {
 		global $tbdb;
 		global $tbtax;
 		global $tbopt;
@@ -433,12 +339,10 @@ class TB_Posts {
         $sql['select']  = '*';
         $sql['from']    = 'posts';
         $sql['where']   = [];
-        $sql['where'][] = 'id=' . intval($arg['id']);
-
-		if($arg['modified']) {
-			$sql['where'][] = "modified>'".$arg['modified']."'";
-		}
-
+        $sql['where'][] = 'id=' . $id;
+        if($modified) {
+            $sql['where'][] = "modified>'".$modified."'";
+        }
         $sql['limit'] = 1;
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
@@ -452,15 +356,18 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
+        $p = $this->after_posts_query($p);
+
 		return $p;
 	}
 
-	private function query_by_tags(&$arg) {
+    // 查询标签对应的文章集
+	public function query_by_tags(string $tag) {
 		global $tbdb;
 		global $tbquery;
 
-		$tags = $tbdb->real_escape_string($arg['tags']);
-		$tbquery->tags = $tags;
+		$tag = $tbdb->real_escape_string($tag);
+		$tbquery->tags = $tag;
 
         $sql = array();
         $sql['select']  = 'posts.*';
@@ -468,7 +375,7 @@ class TB_Posts {
         $sql['where']   = [];
         $sql['where'][] = "posts.id=post_tags.post_id";
         $sql['where'][] = "post_tags.tag_id=tags.id";
-        $sql['where'][] = "tags.name='$tags'";
+        $sql['where'][] = "tags.name='$tag'";
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
@@ -483,22 +390,19 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
+        $p = $this->after_posts_query($p);
+
 		return $p;
 	}
 
-	private function query_by_date($arg) {
+    // 获取日期对应的文章集
+	public function query_by_date(int $yy, int $mm, int $count) {
 		global $tbdb;
 		global $tbquery;
 		global $tbdate;
 
-		$yy = (int)$arg['yy'];
-		$mm = (int)$arg['mm'];
-
-		$content_filed = $arg['no_content'] ? '' : ',content';
-		$fields = "id,date,title$content_filed,slug,type,taxonomy";
-
         $sql = array();
-        $sql['select']  = $fields;
+        $sql['select']  = '*';
         $sql['from']    = 'posts';
         $sql['where']   = [];
 
@@ -514,12 +418,11 @@ class TB_Posts {
 
 		$tbquery->date = (object)['yy'=>$yy,'mm'=>$mm];
 
-		$ppp = (int)$tbquery->posts_per_page;
-		$pageno = intval($arg['pageno']);
-		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
-
         $sql['orderby'] = 'date DESC';
-        $sql['limit']   = "$offset,$ppp";
+
+        if($count > 0) {
+            $sql['limit'] = $count;
+        }
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
@@ -532,32 +435,39 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
-		$tbquery->total = $this->get_count_of_date($yy, $mm);
+        $p = $this->after_posts_query($p);
 
 		return $p;
 	}
 
-	private function query_by_slug($arg){
+    // 获取最近（依据 date）
+    public function query_by_latest(int $count)
+    {
+        return $this->query_by_date(0, 0, $count);
+    }
+
+    // 查询别名对应的单篇文章
+	public function query_by_slug(string $tax, string $slug, string $modified){
 		global $tbdb;
 		global $tbtax;
 
-		$tax = $arg['tax'];
-		$slug = $arg['slug'];
-
+        // 根据类似 /path/to/folder/post 的形式
+        // 中 /path/to/folder 文件夹（分类层次）
+        // 对应的分类中最后一个分类的 ID
 		$taxid = $tbtax->id_from_tree($tax);
 		if(!$taxid) return false;
+        
+        $slug = $tbdb->real_escape_string($slug);
 
         $sql = array();
         $sql['select']  = '*';
         $sql['from']    = 'posts';
         $sql['where']   = [];
         $sql['where'][] = "taxonomy=$taxid";
-        $sql['where'][] = "slug='".$tbdb->real_escape_string($slug)."'";
-
-		if($arg['modified']) {
-            $sql['where'][] = "modified>'".$arg['modified']."'";
-		}
-
+        $sql['where'][] = "slug='".$slug."'";
+        if($modified) {
+            $sql['where'][] = "modified>'".$modified."'";
+        }
         $sql['limit']   = 1;
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
@@ -571,20 +481,22 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
-		return $p;
+        $p = $this->after_posts_query($p);
 
+		return $p;
 	}
 
-	private function query_by_page($arg){
+    // 查询指定页面
+    // 页面格式：/parent/page
+	public function query_by_page(string $parents, string $page, string $modified){
 		global $tbdb;
 
-        $parents = $arg['parents'];
         $parents = strlen($parents) ? explode('/', substr($parents, 1)) : [];
         $pid = $this->get_the_last_parents_id($parents);
 
         if($pid === false) return false;
 
-		$slug = $arg['page'];
+        $page = $tbdb->real_escape_string($page);
 
         $sql = array();
         $sql['select']  = '*';
@@ -592,13 +504,11 @@ class TB_Posts {
         $sql['where']   = [];
         $sql['where'][] = "type='page'";
         $sql['where'][] = "taxonomy=$pid";
-        $sql['where'][] = "slug='".$tbdb->real_escape_string($slug)."'";
-
-		if($arg['modified']) {
-            $sql['where'][] = "modified>'".$arg['modified']."'";
-		}
-
+        $sql['where'][] = "slug='".$page."'";
         $sql['limit']   = 1;
+        if($modified) {
+            $sql['where'][] = "modified>'".$modified."'";
+        }
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
@@ -611,16 +521,17 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
+        $p = $this->after_posts_query($p);
+
 		return $p;
 
 	}
 
-	private function query_by_tax($arg){
+    // 根据分类查询文章
+	private function query_by_tax(string $tax){
 		global $tbdb;
 		global $tbtax;
 		global $tbquery;
-
-		$tax = $arg['tax'];
 
 		$taxid = (int)$tbtax->id_from_tree($tax);
 		if(!$taxid) return false;
@@ -629,8 +540,7 @@ class TB_Posts {
 
         $sql = array();
 
-		$content_filed = $arg['no_content'] ? '' : ',content';
-		$fields = "id,date,title$content_filed,slug,type,taxonomy";
+		$fields = "id,date,title,slug,type,taxonomy";
 
         $sql['select']  = $fields;
         $sql['from']    = 'posts';
@@ -645,12 +555,6 @@ class TB_Posts {
 
         $sql['oderby']  = 'date DESC';
 
-		$ppp = (int)$tbquery->posts_per_page;
-		$pageno = intval($arg['pageno']);
-		$offset = ($pageno >= 1 ? $pageno-1 : 0) * $ppp;
-        $sql['limit']   = $ppp;
-        $sql['offset']  = $offset;
-
         $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
@@ -661,7 +565,7 @@ class TB_Posts {
 			$p[] = $r;
 		}
 
-		$tbquery->total = $this->get_count_of_taxes(array_merge([$taxid],$offsprings));
+        $p = $this->after_posts_query($p);
 
 		return $p;
 

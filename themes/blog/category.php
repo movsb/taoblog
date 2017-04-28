@@ -20,7 +20,7 @@ while($tbquery->has()){
 	</ul>
 </div>
 
-<?php theme_gen_pagination();
+<?php
 
 require('footer.php');
 

@@ -354,32 +354,6 @@
     }
 }
 
-/* 分页 */
-#content .pagination {
-	border-top: 1px solid $border_color;
-	padding: 20px;
-	text-align: center;
-
-    .page-number,
-    .current {
-        padding: 3px 6px;
-        cursor: pointer;
-        margin-right: 0.5em;
-        color: inherit;
-    }
-
-    .page-number:hover {
-        color: $pagination_number_hover_fg;
-        background-color: $pagination_number_hover_bg;
-        text-decoration: none;
-    }
-
-    .current {
-        color: $pagination_current_fg;
-        background-color: $pagination_current_bg;
-    }
-}
-
 .post, .page {
     a {
         text-decoration: none;

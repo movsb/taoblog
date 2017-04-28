@@ -14,16 +14,13 @@
 		} else if($tbquery->is_singular()) {
 			echo htmlspecialchars($the->title);
 		} else if($tbquery->is_category()) {
-			echo "第{$tbquery->pageno}页 - ";
 			$names = $tbquery->category['name'];
 			$names = array_reverse($names);
 			echo htmlspecialchars(implode(' - ', $names));
 		} else if($tbquery->is_date()) {
-			echo "第{$tbquery->pageno}页 - ";
 			if($tbquery->date->yy >= 1970) echo $tbquery->date->yy,'年';
 			if($tbquery->date->mm >= 1 && $tbquery->date->mm <= 12) echo $tbquery->date->mm,'月';
 		} else if($tbquery->is_tag()) {
-			echo "第{$tbquery->pageno}页 - ";
 			echo htmlspecialchars($tbquery->tags);
         } else if($tbquery->is_memory()) {
             echo '说说';

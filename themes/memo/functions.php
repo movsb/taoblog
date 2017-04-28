@@ -1,44 +1,5 @@
 <?php
 
-function theme_gen_pagination() {
-	global $tbquery;
-
-	$pageno = $tbquery->pageno;
-	$pagenum = $tbquery->pagenum;
-
-	$start = max(1, $pageno-5);
-	$end = min($pagenum, $pageno + 5);
-
-	echo '<div class="pagination no-sel">',"\n";
-
-	if($pageno > 1) echo '<a href="'.($pageno-1).'" class="page-number">上一页</a>';
-
-		for($i=$start; $i < $pageno; $i++) {
-			echo '<a pageno="'.$i.'" class="page-number">'.$i.'</a>';
-		}
-		echo '<span class="current">'.$pageno.'</span>';
-		for($i=$pageno+1; $i <= $end; $i++) {
-			echo '<a pageno="'.$i.'" class="page-number">'.$i.'</a>';
-		}
-
-		if($pageno < $pagenum) echo '<a pageno="'.($pageno+1).'" class="page-number">下一页</a>';
-?>
-		<script type="text/javascript">
-			$('.pagination').click(function(e) {
-				var cl = e.target.classList;
-				if(cl.contains('page-number')) {
-					var pageno = $(e.target).attr('pageno');
-					var loc = location.pathname;
-					if(!/page\/\d+$/.test(loc)) loc += 'page/1';
-					loc = loc.replace(/page\/\d+$/,'page/'+pageno);
-					location.pathname = loc;
-				}
-			});
-		</script>
-	</div>
-<?php
-}
-
 function the_meta_date() {
 	global $the;
 

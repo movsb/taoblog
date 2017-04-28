@@ -14,10 +14,6 @@ class TB_Query {
 	public $count;
 	private $index;
 
-	public $pageno;
-	public $pagenum;
-	public $pages_per_page;
-
 	public $is_query_modification = false;
 
 	// 查询类别
@@ -47,7 +43,6 @@ class TB_Query {
 
 	public function __construct() {
 		global $tbopt;
-		$this->posts_per_page = (int)$tbopt->get('posts_per_page', 20);
 		$this->internal_query = [];
 	}
 
@@ -65,6 +60,7 @@ class TB_Query {
 	}
 
 	public function query() {
+        global $tbquery;
 		global $tbopt;
 		global $tbpost;
 		global $tbtax;
@@ -80,14 +76,14 @@ class TB_Query {
 		$rules = [
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
             '^/archives/(\d+)\.html$'                           => 'id=$1',
-            '^/date/((\d{4})/((\d{2})/)?)?(page/(\d+))?$'       => 'yy=$2&mm=$4&pageno=$6',
+            '^/date/((\d{4})/((\d{2})/)?)$'                     => 'yy=$2&mm=$4',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/sitemap\.xml$'                                   => 'sitemap=1',
             '^/memory$'                                         => 'memory=1',
             '^/archives$'                                       => 'archives=1',
-            '^/(.+)/(page/(\d+))?$'                             => 'tax=$1&pageno=$3',
+            '^/(.+)/$'                                          => 'tax=$1',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
             '^/$'                                               => '',
@@ -107,7 +103,6 @@ class TB_Query {
 
 			return false;
 		}
-
 
 		$this->is_query_modification = false;
 		if(!$logged_in && isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
@@ -171,7 +166,52 @@ class TB_Query {
         }
 
         // 查询文章
-		$r = $tbpost->query($this->internal_query);
+        $r = [];
+        $q = &$this->internal_query;
+
+        if($q['id'] ?? '') {
+            $tbquery->type = 'post';
+            $r = $tbpost->query_by_id((int)$q['id'], $q['modified']??'');
+            if(is_array($r) && count($r)) {
+                $tbquery->related_posts = $tbpost->get_related_posts($r[0]->id);
+                $r[0]->page_view++;
+                $tbpost->increase_page_view_count($r[0]->id);
+            }
+        }
+        else if($q['slug'] ?? '') {
+            $tbquery->type = 'post';
+            $r = $tbpost->query_by_slug($q['tax'], $q['slug'], $q['modified']??'');
+            if(is_array($r) && count($r)) {
+                $tbquery->related_posts = $tbpost->get_related_posts($r[0]->id);
+                $r[0]->page_view++;
+                $tbpost->increase_page_view_count($r[0]->id);
+            }
+        }
+        else if($q['page'] ?? '') {
+            $tbquery->type = 'page';
+            $r = $tbpost->query_by_page($q['parents'], $q['page'], $q['modified']??'');
+            if(is_array($r) && count($r)) {
+                $r[0]->page_view++;
+                $tbpost->increase_page_view_count($r[0]->id);
+            }
+        }
+        else if($q['tax'] ?? '') {
+            $tbquery->type = 'tax';
+            $r = $tbpost->query_by_tax($q['tax']);
+        }
+        else if($q['tags'] ?? '') {
+            $tbquery->type = 'tag';
+            $r = $tbpost->query_by_tags($q['tags']);
+        }
+        else if($q['feed'] ?? '') {
+            $tbquery->type = 'feed';
+            $r = $tbpost->query_by_latest(20);
+        }
+        else {
+            $tbquery->type = 'home';
+            $r = $tbpost->query_by_latest(20);
+        }
+
 		if($r === false || !is_array($r)) return $r;
 
 		// 页面不能通过id访问，重定向到slug
@@ -191,7 +231,6 @@ class TB_Query {
 
 		$this->count = count($this->objs);
 		$this->index = 0;
-		$this->pagenum = (int)ceil($this->total / $this->posts_per_page);
 
 		if($need_redirect && $this->count) {
 			$link = the_link($this->objs[0]);
