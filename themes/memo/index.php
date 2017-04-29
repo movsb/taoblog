@@ -1,6 +1,5 @@
 <?php
 
-
 // 这代码加这命名加这逻辑，我估计你得看醉，反正我是醉了
 function list_all_cats() {
 	global $tbtax;
@@ -42,6 +41,16 @@ require('header.php');
     <div class="cats">
         <?php list_all_cats(); ?>
     </div>
+    <div class="content">
+        <div>
+            <h2 class="title"></h2>
+        </div>
+        <div>
+            <div class="content"></div>
+        </div>
+        <div>
+        </div>
+    </div>
 </div>
 
 <?php
@@ -51,9 +60,9 @@ function tb_footer_hook() { ?>
 function gen_entry(p) {
     return $('<li/>')
         .attr('class', 'title')
-        .append($('<a/>')
-            .attr('target', '_blank')
-            .attr('href', '/' + p.id + '/')
+        .append($('<span/>')
+            .attr('class', 'item')
+            .attr('data-id', p.id)
             .attr('title', p.title)
             .text(p.title)
         );
@@ -75,6 +84,14 @@ function get_entries_callback(data, ul) {
     else {
         alert(data.error);
     }
+}
+
+function gen_content(p)
+{
+    var root = $('#content .content');
+
+    root.find('.title').text(p.title);
+    root.find('.content').html(p.content);
 }
 
 function toggle_loading(ul, on) {
@@ -112,6 +129,18 @@ $('.cats').on('click',function(e) {
                 toggle_loading(ul, false);
             });
         }
+    }
+    else if(t.hasClass('item')) {
+        $.post('/api/post/get',
+            'id=' + t.attr('data-id'),
+            function(data) {
+                if(data.ret == 0) {
+                    gen_content(data.data);
+                } else {
+                    alert('错误。');
+                }
+            }
+        );
     }
     e.stopPropagation();
 });

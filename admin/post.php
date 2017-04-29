@@ -459,8 +459,7 @@ if(!$do) {
 	die(0);
 } else if($do === 'edit') {
 	$id = intval($_GET['id']);
-	$arg = ['id' => $id];
-	$post = $tbpost->query($arg);
+	$post = $tbpost->query_by_id($id,'');
 	if($post === false || empty($post)){
 		tb_die(200, '没有这篇文章！');
 	}

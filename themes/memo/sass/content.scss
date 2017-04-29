@@ -28,38 +28,12 @@
 
 /* 文章归档页面 */
 .archives {
-    overflow: hidden;
-    > div:nth-child(n) {
-        float: left;
-        width: 30%;
-        margin-right: 2%;
-        min-width: 200px;
-    }
-
-    .tags {
-        ul {
-            list-style: none;
-            line-height: 1.5em;
-            padding-left: 2em;
-            display: none;
-            &.roots {
-                padding-left: 0px;
-                display: block;
-            }
-            li {
-                &.tag {
-                    > .tag-name {
-                        cursor: pointer;
-                        &.fa {
-                            width: 1em;
-                            margin-right: 6px;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    display: flex;
     .cats {
+        min-width: 200px;
+        max-width: 300px;
+        flex: 1;
+
         ul {
             list-style: none;
             line-height: 1.5em;
@@ -82,28 +56,9 @@
             }
         }
     }
-    .date {
-        ul {
-            list-style: none;
-            line-height: 1.5em;
-            padding-left: 2em;
-            display: none;
-            &.roots {
-                padding-left: 0px;
-                display: block;
-            }
-            li {
-                &.year-month {
-                    > .datetime {
-                        cursor: pointer;
-                        &.fa {
-                            width: 1em;
-                            margin-right: 6px;
-                        }
-                    }
-                }
-            }
-        }
+
+    .content {
+        flex: 1;
     }
 }
 

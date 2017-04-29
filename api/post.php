@@ -41,7 +41,8 @@ if($api->method == 'update') {
 }
 elseif($api->method == 'get') {
     $id = (int)check_arg('id');
-    $posts = $tbpost->query(compact('id'));
+    // TODO 使用 tbquery 的查询功能
+    $posts = $tbpost->query_by_id($id,'');
 
     if($posts === false || !count($posts)) {
         api_die([
