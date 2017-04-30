@@ -528,7 +528,7 @@ class TB_Posts {
 	}
 
     // 根据分类查询文章
-	private function query_by_tax(string $tax){
+	public function query_by_tax(string $tax){
 		global $tbdb;
 		global $tbtax;
 		global $tbquery;
