@@ -415,8 +415,8 @@ DOM;
                     </select>
                     <select name="source_type">
                         <?php if($p && $p->source_type === '') $p->source_type = 'html'; ?>
-                        <option value="html"<?php if($p && $p->source_type == 'html') echo ' selected'; ?>>HTML</option>
                         <option value="markdown"<?php if($p && $p->source_type == 'markdown') echo ' selected'; ?>>Markdown</option>
+                        <option value="html"<?php if($p && $p->source_type == 'html') echo ' selected'; ?>>HTML</option>
                     </select>
 				</div>
 			</div>
