@@ -175,8 +175,15 @@ function post_widget_date($p=null) {
 
 add_hook('post_widget', 'post_widget_date');
 
-function post_admin_head() { ?>
+function post_admin_head() {
+    $post = $GLOBALS['__p__'] ?? null;
+
+    echo '<title>', $post ? '【编辑文章】'.htmlspecialchars($post->title) : '新文章','</title>';
+
+?>
+
 <script src="scripts/marked.js"></script>
+
 <script>
     var renderer = new marked.Renderer();
     renderer.code = function(code, lang) {
@@ -193,6 +200,7 @@ function post_admin_head() { ?>
     }
     marked.setOptions({renderer: renderer});
 </script>
+
 <style>
 	.sidebar {
 
@@ -467,6 +475,9 @@ if(!$do) {
 	// 输出编辑内容之前过滤
 	if(isset($post[0]->content))
 		$post[0]->content = apply_hooks('edit_the_content', $post[0]->content, $post[0]->id);
+
+    // 罪过，使用全局变量了
+    $GLOBALS['__p__'] = $post[0];
 
 	admin_header();
 	new_post_html($post[0]);
