@@ -46,6 +46,10 @@ require('header.php');
             <h2 class="title"></h2>
         </div>
         <div>
+            <div class="meta">
+                <a class="a" target="_blank">新窗口打开</a>
+                <span class="date"></span>
+            </div>
             <div class="content"></div>
         </div>
         <div>
@@ -92,6 +96,8 @@ function gen_content(p)
 
     root.find('.title').text(p.title);
     root.find('.content').html(p.content);
+    root.find('.meta .a').attr('href', '/'+p.id+'/');
+    root.find('.meta .date').text(p.date);
 }
 
 function toggle_loading(ul, on) {
