@@ -398,7 +398,7 @@ DOM;
 			</div>
 		</div><!-- post -->
 		<div class="sidebar sidebar-right">
-			<div class="widget">
+			<div class="widget widget-post">
 				<h3>发表</h3>
 				<div class="widget-content">
                     <?php if($p) { ?>
@@ -435,6 +435,22 @@ DOM;
 			} ?>
 		</div><!-- sidebar right -->
         <script>
+            // TODO 临时代码，在切换源的类型时切换编辑器语法
+            $('select[name="source_type"]').change(function() {
+                console.log('源类型切换为：', this.value);
+                if(typeof codemirror == 'object') {
+                    var mode = '';
+                    var value = this.value;
+
+                    if(value == 'markdown')
+                        mode = 'markdown';
+                    else if(value == 'html')
+                        mode = 'htmlmixed';
+
+                    codemirror.setOption('mode', mode);
+                }
+            }).change();
+
             $('#form-post').submit(function() {
                 var source = $('#source');
                 var content = $('input[name="content"]');

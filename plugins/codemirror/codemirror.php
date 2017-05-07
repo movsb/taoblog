@@ -21,6 +21,7 @@ function post_head() {
         <script src="/plugins/codemirror/css.js"></script>
         <script src="/plugins/codemirror/javascript.js"></script>
         <script src="/plugins/codemirror/htmlmixed.js"></script>
+        <script src="/plugins/codemirror/markdown.js"></script>
 
         <script src="/plugins/codemirror/vim.js"></script>
         <link rel="stylesheet" href="/plugins/codemirror/dialog.css" />
@@ -47,7 +48,7 @@ function post_foot() {
                 keyMap: 'vim',
                 lineWrapping: true,
                 extraKeys: {
-                    'F11': function(cm) {
+                    'Alt-F': function(cm) {
                         cm.setOption('fullScreen', !cm.getOption('fullScreen'));
                     },
                 },
@@ -93,7 +94,7 @@ function memory_foot() {
                 keyMap: 'vim',
                 lineWrapping: true,
                 extraKeys: {
-                    'F11': function(cm) {
+                    'Alt-F': function(cm) {
                         cm.setOption('fullScreen', !cm.getOption('fullScreen'));
                     },
                 },
