@@ -106,8 +106,8 @@ add_hook('post_widget', 'post_widget_metas');
 function post_widget_tax_add(&$taxes, $tax=1) {
 	$s = '';
 	foreach($taxes as $t) {
-		$s .= '<li><label><input type="radio" style="position: relative; top: 2px;" name="taxonomy" value="'.$t->id.'"'.
-			($tax==$t->id?' checked="checked" ':' ').' /> '.$t->name."</label>\n";
+		$s .= '<li style="margin-bottom: 4px;"><label><input type="radio" style="margin-right: 6px" name="taxonomy" value="'.$t->id.'"'.
+			($tax==$t->id?' checked="checked"':'').'/>'.htmlspecialchars($t->name)."</label>\n";
 		if(isset($t->sons) && count($t->sons)) {
 			$s .= '<ul class="children" style="margin-left: 14px;">';
 			$s .= post_widget_tax_add($t->sons, $tax);
