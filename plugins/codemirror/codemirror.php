@@ -33,7 +33,7 @@ function post_head() {
                 border: 1px solid gray;
                 font-family: Microsoft YaHei Mono, monospace;
                 font-size: 13px;
-                height: 50vh;
+                height: 70vh;
             }
         </style>
     <?php }
@@ -79,7 +79,7 @@ function memory_head() {
                 border: 1px solid gray;
                 font-family: Microsoft YaHei Mono, monospace;
                 font-size: 13px;
-                height: 50vh;
+                height: 70vh;
             }
         </style>
     <?php }

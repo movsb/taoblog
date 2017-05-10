@@ -220,6 +220,7 @@ function postmetas_post_updated($id, $pr) {
 
 add_hook('post_updated', 'postmetas_post_updated');
 
+/*
 function postmetas_post_widget($p=null) {
 	$tbpm = new TB_Post_Metas;
 
@@ -240,4 +241,5 @@ function postmetas_post_widget($p=null) {
 }
 
 add_hook('post_widget', 'postmetas_post_widget');
+*/
 

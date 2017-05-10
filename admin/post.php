@@ -246,7 +246,7 @@ function post_admin_head() {
 
 	#source {
 		max-height: 2000px;
-		height: 50vh;
+		height: 70vh;
 		min-height: 300px;
 		width: 100%;
 		padding: 4px;

@@ -39,7 +39,7 @@ body {
     left: 0;
     top: 50%;
     right: 0;
-    width: 300px;
+    width: 220px;
     margin: auto;
     border: 1px solid gray;
     transform: translateY(-50%);
