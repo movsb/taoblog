@@ -57,7 +57,7 @@
         <div class="content">
             <div class="padding">
                 <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
-                <p class="motto">不忘初心，方得始终</p>
+                <p class="motto"><?php echo htmlspecialchars($tbopt->get('blog_desc'));?></p>
                 <div class="nav">
                     <ol>
                         <li><a href="/admin/">管理后台</a></li>

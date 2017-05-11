@@ -57,7 +57,7 @@
         <div class="content">
             <div class="padding">
                 <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
-                <p class="motto">不忘初心，方得始终</p>
+                <p class="motto"><?php echo htmlspecialchars($tbopt->get('blog_desc'));?></p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
                     <img src="/themes/blog/images/search.svg" class="icon" /><!--
                     --><input name="q" placeholder="Google Search" />
