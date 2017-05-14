@@ -739,7 +739,7 @@ class TB_Posts {
 
         $sql['groupby'] = 'p.id';
         $sql['orderby'] = 'relevance DESC';
-        $sql['limit']   = 10;   // TODO make configable
+        $sql['limit']   = 9;   // TODO make configable
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);

@@ -449,7 +449,14 @@ DOM;
 
                     codemirror.setOption('mode', mode);
                 }
-            }).change();
+                else {
+                    console.warn('codemirror != object, cannot apply syntax.');
+                }
+            });
+
+            setTimeout(function(){
+                $('select[name="source_type"]').change();
+            },0);
 
             $('#form-post').submit(function() {
                 var source = $('#source');
