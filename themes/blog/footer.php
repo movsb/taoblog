@@ -10,7 +10,6 @@
 	</div>
 </div>
 
-<div class="img-view" id="img-view"><img /><div class="tip"></div></div>
 <div style="display: none;">
 <script src="/themes/blog/scripts/footer.js"></script>
 </div>

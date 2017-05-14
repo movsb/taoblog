@@ -16,6 +16,18 @@ $('#back-to-top').click(function(){
 /* 写得超级烂，完全没管性能 */
 (function() {
 	var body = $('body');
+
+    body.append(
+        $('<div>')
+            .attr('class', 'img-view')
+            .attr('id', 'img-view')
+            .append($('<img/>'))
+            .append(
+                $('<div/>')
+                    .attr('class', 'tip')
+            )
+        );
+
 	var imgdiv = $('#img-view');
     var img = $('#img-view > img');
     var images = $('.entry img:not(.nz)');
