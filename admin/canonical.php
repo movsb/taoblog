@@ -27,11 +27,11 @@ function the_id_link(&$p, $home=true) {
 	return $home . '/' . $p->id . '/';
 }
 
-function the_edit_link(&$p, $ret_anchor = true) {
+function the_edit_link(&$p, $ret_anchor = true, $blank = false) {
 	$link = '/admin/post.php?do=edit&id='.(int)$p->id;
 
 	return $ret_anchor
-		? '<a href="'.$link.'">编辑</a>'
+		? '<a href="'.$link.'"'.($blank?'target="_blank"':'').'>编辑</a>'
 		: $link;
 }
 

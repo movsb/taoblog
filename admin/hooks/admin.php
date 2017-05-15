@@ -30,6 +30,13 @@ function page_admin_left() {
 <?php 
 }
 
+add_hook('admin_left', 'post_manage_admin_left');
+
+function post_manage_admin_left() {
+?><li><a href="post-manage.php">文章管理</a></li>
+<?php
+}
+
 add_hook('admin_left', 'tax_admin_left');
 
 function tax_admin_left() {

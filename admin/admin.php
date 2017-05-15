@@ -41,10 +41,6 @@ function admin_header($arg=[]) {
 
 
 function admin_footer($arg=[]) { ?>
-	<div id="thanksbar" style="display: none; color: #B070B0; text-shadow: 1px 1px 4px; margin-top: 3em; font-style: italic; height: 1.5em;">
-		<p style="float: left;">感谢使用 TaoBlog 进行创作。</p>
-		<p style="float: right;">Version: 0.0.0</p>
-	</div>
 	</div><!-- admin-wrap -->
 </div><!-- admin-main -->
 <?php apply_hooks('admin_footer'); ?>
