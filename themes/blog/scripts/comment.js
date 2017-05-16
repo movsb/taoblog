@@ -1,7 +1,7 @@
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
-		<i class="fa fa-mr fa-comments"></i>评论<span class="no-sel">(<span class="loaded">0</span>/<span class="total" itemprop="commentCount">0</span>)</span>
+		评论<span class="no-sel">(<span class="loaded">0</span>/<span class="total" itemprop="commentCount">0</span>)</span>
 	</h3>
 
 	<!-- 评论列表  -->

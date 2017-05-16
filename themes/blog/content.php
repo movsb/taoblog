@@ -26,7 +26,7 @@
         && is_array($tbquery->related_posts)
         && count($tbquery->related_posts))
         {
-			echo '<h3><i class="fa fa-mr fa-book"></i>相关文章</h3>', PHP_EOL;
+			echo '<h3>相关文章</h3>', PHP_EOL;
 			echo '<ol>',PHP_EOL;
 
 			$ps = &$tbquery->related_posts;
