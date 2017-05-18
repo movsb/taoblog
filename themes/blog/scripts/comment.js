@@ -285,7 +285,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 				cmt.url = 'http://' + cmt.url;
 
             nickname = '<i class="fa fa-home"></i>';
-			nickname += '<a rel="nofollow" target="_blank" href="' + cmt.url + '">' + this.h2t(cmt.author) + '</a>';
+			nickname += '<a rel="nofollow" target="_blank" href="' + this.h2a(cmt.url) + '">' + this.h2t(cmt.author) + '</a>';
 		} else {
 			nickname = this.h2t(cmt.author);
 		}
