@@ -44,17 +44,19 @@ function pm_notify_admin(&$arg) {
     global $tbopt;
     global $tbmain;
 
-    $title_encoded = htmlspecialchars($arg->post_title);
+    $title_encoded   = htmlspecialchars($arg->post_title);
     $content_encoded = htmlspecialchars($arg->content);
+    $url_encoded     = htmlspecialchars($arg->url);
+    $author_encoded  = htmlspecialchars($arg->author);
 
     $subject = '[新博文评论] '.$arg->post_title;
     $link = $tbmain->home.'/?p='.$arg->post_id.'#comments';
 
     $body = "<b>您的博文“{$title_encoded}”有新的评论啦！</b><br><br>";
     $body .= "<b>链接：</b>{$link}<br>";
-    $body .= "<b>作者：</b>{$arg->author}<br>";
+    $body .= "<b>作者：</b>{$author_encoded}<br>";
     $body .= "<b>邮箱：</b>{$arg->email}<br>";
-    $body .= "<b>网址：</b>{$arg->url}<br>";
+    $body .= "<b>网址：</b>{$url_encoded}<br>";
     $body .= "<b>时间：</b>{$arg->date}<br>";
     $body .= "<b>内容：</b>{$content_encoded}<br>";
 
@@ -65,15 +67,16 @@ function pm_notify_user(&$arg) {
     global $tbopt;
     global $tbmain;
 
-    $title_encoded = htmlspecialchars($arg->post_title);
+    $title_encoded   = htmlspecialchars($arg->post_title);
     $content_encoded = htmlspecialchars($arg->content);
+    $author_encoded  = htmlspecialchars($arg->author);
 
     $subject = '[回复评论] '.$arg->post_title;
     $link = $tbmain->home.'/?p='.$arg->post_id.'#comments';
 
     $body = "<b>您在博文“{$title_encoded}”的评论有新的回复啦！</b><br><br>";
     $body .= "<b>链接：</b>{$link}<br>";
-    $body .= "<b>作者：</b>{$arg->author}<br>";
+    $body .= "<b>作者：</b>{$author_encoded}<br>";
     $body .= "<b>时间：</b>{$arg->date}<br>";
     $body .= "<b>内容：</b>{$content_encoded}<br>";
     $body .= "<br>该邮件为系统自动发出，请勿直接回复该邮件。<br>";

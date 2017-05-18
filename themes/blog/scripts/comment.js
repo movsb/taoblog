@@ -209,7 +209,7 @@ Comment.prototype.gen_avatar = function(eh, sz) {
 Comment.prototype.emotions = ["狗狗", "偷笑", "冷汗", "卖萌", "可爱", "呲牙", "喷血", "嘘", "坏笑", "小纠结", "尴尬", "幽灵", "微笑", "惊喜", "惊恐", "惊讶", "憨笑", "我最美", "托腮", "抠鼻", "拥抱", "撇嘴", "擦汗", "敲打", "斜眼笑", "无奈", "晕", "泪奔", "流汗", "流泪", "玫瑰", "疑问", "笑哭", "衰", "调皮", "阴险", "难过", "骚扰"];
 
 Comment.prototype.normalize_content = function(c) {
-    var s = c.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var s = this.h2t(c);
     s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code" lang="$2">\n$3</pre>');
     s = s.replace(/\[([^\x20-\x7E]{1,3})\]/gm, function(all,alt) {
             if(Comment.prototype.emotions.indexOf(alt) != -1)
@@ -252,7 +252,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	s += '<div class="comment-meta">\n';
 
 	if(cmt.is_admin) {
-		s += '<span class="author">【作者】' + cmt.author + '</span>\n';
+		s += '<span class="author">【作者】' + this.h2t(cmt.author) + '</span>\n';
 	} else {
 		var nickname;
 		if(typeof cmt.url == 'string' && cmt.url.length) {
@@ -260,9 +260,9 @@ Comment.prototype.gen_comment_item = function(cmt) {
 				cmt.url = 'http://' + cmt.url;
 
             nickname = '<i class="fa fa-home"></i>';
-			nickname += '<a rel="nofollow" target="_blank" href="' + cmt.url + '">' + cmt.author + '</a>';
+			nickname += '<a rel="nofollow" target="_blank" href="' + cmt.url + '">' + this.h2t(cmt.author) + '</a>';
 		} else {
-			nickname = cmt.author;
+			nickname = this.h2t(cmt.author);
 		}
 
 		s += '<span class="nickname">' + nickname + '</span>\n';
@@ -272,6 +272,8 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
 	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment.reply_to('+cmt.id+');return false;">回复</a></div>';
 	s += '</li>';
+
+    // console.log(s);
 
 	return s;
 };

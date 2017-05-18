@@ -50,8 +50,8 @@ class TB_Comments {
             return false;
         }
 
-		if(!$arg['author'] || preg_match("#\"|;|<|>|  |	|/|\\\\#", $arg['author'])){
-			$this->error = '昵称不能为空或包含特殊字符。';
+		if(!$arg['author']) {
+			$this->error = '昵称不能为空！';
 			return false;
 		}
 
