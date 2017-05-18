@@ -226,11 +226,28 @@ Comment.prototype.friendly_date = function(d) {
 	return d.substring(start, 16);
 };
 
+Comment.prototype.h2t = function(h) {
+    return $('<div/>').text(h).html();
+};
+
 Comment.prototype.gen_comment_item = function(cmt) {
 	var s = '';
+
+    // 登录后可以显示评论者的详细信息
+    var info = '';
+    if(cmt.ip != undefined) {
+        // author, email, url, ip, date
+        info = '作者：' + this.h2t(cmt.author)
+            + '\n邮箱：' + this.h2t(cmt.email)
+            + '\n网址：' + this.h2t(cmt.url)
+            + '\n地址：' + this.h2t(cmt.ip)
+            + '\n日期：' + this.h2t(cmt.date)
+            ;
+    }
+
 	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '" itemprop="comment">\n';
 	s += '<div class="comment-avatar">'
-		+ '<img src="' + this.gen_avatar(cmt.avatar, 48) + '" width="48px" height="48px"/>'
+		+ '<img src="' + this.gen_avatar(cmt.avatar, 48) + '" width="48px" height="48px" title="'+info+'"/>'
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 

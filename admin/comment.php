@@ -25,9 +25,11 @@ function error($msg) {
 
 function cmt_make_public(&$cmts) {
     global $tbopt;
+    global $logged_in;
     $admin_email = $tbopt->get('email');
 
-    $flts = ['email', 'ip', 'status'];
+    $flts = !$logged_in ? ['email', 'ip', 'status'] : [];
+
     for($i=0,$c=count($cmts); $i < $c; $i++) {
         $cmt = $cmts[$i];
         $cmt->avatar = md5(strtolower($cmt->email));
