@@ -226,9 +226,34 @@ Comment.prototype.friendly_date = function(d) {
 	return d.substring(start, 16);
 };
 
+// https://stackoverflow.com/a/12034334/3628322
+// escape html to text
 Comment.prototype.h2t = function(h) {
-    return $('<div/>').text(h).html();
+    var map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+    };
+
+    return h.replace(/[&<>]/g, function (s) {
+        return map[s];
+    });
 };
+
+// escape html to attribute
+Comment.prototype.h2a = function(h) {
+    var map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    };
+
+    return h.replace(/[&<>'"]/g, function (s) {
+        return map[s];
+    });
+}
 
 Comment.prototype.gen_comment_item = function(cmt) {
 	var s = '';
@@ -237,11 +262,11 @@ Comment.prototype.gen_comment_item = function(cmt) {
     var info = '';
     if(cmt.ip != undefined) {
         // author, email, url, ip, date
-        info = '作者：' + this.h2t(cmt.author)
-            + '\n邮箱：' + this.h2t(cmt.email)
-            + '\n网址：' + this.h2t(cmt.url)
-            + '\n地址：' + this.h2t(cmt.ip)
-            + '\n日期：' + this.h2t(cmt.date)
+        info = '作者：' + this.h2a(cmt.author)
+            + '\n邮箱：' + this.h2a(cmt.email)
+            + '\n网址：' + this.h2a(cmt.url)
+            + '\n地址：' + cmt.ip
+            + '\n日期：' + cmt.date
             ;
     }
 
