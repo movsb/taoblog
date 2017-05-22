@@ -21,9 +21,24 @@ document.write(function(){/*
 	<div id="comment-form-div" class="normal">
 		<div class="comment-form-div-1 no-sel">
 			<div class="no-sel" class="nc">
-				<div class="closebtn" title="关闭">
-                    <img src="/themes/blog/images/close.svg" width="20" height="20"/>
-				</div>
+                <div class="ncbtns">
+                    <img src="/themes/blog/images/close.svg" width="20" height="20" title="关闭" class="closebtn"/>
+                    <img src="/themes/blog/images/question.svg" width="20" height="20" title="支持部分QQ表情，如：
+
+    [笑哭] [小纠结] [无奈]
+
+支持插入代码片段，请使用3个反引号括起来，如：
+
+    ```
+    #include <stdio.h>
+
+    int main()
+    {
+        print(&quot;Hello, world!&quot;);
+    }
+    ```
+"/>
+                </div>
 				<div class="comment-title">
 					<span>评论</span>
 				</div>
