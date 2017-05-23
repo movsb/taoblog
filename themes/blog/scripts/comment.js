@@ -228,7 +228,13 @@ Comment.prototype.normalize_content = function(c) {
     s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code" lang="$2">\n$3</pre>');
     s = s.replace(/\[([^\x20-\x7E]{1,3})\]/gm, function(all,alt) {
             if(Comment.prototype.emotions.indexOf(alt) != -1)
-                return $('<img/>').attr('alt', all).attr('src', '/themes/blog/emotions/' + alt + '.png')[0].outerHTML;
+                return $('<img/>')
+                    .attr('alt', all)
+                    .attr('width', '20px')
+                    .attr('height', '20px')
+                    .css('vertical-align', 'bottom')
+                    .attr('src', '/themes/blog/emotions/' + alt + '.png')[0]
+                    .outerHTML;
             else
                 return all;
         });
