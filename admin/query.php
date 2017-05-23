@@ -75,6 +75,7 @@ class TB_Query {
 
 		$rules = [
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
+            '^(/\d+/[^/]+)$'                                    => 'file=$1',
             '^/archives/(\d+)\.html$'                           => 'id=$1',
             '^/date/((\d{4})/((\d{2})/)?)$'                     => 'yy=$2&mm=$4',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
@@ -138,6 +139,21 @@ class TB_Query {
 			header('Location: /'.$this->internal_query['id'].'/'.$query);
 			die(0);
 		}
+
+        // 处理文件
+        if(isset($this->internal_query['file'])) {
+            $relative = '/'.FILE_DIR.$this->internal_query['file'];
+            $absolute = TBPATH.$relative;
+            if($logged_in && file_exists($absolute)) {
+                header('HTTP/1.1 302 Use local file');
+                header('Location: '.$relative);
+            }
+            else {
+                header('HTTP/1.1 302 Use backup file');
+                header('Location: '.FILE_HOST.$relative);
+            }
+            die(0);
+        }
 
 		// 处理RSS
 		if($this->is_query_modification && isset($this->internal_query['feed'])) {

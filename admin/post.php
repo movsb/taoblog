@@ -19,6 +19,163 @@ EOD;
 
 add_hook('post_widget', 'post_widget_tag');
 
+function post_widget_files($p=null) {
+    $title = '文件';
+    $classname = 'files';
+    $types = 'page,post';
+    $content = <<<EOD
+<label>文件列表：</label>
+<ul class="list">
+</ul>
+<label>文件上传：</label>
+<div>
+    <input type="file" multiple class="files"/>
+    <button class="submit">上传</button>
+    <button class="refresh">刷新</button>
+    <progress class="progress"></progress>
+</div>
+<script>
+    function refresh_files() {
+        var pid = $('#form-post input[name="id"]').val();
+        $.post('file-upload.php',
+            {
+                pid: pid,
+                do: 'list',
+            },
+            function(data) {
+                if(data.errno == 'ok') {
+                    var files = $('.widget-files .list');
+                    files.empty();
+
+                    data.files.forEach(function(file) {
+                        files.append(
+                            $('<li/>')
+                                .append($('<span/>').text(file))
+                                .append('<button class="delete">删除</button>')
+                        );
+                    });
+
+                    bind_delete();
+                }
+            }
+        );
+    }
+
+    $('.widget-files .refresh').click(function(){
+        refresh_files();
+        return false;
+    });
+
+    function bind_delete() {
+        $('.widget-files .list .delete').click(function(){
+            var li = $(this).parent();
+            var name = $(this).prev().text();
+            var pid = $('#form-post input[name="id"]').val();
+            $.post('file-upload.php',
+                {
+                    pid: pid,
+                    do: 'delete',
+                    name: name,
+                },
+                function(data) {
+                    if(data.errno == 'ok') {
+                        li.remove();
+                    }
+                    else {
+                        alert('删除失败。');
+                    }
+                }
+            );
+            return false;
+        });
+    }
+
+    $('.widget-files .submit').click(function(){
+        var files = $('.widget-files .files')[0].files;
+
+        if(files.length <= 0) {
+            alert('请先选择文件再上传。');
+            return false;
+        }
+        
+        var data = new FormData();
+
+        // 当前文章ID（新文章并没有ID，这里先临时使用下一篇文章ID）
+        // 所以，不能同时编辑并发表新文章
+        var pid = $('#form-post input[name="id"]').val();
+
+        data.append('pid', pid);
+        
+        data.append('do', 'upload');
+
+        // 待上传的文件列表
+        for(var i = 0, n = files.length; i < n; i++) {
+            var file = files[i];
+            data.append('files[]', file);
+        }
+
+        // 进度条
+        var progress = $('.widget-files .progress');
+        progress.attr('value', 0);
+
+        // https://stackoverflow.com/a/8758614/3628322
+        $.ajax({
+            // Your server script to process the upload
+            url: 'file-upload.php',
+            type: 'POST',
+
+            // Form data
+            data: data,
+
+            // Tell jQuery not to process data or worry about content-type
+            // You *must* include these options!
+            cache: false,
+            contentType: false,
+            processData: false,
+
+            // Custom XMLHttpRequest
+            xhr: function() {
+                var myXhr = $.ajaxSettings.xhr();
+                if (myXhr.upload) {
+                    // For handling the progress of the upload
+                    myXhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            progress.attr({
+                                value: e.loaded,
+                                max: e.total,
+                            });
+                        }
+                    } , false);
+                }
+                return myXhr;
+            },
+
+            error: function(xhr, except) {
+                console.warn(xhr,except);
+                alert('ajax error:'+xhr.statusText);
+            },
+
+            success: function(response) {
+                console.log('data:',response);
+                if(response.errno === 'ok') {
+                    refresh_files();
+                }
+                else {
+                    alert(response.error);
+                }
+            },
+        });
+
+        return false;
+    });
+</script>
+EOD;
+
+    return compact('title', 'classname', 'types', 'content');
+}
+
+add_hook('post_widget', 'post_widget_files');
+
 function post_widget_metas($p=null) {
     $metas = str_replace(['\\','\''], ['\\\\','\\\''], $p ? $p->metas_raw : '{}');
     $title = '自定义';
@@ -386,7 +543,7 @@ DOM;
 				<div>
 					<input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
 					<input type="hidden" name="type" value="<?php echo $p ? $p->type : $type; ?>" />
-					<?php if($p) { ?><input type="hidden" name="id" value="<?php echo $p->id; ?>" /><?php } ?>
+					<input type="hidden" name="id" value="<?php echo $p ? $p->id : $next_id; ?>" />
 				</div>
 			</div><!-- post-area -->
 			<div class="sidebar sidebar-left">
