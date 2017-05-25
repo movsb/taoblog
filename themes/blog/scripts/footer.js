@@ -74,12 +74,14 @@ $('#back-to-top').click(function(){
 
 			body.css('max-height', window.innerHeight);
 			body.css('overflow', 'hidden');
+            img[0].onload = function() {
+                img.css('left', (parseInt(imgdiv.css('width'))-parseInt(img.prop('naturalWidth')))/2 + 'px');
+                img.css('top', (parseInt(imgdiv.css('height'))-parseInt(img.prop('naturalHeight')))/2 + 'px');
+                img.css('width', img.prop('naturalWidth') + 'px');
+                img.css('height', img.prop('naturalHeight') + 'px');
+                imgdiv.show();
+            };
 			img.attr('src', ele.src);
-            img.css('left', (parseInt(imgdiv.css('width'))-parseInt(img.prop('naturalWidth')))/2 + 'px');
-            img.css('top', (parseInt(imgdiv.css('height'))-parseInt(img.prop('naturalHeight')))/2 + 'px');
-            img.css('width', img.prop('naturalWidth') + 'px');
-            img.css('height', img.prop('naturalHeight') + 'px');
-			imgdiv.show();
 		} else {
             // 以下两行清除因拖动导致的设置
 			img.css('left', '0px');
