@@ -98,6 +98,7 @@ Comment.prototype.init = function() {
                 for(var i=0; i<cmts.length; i++){
                     $('#comment-list').append(self.gen_comment_item(cmts[i]));
                     $('#comment-'+cmts[i].id).fadeIn();
+                    TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id));
                     self.add_reply_div(cmts[i].id);
 
                     self.append_children(cmts[i].children, cmts[i].id);
@@ -154,6 +155,7 @@ Comment.prototype.init = function() {
                         $('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(data.cmt));
                     }
                     $('#comment-'+data.cmt.id).fadeIn();
+                    TaoBlog.events.dispatch('comment', 'post', $('#comment-'+data.cmt.id));
                     $('#comment-content').val('');
                     $('#comment-form-div').fadeOut();
                     self.save_info();
@@ -353,6 +355,7 @@ Comment.prototype.append_children = function(ch, p) {
 		if(ch[i].parent == p) {
 			$('#comment-reply-'+p + ' ol:first').append(this.gen_comment_item(ch[i]));
 			$('#comment-'+ch[i].id).fadeIn();
+            TaoBlog.events.dispatch('comment', 'post', $('#comment-'+ch[i].id));
 			this.add_reply_div(ch[i].id);
 			this.append_children(ch, ch[i].id);
 			delete ch[i];

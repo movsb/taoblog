@@ -38,7 +38,7 @@
 	<link rel="stylesheet" type="text/css" href="/themes/blog/style.css" />
     <?php if ($tbquery->is_archive()) { echo '<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />'; } ?>
 	<script src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
-	<script src="/themes/blog/scripts/header.js""></script>
+	<script src="/themes/blog/scripts/header.js"></script>
 <?php if(!$tbquery->count) {
 
 } else if($tbquery->is_singular()) {?>
