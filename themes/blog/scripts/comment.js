@@ -145,7 +145,7 @@ Comment.prototype.init = function() {
                 if(data.errno == 'success') {
                     var parent = $('#comment-form input[name="parent"]').val();
                     if(parent == 0) {
-                        $('#comment-list').append(self.gen_comment_item(data.cmt));
+                        $('#comment-list').prepend(self.gen_comment_item(data.cmt));
                         // 没有父评论，避免二次加载。
                         self._loaded ++;
 
@@ -336,6 +336,7 @@ Comment.prototype.reply_to = function(p){
 	}
 
 	$('#comment-form-div').fadeIn();
+    $('#comment-content').focus();
 };
 
 // 为上一级评论添加div
