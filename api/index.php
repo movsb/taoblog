@@ -62,8 +62,6 @@ if(preg_match('~^/api/([^/]+)/([^/?]+)~', $_SERVER['REQUEST_URI'], $matches)) {
     $api->module = $matches[1];
     $api->method = $matches[2];
 
-    check_login();
-
     @include_once($api->module.'.php');
 
     die(0);

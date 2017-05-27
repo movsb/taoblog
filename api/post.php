@@ -29,6 +29,8 @@ function check_existence() {
 } 
 
 if($api->method == 'update') {
+    check_login();
+
     $id         = check_arg('id');
     $content    = check_arg('content');
 
@@ -57,11 +59,74 @@ elseif($api->method == 'get') {
     ]);
 }
 elseif($api->method == 'get_id') {
+    check_login();
+
     api_die([
         "ret" => 0,
         "data" => [
             "id" => $tbpost->the_next_id(),
         ],
+    ]);
+}
+elseif($api->method == 'get_tag_posts') {
+    $tag = check_arg('tag');
+    if(!strlen($tag)) {
+        api_die([
+            'ret' => -1,
+            'msg' => '空标签',
+        ]);
+    }
+
+    $posts = $tbpost->get_tag_posts($tag);
+    if(!is_array($posts)) {
+        api_die([
+            'ret' => -1,
+            'msg' => '未知错误',
+        ]);
+    }
+
+    api_die([
+        'ret'  => 0,
+        'posts' => $posts,
+    ]);
+}
+elseif($api->method == 'get_date_posts') {
+    $yy = (int)check_arg('yy');
+    $mm = (int)check_arg('mm');
+
+    if ($yy < 1970 || ($mm < 1 || $mm > 12)){
+        api_die([
+            'ret' => -1,
+            'msg' => '你我不在同一个世界？',
+        ]);
+    }
+
+    $posts = $tbpost->get_date_posts($yy, $mm);
+    if(!is_array($posts)){
+        api_die([
+            'ret' => -1,
+            'msg' => '未知错误',
+        ]);
+    }
+
+    api_die([
+        'ret'  => 0,
+        'posts' => $posts,
+    ]);
+}
+elseif($api->method == 'get_cat_posts') {
+    $cid = (int)check_arg('cid');
+    $posts = $tbpost->get_cat_posts($cid);
+    if(!is_array($posts)) {
+        api_die([
+            'ret' => -1,
+            'msg' => '未知错误',
+        ]);
+    }
+
+    api_die([
+        'ret' => 0,
+        'posts' => $posts,
     ]);
 }
 else {

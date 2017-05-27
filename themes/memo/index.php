@@ -73,7 +73,7 @@ function gen_entry(p) {
 }
 
 function get_entries_callback(data, ul) {
-    if(data.errno == 'ok') {
+    if(data.ret == 0) {
         var ps = data.posts;
         for(var i=0; i< ps.length; i++) {
             ul.append(gen_entry(ps[i]));
@@ -126,8 +126,10 @@ $('.cats').on('click',function(e) {
             li.attr('data-clicked', '1');
             toggle_loading(ul, true);
             var cid = li.attr('data-cid');
-            $.get('/admin/ajax.php',
-                'do=get_cat_posts&cid=' + cid,
+            $.get('/api/post/get_cat_posts',
+                {
+                    cid: cid,
+                },
                 function(data) {
                     get_entries_callback(data, ul);
                 }

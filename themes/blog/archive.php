@@ -104,7 +104,7 @@ function gen_entry(p) {
 }
 
 function get_entries_callback(data, ul) {
-    if(data.errno == 'ok') {
+    if(data.ret === 0) {
         var ps = data.posts;
         for(var i=0; i< ps.length; i++) {
             ul.append(gen_entry(ps[i]));
@@ -147,8 +147,10 @@ $('.cats').on('click',function(e) {
             li.attr('data-clicked', '1');
             toggle_loading(ul, true);
             var cid = li.attr('data-cid');
-            $.get('/admin/ajax.php',
-                'do=get_cat_posts&cid=' + cid,
+            $.get('/api/post/get_cat_posts',
+                {
+                    cid: cid,
+                },
                 function(data) {
                     get_entries_callback(data, ul);
                 }
@@ -170,8 +172,11 @@ $('.date').on('click',function(e) {
             toggle_loading(ul, true);
             var yy = li.attr('data-yy');
             var mm = li.attr('data-mm');
-            $.get('/admin/ajax.php',
-                'do=get_date_posts&yy=' + yy + '&mm=' + mm,
+            $.get('/api/post/get_date_posts',
+                {
+                    yy: yy,
+                    mm: mm,
+                },
                 function(data) {
                     get_entries_callback(data, ul);
                 }
@@ -192,8 +197,10 @@ $('.tags').on('click',function(e) {
             li.attr('data-clicked', '1');
             toggle_loading(ul, true);
             var name = li.attr('data-name');
-            $.get('/admin/ajax.php',
-                'do=get_tag_posts&tag=' + encodeURIComponent(name),
+            $.get('/api/post/get_tag_posts',
+                {
+                    tag: name,
+                },
                 function(data) {
                     get_entries_callback(data, ul);
                 }

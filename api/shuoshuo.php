@@ -37,6 +37,8 @@ if($api->method == 'get') {
     ]);
 }
 elseif($api->method == 'del') {
+    check_login();
+
     check_arg('id');
     check_existence();
 
@@ -64,6 +66,8 @@ elseif($api->method == 'get-latest') {
     ]);
 }
 elseif($api->method == 'update') {
+    check_login();
+
     $id = (int)check_arg('id');
     $content = check_arg('content');
 
@@ -76,6 +80,8 @@ elseif($api->method == 'update') {
     ]);
 }
 elseif($api->method == 'post') {
+    check_login();
+
     $content = check_arg('content');
     $date = $tbdate->mysql_datetime_gmt();
 

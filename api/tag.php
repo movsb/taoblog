@@ -30,6 +30,8 @@ function check_existence() {
 } 
 
 if($api->method == 'update') {
+    check_login();
+
     $pid    = (int)check_arg('pid');
     $tags   = (string)check_arg('tags');
 
