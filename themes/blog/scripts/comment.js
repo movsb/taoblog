@@ -90,8 +90,13 @@ Comment.prototype.init = function() {
         $('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
         $.post(
             '/admin/comment.php',
-            'do=get-cmt&order=desc&count=10&offset=' + self._loaded
-                + '&post_id=' + $('#post-id').val(),
+            {
+                do: 'get-cmt',
+                order: 'desc',
+                count: 10,
+                offset: self._loaded,
+                post_id: $('#post-id').val(),
+            },
             function(data) {
                 var cmts = data.cmts || [];
                 var ch_count = 0;

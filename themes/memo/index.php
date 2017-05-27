@@ -140,7 +140,9 @@ $('.cats').on('click',function(e) {
     }
     else if(t.hasClass('item')) {
         $.post('/api/post/get',
-            'id=' + t.attr('data-id'),
+            {
+                id: t.attr('data-id'),
+            },
             function(data) {
                 if(data.ret == 0) {
                     gen_content(data.data);

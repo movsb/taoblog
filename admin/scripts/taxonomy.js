@@ -84,7 +84,10 @@ $('#tax-list').click(function(e) {
 		} else if(cls == 'delete') {
 			$.post(
 				'/admin/taxonomy.php',
-				'do=delete&id='+trid,
+                {
+                    do: 'delete',
+                    id: trid,
+                },
 				function(data) {
 					if(data.errno == 'success') {
 						location.href = location.href;

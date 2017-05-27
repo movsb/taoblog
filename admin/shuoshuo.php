@@ -190,7 +190,10 @@ $('#form').submit(function() {
                 return false;
 
             $.post('/admin/shuoshuo.php',
-                'do=delete&id=' + id,
+                {
+                    do: 'delete',
+                    id: id,
+                },
                 function(data) {
                     if(data.errno == 'ok') {
                         $('#shuoshuos > li[data-id=' + id + ']').remove();
