@@ -219,7 +219,7 @@ function shuoshuo_die_json($arg) {
 	header('HTTP/1.1 200 OK');
 	header('Content-Type: application/json');
 
-	echo json_encode($arg);
+	echo json_encode($arg, JSON_UNESCAPED_UNICODE);
 	die(0);
 }
 

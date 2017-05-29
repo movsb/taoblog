@@ -8,7 +8,7 @@ $api->loggedin = $logged_in;
 function api_die($arr) {
     header('HTTP/1.1 200 OK');
     header('Content-Type: application/json');
-    echo json_encode($arr);
+    echo json_encode($arr, JSON_UNESCAPED_UNICODE);
     die(0);
 }
 

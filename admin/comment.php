@@ -19,7 +19,7 @@ function error($msg) {
     echo json_encode([
         'errno' => 'error',
         'error' => $msg
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     die(-1);
 }
 
@@ -58,7 +58,7 @@ function cmt_get_cmt() {
     echo json_encode([
         'errno'     => 'success',
         'cmts'      => $cmts,
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     die(0);
 }
 
@@ -73,7 +73,7 @@ function cmt_get_count() {
 
         echo json_encode([
             'count' => $r->comments,
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
 
         die(0);
     }
@@ -98,7 +98,7 @@ function cmt_post_cmt() {
         echo json_encode([
             'errno' => 'error',
             'error' => $tbcmts->error
-            ]);
+            ], JSON_UNESCAPED_UNICODE);
         die(-1);
     }
 
@@ -113,12 +113,12 @@ function cmt_post_cmt() {
         echo json_encode([
             'errno' => 'success',
             'cmt'   => $cmts[0],
-            ]);
+            ], JSON_UNESCAPED_UNICODE);
     } else {
         echo json_encode([
             'errno' => 'success',
             'id'    => $r,
-            ]);
+            ], JSON_UNESCAPED_UNICODE);
     }
     header('Content-Length: '.ob_get_length());
     header('Connection: close');

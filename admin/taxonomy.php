@@ -68,7 +68,7 @@ function new_tax_html() { ?>
 	</div>
 	<script><?php
 		global $tbtax;
-		echo 'var taxes = JSON.parse(\''.json_encode($tbtax->get_hierarchically()).'\');';
+		echo 'var taxes = JSON.parse(\''.json_encode($tbtax->get_hierarchically(), JSON_UNESCAPED_UNICODE).'\');';
 		?>
 	</script>
 </form>
@@ -125,7 +125,7 @@ function tax_die_json($arg) {
 	header('HTTP/1.1 200 OK');
 	header('Content-Type: application/json');
 
-	echo json_encode($arg);
+	echo json_encode($arg, JSON_UNESCAPED_UNICODE);
 	die(0);
 }
 
@@ -146,7 +146,7 @@ function tax_new_tax() {
 }
 
 function tax_get_all() {
-	echo json_encode($tbtax->get());
+	echo json_encode($tbtax->get(), JSON_UNESCAPED_UNICODE);
 	die(0);
 }
 
@@ -198,13 +198,13 @@ if($do === 'get-all') {
 		echo json_encode([
 			'errno' => 'error',
 			'error' => $tbtax->error,
-			]);
+			], JSON_UNESCAPED_UNICODE);
 		die(0);
 	} else {
 		echo json_encode([
 			'errno' => 'success',
 			'tax' => $tbtax->get($id),
-			]);
+			], JSON_UNESCAPED_UNICODE);
 		die(0);
 	}
 } else if($do === 'update') {
