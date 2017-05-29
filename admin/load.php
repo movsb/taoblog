@@ -29,6 +29,8 @@ require_once('hooks/post.php');
 require_once('query.php');
 require_once('canonical.php');
 
+require_once('api.php');
+
 apply_hooks('tb_load');
 
 $tbopt          = new TB_Options;
@@ -40,6 +42,7 @@ $tbdate         = new TB_DateTime;
 $tbtag          = new TB_Tags;
 $tbshuoshuo     = new TB_Shuoshuo;
 $tbsscmt        = new TB_ShuoshuoComments;
+$tbapi          = new TB_API;
 
 $tbmain         = new TB_Main;
 
