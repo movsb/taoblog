@@ -177,14 +177,13 @@
 
     code {
         color: #505050;
-        background-color: white;
+        background-color: lightgray;
         text-shadow: 0 0 1px rgba(0,0,0,0.22);
-        padding: 0.1em 0.6em;
-        margin: 0.1em 3px;
-        border: 1px solid #ff608d33;
-        border-radius: 5px;
+        padding: 0.1em 0.4em 0.1em;
+        margin-bottom: 0.1em;
+        border-radius: 4px;
         display: inline-block;
-        line-height: 1.5em;
+        vertical-align: middle;
     }
 
      pre {
