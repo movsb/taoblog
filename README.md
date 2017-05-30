@@ -29,12 +29,10 @@ favicon.ico	| 网站图标
 README.md	| 此文件
 admin/		| 博客程序目录、后台目录
 api/		| 为第三方客户端提供的接口 API 实现
-client/		| 一个用 Python 写的第三方博客管理工具
 docs/		| 一些文档
 plugins/	| 插件目录
 setup/		| 安装脚本目录、配置文件目录
 themes/		| 各主题文件
-backups/    | 一些备份文件
 
 
 # 联系我
