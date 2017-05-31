@@ -104,8 +104,8 @@ function gen_entry(p) {
 }
 
 function get_entries_callback(data, ul) {
-    if(data.ret === 0) {
-        var ps = data.posts;
+    if(data.code === 0) {
+        var ps = data.data;
         for(var i=0; i< ps.length; i++) {
             ul.append(gen_entry(ps[i]));
         }
@@ -117,7 +117,7 @@ function get_entries_callback(data, ul) {
         }
     }
     else {
-        alert(data.error);
+        alert(data.msg);
     }
 }
 

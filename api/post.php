@@ -4,132 +4,80 @@ namespace api\post;
 
 defined('TBPATH') or die('Silence is golden.');
 
-function check_arg($arg) {
-    if(!isset($_REQUEST[$arg]) ) {
-        api_die([
-            "ret" => -1,
-            "msg" => "expect argument `$arg'",
-        ]);
-    }
-    else {
-        return $_REQUEST[$arg];
-    }
-}
-
 function check_existence() {
+    global $tbapi;
     global $tbshuoshuo;
 
     $id = (int)$_REQUEST['id'];
     if($id == 0 || !$tbshuoshuo->has($id)) {
-        api_die([
-            "ret" => -1,
-            "msg" => "doesn't exist.",
-        ]);
+        $tbapi->err(-1, "doesn't exist");
     }
 } 
 
-if($api->method == 'update') {
-    check_login();
+if($tbapi->method == 'update') {
+    $tbapi->auth();
 
-    $id         = check_arg('id');
-    $content    = check_arg('content');
+    $id         = (int)$tbapi->expected('id');
+    $content    = (string)$tbapi->expected('content');
 
-    $r = $tbpost->tmp_update_content((int)$id, $content) ? 0 : -1;
+    $r = $tbpost->tmp_update_content($id, $content) ? 0 : -1;
 
-    api_die([
-        "ret" => $r,
-        "msg" => $tbpost->error,
-    ]);
+    $tbapi->err($r, $tbpost->error);
 }
-elseif($api->method == 'get') {
-    $id = (int)check_arg('id');
+elseif($tbapi->method == 'get') {
+    $id = (int)$tbapi->expected('id');
     // TODO 使用 tbquery 的查询功能
     $posts = $tbpost->query_by_id($id,'');
 
     if($posts === false || !count($posts)) {
-        api_die([
-            "ret" => -1,
-            "msg" => "",
-        ]);
+        $tbapi->err(-1,"");
     }
 
-    api_die([
-        "ret" => 0,
-        "data" => $posts[0],
-    ]);
+    $tbapi->done($posts[0]);
 }
-elseif($api->method == 'get_id') {
-    check_login();
+elseif($tbapi->method == 'get_id') {
+    $tbapi->auth();
 
-    api_die([
-        "ret" => 0,
-        "data" => [
-            "id" => $tbpost->the_next_id(),
-        ],
-    ]);
+    $tbapi->done(["id"=>$tbpost->the_next_id()]);
 }
-elseif($api->method == 'get_tag_posts') {
-    $tag = check_arg('tag');
+elseif($tbapi->method == 'get_tag_posts') {
+    $tag = $tbapi->expected('tag');
     if(!strlen($tag)) {
-        api_die([
-            'ret' => -1,
-            'msg' => '空标签',
-        ]);
+        $tbapi->err(-1,"");
     }
 
     $posts = $tbpost->get_tag_posts($tag);
     if(!is_array($posts)) {
-        api_die([
-            'ret' => -1,
-            'msg' => '未知错误',
-        ]);
+        $tbapi->err(-1,"");
     }
 
-    api_die([
-        'ret'  => 0,
-        'posts' => $posts,
-    ]);
+    $tbapi->done($posts);
 }
-elseif($api->method == 'get_date_posts') {
-    $yy = (int)check_arg('yy');
-    $mm = (int)check_arg('mm');
+elseif($tbapi->method == 'get_date_posts') {
+    $yy = (int)$tbapi->expected('yy');
+    $mm = (int)$tbapi->expected('mm');
 
     if ($yy < 1970 || ($mm < 1 || $mm > 12)){
-        api_die([
-            'ret' => -1,
-            'msg' => '你我不在同一个世界？',
-        ]);
+        $tbapi->err(-1, "你我不在同一个世界？");
     }
 
     $posts = $tbpost->get_date_posts($yy, $mm);
     if(!is_array($posts)){
-        api_die([
-            'ret' => -1,
-            'msg' => '未知错误',
-        ]);
+        $tbapi->err(-1,"");
     }
 
-    api_die([
-        'ret'  => 0,
-        'posts' => $posts,
-    ]);
+    $tbapi->done($posts);
 }
-elseif($api->method == 'get_cat_posts') {
-    $cid = (int)check_arg('cid');
+elseif($tbapi->method == 'get_cat_posts') {
+    $cid = (int)$tbapi->expected('cid');
     $posts = $tbpost->get_cat_posts($cid);
     if(!is_array($posts)) {
-        api_die([
-            'ret' => -1,
-            'msg' => '未知错误',
-        ]);
+        $tbapi->err(-1,"");
     }
 
-    api_die([
-        'ret' => 0,
-        'posts' => $posts,
-    ]);
+    $tbapi->done($posts);
 }
 else {
-    api_bad_method();
+    $tbapi->bad();
 }
 

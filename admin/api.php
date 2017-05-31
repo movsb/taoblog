@@ -7,8 +7,8 @@
 
 class TB_API
 {
-    private $module = '';
-    private $method = '';
+    public $module = '';
+    public $method = '';
 
     /*
      * 结束一条API请求
