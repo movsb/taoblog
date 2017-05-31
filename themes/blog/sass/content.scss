@@ -177,10 +177,10 @@
 
     code {
         color: #505050;
-        background-color: lightgray;
+        background-color: $post_code_bg;
         text-shadow: 0 0 1px rgba(0,0,0,0.22);
         padding: 0.1em 0.4em 0.1em;
-        margin-bottom: 0.1em;
+        margin: 0.1em 0.3em 0.1em;
         border-radius: 4px;
         display: inline-block;
         vertical-align: middle;

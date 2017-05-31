@@ -92,6 +92,7 @@ $('#back-to-top').click(function(){
             img.css('transform','');
 
             imgview.dragging = false;
+            imgview.degree = 0;
 			imgdiv.hide();
 		}
 
