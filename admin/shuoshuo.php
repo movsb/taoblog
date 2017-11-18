@@ -71,19 +71,19 @@ if($id > 0) {
     <script>
         function update_address_baidu(data) {
             var addr = $('#form select[name=addr]');
-            addr.append('<option value="null">---百度地图---</option>');
+            addr.append('<option disabled value="null">---百度地图---</option>');
             update_address(data);
         }
 
         function update_address_tencent(data) {
             var addr = $('#form select[name=addr]');
-            addr.append('<option value="null">---腾讯地图---</option>');
+            addr.append('<option disabled value="null">---腾讯地图---</option>');
             update_address(data);
         }
 
         function update_address_gaode(data) {
             var addr = $('#form select[name=addr]');
-            addr.append('<option value="null">---高德地图---</option>');
+            addr.append('<option disabled value="null">---高德地图---</option>');
             update_address(data);
         }
 
