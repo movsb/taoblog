@@ -37,6 +37,10 @@ body {
 }
 }
 
+#admin-left > ul > li {
+    line-height: 1.5em;
+}
+
 #admin-left ul li .menu {
 	padding: 0.4em;
     display: inline-block;
