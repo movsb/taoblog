@@ -35,10 +35,10 @@
 		echo '<meta name="keywords" content="', htmlspecialchars($tbopt->get('keywords')), '" />', PHP_EOL;
 } ?>
 	<link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($blog_name);?>" href="<?php echo '/rss';?>" />
-	<link rel="stylesheet" type="text/css" href="/themes/blog/style.css" />
+	<link rel="stylesheet" type="text/css" href="/theme/style.css" />
     <?php if ($tbquery->is_archive()) { echo '<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />'; } ?>
 	<script src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
-	<script src="/themes/blog/scripts/header.js"></script>
+	<script src="/theme/scripts/header.js"></script>
 <?php if(!$tbquery->count) {
 
 } else if($tbquery->is_singular()) {?>
@@ -60,7 +60,7 @@
                 <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
                 <p class="motto"><?php echo htmlspecialchars($tbopt->get('blog_desc'));?></p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
-                    <img src="/themes/blog/images/search.svg" class="icon" /><!--
+                    <img src="/theme/images/search.svg" class="icon" /><!--
                     --><input name="q" placeholder="Google Search" />
                 </form>
                 <div class="nav">

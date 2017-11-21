@@ -6,12 +6,12 @@
 
 <div class="footer-toolbar" id="footer-toolbar">
 	<div class="back-to-top" id="back-to-top" title="回到顶端">
-        <img src="/themes/blog/images/gotop.png" alt="" width="32" height="32"/>
+        <img src="/theme/images/gotop.png" alt="" width="32" height="32"/>
 	</div>
 </div>
 
 <div style="display: none;">
-<script src="/themes/blog/scripts/footer.js"></script>
+<script src="/theme/scripts/footer.js"></script>
 </div>
 </body>
 </html>

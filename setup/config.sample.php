@@ -5,7 +5,6 @@ define('FILE_HOST',         'http://localhost');
 define('FILE_DIR',          'files');
 
 define('TB_PRIVATE',        FALSE);                     /* 是否对外开放 */
-define('TB_THEME',          'blog');                    /* 主题 */
 
 define('DB_HOST',           'localhost');               /* 主机名 */
 define('DB_NAME',           'taoblog');                 /* 数据库名 */
