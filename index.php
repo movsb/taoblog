@@ -5,6 +5,12 @@ if(!isset($_SERVER['HTTP_USER_AGENT'])) {
 	die(-1);
 }
 
+if(!file_exists('theme/')) {
+    header('HTTP/1.1 503');
+    echo 'Error: blog theme not available.';
+    die(-1);
+}
+
 require('admin/load.php');
 require('theme/functions.php');
 
