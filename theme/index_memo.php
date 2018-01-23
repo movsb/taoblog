@@ -55,10 +55,29 @@ function tb_head() {
 .framebox {
     flex: 1;
     margin: 1em;
+    position:relative;
+}
+.framebox.fullscreen {
+    position: fixed;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    margin: 0;
+    background:white;
 }
 #frame {
     width: 100%;
     height: 100%;
+}
+#full {
+    position: absolute;
+    right: 1em;
+    top:1em;
+    opacity: 0.3;
+}
+#full:hover {
+    opacity:1;
 }
 #content {
     height: 100%;
@@ -91,10 +110,11 @@ require('header.php');
         <?php list_all_cats(); ?>
     </div>
     <div class="framebox">
+        <button id="full">fullscreen</button>
         <iframe id="frame" frameborder="0"></iframe>
         <script>
-        $('#frame').on('dbclick', function() {
-            alert('click');
+        $('#full').on('click',function(){
+            $('.framebox').toggleClass('fullscreen');
         });
         </script>
     </div>
