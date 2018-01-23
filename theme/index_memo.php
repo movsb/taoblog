@@ -193,7 +193,7 @@ $('.cats').on('click',function(e) {
     }
     else if(t.hasClass('item')) {
         var id = t.attr('data-id');
-        $('#frame').attr('src', '/' + id + '/');
+        $('#frame').attr('src', '/' + id + '/?content_only=1');
     }
     e.stopPropagation();
 });

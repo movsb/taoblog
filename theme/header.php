@@ -1,6 +1,6 @@
 <?php
-	$blog_name = $tbopt->get('blog_name');
-
+    $blog_name = $tbopt->get('blog_name');
+    $content_only = ($_GET['content_only'] ?? '0') == '1';
 ?><!DOCTYPE html> 
 <html lang="zh-CN">
 <head>
@@ -51,7 +51,7 @@
 
 </head>
 
-<body>
+<body class="<?php if($content_only) echo "content_only"; ?>">
 <div id="wrapper">
     <!-- 头部 -->
 	<header id="header">

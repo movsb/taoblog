@@ -1,8 +1,4 @@
 /* 内容 */
-#main {
-
-}
-
 #content {
     max-width: 850px;
     min-width: 200px;
@@ -350,6 +346,19 @@
     ol {
         padding-left: 2em;
         line-height: 1.7em;
+    }
+}
+
+.content_only {
+    header {
+        display: none;
+    }
+    .post {
+        .meta,
+        .related,
+        #comments {
+            display: none;
+        }
     }
 }
 
