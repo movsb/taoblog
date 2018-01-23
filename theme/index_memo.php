@@ -35,25 +35,68 @@ function list_all_cats() {
     echo '<ul class="roots">',$_tax_add($taxes, $count_of_total/*not used*/),'</ul>';
 }
 
+function tb_head() {
+?>
+<style>
+.archives-view {
+    display: flex;
+    height: 100%;
+}
+.cats {
+    flex: 1;
+    max-width: 25%;
+    border-right: 1px solid #efefef;
+    height: 100%;
+    overflow: auto;
+}
+.folder > ul {
+    display: none;
+}
+.framebox {
+    flex: 1;
+    margin: 1em;
+}
+#frame {
+    width: 100%;
+    height: 100%;
+}
+#content {
+    height: 100%;
+    overflow: auto;
+}
+
+.roots {
+    list-style: none;
+    padding: 0;
+}
+
+</style>
+<script>
+function resize() {
+    var header = $('#header');
+    var main = $('#main');
+    main.css('height', $(window).height() + 'px');
+}
+
+$(window).on('load', resize);
+$(window).on('resize', resize);
+</script>
+<?php }
+
+add_hook('tb_head', 'tb_head');
 require('header.php');
 ?>
-<div class="archives">
+<div class="archives-view" >
     <div class="cats">
         <?php list_all_cats(); ?>
     </div>
-    <div class="content">
-        <div>
-            <h2 class="title"></h2>
-        </div>
-        <div>
-            <div class="meta">
-                <a class="a" target="_blank">新窗口打开</a>
-                <span class="date"></span>
-            </div>
-            <div class="content"></div>
-        </div>
-        <div>
-        </div>
+    <div class="framebox">
+        <iframe id="frame" frameborder="0"></iframe>
+        <script>
+        $('#frame').on('dbclick', function() {
+            alert('click');
+        });
+        </script>
     </div>
 </div>
 
@@ -88,16 +131,6 @@ function get_entries_callback(data, ul) {
     else {
         alert(data.msg);
     }
-}
-
-function gen_content(p)
-{
-    var root = $('#content .content');
-
-    root.find('.title').text(p.title);
-    root.find('.content').html(p.content);
-    root.find('.meta .a').attr('href', '/'+p.id+'/');
-    root.find('.meta .date').text(p.date);
 }
 
 function toggle_loading(ul, on) {
@@ -139,18 +172,8 @@ $('.cats').on('click',function(e) {
         }
     }
     else if(t.hasClass('item')) {
-        $.post('/api/post/get',
-            {
-                id: t.attr('data-id'),
-            },
-            function(data) {
-                if(data.code == 0) {
-                    gen_content(data.data);
-                } else {
-                    alert('错误。');
-                }
-            }
-        );
+        var id = t.attr('data-id');
+        $('#frame').attr('src', '/' + id + '/');
     }
     e.stopPropagation();
 });
