@@ -5,9 +5,9 @@ if(!isset($_SERVER['HTTP_USER_AGENT'])) {
 	die(-1);
 }
 
-if(!file_exists('theme/')) {
+if(!file_exists('theme/') || !file_exists('theme/index.php')) {
     header('HTTP/1.1 503');
-    echo 'Error: blog theme not available.';
+    echo 'Error: theme is not available.';
     die(-1);
 }
 
