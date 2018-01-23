@@ -22,9 +22,16 @@ $('#back-to-top').click(function(){
             .attr('class', 'img-view')
             .attr('id', 'img-view')
             .append($('<img/>'))
-            .append(
-                $('<div/>')
-                    .attr('class', 'tip')
+            .append($('<div/>')
+                .attr('class', 'tool')
+                .append(
+                    $('<div/>')
+                        .attr('class', 'info')
+                )
+                .append(
+                    $('<div/>')
+                        .attr('class', 'tip')
+                )
             )
         );
 
@@ -34,15 +41,35 @@ $('#back-to-top').click(function(){
     var image_index = -1;
     var key_handler_added = false;
 
+    // current image's raw width & height
+    var curImageRawHeight = 0, curImageRawWidth = 0;
+
+    // show_info timer
+    var tmrShowInfo = null;
+
     function key_handler(e) {
+        var handled = true;
+
         if(e.keyCode == 27 || e.keyCode == 32) {
-            view_image(null, false);
-            e.preventDefault();
-        } else if(e.keyCode == 37 || e.keyCode == 38) {
+            // Escape or Space to exit
+            view_image(null);
+        } else if(e.keyCode == 37) {
+            // left to previous
             next_image(-1);
-            e.preventDefault();
-        } else if(e.keyCode == 39 || e.keyCode == 40) {
+        } else if(e.keyCode ==  39) {
+            // right to next
             next_image(1);
+        } else if(e.keyCode == 38) {
+            // up to rotate anticlockwisely
+            rotateImage(false);
+        } else if(e.keyCode == 40) {
+            // down to rotate clockwisely
+            rotateImage(true);
+        } else {
+            handled = false;
+        }
+
+        if(handled) {
             e.preventDefault();
         }
     };
@@ -56,30 +83,73 @@ $('#back-to-top').click(function(){
         }
     }
 
-	function view_image(ele, show) {
-		if(show) {
+    function show_info(rawWidth, rawHeight, scale) {
+        var s = '';
+        s += 'No: ' + (image_index+1) + '/' + images.length;
+        s += ', Raw: ' + rawWidth + '*' + rawHeight;
+        s += ', Scale: ' +  Math.round(scale*100) + '%';
+        var e = $('#img-view .info');
+        e.text(s);
+        e.show();
+        if(tmrShowInfo != null) {
+            clearTimeout(tmrShowInfo);
+        }
+        tmrShowInfo = setTimeout(function() {
+            e.hide();
+            tmrShowInfo = null;
+        }, 3000);
+    }
+
+	function view_image(ele) {
+		if(ele != null) {
             // tips
             var tip_times_total = 1;
             var tip_times = +img.attr('data-times') || 0;
 
-            if(tip_times == 0)
-                $('#img-view .tip').text('左键拖动，中键旋转，滚动缩放，上下左右切换；双击图片或单击空白区域退出。');
+            if(tip_times == 0) {
+                $('#img-view .tip').text('左键拖动，上中下键旋转，滚动缩放，左右切换；双击图片或单击空白区域退出。');
+            }
 
             if(tip_times < tip_times_total) {
                 tip_times++;
                 img.attr('data-times', tip_times);
             } else if(tip_times == tip_times_total) {
-                $('#img-view > .tip').hide();
+                $('#img-view .tip').hide();
             }
 
 			body.css('max-height', window.innerHeight);
-			body.css('overflow', 'hidden');
+            body.css('overflow', 'hidden');
+
             img[0].onload = function() {
-                img.css('left', (parseInt(imgdiv.css('width'))-parseInt(img.prop('naturalWidth')))/2 + 'px');
-                img.css('top', (parseInt(imgdiv.css('height'))-parseInt(img.prop('naturalHeight')))/2 + 'px');
-                img.css('width', img.prop('naturalWidth') + 'px');
-                img.css('height', img.prop('naturalHeight') + 'px');
+                curImageRawWidth = img.prop('naturalWidth');
+                curImageRawHeight = img.prop('naturalHeight');
+
+                var initScale = 1;
+                var initWidth = 0, initHeight = 0;
+                {
+                    var scaleWidth = imgdiv.width() / curImageRawWidth,
+                        scaleHeight = imgdiv.height() / curImageRawHeight;
+
+                    // if smaller than container
+                    if(scaleWidth >= 1 && scaleHeight >= 1) {
+                        initScale = 1;
+                    }
+                    // if larger than container, scale to fit
+                    else {
+                        initScale = Math.min(scaleWidth, scaleHeight);
+                     }
+
+                    initWidth = curImageRawWidth * initScale;
+                    initHeight = curImageRawHeight * initScale;
+                }
+
+                img.css('left', (imgdiv.width()-initWidth)/2 + 'px');
+                img.css('top', (imgdiv.height()-initHeight)/2 + 'px');
+                img.css('width', initWidth + 'px');
+                img.css('height', initHeight + 'px');
                 imgdiv.show();
+
+                show_info(curImageRawWidth, curImageRawHeight, initScale);
             };
 			img.attr('src', ele.src);
 		} else {
@@ -96,7 +166,7 @@ $('#back-to-top').click(function(){
 			imgdiv.hide();
 		}
 
-        if(show) {
+        if(ele != null) {
             if(!key_handler_added) {
                 window.addEventListener('keydown', key_handler);
                 key_handler_added = true;
@@ -110,22 +180,23 @@ $('#back-to-top').click(function(){
 	}
 
     function next_image(dir) {
+        rotateImage();
         image_index += dir > 0 ? 1 : -1;
         if(image_index > images.length-1) image_index = images.length - 1;
         if(image_index < 0) image_index = 0;
         if(image_index < images.length) {
             var img = images[image_index];
-            view_image(img, true);
+            view_image(img);
         }
     }
 
 	$('.entry img:not(.nz)').click(function(e) {
         set_current_image(this);
-		view_image(this, true);
+		view_image(this);
 	});
 
 	imgdiv.click(function() {
-		view_image(null, false);
+		view_image(null);
 	});
 
     window.imgview = {};
@@ -150,17 +221,24 @@ $('#back-to-top').click(function(){
 
             imgview.dragging =true;
         } else if(e.which == 2) {    // middle button
-            imgview.degree += 90;
-            if(imgview.degree >= 360)
-                imgview.degree = 0;
-            img.attr('data-busy', '1');
-            img.css('transition', 'transform 0.3s linear');
-            img.css('transform', 'rotateZ(' + imgview.degree + 'deg)');
+            rotateImage(true);
         }
 
         e.preventDefault();
         return false;
     });
+
+    function rotateImage(clockwisely) {
+        if (clockwisely == undefined) {
+            img.css('transform', '');
+            imgview.degree = 0;
+        } else {
+            imgview.degree += !!clockwisely ? +90 : -90;
+            img.attr('data-busy', '1');
+            img.css('transition', 'transform 0.3s linear');
+            img.css('transform', 'rotateZ(' + imgview.degree + 'deg)');
+        }
+    }
 
     img.on('mousemove', function(e) {
         if(!imgview.dragging) return;
@@ -196,7 +274,7 @@ $('#back-to-top').click(function(){
     });
 
     img.on('dblclick', function(e) {
-        view_image(null, false);
+        view_image(null);
         
         e.preventDefault();
         return false;
@@ -232,13 +310,15 @@ $('#back-to-top').click(function(){
             ? top + (height - new_height) * ((y-top)/height)
             : top + (height - new_height) / 2;
 
-        if(new_width > 0 && new_height > 0) {
+        if(new_width >= 1 && new_height >= 1) {
             img.attr('data-busy', '1');
             img.css('transition', 'all 0.3s linear 0s');
             img.css('left', new_left + 'px');
             img.css('top', new_top + 'px');
             img.css('width', new_width + 'px');
             img.css('height', new_height + 'px');
+
+            show_info(curImageRawWidth, curImageRawHeight, new_width / curImageRawWidth);
         }
 
         e.preventDefault();
@@ -398,11 +478,4 @@ $('#back-to-top').click(function(){
         if(the_ele)
             that.replaceWith(the_ele);
     });
-})();
-
-/* posts have background-image set */
-(function() {
-    if($('#wrapper').css('background-image')) {
-        $('#content').css('opacity', '0.95');
-    }
 })();

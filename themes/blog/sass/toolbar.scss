@@ -51,7 +51,7 @@
 	bottom: 0px;
     cursor: zoom-out;
 
-    img {
+    > img {
         cursor: move;
         position: relative;
         left: 0px;
@@ -61,13 +61,14 @@
         user-select:none;
     }
 
-    .tip {
+    > .tool {
         position: absolute;
         left: 0px;
         right: 0px;
         bottom: 3px;
         text-align: center;
-        color: #bcbcbc;
+        color: aliceblue;
+        text-shadow: 0 0 3px #ff608d;
     }
 }
 
