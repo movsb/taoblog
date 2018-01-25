@@ -1,6 +1,6 @@
 if($('pre.code').length) {
 	$('head').append('<link rel="stylesheet" type="text/css" href="/plugins/highlight/default.css" />');
-	// jQuery will cause the underscore(_) query parameter added to the request
+	// jQuery will cause the underscore(_) query parameter to be added to the request
 	//$('head').append('<script type="text/javascript" src="/plugins/highlight/highlight.min.js"></script>');
 	//$.getScript('/plugins/highlight/highlight.min.js');
 	(function(){
