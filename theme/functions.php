@@ -24,6 +24,6 @@ function the_meta_tag() {
 
     $ts = join(' · ', $as);
     
-    return '<span class="value">'.($ts ? $ts : "（没有）").'</span>';
+    return $ts ? '<span class="value">'.$ts.'</span>' : '';
 }
 

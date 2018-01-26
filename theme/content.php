@@ -1,4 +1,4 @@
-<article class="post" itemscope itemtype="http://schema.org/Article">	
+<article class="post" itemscope itemtype="http://schema.org/Article">
 	<div class="title clearfix">
 		<h1 itemprop="name"><?php echo htmlspecialchars($the->title); ?></h1>
 	</div>
@@ -13,10 +13,17 @@
             echo $is_preview ? $_POST['content'] : $the->content;
         ?>
         <?php if($the->type == 'post') { ?>
-        <div class="meta clearfix">
-            <span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name"><?php echo htmlspecialchars($tbopt->get('author')); ?></span></span>
-            发表于：<?php echo the_meta_date();?>，阅读量：<?php echo $the->page_view; ?>，标签：<span itemprop="keywords"><?php echo the_meta_tag();?></span>
-        </div>
+		<div class="meta clearfix">
+			<span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+				<span itemprop="name"><?php echo htmlspecialchars($tbopt->get('author')); ?></span>
+			</span>
+			发表于：<?php echo the_meta_date();?>，阅读量：<?php echo $the->page_view; ?><?php
+				$s = the_meta_tag();
+				if ($s != '') {
+					echo '，标签：<span itemprop="keywords">', $s, '</span>';
+				}
+			?>
+		</div>
         <?php } ?>
 	</div><!-- end entry -->
 
