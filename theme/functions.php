@@ -23,7 +23,32 @@ function the_meta_tag() {
 	}
 
     $ts = join(' · ', $as);
-    
+
     return $ts ? '<span class="value">'.$ts.'</span>' : '';
 }
 
+/**
+ * Outputs the related posts
+ *
+ * @return the html content of related posts list
+ */
+function theRelatedPosts()
+{
+    global $the, $tbquery;
+
+    if ($the->type == 'post'
+        && isset($tbquery->related_posts)
+        && is_array($tbquery->related_posts)
+        && count($tbquery->related_posts)
+    ) {
+        echo '<h3>相关文章</h3>', PHP_EOL;
+        echo '<ol>',PHP_EOL;
+
+        $ps = &$tbquery->related_posts;
+        foreach ($ps as $p) {
+            echo sprintf("<li><a href=\"/%d/\">%s</a></li>\n", $p->id, htmlspecialchars($p->title));
+        }
+
+        echo '</ol>',PHP_EOL;
+    }
+}
