@@ -1,19 +1,31 @@
 <?php
+/**
+ * Hooks of comments
+ */
+
+namespace admin\hooks\comment;
 
 defined('TBPATH') or die("Silence is golden.");
 
-function ahc_update_count($id, $post) {
-	global $tbopt;
+/**
+ * Updates all comments count
+ */
+function updateAllCount($id, $post)
+{
+    global $tbopt;
     global $tbcmts;
 
     $count = $tbcmts->get_count_of_comments();
     $tbopt->set('comment_count', $count);
 }
 
-add_hook('comment_posted', 'ahc_update_count');
+add_hook('comment_posted', __NAMESPACE__ . '\\updateAllCount');
 
-
-function dbh_on_comment_posted($unused, $POST) {
+/**
+ * Updates comment count of a post
+ */
+function updateCount($unused, $POST)
+{
     global $tbdb;
 
     $post_id = (int)$POST['post_id'];
@@ -21,5 +33,4 @@ function dbh_on_comment_posted($unused, $POST) {
     $tbdb->query($sql);
 }
 
-add_hook('comment_posted', 'dbh_on_comment_posted');
-
+add_hook('comment_posted', __NAMESPACE__ . '\\updateCount');
