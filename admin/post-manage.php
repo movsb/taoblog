@@ -40,6 +40,7 @@ admin_header();
 <th>发表日期</th>
 <th>修改日期</th>
 <th>浏览量</th>
+<th>评论数</th>
 <th>源类型</th>
 <th>操作</th>
 </tr>
@@ -54,8 +55,9 @@ foreach($posts as $p) {
         '<td>',$p->date,'</td>',
         '<td>',$p->modified,'</td>',
         '<td>',$p->page_view,'</td>',
+        '<td>',$p->comments,'</td>',
         '<td>',htmlspecialchars($p->source_type),'</td>',
-        '<td>',the_edit_link($p,true,true),'</td>',
+        '<td>',the_edit_link($p, true, true),'</td>',
         '</tr>'
     ;
 }

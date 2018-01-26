@@ -1012,7 +1012,7 @@ class TB_Posts {
         global $tbdb;
 
         $sql = array();
-        $sql['select']  = 'id,date,modified,title,page_view,source_type';
+        $sql['select']  = 'id,date,modified,title,page_view,source_type,comments';
         $sql['from']    = 'posts';
         $sql['where'][] = "type='post'";
         $sql['orderby'] = 'id DESC';
