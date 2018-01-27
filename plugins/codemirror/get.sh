@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 wget http://codemirror.net/codemirror.zip
 unzip codemirror.zip
