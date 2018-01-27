@@ -2,34 +2,34 @@
 
 define('TB_VERSION', '1.0.7');
 
-require_once(dirname(__FILE__).'/../setup/config.php');
+require_once dirname(__FILE__).'/../setup/config.php';
 
-require_once('utils/die.php');
-require_once('utils/utils.php');
-require_once('utils/datetime.php');
+require_once 'utils/die.php';
+require_once 'utils/utils.php';
+require_once 'utils/datetime.php';
 
-require_once('login-auth.php');
+require_once 'login-auth.php';
 
-require_once('utils/hooks.php');
-require_once('plugin.php');
+require_once 'utils/hooks.php';
+require_once 'plugin.php';
 
-require_once('models/base.php');
-require_once('models/options.php');
-require_once('models/posts.php');
-require_once('models/taxonomies.php');
-require_once('models/comments.php');
-require_once('models/tags.php');
-require_once('models/shuoshuo.php');
+require_once 'models/base.php';
+require_once 'models/options.php';
+require_once 'models/posts.php';
+require_once 'models/taxonomies.php';
+require_once 'models/comments.php';
+require_once 'models/tags.php';
+require_once 'models/shuoshuo.php';
 
-require_once('tbmain.php');
+require_once 'tbmain.php';
 
-require_once('hooks/comment.php');
-require_once('hooks/post.php');
+require_once 'hooks/comment.php';
+require_once 'hooks/post.php';
 
-require_once('query.php');
-require_once('canonical.php');
+require_once 'query.php';
+require_once 'canonical.php';
 
-require_once('api.php');
+require_once 'api.php';
 
 apply_hooks('tb_load');
 
@@ -49,4 +49,3 @@ $tbmain         = new TB_Main;
 date_default_timezone_set('Asia/Chongqing');
 
 $logged_in = login_auth();
-

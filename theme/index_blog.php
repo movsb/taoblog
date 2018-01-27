@@ -3,41 +3,41 @@ global $tbopt;
 $blog_name = $tbopt->get('blog_name');
 
 function the_recent_posts() {
-	global $tbquery;
+    global $tbquery;
 
-	$q = ['count'=>20, 'no_content'=>true];
-	$posts = $tbquery->objs;
-	if(is_array($posts) && count($posts)) {
-		echo '<h2>近期文章</h2>',PHP_EOL;
-		echo '<ul>';
-		foreach($posts as &$p) {
-			$link = the_link($p, false);
-			echo '<li><a href="'.$link.'">',htmlspecialchars($p->title),'</a></li>',"\n";
-		}
-		echo '</ul>';
-	}
+    $q = ['count'=>20, 'no_content'=>true];
+    $posts = $tbquery->objs;
+    if(is_array($posts) && count($posts)) {
+        echo '<h2>近期文章</h2>',PHP_EOL;
+        echo '<ul>';
+        foreach($posts as &$p) {
+            $link = the_link($p, false);
+            echo '<li><a href="'.$link.'">',htmlspecialchars($p->title),'</a></li>',"\n";
+        }
+        echo '</ul>';
+    }
 }
 
 function the_recent_comments() {
-	global $tbcmts;
-	global $tbpost;
+    global $tbcmts;
+    global $tbpost;
     global $tbopt;
 
     $admin_email = $tbopt->get('email');
 
-	$cmts = $tbcmts->get_recent_comments();
-	if(is_array($cmts) && count($cmts)) {
-		echo '<h2>近期评论</h2>',PHP_EOL;
-		echo '<ul>';
-		foreach($cmts as $c) {
-			$title = $tbpost->get_vars('title',"id=$c->post_id")->title;
+    $cmts = $tbcmts->get_recent_comments();
+    if(is_array($cmts) && count($cmts)) {
+        echo '<h2>近期评论</h2>',PHP_EOL;
+        echo '<ul>';
+        foreach($cmts as $c) {
+            $title = $tbpost->get_vars('title',"id=$c->post_id")->title;
             $author = strcasecmp($c->email, $admin_email) == 0 ? '博主' : $c->author;
 
-			echo '<li style="margin-bottom: 8px; overflow: hidden;"><b>', htmlspecialchars($author),'</b>: ',htmlspecialchars($c->content),
-				'<span style="float: right;">《','<a href="/',$c->post_id,'/">',htmlspecialchars($title),'</a>》</span>','</li>',PHP_EOL;
-		}
-		echo '</ul>';
-	}
+            echo '<li style="margin-bottom: 8px; overflow: hidden;"><b>', htmlspecialchars($author),'</b>: ',htmlspecialchars($c->content),
+                '<span style="float: right;">《','<a href="/',$c->post_id,'/">',htmlspecialchars($title),'</a>》</span>','</li>',PHP_EOL;
+        }
+        echo '</ul>';
+    }
 }
 
 function tb_head() {?>
@@ -91,9 +91,9 @@ the_recent_comments();
 ?>
 
 <div class="status">
-	<h2>状态</h2>
+    <h2>状态</h2>
     <ul>
-	<li>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</li>
+    <li>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</li>
     <li>博客归档：<?php
         echo '文章数：', $tbopt->get('post_count', '?');
         echo '，页面数：', $tbopt->get('page_count', '?');

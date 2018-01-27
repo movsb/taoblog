@@ -3,22 +3,22 @@
 require('header.php');
 ?>
 <div class="query date-query">
-	<h2><?php
-		if($tbquery->date->yy) echo $tbquery->date->yy,'年';
-		if($tbquery->date->mm) echo $tbquery->date->mm,'月';
-		echo '的归档';
-	?></h2>
-	<ul class="item-list">
+    <h2><?php
+        if($tbquery->date->yy) echo $tbquery->date->yy,'年';
+        if($tbquery->date->mm) echo $tbquery->date->mm,'月';
+        echo '的归档';
+    ?></h2>
+    <ul class="item-list">
 <?php
 while($tbquery->has()){
-	$the = $tbquery->the();
+    $the = $tbquery->the();
 ?>
-	<li class="item cat-item"><h2><a target="_blank" href="<?php 
-			echo the_link($the, false);
-			?>"><?php echo htmlspecialchars($the->title);?></a></h2></li>
+    <li class="item cat-item"><h2><a target="_blank" href="<?php 
+            echo the_link($the, false);
+            ?>"><?php echo htmlspecialchars($the->title);?></a></h2></li>
 <?php
 } ?>
-	</ul>
+    </ul>
 </div>
 
 <?php

@@ -1,24 +1,24 @@
 <?php
 
-require_once('login-auth.php');
-require_once('utils/die.php');
-require_once(dirname(__FILE__).'/../setup/config.php');
-require_once('models/base.php');
-require_once('models/options.php');
+require_once 'login-auth.php';
+require_once 'utils/die.php';
+require_once dirname(__FILE__).'/../setup/config.php';
+require_once 'models/base.php';
+require_once 'models/options.php';
 
 // 登录相关的请求全部在 https 下进行
 if(($_SERVER['HTTPS'] ?? 'off') !== 'on') {
-	header('HTTP/1.1 302 Unauthorized access');
-	header('Location: /');
-	die(0);
+    header('HTTP/1.1 302 Unauthorized access');
+    header('Location: /');
+    die(0);
 }
 
 function login_html($url='') { ?>
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8" />
-	<title>登录 - TaoBlog</title>
+    <meta charset="UTF-8" />
+    <title>登录 - TaoBlog</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
     <style>
 body {
@@ -70,12 +70,12 @@ body {
     font-size: 1em;   
 }
 
-	</style>
+    </style>
 </head>
 <body>
 <div id="wrapper">
-	<form method="post" id="login-form">
-		<div id="title">登录</div>
+    <form method="post" id="login-form">
+        <div id="title">登录</div>
         <div id="input-wrapper">
             <div>
                 <input class="input" type="text" name="user" placeholder="用户名" />
@@ -86,12 +86,12 @@ body {
                 <input class="btn" type="button" value="取消" onclick="location.href='/';" />
             </div>
         </div>
-		<div class="hidden">
-		<?php if($url) { ?>
-			<input type="hidden" name="url" value="<?php echo htmlspecialchars($url); ?>" />
-		<?php } ?>
-		</div>
-	</form>
+        <div class="hidden">
+        <?php if($url) { ?>
+            <input type="hidden" name="url" value="<?php echo htmlspecialchars($url); ?>" />
+        <?php } ?>
+        </div>
+    </form>
 </div>
 </body>
 </html>
@@ -102,31 +102,31 @@ if($_SERVER['REQUEST_METHOD'] === 'GET') :
 
 $do = $_GET['do'] ?? '';
 if($do === 'logout') {
-	header('HTTP/1.1 302 Logged Out');
-	setcookie('login','',time()-1, '/');
+    header('HTTP/1.1 302 Logged Out');
+    setcookie('login','',time()-1, '/');
     // 转到登录页面以验证成功退出
     // 如果没有成功退出，那么会因认证成功而转到管理员页面
-	header('Location: login.php');
-	die(0);
+    header('Location: login.php');
+    die(0);
 } else {
-	if(login_auth()){
-		header('HTTP/1.1 302 Login Success');
+    if(login_auth()){
+        header('HTTP/1.1 302 Login Success');
 
-		$url = $_GET['url'] ?? '/admin/';
-		header('Location: '.$url);
-		die(0);
-	} else {
-		$url = $_GET['url'] ?? '';
-		login_html($url);
-		die(0);
-	}
+        $url = $_GET['url'] ?? '/admin/';
+        header('Location: '.$url);
+        die(0);
+    } else {
+        $url = $_GET['url'] ?? '';
+        login_html($url);
+        die(0);
+    }
 }
 
 else : // POST
 
 if(!login_auth_passwd($_POST)) {
-	login_html();
-	die(0);
+    login_html();
+    die(0);
 }
 
 $url = $_POST['url'] ?? '/admin/';

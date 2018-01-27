@@ -8,11 +8,11 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') :
 else :
 
 function fm_die_json($arg) {
-	header('HTTP/1.1 200 OK');
-	header('Content-Type: application/json');
+    header('HTTP/1.1 200 OK');
+    header('Content-Type: application/json');
 
-	echo json_encode($arg, JSON_UNESCAPED_UNICODE);
-	die(0);
+    echo json_encode($arg, JSON_UNESCAPED_UNICODE);
+    die(0);
 }
 
 function fm_error($msg) {
@@ -25,7 +25,7 @@ function fm_error($msg) {
 require_once('login-auth.php');
 
 if(!login_auth()) {
-	fm_error('需要登录后才能进行该操作！');
+    fm_error('需要登录后才能进行该操作！');
 }
 
 require_once('load.php');

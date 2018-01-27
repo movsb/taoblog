@@ -1,36 +1,36 @@
 /* 底部工具栏 */
 .footer-toolbar {
-	position: fixed;
-	right: 10px;
-	bottom: 10px;
-	box-sizing: border-box;
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    box-sizing: border-box;
 }
 
 #tips {
-	position: fixed;
-	right: 10px;
-	top: 10px;
-	max-width: 200px;
-	padding: 1em;
-	box-shadow: 0px 0px 1px;
-	border-radius: 4px;
-	background-color: $toolbar_tips_bg;
-	color: $toolbar_tips_fg;
-	z-index: 1000;
-	display: none;
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    max-width: 200px;
+    padding: 1em;
+    box-shadow: 0px 0px 1px;
+    border-radius: 4px;
+    background-color: $toolbar_tips_bg;
+    color: $toolbar_tips_fg;
+    z-index: 1000;
+    display: none;
 }
 
 /* 阅读模式 */
 .reading-mode {
-	font-size: 30px;
-	height: 30px;
-	cursor: pointer;
+    font-size: 30px;
+    height: 30px;
+    cursor: pointer;
 }
 
 /* 回到顶部 */
 .back-to-top {
-	display: none;
-	cursor: pointer;
+    display: none;
+    cursor: pointer;
     -moz-user-select: none;
     user-select: none;
     filter: opacity(70%);
@@ -41,14 +41,14 @@
 
 /* 图片查看 */
 #img-view {
-	position: fixed;
-	z-index: 1000000;
-	display: none;
-	background-color: $toolbar_imgview_bg;
-	left: 0px;
-	top: 0px;
-	right: 0px;
-	bottom: 0px;
+    position: fixed;
+    z-index: 1000000;
+    display: none;
+    background-color: $toolbar_imgview_bg;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
     cursor: zoom-out;
 
     > img {

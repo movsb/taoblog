@@ -2,10 +2,10 @@
 
 // 这代码加这命名加这逻辑，我估计你得看醉，反正我是醉了
 function list_all_cats() {
-	global $tbtax;
+    global $tbtax;
     global $tbpost;
 
-	$taxes = $tbtax->get_hierarchically();
+    $taxes = $tbtax->get_hierarchically();
     $cat_posts = $tbpost->get_count_of_cats_all();
 
     $_tax_add = function( &$taxes,&$count_of_func) use($cat_posts,&$_tax_add) {

@@ -1,8 +1,8 @@
 <?php
 
 if(!isset($_SERVER['HTTP_USER_AGENT'])) {
-	header('HTTP/1.1 400 Bad Request');
-	die(-1);
+    header('HTTP/1.1 400 Bad Request');
+    die(-1);
 }
 
 if(!file_exists('theme/') || !file_exists('theme/index.php')) {
@@ -31,7 +31,7 @@ if(!login_auth() && file_exists('MAINTENANCE')) {
 
 
 if($tbquery->query() === false){
-	tb_die(400, '未定义的查询！');
+    tb_die(400, '未定义的查询！');
 }
 
 if(!$tbquery->have() 
@@ -40,13 +40,13 @@ if(!$tbquery->have()
     && !$tbquery->is_archive()
     && !$tbquery->is_memory()
 ){
-	if(!$tbquery->is_query_modification) {
-		require('theme/404.php');
-		die(0);
-	} else {
-		header('HTTP/1.1 304 Not Modified');
-		die(0);
-	}
+    if(!$tbquery->is_query_modification) {
+        require('theme/404.php');
+        die(0);
+    } else {
+        header('HTTP/1.1 304 Not Modified');
+        die(0);
+    }
 }
 
 if($tbquery->is_home())             require('theme/index.php');

@@ -216,11 +216,11 @@ die(0);
 else : // POST
 
 function shuoshuo_die_json($arg) {
-	header('HTTP/1.1 200 OK');
-	header('Content-Type: application/json');
+    header('HTTP/1.1 200 OK');
+    header('Content-Type: application/json');
 
-	echo json_encode($arg, JSON_UNESCAPED_UNICODE);
-	die(0);
+    echo json_encode($arg, JSON_UNESCAPED_UNICODE);
+    die(0);
 }
 
 require_once('login-auth.php');

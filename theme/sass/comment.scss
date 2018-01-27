@@ -6,16 +6,16 @@
 
 /* 评论标题 */
 #comment-title {
-	font-size: 1.5em;
-	border-bottom: 1px solid $border_color;
+    font-size: 1.5em;
+    border-bottom: 1px solid $border_color;
     margin-bottom: 0;
     padding-bottom: 0.3em;
 }
 
 /* 评论列表 */
 #comment-list {
-	padding: 0;
-	list-style: none;
+    padding: 0;
+    list-style: none;
 
     .comment-replies ol {
         padding: 0;
@@ -73,18 +73,18 @@
             border-top: 1px dashed $comment_func_border;
         }
 
-		.reply-to {
-			margin-bottom: 0.5em;
-		}
+        .reply-to {
+            margin-bottom: 0.5em;
+        }
     }
 }
 
 /* 评论提交 */
 #comment-submit {
-	padding: 5px;
-	background-color: $comment_submit_bg;
-	color: $comment_submit_fg;
-	cursor: pointer;
+    padding: 5px;
+    background-color: $comment_submit_bg;
+    color: $comment_submit_fg;
+    cursor: pointer;
 
     &:hover {
         background-color: $comment_submit_hover_bg;
@@ -93,7 +93,7 @@
 
 /* 评论功能区 */
 #comments .comment-func {
-	margin: 2em;
+    margin: 2em;
 }
 
 .comment-meta {

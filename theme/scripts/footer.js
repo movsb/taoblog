@@ -1,21 +1,21 @@
 /* 回到顶端 */
 window.onscroll = function() {
-	if(window.scrollY > 160) {
-		$("#back-to-top").fadeIn(500);
-	} else {
-		$("#back-to-top").fadeOut(500);
-	}
+    if(window.scrollY > 160) {
+        $("#back-to-top").fadeIn(500);
+    } else {
+        $("#back-to-top").fadeOut(500);
+    }
 };
 $('#back-to-top').click(function(){
-	$('html,body').animate({
-		scrollTop: 0
-	}, 300);
+    $('html,body').animate({
+        scrollTop: 0
+    }, 300);
 });
 
 /* 点击图片放大 & 拖动浏览*/
 /* 写得超级烂，完全没管性能 */
 (function() {
-	var body = $('body');
+    var body = $('body');
 
     body.append(
         $('<div>')
@@ -35,7 +35,7 @@ $('#back-to-top').click(function(){
             )
         );
 
-	var imgdiv = $('#img-view');
+    var imgdiv = $('#img-view');
     var img = $('#img-view > img');
     var images = $('.entry img:not(.nz)');
     var image_index = -1;
@@ -100,8 +100,8 @@ $('#back-to-top').click(function(){
         }, 3000);
     }
 
-	function view_image(ele) {
-		if(ele != null) {
+    function view_image(ele) {
+        if(ele != null) {
             // tips
             var tip_times_total = 1;
             var tip_times = +img.attr('data-times') || 0;
@@ -117,7 +117,7 @@ $('#back-to-top').click(function(){
                 $('#img-view .tip').hide();
             }
 
-			body.css('max-height', window.innerHeight);
+            body.css('max-height', window.innerHeight);
             body.css('overflow', 'hidden');
 
             img[0].onload = function() {
@@ -151,20 +151,20 @@ $('#back-to-top').click(function(){
 
                 show_info(curImageRawWidth, curImageRawHeight, initScale);
             };
-			img.attr('src', ele.src);
-		} else {
+            img.attr('src', ele.src);
+        } else {
             // 以下两行清除因拖动导致的设置
-			img.css('left', '0px');
-			img.css('top', '0px');
-			body.css('max-height', 'none');
-			body.css('overflow', 'auto');
+            img.css('left', '0px');
+            img.css('top', '0px');
+            body.css('max-height', 'none');
+            body.css('overflow', 'auto');
             // 清除旋转
             img.css('transform','');
 
             imgview.dragging = false;
             imgview.degree = 0;
-			imgdiv.hide();
-		}
+            imgdiv.hide();
+        }
 
         if(ele != null) {
             if(!key_handler_added) {
@@ -177,7 +177,7 @@ $('#back-to-top').click(function(){
                 key_handler_added = false;
             }
         }
-	}
+    }
 
     function next_image(dir) {
         rotateImage();
@@ -190,14 +190,14 @@ $('#back-to-top').click(function(){
         }
     }
 
-	$('.entry img:not(.nz)').click(function(e) {
+    $('.entry img:not(.nz)').click(function(e) {
         set_current_image(this);
-		view_image(this);
-	});
+        view_image(this);
+    });
 
-	imgdiv.click(function() {
-		view_image(null);
-	});
+    imgdiv.click(function() {
+        view_image(null);
+    });
 
     window.imgview = {};
     imgview.dragging = false;
@@ -328,29 +328,29 @@ $('#back-to-top').click(function(){
 
 /* 目录展开与隐藏 */
 (function() {
-	if($('.entry .toc').length == 0) return;
+    if($('.entry .toc').length == 0) return;
 
-	function hide_toc(hide) {
-		var hide_toc = $('#hide-toc');
-		var toc_ul = $('.entry .toc > ul');
+    function hide_toc(hide) {
+        var hide_toc = $('#hide-toc');
+        var toc_ul = $('.entry .toc > ul');
 
-		if(hide) {
-			hide_toc.text('[显示]');
-			toc_ul.hide();
-		} else {
-			hide_toc.text('[隐藏]');
-			toc_ul.show();
-		}
-	}
+        if(hide) {
+            hide_toc.text('[显示]');
+            toc_ul.hide();
+        } else {
+            hide_toc.text('[隐藏]');
+            toc_ul.show();
+        }
+    }
 
-	$('.entry .toc h2, .entry .toc h3').replaceWith('<div style="margin-bottom: -10px;"><h2 style="float: left; margin-right: 20px;">目录</h2><span id="hide-toc" class="no-sel" style="float: right; cursor: pointer;"></span><div style="clear: both;"></div></div>');
+    $('.entry .toc h2, .entry .toc h3').replaceWith('<div style="margin-bottom: -10px;"><h2 style="float: left; margin-right: 20px;">目录</h2><span id="hide-toc" class="no-sel" style="float: right; cursor: pointer;"></span><div style="clear: both;"></div></div>');
 
-	hide_toc(true);
+    hide_toc(true);
 
-	$('#hide-toc').click(function() {
-		var hidden = $('.entry .toc > ul').css('display') == 'none';
-		hide_toc(!hidden);
-	});
+    $('#hide-toc').click(function() {
+        var hidden = $('.entry .toc > ul').css('display') == 'none';
+        hide_toc(!hidden);
+    });
 
     window.addEventListener('keyup', function(e) {
         if(e.keyCode == 27) {
@@ -432,26 +432,26 @@ $('#back-to-top').click(function(){
 /* 服务器运行时间 */
 // http://www.htmlgoodies.com/html5/javascript/calculating-the-difference-between-two-dates-in-javascript.html
 (function() {
-	function date_between(date1, date2) {
-		// get one day in millisecond
-		var one_day = 24*60*60*1000;
+    function date_between(date1, date2) {
+        // get one day in millisecond
+        var one_day = 24*60*60*1000;
 
-		// convert to millisecond
-		var date1_ms = date1.getTime();
-		var date2_ms = date2.getTime();
+        // convert to millisecond
+        var date1_ms = date1.getTime();
+        var date2_ms = date2.getTime();
 
-		// calc diff
-		var diff_ms = date2_ms - date1_ms;
+        // calc diff
+        var diff_ms = date2_ms - date1_ms;
 
-		return Math.round(diff_ms / one_day);
-	}
+        return Math.round(diff_ms / one_day);
+    }
 
-	var start = new Date(2014, 12-1, 24);
-	var now = new Date();
+    var start = new Date(2014, 12-1, 24);
+    var now = new Date();
 
-	var days = date_between(start, now);
+    var days = date_between(start, now);
 
-	$('#server-run-time').text(days);
+    $('#server-run-time').text(days);
 })();
 
 /* 表情图片 */

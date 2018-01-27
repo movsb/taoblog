@@ -31,7 +31,7 @@ function asciinema_head() {
 add_hook('tb_footer', 'asciinema_footer');
 
 function asciinema_footer() { 
-	global $tbquery;
+    global $tbquery;
     if($tbquery->is_singular()) {
         global $the;
         if(preg_match('~<pre[^>]+\basciinema\b[^>]+>~', $the->content)) { ?>

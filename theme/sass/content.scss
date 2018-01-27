@@ -8,7 +8,7 @@
 
 /* 分类与日期查询 */
 .query {
-	padding: 0px 10px;
+    padding: 0px 10px;
 
     ul.item-list {
         list-style: none;
@@ -146,29 +146,29 @@
 
 /* 文章内容 */
 @media screen and (max-width: 850px) {
-	.entry {
-		padding: 0px 0px 16px;
-	}
+    .entry {
+        padding: 0px 0px 16px;
+    }
 }
 @media screen and (min-width: 851px) {
-	.entry {
-		padding-bottom: 16px;
+    .entry {
+        padding-bottom: 16px;
         line-height: 2em;
-	}
+    }
 }
 
 @media screen and (max-width: 850px) {
-	.entry img {
+    .entry img {
         height: unset !important;
         max-width: 100%;
         max-height: 100%;
-	}
+    }
 }
 
 .entry {
-	display: block;
-	color: $post_content_fg;
-	text-align: justify;
+    display: block;
+    color: $post_content_fg;
+    text-align: justify;
     margin-bottom: 3em;
 
     code {
@@ -288,17 +288,17 @@
 
 /* 目录 */
 @media screen and (min-width: 600px) {
-	.entry div.toc {
-		position: fixed;
-		top: 20px;
-		right: 20px;
-		max-width: 300px;
-		color: $toc_fg;
-		background-color: $toc_bg;
-		padding: 10px;
-		border: 1px solid $toc_border_color;
+    .entry div.toc {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        max-width: 300px;
+        color: $toc_fg;
+        background-color: $toc_bg;
+        padding: 10px;
+        border: 1px solid $toc_border_color;
         line-height: 1.5em;
-	}
+    }
 }
 
 .entry {

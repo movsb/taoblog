@@ -1,36 +1,36 @@
 if($('pre.code').length) {
-	$('head').append('<link rel="stylesheet" type="text/css" href="/plugins/highlight/default.css" />');
-	// jQuery will cause the underscore(_) query parameter to be added to the request
-	//$('head').append('<script type="text/javascript" src="/plugins/highlight/highlight.min.js"></script>');
-	//$.getScript('/plugins/highlight/highlight.min.js');
-	(function(){
-		var head = document.getElementsByTagName('head')[0];
-		var s = document.createElement('script');
-		s.src = '//blog-10005538.file.myqcloud.com/highlight.pack.js';
-		head.appendChild(s);
-	})();
+    $('head').append('<link rel="stylesheet" type="text/css" href="/plugins/highlight/default.css" />');
+    // jQuery will cause the underscore(_) query parameter to be added to the request
+    //$('head').append('<script type="text/javascript" src="/plugins/highlight/highlight.min.js"></script>');
+    //$.getScript('/plugins/highlight/highlight.min.js');
+    (function(){
+        var head = document.getElementsByTagName('head')[0];
+        var s = document.createElement('script');
+        s.src = '//blog-10005538.file.myqcloud.com/highlight.pack.js';
+        head.appendChild(s);
+    })();
 
 
-	var hljscnt = 0;
-	var hljstmr = setInterval(function() {
-		if(typeof hljs == 'undefined') {
-			if(++hljscnt >= 100) clearInterval(hljstmr);
+    var hljscnt = 0;
+    var hljstmr = setInterval(function() {
+        if(typeof hljs == 'undefined') {
+            if(++hljscnt >= 100) clearInterval(hljstmr);
 
-			return;
-		}
+            return;
+        }
 
-		clearInterval(hljstmr);
+        clearInterval(hljstmr);
 
-		$('pre.code').each(function(i, e){
-			var that = $(this);
-			var ho = {};
+        $('pre.code').each(function(i, e){
+            var that = $(this);
+            var ho = {};
 
-			// TAB 换空格
-			if(that.attr('tabsize')) {
-				ho.tabReplace = (new Array(parseInt(that.attr('tabsize'))+1)).join(' ');
-			} else {
-				ho.tabReplace = '    ';
-			}
+            // TAB 换空格
+            if(that.attr('tabsize')) {
+                ho.tabReplace = (new Array(parseInt(that.attr('tabsize'))+1)).join(' ');
+            } else {
+                ho.tabReplace = '    ';
+            }
 
             // 程序语言
             var lang = that.attr('lang');
@@ -42,16 +42,16 @@ if($('pre.code').length) {
                 ho.languages = [lang];
             }
 
-			hljs.configure(ho);
-			hljs.highlightBlock(e);
+            hljs.configure(ho);
+            hljs.highlightBlock(e);
             // console.log('高亮：', e, ho);
-		});
-	},
-	100);
+        });
+    },
+    100);
 }
 
 
 if($('pre.shell').length) {
-	$('head').append('<link rel="stylesheet" href="/plugins/highlight/shell.css" />');
+    $('head').append('<link rel="stylesheet" href="/plugins/highlight/shell.css" />');
 }
 

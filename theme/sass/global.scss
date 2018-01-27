@@ -19,9 +19,9 @@ body {
 }
 
 @media screen and (max-width: 850px) {
-	body {
-		text-shadow: 0 0 1px rgba(0,0,0,0.22);
-	}
+    body {
+        text-shadow: 0 0 1px rgba(0,0,0,0.22);
+    }
 }
 
 a {
@@ -60,22 +60,22 @@ h6 { font-size: 1.0em; }
 
 /* 不可选 */
 .no-sel {
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
     cursor: default;
 }
 
 /* 按钮 */
 .btn {
-	border: none;
-	box-sizing: border-box;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	user-select: none;
+    border: none;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
     padding: 6px;
-	cursor: pointer;
-	color: $btn_fg;
+    cursor: pointer;
+    color: $btn_fg;
     transition: all 0s;
     background-color: $btn_bg;
 

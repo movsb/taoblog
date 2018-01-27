@@ -1,7 +1,7 @@
 /* 底部 */
 #footer {
-	font-size: 13px;
-	margin-top: 30px;
+    font-size: 13px;
+    margin-top: 30px;
 
     .mb {
         margin-bottom: 16px;
@@ -41,17 +41,17 @@
 }
 
 @media screen and (min-width: 851px) {
-	#mobile-footer {
-		display: none;
-	}
+    #mobile-footer {
+        display: none;
+    }
 }
 
 @media screen and (max-width: 850px) {
-	#mobile-footer {
-		border-top: 1px solid $border_color;
-		margin-top: 10px;
-		padding: 10px;
-		text-align: center;
-	}
+    #mobile-footer {
+        border-top: 1px solid $border_color;
+        margin-top: 10px;
+        padding: 10px;
+        text-align: center;
+    }
 }
 
