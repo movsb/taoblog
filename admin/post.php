@@ -633,9 +633,6 @@ DOM;
             });
         </script>
     </form>
-    <script type="text/javascript">
-        document.getElementsByTagName('form')[0].reset();
-    </script>
 </div><!-- admin-post -->
 <?php } 
 
