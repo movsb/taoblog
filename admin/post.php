@@ -28,11 +28,13 @@ function post_widget_files($p=null) {
 <ul class="list">
 </ul>
 <label>文件上传：</label>
+<span class="count"></span>
 <div>
-    <input type="file" multiple class="files"/>
-    <button class="submit">上传</button>
+    <input type="file" multiple class="files" style="display:none;"/>
     <button class="refresh">刷新</button>
-    <progress class="progress"></progress>
+    <button class="browse">浏览</button>
+    <button class="submit">上传</button>
+    <progress class="progress clearfix" value="0"></progress>
 </div>
 <script>
     function refresh_files() {
@@ -50,7 +52,7 @@ function post_widget_files($p=null) {
                     data.files.forEach(function(file) {
                         files.append(
                             $('<li/>')
-                                .append($('<span/>').text(file))
+                                .append($('<span />').text(file))
                                 .append('<button class="delete">删除</button>')
                         );
                     });
@@ -63,6 +65,15 @@ function post_widget_files($p=null) {
 
     $('.widget-files .refresh').click(function(){
         refresh_files();
+        return false;
+    });
+
+    $('.widget-files .files').on('change', function(e) {
+        $('.widget-files .count').text(e.target.files.length + ' 个文件');
+    });
+
+    $('.widget-files .browse').click(function(){
+        $('.widget-files .files').click();
         return false;
     });
 
@@ -153,16 +164,19 @@ function post_widget_files($p=null) {
             error: function(xhr, except) {
                 console.warn(xhr,except);
                 alert('ajax error:'+xhr.statusText);
+                progress.attr('value', 0);
             },
 
             success: function(response) {
                 console.log('data:',response);
                 if(response.errno === 'ok') {
+                    $('.widget-files .files').val("");
                     refresh_files();
                 }
                 else {
                     alert(response.error);
                 }
+                progress.attr('value', 0);
             },
         });
 
