@@ -28,7 +28,7 @@ function the_id_link(&$p, $home=true) {
 }
 
 function the_edit_link(&$p, $ret_anchor = true, $blank = false) {
-    $link = '/admin/post.php?do=edit&id='.(int)$p->id;
+    $link = '/admin/post.php?do=edit&amp;id='.(int)$p->id;
 
     return $ret_anchor
         ? '<a href="'.$link.'"'.($blank?'target="_blank"':'').'>编辑</a>'
