@@ -25,7 +25,7 @@ function post_widget_files($p=null) {
     $types = 'page,post';
     $content = <<<EOD
 <label>文件列表：</label>
-<ul class="list">
+<ul class="list" style="max-height:200px;overflow:auto;">
 </ul>
 <label>文件上传：</label>
 <span class="count"></span>
