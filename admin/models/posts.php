@@ -10,13 +10,13 @@ class TB_Posts {
         global $tbtag;
 
         $def = [
-            'id'		    => 0,
-            'date'		    => '',
-            'modified'	    => '',
-            'title'		    => '',
-            'content'	    => '',
-            'slug'		    => '',
-            'taxonomy'	    => 1,
+            'id'            => 0,
+            'date'          => '',
+            'modified'      => '',
+            'title'         => '',
+            'content'       => '',
+            'slug'          => '',
+            'taxonomy'      => 1,
             'page_parents'  => '',
             'status'        => 'public',
             'metas'         => '',
@@ -41,7 +41,7 @@ class TB_Posts {
             return false;
         }
 
-        if(!$arg['slug'] || preg_match('# |	|\'|"|;|/|\\\\|\\?|&|\.|<|>|:|@|\\$|%|\\^|\\*#', $arg['slug'])) {
+        if (preg_match('# |	|\'|"|;|/|\\\\|\\?|&|\.|<|>|:|@|\\$|%|\\^|\\*#', $arg['slug'])) {
             $this->error = '文章别名不规范！';
             return false;
         }

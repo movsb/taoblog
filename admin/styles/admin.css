@@ -3,6 +3,11 @@
 	padding: 0px;
 }
 
+.clearfix {
+    display: block;
+    clear: both;
+}
+
 body {
 	font-family: "Microsoft YaHei";
 	background-color: #F1F1F1;
