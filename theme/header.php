@@ -57,7 +57,7 @@
     <header id="header">
         <div class="content">
             <div class="padding">
-                <h2 class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></h2>
+                <div class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></div>
                 <p class="motto"><?php echo htmlspecialchars($tbopt->get('blog_desc'));?></p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
                     <img src="/theme/images/search.svg" class="icon" /><!--
