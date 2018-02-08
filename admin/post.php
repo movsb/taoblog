@@ -370,7 +370,10 @@ function post_admin_head() {
     renderer.br = function() {
         return '<br/>';
     }
-    marked.setOptions({renderer: renderer});
+    marked.setOptions({
+        renderer: renderer,
+        sanitize: false,
+    });
 </script>
 
 <style>
