@@ -272,14 +272,14 @@
     pre.code, pre.shell {
         overflow: auto !important;
         white-space: pre;
-        font-family: Microsoft Yahei Mono, Consolas, monospace;
+        font-family: 'Microsoft Yahei Mono', Consolas, monospace;
         padding: 0.5em !important;
         border-radius: 2px;
         background-color: $post_code_bg;
         line-height: 1.5em;
         margin: 1em 0px;
-        max-height: 1000px;
-        max-height: 100vh;
+        max-height: 600px;
+        max-height: 60vh;
         text-shadow: 0 0 1px rgba(0,0,0,0.2);
     }
 }
