@@ -122,39 +122,42 @@ class TB_Tags {
      *
      * @return 始终返回true
      */
-    public function update_post_tags($id, $tags) {
+    public function update_post_tags($id, $tags)
+    {
         global $tbdb;
 
+        $tags = is_string($tags) ? str_replace("，", ",", $tags) : "";
+
         $oldts = $this->get_post_tag_names($id);
-        $newts = $tags ? explode(',', $tags) : [];
+        $newts = explode(',', $tags);
 
         $deleted = []; // 删除的
         $added = []; // 新增加的
 
         // 计算需要删除的
-        foreach($oldts as $o) {
-            if(!in_array($o, $newts)) {
+        foreach ($oldts as $o) {
+            if (!in_array($o, $newts)) {
                 $deleted[] = $o;
             }
         }
 
         // 计算需要增加的
-        foreach($newts as $n) {
+        foreach ($newts as $n) {
             $n = trim($n);
-            if($n && !in_array($n, $oldts)) {
+            if ($n && !in_array($n, $oldts)) {
                 $added[] = $n;
             }
         }
 
         // 删除需要删除的
-        foreach($deleted as $d) {
+        foreach ($deleted as $d) {
             $tid = $this->get_tag_id($d);
             $this->delete_post_tag($id, $tid);
         }
 
         // 增加需要增加的
-        foreach($added as $a) {
-            if(!$this->has_tag_name($a)) {
+        foreach ($added as $a) {
+            if (!$this->has_tag_name($a)) {
                 $tid = $this->insert_tag($a);
             } else {
                 $tid = $this->get_tag_id($a);

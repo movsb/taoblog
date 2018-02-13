@@ -11,7 +11,7 @@ function post_widget_tag($p=null) {
     $classname = 'tags';
     $types = 'post';
     $content = <<<EOD
-<input type="text" name="tags" value="$tag" />
+<input type="text" name="tags" value="$tag" placeholder="中英文逗号分隔" />
 EOD;
 
     return compact('title', 'classname', 'types', 'content');
