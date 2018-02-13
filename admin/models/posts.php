@@ -714,7 +714,8 @@ class TB_Posts {
         return $ids;
     }
 
-    public function &get_related_posts($id) {
+    public function &get_related_posts($id) 
+    {
         global $tbdb;
         global $tbtag;
 
@@ -722,9 +723,11 @@ class TB_Posts {
 
         $posts = [];
 
-        $tagids = $tbtag->get_post_tag_ids($id);
-        if(!$tagids || !count($tagids))
+        $tagids = $tbtag->get_post_tag_ids($id, true);
+
+        if (!$tagids || !count($tagids)) {
             return $posts;
+        }
 
         $in_tags = join(',', $tagids);
 

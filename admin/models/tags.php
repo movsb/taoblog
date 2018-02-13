@@ -48,7 +48,7 @@ class TB_Tags {
         return $results->fetch_object()->id;
     }
 
-    /*
+    /**
      * 判断某个标签是否存在
      *
      * 该函数调用 get_tag_id 来判断某个名为 $name 的标签是否存在
@@ -61,7 +61,7 @@ class TB_Tags {
         return !!$this->get_tag_id($name);
     }
 
-    /*
+    /**
      * 取得某篇文章的标签名列表
      *
      * @param int $id 文章编号
@@ -86,14 +86,16 @@ class TB_Tags {
         return $names;
     }
 
-    /*
+    /**
      * 取得某篇文章的标签编号列表
      *
-     * @param int $id 文章编号
+     * @param int  $id    文章编号
+     * @param bool $alias 是否同时返回别名标签
      *
      * @return 若成功，返回文章拥有的标签编号列表。若失败，返回空列表。
      */
-    public function &get_post_tag_ids($id) {
+    public function &get_post_tag_ids($id, bool $alias)
+    {
         global $tbdb;
 
         $id = (int)$id;
@@ -102,12 +104,46 @@ class TB_Tags {
         $ids = [];
 
         $results = $tbdb->query($sql);
-        if(!$results) return $ids;
+        if (!$results) {
+            return $ids;
+        }
 
-        while($n = $results->fetch_object()) {
+        while ($n = $results->fetch_object()) {
             $ids[] = $n->tag_id;
         }
 
+        if (!$alias) {
+            return $ids;
+        }
+
+        return $this->getAliasTagsAll($ids);
+    }
+
+    /**
+     * 取得包括别名在内的标签编号列表（没有递归）
+     * 
+     * @param array $ids 文章标签，不包含别名（即别名为0的标签）
+     * 
+     * @return ?
+     */
+    public function &getAliasTagsAll(array $ids)
+    {
+        global $tbdb;
+
+        $sids = join(',', $ids);
+        $sql = "SELECT alias FROM tags WHERE id in ($sids)";
+        $rids = [];
+
+        $results = $tbdb->query($sql);
+        if (!$results) {
+            return $ids;
+        }
+
+        while ($n = $results->fetch_object()) {
+            $rids[] = $n->alias;
+        }
+
+        $ids = array_merge($ids, $rids);
         return $ids;
     }
 

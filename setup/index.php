@@ -97,6 +97,7 @@ if(!$my->query($sql)) {
 $sql = "CREATE TABLE IF NOT EXISTS tags (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `alias` INT(20) UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`)
     );";
