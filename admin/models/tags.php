@@ -249,33 +249,76 @@ class TB_Tags {
         return true;
     }
 
-    /*
+    /**
      * 获取所有的标签以及其拥有的文章数
      *
      * 返回时按拥有的文章数量从多到少排列
      *
-     * @param int $n 获取至多 $n 条记录
+     * @param int $limit 获取至多 $limit 条记录
      *
      * @return 返回对象数组，对象格式为：
      *      {
-     *          "name": "标签名",
+     *          "tags.*": "*",
      *          "size": 拥有的文章数,
      *      }
      */
-    public function list_all_tags($n) {
+    public function list_all_tags(int $limit)
+    {
         global $tbdb;
 
-        $n = (int)$n;
+        $limit = (int)$limit;
 
-        $sql = "SELECT t.name,COUNT(pt.id) as size FROM post_tags pt,tags t WHERE pt.tag_id=t.id GROUP BY t.id ORDER BY size DESC LIMIT $n";
+        $sql = array();
+        $sql['select'] = "t.*,COUNT(pt.id) as size";
+        $sql['from'] = "post_tags pt,tags t";
+        $sql['where'] = "pt.tag_id=t.id";
+        $sql['groupby'] = "t.id";
+        $sql['orderby'] = "size DESC";
+
+        if ($limit > 0) {
+            $sql['limit'] = $limit;
+        }
+
+        $sql = make_query_string($sql);
         $results = $tbdb->query($sql);
-        if(!$results) return false;
+
+        if (!$results) {
+            return false;
+        }
 
         $tag_objs = [];
-        while($to = $results->fetch_object())
+
+        while ($to = $results->fetch_object()) {
             $tag_objs[] = $to;
+        }
 
         return $tag_objs;
+    }
+
+    /**
+     * 更新某标签数据
+     * 
+     * @param int    $id    标签编号
+     * @param string $name  新标签名字
+     * @param int    $alias 新标签别名
+     * 
+     * @return boolean
+     */
+    public function updateTag(int $id, string $name, int $alias)
+    {
+        global $tbdb;
+
+        $r = false;
+
+        $sql = "UPDATE tags SET name=?,alias=? WHERE id=? LIMIT 1";
+        if ($stmt = $tbdb->prepare($sql)) {
+            if ($stmt->bind_param('sii', $name, $alias, $id)) {
+                $r = $stmt->execute();
+            }
+            $stmt->close();
+        }
+
+        return $r;
     }
 }
 

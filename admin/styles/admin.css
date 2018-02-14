@@ -23,7 +23,7 @@ body {
     bottom: 0px;
     width: 80px;
 }
-#admin-wrap {
+#admin-wrap, .admin-wrap {
     margin-left: 80px;
 }
 }
