@@ -55,7 +55,7 @@ admin_header();
 </thead>
 <tbody>
 <?php
-$tags = $tbtag->list_all_tags(-1);
+$tags = $tbtag->list_all_tags(-1, false);
 foreach ($tags as $t) {
     echo '<tr data-id="',$t->id,'">',
         '<td>',$t->id,'</td>',
@@ -110,7 +110,7 @@ $('#edit-form .submit').click(function(){
     $.post('', $('#edit-form').serialize(),
         function(data) {
             if (data.errno != 'ok') {
-                alert('失败。');
+                alert(data.error);
                 return;
             }
             var f = $('#edit-box');
@@ -174,6 +174,7 @@ if ($do == 'update') {
 
     tag_die_json([
         'errno' => $r ? 'ok' : 'error',
+        'error' => $tbtag->error,
     ]);
 }
 

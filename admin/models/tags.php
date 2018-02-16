@@ -1,13 +1,15 @@
 <?php
 
-/*
+/**
  *  数据库标签管理模块
  *
  *  该模块用来管理数据库中的标签表
  *
  */
+class TB_Tags
+{
+    public $error = '';
 
-class TB_Tags {
     /*
      *  插入一个标签
      *
@@ -130,17 +132,27 @@ class TB_Tags {
     {
         global $tbdb;
 
-        $sids = join(',', $ids);
-        $sql = "SELECT alias FROM tags WHERE id in ($sids)";
         $rids = [];
+        $sids = join(',', $ids);
 
-        $results = $tbdb->query($sql);
-        if (!$results) {
+        $sql1 = "SELECT alias FROM tags WHERE id in ($sids)";
+        $sql2 = "SELECT id FROM tags WHERE alias in ($sids)";
+
+        $results1 = $tbdb->query($sql1);
+        $results2 = $tbdb->query($sql2);
+
+        if (!$results1 || !$results2) {
             return $ids;
         }
 
-        while ($n = $results->fetch_object()) {
-            $rids[] = $n->alias;
+        while ($n = $results1->fetch_object()) {
+            if ($n->alias > 0) {
+                $rids[] = $n->alias;
+            }
+        }
+
+        while ($n = $results2->fetch_object()) {
+            $rids[] = $n->id;
         }
 
         $ids = array_merge($ids, $rids);
@@ -262,7 +274,7 @@ class TB_Tags {
      *          "size": 拥有的文章数,
      *      }
      */
-    public function list_all_tags(int $limit)
+    public function list_all_tags(int $limit, bool $mergeAliases)
     {
         global $tbdb;
 
@@ -287,12 +299,29 @@ class TB_Tags {
         }
 
         $tag_objs = [];
+        $tag_alias_objs = [];
 
         while ($to = $results->fetch_object()) {
-            $tag_objs[] = $to;
+            if ($to->alias == 0) {
+                $tag_objs[] = $to;
+            } else {
+                $tag_alias_objs[] = $to;
+            }
         }
 
-        return $tag_objs;
+        if (!$mergeAliases) {
+            return array_merge($tag_objs, $tag_alias_objs);
+        } else {
+            // 写得好麻烦
+            foreach ($tag_objs as $to) {
+                foreach ($tag_alias_objs as $ta) {
+                    if ($ta->alias == $to->id) {
+                        $to->size += $ta->size;
+                    }
+                }
+            }
+            return $tag_objs;
+        }
     }
 
     /**
@@ -301,7 +330,7 @@ class TB_Tags {
      * @param int    $id    标签编号
      * @param string $name  新标签名字
      * @param int    $alias 新标签别名
-     * 
+     *
      * @return boolean
      */
     public function updateTag(int $id, string $name, int $alias)
@@ -309,6 +338,21 @@ class TB_Tags {
         global $tbdb;
 
         $r = false;
+
+        // 如果是别名标签，被别名的标签不应是另一别名标签
+        // 即：被别名的标签的别名标签应该为空
+        if ($alias != 0) {
+            $ao = $this->getTagObject($alias);
+            if ($ao != null) {
+                if ($ao->alias != 0) {
+                    $this->error = "被别名的标签不应该是一个别名标签。";
+                    return false;
+                }
+            } else {
+                $this->error = "被别名的标签不存在。";
+                return false;
+            }
+        }
 
         $sql = "UPDATE tags SET name=?,alias=? WHERE id=? LIMIT 1";
         if ($stmt = $tbdb->prepare($sql)) {
@@ -319,6 +363,20 @@ class TB_Tags {
         }
 
         return $r;
+    }
+
+    /**
+     * 取得一条标签对象
+     * 
+     * @param int $id 标签编号
+     * 
+     * @return 对应标签对象（找不到时返回空）
+     */
+    public function getTagObject(int $id)
+    {
+        global $tbdb;
+        $sql = "SELECT * FROM tags WHERE id=$id";
+        return $tbdb->query($sql)->fetch_object();
     }
 }
 

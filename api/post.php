@@ -39,16 +39,15 @@ elseif($tbapi->method == 'get_id') {
     $tbapi->auth();
 
     $tbapi->done(["id"=>$tbpost->the_next_id()]);
-}
-elseif($tbapi->method == 'get_tag_posts') {
+} elseif ($tbapi->method == 'get_tag_posts') {
     $tag = $tbapi->expected('tag');
-    if(!strlen($tag)) {
-        $tbapi->err(-1,"");
+    if (!strlen($tag)) {
+        $tbapi->err(-1, "");
     }
 
-    $posts = $tbpost->get_tag_posts($tag);
-    if(!is_array($posts)) {
-        $tbapi->err(-1,"");
+    $posts = $tbpost->query_by_tags($tag, false);
+    if (!is_array($posts)) {
+        $tbapi->err(-1, "");
     }
 
     $tbapi->done($posts);

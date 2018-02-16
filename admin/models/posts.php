@@ -362,31 +362,38 @@ class TB_Posts {
     }
 
     // 查询标签对应的文章集
-    public function query_by_tags(string $tag) {
+    public function query_by_tags(string $tag, bool $all)
+    {
         global $tbdb;
         global $tbquery;
+        global $tbtag;
 
-        $tag = $tbdb->real_escape_string($tag);
         $tbquery->tags = $tag;
 
+        $ids[] = $tbtag->get_tag_id($tag);
+        $ids = $tbtag->getAliasTagsAll($ids);
+        $ids = join(',', $ids);
+
         $sql = array();
-        $sql['select']  = 'posts.*';
-        $sql['from']    = 'posts,post_tags,tags';
+        $sql['select']  = $all ? 'posts.*' : 'posts.id,posts.title';
+        $sql['from']    = 'posts,post_tags';
         $sql['where']   = [];
         $sql['where'][] = "posts.id=post_tags.post_id";
-        $sql['where'][] = "post_tags.tag_id=tags.id";
-        $sql['where'][] = "tags.name='$tag'";
+        $sql['where'][] = "post_tags.tag_id in ($ids)";
 
         $sql = apply_hooks('before_query_posts', 0, $sql);
         $sql = make_query_string($sql);
 
         $results = $tbdb->query($sql);
-        if(!$results) return false;
+
+        if (!$results) {
+            return false;
+        }
 
         $rows = $results;
 
         $p = [];
-        while($r = $rows->fetch_object()) {
+        while ($r = $rows->fetch_object()) {
             $p[] = $r;
         }
 
@@ -929,35 +936,6 @@ class TB_Posts {
 
         $p = [];
         while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        return $p;
-    }
-
-    // query_by_tags 改的
-    public function get_tag_posts($tag) {
-        global $tbdb;
-
-        $tag = $tbdb->real_escape_string($tag);
-
-        $sql = array();
-        $sql['select']  = 'posts.id,posts.date,posts.title';
-        $sql['from']    = 'posts,post_tags,tags';
-        $sql['where']   = [];
-        $sql['where'][] = "type='post'";
-        $sql['where'][] = 'posts.id=post_tags.post_id';
-        $sql['where'][] = 'post_tags.tag_id=tags.id';
-        $sql['where'][] = "tags.name='$tag'";
-
-        $sql = apply_hooks('before_query_posts', 0, $sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        while($r = $rows->fetch_object()) {
             $p[] = $r;
         }
 

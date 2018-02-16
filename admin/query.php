@@ -214,10 +214,9 @@ class TB_Query {
         else if($q['tax'] ?? '') {
             $tbquery->type = 'tax';
             $r = $tbpost->query_by_tax($q['tax']);
-        }
-        else if($q['tags'] ?? '') {
+        } elseif ($q['tags'] ?? '') {
             $tbquery->type = 'tag';
-            $r = $tbpost->query_by_tags($q['tags']);
+            $r = $tbpost->query_by_tags($q['tags'], true);
         }
         else if($q['feed'] ?? '') {
             $tbquery->type = 'feed';
