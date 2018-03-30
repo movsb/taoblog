@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <script src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
+</head>
+<body>
+<p id="loading">加载中……</p>
+<ol id="list">
+
+</ol>
+<script>
+$.get(
+    "/apiv2/all-post.go",
+    function(data) {
+        var list = $('#list');
+        data.forEach(function(e, _, _) {
+            list.append(
+                $('<li/>')
+                    .append($('<a/>')
+                        .attr('href', '/'+e.id + '/')
+                        .text(e.title)
+                    )
+            );
+        });
+    },
+    "json"
+    )
+    .always(function(){
+        $('#loading').remove();
+    })
+    ;
+</script>
+</body>
+</html>
