@@ -5,13 +5,13 @@
     <script src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 </head>
 <body>
-<p id="loading">加载中……</p>
+<p id="loading">加载中……<span id="error" style="color:red;display:none;">失败！</span></p>
 <ol id="list">
 
 </ol>
 <script>
 $.get(
-    "/apiv2/all-post.go",
+    "/apiv2/all-posts.go",
     function(data) {
         var list = $('#list');
         data.forEach(function(e, _, _) {
@@ -23,11 +23,12 @@ $.get(
                     )
             );
         });
+        $('#loading').hide();
     },
     "json"
     )
-    .always(function(){
-        $('#loading').remove();
+    .fail(function(){
+        $('#error').show();
     })
     ;
 </script>

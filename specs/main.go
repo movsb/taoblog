@@ -38,7 +38,7 @@ func main() {
 	gin.DisableConsoleColor()
 	router := gin.Default()
 
-	router.GET("/all-post.go", func(c *gin.Context) {
+	router.GET("/all-posts.go", func(c *gin.Context) {
 		rets, err := getAllPosts(gdb)
 		if err != nil {
 			c.JSON(500, err)

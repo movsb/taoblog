@@ -16,6 +16,7 @@ function the_recent_posts() {
         }
         echo '</ul>';
     }
+    echo '<p style="padding-left:3em;"><a href="/all-posts.html">所有文章...</a></p>';
 }
 
 function the_recent_comments() {
