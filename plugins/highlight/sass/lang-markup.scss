@@ -1,0 +1,19 @@
+.token {
+    &.doctype {
+        color: $comment;
+    }
+    &.tag {
+        color: $keyword;
+    }
+    &.attr-name {
+        color: $name;
+    }
+    &.attr-value {
+        color: $value;
+
+        :first-child {
+            color: initial;
+        }
+    }
+}
+
