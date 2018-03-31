@@ -283,6 +283,11 @@
         max-height: 60vh;
         text-shadow: 0 0 1px rgba(0,0,0,0.2);
     }
+
+    pre[class*="language-"] {
+        max-height: 600px;
+        max-height: 60vh;
+    }
 }
 
 /* 目录 */

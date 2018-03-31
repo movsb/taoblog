@@ -359,9 +359,9 @@ function post_admin_head() {
 <script>
     var renderer = new marked.Renderer();
     renderer.code = function(code, lang) {
-        var beg = '<pre class="code" lang="' + (lang === undefined ? '' : lang) + '">\n';
+        var beg = '<pre class="code"><code class="language-' + (lang === undefined ? 'none' : lang) + '">';
         var text = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        var end = '\n</pre>';
+        var end = '</code></pre>';
         return beg + text + end;
     }
     renderer.hr = function() {
