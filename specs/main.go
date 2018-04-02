@@ -41,7 +41,7 @@ func main() {
 	router.GET("/all-posts.go", func(c *gin.Context) {
 		rets, err := getAllPosts(gdb)
 		if err != nil {
-			c.JSON(500, err)
+			c.JSON(500, fmt.Sprint(err))
 			return
 		}
 
