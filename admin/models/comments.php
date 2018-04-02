@@ -119,6 +119,7 @@ class TB_Comments
             )
             ) {
                 $r = $stmt->execute();
+                $this->error = $stmt->error;
                 $stmt->close();
 
                 if ($r) {

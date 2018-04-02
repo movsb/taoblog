@@ -12,7 +12,7 @@ if ($tbdb->connect_error) {
     tb_die(503, '连接数据库失败：'.$tbdb->connect_error);
 }
 
-if (!$tbdb->set_charset("utf8")) {
+if (!$tbdb->set_charset("utf8mb4")) {
     tb_die(503, '无法设置字符集：'.$tbdb->connect_error);
 }
 

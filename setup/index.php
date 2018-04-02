@@ -13,7 +13,7 @@ $my = $tbdb;
 $sql = "CREATE TABLE IF NOT EXISTS `options` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `value` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `value` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     PRIMARY KEY(`id`)
     );";
 
@@ -27,17 +27,17 @@ $sql = "CREATE TABLE IF NOT EXISTS `posts` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
     `modified` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-    `title` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `content` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `slug` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `title` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    `content` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    `slug` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `type` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `taxonomy` INT(20) UNSIGNED NOT NULL DEFAULT 1,
     `status` ENUM('public', 'draft'),
     `page_view` INT(20) UNSIGNED NOT NULL DEFAULT 0,
     `comment_status` INT(1) UNSIGNED DEFAULT 1,
     `comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
-    `metas` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `source` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `metas` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    `source` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     `source_type` ENUM('html', 'markdown'),
     PRIMARY KEY(`id`)
     );";
@@ -50,12 +50,12 @@ if(!$my->query($sql)){
 $sql = "CREATE TABLE IF NOT EXISTS `comments` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `post_id` INT(20) UNSIGNED NOT NULL,
-    `author` TINYTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `author` TINYTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `email` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `url` VARCHAR(200) CHARACTER SET utf8 COLLATE utf8_general_ci,
     `ip` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-    `content` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `status` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'approved',
     `parent` INT(20) UNSIGNED NOT NULL,
     `ancestor` INT(20) UNSIGNED NOT NULL,
@@ -69,8 +69,8 @@ if(!$my->query($sql)){
 // 创建表 taxonomies
 $sql = "CREATE TABLE IF NOT EXISTS taxonomies (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `slug` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    `slug` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `parent` INT(20) UNSIGNED NOT NULL,
     `ancestor` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)
@@ -96,7 +96,7 @@ if(!$my->query($sql)) {
 // 创建表 tag标签/post_tags
 $sql = "CREATE TABLE IF NOT EXISTS tags (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `alias` INT(20) UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`)
@@ -118,13 +118,13 @@ if(!$my->query($sql)) {
 // 创建表 我的说说/shuoshuo
 $sql = "CREATE TABLE IF NOT EXISTS shuoshuo (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `content` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
     `geo_lat` FLOAT(10,6) NOT NULL DEFAULT 0,
     `geo_lng` FLOAT(10,6) NOT NULL DEFAULT 0,
     `geo_addr` VARCHAR(256) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
-    `source` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `source` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     PRIMARY KEY(`id`)
     );";
 if(!$my->query($sql)) {
@@ -135,9 +135,9 @@ if(!$my->query($sql)) {
 $sql = "CREATE TABLE IF NOT EXISTS `shuoshuo_comments` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `sid` INT(20) UNSIGNED NOT NULL,
-    `author` TINYTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `author` TINYTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-    `content` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     PRIMARY KEY(`id`)
     );";
 if(!$my->query($sql)) {
