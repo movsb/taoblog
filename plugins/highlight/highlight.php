@@ -9,9 +9,9 @@ function hljs_footer() {
 <script>
 $('pre.code').each(function(_, re, _){
     var e = $(re);
-    var lang = e.attr('lang');
+    var lang = e.attr('lang') || 'none';
     // old style https://stackoverflow.com/a/1318091/3628322
-    if(typeof lang != typeof undefined && lang !== false && e.find('>code').length == 0) {
+    if(e.find('>code').length == 0) {
         var code = $('<code/>').html(e.html());
         code.addClass("language-" + lang);
         e.removeAttr('lang');
