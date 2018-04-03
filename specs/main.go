@@ -33,6 +33,8 @@ func main() {
 		panic(err)
 	}
 
+	gdb.SetMaxIdleConns(10)
+
 	defer gdb.Close()
 
 	gin.DisableConsoleColor()
