@@ -664,10 +664,11 @@ class TB_Posts {
         return $rows->fetch_array()[0];
     }
 
+    // Go!
     public function have($id) {
         global $tbdb;
 
-        $sql = "SELECT id FROM posts where id=".(int)$id;
+       $sql = "SELECT id FROM posts where id=".(int)$id;
         $sql .= " LIMIT 1";
 
         $rows = $tbdb->query($sql);
