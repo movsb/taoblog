@@ -39,6 +39,7 @@ plugins/    | 插件目录
 setup/      | 安装脚本目录、配置文件目录
 theme/      | 主题文件
 specs/      | Go临时文件
+tools/      | 一些工具
 
 ## 联系我
 
