@@ -33,13 +33,13 @@ robots.txt  | 搜索引擎收录规则文件
 favicon.ico | 网站图标
 README.md   | 此文件
 admin/      | 博客程序目录、后台目录
-api/        | 为第三方客户端提供的接口 API 实现
+api/        | API服务端（PHP实现，待移除）
 docs/       | 一些文档
 plugins/    | 插件目录
 setup/      | 安装脚本目录、配置文件目录
 theme/      | 主题文件
-specs/      | Go临时文件
-tools/      | 一些工具
+server/     | API服务端
+client/     | API客户端
 
 ## 联系我
 

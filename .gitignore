@@ -1,6 +1,8 @@
 *~
 *.swp
 .DS_Store
+
+/.vscode/
 /contents/
 /files/
 
