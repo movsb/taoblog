@@ -217,11 +217,17 @@ Comment.prototype.load_essential_comments = function() {
 
 Comment.prototype.get_count = function(callback) {
     var self = this;
-    $.post('/admin/comment.php', 'do=get-count&post_id=' + $('#post-id').val(), function(data) {
-        self._count = data.count;
-        $('#comment-title .total').text(self._count);
-        callback();
-    }, 'json');
+    $.get('/apiv2/posts/comment-count',
+        {
+            pid: $('#post-id').val()
+        },
+        function(data) {
+            self._count = data.data;
+            $('#comment-title .total').text(self._count);
+            callback();
+        },
+        'json'
+    );
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {

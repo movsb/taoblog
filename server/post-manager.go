@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -73,4 +74,18 @@ func (me *xPostManager) updateContent(id int64, typ string, source string) error
 	_ = ret
 
 	return nil
+}
+
+func (me *xPostManager) getCommentCount(pid int64) (count int) {
+	query := `SELECT comments FROM posts WHERE id=` + fmt.Sprint(pid) + ` LIMIT 1`
+	row := me.db.QueryRow(query)
+	switch row.Scan(&count) {
+	case sql.ErrNoRows:
+		count = -1
+	case nil:
+		break
+	default:
+		count = -1
+	}
+	return
 }

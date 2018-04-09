@@ -147,5 +147,17 @@ func main() {
 		finishDone(c, 0, "", nil)
 	})
 
+	postapi.GET("/comment-count", func(c *gin.Context) {
+		var err error
+		pidstr, has := c.GetQuery("pid")
+		pid, err := strconv.ParseInt(pidstr, 10, 64)
+		if !has || err != nil || pid < 0 {
+			c.String(400, "expect: pid")
+			return
+		}
+		count := postmgr.getCommentCount(pid)
+		finishDone(c, 0, "", count)
+	})
+
 	router.Run(config.listen)
 }

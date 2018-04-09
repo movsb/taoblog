@@ -62,28 +62,6 @@ function cmt_get_cmt() {
     die(0);
 }
 
-function cmt_get_count() {
-    global $tbpost;
-
-    $r = $tbpost->get_vars('comments', 'id='.(int)$_POST['post_id']);
-
-    if(is_object($r)) {
-        header('HTTP/1.1 200 OK');
-        header('Content-Type: application/json');
-
-        echo json_encode([
-            'count' => $r->comments,
-        ], JSON_UNESCAPED_UNICODE);
-
-        die(0);
-    }
-    else {
-        header('HTTP/1.1 503');
-        die(-1);
-    }
-}
-
-
 function cmt_post_cmt() {
     global $tbcmts;
     global $tbdb;
@@ -133,7 +111,6 @@ $do = $_POST['do'] ?? '';
 
 if($do == 'get-cmt')        cmt_get_cmt();
 else if($do == 'post-cmt')  cmt_post_cmt();
-else if($do == 'get-count') cmt_get_count();
 
 endif;
 
