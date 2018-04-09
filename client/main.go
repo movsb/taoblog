@@ -1,140 +1,72 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
+	"bufio"
 	"flag"
-	"fmt"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
+	"log"
+	"os"
+	"os/user"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
-var sourceNames = []string{
-	"README.md",
-	"index.md",
-	"index.html",
+func parseFlags() {
+	flag.Parse()
 }
 
-var key string
-var dir string
-var api string
-var verify bool
+type xInitConfig struct {
+	api    string // the api root, like https://taoblog/apiv2
+	verify bool   // verify host key
+	key    string // the key
+}
 
-func update(id int64, typ string, source string) {
+var initConfig xInitConfig
 
+func readInitConfig() {
 	var err error
-	buf := bytes.NewBuffer(nil)
-	mpw := multipart.NewWriter(buf)
 
-	// arg: pid
-	err = mpw.WriteField("pid", fmt.Sprint(id))
+	usr, err := user.Current()
+	path := filepath.Join(usr.HomeDir, "/.taoblog.cfg")
+	fp, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		panic("cannot read init config: " + path)
 	}
 
-	// arg: type
-	err = mpw.WriteField("type", typ)
-	if err != nil {
-		panic(err)
-	}
+	defer fp.Close()
 
-	// arg: source
-	err = mpw.WriteField("source", source)
-	if err != nil {
-		panic(err)
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !verify,
-			},
-		},
-	}
-
-	mpw.Close()
-
-	req, err := http.NewRequest("POST", api+"/posts/update-content", buf)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Content-Type", mpw.FormDataContentType())
-	req.Header.Set("Authorization", key)
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	defer resp.Body.Close()
-
-	code := resp.StatusCode
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("code: %d\nbody: %s\n", code, body)
-}
-
-func readSource() (string, string) {
-	var source string
-	var theName string
-
-	for _, name := range sourceNames {
-		path := filepath.Join(dir, name)
-		bys, err := ioutil.ReadFile(path)
-		if err != nil {
+	buf := bufio.NewScanner(fp)
+	for buf.Scan() {
+		line := strings.TrimSpace(buf.Text())
+		if line == "" {
 			continue
 		}
-		source = string(bys)
-		theName = name
-		break
-	}
-	if source == "" {
-		panic("source cannot be found")
-	}
+		toks := strings.SplitN(line, ":", 2)
+		if len(toks) < 2 {
+			log.Printf("invalid config: %s\n", line)
+			continue
+		}
 
-	typ := ""
-	switch filepath.Ext(theName) {
-	case ".md":
-		typ = "markdown"
-	case ".html":
-		typ = "html"
+		switch toks[0] {
+		case "api":
+			initConfig.api = toks[1]
+		case "verify":
+			initConfig.verify = toks[1] == "1"
+		case "key":
+			initConfig.key = toks[1]
+		default:
+			log.Printf("unrecognized config: %s\n", line)
+		}
 	}
-
-	return typ, source
-}
-
-func readID() int64 {
-	path := filepath.Join(dir, "id")
-	bys, err := ioutil.ReadFile(path)
-	if err != nil || len(bys) == 0 {
-		panic(err)
-	}
-	str := strings.SplitN(string(bys), "\n", 2)[0]
-	id, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
-func parseFlags() {
-	flag.StringVar(&key, "key", "", "api key")
-	flag.StringVar(&dir, "dir", ".", "post dir")
-	flag.StringVar(&api, "api", "", "api")
-	flag.BoolVar(&verify, "verify", true, "verify host key")
-	flag.Parse()
 }
 
 func main() {
 	parseFlags()
+	readInitConfig()
 
-	id := readID()
-	typ, src := readSource()
-	update(id, typ, src)
+	if len(os.Args) >= 2 {
+		command := os.Args[1]
+		if command == "post" {
+			evalPost(os.Args[2:])
+		}
+	}
 }
