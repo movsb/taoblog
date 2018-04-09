@@ -41,7 +41,6 @@ $tbquery        = new TB_Query;
 $tbdate         = new TB_DateTime;
 $tbtag          = new TB_Tags;
 $tbshuoshuo     = new TB_Shuoshuo;
-$tbsscmt        = new TB_ShuoshuoComments;
 $tbapi          = new TB_API;
 
 $tbmain         = new TB_Main;

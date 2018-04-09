@@ -280,23 +280,6 @@ else if($do == 'delete') {
             ]);
     die(0);
 }
-else if($do == 'post-comment') {
-    $r = $tbsscmt->post($_POST['sid'], $_POST['author'], $_POST['content']);
-    if($r === false) {
-        shuoshuo_die_json([
-            'errno' => 'failed',
-            'error' => $tbsscmt->error,
-        ]);
-    }
-    else {
-        // 当前不作任何处理，直接返回
-        shuoshuo_die_json([
-            'errno' => 'ok',
-            'author' => htmlspecialchars($_POST['author']),
-            'content' => htmlspecialchars($_POST['content']),
-        ]);
-    }
-}
 
 die(0);
 
