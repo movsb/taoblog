@@ -370,7 +370,10 @@ class TB_Posts {
 
         $tbquery->tags = $tag;
 
-        $ids[] = $tbtag->get_tag_id($tag);
+        $ids = $tbtag->get_tag_id($tag);
+        if ($ids === false) {
+            return [];
+        }
         $ids = $tbtag->getAliasTagsAll($ids);
         $ids = join(',', $ids);
 
