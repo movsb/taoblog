@@ -21,8 +21,6 @@ class TB_Query {
     public function is_post()       { return $this->type === 'post'; }
     public function is_page()       { return $this->type === 'page'; }
     public function is_singular()   { return $this->is_post() || $this->is_page(); }
-    public function is_category()   { return $this->type === 'category' || $this->type === 'tax'; }
-    public function is_date()       { return $this->type === 'date'; }
     public function is_tag()        { return $this->type === 'tag'; }
     public function is_404()        { return $this->type === '404'; }
     public function is_feed()       { return $this->type === 'feed'; }
@@ -76,15 +74,12 @@ class TB_Query {
         $rules = [
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
             '^(/\d+/[^/]+)$'                                    => 'file=$1',
-            '^/archives/(\d+)\.html$'                           => 'id=$1',
-            '^/date/((\d{4})/((\d{2})/)?)$'                     => 'yy=$2&mm=$4',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/sitemap\.xml$'                                   => 'sitemap=1',
             '^/memory$'                                         => 'memory=1',
             '^/archives$'                                       => 'archives=1',
-            '^/(.+)/$'                                          => 'tax=$1',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
             '^/$'                                               => '',
@@ -210,10 +205,6 @@ class TB_Query {
                 $r[0]->page_view++;
                 $tbpost->increase_page_view_count($r[0]->id);
             }
-        }
-        else if($q['tax'] ?? '') {
-            $tbquery->type = 'tax';
-            $r = $tbpost->query_by_tax($q['tax']);
         } elseif ($q['tags'] ?? '') {
             $tbquery->type = 'tag';
             $r = $tbpost->query_by_tags($q['tags'], true);

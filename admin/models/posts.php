@@ -374,7 +374,7 @@ class TB_Posts {
         if ($ids === false) {
             return [];
         }
-        $ids = $tbtag->getAliasTagsAll($ids);
+        $ids = $tbtag->getAliasTagsAll([$ids]);
         $ids = join(',', $ids);
 
         $sql = array();

@@ -10,10 +10,6 @@ $tbquery->pop_404();
                     echo '此页面不存在';
                 } else if($tbquery->is_post()) {
                     echo '此文章不存在';
-                } else if($tbquery->is_category()) {
-                    echo '此分类下不存在相关文章';
-                } else if($tbquery->is_date()) {
-                    echo '此时段不存在相关文章';
                 } else if($tbquery->is_tag()) {
                     echo '此标签下不存在相关文章';
                 }
