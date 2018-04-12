@@ -9,6 +9,11 @@ type xOptionsModel struct {
 	db *sql.DB
 }
 
+type OptionItem struct {
+	Name  string
+	Value string
+}
+
 func newOptionsModel(db *sql.DB) *xOptionsModel {
 	return &xOptionsModel{
 		db: db,
@@ -30,6 +35,14 @@ func (o *xOptionsModel) Get(name string) (string, error) {
 	return val, err
 }
 
+func (o *xOptionsModel) GetDef(name string, def string) string {
+	val, err := o.Get(name)
+	if err == nil {
+		return val
+	}
+	return def
+}
+
 func (o *xOptionsModel) Set(name string, val interface{}) error {
 	strVal := fmt.Sprint(val)
 
@@ -48,4 +61,22 @@ func (o *xOptionsModel) Del(name string) error {
 	query := `DELETE FROM options WHERE name=? LIMIT 1`
 	_, err := o.db.Exec(query, name)
 	return err
+}
+
+func (o *xOptionsModel) List() ([]OptionItem, error) {
+	items := make([]OptionItem, 0)
+	query := `SELECT name,value FROM options`
+	rows, err := o.db.Query(query)
+	if err != nil {
+		return items, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var item OptionItem
+		if err := rows.Scan(&item.Name, &item.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
 }

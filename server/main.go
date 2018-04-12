@@ -25,6 +25,7 @@ var gdb *sql.DB
 var tagmgr *xTagManager
 var postmgr *xPostManager
 var optmgr *xOptionsModel
+var auther *GenericAuth
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -33,12 +34,11 @@ type xJSONRet struct {
 }
 
 func auth(c *gin.Context) bool {
-	val := c.GetHeader("Authorization")
-	if val == "" || val != config.key {
-		finishError(c, -1, errors.New("auth error"))
-		return false
+	if auther.AuthHeader(c) || auther.AuthCookie(c) {
+		return true
 	}
-	return true
+	finishError(c, -1, errors.New("auth error"))
+	return false
 }
 
 func main() {
@@ -67,6 +67,9 @@ func main() {
 	tagmgr = newTagManager(gdb)
 	postmgr = newPostManager(gdb)
 	optmgr = newOptionsModel(gdb)
+	auther = &GenericAuth{}
+	auther.SetLogin(optmgr.GetDef("login", "x"))
+	auther.SetKey(config.key)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -90,6 +93,9 @@ func main() {
 	optapi := router.Group("/option")
 
 	optapi.GET("/has", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
 		name := c.DefaultQuery("name", "")
 		err := optmgr.Has(name)
 		has := name != "" && err == nil
@@ -97,6 +103,9 @@ func main() {
 	})
 
 	optapi.GET("/get", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
 		name := c.DefaultQuery("name", "")
 		val, err := optmgr.Get(name)
 		if err != nil {
@@ -107,6 +116,9 @@ func main() {
 	})
 
 	optapi.POST("/set", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
 		name := c.DefaultPostForm("name", "")
 		val := c.DefaultPostForm("value", "")
 		if err := optmgr.Set(name, val); err == nil {
@@ -117,12 +129,27 @@ func main() {
 	})
 
 	optapi.POST("/del", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
 		name := c.DefaultPostForm("name", "")
 		if err := optmgr.Del(name); err == nil {
 			finishDone(c, 0, "", nil)
 		} else {
 			finishError(c, -1, err)
 		}
+	})
+
+	optapi.GET("/list", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
+		items, err := optmgr.List()
+		if err != nil {
+			finishError(c, -1, err)
+		}
+
+		finishDone(c, 0, "", items)
 	})
 
 	postapi := router.Group("/posts")
