@@ -39,17 +39,16 @@ function post_widget_files($p=null) {
 <script>
     function refresh_files() {
         var pid = $('#form-post input[name="id"]').val();
-        $.post('file-upload.php',
+        $.get('/apiv2/upload/list',
             {
                 pid: pid,
-                do: 'list',
             },
             function(data) {
-                if(data.errno == 'ok') {
+                if(data.code == 0) {
                     var files = $('.widget-files .list');
                     files.empty();
 
-                    data.files.forEach(function(file) {
+                    data.data.forEach(function(file) {
                         files.append(
                             $('<li/>')
                                 .append($('<span />').text(file))
@@ -82,14 +81,13 @@ function post_widget_files($p=null) {
             var li = $(this).parent();
             var name = $(this).prev().text();
             var pid = $('#form-post input[name="id"]').val();
-            $.post('file-upload.php',
+            $.post('/apiv2/upload/delete',
                 {
                     pid: pid,
-                    do: 'delete',
                     name: name,
                 },
                 function(data) {
-                    if(data.errno == 'ok') {
+                    if(data.code == 0) {
                         li.remove();
                     }
                     else {
@@ -116,8 +114,6 @@ function post_widget_files($p=null) {
         var pid = $('#form-post input[name="id"]').val();
 
         data.append('pid', pid);
-        
-        data.append('do', 'upload');
 
         // 待上传的文件列表
         for(var i = 0, n = files.length; i < n; i++) {
@@ -132,7 +128,7 @@ function post_widget_files($p=null) {
         // https://stackoverflow.com/a/8758614/3628322
         $.ajax({
             // Your server script to process the upload
-            url: 'file-upload.php',
+            url: '/apiv2/upload/upload',
             type: 'POST',
 
             // Form data
@@ -169,8 +165,9 @@ function post_widget_files($p=null) {
 
             success: function(response) {
                 console.log('data:',response);
-                if(response.errno === 'ok') {
+                if(response.code === 0) {
                     $('.widget-files .files').val("");
+                    $('.widget-files .count').text("0 个文件");
                     refresh_files();
                 }
                 else {

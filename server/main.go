@@ -17,6 +17,7 @@ type xConfig struct {
 	password string
 	database string
 	key      string
+	files    string
 }
 
 var gkey string
@@ -26,6 +27,7 @@ var tagmgr *xTagManager
 var postmgr *xPostManager
 var optmgr *xOptionsModel
 var auther *GenericAuth
+var uploadmgr *FileUpload
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -47,6 +49,7 @@ func main() {
 	flag.StringVar(&config.password, "password", "taoblog", "the database password")
 	flag.StringVar(&config.database, "database", "taoblog", "the database name")
 	flag.StringVar(&config.key, "key", "", "api key")
+	flag.StringVar(&config.files, "files", ".", "the files folder")
 	flag.Parse()
 
 	if config.key == "" {
@@ -70,6 +73,7 @@ func main() {
 	auther = &GenericAuth{}
 	auther.SetLogin(optmgr.GetDef("login", "x"))
 	auther.SetKey(config.key)
+	uploadmgr = NewFileUpload(config.files)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -224,6 +228,44 @@ func main() {
 		}
 		count := postmgr.getCommentCount(pid)
 		finishDone(c, 0, "", count)
+	})
+
+	uploadapi := router.Group("/upload")
+
+	uploadapi.POST("/upload", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
+
+		if err := uploadmgr.Upload(c); err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		files := uploadmgr.List(c)
+		finishDone(c, 0, "", files)
+	})
+
+	uploadapi.GET("/list", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
+
+		files := uploadmgr.List(c)
+		finishDone(c, 0, "", files)
+	})
+
+	uploadapi.POST("/delete", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
+
+		ok := uploadmgr.Delete(c)
+		if ok {
+			finishDone(c, 0, "", ok)
+		} else {
+			finishError(c, -1, nil)
+		}
 	})
 
 	router.Run(config.listen)
