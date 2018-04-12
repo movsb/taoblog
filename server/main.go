@@ -24,6 +24,7 @@ var config xConfig
 var gdb *sql.DB
 var tagmgr *xTagManager
 var postmgr *xPostManager
+var optmgr *xOptionsModel
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -65,6 +66,7 @@ func main() {
 
 	tagmgr = newTagManager(gdb)
 	postmgr = newPostManager(gdb)
+	optmgr = newOptionsModel(gdb)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -83,6 +85,44 @@ func main() {
 
 	tagapi.GET("/list", func(c *gin.Context) {
 
+	})
+
+	optapi := router.Group("/option")
+
+	optapi.GET("/has", func(c *gin.Context) {
+		name := c.DefaultQuery("name", "")
+		err := optmgr.Has(name)
+		has := name != "" && err == nil
+		finishDone(c, 0, "", has)
+	})
+
+	optapi.GET("/get", func(c *gin.Context) {
+		name := c.DefaultQuery("name", "")
+		val, err := optmgr.Get(name)
+		if err != nil {
+			finishError(c, -1, err)
+		} else {
+			finishDone(c, 0, "", val)
+		}
+	})
+
+	optapi.POST("/set", func(c *gin.Context) {
+		name := c.DefaultPostForm("name", "")
+		val := c.DefaultPostForm("value", "")
+		if err := optmgr.Set(name, val); err == nil {
+			finishDone(c, 0, "", nil)
+		} else {
+			finishError(c, -1, err)
+		}
+	})
+
+	optapi.POST("/del", func(c *gin.Context) {
+		name := c.DefaultPostForm("name", "")
+		if err := optmgr.Del(name); err == nil {
+			finishDone(c, 0, "", nil)
+		} else {
+			finishError(c, -1, err)
+		}
 	})
 
 	postapi := router.Group("/posts")

@@ -74,7 +74,7 @@ function fm_list() {
     
     $files = [];
 
-    if($handle = opendir($root)) {
+    if($handle = @opendir($root)) {
         while(($file = readdir($handle)) !== false) {
             if($file[0] != '.') {
                 $files[] = $file;
