@@ -60,7 +60,7 @@
                     <ol>
                         <li><a href="/">首页</a></li>
                         <li><a href="/friends">朋友们</a></li>
-                        <li><a title="GitHub" href="https://github.com/movsb" rel="nofollow" target="_blank">同性交友</a></li>
+                        <li><a href="https://github.com/movsb" target="_blank">GitHub</a></li>
                         <li><a href="/archives">文章归档</a></li>
                         <li><a href="/blog">博客程序</a></li>
                         <li><a href="/echo">建议反馈</a></li>

@@ -10,6 +10,12 @@
     border-bottom: 1px solid $border_color;
     margin-bottom: 0;
     padding-bottom: 0.3em;
+
+    .count-wrap {
+        color: #cfcfcf;
+        font-weight: normal;
+        font-size: 0.7em;
+    }
 }
 
 /* 评论列表 */
