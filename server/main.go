@@ -187,7 +187,7 @@ func main() {
 		finishDone(c, 0, "", names)
 	})
 
-	postapi.POST("/update-content", func(c *gin.Context) {
+	postapi.POST("/update", func(c *gin.Context) {
 		if !auth(c) {
 			return
 		}
@@ -198,9 +198,9 @@ func main() {
 			c.String(400, "expect: pid")
 			return
 		}
-		typ, has := c.GetPostForm("type")
+		typ, has := c.GetPostForm("source_type")
 		if !has {
-			c.String(400, "expect: type")
+			c.String(400, "expect: source_type")
 			return
 		}
 		source, has := c.GetPostForm("source")
@@ -209,7 +209,7 @@ func main() {
 			return
 		}
 
-		err = postmgr.updateContent(pid, typ, source)
+		err = postmgr.update(pid, typ, source)
 		if err != nil {
 			finishError(c, -1, err)
 			return

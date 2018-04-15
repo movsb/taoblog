@@ -29,7 +29,7 @@ func (me *xPostManager) has(id int64) error {
 	return err
 }
 
-func (me *xPostManager) updateContent(id int64, typ string, source string) error {
+func (me *xPostManager) update(id int64, typ string, source string) error {
 	var tr post_translators.PostTranslator
 	var content string
 	var err error

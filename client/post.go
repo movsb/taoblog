@@ -21,15 +21,7 @@ var sourceNames = []string{
 	"index.html",
 }
 
-/*
-type xPostMetas struct {
-	id    int64
-	title string
-	tags  []string
-}
-*/
-
-func update(id int64, typ string, source string) {
+func update(id int64, args map[string]string) {
 
 	var err error
 	buf := bytes.NewBuffer(nil)
@@ -41,16 +33,12 @@ func update(id int64, typ string, source string) {
 		panic(err)
 	}
 
-	// arg: type
-	err = mpw.WriteField("type", typ)
-	if err != nil {
-		panic(err)
-	}
-
-	// arg: source
-	err = mpw.WriteField("source", source)
-	if err != nil {
-		panic(err)
+	// args to be posted
+	for k, a := range args {
+		err = mpw.WriteField(k, a)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	client := &http.Client{
@@ -63,7 +51,7 @@ func update(id int64, typ string, source string) {
 
 	mpw.Close()
 
-	req, err := http.NewRequest("POST", initConfig.api+"/posts/update-content", buf)
+	req, err := http.NewRequest("POST", initConfig.api+"/posts/update", buf)
 	if err != nil {
 		panic(err)
 	}
@@ -114,16 +102,14 @@ func readSource(dir string) (string, string) {
 	return typ, source
 }
 
-type xPostMetas map[string]string
-
-func readPostMetas(dir string) xPostMetas {
+func readPostMetas(dir string) map[string]string {
 	path := filepath.Join(dir, "metas")
 	fp, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
 	defer fp.Close()
-	metas := make(xPostMetas)
+	metas := make(map[string]string)
 	buf := bufio.NewScanner(fp)
 	for buf.Scan() {
 		line := strings.TrimSpace(buf.Text())
@@ -150,8 +136,11 @@ func evalPost(args []string) {
 				if err != nil {
 					panic(err)
 				}
+				delete(metas, "id")
 				typ, src := readSource(dir)
-				update(pid, typ, src)
+				metas["source_type"] = typ
+				metas["source"] = src
+				update(pid, metas)
 			}
 		}
 	}
