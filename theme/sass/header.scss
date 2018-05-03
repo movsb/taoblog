@@ -1,8 +1,17 @@
 /* 头部 */
 
+#header .content {
+    max-width: $max_width_1;
+}
+
+@media screen and (min-width: 1500px) {
+    #header .content {
+        max-width: $max_width_2;
+    }
+}
+
 #header {
     .content {
-        max-width: 850px;
         min-width: 200px;
         margin: auto;
         padding: 2em 1em 0;
@@ -92,14 +101,14 @@
     }
 }
 
-@media screen and (max-width: 850px) {
+@media screen and (max-width: $max_width_1) {
     #header .content {
         background-color: rgba(0,0,0,0.6);
         text-align: center;
     }
 }
 
-@media screen and (min-width: 851px) {
+@media screen and (min-width: $max_width_1+1) {
     #header {
         background-color: rgba(0,0,0,0.6);
         .content {

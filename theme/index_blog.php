@@ -75,6 +75,7 @@ input, textarea, button {
     list-style: none;
 }
 
+/* TODO 这个最大宽度应该是变量 */
 @media screen and (max-width: 850px) {
 #content > ul, .status > ul {
     padding: 0px;

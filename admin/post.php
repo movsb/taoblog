@@ -422,7 +422,7 @@ function post_admin_head() {
     flex: 1;
 }
 
-@media screen and (min-width: 851px) {
+@media screen and (min-width: $max_width_1+1) {
     .sidebar-right {
         width: 280px;
         max-width: 280px;
@@ -432,7 +432,7 @@ function post_admin_head() {
         margin-right: 1em;
     }
 }
-@media screen and (max-width: 850px) {
+@media screen and (max-width: $max_width_1) {
     #form-post {
         flex-direction: column;
     }
