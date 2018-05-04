@@ -13,7 +13,8 @@ body {
 	background-color: #F1F1F1;
 }
 
-@media screen and (min-width: $max_width_1+1) {
+/* TODO 根据主题修改 */
+@media screen and (min-width: 851px) {
 #admin-left {
     background-color: black;
     color: white;
@@ -28,7 +29,8 @@ body {
 }
 }
 
-@media screen and (max-width: $max_width_1) {
+/* TODO 根据主题修改 */
+@media screen and (max-width: 850px) {
 #admin-left {
     background-color: black;
     color: white;

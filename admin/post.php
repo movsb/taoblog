@@ -422,7 +422,8 @@ function post_admin_head() {
     flex: 1;
 }
 
-@media screen and (min-width: $max_width_1+1) {
+/* TODO 根据主题修改 */
+@media screen and (min-width: 851px) {
     .sidebar-right {
         width: 280px;
         max-width: 280px;
@@ -432,7 +433,9 @@ function post_admin_head() {
         margin-right: 1em;
     }
 }
-@media screen and (max-width: $max_width_1) {
+
+/* TODO 根据主题修改 */
+@media screen and (max-width: 850px) {
     #form-post {
         flex-direction: column;
     }
