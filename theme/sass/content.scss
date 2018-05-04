@@ -277,6 +277,13 @@
             padding-right: 1em;
         }
     }
+
+    blockquote {
+        background-color: rgba(0,0,0,0.08);
+        padding: 1px 1.5em;
+        margin: 0;
+        border-left: gray 3px solid;
+    }
 }
 
 .entry, #comments {
