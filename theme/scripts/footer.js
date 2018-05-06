@@ -479,3 +479,24 @@ $('#back-to-top').click(function(){
             that.replaceWith(the_ele);
     });
 })();
+
+(function(){
+    var $raws = $('i[data-aes2htm]');
+    console.log($raws);
+    $raws.each(function(_, e){
+        file = $(e).attr('data-aes2htm');
+        $code = $(e).parent().prev().find('code');
+        $.get(file, function(data){
+            $.post('/apiv2/tools/aes2htm',
+                {
+                    source: data,
+                },
+                function(data) {
+                    if(data.code == 0) {
+                        $code.html(data.data);
+                    }
+                }
+            );
+        });
+    });
+})();

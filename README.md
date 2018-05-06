@@ -41,6 +41,7 @@ setup/      | 安装脚本目录、配置文件目录
 theme/      | 主题文件
 server/     | API服务端
 client/     | API客户端
+tools/      | 一些工具
 
 ## 联系我
 

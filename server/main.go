@@ -12,6 +12,7 @@ import (
 )
 
 type xConfig struct {
+	base     string
 	listen   string
 	username string
 	password string
@@ -49,6 +50,7 @@ func main() {
 	flag.StringVar(&config.password, "password", "taoblog", "the database password")
 	flag.StringVar(&config.database, "database", "taoblog", "the database name")
 	flag.StringVar(&config.key, "key", "", "api key")
+	flag.StringVar(&config.base, "base", ".", "taoblog directory")
 	flag.StringVar(&config.files, "files", ".", "the files folder")
 	flag.Parse()
 
@@ -266,6 +268,12 @@ func main() {
 		} else {
 			finishError(c, -1, nil)
 		}
+	})
+
+	toolapi := router.Group("/tools")
+
+	toolapi.POST("/aes2htm", func(c *gin.Context) {
+		aes2htm(c)
 	})
 
 	router.Run(config.listen)

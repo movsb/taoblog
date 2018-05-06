@@ -13,7 +13,7 @@ $('pre').each(function(_, re, _){
     // https://stackoverflow.com/a/1318091/3628322
     var hasLang = typeof lang !== typeof undefined && lang !== false;
     var hasCode = e.find('>code').length > 0;
-    console.log(re, hasLang, hasCode);
+    // console.log(re, hasLang, hasCode);
     if(hasLang && !hasCode) {
         var code = $('<code/>').html(e.html());
         code.addClass("language-" + lang);
@@ -24,7 +24,8 @@ $('pre').each(function(_, re, _){
     }
     if(hasCode) {
         e.removeClass('code');
-        e.addClass('line-numbers');
+        // TODO
+        // e.addClass('line-numbers');
         Prism.highlightAllUnder(re);
     }
 });
