@@ -12,7 +12,8 @@ $tt_fg:             #ff0080;
 $a_visited_fg:      #924646;
 $a_active_fg:       #faa700;
 
-$border_color:      #efefef;
+$border_color:      #f0f0f0;
+$border_color_hover:#c0c0c0;
 
 $btn_fg:            white;
 $btn_bg:            rgba(60,60,60,0.6);
@@ -67,7 +68,6 @@ $toc_bg:                        rgba(255,255,255,0.9);
 $toc_border_color:              grey;
 
 /* comment */
-$comment_title_fg:              #a53535;
 $comment_func_border:           #ccc;
 $comment_submit_bg:             rgba(113,113,113,0.7);
 $comment_submit_fg:             white;

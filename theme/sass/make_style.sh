@@ -5,5 +5,8 @@ if ! hash sass 2>/dev/null; then
     exit 1;
 fi
 
-sass --style compressed style.scss ../style.css
-
+if [ "$1" == "--watch" ]; then
+    sass --watch style.scss:../style.css
+else
+    sass --style compressed style.scss ../style.css
+fi

@@ -81,3 +81,51 @@ h6 { font-size: 1.0em; }
     }
 }
 
+a {
+    text-decoration: none;
+    color: $a_fg;
+    &:hover {
+        text-decoration: underline;
+    }
+    &:visited {
+        color: $a_visited_fg;
+    }
+    &:active {
+        color: $a_active_fg;
+    }
+    &:focus {
+        outline: none;
+    }
+}
+
+button, input[type=submit] {
+    border: none;
+    &::-moz-focus-inner {
+        border: 0;
+    }
+}
+
+input[type=text], a, textarea {
+    &:focus {
+        outline: none;
+    }
+}
+
+input[type=text], textarea, button {
+    border: 1px solid $border_color;
+    padding: 5px 7px;
+}
+
+a, input[type=text], textarea, button {
+    transition: all 0.2s ease-out;
+}
+
+input[type=text]:hover, textarea:hover {
+    border: 1px solid $border_color_hover;
+}
+
+pre {
+    padding: 1em;
+    margin: 0;
+    background-color: $post_code_bg;
+}

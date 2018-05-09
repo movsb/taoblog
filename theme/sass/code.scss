@@ -1,0 +1,34 @@
+/* 代码块的最大高度 */
+code[class*="lang"] {
+    max-height: 600px;
+    max-height: 60vh;
+}
+
+/* 代码块 */
+code[class*="lang"] {
+    display: inline-block;
+	background: none;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* 行内代码 */
+:not(pre) > code {
+	padding: .1em;
+	border-radius: .3em;
+    white-space: normal;
+    background-color: $post_code_bg;
+}

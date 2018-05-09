@@ -482,7 +482,6 @@ $('#back-to-top').click(function(){
 
 (function(){
     var $raws = $('i[data-aes2htm]');
-    console.log($raws);
     $raws.each(function(_, e){
         file = $(e).attr('data-aes2htm');
         $code = $(e).parent().prev().find('code');

@@ -179,18 +179,6 @@
     text-align: justify;
     margin-bottom: 3em;
 
-    code {
-        color: #505050;
-        background-color: $post_code_bg;
-        text-shadow: 0 0 1px rgba(0,0,0,0.22);
-        padding: 0.1em 0.4em 0.1em;
-        margin: 0.1em 0.3em 0.1em;
-        border-radius: 4px;
-        display: inline-block;
-        vertical-align: middle;
-        line-height: initial;
-    }
-
      pre {
         box-sizing: border-box;
         overflow: auto;
@@ -286,27 +274,6 @@
     }
 }
 
-.entry, #comments {
-    pre.code, pre.shell {
-        overflow: auto !important;
-        white-space: pre;
-        font-family: 'Microsoft Yahei Mono', Consolas, monospace;
-        padding: 0.5em !important;
-        border-radius: 2px;
-        background-color: $post_code_bg;
-        line-height: 1.5em;
-        margin: 1em 0px;
-        max-height: 600px;
-        max-height: 60vh;
-        text-shadow: 0 0 1px rgba(0,0,0,0.2);
-    }
-
-    pre[class*="language-"] {
-        max-height: 600px;
-        max-height: 60vh;
-    }
-}
-
 /* 目录 */
 @media screen and (min-width: 600px) {
     .entry div.toc {
@@ -380,47 +347,6 @@
         #comments {
             display: none;
         }
-    }
-}
-
-.post, .page {
-    a {
-        text-decoration: none;
-        color: $a_fg;
-        &:hover {
-            text-decoration: underline;
-        }
-        &:visited {
-            color: $a_visited_fg;
-        }
-        &:active {
-            color: $a_active_fg;
-        }
-        &:focus {
-            outline: none;
-        }
-    }
-
-    a, input, textarea, button {
-        transition: all 0.2s ease-out;
-    }
-
-    button, input[type=submit] {
-        border: none;
-        &::-moz-focus-inner {
-            border: 0;
-        }
-    }
-
-    input, a, textarea {
-        &:focus {
-            outline: none;
-        }
-    }
-
-    input, textarea, button {
-        border: 1px solid $border_color;
-        padding: 5px 7px;
     }
 }
 
