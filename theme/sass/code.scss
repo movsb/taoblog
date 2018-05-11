@@ -27,7 +27,8 @@ code[class*="lang"] {
 
 /* 行内代码 */
 :not(pre) > code {
-	padding: .1em;
+    margin: 0 5px;
+	padding: 4px 6px;
 	border-radius: .3em;
     white-space: normal;
     background-color: $post_code_bg;
