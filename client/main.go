@@ -14,6 +14,12 @@ func parseFlags() {
 	flag.Parse()
 }
 
+type JSONRet struct {
+	Code int         `json:"code"`
+	Msgs string      `json:"msgs"`
+	Data interface{} `json:"data"`
+}
+
 type xInitConfig struct {
 	api    string // the api root, like https://taoblog/apiv2
 	verify bool   // verify host key
@@ -67,6 +73,8 @@ func main() {
 		command := os.Args[1]
 		if command == "post" {
 			evalPost(os.Args[2:])
+		} else if command == "backup" {
+			evalBackup(os.Args[2:])
 		}
 	}
 }

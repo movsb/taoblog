@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"flag"
@@ -29,6 +30,7 @@ var postmgr *xPostManager
 var optmgr *xOptionsModel
 var auther *GenericAuth
 var uploadmgr *FileUpload
+var backupmgr *BlogBackup
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -76,6 +78,7 @@ func main() {
 	auther.SetLogin(optmgr.GetDef("login", "x"))
 	auther.SetKey(config.key)
 	uploadmgr = NewFileUpload(config.files)
+	backupmgr = NewBlogBackup(gdb)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -274,6 +277,23 @@ func main() {
 
 	toolapi.POST("/aes2htm", func(c *gin.Context) {
 		aes2htm(c)
+	})
+
+	backupapi := router.Group("/backups")
+
+	backupapi.GET("backup", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
+
+		var sb bytes.Buffer
+		var er error
+		er = backupmgr.Backup(&sb)
+		if er != nil {
+			finishError(c, -1, er)
+			return
+		}
+		finishDone(c, 0, "", sb.String())
 	})
 
 	router.Run(config.listen)
