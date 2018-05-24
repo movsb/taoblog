@@ -74,6 +74,7 @@ class TB_Query {
         $rules = [
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
             '^(/\d+/[^/]+)$'                                    => 'file=$1',
+            '^/files(/\d+/[^/]+)$'                             => 'file=$1',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
@@ -144,6 +145,13 @@ class TB_Query {
                 header('Location: '.$relative);
             }
             else {
+                // TODO remove
+                $referer = strtolower($_SERVER['HTTP_REFERER']);
+                if(strstr($referer, "blog.csdn.net") !== FALSE) {
+                    header('HTTP/1.1 302 OK');
+                    header('Location: https://blog.twofei.com/1.jpg');
+                    die(-1);
+                }
                 header('HTTP/1.1 302 Use backup file');
                 header('Location: '.FILE_HOST.$relative);
             }
