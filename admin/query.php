@@ -146,7 +146,7 @@ class TB_Query {
             }
             else {
                 // TODO remove
-                $referer = strtolower($_SERVER['HTTP_REFERER']);
+                $referer = strtolower($_SERVER['HTTP_REFERER'] ?? '');
                 if(strstr($referer, "blog.csdn.net") !== FALSE) {
                     header('HTTP/1.1 302 OK');
                     header('Location: https://blog.twofei.com/1.jpg');

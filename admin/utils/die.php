@@ -5,6 +5,7 @@ function tb_die($code, $str){
         200 => 'HTTP/1.1 200 OK',
         403 => 'HTTP/1.1 403 Forbidden',
         400 => 'HTTP/1.1 400 Bad Request',
+        404 => 'HTTP/1.1 404 Not Found',
         503 => 'HTTP/1.1 503 Service Unavailable',
     ];
     header($status[$code]);
