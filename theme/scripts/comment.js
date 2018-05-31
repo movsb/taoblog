@@ -293,9 +293,11 @@ Comment.prototype.h2a = function(h) {
 Comment.prototype.gen_comment_item = function(cmt) {
 	var s = '';
 
+    var loggedin = cmt.ip != undefined;
+
     // 登录后可以显示评论者的详细信息
     var info = '';
-    if(cmt.ip != undefined) {
+    if(loggedin) {
         // author, email, url, ip, date
         info = '作者：' + this.h2a(cmt.author)
             + '\n邮箱：' + this.h2a(cmt.email)
@@ -311,6 +313,10 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 
+	if(cmt.status == 'private') {
+		s += '<span class="private">【已删除】</span>';
+	}
+
 	if(cmt.is_admin) {
 		s += '<span class="author">【作者】' + this.h2t(cmt.author) + '</span>\n';
 	} else {
@@ -319,7 +325,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 			if(!cmt.url.match(/^https?:\/\//i))
 				cmt.url = 'http://' + cmt.url;
 
-            nickname = '<i class="fa fa-home"></i>';
+			nickname = '<i class="fa fa-home"></i>';
 			nickname += '<a rel="nofollow" target="_blank" href="' + this.h2a(cmt.url) + '">' + this.h2t(cmt.author) + '</a>';
 		} else {
 			nickname = this.h2t(cmt.author);
@@ -330,7 +336,12 @@ Comment.prototype.gen_comment_item = function(cmt) {
 
     s += '<time class="date" datetime="' + cmt.date + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
 	s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
-	s += '<div class="reply-to no-sel" style="margin-left: 54px;"><a style="cursor: pointer;" onclick="comment.reply_to('+cmt.id+');return false;">回复</a></div>';
+    s += '<div class="toolbar no-sel" style="margin-left: 54px;">';
+	s += '<a style="cursor: pointer;" onclick="comment.reply_to('+cmt.id+');return false;">回复</a>';
+	if(loggedin) {
+		s += '<a style="cursor: pointer;" onclick="comment.delete_me('+cmt.id+');return false;">删除</a>';
+	}
+    s += '</div>';
 	s += '</li>';
 
     // console.log(s);
@@ -351,6 +362,26 @@ Comment.prototype.reply_to = function(p){
 
 	$('#comment-form-div').fadeIn();
     $('#comment-content').focus();
+};
+
+Comment.prototype.delete_me = function(p) {
+	$.post(
+		'/apiv2/comments/delete',
+		{
+			id: +p,
+		},
+		function(data) {
+			if(data.code == 0) {
+				$('#comment-'+p).remove();
+			} else {
+				alert(data.msgs);
+			}
+		},
+		'json'
+	)
+	.fail(function(){
+		alert('删除失败。');
+	});
 };
 
 // 为上一级评论添加div

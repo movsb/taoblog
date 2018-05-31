@@ -182,7 +182,7 @@ class TB_Comments
      *
      * @fixme 根据函数返回值类型，不能返回 false
      */
-    public function &get(&$arg=[])
+    public function &get(&$arg=[], bool $pub)
     {
         global $tbdb;
         global $tbdate;
@@ -200,8 +200,14 @@ class TB_Comments
         $id = (int)$arg['id'];
         if ($id > 0) {
             $sql = "SELECT * FROM comments WHERE id=$id";
+            if($pub) {
+                $sql .= " AND status='public'";
+            }
         } else {
             $sql = "SELECT * FROM comments WHERE parent=0 ";
+            if($pub) {
+                $sql .= " AND status='public'";
+            }
             if ((int)$arg['post_id'] > 0) {
                 $sql .= " AND post_id=".(int)$arg['post_id'];
             }

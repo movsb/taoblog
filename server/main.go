@@ -31,6 +31,7 @@ var optmgr *xOptionsModel
 var auther *GenericAuth
 var uploadmgr *FileUpload
 var backupmgr *BlogBackup
+var cmtmgr *CommentManager
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -79,6 +80,7 @@ func main() {
 	auther.SetKey(config.key)
 	uploadmgr = NewFileUpload(config.files)
 	backupmgr = NewBlogBackup(gdb)
+	cmtmgr = newCommentManager(gdb)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -294,6 +296,30 @@ func main() {
 			return
 		}
 		finishDone(c, 0, "", sb.String())
+	})
+
+	cmtapi := router.Group("/comments")
+
+	cmtapi.POST("/delete", func(c *gin.Context) {
+		if !auth(c) {
+			return
+		}
+
+		var err error
+
+		idstr, has := c.GetPostForm("id")
+		id, err := strconv.ParseInt(idstr, 10, 64)
+		if !has || err != nil || id < 0 {
+			finishError(c, -1, fmt.Errorf("无效评论ID"))
+			return
+		}
+
+		if err = cmtmgr.SetStatus(id, "private"); err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		finishDone(c, 0, "", nil)
 	})
 
 	router.Run(config.listen)
