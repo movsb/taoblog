@@ -313,10 +313,6 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 
-	if(cmt.status == 'private') {
-		s += '<span class="private">【已删除】</span>';
-	}
-
 	if(cmt.is_admin) {
 		s += '<span class="author">【作者】' + this.h2t(cmt.author) + '</span>\n';
 	} else {

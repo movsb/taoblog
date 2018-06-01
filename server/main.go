@@ -32,6 +32,7 @@ var auther *GenericAuth
 var uploadmgr *FileUpload
 var backupmgr *BlogBackup
 var cmtmgr *CommentManager
+var postcmtsmgr *PostCommentsManager
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -81,6 +82,7 @@ func main() {
 	uploadmgr = NewFileUpload(config.files)
 	backupmgr = NewBlogBackup(gdb)
 	cmtmgr = newCommentManager(gdb)
+	postcmtsmgr = newPostCommentsManager(gdb)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -314,7 +316,7 @@ func main() {
 			return
 		}
 
-		if err = cmtmgr.SetStatus(id, "private"); err != nil {
+		if err = postcmtsmgr.DeletePostComment(id); err != nil {
 			finishError(c, -1, err)
 			return
 		}

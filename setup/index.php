@@ -56,7 +56,6 @@ $sql = "CREATE TABLE IF NOT EXISTS `comments` (
     `ip` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
     `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `status` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'approved',
     `parent` INT(20) UNSIGNED NOT NULL,
     `ancestor` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)

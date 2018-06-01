@@ -28,7 +28,7 @@ function cmt_make_public(&$cmts) {
     global $logged_in;
     $admin_email = $tbopt->get('email');
 
-    $flts = !$logged_in ? ['email', 'ip', 'status'] : [];
+    $flts = !$logged_in ? ['email', 'ip'] : [];
 
     for($i=0,$c=count($cmts); $i < $c; $i++) {
         $cmt = $cmts[$i];
@@ -50,11 +50,10 @@ function cmt_make_public(&$cmts) {
 
 function cmt_get_cmt() {
     global $tbcmts;
-    global $logged_in;
 
     cmt_header_json();
 
-    $cmts = cmt_make_public($tbcmts->get($_POST, !$logged_in));
+    $cmts = cmt_make_public($tbcmts->get($_POST));
     
     echo json_encode([
         'errno'     => 'success',
@@ -66,7 +65,6 @@ function cmt_get_cmt() {
 function cmt_post_cmt() {
     global $tbcmts;
     global $tbdb;
-    global $logged_in;
 
     $ret_cmt = (int)($_POST['return_cmt'] ?? '');
     
@@ -88,7 +86,7 @@ function cmt_post_cmt() {
     ob_start();
     if($ret_cmt) {
         $c = ['id'=>$r];
-        $cmts = cmt_make_public($tbcmts->get($c, !$logged_in));
+        $cmts = cmt_make_public($tbcmts->get($c));
 
         echo json_encode([
             'errno' => 'success',

@@ -34,7 +34,6 @@ class TB_Comments
             'ip'        => $_SERVER['REMOTE_ADDR'],
             'date'      => $tbdate->mysql_datetime_local(),
             'content'   => '',
-            'status'    => 'public',
             'parent'    => false,
         ];
 
@@ -107,14 +106,14 @@ class TB_Comments
 
         // 向数据库中写入评论
         $sql = "INSERT INTO comments (
-            post_id,author,email,url,ip,date,content,status,parent,ancestor)
-            VALUES (?,?,?,?,?,?,?,?,?,?)";
+            post_id,author,email,url,ip,date,content,parent,ancestor)
+            VALUES (?,?,?,?,?,?,?,?,?)";
         if ($stmt = $tbdb->prepare($sql)) {
             if ($stmt->bind_param(
-                'isssssssii',
+                'issssssii',
                 $arg['post_id'],    $arg['author'], $arg['email'],
                 $arg['url'],        $arg['ip'],     $arg['date_gmt'],
-                $arg['content'],    $arg['status'],
+                $arg['content'],
                 $arg['parent'],     $arg['ancestor']
             )
             ) {
@@ -182,7 +181,7 @@ class TB_Comments
      *
      * @fixme 根据函数返回值类型，不能返回 false
      */
-    public function &get(&$arg=[], bool $pub)
+    public function &get(&$arg=[])
     {
         global $tbdb;
         global $tbdate;
@@ -200,14 +199,8 @@ class TB_Comments
         $id = (int)$arg['id'];
         if ($id > 0) {
             $sql = "SELECT * FROM comments WHERE id=$id";
-            if($pub) {
-                $sql .= " AND status='public'";
-            }
         } else {
             $sql = "SELECT * FROM comments WHERE parent=0 ";
-            if($pub) {
-                $sql .= " AND status='public'";
-            }
             if ((int)$arg['post_id'] > 0) {
                 $sql .= " AND post_id=".(int)$arg['post_id'];
             }
