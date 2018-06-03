@@ -35,6 +35,7 @@ function post_widget_files($p=null) {
     <button class="browse">浏览</button>
     <button class="submit">上传</button>
     <progress class="progress clearfix" value="0"></progress>
+    <textarea class="copy_area" style="opacity:0;height:0;position:absolute;left:-10000px;"></textarea>
 </div>
 <script>
     function refresh_files() {
@@ -49,13 +50,19 @@ function post_widget_files($p=null) {
                     files.empty();
 
                     data.data.forEach(function(file) {
-                        files.append(
-                            $('<li/>')
-                                .append($('<span />').text(file))
-                                .append('<button class="delete">删除</button>')
-                        );
+                        var li = $('<li/>')
+                            .css('overflow', 'hidden')
+                            .append($('<span />').text(file));
+                        var btns = $('<span style="float:right;" />');
+                        if(/\.(jpg|gif|png|bmp)$/i.test(file)) {
+                            btns.append('<button class="copy_as_md" title="复制为Markdown">复制</button>');
+                        }
+                        btns.append('<button class="delete">删除</button>');
+                        li.append(btns);
+                        files.append(li);
                     });
 
+                    bind_copy_as_md();
                     bind_delete();
                 }
             }
@@ -78,8 +85,8 @@ function post_widget_files($p=null) {
 
     function bind_delete() {
         $('.widget-files .list .delete').click(function(){
-            var li = $(this).parent();
-            var name = $(this).prev().text();
+            var li = $(this).parent().parent();
+            var name = $(this).parent().prev().text();
             var pid = $('#form-post input[name="id"]').val();
             $.post('/apiv2/upload/delete',
                 {
@@ -95,6 +102,26 @@ function post_widget_files($p=null) {
                     }
                 }
             );
+            return false;
+        });
+    }
+
+    function bind_copy_as_md() {
+        var ta = $('.widget-files .copy_area')[0];
+        $('.widget-files .list .copy_as_md').click(function() {
+            var name = $(this).parent().prev().text();
+            var text = '![' + name + '](' + name + ')';
+            console.log('Markdown: ' + text);
+            ta.value = text;
+            ta.focus();
+            ta.select();
+            try {
+                if(!document.execCommand('copy')) {
+                    throw -1;
+                }
+            } catch (e) {
+                alert('复制失败。'+e);
+            }
             return false;
         });
     }
