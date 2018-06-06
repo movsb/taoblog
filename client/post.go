@@ -18,6 +18,7 @@ import (
 var sourceNames = []string{
 	"README.md",
 	"index.md",
+	"README.html",
 	"index.html",
 }
 
