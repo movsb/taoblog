@@ -55,3 +55,54 @@ func (o *CommentManager) GetComment(id int64) (*Comment, error) {
 	err := row.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content)
 	return cmt, err
 }
+
+// GetRecentComments gets the recent comments
+// TODO Not tested
+func (o *CommentManager) GetRecentComments(num int) ([]*Comment, error) {
+	var err error
+	query := `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments ORDER BY date DESC LIMIT ` + fmt.Sprint(num)
+	rows, err := o.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var cmts []*Comment
+
+	for rows.Next() {
+		var cmt Comment
+		if err = rows.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content); err != nil {
+			return nil, err
+		}
+		cmts = append(cmts, &cmt)
+	}
+
+	return cmts, rows.Err()
+}
+
+// GetChildren gets all children comments of an ancestor
+// TODO Not tested
+func (o *CommentManager) GetChildren(id int64) ([]*Comment, error) {
+	var err error
+
+	query := `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE ancestor=` + fmt.Sprint(id)
+	rows, err := o.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var cmts []*Comment
+
+	for rows.Next() {
+		var cmt Comment
+		if err = rows.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content); err != nil {
+			return nil, err
+		}
+		cmts = append(cmts, &cmt)
+	}
+
+	return cmts, rows.Err()
+}

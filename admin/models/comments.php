@@ -132,7 +132,7 @@ class TB_Comments
         return false;
     }
 
-    /**
+    /** Gone
      * 取得属于某个祖先下的所有子评论
      *
      * @param (int) $p 祖先评论的编号
@@ -298,7 +298,7 @@ class TB_Comments
         return $r;
     }
 
-    /**
+    /** Gone
      * 获取近期评论（无层次关系）
      *
      * 条数为 10 条，暂时写死了
@@ -326,7 +326,7 @@ class TB_Comments
         return $cmts;
     }
 
-    /**
+    /** Gone
      * 获取所有文章（包括未公开发表的）的评论总数
      *
      * @return 若成功，返回评论总数。若失败，返回 0。
