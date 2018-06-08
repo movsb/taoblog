@@ -251,10 +251,9 @@ func main() {
 		if err := uploadmgr.Upload(c); err != nil {
 			finishError(c, -1, err)
 			return
+		} else {
+			finishDone(c, 0, "", nil)
 		}
-
-		files, _ := uploadmgr.List(c)
-		finishDone(c, 0, "", files)
 	})
 
 	uploadapi.GET("/list", func(c *gin.Context) {
@@ -262,8 +261,11 @@ func main() {
 			return
 		}
 
-		files, _ := uploadmgr.List(c)
-		finishDone(c, 0, "", files)
+		if files, err := uploadmgr.List(c); err == nil {
+			finishDone(c, 0, "", files)
+		} else {
+			finishError(c, -1, err)
+		}
 	})
 
 	uploadapi.POST("/delete", func(c *gin.Context) {

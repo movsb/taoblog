@@ -64,6 +64,8 @@ function post_widget_files($p=null) {
 
                     bind_copy_as_md();
                     bind_delete();
+                } else {
+                    alert(data.msgs);
                 }
             }
         );
