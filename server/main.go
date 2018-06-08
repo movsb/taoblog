@@ -10,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+
+	"./internal/file_managers"
 )
 
 type xConfig struct {
@@ -79,7 +81,7 @@ func main() {
 	auther = &GenericAuth{}
 	auther.SetLogin(optmgr.GetDef("login", "x"))
 	auther.SetKey(config.key)
-	uploadmgr = NewFileUpload(config.files)
+	uploadmgr = NewFileUpload(file_managers.NewLocalFileManager(config.files))
 	backupmgr = NewBlogBackup(gdb)
 	cmtmgr = newCommentManager(gdb)
 	postcmtsmgr = newPostCommentsManager(gdb)
@@ -251,7 +253,7 @@ func main() {
 			return
 		}
 
-		files := uploadmgr.List(c)
+		files, _ := uploadmgr.List(c)
 		finishDone(c, 0, "", files)
 	})
 
@@ -260,7 +262,7 @@ func main() {
 			return
 		}
 
-		files := uploadmgr.List(c)
+		files, _ := uploadmgr.List(c)
 		finishDone(c, 0, "", files)
 	})
 
@@ -269,9 +271,9 @@ func main() {
 			return
 		}
 
-		ok := uploadmgr.Delete(c)
-		if ok {
-			finishDone(c, 0, "", ok)
+		err := uploadmgr.Delete(c)
+		if err == nil {
+			finishDone(c, 0, "", nil)
 		} else {
 			finishError(c, -1, nil)
 		}

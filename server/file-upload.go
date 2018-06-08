@@ -3,34 +3,38 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-type FileUpload struct {
-	folder string
+// IFileManager exposes interfaces to manage upload files.
+type IFileManager interface {
+	Put(pid int64, name string, r io.Reader) error
+	Delete(pid int64, name string) error
+	List(pid int64) ([]string, error)
 }
 
-func NewFileUpload(folder string) *FileUpload {
+// FileUpload operates on upload files
+type FileUpload struct {
+	mgr IFileManager
+}
+
+// NewFileUpload returns a new instance of FileUpload
+func NewFileUpload(mgr IFileManager) *FileUpload {
 	return &FileUpload{
-		folder: folder,
+		mgr: mgr,
 	}
 }
 
+// Upload does file saving
 func (o *FileUpload) Upload(c *gin.Context) error {
+	var err error
 	pidstr, ok := c.GetPostForm("pid")
-	pid, err := strconv.Atoi(pidstr)
+	pid, err := strconv.ParseInt(pidstr, 10, 64)
 	if !ok || err != nil {
 		return errors.New("invalid pid")
-	}
-	pidstr = fmt.Sprint(pid)
-
-	root := filepath.Join(o.folder, pidstr)
-	if err := os.MkdirAll(root, 0755); err != nil {
-		return err
 	}
 
 	form, err := c.MultipartForm()
@@ -39,8 +43,12 @@ func (o *FileUpload) Upload(c *gin.Context) error {
 	}
 
 	for _, file := range form.File["files[]"] {
-		path := filepath.Join(root, file.Filename)
-		if err = c.SaveUploadedFile(file, path); err != nil {
+		fp, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer fp.Close()
+		if err = o.mgr.Put(pid, file.Filename, fp); err != nil {
 			return err
 		}
 	}
@@ -48,46 +56,30 @@ func (o *FileUpload) Upload(c *gin.Context) error {
 	return nil
 }
 
-func (o *FileUpload) List(c *gin.Context) []string {
-	var files = make([]string, 0)
-
+// List does file listing
+func (o *FileUpload) List(c *gin.Context) ([]string, error) {
 	pidstr, ok := c.GetQuery("pid")
-	pid, err := strconv.Atoi(pidstr)
+	pid, err := strconv.ParseInt(pidstr, 10, 64)
 	if !ok || err != nil {
-		return files
+		return nil, errors.New("invalid pid")
 	}
-	pidstr = fmt.Sprint(pid)
 
-	root := filepath.Join(o.folder, pidstr)
-	err = filepath.Walk(root, func(path string, info os.FileInfo, e error) error {
-		if e != nil {
-			return filepath.SkipDir
-		}
-
-		if !info.IsDir() {
-			files = append(files, info.Name())
-		}
-
-		return nil
-	})
-
-	return files
+	return o.mgr.List(pid)
 }
 
-func (o *FileUpload) Delete(c *gin.Context) bool {
+// Delete does file deleting
+func (o *FileUpload) Delete(c *gin.Context) error {
 	pidstr, ok := c.GetPostForm("pid")
-	pid, err := strconv.Atoi(pidstr)
+	pid, err := strconv.ParseInt(pidstr, 10, 64)
 	if !ok || err != nil {
-		return false
+		return errors.New("invalid pid")
 	}
 	pidstr = fmt.Sprint(pid)
 
 	name := c.DefaultPostForm("name", "")
 	if name == "" {
-		return false
+		return errors.New("bad name")
 	}
 
-	root := filepath.Join(o.folder, pidstr, name)
-	err = os.Remove(root)
-	return err == nil
+	return o.mgr.Delete(pid, name)
 }
