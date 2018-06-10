@@ -364,17 +364,17 @@ func main() {
 			return
 		}
 
-		var cmts interface{}
-
-		if auth(c, false) {
-			cmts, err = postcmtsmgr.GetPostCommentsPrivate(id, offset, count, pid, order == "asc")
-		} else {
-			cmts, err = postcmtsmgr.GetPostCommentsPublic(id, offset, count, pid, order == "asc")
-		}
+		cmts, err := postcmtsmgr.GetPostComments(id, offset, count, pid, order == "asc")
 
 		if err != nil {
 			finishError(c, -1, err)
 			return
+		}
+
+		var loggedin = auth(c, false)
+
+		for _, c := range cmts {
+			c.private = loggedin
 		}
 
 		finishDone(c, 0, "", cmts)

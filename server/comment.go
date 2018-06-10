@@ -7,17 +7,17 @@ import (
 )
 
 type Comment struct {
-	ID       int64      `json:"id"`
-	Parent   int64      `json:"parent"`
-	Ancestor int64      `json:"ancestor"`
-	PostID   int64      `json:"post_id"`
-	Author   string     `json:"author"`
-	EMail    string     `json:"email"`
-	URL      string     `json:"url"`
-	IP       string     `json:"ip"`
-	Date     string     `json:"date"`
-	Content  string     `json:"content"`
-	Children []*Comment `json:"children"`
+	ID       int64
+	Parent   int64
+	Ancestor int64
+	PostID   int64
+	Author   string
+	EMail    string
+	URL      string
+	IP       string
+	Date     string
+	Content  string
+	Children []*Comment
 }
 
 type CommentManager struct {

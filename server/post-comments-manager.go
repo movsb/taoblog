@@ -1,42 +1,92 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
 
-type CommentPrivate struct {
-	ID       int64             `json:"id"`
-	Parent   int64             `json:"parent"`
-	Ancestor int64             `json:"ancestor"`
-	PostID   int64             `json:"post_id"`
-	Author   string            `json:"author"`
-	EMail    string            `json:"email"`
-	URL      string            `json:"url"`
-	IP       string            `json:"ip"`
-	Date     string            `json:"date"`
-	Content  string            `json:"content"`
-	Children []*CommentPrivate `json:"children"`
-
-	Avatar  string `json:"avatar"`
-	IsAdmin bool   `json:"is_admin"`
+type AjaxComment struct {
+	c        *Comment
+	Children []*AjaxComment
+	Avatar   string
+	IsAdmin  bool
+	private  bool
 }
 
-type CommentPublic struct {
-	ID       int64            `json:"id"`
-	Parent   int64            `json:"parent"`
-	Ancestor int64            `json:"ancestor"`
-	PostID   int64            `json:"post_id"`
-	Author   string           `json:"author"`
-	URL      string           `json:"url"`
-	Date     string           `json:"date"`
-	Content  string           `json:"content"`
-	Children []*CommentPublic `json:"children"`
+func (o *AjaxComment) marshal(ac *AjaxComment, sb *bytes.Buffer, private bool, comma bool) error {
+	var err error
 
-	Avatar  string `json:"avatar"`
-	IsAdmin bool   `json:"is_admin"`
+	c := ac.c
+
+	f := func(name string, v interface{}) {
+		if err != nil {
+			return
+		}
+
+		var by []byte
+
+		by, err = json.Marshal(v)
+		if err != nil {
+			return
+		}
+
+		_, err = sb.WriteString(
+			fmt.Sprintf(`"%s":%s,`, name, string(by)),
+		)
+	}
+
+	sb.WriteString(`{`)
+
+	f(`id`, c.ID)
+	f(`parent`, c.Parent)
+	f(`ancestor`, c.Ancestor)
+	f(`post_id`, c.PostID)
+	f(`author`, c.Author)
+	f(`url`, c.URL)
+	f(`date`, c.Date)
+	f(`content`, c.Content)
+
+	f(`avatar`, ac.Avatar)
+	f(`is_admin`, ac.IsAdmin)
+
+	if private {
+		f(`email`, c.EMail)
+		f(`ip`, c.IP)
+	}
+
+	_, err = sb.WriteString(fmt.Sprint(`"children":[`))
+
+	for i, cc := range ac.Children {
+		comma2 := i != len(ac.Children)-1
+		err = o.marshal(cc, sb, o.private, comma2)
+	}
+
+	_, err = sb.WriteString(`]`) // no comma
+
+	_, err = sb.WriteString(`}`)
+
+	if comma {
+		sb.WriteByte(',')
+	}
+
+	return err
+}
+
+func (o *AjaxComment) MarshalJSON() ([]byte, error) {
+	var sb = &bytes.Buffer{}
+
+	var err error
+
+	err = o.marshal(o, sb, o.private, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return sb.Bytes(), nil
 }
 
 type PostCommentsManager struct {
@@ -76,7 +126,7 @@ func (o *PostCommentsManager) DeletePostComment(cid int64) error {
 	return nil
 }
 
-func (o *PostCommentsManager) GetPostCommentsPublic(cid int64, offset int64, count int64, pid int64, ascent bool) ([]*CommentPublic, error) {
+func (o *PostCommentsManager) GetPostComments(cid int64, offset int64, count int64, pid int64, ascent bool) ([]*AjaxComment, error) {
 	cmts, err := cmtmgr.GetCommentAndItsChildren(cid, offset, count, pid, ascent)
 	if err != nil {
 		return nil, err
@@ -90,16 +140,9 @@ func (o *PostCommentsManager) GetPostCommentsPublic(cid int64, offset int64, cou
 		return fmt.Sprintf("%x", md5.Sum(nil))
 	}
 
-	convert := func(c *Comment) *CommentPublic {
-		pc := &CommentPublic{
-			ID:       c.ID,
-			Parent:   c.Parent,
-			Ancestor: c.Ancestor,
-			PostID:   c.PostID,
-			Author:   c.Author,
-			URL:      c.URL,
-			Date:     c.Date,
-			Content:  c.Content,
+	convert := func(c *Comment) *AjaxComment {
+		pc := &AjaxComment{
+			c: c,
 		}
 
 		pc.Avatar = md5it(c.EMail)
@@ -108,7 +151,7 @@ func (o *PostCommentsManager) GetPostCommentsPublic(cid int64, offset int64, cou
 		return pc
 	}
 
-	pcmts := make([]*CommentPublic, 0, len(cmts))
+	pcmts := make([]*AjaxComment, 0, len(cmts))
 
 	for _, c := range cmts {
 		pc := convert(c)
@@ -116,57 +159,7 @@ func (o *PostCommentsManager) GetPostCommentsPublic(cid int64, offset int64, cou
 			pc.Children = append(pc.Children, convert(cc))
 		}
 		if len(pc.Children) == 0 {
-			pc.Children = make([]*CommentPublic, 0)
-		}
-		pcmts = append(pcmts, pc)
-	}
-
-	return pcmts, nil
-}
-
-func (o *PostCommentsManager) GetPostCommentsPrivate(cid int64, offset int64, count int64, pid int64, ascent bool) ([]*CommentPrivate, error) {
-	cmts, err := cmtmgr.GetCommentAndItsChildren(cid, offset, count, pid, ascent)
-	if err != nil {
-		return nil, err
-	}
-
-	adminEmail := strings.ToLower(optmgr.GetDef("email", ""))
-
-	md5it := func(s string) string {
-		md5 := md5.New()
-		md5.Write([]byte(s))
-		return fmt.Sprintf("%x", md5.Sum(nil))
-	}
-
-	convert := func(c *Comment) *CommentPrivate {
-		pc := &CommentPrivate{
-			ID:       c.ID,
-			Parent:   c.Parent,
-			Ancestor: c.Ancestor,
-			PostID:   c.PostID,
-			Author:   c.Author,
-			EMail:    c.EMail,
-			URL:      c.URL,
-			IP:       c.IP,
-			Date:     c.Date,
-			Content:  c.Content,
-		}
-
-		pc.Avatar = md5it(c.EMail)
-		pc.IsAdmin = strings.ToLower(c.EMail) == adminEmail
-
-		return pc
-	}
-
-	pcmts := make([]*CommentPrivate, 0, len(cmts))
-
-	for _, c := range cmts {
-		pc := convert(c)
-		for _, cc := range c.Children {
-			pc.Children = append(pc.Children, convert(cc))
-		}
-		if len(pc.Children) == 0 {
-			pc.Children = make([]*CommentPrivate, 0)
+			pc.Children = make([]*AjaxComment, 0)
 		}
 		pcmts = append(pcmts, pc)
 	}
