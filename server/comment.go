@@ -7,16 +7,17 @@ import (
 )
 
 type Comment struct {
-	ID       int64
-	Parent   int64
-	Ancestor int64
-	PostID   int64
-	Author   string
-	EMail    string
-	URL      string
-	IP       string
-	Date     string
-	Content  string
+	ID       int64      `json:"id"`
+	Parent   int64      `json:"parent"`
+	Ancestor int64      `json:"ancestor"`
+	PostID   int64      `json:"post_id"`
+	Author   string     `json:"author"`
+	EMail    string     `json:"email"`
+	URL      string     `json:"url"`
+	IP       string     `json:"ip"`
+	Date     string     `json:"date"`
+	Content  string     `json:"content"`
+	Children []*Comment `json:"children"`
 }
 
 type CommentManager struct {
@@ -94,7 +95,7 @@ func (o *CommentManager) GetChildren(id int64) ([]*Comment, error) {
 
 	defer rows.Close()
 
-	var cmts []*Comment
+	cmts := make([]*Comment, 0)
 
 	for rows.Next() {
 		var cmt Comment
@@ -102,6 +103,79 @@ func (o *CommentManager) GetChildren(id int64) ([]*Comment, error) {
 			return nil, err
 		}
 		cmts = append(cmts, &cmt)
+	}
+
+	return cmts, rows.Err()
+}
+
+// GetAncestor returns the ancestor of a comment
+func (o *CommentManager) GetAncestor(id int64, returnIDIfZero bool) (int64, error) {
+	query := `SELECT ancestor FROM comments WHERE id=` + fmt.Sprint(id) + ` LIMIT 1`
+	row := o.db.QueryRow(query)
+	var aid int64
+	if err := row.Scan(&aid); err != nil {
+		return -1, err
+	}
+
+	if aid != 0 {
+		return aid, nil
+	}
+
+	if returnIDIfZero {
+		return id, nil
+	}
+
+	return 0, nil
+}
+
+func (o *CommentManager) GetCommentAndItsChildren(cid int64, offset int64, count int64, pid int64, ascent bool) ([]*Comment, error) {
+	var query string
+
+	if cid > 0 {
+		query += `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE id=` + fmt.Sprint(cid)
+	} else {
+		query += `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE parent=0`
+		if pid > 0 {
+			query += ` AND post_id=` + fmt.Sprint(pid)
+		}
+
+		if ascent {
+			query += ` ORDER BY id ASC`
+		} else {
+			query += ` ORDER BY id DESC`
+		}
+
+		if count > 0 {
+			if offset >= 0 {
+				query += fmt.Sprintf(" LIMIT %d,%d", offset, count)
+			} else {
+				query += fmt.Sprintf(" LIMIT %d", count)
+			}
+		}
+	}
+
+	cmts := make([]*Comment, 0)
+
+	rows, err := o.db.Query(query)
+	if err != nil {
+		return cmts, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var cmt Comment
+		if err = rows.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content); err != nil {
+			return cmts, err
+		}
+		cmts = append(cmts, &cmt)
+	}
+
+	for _, cmt := range cmts {
+		cmt.Children, err = o.GetChildren(cmt.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cmts, rows.Err()

@@ -89,17 +89,17 @@ Comment.prototype.init = function() {
         var load = this;
         $(this).attr('loading', 'true');
         $('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
-        $.post(
-            '/admin/comment.php',
+        $.get(
+            '/apiv2/comments/get',
             {
-                do: 'get-cmt',
+                id: 0,
                 order: 'desc',
                 count: 10,
                 offset: self._loaded,
                 post_id: $('#post-id').val(),
             },
             function(data) {
-                var cmts = data.cmts || [];
+                var cmts = data.data || [];
                 var ch_count = 0;
                 for(var i=0; i<cmts.length; i++){
                     $('#comment-list').append(self.gen_comment_item(cmts[i]));

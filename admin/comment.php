@@ -109,8 +109,7 @@ function cmt_post_cmt() {
 
 $do = $_POST['do'] ?? '';
 
-if($do == 'get-cmt')        cmt_get_cmt();
-else if($do == 'post-cmt')  cmt_post_cmt();
+if($do == 'post-cmt')  cmt_post_cmt();
 
 endif;
 

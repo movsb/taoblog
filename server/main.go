@@ -42,11 +42,13 @@ type xJSONRet struct {
 	Data interface{} `json:"data"`
 }
 
-func auth(c *gin.Context) bool {
+func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
 		return true
 	}
-	finishError(c, -1, errors.New("auth error"))
+	if finish {
+		finishError(c, -1, errors.New("auth error"))
+	}
 	return false
 }
 
@@ -108,7 +110,7 @@ func main() {
 	optapi := router.Group("/option")
 
 	optapi.GET("/has", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 		name := c.DefaultQuery("name", "")
@@ -118,7 +120,7 @@ func main() {
 	})
 
 	optapi.GET("/get", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 		name := c.DefaultQuery("name", "")
@@ -131,7 +133,7 @@ func main() {
 	})
 
 	optapi.POST("/set", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 		name := c.DefaultPostForm("name", "")
@@ -144,7 +146,7 @@ func main() {
 	})
 
 	optapi.POST("/del", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 		name := c.DefaultPostForm("name", "")
@@ -156,7 +158,7 @@ func main() {
 	})
 
 	optapi.GET("/list", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 		items, err := optmgr.List()
@@ -199,7 +201,7 @@ func main() {
 	})
 
 	postapi.POST("/update", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 		var err error
@@ -244,7 +246,7 @@ func main() {
 	uploadapi := router.Group("/upload")
 
 	uploadapi.POST("/upload", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 
@@ -257,7 +259,7 @@ func main() {
 	})
 
 	uploadapi.GET("/list", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 
@@ -269,7 +271,7 @@ func main() {
 	})
 
 	uploadapi.POST("/delete", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 
@@ -290,7 +292,7 @@ func main() {
 	backupapi := router.Group("/backups")
 
 	backupapi.GET("backup", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 
@@ -307,7 +309,7 @@ func main() {
 	cmtapi := router.Group("/comments")
 
 	cmtapi.POST("/delete", func(c *gin.Context) {
-		if !auth(c) {
+		if !auth(c, true) {
 			return
 		}
 
@@ -326,6 +328,56 @@ func main() {
 		}
 
 		finishDone(c, 0, "", nil)
+	})
+
+	cmtapi.GET("/get", func(c *gin.Context) {
+		var err error
+
+		get := func(name string) int64 {
+			if err != nil {
+				return -1
+			}
+
+			str, has := c.GetQuery(name)
+			if !has {
+				err = errors.New("expect " + name)
+				return -1
+			}
+
+			n := int64(0)
+			n, err = strconv.ParseInt(str, 10, 64)
+			if err != nil {
+				return -1
+			}
+
+			return n
+		}
+
+		id := get("id")
+		offset := get("offset")
+		count := get("count")
+		pid := get("post_id")
+		order := c.DefaultQuery("order", "asc")
+
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		var cmts interface{}
+
+		if auth(c, false) {
+			cmts, err = postcmtsmgr.GetPostCommentsPrivate(id, offset, count, pid, order == "asc")
+		} else {
+			cmts, err = postcmtsmgr.GetPostCommentsPublic(id, offset, count, pid, order == "asc")
+		}
+
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		finishDone(c, 0, "", cmts)
 	})
 
 	router.Run(config.listen)

@@ -163,7 +163,7 @@ class TB_Comments
         return $children;
     }
 
-    /**
+    /** Gone
      * 获取某条特定的评论或某篇文章的评论
      *
      * 指定评论编号时，以评论编号为准。否则以文章编号为准。两者不同时使用
@@ -240,7 +240,7 @@ class TB_Comments
         return $cmts;
     }
 
-    /**
+    /** Gone
      * 获取某条评论的祖先评论的编号
      *
      * @param (int)  $id                     评论编号
