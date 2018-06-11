@@ -354,7 +354,7 @@ add_hook('post_widget', 'post_widget_page_parents');
 function post_widget_slug($p=null) {
     return [
         'title' => '别名',
-        'types' => 'page',
+        'types' => 'page,post',
         'content' => '<input type="text" name="slug" value="'.($p ? htmlspecialchars($p->slug) : '').'" />',
         ];
 }

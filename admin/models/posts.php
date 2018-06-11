@@ -36,11 +36,6 @@ class TB_Posts {
             return false;
         }
 
-        if(!$arg['content']) {
-            $this->error = '内容不应为空！';
-            return false;
-        }
-
         if (preg_match('# |	|\'|"|;|/|\\\\|\\?|&|\.|<|>|:|@|\\$|%|\\^|\\*#', $arg['slug'])) {
             $this->error = '文章别名不规范！';
             return false;
