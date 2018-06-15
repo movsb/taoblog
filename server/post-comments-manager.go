@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"./internal/utils/datetime"
 )
 
 type AjaxComment struct {
@@ -144,6 +146,8 @@ func (o *PostCommentsManager) GetPostComments(cid int64, offset int64, count int
 		pc := &AjaxComment{
 			c: c,
 		}
+
+		pc.c.Date = datetime.My2Local(pc.c.Date)
 
 		pc.Avatar = md5it(c.EMail)
 		pc.IsAdmin = strings.ToLower(c.EMail) == adminEmail
