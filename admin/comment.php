@@ -9,20 +9,6 @@ else :
 
 require_once('load.php');
 
-function  cmt_header_json() {
-    header('HTTP/1.1 200 OK');
-    header('Content-Type: application/json');
-}
-
-function error($msg) {
-    cmt_header_json();
-    echo json_encode([
-        'errno' => 'error',
-        'error' => $msg
-        ], JSON_UNESCAPED_UNICODE);
-    die(-1);
-}
-
 function cmt_make_public(&$cmts) {
     global $tbopt;
     global $logged_in;
@@ -46,20 +32,6 @@ function cmt_make_public(&$cmts) {
         }
     }
     return $cmts;
-}
-
-function cmt_get_cmt() {
-    global $tbcmts;
-
-    cmt_header_json();
-
-    $cmts = cmt_make_public($tbcmts->get($_POST));
-    
-    echo json_encode([
-        'errno'     => 'success',
-        'cmts'      => $cmts,
-        ], JSON_UNESCAPED_UNICODE);
-    die(0);
 }
 
 function cmt_post_cmt() {
