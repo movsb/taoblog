@@ -1,7 +1,7 @@
 <?php
 
 define('TBPATH',            dirname(__FILE__).'/../');
-define('FILE_HOST',         'http://localhost');
+define('FILE_HOST',         '//localhost');
 define('FILE_DIR',          'files');
 
 define('TB_PRIVATE',        FALSE);                     /* 是否对外开放 */
