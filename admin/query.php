@@ -73,8 +73,6 @@ class TB_Query {
 
         $rules = [
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
-            '^(/\d+/[^/]+)$'                                    => 'file=$1',
-            '^/files(/\d+/[^/]+)$'                             => 'file=$1',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
@@ -133,28 +131,6 @@ class TB_Query {
             $query = isset($_SERVER['QUERY_STRING']) && strlen($_SERVER['QUERY_STRING']) ? '?'.$_SERVER['QUERY_STRING'] : '';
             header('HTTP/1.1 301 Moved Permanently');
             header('Location: /'.$this->internal_query['id'].'/'.$query);
-            die(0);
-        }
-
-        // 处理文件
-        if(isset($this->internal_query['file'])) {
-            $relative = '/'.FILE_DIR.$this->internal_query['file'];
-            $absolute = TBPATH.$relative;
-            if($logged_in && file_exists($absolute)) {
-                header('HTTP/1.1 302 Use local file');
-                header('Location: '.$relative);
-            }
-            else {
-                // TODO remove
-                $referer = strtolower($_SERVER['HTTP_REFERER'] ?? '');
-                if(strstr($referer, "blog.csdn.net") !== FALSE) {
-                    header('HTTP/1.1 302 OK');
-                    header('Location: /1.jpg');
-                    die(-1);
-                }
-                header('HTTP/1.1 302 Use backup file');
-                header('Location: '.FILE_HOST.$relative);
-            }
             die(0);
         }
 

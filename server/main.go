@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -22,6 +23,7 @@ type xConfig struct {
 	database string
 	key      string
 	files    string
+	fileHost string
 }
 
 var gkey string
@@ -29,12 +31,13 @@ var config xConfig
 var gdb *sql.DB
 var tagmgr *xTagManager
 var postmgr *xPostManager
-var optmgr *xOptionsModel
+var optmgr *OptionManager
 var auther *GenericAuth
 var uploadmgr *FileUpload
 var backupmgr *BlogBackup
 var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
+var fileredir *FileRedirect
 
 type xJSONRet struct {
 	Code int         `json:"code"`
@@ -60,6 +63,7 @@ func main() {
 	flag.StringVar(&config.key, "key", "", "api key")
 	flag.StringVar(&config.base, "base", ".", "taoblog directory")
 	flag.StringVar(&config.files, "files", ".", "the files folder")
+	flag.StringVar(&config.fileHost, "file-host", "//localhost", "the backup file host")
 	flag.Parse()
 
 	if config.key == "" {
@@ -87,6 +91,7 @@ func main() {
 	backupmgr = NewBlogBackup(gdb)
 	cmtmgr = newCommentManager(gdb)
 	postcmtsmgr = newPostCommentsManager(gdb)
+	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
@@ -107,7 +112,7 @@ func main() {
 
 	})
 
-	optapi := router.Group("/option")
+	optapi := router.Group("/options")
 
 	optapi.GET("/has", func(c *gin.Context) {
 		if !auth(c, true) {
@@ -380,5 +385,35 @@ func main() {
 		finishDone(c, 0, "", cmts)
 	})
 
+	routerV1(router)
+
 	router.Run(config.listen)
+}
+
+func toInt64(s string) int64 {
+	n, _ := strconv.ParseInt(s, 10, 64)
+	return n
+}
+
+func routerV1(router *gin.Engine) {
+	v1 := router.Group("/v1")
+
+	posts := v1.Group("/posts")
+
+	posts.GET("/:parent/*name", func(c *gin.Context) {
+		referrer := strings.ToLower(c.GetHeader("referer"))
+		if strings.Contains(referrer, "://blog.csdn.net") {
+			c.Redirect(302, "/1.jpg")
+			return
+		}
+		parent := toInt64(c.Param("parent"))
+		name := c.Param("name")
+		if strings.Contains(name, "/../") {
+			c.String(400, "bad file")
+			return
+		}
+		logged := auth(c, false)
+		path := fileredir.Redirect(logged, fmt.Sprintf("%d/%s", parent, name))
+		c.Redirect(302, path)
+	})
 }

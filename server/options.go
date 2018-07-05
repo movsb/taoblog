@@ -5,29 +5,29 @@ import (
 	"fmt"
 )
 
-type xOptionsModel struct {
+type OptionManager struct {
 	db *sql.DB
 }
 
-type OptionItem struct {
+type Option struct {
 	Name  string
 	Value string
 }
 
-func newOptionsModel(db *sql.DB) *xOptionsModel {
-	return &xOptionsModel{
+func newOptionsModel(db *sql.DB) *OptionManager {
+	return &OptionManager{
 		db: db,
 	}
 }
 
-func (o *xOptionsModel) Has(name string) error {
+func (o *OptionManager) Has(name string) error {
 	query := `SELECT name FROM options WHERE name=? LIMIT 1`
 	val := ""
 	row := o.db.QueryRow(query, name)
 	return row.Scan(&val)
 }
 
-func (o *xOptionsModel) Get(name string) (string, error) {
+func (o *OptionManager) Get(name string) (string, error) {
 	query := `SELECT value FROM options WHERE name=? LIMIT 1`
 	row := o.db.QueryRow(query, name)
 	val := ""
@@ -35,7 +35,7 @@ func (o *xOptionsModel) Get(name string) (string, error) {
 	return val, err
 }
 
-func (o *xOptionsModel) GetDef(name string, def string) string {
+func (o *OptionManager) GetDef(name string, def string) string {
 	val, err := o.Get(name)
 	if err == nil {
 		return val
@@ -43,7 +43,7 @@ func (o *xOptionsModel) GetDef(name string, def string) string {
 	return def
 }
 
-func (o *xOptionsModel) Set(name string, val interface{}) error {
+func (o *OptionManager) Set(name string, val interface{}) error {
 	strVal := fmt.Sprint(val)
 
 	query := ""
@@ -57,14 +57,14 @@ func (o *xOptionsModel) Set(name string, val interface{}) error {
 	return err
 }
 
-func (o *xOptionsModel) Del(name string) error {
+func (o *OptionManager) Del(name string) error {
 	query := `DELETE FROM options WHERE name=? LIMIT 1`
 	_, err := o.db.Exec(query, name)
 	return err
 }
 
-func (o *xOptionsModel) List() ([]OptionItem, error) {
-	items := make([]OptionItem, 0)
+func (o *OptionManager) List() ([]Option, error) {
+	items := make([]Option, 0)
 	query := `SELECT name,value FROM options`
 	rows, err := o.db.Query(query)
 	if err != nil {
@@ -72,7 +72,7 @@ func (o *xOptionsModel) List() ([]OptionItem, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var item OptionItem
+		var item Option
 		if err := rows.Scan(&item.Name, &item.Value); err != nil {
 			return nil, err
 		}
