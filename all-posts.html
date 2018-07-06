@@ -10,8 +10,7 @@
 
 </ol>
 <script>
-$.get(
-    "/apiv2/all-posts.go",
+$.get("/v1/posts",
     function(data) {
         var list = $('#list');
         data.forEach(function(e, _, _) {

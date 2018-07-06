@@ -486,7 +486,7 @@ $('#back-to-top').click(function(){
         file = $(e).attr('data-aes2htm');
         $code = $(e).parent().prev().find('code');
         $.get(file, function(data){
-            $.post('/apiv2/tools/aes2htm',
+            $.post('/v1/tools/aes2htm',
                 {
                     source: data,
                 },

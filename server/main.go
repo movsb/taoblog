@@ -96,16 +96,6 @@ func main() {
 	gin.DisableConsoleColor()
 	router := gin.Default()
 
-	router.GET("/all-posts.go", func(c *gin.Context) {
-		rets, err := getAllPosts(gdb)
-		if err != nil {
-			c.JSON(500, fmt.Sprint(err))
-			return
-		}
-
-		c.JSON(200, rets)
-	})
-
 	tagapi := router.Group("/tags")
 
 	tagapi.GET("/list", func(c *gin.Context) {
@@ -236,18 +226,6 @@ func main() {
 		finishDone(c, 0, "", nil)
 	})
 
-	postapi.GET("/comment-count", func(c *gin.Context) {
-		var err error
-		pidstr, has := c.GetQuery("pid")
-		pid, err := strconv.ParseInt(pidstr, 10, 64)
-		if !has || err != nil || pid < 0 {
-			c.String(400, "expect: pid")
-			return
-		}
-		count := postmgr.getCommentCount(pid)
-		finishDone(c, 0, "", count)
-	})
-
 	uploadapi := router.Group("/upload")
 
 	uploadapi.POST("/upload", func(c *gin.Context) {
@@ -286,12 +264,6 @@ func main() {
 		} else {
 			finishError(c, -1, nil)
 		}
-	})
-
-	toolapi := router.Group("/tools")
-
-	toolapi.POST("/aes2htm", func(c *gin.Context) {
-		aes2htm(c)
 	})
 
 	backupapi := router.Group("/backups")
@@ -400,7 +372,17 @@ func routerV1(router *gin.Engine) {
 
 	posts := v1.Group("/posts")
 
-	posts.GET("/:parent/*name", func(c *gin.Context) {
+	posts.GET("", func(c *gin.Context) {
+		rets, err := getAllPosts(gdb)
+		if err != nil {
+			c.JSON(500, fmt.Sprint(err))
+			return
+		}
+
+		c.JSON(200, rets)
+	})
+
+	posts.GET("/:parent/files/*name", func(c *gin.Context) {
 		referrer := strings.ToLower(c.GetHeader("referer"))
 		if strings.Contains(referrer, "://blog.csdn.net") {
 			c.Redirect(302, "/1.jpg")
@@ -415,5 +397,17 @@ func routerV1(router *gin.Engine) {
 		logged := auth(c, false)
 		path := fileredir.Redirect(logged, fmt.Sprintf("%d/%s", parent, name))
 		c.Redirect(302, path)
+	})
+
+	posts.GET("/:parent/comments", func(c *gin.Context) {
+		parent := toInt64(c.Param("parent"))
+		count := postmgr.getCommentCount(parent)
+		finishDone(c, 0, "", count)
+	})
+
+	tools := v1.Group("/tools")
+
+	tools.POST("/aes2htm", func(c *gin.Context) {
+		aes2htm(c)
 	})
 }

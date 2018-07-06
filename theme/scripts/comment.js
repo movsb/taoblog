@@ -218,10 +218,8 @@ Comment.prototype.load_essential_comments = function() {
 
 Comment.prototype.get_count = function(callback) {
     var self = this;
-    $.get('/apiv2/posts/comment-count',
-        {
-            pid: $('#post-id').val()
-        },
+    var pid = $('#post-id').val();
+    $.get('/v1/posts/' + pid + '/comments',
         function(data) {
             self._count = data.data;
             $('#comment-title .total').text(self._count);
