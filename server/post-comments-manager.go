@@ -128,8 +128,8 @@ func (o *PostCommentsManager) DeletePostComment(cid int64) error {
 	return nil
 }
 
-func (o *PostCommentsManager) GetPostComments(cid int64, offset int64, count int64, pid int64, ascent bool) ([]*AjaxComment, error) {
-	cmts, err := cmtmgr.GetCommentAndItsChildren(cid, offset, count, pid, ascent)
+func (o *PostCommentsManager) GetPostComments(offset int64, count int64, pid int64, ascent bool) ([]*AjaxComment, error) {
+	cmts, err := cmtmgr.GetCommentAndItsChildren(0, offset, count, pid, ascent)
 	if err != nil {
 		return nil, err
 	}

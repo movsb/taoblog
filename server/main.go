@@ -307,56 +307,6 @@ func main() {
 		finishDone(c, 0, "", nil)
 	})
 
-	cmtapi.GET("/get", func(c *gin.Context) {
-		var err error
-
-		get := func(name string) int64 {
-			if err != nil {
-				return -1
-			}
-
-			str, has := c.GetQuery(name)
-			if !has {
-				err = errors.New("expect " + name)
-				return -1
-			}
-
-			n := int64(0)
-			n, err = strconv.ParseInt(str, 10, 64)
-			if err != nil {
-				return -1
-			}
-
-			return n
-		}
-
-		id := get("id")
-		offset := get("offset")
-		count := get("count")
-		pid := get("post_id")
-		order := c.DefaultQuery("order", "asc")
-
-		if err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		cmts, err := postcmtsmgr.GetPostComments(id, offset, count, pid, order == "asc")
-
-		if err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		var loggedin = auth(c, false)
-
-		for _, c := range cmts {
-			c.private = loggedin
-		}
-
-		finishDone(c, 0, "", cmts)
-	})
-
 	routerV1(router)
 
 	router.Run(config.listen)
@@ -399,10 +349,34 @@ func routerV1(router *gin.Engine) {
 		c.Redirect(302, path)
 	})
 
-	posts.GET("/:parent/comments", func(c *gin.Context) {
+	posts.GET("/:parent/comments:count", func(c *gin.Context) {
 		parent := toInt64(c.Param("parent"))
 		count := postmgr.getCommentCount(parent)
 		finishDone(c, 0, "", count)
+	})
+
+	posts.GET("/:parent/comments", func(c *gin.Context) {
+		var err error
+
+		parent := toInt64(c.Param("parent"))
+		offset := toInt64(c.Query("offset"))
+		count := toInt64(c.Query("count"))
+		order := c.DefaultQuery("order", "asc")
+
+		cmts, err := postcmtsmgr.GetPostComments(offset, count, parent, order == "asc")
+
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		var loggedin = auth(c, false)
+
+		for _, c := range cmts {
+			c.private = loggedin
+		}
+
+		finishDone(c, 0, "", cmts)
 	})
 
 	tools := v1.Group("/tools")

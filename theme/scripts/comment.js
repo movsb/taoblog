@@ -89,14 +89,14 @@ Comment.prototype.init = function() {
         var load = this;
         $(this).attr('loading', 'true');
         $('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
-        $.get(
-            '/apiv2/comments/get',
+
+        var pid = $('#post-id').val();
+
+        $.get('/v1/posts/' + pid + '/comments',
             {
-                id: 0,
                 order: 'desc',
                 count: 10,
                 offset: self._loaded,
-                post_id: $('#post-id').val(),
             },
             function(data) {
                 var cmts = data.data || [];
@@ -219,7 +219,7 @@ Comment.prototype.load_essential_comments = function() {
 Comment.prototype.get_count = function(callback) {
     var self = this;
     var pid = $('#post-id').val();
-    $.get('/v1/posts/' + pid + '/comments',
+    $.get('/v1/posts/' + pid + '/comments:count',
         function(data) {
             self._count = data.data;
             $('#comment-title .total').text(self._count);
