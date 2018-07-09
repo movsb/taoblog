@@ -40,10 +40,7 @@ function post_widget_files($p=null) {
 <script>
     function refresh_files() {
         var pid = $('#form-post input[name="id"]').val();
-        $.get('/apiv2/upload/list',
-            {
-                pid: pid,
-            },
+        $.get('/v1/posts/' + pid + '/files',
             function(data) {
                 if(data.code == 0) {
                     var files = $('.widget-files .list');

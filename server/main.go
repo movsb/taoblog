@@ -241,18 +241,6 @@ func main() {
 		}
 	})
 
-	uploadapi.GET("/list", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-
-		if files, err := uploadmgr.List(c); err == nil {
-			finishDone(c, 0, "", files)
-		} else {
-			finishError(c, -1, err)
-		}
-	})
-
 	uploadapi.POST("/delete", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
@@ -374,6 +362,18 @@ func routerV1(router *gin.Engine) {
 		}
 
 		finishDone(c, 0, "", nil)
+	})
+
+	posts.GET("/:parent/files", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		if files, err := uploadmgr.List(c); err == nil {
+			finishDone(c, 0, "", files)
+		} else {
+			finishError(c, -1, err)
+		}
 	})
 
 	tools := v1.Group("/tools")

@@ -58,13 +58,8 @@ func (o *FileUpload) Upload(c *gin.Context) error {
 
 // List does file listing
 func (o *FileUpload) List(c *gin.Context) ([]string, error) {
-	pidstr, ok := c.GetQuery("pid")
-	pid, err := strconv.ParseInt(pidstr, 10, 64)
-	if !ok || err != nil {
-		return nil, errors.New("invalid pid")
-	}
-
-	return o.mgr.List(pid)
+	parent := toInt64(c.Param("parent"))
+	return o.mgr.List(parent)
 }
 
 // Delete does file deleting
