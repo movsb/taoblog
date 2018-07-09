@@ -135,12 +135,6 @@ function post_widget_files($p=null) {
         
         var data = new FormData();
 
-        // 当前文章ID（新文章并没有ID，这里先临时使用下一篇文章ID）
-        // 所以，不能同时编辑并发表新文章
-        var pid = $('#form-post input[name="id"]').val();
-
-        data.append('pid', pid);
-
         // 待上传的文件列表
         for(var i = 0, n = files.length; i < n; i++) {
             var file = files[i];
@@ -151,10 +145,14 @@ function post_widget_files($p=null) {
         var progress = $('.widget-files .progress');
         progress.attr('value', 0);
 
+        // 当前文章ID（新文章并没有ID，这里先临时使用下一篇文章ID）
+        // 所以，不能同时编辑并发表新文章
+        var pid = $('#form-post input[name="id"]').val();
+
         // https://stackoverflow.com/a/8758614/3628322
         $.ajax({
             // Your server script to process the upload
-            url: '/apiv2/upload/upload',
+            url: '/v1/posts/' + pid + '/files',
             type: 'POST',
 
             // Form data

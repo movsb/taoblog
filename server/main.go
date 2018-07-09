@@ -228,19 +228,6 @@ func main() {
 
 	uploadapi := router.Group("/upload")
 
-	uploadapi.POST("/upload", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-
-		if err := uploadmgr.Upload(c); err != nil {
-			finishError(c, -1, err)
-			return
-		} else {
-			finishDone(c, 0, "", nil)
-		}
-	})
-
 	uploadapi.POST("/delete", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
@@ -373,6 +360,19 @@ func routerV1(router *gin.Engine) {
 			finishDone(c, 0, "", files)
 		} else {
 			finishError(c, -1, err)
+		}
+	})
+
+	posts.POST("/:parent/files", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		if err := uploadmgr.Upload(c); err != nil {
+			finishError(c, -1, err)
+			return
+		} else {
+			finishDone(c, 0, "", nil)
 		}
 	})
 

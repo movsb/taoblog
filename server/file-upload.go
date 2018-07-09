@@ -31,11 +31,8 @@ func NewFileUpload(mgr IFileManager) *FileUpload {
 // Upload does file saving
 func (o *FileUpload) Upload(c *gin.Context) error {
 	var err error
-	pidstr, ok := c.GetPostForm("pid")
-	pid, err := strconv.ParseInt(pidstr, 10, 64)
-	if !ok || err != nil {
-		return errors.New("invalid pid")
-	}
+
+	parent := toInt64(c.Param("parent"))
 
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -48,7 +45,7 @@ func (o *FileUpload) Upload(c *gin.Context) error {
 			return err
 		}
 		defer fp.Close()
-		if err = o.mgr.Put(pid, file.Filename, fp); err != nil {
+		if err = o.mgr.Put(parent, file.Filename, fp); err != nil {
 			return err
 		}
 	}
