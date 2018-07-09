@@ -283,30 +283,6 @@ func main() {
 		finishDone(c, 0, "", sb.String())
 	})
 
-	cmtapi := router.Group("/comments")
-
-	cmtapi.POST("/delete", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-
-		var err error
-
-		idstr, has := c.GetPostForm("id")
-		id, err := strconv.ParseInt(idstr, 10, 64)
-		if !has || err != nil || id < 0 {
-			finishError(c, -1, fmt.Errorf("无效评论ID"))
-			return
-		}
-
-		if err = postcmtsmgr.DeletePostComment(id); err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		finishDone(c, 0, "", nil)
-	})
-
 	routerV1(router)
 
 	router.Run(config.listen)
@@ -377,6 +353,27 @@ func routerV1(router *gin.Engine) {
 		}
 
 		finishDone(c, 0, "", cmts)
+	})
+
+	posts.DELETE("/:parent/comments/:name", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		var err error
+
+		parent := toInt64(c.Param("parent"))
+		id := toInt64(c.Param("name"))
+
+		// TODO check referrer
+		_ = parent
+
+		if err = postcmtsmgr.DeletePostComment(id); err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		finishDone(c, 0, "", nil)
 	})
 
 	tools := v1.Group("/tools")

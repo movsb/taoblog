@@ -359,23 +359,21 @@ Comment.prototype.reply_to = function(p){
 };
 
 Comment.prototype.delete_me = function(p) {
-	$.post(
-		'/apiv2/comments/delete',
-		{
-			id: +p,
-		},
-		function(data) {
+    var pid = $('#post-id').val();
+	$.ajax({
+        url: '/v1/posts/' + pid + '/comments/' + p,
+        type: 'DELETE',
+        success: function(data) {
 			if(data.code == 0) {
 				$('#comment-'+p).remove();
 			} else {
 				alert(data.msgs);
 			}
 		},
-		'json'
-	)
-	.fail(function(){
-		alert('删除失败。');
-	});
+        error: function(){
+            alert('删除失败。');
+        }
+    });
 };
 
 // 为上一级评论添加div
