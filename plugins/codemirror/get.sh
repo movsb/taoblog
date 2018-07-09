@@ -2,7 +2,7 @@
 
 [ -f codemirror.js ] && exit 0
 
-curl http://codemirror.net/codemirror.zip > codemirror.zip
+curl -L http://codemirror.net/codemirror.zip > codemirror.zip
 unzip codemirror.zip
 cd codemirror-*
 

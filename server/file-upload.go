@@ -1,10 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -61,17 +59,12 @@ func (o *FileUpload) List(c *gin.Context) ([]string, error) {
 
 // Delete does file deleting
 func (o *FileUpload) Delete(c *gin.Context) error {
-	pidstr, ok := c.GetPostForm("pid")
-	pid, err := strconv.ParseInt(pidstr, 10, 64)
-	if !ok || err != nil {
-		return errors.New("invalid pid")
-	}
-	pidstr = fmt.Sprint(pid)
+	parent := toInt64(c.Param("parent"))
+	name := c.Param("name")
 
-	name := c.DefaultPostForm("name", "")
 	if name == "" {
-		return errors.New("bad name")
+		return fmt.Errorf("bad name")
 	}
 
-	return o.mgr.Delete(pid, name)
+	return o.mgr.Delete(parent, name)
 }

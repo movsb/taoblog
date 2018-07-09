@@ -87,20 +87,21 @@ function post_widget_files($p=null) {
             var li = $(this).parent().parent();
             var name = $(this).parent().prev().text();
             var pid = $('#form-post input[name="id"]').val();
-            $.post('/apiv2/upload/delete',
-                {
-                    pid: pid,
-                    name: name,
-                },
-                function(data) {
+            $.ajax({
+                url: '/v1/posts/' + pid + '/files/' + encodeURI(name),
+                type: 'DELETE',
+                success: function(data) {
                     if(data.code == 0) {
                         li.remove();
                     }
                     else {
                         alert('删除失败。');
                     }
+                },
+                error: function() {
+                    alert('删除失败。');
                 }
-            );
+            });
             return false;
         });
     }

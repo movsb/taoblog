@@ -226,21 +226,6 @@ func main() {
 		finishDone(c, 0, "", nil)
 	})
 
-	uploadapi := router.Group("/upload")
-
-	uploadapi.POST("/delete", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-
-		err := uploadmgr.Delete(c)
-		if err == nil {
-			finishDone(c, 0, "", nil)
-		} else {
-			finishError(c, -1, nil)
-		}
-	})
-
 	backupapi := router.Group("/backups")
 
 	backupapi.GET("backup", func(c *gin.Context) {
@@ -370,9 +355,21 @@ func routerV1(router *gin.Engine) {
 
 		if err := uploadmgr.Upload(c); err != nil {
 			finishError(c, -1, err)
-			return
 		} else {
 			finishDone(c, 0, "", nil)
+		}
+	})
+
+	posts.DELETE("/:parent/files/*name", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		err := uploadmgr.Delete(c)
+		if err == nil {
+			finishDone(c, 0, "", nil)
+		} else {
+			finishError(c, -1, nil)
 		}
 	})
 
