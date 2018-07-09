@@ -19,7 +19,6 @@ require_once 'models/posts.php';
 require_once 'models/taxonomies.php';
 require_once 'models/comments.php';
 require_once 'models/tags.php';
-require_once 'models/shuoshuo.php';
 
 require_once 'tbmain.php';
 
@@ -40,7 +39,6 @@ $tbcmts         = new TB_Comments;
 $tbquery        = new TB_Query;
 $tbdate         = new TB_DateTime;
 $tbtag          = new TB_Tags;
-$tbshuoshuo     = new TB_Shuoshuo;
 $tbapi          = new TB_API;
 
 $tbmain         = new TB_Main;

@@ -4,16 +4,6 @@ namespace api\post;
 
 defined('TBPATH') or die('Silence is golden.');
 
-function check_existence() {
-    global $tbapi;
-    global $tbshuoshuo;
-
-    $id = (int)$_REQUEST['id'];
-    if($id == 0 || !$tbshuoshuo->has($id)) {
-        $tbapi->err(-1, "doesn't exist");
-    }
-} 
-
 if($tbapi->method == 'update') {
     $tbapi->auth();
 

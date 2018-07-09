@@ -22,11 +22,3 @@ ALTER TABLE `taxonomies` CHANGE `slug` `slug` VARCHAR(32) CHARACTER SET utf8mb4 
 
 -- tags
 ALTER TABLE `tags` CHANGE `name` `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
-
--- shuoshuo
-ALTER TABLE `shuoshuo` CHANGE `content` `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
-ALTER TABLE `shuoshuo` CHANGE `source` `source` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- shuoshuo_comments
-ALTER TABLE `shuoshuo_comments` CHANGE `author` `author` TINYTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
-ALTER TABLE `shuoshuo_comments` CHANGE `content` `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;

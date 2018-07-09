@@ -15,8 +15,6 @@
             echo htmlspecialchars($the->title);
         } else if($tbquery->is_tag()) {
             echo htmlspecialchars($tbquery->tags);
-        } else if($tbquery->is_memory()) {
-            echo '说说';
         } else if(!$tbquery->count) {
             echo '404';
         }

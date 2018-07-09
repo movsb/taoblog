@@ -26,7 +26,6 @@ class TB_Query {
     public function is_feed()       { return $this->type === 'feed'; }
     public function is_sitemap()    { return $this->type === 'sitemap'; } 
     public function is_archive()    { return $this->type === 'archive'; }
-    public function is_memory()     { return $this->type === 'memory'; }
 
     // 临时使用，待寻找更好的解决办法
     public function push_404() {
@@ -77,7 +76,6 @@ class TB_Query {
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/sitemap\.xml$'                                   => 'sitemap=1',
-            '^/memory$'                                         => 'memory=1',
             '^/archives$'                                       => 'archives=1',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
@@ -151,12 +149,6 @@ class TB_Query {
         // 处理归档
         if(isset($this->internal_query['archives'])) {
             $this->type = 'archive'; // 没有 s
-            return true;
-        }
-
-        // 处理说说
-        if(isset($this->internal_query['memory'])) {
-            $this->type = 'memory';
             return true;
         }
 

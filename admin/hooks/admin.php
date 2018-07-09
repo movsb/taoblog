@@ -15,7 +15,6 @@ add_hook('admin_left', 'adminLeftAll');
 function adminLeftAll()
 {
     echo '<li><a href="/">首页</a></li>';
-    echo '<li><a href="shuoshuo.php">发表说说</a></li>';
     echo '<li><a href="post.php">发表文章</a></li>';
     echo '<li><a href="post.php?type=page">发表页面</a></li>';
     echo '<li><a href="post-manage.php">文章管理</a></li>';
