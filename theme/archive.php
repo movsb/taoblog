@@ -169,11 +169,7 @@ $('.date').on('click',function(e) {
             toggle_loading(ul, true);
             var yy = li.attr('data-yy');
             var mm = li.attr('data-mm');
-            $.get('/api/post/get_date_posts',
-                {
-                    yy: yy,
-                    mm: mm,
-                },
+            $.get('/v1/archives/dates/' + yy + '/' + mm,
                 function(data) {
                     get_entries_callback(data, ul);
                 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"./internal/post_translators"
+	"./internal/utils/datetime"
 )
 
 
@@ -158,6 +159,28 @@ func (z *xPostManager) GetPostsByTags(tag string) ([]*PostForArchiveQuery, error
 		"posts.id=post_tags.post_id",
 		fmt.Sprintf("post_tags.tag_id in (%s)", joinInts(ids, ",")),
 	}
+
+	return z.getRowPosts(q)
+}
+
+func (z *xPostManager) GetPostsByDate(yy, mm int64) ([]*PostForArchiveQuery, error) {
+	q := make(map[string]interface{})
+	q["select"] = "id,title"
+	q["from"] = "posts"
+	q["where"] = []string{
+		"type='post'",
+	}
+	if yy > 1970 {
+		var start, end string
+		if 1 <= mm && mm <= 12 {
+			start, end = datetime.MonthStartEnd(int(yy), int(mm))
+		} else {
+			start, end = datetime.YearStartEnd(int(yy))
+		}
+		q["where"] = append(q["where"].([]string), fmt.Sprintf("date>='%s' AND date<='%s'", start, end))
+	}
+
+	q["orderby"] = "date DESC"
 
 	return z.getRowPosts(q)
 }

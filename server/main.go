@@ -397,6 +397,19 @@ func routerV1(router *gin.Engine) {
 		finishDone(c, 0, "", ps)
 	})
 
+	archives.GET("/dates/:year/:month", func(c *gin.Context) {
+		year := toInt64(c.Param("year"))
+		month := toInt64(c.Param("month"))
+
+		ps, err := postmgr.GetPostsByDate(year, month)
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		finishDone(c, 0, "", ps)
+	})
+
 	tools := v1.Group("/tools")
 
 	tools.POST("/aes2htm", func(c *gin.Context) {

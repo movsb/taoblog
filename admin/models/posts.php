@@ -871,46 +871,6 @@ class TB_Posts {
         return $x;
     }
 
-    // query_by_date 改的
-    public function get_date_posts($yy, $mm) {
-        global $tbdb;
-        global $tbdate;
-
-        $yy = (int)$yy;
-        $mm = (int)$mm;
-
-        $sql = array();
-        $sql['select']  = 'id,date,title';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "type='post'";
-
-        if($yy >= 1970) {
-            if($mm >= 1 && $mm <= 12) {
-                $startend = $tbdate->the_month_startend_gmdate($yy, $mm);
-            } else {
-                $startend = $tbdate->the_year_startend_gmdate($yy);
-            }
-
-            $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
-        }
-
-        $sql['orderby'] = 'date DESC';
-
-        $sql = apply_hooks('before_query_posts', 0, $sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        return $p;
-    }
-
     public function get_count_of_type($type) {
         global $tbdb;
 
