@@ -4,32 +4,7 @@ namespace api\post;
 
 defined('TBPATH') or die('Silence is golden.');
 
-if($tbapi->method == 'update') {
-    $tbapi->auth();
-
-    $id         = (int)$tbapi->expected('id');
-    $content    = (string)$tbapi->expected('content');
-
-    $r = $tbpost->tmp_update_content($id, $content) ? 0 : -1;
-
-    $tbapi->err($r, $tbpost->error);
-}
-elseif($tbapi->method == 'get') {
-    $id = (int)$tbapi->expected('id');
-    // TODO 使用 tbquery 的查询功能
-    $posts = $tbpost->query_by_id($id,'');
-
-    if($posts === false || !count($posts)) {
-        $tbapi->err(-1,"");
-    }
-
-    $tbapi->done($posts[0]);
-}
-elseif($tbapi->method == 'get_id') {
-    $tbapi->auth();
-
-    $tbapi->done(["id"=>$tbpost->the_next_id()]);
-} elseif ($tbapi->method == 'get_tag_posts') {
+if ($tbapi->method == 'get_tag_posts') {
     $tag = $tbapi->expected('tag');
     if (!strlen($tag)) {
         $tbapi->err(-1, "");

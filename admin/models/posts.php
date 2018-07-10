@@ -960,27 +960,6 @@ class TB_Posts {
         return $rows->fetch_object()->size;
     }
 
-    public function tmp_update_content($pid, $content) {
-        global $tbdb;
-        global $tbdate;
-
-        $r = false;
-
-        $sql = "UPDATE posts SET content=?,modified=? WHERE id=? LIMIT 1";
-        if($stmt = $tbdb->prepare($sql)) {
-            $modified = $tbdate->mysql_datetime_gmt();
-            if($stmt->bind_param('ssi', $content, $modified, $pid)) {
-                $r = $stmt->execute();
-                if(!$r) {
-                    $this->error = $stmt->error;
-                }
-            }
-            $stmt->close();
-        }
-
-        return $r;
-    }
-
     public function increase_page_view_count(int $pid) {
         global $tbdb;
         $sql = "UPDATE posts SET page_view=page_view+1 WHERE id=".$pid." LIMIT 1";
