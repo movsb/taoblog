@@ -194,10 +194,7 @@ $('.tags').on('click',function(e) {
             li.attr('data-clicked', '1');
             toggle_loading(ul, true);
             var name = li.attr('data-name');
-            $.get('/api/post/get_tag_posts',
-                {
-                    tag: name,
-                },
+            $.get('/v1/archives/tags/' + encodeURI(name),
                 function(data) {
                     get_entries_callback(data, ul);
                 }

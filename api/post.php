@@ -4,20 +4,7 @@ namespace api\post;
 
 defined('TBPATH') or die('Silence is golden.');
 
-if ($tbapi->method == 'get_tag_posts') {
-    $tag = $tbapi->expected('tag');
-    if (!strlen($tag)) {
-        $tbapi->err(-1, "");
-    }
-
-    $posts = $tbpost->query_by_tags($tag, false);
-    if (!is_array($posts)) {
-        $tbapi->err(-1, "");
-    }
-
-    $tbapi->done($posts);
-}
-elseif($tbapi->method == 'get_date_posts') {
+if($tbapi->method == 'get_date_posts') {
     $yy = (int)$tbapi->expected('yy');
     $mm = (int)$tbapi->expected('mm');
 
@@ -34,4 +21,3 @@ elseif($tbapi->method == 'get_date_posts') {
 } else {
     $tbapi->bad();
 }
-

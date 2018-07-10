@@ -107,16 +107,7 @@ func (z *xPostManager) BeforeQuery(q map[string]interface{}) map[string]interfac
 	return q
 }
 
-func (z *xPostManager) GetPostsByCategory(catID int64) ([]*PostForArchiveQuery, error) {
-	q := make(map[string]interface{})
-	q["select"] = "id,title"
-	q["from"] = "posts"
-	q["where"] = []string{
-		fmt.Sprintf("taxonomy=%d", catID),
-		"type='post'",
-	}
-	q["orderby"] = "date DESC"
-
+func (z *xPostManager) getRowPosts(q map[string]interface{}) ([]*PostForArchiveQuery, error) {
 	q = z.BeforeQuery(q)
 	s := BuildQueryString(q)
 	log.Println(s)
@@ -139,4 +130,34 @@ func (z *xPostManager) GetPostsByCategory(catID int64) ([]*PostForArchiveQuery, 
 	}
 
 	return ps, rows.Err()
+}
+
+func (z *xPostManager) GetPostsByCategory(catID int64) ([]*PostForArchiveQuery, error) {
+	q := make(map[string]interface{})
+
+	q["select"] = "id,title"
+	q["from"] = "posts"
+	q["where"] = []string{
+		fmt.Sprintf("taxonomy=%d", catID),
+		"type='post'",
+	}
+	q["orderby"] = "date DESC"
+
+	return z.getRowPosts(q)
+}
+
+func (z *xPostManager) GetPostsByTags(tag string) ([]*PostForArchiveQuery, error) {
+	id := tagmgr.getTagID(tag)
+	ids := tagmgr.getAliasTagsAll([]int64{id})
+
+	q := make(map[string]interface{})
+
+	q["select"] = "posts.id,posts.title"
+	q["from"] = "posts,post_tags"
+	q["where"] = []string{
+		"posts.id=post_tags.post_id",
+		fmt.Sprintf("post_tags.tag_id in (%s)", joinInts(ids, ",")),
+	}
+
+	return z.getRowPosts(q)
 }

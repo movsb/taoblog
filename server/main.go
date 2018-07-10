@@ -386,6 +386,17 @@ func routerV1(router *gin.Engine) {
 		finishDone(c, 0, "", ps)
 	})
 
+	archives.GET("/tags/:name", func(c *gin.Context) {
+		tag := c.Param("name")
+		ps, err := postmgr.GetPostsByTags(tag)
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		finishDone(c, 0, "", ps)
+	})
+
 	tools := v1.Group("/tools")
 
 	tools.POST("/aes2htm", func(c *gin.Context) {
