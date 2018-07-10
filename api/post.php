@@ -31,17 +31,7 @@ elseif($tbapi->method == 'get_date_posts') {
     }
 
     $tbapi->done($posts);
-}
-elseif($tbapi->method == 'get_cat_posts') {
-    $cid = (int)$tbapi->expected('cid');
-    $posts = $tbpost->get_cat_posts($cid);
-    if(!is_array($posts)) {
-        $tbapi->err(-1,"");
-    }
-
-    $tbapi->done($posts);
-}
-else {
+} else {
     $tbapi->bad();
 }
 

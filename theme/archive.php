@@ -117,7 +117,7 @@ function get_entries_callback(data, ul) {
         }
     }
     else {
-        alert(data.msg);
+        alert(data.msg || data.msgs);
     }
 }
 
@@ -147,10 +147,7 @@ $('.cats').on('click',function(e) {
             li.attr('data-clicked', '1');
             toggle_loading(ul, true);
             var cid = li.attr('data-cid');
-            $.get('/api/post/get_cat_posts',
-                {
-                    cid: cid,
-                },
+            $.get('/v1/archives/categories/' + cid,
                 function(data) {
                     get_entries_callback(data, ul);
                 }

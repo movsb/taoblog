@@ -373,6 +373,19 @@ func routerV1(router *gin.Engine) {
 		}
 	})
 
+	archives := v1.Group("/archives")
+
+	archives.GET("/categories/:name", func(c *gin.Context) {
+		id := toInt64(c.Param("name"))
+		ps, err := postmgr.GetPostsByCategory(id)
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+
+		finishDone(c, 0, "", ps)
+	})
+
 	tools := v1.Group("/tools")
 
 	tools.POST("/aes2htm", func(c *gin.Context) {

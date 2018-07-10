@@ -835,36 +835,6 @@ class TB_Posts {
         return $uri ? '/'.$uri : '';
     }
 
-    public function get_cat_posts($cid){
-        global $tbdb;
-        global $tbtax;
-        global $tbquery;
-
-        $cid = (int)$cid;
-        if($cid <= 0) return false;
-
-        $sql = array();
-        $sql['select']  = 'id,date,title';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "taxonomy=$cid";
-        $sql['where'][] = "type='post'";
-        $sql['orderby'] = 'date DESC';
-
-        $sql = apply_hooks('before_query_posts', 0, $sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        return $p;
-    }
-
     public function get_date_archives() {
         global $tbdb;
 

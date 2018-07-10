@@ -4,11 +4,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"./internal/post_translators"
 )
+
+
+type PostForArchiveQuery struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+}
 
 type xPostManager struct {
 	db *sql.DB
@@ -88,4 +95,48 @@ func (me *xPostManager) getCommentCount(pid int64) (count int) {
 		count = -1
 	}
 	return
+}
+
+func (z *xPostManager) BeforeQuery(q map[string]interface{}) map[string]interface{} {
+	if _, ok := q["where"]; !ok {
+		q["where"] = []string{}
+	}
+	ws := q["where"].([]string)
+	ws = append(ws, "status='public'")
+	q["where"] = ws
+	return q
+}
+
+func (z *xPostManager) GetPostsByCategory(catID int64) ([]*PostForArchiveQuery, error) {
+	q := make(map[string]interface{})
+	q["select"] = "id,title"
+	q["from"] = "posts"
+	q["where"] = []string{
+		fmt.Sprintf("taxonomy=%d", catID),
+		"type='post'",
+	}
+	q["orderby"] = "date DESC"
+
+	q = z.BeforeQuery(q)
+	s := BuildQueryString(q)
+	log.Println(s)
+
+	rows, err := z.db.Query(s)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	ps := make([]*PostForArchiveQuery, 0)
+
+	for rows.Next() {
+		p := &PostForArchiveQuery{}
+		if err = rows.Scan(&p.ID, &p.Title); err != nil {
+			return nil, err
+		}
+		ps = append(ps, p)
+	}
+
+	return ps, rows.Err()
 }
