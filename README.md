@@ -34,7 +34,6 @@ favicon.ico | 网站图标
 README.md   | 此文件
 Makefile    | 编译、拉取相关数据
 admin/      | 博客程序目录、后台目录
-api/        | API服务端（PHP实现，待移除）
 docs/       | 一些文档
 plugins/    | 插件目录
 setup/      | 安装脚本目录、配置文件目录
