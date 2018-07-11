@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -16,7 +15,7 @@ func toolpath(name string) string {
 func aes2htm(c *gin.Context) {
 	source, ok := c.GetPostForm("source")
 	if !ok {
-		finishError(c, -1, errors.New("expect: source"))
+		EndReq(c, false, "expect: source")
 		return
 	}
 
@@ -25,9 +24,5 @@ func aes2htm(c *gin.Context) {
 	strread := strings.NewReader(source)
 	cmd.Stdin = strread
 	outBytes, err := cmd.Output()
-	if err != nil {
-		finishError(c, -1, err)
-		return
-	}
-	finishDone(c, 0, "", string(outBytes))
+	EndReq(c, err, string(outBytes))
 }

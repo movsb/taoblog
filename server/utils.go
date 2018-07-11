@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -20,14 +21,28 @@ func strInSlice(str []string, s string) bool {
 	return false
 }
 
-func finishDone(c *gin.Context, code int, msgs string, data interface{}) {
-	c.JSON(200, &xJSONRet{code, msgs, data})
+// EndReq succs or fails a request.
+func EndReq(c *gin.Context, err interface{}, dat interface{}) {
+	succ := false
+
+	if err == nil {
+		succ = true
+	} else if val, ok := err.(error); ok {
+		succ = val == nil
+	} else if val, ok := err.(bool); ok {
+		succ = val
+	} else if val, ok := err.(string); ok {
+		succ = val == ""
+	}
+
+	if succ {
+		c.JSON(http.StatusOK, dat)
+	} else {
+		c.JSON(http.StatusInternalServerError, err)
+	}
 }
 
-func finishError(c *gin.Context, code int, err error) {
-	c.JSON(200, &xJSONRet{code, fmt.Sprint(err), nil})
-}
-
+// BuildQueryString builds SQL query string.
 func BuildQueryString(fields map[string]interface{}) string {
 	var q string
 

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"database/sql"
-	"errors"
 	"flag"
 	"fmt"
 	"strconv"
@@ -39,18 +38,12 @@ var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
 
-type xJSONRet struct {
-	Code int         `json:"code"`
-	Msgs string      `json:"msgs"`
-	Data interface{} `json:"data"`
-}
-
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
 		return true
 	}
 	if finish {
-		finishError(c, -1, errors.New("auth error"))
+		EndReq(c, false, "auth error")
 	}
 	return false
 }
@@ -111,7 +104,7 @@ func main() {
 		name := c.DefaultQuery("name", "")
 		err := optmgr.Has(name)
 		has := name != "" && err == nil
-		finishDone(c, 0, "", has)
+		EndReq(c, err, has)
 	})
 
 	optapi.GET("/get", func(c *gin.Context) {
@@ -120,11 +113,7 @@ func main() {
 		}
 		name := c.DefaultQuery("name", "")
 		val, err := optmgr.Get(name)
-		if err != nil {
-			finishError(c, -1, err)
-		} else {
-			finishDone(c, 0, "", val)
-		}
+		EndReq(c, err, val)
 	})
 
 	optapi.POST("/set", func(c *gin.Context) {
@@ -133,11 +122,8 @@ func main() {
 		}
 		name := c.DefaultPostForm("name", "")
 		val := c.DefaultPostForm("value", "")
-		if err := optmgr.Set(name, val); err == nil {
-			finishDone(c, 0, "", nil)
-		} else {
-			finishError(c, -1, err)
-		}
+		err := optmgr.Set(name, val)
+		EndReq(c, err, val)
 	})
 
 	optapi.POST("/del", func(c *gin.Context) {
@@ -145,11 +131,8 @@ func main() {
 			return
 		}
 		name := c.DefaultPostForm("name", "")
-		if err := optmgr.Del(name); err == nil {
-			finishDone(c, 0, "", nil)
-		} else {
-			finishError(c, -1, err)
-		}
+		err := optmgr.Del(name)
+		EndReq(c, err, nil)
 	})
 
 	optapi.GET("/list", func(c *gin.Context) {
@@ -157,43 +140,10 @@ func main() {
 			return
 		}
 		items, err := optmgr.List()
-		if err != nil {
-			finishError(c, -1, err)
-		}
-
-		finishDone(c, 0, "", items)
+		EndReq(c, err, items)
 	})
 
 	postapi := router.Group("/posts")
-
-	postapi.GET("/has", func(c *gin.Context) {
-		pidstr, has := c.GetQuery("pid")
-		pid, err := strconv.ParseInt(pidstr, 10, 64)
-		if !has || err != nil || pid < 0 {
-			c.String(400, "invalid argument: pid")
-			return
-		}
-		if err := postmgr.has(pid); err != nil {
-			finishError(c, -1, err)
-		} else {
-			finishDone(c, 0, "", nil)
-		}
-	})
-
-	postapi.GET("/get-tag-names", func(c *gin.Context) {
-		pidstr, has := c.GetQuery("pid")
-		pid, err := strconv.ParseInt(pidstr, 10, 64)
-		if !has || err != nil || pid < 0 {
-			c.String(400, "invalid argument: pid")
-			return
-		}
-		if err := postmgr.has(pid); err != nil {
-			finishError(c, -1, err)
-			return
-		}
-		names := tagmgr.getTagNames(pid)
-		finishDone(c, 0, "", names)
-	})
 
 	postapi.POST("/update", func(c *gin.Context) {
 		if !auth(c, true) {
@@ -218,12 +168,7 @@ func main() {
 		}
 
 		err = postmgr.update(pid, typ, source)
-		if err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		finishDone(c, 0, "", nil)
+		EndReq(c, err, nil)
 	})
 
 	backupapi := router.Group("/backups")
@@ -234,13 +179,8 @@ func main() {
 		}
 
 		var sb bytes.Buffer
-		var er error
-		er = backupmgr.Backup(&sb)
-		if er != nil {
-			finishError(c, -1, er)
-			return
-		}
-		finishDone(c, 0, "", sb.String())
+		err := backupmgr.Backup(&sb)
+		EndReq(c, err, sb.String())
 	})
 
 	routerV1(router)
@@ -260,12 +200,7 @@ func routerV1(router *gin.Engine) {
 
 	posts.GET("", func(c *gin.Context) {
 		rets, err := getAllPosts(gdb)
-		if err != nil {
-			c.JSON(500, fmt.Sprint(err))
-			return
-		}
-
-		c.JSON(200, rets)
+		EndReq(c, err, rets)
 	})
 
 	posts.GET("/:parent/files/*name", func(c *gin.Context) {
@@ -288,7 +223,7 @@ func routerV1(router *gin.Engine) {
 	posts.GET("/:parent/comments:count", func(c *gin.Context) {
 		parent := toInt64(c.Param("parent"))
 		count := postmgr.getCommentCount(parent)
-		finishDone(c, 0, "", count)
+		EndReq(c, true, count)
 	})
 
 	posts.GET("/:parent/comments", func(c *gin.Context) {
@@ -302,7 +237,7 @@ func routerV1(router *gin.Engine) {
 		cmts, err := postcmtsmgr.GetPostComments(offset, count, parent, order == "asc")
 
 		if err != nil {
-			finishError(c, -1, err)
+			EndReq(c, err, nil)
 			return
 		}
 
@@ -312,7 +247,7 @@ func routerV1(router *gin.Engine) {
 			c.private = loggedin
 		}
 
-		finishDone(c, 0, "", cmts)
+		EndReq(c, true, cmts)
 	})
 
 	posts.DELETE("/:parent/comments/:name", func(c *gin.Context) {
@@ -328,12 +263,8 @@ func routerV1(router *gin.Engine) {
 		// TODO check referrer
 		_ = parent
 
-		if err = postcmtsmgr.DeletePostComment(id); err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		finishDone(c, 0, "", nil)
+		err = postcmtsmgr.DeletePostComment(id)
+		EndReq(c, err, nil)
 	})
 
 	posts.GET("/:parent/files", func(c *gin.Context) {
@@ -341,11 +272,8 @@ func routerV1(router *gin.Engine) {
 			return
 		}
 
-		if files, err := uploadmgr.List(c); err == nil {
-			finishDone(c, 0, "", files)
-		} else {
-			finishError(c, -1, err)
-		}
+		files, err := uploadmgr.List(c)
+		EndReq(c, err, files)
 	})
 
 	posts.POST("/:parent/files", func(c *gin.Context) {
@@ -353,11 +281,8 @@ func routerV1(router *gin.Engine) {
 			return
 		}
 
-		if err := uploadmgr.Upload(c); err != nil {
-			finishError(c, -1, err)
-		} else {
-			finishDone(c, 0, "", nil)
-		}
+		err := uploadmgr.Upload(c)
+		EndReq(c, err, nil)
 	})
 
 	posts.DELETE("/:parent/files/*name", func(c *gin.Context) {
@@ -366,11 +291,7 @@ func routerV1(router *gin.Engine) {
 		}
 
 		err := uploadmgr.Delete(c)
-		if err == nil {
-			finishDone(c, 0, "", nil)
-		} else {
-			finishError(c, -1, nil)
-		}
+		EndReq(c, err, nil)
 	})
 
 	archives := v1.Group("/archives")
@@ -378,23 +299,13 @@ func routerV1(router *gin.Engine) {
 	archives.GET("/categories/:name", func(c *gin.Context) {
 		id := toInt64(c.Param("name"))
 		ps, err := postmgr.GetPostsByCategory(id)
-		if err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		finishDone(c, 0, "", ps)
+		EndReq(c, err, ps)
 	})
 
 	archives.GET("/tags/:name", func(c *gin.Context) {
 		tag := c.Param("name")
 		ps, err := postmgr.GetPostsByTags(tag)
-		if err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		finishDone(c, 0, "", ps)
+		EndReq(c, err, ps)
 	})
 
 	archives.GET("/dates/:year/:month", func(c *gin.Context) {
@@ -402,12 +313,7 @@ func routerV1(router *gin.Engine) {
 		month := toInt64(c.Param("month"))
 
 		ps, err := postmgr.GetPostsByDate(year, month)
-		if err != nil {
-			finishError(c, -1, err)
-			return
-		}
-
-		finishDone(c, 0, "", ps)
+		EndReq(c, err, ps)
 	})
 
 	tools := v1.Group("/tools")
@@ -420,7 +326,7 @@ func routerV1(router *gin.Engine) {
 		host := "https://" + optmgr.GetDef("home", "localhost")
 		maps, err := createSitemap(gdb, host)
 		if err != nil {
-			finishError(c, -1, err)
+			EndReq(c, err, nil)
 			return
 		}
 		c.Header("Content-Type", "application/xml")
