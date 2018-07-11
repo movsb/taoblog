@@ -36,7 +36,6 @@ if($tbquery->query() === false){
 
 if(!$tbquery->have() 
     && !$tbquery->is_home() 
-    && !$tbquery->is_sitemap()
     && !$tbquery->is_archive()
 ){
     if(!$tbquery->is_query_modification) {
@@ -52,6 +51,5 @@ if($tbquery->is_home())             require('theme/index.php');
 else if($tbquery->is_singular())    require('theme/single.php');
 else if($tbquery->is_tag())         require('theme/tag.php');
 else if($tbquery->is_feed())        require('theme/feed.php');
-else if($tbquery->is_sitemap())     require('theme/sitemap.php');
 else if($tbquery->is_archive())     require('theme/archive.php');
 

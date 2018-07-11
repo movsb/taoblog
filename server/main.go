@@ -415,4 +415,15 @@ func routerV1(router *gin.Engine) {
 	tools.POST("/aes2htm", func(c *gin.Context) {
 		aes2htm(c)
 	})
+
+	v1.Group("/sitemap.xml").GET("", func(c *gin.Context) {
+		host := "https://" + optmgr.GetDef("home", "localhost")
+		maps, err := createSitemap(gdb, host)
+		if err != nil {
+			finishError(c, -1, err)
+			return
+		}
+		c.Header("Content-Type", "application/xml")
+		c.String(200, "%s", maps)
+	})
 }

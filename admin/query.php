@@ -24,7 +24,6 @@ class TB_Query {
     public function is_tag()        { return $this->type === 'tag'; }
     public function is_404()        { return $this->type === '404'; }
     public function is_feed()       { return $this->type === 'feed'; }
-    public function is_sitemap()    { return $this->type === 'sitemap'; } 
     public function is_archive()    { return $this->type === 'archive'; }
 
     // 临时使用，待寻找更好的解决办法
@@ -75,7 +74,6 @@ class TB_Query {
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
             '^/tags/(.+)$'                                      => 'tags=$1',
             '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
-            '^/sitemap\.xml$'                                   => 'sitemap=1',
             '^/archives$'                                       => 'archives=1',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
@@ -138,12 +136,6 @@ class TB_Query {
                 header('HTTP/1.1 304 Not Modified');
                 die(0);
             }
-        }
-
-        // 处理 sitemap
-        if(isset($this->internal_query['sitemap'])) {
-            $this->type = 'sitemap';
-            return true;
         }
 
         // 处理归档

@@ -4,22 +4,13 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"html/template"
 )
 
-const sitemapTemplate = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<urlset>
-{{range .}}<url><loc>/{{.}}</loc></url>
-{{end}}
-</urlset>
-`
-
-func makeSitemap(db *sql.DB) string {
-	query := `SELECT id FROM posts WHERE type='post' ORDER BY date DESC`
-	rows, err := db.Query(query)
+func createSitemap(tx *sql.DB, host string) (string, error) {
+	query := `SELECT id FROM posts WHERE type='post' AND status='public' ORDER BY date DESC`
+	rows, err := tx.Query(query)
 	if err != nil {
-		return fmt.Sprint(err)
+		return "", err
 	}
 
 	defer rows.Close()
@@ -34,14 +25,15 @@ func makeSitemap(db *sql.DB) string {
 		ids = append(ids, id)
 	}
 
-	tmpl := template.New("sitemap")
-	tmpl, err = tmpl.Parse(sitemapTemplate)
-	if err != nil {
-		return ""
+	sb := bytes.NewBuffer(nil)
+	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+`)
+	for _, id := range ids {
+		sb.WriteString(fmt.Sprintf("<url><loc>%s/%d/</loc></url>\n", host, id))
 	}
 
-	str := bytes.NewBuffer(nil)
-	tmpl.Execute(str, ids)
+	sb.WriteString("</urlset>\n")
 
-	return str.String()
+	return sb.String(), err
 }

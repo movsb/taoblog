@@ -697,29 +697,6 @@ class TB_Posts {
         return $tbtag->get_post_tag_names($id);
     }
 
-    public function &get_all_posts_id() {
-        global $tbdb;
-
-        $sql = array();
-        $sql['select']  = 'id';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "type='post'";
-        $sql['orderby'] = 'date DESC';
-
-        $sql = apply_hooks('before_query_posts', 0, $sql);
-        $sql = make_query_string($sql);
-
-        $ids = [];
-        $rows = $tbdb->query($sql);
-        if(!$rows) return $ids;
-
-        while($r = $rows->fetch_object())
-            $ids[] = $r->id;
-
-        return $ids;
-    }
-
     public function &get_related_posts($id) 
     {
         global $tbdb;
