@@ -26,8 +26,9 @@ $.get("/v1/posts",
     },
     "json"
     )
-    .fail(function(){
+    .fail(function(jx){
         $('#error').show();
+        alert(jx.responseJSON);
     })
     ;
 </script>

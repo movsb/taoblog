@@ -40,32 +40,30 @@ function post_widget_files($p=null) {
 <script>
     function refresh_files() {
         var pid = $('#form-post input[name="id"]').val();
-        $.get('/v1/posts/' + pid + '/files',
-            function(data) {
-                if(data.code == 0) {
-                    var files = $('.widget-files .list');
-                    files.empty();
+        $.get('/v1/posts/' + pid + '/files')
+        .done(function(data) {
+            var files = $('.widget-files .list');
+            files.empty();
 
-                    data.data.forEach(function(file) {
-                        var li = $('<li/>')
-                            .css('overflow', 'hidden')
-                            .append($('<span />').text(file));
-                        var btns = $('<span style="float:right;" />');
-                        if(/\.(jpg|gif|png|bmp)$/i.test(file)) {
-                            btns.append('<button class="copy_as_md" title="复制为Markdown">复制</button>');
-                        }
-                        btns.append('<button class="delete">删除</button>');
-                        li.append(btns);
-                        files.append(li);
-                    });
-
-                    bind_copy_as_md();
-                    bind_delete();
-                } else {
-                    alert(data.msgs);
+            data.forEach(function(file) {
+                var li = $('<li/>')
+                    .css('overflow', 'hidden')
+                    .append($('<span />').text(file));
+                var btns = $('<span style="float:right;" />');
+                if(/\.(jpg|gif|png|bmp)$/i.test(file)) {
+                    btns.append('<button class="copy_as_md" title="复制为Markdown">复制</button>');
                 }
-            }
-        );
+                btns.append('<button class="delete">删除</button>');
+                li.append(btns);
+                files.append(li);
+            });
+
+            bind_copy_as_md();
+            bind_delete();
+        })
+        .fail(function(x){
+            alert(x.responseText);
+        });
     }
 
     $('.widget-files .refresh').click(function(){
@@ -90,13 +88,8 @@ function post_widget_files($p=null) {
             $.ajax({
                 url: '/v1/posts/' + pid + '/files/' + encodeURI(name),
                 type: 'DELETE',
-                success: function(data) {
-                    if(data.code == 0) {
-                        li.remove();
-                    }
-                    else {
-                        alert('删除失败。');
-                    }
+                success: function() {
+                    li.remove();
                 },
                 error: function() {
                     alert('删除失败。');
@@ -188,16 +181,10 @@ function post_widget_files($p=null) {
                 progress.attr('value', 0);
             },
 
-            success: function(response) {
-                console.log('data:',response);
-                if(response.code === 0) {
-                    $('.widget-files .files').val("");
-                    $('.widget-files .count').text("0 个文件");
-                    refresh_files();
-                }
-                else {
-                    alert(response.error);
-                }
+            success: function() {
+                $('.widget-files .files').val("");
+                $('.widget-files .count').text("0 个文件");
+                refresh_files();
                 progress.attr('value', 0);
             },
         });

@@ -491,11 +491,11 @@ $('#back-to-top').click(function(){
                     source: data,
                 },
                 function(data) {
-                    if(data.code == 0) {
-                        $code.html(data.data);
-                    }
+                    $code.html(data);
                 }
-            );
+            ).fail(function(x) {
+                console.error(x);
+            });
         });
     });
 })();

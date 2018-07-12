@@ -98,8 +98,7 @@ Comment.prototype.init = function() {
                 count: 10,
                 offset: self._loaded,
             },
-            function(data) {
-                var cmts = data.data || [];
+            function(cmts) {
                 var ch_count = 0;
                 for(var i=0; i<cmts.length; i++){
                     $('#comment-list').append(self.gen_comment_item(cmts[i]));
@@ -133,9 +132,11 @@ Comment.prototype.init = function() {
                 $('#comment-title .loaded').text(self._loaded + self._loaded_ch);
             },
             'json'
-        )
+        ).fail(function(x) {
+            alert(x.responseText);
+        })
         .always(setTimeout(function(){
-                $(load).removeAttr('loading');
+            $(load).removeAttr('loading');
         },1500));
     });
 
@@ -221,7 +222,7 @@ Comment.prototype.get_count = function(callback) {
     var pid = $('#post-id').val();
     $.get('/v1/posts/' + pid + '/comments:count',
         function(data) {
-            self._count = data.data;
+            self._count = data;
             $('#comment-title .total').text(self._count);
             callback();
         },
@@ -363,12 +364,8 @@ Comment.prototype.delete_me = function(p) {
 	$.ajax({
         url: '/v1/posts/' + pid + '/comments/' + p,
         type: 'DELETE',
-        success: function(data) {
-			if(data.code == 0) {
-				$('#comment-'+p).remove();
-			} else {
-				alert(data.msgs);
-			}
+        success: function() {
+            $('#comment-'+p).remove();
 		},
         error: function(){
             alert('删除失败。');

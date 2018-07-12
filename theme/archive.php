@@ -103,21 +103,15 @@ function gen_entry(p) {
         );
 }
 
-function get_entries_callback(data, ul) {
-    if(data.code === 0) {
-        var ps = data.data;
-        for(var i=0; i< ps.length; i++) {
-            ul.append(gen_entry(ps[i]));
-        }
-        if(ps.length == 0) {
-            ul.append($('<li/>')
-                .attr('class', 'none')
-                .text('（没有文章）')
-            );
-        }
+function get_entries_callback(ps, ul) {
+    for(var i=0; i< ps.length; i++) {
+        ul.append(gen_entry(ps[i]));
     }
-    else {
-        alert(data.msg || data.msgs);
+    if(ps.length == 0) {
+        ul.append($('<li/>')
+            .attr('class', 'none')
+            .text('（没有文章）')
+        );
     }
 }
 
@@ -151,7 +145,9 @@ $('.cats').on('click',function(e) {
                 function(data) {
                     get_entries_callback(data, ul);
                 }
-            ).always(function() {
+            ).fail(function(x) {
+                alert(x.responseText);
+            }).always(function() {
                 toggle_loading(ul, false);
             });
         }
@@ -173,7 +169,9 @@ $('.date').on('click',function(e) {
                 function(data) {
                     get_entries_callback(data, ul);
                 }
-            ).always(function() {
+            ).fail(function(x) {
+                alert(x.responseText);
+            }).always(function() {
                 toggle_loading(ul, false);
             });
         }
@@ -194,7 +192,9 @@ $('.tags').on('click',function(e) {
                 function(data) {
                     get_entries_callback(data, ul);
                 }
-            ).always(function() {
+            ).fail(function(x) {
+                alert(x.responseText);
+            }).always(function() {
                 toggle_loading(ul, false);
             });
         }
