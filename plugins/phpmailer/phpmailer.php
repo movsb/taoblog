@@ -3,41 +3,25 @@
 defined('TBPATH') or die('Silence is golden');
 
 function pm_mail($recipient, $nickname, $subject, $body) {
-    require_once('class.smtp.php');
-    require_once('class.phpmailer.php');
+    $url = 'http://127.0.0.1:2564/.v1/send_mail';
 
-    $mail = new PHPMailer;
-
-    //$mail->SMTPDebug = 5;                                 // Enable verbose debug output
-
-    $mail->isSMTP();                                        // Set mailer to use SMTP
-    $mail->CharSet = 'utf-8';
-
-    $mail->Host = 'smtp.qq.com';                            // Specify main and backup SMTP servers
-    $mail->SMTPAuth = true;                                 // Enable SMTP authentication
-    $mail->Username = PHPMAILER_EMAIL;                      // SMTP username
-    $mail->Password = PHPMAILER_PASSWD;                     // SMTP password
-    $mail->SMTPSecure = 'ssl';                              // Enable TLS encryption, `ssl` also accepted
-    $mail->Port = 465;                                      // TCP port to connect to
-
-    $mail->From = PHPMAILER_EMAIL;
-    $mail->FromName = '博客评论';
-    $mail->addAddress($recipient, $nickname);               // Add a recipient
-    $mail->isHTML(true);                                    // Set email format to HTML
-
-    $mail->Subject = $subject;
-    $mail->Body    = $body;
-
-    if(!$mail->send()) {
-        $log = TBPATH.'plugins/phpmailer/error.log';
-        if(($fd = fopen($log, 'a'))) {
-            fwrite($fd, $recipient.': '.$mail->ErrorInfo.' --- '.$body);
-            fclose($fd);
-        }
-        return false;
-    }
-
-    return true;
+    $data = array(
+        'author' => $nickname,
+        'email' => $recipient,
+        'subject' => $subject,
+        'body' => $body
+    );
+    
+    // use key 'http' even if you send the request to https://...
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($data)
+        )
+    );
+    $context  = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
 }
 
 function pm_notify_admin(&$arg) {

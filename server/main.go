@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"./internal/file_managers"
+	"./internal/mailer"
 )
 
 type xConfig struct {
@@ -23,6 +25,7 @@ type xConfig struct {
 	key      string
 	files    string
 	fileHost string
+	mail     string
 }
 
 var gkey string
@@ -57,6 +60,7 @@ func main() {
 	flag.StringVar(&config.base, "base", ".", "taoblog directory")
 	flag.StringVar(&config.files, "files", ".", "the files folder")
 	flag.StringVar(&config.fileHost, "file-host", "//localhost", "the backup file host")
+	flag.StringVar(&config.mail, "mail", "//", "example.com:465/user@example.com/password")
 	flag.Parse()
 
 	if config.key == "" {
@@ -184,6 +188,7 @@ func main() {
 	})
 
 	routerV1(router)
+	routerInternalV1(router)
 
 	router.Run(config.listen)
 }
@@ -191,6 +196,49 @@ func main() {
 func toInt64(s string) int64 {
 	n, _ := strconv.ParseInt(s, 10, 64)
 	return n
+}
+
+func routerInternalV1(router *gin.Engine) {
+	v1 := router.Group("/.v1/")
+
+	v1.POST("/send_mail", func(c *gin.Context) {
+		author := c.PostForm("author")
+		email := c.PostForm("email")
+		subject := c.PostForm("subject")
+		body := c.PostForm("body")
+
+		log.Println("send_mail:", author, email, subject, body)
+
+		cfg := strings.SplitN(config.mail, "/", 3)
+		if len(cfg) != 3 {
+			panic("bad mail config")
+		}
+
+		go func() {
+			mc, err := mailer.DialTLS(cfg[0])
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			defer mc.Quit()
+			if err = mc.Auth(cfg[1], cfg[2]); err != nil {
+				log.Println(err)
+				return
+			}
+			if err = mc.SetFrom("博客评论", cfg[1]); err != nil {
+				log.Println("SetFrom:", err)
+				return
+			}
+			if err = mc.AddTo(author, email); err != nil {
+				log.Println("AddTo:", email, err)
+				return
+			}
+			if err = mc.Send(subject, body); err != nil {
+				log.Println(err)
+				return
+			}
+		}()
+	})
 }
 
 func routerV1(router *gin.Engine) {
