@@ -86,7 +86,7 @@ func (m *Mailer) Send(subject string, body string) error {
 		write("To: %s <%s>", mime.BEncoding.Encode("utf-8", m.toNames[i]), m.toEmails[i])
 	}
 
-	write("Content-Type: text/html")
+	write("Content-Type: text/html; charset=utf-8")
 	write("")
 
 	write("%s", body)
