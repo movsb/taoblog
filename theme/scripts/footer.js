@@ -1,16 +1,32 @@
 /* 回到顶端 */
-window.onscroll = function() {
-    if(window.scrollY > 160) {
-        $("#back-to-top").fadeIn(500);
-    } else {
-        $("#back-to-top").fadeOut(500);
-    }
-};
-$('#back-to-top').click(function(){
-    $('html,body').animate({
-        scrollTop: 0
-    }, 300);
-});
+(function(){
+    var header_height = $('#header').height();
+    var topIsShowing = false;
+    var $topElement = $('#back-to-top');
+    var fadeDuration = 500;
+
+    window.addEventListener('scroll', function() {
+        if (this.window.scrollY > header_height) {
+            if (!topIsShowing) {
+                topIsShowing = true;
+                $topElement.fadeIn(fadeDuration);  // no wait on animation
+                console.log("back-top-top: fadeIn");
+            }
+        } else {
+            if (topIsShowing) {
+                $topElement.fadeOut(fadeDuration);
+                topIsShowing = false;
+                console.log("back-to-top: fadeOut");
+            }
+        }
+    });
+
+    $topElement.click(function(){
+        $('html,body').animate({
+            scrollTop: 0
+        }, 300);
+    })
+})();
 
 /* 点击图片放大 & 拖动浏览*/
 /* 写得超级烂，完全没管性能 */
@@ -85,9 +101,9 @@ $('#back-to-top').click(function(){
 
     function show_info(rawWidth, rawHeight, scale) {
         var s = '';
-        s += 'No: ' + (image_index+1) + '/' + images.length;
-        s += ', Raw: ' + rawWidth + '*' + rawHeight;
-        s += ', Scale: ' +  Math.round(scale*100) + '%';
+        s += '第 ' + (image_index+1) + '/' + images.length + ' 张';
+        s += '，原始尺寸：' + rawWidth + '*' + rawHeight;
+        s += '，缩放比例：' +  Math.round(scale*100) + '%';
         var e = $('#img-view .info');
         e.text(s);
         e.show();
