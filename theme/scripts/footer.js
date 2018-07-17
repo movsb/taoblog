@@ -142,7 +142,10 @@
 
                 var initScale = 1;
                 var initWidth = 0, initHeight = 0;
-                {
+                var $ele = $(ele);
+
+                // If ! has width and height set
+                if (!($ele.css('width') && $ele.css('height'))) {
                     var scaleWidth = imgdiv.width() / curImageRawWidth,
                         scaleHeight = imgdiv.height() / curImageRawHeight;
 
@@ -157,6 +160,11 @@
 
                     initWidth = curImageRawWidth * initScale;
                     initHeight = curImageRawHeight * initScale;
+                } else {
+                    initWidth = parseInt($ele.css('width'));
+                    initHeight = parseInt($ele.css('height'));
+                    console.log("raw size: ", initWidth, initHeight);
+                    initScale = initWidth / curImageRawWidth; // may be wrong
                 }
 
                 img.css('left', (imgdiv.width()-initWidth)/2 + 'px');
