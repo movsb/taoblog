@@ -12,6 +12,7 @@
 
 <div style="display: none;">
 <script src="/theme/scripts/footer.js"></script>
+<script src="/theme/scripts/image-view.js"></script>
 </div>
 </body>
 </html>
