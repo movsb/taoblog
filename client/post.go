@@ -92,6 +92,10 @@ func readSource(dir string) (string, string) {
 		panic("source cannot be found")
 	}
 
+	if strings.IndexByte(source, '\x08') != -1 {
+		panic("source cannot have '\\x08' characters")
+	}
+
 	typ := ""
 	switch filepath.Ext(theName) {
 	case ".md":
