@@ -14,7 +14,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"./internal/file_managers"
-	"./internal/mailer"
 	"./internal/utils/datetime"
 	"./internal/utils/hooks"
 )
@@ -204,46 +203,7 @@ func toInt64(s string) int64 {
 }
 
 func routerInternalV1(router *gin.Engine) {
-	v1 := router.Group("/.v1/")
-
-	v1.POST("/send_mail", func(c *gin.Context) {
-		author := c.PostForm("author")
-		email := c.PostForm("email")
-		subject := c.PostForm("subject")
-		body := c.PostForm("body")
-
-		log.Println("send_mail:", author, email, subject, body)
-
-		cfg := strings.SplitN(config.mail, "/", 3)
-		if len(cfg) != 3 {
-			panic("bad mail config")
-		}
-
-		go func() {
-			mc, err := mailer.DialTLS(cfg[0])
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			defer mc.Quit()
-			if err = mc.Auth(cfg[1], cfg[2]); err != nil {
-				log.Println(err)
-				return
-			}
-			if err = mc.SetFrom("博客评论", cfg[1]); err != nil {
-				log.Println("SetFrom:", err)
-				return
-			}
-			if err = mc.AddTo(author, email); err != nil {
-				log.Println("AddTo:", email, err)
-				return
-			}
-			if err = mc.Send(subject, body); err != nil {
-				log.Println(err)
-				return
-			}
-		}()
-	})
+	_ = router.Group("/.v1/")
 }
 
 func routerV1(router *gin.Engine) {
@@ -378,7 +338,7 @@ func routerV1(router *gin.Engine) {
 			EndReq(c, err, cmts[0])
 		}
 
-		// TODO send email
+		doNotify(&cmt) // TODO use cmts[0]
 	})
 
 	posts.DELETE("/:parent/comments/:name", func(c *gin.Context) {

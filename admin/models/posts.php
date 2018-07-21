@@ -651,17 +651,6 @@ class TB_Posts {
         return $rows->fetch_object()->total;
     }
 
-    public function get_title($id) {
-        global $tbdb;
-
-        $sql = "SELECT title FROM posts WHERE id=".(int)$id;
-        $sql .= " LIMIT 1";
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        return $rows->fetch_array()[0];
-    }
-
     // Go!
     public function have($id) {
         global $tbdb;

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -208,6 +209,7 @@ func (o *CommentManager) beforeCreateComment(c *Comment) error {
 	}
 
 	// TODO: URL
+	c.URL = strings.TrimSpace(c.URL)
 
 	// Content
 	if len(c.Content) == 0 || utf8.RuneCountInString(c.Content) > 4096 {
@@ -251,4 +253,20 @@ func (o *CommentManager) CreateComment(c *Comment) error {
 	id, err := ret.LastInsertId()
 	c.ID = id
 	return err
+}
+
+func (o *CommentManager) GetVars(fields string, wheres string, outs ...interface{}) error {
+	q := make(map[string]interface{})
+	q["select"] = fields
+	q["from"] = "comments"
+	q["where"] = []string{
+		wheres,
+	}
+	q["limit"] = 1
+
+	query := BuildQueryString(q)
+
+	row := o.db.QueryRow(query)
+
+	return row.Scan(outs...)
 }

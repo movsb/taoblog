@@ -12,7 +12,6 @@ import (
 	"./internal/utils/datetime"
 )
 
-
 type PostForArchiveQuery struct {
 	ID    int64  `json:"id"`
 	Title string `json:"title"`
@@ -183,4 +182,20 @@ func (z *xPostManager) GetPostsByDate(yy, mm int64) ([]*PostForArchiveQuery, err
 	q["orderby"] = "date DESC"
 
 	return z.getRowPosts(q)
+}
+
+func (z *xPostManager) GetVars(fields string, wheres string, outs ...interface{}) error {
+	q := make(map[string]interface{})
+	q["select"] = fields
+	q["from"] = "posts"
+	q["where"] = []string{
+		wheres,
+	}
+	q["limit"] = 1
+
+	query := BuildQueryString(q)
+
+	row := z.db.QueryRow(query)
+
+	return row.Scan(outs...)
 }
