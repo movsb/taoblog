@@ -339,6 +339,11 @@ func routerV1(router *gin.Engine) {
 		}
 
 		doNotify(&cmt) // TODO use cmts[0]
+
+		count := cmtmgr.GetAllCount()
+		optmgr.Set("comment_count", count)
+
+		postcmtsmgr.UpdatePostCommentsCount(cmt.PostID)
 	})
 
 	posts.DELETE("/:parent/comments/:name", func(c *gin.Context) {

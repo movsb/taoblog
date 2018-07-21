@@ -45,7 +45,7 @@ document.write(function(){/*
 				</div>
 			</div>
 
-			<form id="comment-form" action="/admin/comment.php" method="post">
+			<form id="comment-form">
                 <div style="display: none;">
                     <input id="comment-form-post-id" type="hidden" name="post_id" value="" />
                     <input id="comment-form-parent"  type="hidden" name="parent" value="" />

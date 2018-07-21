@@ -163,18 +163,4 @@ class TB_Comments
 
         return $cmts;
     }
-
-    /** Gone
-     * 获取所有文章（包括未公开发表的）的评论总数
-     *
-     * @return 若成功，返回评论总数。若失败，返回 0。
-     */
-    public function get_count_of_comments()
-    {
-        global $tbdb;
-
-        $sql = "SELECT count(*) as size FROM comments";
-        $rows = $tbdb->query($sql);
-        return $rows ? $rows->fetch_object()->size : 0;
-    }
 }
