@@ -31,7 +31,7 @@ if(!login_auth() && file_exists('MAINTENANCE')) {
 
 
 if($tbquery->query() === false){
-    tb_die(404, '未定义的查询！');
+    tb_die(404, '404 Page not found.');
 }
 
 if(!$tbquery->have() 

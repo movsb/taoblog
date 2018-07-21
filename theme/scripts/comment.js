@@ -49,7 +49,6 @@ document.write(function(){/*
                 <div style="display: none;">
                     <input id="comment-form-post-id" type="hidden" name="post_id" value="" />
                     <input id="comment-form-parent"  type="hidden" name="parent" value="" />
-                    <input type="hidden" name="do" value="post-cmt" />
                 </div>
 
                 <textarea id="comment-content" name="content" wrap="off"></textarea>
@@ -147,28 +146,23 @@ Comment.prototype.init = function() {
         $(this).attr('disabled', 'disabled');
         $('#comment-submit').val('提交中...');
         $.post(
-            $('#comment-form')[0].action,
-            $('#comment-form').serialize()+'&return_cmt=1',
-            function(data){
-                if(data.errno == 'success') {
-                    var parent = $('#comment-form input[name="parent"]').val();
-                    if(parent == 0) {
-                        $('#comment-list').prepend(self.gen_comment_item(data.cmt));
-                        // 没有父评论，避免二次加载。
-                        self._loaded ++;
-
-                    } else {
-                        self.add_reply_div(parent);
-                        $('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(data.cmt));
-                    }
-                    $('#comment-'+data.cmt.id).fadeIn();
-                    TaoBlog.events.dispatch('comment', 'post', $('#comment-'+data.cmt.id));
-                    $('#comment-content').val('');
-                    $('#comment-form-div').fadeOut();
-                    self.save_info();
+            '/v1/posts/' + $('#post-id').val() + '/comments?return_cmt=1',
+            $('#comment-form').serialize(),
+            function(cmt){
+                var parent = $('#comment-form input[name="parent"]').val();
+                if(parent == 0) {
+                    $('#comment-list').prepend(self.gen_comment_item(cmt));
+                    // 没有父评论，避免二次加载。
+                    self._loaded ++;
                 } else {
-                    alert(data.error);
+                    self.add_reply_div(parent);
+                    $('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(cmt));
                 }
+                $('#comment-'+cmt.id).fadeIn();
+                TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id));
+                $('#comment-content').val('');
+                $('#comment-form-div').fadeOut();
+                self.save_info();
             },
             'json'
         )

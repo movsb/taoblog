@@ -2,9 +2,15 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
+	"regexp"
+	"unicode/utf8"
 )
+
+// hand write regex, not tested well.
+var regexpValidEmail = regexp.MustCompile(`^[+-_.a-zA-Z0-9]+@[[:alnum:]]+(\.[[:alnum:]]+)+$`)
 
 type Comment struct {
 	ID       int64
@@ -109,7 +115,7 @@ func (o *CommentManager) GetChildren(id int64) ([]*Comment, error) {
 }
 
 // GetAncestor returns the ancestor of a comment
-func (o *CommentManager) GetAncestor(id int64, returnIDIfZero bool) (int64, error) {
+func (o *CommentManager) GetAncestor(id int64) (int64, error) {
 	query := `SELECT ancestor FROM comments WHERE id=` + fmt.Sprint(id) + ` LIMIT 1`
 	row := o.db.QueryRow(query)
 	var aid int64
@@ -119,10 +125,6 @@ func (o *CommentManager) GetAncestor(id int64, returnIDIfZero bool) (int64, erro
 
 	if aid != 0 {
 		return aid, nil
-	}
-
-	if returnIDIfZero {
-		return id, nil
 	}
 
 	return 0, nil
@@ -179,4 +181,74 @@ func (o *CommentManager) GetCommentAndItsChildren(cid int64, offset int64, count
 	}
 
 	return cmts, rows.Err()
+}
+
+// BeforeCreate hooks
+func (o *CommentManager) beforeCreateComment(c *Comment) error {
+	var err error
+
+	// ID
+	if c.ID != 0 {
+		return errors.New("评论ID必须为0")
+	}
+
+	// Ancestor
+	if c.Ancestor != 0 {
+		return errors.New("不能指定祖先ID")
+	}
+
+	// Author
+	if len(c.Author) == 0 || utf8.RuneCountInString(c.Author) > 32 {
+		return errors.New("昵称不能为空或超出最大长度")
+	}
+
+	// Email
+	if !regexpValidEmail.MatchString(c.EMail) {
+		return errors.New("邮箱不正确")
+	}
+
+	// TODO: URL
+
+	// Content
+	if len(c.Content) == 0 || utf8.RuneCountInString(c.Content) > 4096 {
+		return errors.New("评论不能为空或超出最大长度")
+	}
+
+	// Parent
+	if c.Parent > 0 {
+		if _, err = o.GetComment(c.Parent); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CreateComment creates a comment.
+func (o *CommentManager) CreateComment(c *Comment) error {
+	var err error
+
+	if err = o.beforeCreateComment(c); err != nil {
+		return err
+	}
+
+	c.Ancestor = 0
+	if c.Parent != 0 {
+		if c.Ancestor, err = o.GetAncestor(c.Parent); err != nil {
+			return err
+		}
+		if c.Ancestor == 0 {
+			c.Ancestor = c.Parent
+		}
+	}
+
+	query := `INSERT INTO comments (post_id,author,email,url,ip,date,content,parent,ancestor) VALUES (?,?,?,?,?,?,?,?,?)`
+	ret, err := o.db.Exec(query, c.PostID, c.Author, c.EMail, c.URL, c.IP, c.Date, c.Content, c.Parent, c.Ancestor)
+	if err != nil {
+		return err
+	}
+
+	id, err := ret.LastInsertId()
+	c.ID = id
+	return err
 }

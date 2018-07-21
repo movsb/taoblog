@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -14,6 +15,8 @@ import (
 
 	"./internal/file_managers"
 	"./internal/mailer"
+	"./internal/utils/datetime"
+	"./internal/utils/hooks"
 )
 
 type xConfig struct {
@@ -40,6 +43,8 @@ var backupmgr *BlogBackup
 var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
+
+var gHooks *hooks.HookManager
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
@@ -282,7 +287,7 @@ func routerV1(router *gin.Engine) {
 		count := toInt64(c.Query("count"))
 		order := c.DefaultQuery("order", "asc")
 
-		cmts, err := postcmtsmgr.GetPostComments(offset, count, parent, order == "asc")
+		cmts, err := postcmtsmgr.GetPostComments(0, offset, count, parent, order == "asc")
 
 		if err != nil {
 			EndReq(c, err, nil)
@@ -296,6 +301,84 @@ func routerV1(router *gin.Engine) {
 		}
 
 		EndReq(c, true, cmts)
+	})
+
+	posts.POST("/:parent/comments", func(c *gin.Context) {
+		var err error
+		var cmt Comment
+		var loggedin bool
+
+		loggedin = auth(c, false)
+
+		cmt.PostID = toInt64(c.Param("parent"))
+		cmt.Parent = toInt64(c.DefaultPostForm("parent", "0"))
+		cmt.Author = c.DefaultPostForm("author", "")
+		cmt.EMail = c.DefaultPostForm("email", "")
+		cmt.URL = c.DefaultPostForm("url", "")
+		cmt.IP = c.ClientIP()
+		cmt.Date = datetime.MyLocal()
+		cmt.Content = c.DefaultPostForm("content", "")
+
+		if err = postmgr.has(cmt.PostID); err != nil {
+			log.Println("找不到文章")
+			EndReq(c, err, nil)
+			return
+		}
+
+		if !loggedin {
+			{
+				notAllowedEmails := strings.Split(optmgr.GetDef("not_allowed_emails", ""), ",")
+				if adminEmail := optmgr.GetDef("email", ""); adminEmail != "" {
+					notAllowedEmails = append(notAllowedEmails, adminEmail)
+				}
+
+				log.Println(notAllowedEmails)
+
+				// TODO use regexp to detect equality.
+				for _, email := range notAllowedEmails {
+					if email != "" && cmt.EMail != "" && strings.EqualFold(email, cmt.EMail) {
+						EndReq(c, errors.New("不能使用此邮箱地址"), nil)
+						return
+					}
+				}
+			}
+			{
+				notAllowedAuthors := strings.Split(optmgr.GetDef("not_allowed_authors", ""), ",")
+				if adminName := optmgr.GetDef("nickname", ""); adminName != "" {
+					notAllowedAuthors = append(notAllowedAuthors, adminName)
+				}
+
+				for _, author := range notAllowedAuthors {
+					if author != "" && cmt.Author != "" && strings.EqualFold(author, cmt.Author) {
+						EndReq(c, errors.New("不能使用此昵称"), nil)
+						return
+					}
+				}
+			}
+		}
+
+		if err = cmtmgr.CreateComment(&cmt); err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		retCmt := c.DefaultQuery("return_cmt", "0") == "1"
+
+		if !retCmt {
+			EndReq(c, nil, gin.H{
+				"id": cmt.ID,
+			})
+		} else {
+			cmts, err := postcmtsmgr.GetPostComments(cmt.ID, 0, 1, cmt.PostID, true)
+			if err != nil || len(cmts) == 0 {
+				EndReq(c, errors.New("error get comment"), nil)
+				return
+			}
+			cmts[0].private = !loggedin
+			EndReq(c, err, cmts[0])
+		}
+
+		// TODO send email
 	})
 
 	posts.DELETE("/:parent/comments/:name", func(c *gin.Context) {
