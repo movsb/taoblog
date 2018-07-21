@@ -15,7 +15,6 @@ import (
 
 	"./internal/file_managers"
 	"./internal/utils/datetime"
-	"./internal/utils/hooks"
 )
 
 type xConfig struct {
@@ -42,8 +41,6 @@ var backupmgr *BlogBackup
 var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
-
-var gHooks *hooks.HookManager
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
