@@ -13,10 +13,6 @@
     <?php } ?>
 
     <div class="entry clearfix" itemprop="articleBody">
-        <?php
-            $is_preview = ($_POST['do'] ?? '') === 'preview';
-            echo $is_preview ? $_POST['content'] : $the->content;
-        ?>
         <?php if ($the->type == 'post') { ?>
         <div class="meta clearfix">
             <p><span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person">

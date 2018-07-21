@@ -574,21 +574,6 @@ DOM;
             <div class="widget widget-post">
                 <h3>发表</h3>
                 <div class="widget-content">
-                    <?php if($p) { ?>
-                    <input type="button" onclick="do_preview()" value="预览" />
-                    <script>
-                        function do_preview() {
-                            var form = $('#form-post');
-                            form.attr('target', '_blank');
-                            form.attr('action', '/<?php echo $p->id; ?>/');
-                            form.find('input[name=do]').val('preview');
-                            form.submit();
-                            form.attr('target', '')
-                            form.attr('action', '')
-                            form.find('input[name=do]').val('update');
-                        }
-                    </script>
-                    <?php } ?>
                     <input type="submit" value="发表" />
                     <select name="status">
                         <option value="public"<?php if($p && $p->status == 'public') echo ' selected'; ?>>公开</option>
