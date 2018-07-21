@@ -1,6 +1,6 @@
 <?php 
 
-define('TB_VERSION', '1.1.9');
+define('TB_VERSION', '1.1.10');
 
 require_once dirname(__FILE__).'/../setup/config.php';
 
