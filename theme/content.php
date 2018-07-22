@@ -13,6 +13,7 @@
     <?php } ?>
 
     <div class="entry clearfix" itemprop="articleBody">
+        <?php echo $the->content; ?>
         <?php if ($the->type == 'post') { ?>
         <div class="meta clearfix">
             <p><span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person">
