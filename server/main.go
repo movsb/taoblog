@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strconv"
 	"strings"
@@ -98,54 +99,6 @@ func main() {
 
 	tagapi.GET("/list", func(c *gin.Context) {
 
-	})
-
-	optapi := router.Group("/options")
-
-	optapi.GET("/has", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.DefaultQuery("name", "")
-		err := optmgr.Has(name)
-		has := name != "" && err == nil
-		EndReq(c, err, has)
-	})
-
-	optapi.GET("/get", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.DefaultQuery("name", "")
-		val, err := optmgr.Get(name)
-		EndReq(c, err, val)
-	})
-
-	optapi.POST("/set", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.DefaultPostForm("name", "")
-		val := c.DefaultPostForm("value", "")
-		err := optmgr.Set(name, val)
-		EndReq(c, err, val)
-	})
-
-	optapi.POST("/del", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.DefaultPostForm("name", "")
-		err := optmgr.Del(name)
-		EndReq(c, err, nil)
-	})
-
-	optapi.GET("/list", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		items, err := optmgr.List()
-		EndReq(c, err, items)
 	})
 
 	postapi := router.Group("/posts")
@@ -424,5 +377,47 @@ func routerV1(router *gin.Engine) {
 		}
 		c.Header("Content-Type", "application/xml")
 		c.String(200, "%s", maps)
+	})
+
+	optionsV1(v1)
+}
+
+func optionsV1(routerV1 *gin.RouterGroup) {
+	optapi := routerV1.Group("/options")
+
+	optapi.GET("", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		items, err := optmgr.List()
+		EndReq(c, err, items)
+	})
+
+	optapi.GET("/:name", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		name := c.Param("name")
+		varlue, err := optmgr.Get(name)
+		EndReq(c, err, varlue)
+	})
+
+	optapi.POST("/:name", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		name := c.Param("name")
+		value, _ := ioutil.ReadAll(c.Request.Body) // WARN: Body is consumed
+		err := optmgr.Set(name, string(value))
+		EndReq(c, err, nil)
+	})
+
+	optapi.DELETE("/:name", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		name := c.Param("name")
+		err := optmgr.Del(name)
+		EndReq(c, err, nil)
 	})
 }

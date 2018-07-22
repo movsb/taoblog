@@ -41,7 +41,10 @@ func EndReq(c *gin.Context, err interface{}, dat interface{}) {
 		if e, ok := err.(error); ok {
 			c.JSON(http.StatusInternalServerError, e.Error())
 		} else {
-			c.JSON(http.StatusInternalServerError, err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"err": err,
+				"dat": dat,
+			})
 		}
 	}
 }

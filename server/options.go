@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 type OptionManager struct {
@@ -10,8 +11,8 @@ type OptionManager struct {
 }
 
 type Option struct {
-	Name  string
-	Value string
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 func newOptionsModel(db *sql.DB) *OptionManager {
@@ -47,13 +48,16 @@ func (o *OptionManager) Set(name string, val interface{}) error {
 	strVal := fmt.Sprint(val)
 
 	query := ""
+	var err error
 
 	if o.Has(name) == nil {
 		query = `UPDATE options SET value=? WHERE name=? LIMIT 1`
+		_, err = o.db.Exec(query, strVal, name)
 	} else {
 		query = `INSERT INTO options (name,value) VALUES (?,?)`
+		_, err = o.db.Exec(query, name, strVal)
 	}
-	_, err := o.db.Exec(query, name, strVal)
+	log.Println(query)
 	return err
 }
 
