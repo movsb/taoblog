@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"./internal/utils/datetime"
 )
 
 // hand write regex, not tested well.
@@ -229,6 +231,11 @@ func (o *CommentManager) beforeCreateComment(c *Comment) error {
 // CreateComment creates a comment.
 func (o *CommentManager) CreateComment(c *Comment) error {
 	var err error
+
+	c.Date = datetime.Local2My(c.Date)
+	defer func() {
+		c.Date = datetime.My2Local(c.Date)
+	}()
 
 	if err = o.beforeCreateComment(c); err != nil {
 		return err
