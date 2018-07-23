@@ -17,6 +17,8 @@ ImageView.prototype._init = function() {
 
     this._keyHandlerAdded = false;
 
+    this._boundEvents = {};
+
     this._initBindings();
 
     this._images = $('.entry img:not(.nz)');
@@ -184,12 +186,12 @@ ImageView.prototype.viewImage = function(img) {
 
     if(img != null) {
         if(!this._keyHandlerAdded) {
-            window.addEventListener('keydown', this._keyHandler.bind(this));
+            window.addEventListener('keydown', this._boundEvents.keyHandler);
             this._keyHandlerAdded = true;
         }
     } else {
         if(this._keyHandlerAdded){
-            window.removeEventListener('keydown', this._keyHandler);
+            window.removeEventListener('keydown', this._boundEvents.keyHandler);
             this._keyHandlerAdded = false;
         }
     }
@@ -218,6 +220,8 @@ ImageView.prototype._initView = function() {
 };
 
 ImageView.prototype._initBindings = function() {
+    this._boundEvents.keyHandler = this._keyHandler.bind(this);
+
     this._$img.on('mousedown', this._onImgMouseDown.bind(this));
     this._$img.on('mousemove', this._onImgMouseMove.bind(this));
     this._$img.on('mouseup', this._onImgMouseUp.bind(this));
