@@ -128,9 +128,6 @@ ImageView.prototype.viewImage = function(img) {
             this._$tip.hide();
         }
 
-        $('body').css('max-height', window.innerHeight);
-        $('body').css('overflow', 'hidden');
-
         this._$img[0].onload = function() {
             this._rawWidth =  this._$img.prop('naturalWidth');
             this._rawHeight = this._$img.prop('naturalHeight');
@@ -167,7 +164,13 @@ ImageView.prototype.viewImage = function(img) {
             this._$img.css('height', initHeight + 'px');
             this._$imgView.show();
 
+            $('body').css('max-height', window.innerHeight);
+            $('body').css('overflow', 'hidden');
+
             this._showInfo(this._rawWidth, this._rawHeight, initScale);
+        }.bind(this);
+        this._$img[0].onerror = function() {
+            this._showInfo(0, 0, 0);
         }.bind(this);
         this._$img.attr('src', img.src);
     } else {
