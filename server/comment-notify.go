@@ -44,7 +44,7 @@ func doSendMailAsync(recipient, nickname, subject, body string) {
 	}()
 }
 
-func doNotifyAdmin(cmt *Comment, postTitle string) {
+func doNotifyAdmin(tx Querier, cmt *Comment, postTitle string) {
 	body := bytes.NewBuffer(nil)
 
 	write := func(f string, args ...interface{}) {
@@ -53,7 +53,7 @@ func doNotifyAdmin(cmt *Comment, postTitle string) {
 
 	write(`<b>您的博文“%s”有新的评论啦！</b><br/><br/>`, html.EscapeString(postTitle))
 
-	link := "https://" + optmgr.GetDef("home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
+	link := "https://" + optmgr.GetDef(tx, "home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
 	write(`<b>链接：</b>%s<br/>`, link)
 	write(`<b>作者：</b>%s<br/>`, html.EscapeString(cmt.Author))
 	write(`<b>邮箱：</b>%s<br/>`, cmt.EMail)
@@ -62,8 +62,8 @@ func doNotifyAdmin(cmt *Comment, postTitle string) {
 	write(`<b>内容：</b>%s<br/>`, html.EscapeString(cmt.Content))
 
 	doSendMailAsync(
-		optmgr.GetDef("email", ""),
-		optmgr.GetDef("nickname", ""),
+		optmgr.GetDef(tx, "email", ""),
+		optmgr.GetDef(tx, "nickname", ""),
 		fmt.Sprintf("[新博文评论] %s", postTitle),
 		body.String(),
 	)
@@ -75,8 +75,8 @@ type ParentInfo struct {
 	Email  string
 }
 
-func doNotifyUser(cmt *Comment, postTitle string, parent ParentInfo) {
-	link := "https://" + optmgr.GetDef("home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
+func doNotifyUser(tx Querier, cmt *Comment, postTitle string, parent ParentInfo) {
+	link := "https://" + optmgr.GetDef(tx, "home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
 
 	body := bytes.NewBuffer(nil)
 
@@ -96,19 +96,19 @@ func doNotifyUser(cmt *Comment, postTitle string, parent ParentInfo) {
 	doSendMailAsync(parent.Email, parent.Author, subject, body.String())
 }
 
-func doNotify(cmt *Comment) {
+func doNotify(tx Querier, cmt *Comment) {
 	var err error
 
-	adminEmail := optmgr.GetDef("email", "")
+	adminEmail := optmgr.GetDef(tx, "email", "")
 
 	var postTitle string
-	if err = postmgr.GetVars("title", "id="+fmt.Sprint(cmt.PostID), &postTitle); err != nil {
+	if err = postmgr.GetVars(tx, "title", "id="+fmt.Sprint(cmt.PostID), &postTitle); err != nil {
 		log.Println(err)
 		return
 	}
 
 	if cmt.EMail != adminEmail {
-		doNotifyAdmin(cmt, postTitle)
+		doNotifyAdmin(tx, cmt, postTitle)
 	}
 
 	parents := []ParentInfo{}
@@ -116,7 +116,7 @@ func doNotify(cmt *Comment) {
 	parentID := cmt.Parent
 	for parentID > 0 {
 		var parentInfo ParentInfo
-		if err = cmtmgr.GetVars("id,author,email,parent", "id="+fmt.Sprint(parentID),
+		if err = cmtmgr.GetVars(tx, "id,author,email,parent", "id="+fmt.Sprint(parentID),
 			&parentInfo.ID, &parentInfo.Author, &parentInfo.Email, &parentID); err != nil {
 			log.Println(err)
 			return
@@ -126,6 +126,6 @@ func doNotify(cmt *Comment) {
 	}
 
 	for _, parent := range parents {
-		doNotifyUser(cmt, postTitle, parent)
+		doNotifyUser(tx, cmt, postTitle, parent)
 	}
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -92,35 +91,32 @@ func (o *AjaxComment) MarshalJSON() ([]byte, error) {
 }
 
 type PostCommentsManager struct {
-	db *sql.DB
 }
 
-func newPostCommentsManager(db *sql.DB) *PostCommentsManager {
-	return &PostCommentsManager{
-		db: db,
-	}
+func newPostCommentsManager() *PostCommentsManager {
+	return &PostCommentsManager{}
 }
 
-func (o *PostCommentsManager) UpdatePostCommentsCount(pid int64) error {
+func (o *PostCommentsManager) UpdatePostCommentsCount(tx Querier, pid int64) error {
 	sql := `UPDATE posts INNER JOIN (SELECT post_id,count(post_id) count FROM comments WHERE post_id=%d) x ON posts.id=x.post_id SET posts.comments=x.count WHERE posts.id=%d`
 	sql = fmt.Sprintf(sql, pid, pid)
-	_, err := o.db.Exec(sql)
+	_, err := tx.Exec(sql)
 	return err
 }
 
-func (o *PostCommentsManager) DeletePostComment(cid int64) error {
+func (o *PostCommentsManager) DeletePostComment(tx Querier, cid int64) error {
 	var err error
-	cmt, err := cmtmgr.GetComment(cid)
+	cmt, err := cmtmgr.GetComment(tx, cid)
 	if err != nil {
 		return err
 	}
 
-	err = cmtmgr.DeleteComments(cid)
+	err = cmtmgr.DeleteComments(tx, cid)
 	if err != nil {
 		return err
 	}
 
-	err = o.UpdatePostCommentsCount(cmt.PostID)
+	err = o.UpdatePostCommentsCount(tx, cmt.PostID)
 	if err != nil {
 		return err
 	}
@@ -128,13 +124,13 @@ func (o *PostCommentsManager) DeletePostComment(cid int64) error {
 	return nil
 }
 
-func (o *PostCommentsManager) GetPostComments(cid int64, offset int64, count int64, pid int64, ascent bool) ([]*AjaxComment, error) {
-	cmts, err := cmtmgr.GetCommentAndItsChildren(cid, offset, count, pid, ascent)
+func (o *PostCommentsManager) GetPostComments(tx Querier, cid int64, offset int64, count int64, pid int64, ascent bool) ([]*AjaxComment, error) {
+	cmts, err := cmtmgr.GetCommentAndItsChildren(tx, cid, offset, count, pid, ascent)
 	if err != nil {
 		return nil, err
 	}
 
-	adminEmail := strings.ToLower(optmgr.GetDef("email", ""))
+	adminEmail := strings.ToLower(optmgr.GetDef(tx, "email", ""))
 
 	md5it := func(s string) string {
 		md5 := md5.New()

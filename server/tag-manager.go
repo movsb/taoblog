@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"fmt"
 	"log"
 	"strings"
 )
@@ -13,23 +13,15 @@ type xTagObject struct {
 }
 
 type xTagManager struct {
-	db *sql.DB
 }
 
-func newTagManager(db *sql.DB) *xTagManager {
-	return &xTagManager{
-		db: db,
-	}
+func newTagManager() *xTagManager {
+	return &xTagManager{}
 }
 
-func (tm *xTagManager) addTag(name string, alias uint) int64 {
+func (tm *xTagManager) addTag(tx Querier, name string, alias uint) int64 {
 	sql := `INSERT INTO tags (name,alias) values (?,?)`
-	stmt, err := tm.db.Prepare(sql)
-	if err != nil {
-		panic(err)
-	}
-
-	ret, err := stmt.Exec(name, alias)
+	ret, err := tx.Exec(sql, name, alias)
 	if err != nil {
 		panic(err)
 	}
@@ -38,9 +30,9 @@ func (tm *xTagManager) addTag(name string, alias uint) int64 {
 	return id
 }
 
-func (tm *xTagManager) searchTag(tag string) (tags []xTagObject) {
+func (tm *xTagManager) searchTag(tx Querier, tag string) (tags []xTagObject) {
 	sql := `SELECT * FROM tags WHERE name LIKE ?`
-	rows, err := tm.db.Query(sql, "%"+tag+"%")
+	rows, err := tx.Query(sql, "%"+tag+"%")
 	if err != nil {
 		panic(err)
 	}
@@ -56,17 +48,12 @@ func (tm *xTagManager) searchTag(tag string) (tags []xTagObject) {
 	return
 }
 
-func (tm *xTagManager) getTagID(name string) int64 {
+func (tm *xTagManager) getTagID(tx Querier, name string) int64 {
 	sql := `SELECT id FROM tags WHERE name=? LIMIT 1`
-	stmt, err := tm.db.Prepare(sql)
-	if err != nil {
-		panic(err)
-	}
-
-	row := stmt.QueryRow(name)
+	row := tx.QueryRow(sql, name)
 
 	var id int64
-	if err = row.Scan(&id); err != nil {
+	if err := row.Scan(&id); err != nil {
 		log.Printf("标签名不存在：%s\n", name)
 		id = 0
 	}
@@ -74,18 +61,13 @@ func (tm *xTagManager) getTagID(name string) int64 {
 	return id
 }
 
-func (tm *xTagManager) hasTagName(name string) bool {
-	return tm.getTagID(name) > 0
+func (tm *xTagManager) hasTagName(tx Querier, name string) bool {
+	return tm.getTagID(tx, name) > 0
 }
 
-func (tm *xTagManager) getTagNames(pid int64) (names []string) {
-	sql := `SELECT tags.name FROM post_tags,tags WHERE post_tags.post_id=? AND post_tags.tag_id=tags.id`
-	stmt, err := tm.db.Prepare(sql)
-	if err != nil {
-		panic(err)
-	}
-
-	rows, err := stmt.Query(pid)
+func (tm *xTagManager) getTagNames(tx Querier, pid int64) (names []string) {
+	sql := `SELECT tags.name FROM post_tags,tags WHERE post_tags.post_id=` + fmt.Sprint(pid) + ` AND post_tags.tag_id=tags.id`
+	rows, err := tx.Query(sql)
 	if err != nil {
 		panic(err)
 	}
@@ -106,14 +88,10 @@ func (tm *xTagManager) getTagNames(pid int64) (names []string) {
 	return
 }
 
-func (tm *xTagManager) getTagIDs(pid int64, alias bool) (ids []int64) {
-	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
-	stmt, err := tm.db.Prepare(sql)
-	if err != nil {
-		panic(err)
-	}
+func (tm *xTagManager) getTagIDs(tx Querier, pid int64, alias bool) (ids []int64) {
+	sql := `SELECT tag_id FROM post_tags WHERE post_id=` + fmt.Sprint(pid)
 
-	rows, err := stmt.Query(pid)
+	rows, err := tx.Query(sql)
 	if err != nil {
 		panic(err)
 	}
@@ -130,19 +108,19 @@ func (tm *xTagManager) getTagIDs(pid int64, alias bool) (ids []int64) {
 	}
 
 	if alias {
-		ids = tm.getAliasTagsAll(ids)
+		ids = tm.getAliasTagsAll(tx, ids)
 	}
 
 	return
 }
 
-func (tm *xTagManager) getAliasTagsAll(ids []int64) []int64 {
+func (tm *xTagManager) getAliasTagsAll(tx Querier, ids []int64) []int64 {
 	sids := joinInts(ids, ",")
 
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
 	sql2 := `SELECT id FROM tags WHERE alias in (?)`
 
-	rows, err := tm.db.Query(sql1, sids)
+	rows, err := tx.Query(sql1, sids)
 	if err != nil {
 		panic(err)
 	}
@@ -160,7 +138,7 @@ func (tm *xTagManager) getAliasTagsAll(ids []int64) []int64 {
 
 	rows.Close()
 
-	rows, err = tm.db.Query(sql2, sids)
+	rows, err = tx.Query(sql2, sids)
 	if err != nil {
 		panic(err)
 	}
@@ -179,9 +157,9 @@ func (tm *xTagManager) getAliasTagsAll(ids []int64) []int64 {
 	return ids
 }
 
-func (tm *xTagManager) addObjectTag(pid int64, tid int64) int64 {
+func (tm *xTagManager) addObjectTag(tx Querier, pid int64, tid int64) int64 {
 	sql := `INSERT INTO post_tags (post_id,tag_id) VALUES (?,?)`
-	ret, err := tm.db.Exec(sql, pid, tid)
+	ret, err := tx.Exec(sql, pid, tid)
 	if err != nil {
 		panic(err)
 	}
@@ -191,18 +169,18 @@ func (tm *xTagManager) addObjectTag(pid int64, tid int64) int64 {
 	return id
 }
 
-func (tm *xTagManager) removeObjectTag(pid, tid int64) {
+func (tm *xTagManager) removeObjectTag(tx Querier, pid, tid int64) {
 	sql := `DELETE FROM post_tags WHERE post_id=? AND tag_id=? LIMIT 1`
-	ret, err := tm.db.Exec(sql, pid, tid)
+	ret, err := tx.Exec(sql, pid, tid)
 	if err != nil {
 		panic(err)
 	}
 	_ = ret
 }
 
-func (tm *xTagManager) updateObjectTags(pid int64, tagstr string) {
+func (tm *xTagManager) updateObjectTags(tx Querier, pid int64, tagstr string) {
 	newTags := strings.Split(tagstr, ",")
-	oldTags := tm.getTagNames(pid)
+	oldTags := tm.getTagNames(tx, pid)
 
 	var (
 		toBeDeled []string
@@ -223,17 +201,17 @@ func (tm *xTagManager) updateObjectTags(pid int64, tagstr string) {
 	}
 
 	for _, t := range toBeDeled {
-		tid := tm.getTagID(t)
-		tm.removeObjectTag(pid, tid)
+		tid := tm.getTagID(tx, t)
+		tm.removeObjectTag(tx, pid, tid)
 	}
 
 	for _, t := range toBeAdded {
 		var tid int64
-		if !tm.hasTagName(t) {
-			tid = tm.addTag(t, 0)
+		if !tm.hasTagName(tx, t) {
+			tid = tm.addTag(tx, t, 0)
 		} else {
-			tid = tm.getTagID(t)
+			tid = tm.getTagID(tx, t)
 		}
-		tm.addObjectTag(pid, tid)
+		tm.addObjectTag(tx, pid, tid)
 	}
 }

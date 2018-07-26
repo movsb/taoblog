@@ -2,20 +2,16 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"errors"
 	"io"
 	"os/exec"
 )
 
 type BlogBackup struct {
-	db *sql.DB
 }
 
-func NewBlogBackup(db *sql.DB) *BlogBackup {
-	return &BlogBackup{
-		db: db,
-	}
+func NewBlogBackup() *BlogBackup {
+	return &BlogBackup{}
 }
 
 func (o *BlogBackup) Backup(w io.Writer) error {

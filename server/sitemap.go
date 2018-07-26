@@ -2,11 +2,10 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"fmt"
 )
 
-func createSitemap(tx *sql.DB, host string) (string, error) {
+func createSitemap(tx Querier, host string) (string, error) {
 	query := `SELECT id FROM posts WHERE type='post' AND status='public' ORDER BY date DESC`
 	rows, err := tx.Query(query)
 	if err != nil {

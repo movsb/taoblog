@@ -34,7 +34,7 @@ var gkey string
 var config xConfig
 var gdb *sql.DB
 var tagmgr *xTagManager
-var postmgr *xPostManager
+var postmgr *PostManager
 var optmgr *OptionManager
 var auther *GenericAuth
 var uploadmgr *FileUpload
@@ -80,16 +80,16 @@ func main() {
 
 	defer gdb.Close()
 
-	tagmgr = newTagManager(gdb)
-	postmgr = newPostManager(gdb)
-	optmgr = newOptionsModel(gdb)
+	tagmgr = newTagManager()
+	postmgr = NewPostManager()
+	optmgr = newOptionsModel()
 	auther = &GenericAuth{}
-	auther.SetLogin(optmgr.GetDef("login", "x"))
+	auther.SetLogin(optmgr.GetDef(gdb, "login", "x"))
 	auther.SetKey(config.key)
 	uploadmgr = NewFileUpload(file_managers.NewLocalFileManager(config.files))
-	backupmgr = NewBlogBackup(gdb)
-	cmtmgr = newCommentManager(gdb)
-	postcmtsmgr = newPostCommentsManager(gdb)
+	backupmgr = NewBlogBackup()
+	cmtmgr = newCommentManager()
+	postcmtsmgr = newPostCommentsManager()
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 
 	gin.DisableConsoleColor()
@@ -125,7 +125,15 @@ func main() {
 			return
 		}
 
-		err = postmgr.update(pid, typ, source)
+		tx, err := gdb.Begin()
+		if err == nil {
+			if err = postmgr.update(tx, pid, typ, source); err == nil {
+				if err = tx.Commit(); err != nil {
+					tx.Rollback()
+				}
+			}
+		}
+
 		EndReq(c, err, nil)
 	})
 
@@ -185,7 +193,7 @@ func routerV1(router *gin.Engine) {
 
 	posts.GET("/:parent/comments:count", func(c *gin.Context) {
 		parent := toInt64(c.Param("parent"))
-		count := postmgr.getCommentCount(parent)
+		count := postmgr.GetCommentCount(gdb, parent)
 		EndReq(c, true, count)
 	})
 
@@ -197,7 +205,7 @@ func routerV1(router *gin.Engine) {
 		count := toInt64(c.Query("count"))
 		order := c.DefaultQuery("order", "asc")
 
-		cmts, err := postcmtsmgr.GetPostComments(0, offset, count, parent, order == "asc")
+		cmts, err := postcmtsmgr.GetPostComments(gdb, 0, offset, count, parent, order == "asc")
 
 		if err != nil {
 			EndReq(c, err, nil)
@@ -229,16 +237,22 @@ func routerV1(router *gin.Engine) {
 		cmt.Date = datetime.MyLocal()
 		cmt.Content = c.DefaultPostForm("content", "")
 
-		if err = postmgr.has(cmt.PostID); err != nil {
-			log.Println("找不到文章")
+		tx, err := gdb.Begin()
+		if err != nil {
 			EndReq(c, err, nil)
+			return
+		}
+
+		if has, err := postmgr.Has(tx, cmt.PostID); err != nil || !has {
+			EndReq(c, errors.New("找不到文章"), nil)
+			tx.Rollback()
 			return
 		}
 
 		if !loggedin {
 			{
-				notAllowedEmails := strings.Split(optmgr.GetDef("not_allowed_emails", ""), ",")
-				if adminEmail := optmgr.GetDef("email", ""); adminEmail != "" {
+				notAllowedEmails := strings.Split(optmgr.GetDef(tx, "not_allowed_emails", ""), ",")
+				if adminEmail := optmgr.GetDef(tx, "email", ""); adminEmail != "" {
 					notAllowedEmails = append(notAllowedEmails, adminEmail)
 				}
 
@@ -248,52 +262,66 @@ func routerV1(router *gin.Engine) {
 				for _, email := range notAllowedEmails {
 					if email != "" && cmt.EMail != "" && strings.EqualFold(email, cmt.EMail) {
 						EndReq(c, errors.New("不能使用此邮箱地址"), nil)
+						tx.Rollback()
 						return
 					}
 				}
 			}
 			{
-				notAllowedAuthors := strings.Split(optmgr.GetDef("not_allowed_authors", ""), ",")
-				if adminName := optmgr.GetDef("nickname", ""); adminName != "" {
+				notAllowedAuthors := strings.Split(optmgr.GetDef(tx, "not_allowed_authors", ""), ",")
+				if adminName := optmgr.GetDef(tx, "nickname", ""); adminName != "" {
 					notAllowedAuthors = append(notAllowedAuthors, adminName)
 				}
 
 				for _, author := range notAllowedAuthors {
 					if author != "" && cmt.Author != "" && strings.EqualFold(author, cmt.Author) {
 						EndReq(c, errors.New("不能使用此昵称"), nil)
+						tx.Rollback()
 						return
 					}
 				}
 			}
 		}
 
-		if err = cmtmgr.CreateComment(&cmt); err != nil {
+		if err = cmtmgr.CreateComment(tx, &cmt); err != nil {
 			EndReq(c, err, nil)
+			tx.Rollback()
 			return
 		}
+
+		count := cmtmgr.GetAllCount(tx)
+		optmgr.Set(tx, "comment_count", count)
+
+		postcmtsmgr.UpdatePostCommentsCount(tx, cmt.PostID)
 
 		retCmt := c.DefaultQuery("return_cmt", "0") == "1"
 
 		if !retCmt {
+			if err = tx.Commit(); err != nil {
+				tx.Rollback()
+				EndReq(c, err, nil)
+				return
+			}
 			EndReq(c, nil, gin.H{
 				"id": cmt.ID,
 			})
 		} else {
-			cmts, err := postcmtsmgr.GetPostComments(cmt.ID, 0, 1, cmt.PostID, true)
+			cmts, err := postcmtsmgr.GetPostComments(tx, cmt.ID, 0, 1, cmt.PostID, true)
 			if err != nil || len(cmts) == 0 {
 				EndReq(c, errors.New("error get comment"), nil)
+				tx.Rollback()
+				return
+			}
+			if err = tx.Commit(); err != nil {
+				tx.Rollback()
+				EndReq(c, err, nil)
 				return
 			}
 			cmts[0].private = !loggedin
 			EndReq(c, err, cmts[0])
 		}
 
-		doNotify(&cmt) // TODO use cmts[0]
-
-		count := cmtmgr.GetAllCount()
-		optmgr.Set("comment_count", count)
-
-		postcmtsmgr.UpdatePostCommentsCount(cmt.PostID)
+		doNotify(gdb, &cmt) // TODO use cmts[0]
 	})
 
 	posts.DELETE("/:parent/comments/:name", func(c *gin.Context) {
@@ -309,7 +337,14 @@ func routerV1(router *gin.Engine) {
 		// TODO check referrer
 		_ = parent
 
-		err = postcmtsmgr.DeletePostComment(id)
+		tx, err := gdb.Begin()
+		if err != nil {
+			panic(err)
+		}
+		err = postcmtsmgr.DeletePostComment(tx, id)
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+		}
 		EndReq(c, err, nil)
 	})
 
@@ -344,13 +379,13 @@ func routerV1(router *gin.Engine) {
 
 	archives.GET("/categories/:name", func(c *gin.Context) {
 		id := toInt64(c.Param("name"))
-		ps, err := postmgr.GetPostsByCategory(id)
+		ps, err := postmgr.GetPostsByCategory(gdb, id)
 		EndReq(c, err, ps)
 	})
 
 	archives.GET("/tags/:name", func(c *gin.Context) {
 		tag := c.Param("name")
-		ps, err := postmgr.GetPostsByTags(tag)
+		ps, err := postmgr.GetPostsByTags(gdb, tag)
 		EndReq(c, err, ps)
 	})
 
@@ -358,7 +393,7 @@ func routerV1(router *gin.Engine) {
 		year := toInt64(c.Param("year"))
 		month := toInt64(c.Param("month"))
 
-		ps, err := postmgr.GetPostsByDate(year, month)
+		ps, err := postmgr.GetPostsByDate(gdb, year, month)
 		EndReq(c, err, ps)
 	})
 
@@ -369,7 +404,7 @@ func routerV1(router *gin.Engine) {
 	})
 
 	v1.Group("/sitemap.xml").GET("", func(c *gin.Context) {
-		host := "https://" + optmgr.GetDef("home", "localhost")
+		host := "https://" + optmgr.GetDef(gdb, "home", "localhost")
 		maps, err := createSitemap(gdb, host)
 		if err != nil {
 			EndReq(c, err, nil)
@@ -389,7 +424,7 @@ func optionsV1(routerV1 *gin.RouterGroup) {
 		if !auth(c, true) {
 			return
 		}
-		items, err := optmgr.List()
+		items, err := optmgr.List(gdb)
 		EndReq(c, err, items)
 	})
 
@@ -398,7 +433,7 @@ func optionsV1(routerV1 *gin.RouterGroup) {
 			return
 		}
 		name := c.Param("name")
-		varlue, err := optmgr.Get(name)
+		varlue, err := optmgr.Get(gdb, name)
 		EndReq(c, err, varlue)
 	})
 
@@ -408,7 +443,23 @@ func optionsV1(routerV1 *gin.RouterGroup) {
 		}
 		name := c.Param("name")
 		value, _ := ioutil.ReadAll(c.Request.Body) // WARN: Body is consumed
-		err := optmgr.Set(name, string(value))
+
+		tx, err := gdb.Begin()
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		err = optmgr.Set(tx, name, string(value))
+		if err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
 		EndReq(c, err, nil)
 	})
 
@@ -417,7 +468,23 @@ func optionsV1(routerV1 *gin.RouterGroup) {
 			return
 		}
 		name := c.Param("name")
-		err := optmgr.Del(name)
+
+		tx, err := gdb.Begin()
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		err = optmgr.Del(tx, name)
+		if err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
 		EndReq(c, err, nil)
 	})
 }

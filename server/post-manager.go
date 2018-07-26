@@ -5,38 +5,38 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"./internal/post_translators"
 	"./internal/utils/datetime"
 )
 
+// PostForArchiveQuery is an archive query result.
 type PostForArchiveQuery struct {
 	ID    int64  `json:"id"`
 	Title string `json:"title"`
 }
 
-type xPostManager struct {
-	db *sql.DB
+// PostManager manages posts.
+type PostManager struct {
 }
 
-func newPostManager(db *sql.DB) *xPostManager {
-	return &xPostManager{
-		db: db,
-	}
+// NewPostManager news a post manager.
+func NewPostManager() *PostManager {
+	return &PostManager{}
 }
 
-// returns nil if post presents
-func (me *xPostManager) has(id int64) error {
-	query := `SELECT id FROM posts WHERE id=` + strconv.FormatInt(id, 10)
-	rows := me.db.QueryRow(query)
+// Has returns true if post id exists.
+func (z *PostManager) Has(tx Querier, id int64) (bool, error) {
+	query := `SELECT id FROM posts WHERE id=` + fmt.Sprint(id)
+	rows := tx.QueryRow(query)
 	pid := 0
 	err := rows.Scan(&pid)
-	return err
+	return pid > 0, err
 }
 
-func (me *xPostManager) update(id int64, typ string, source string) error {
+// internal use
+func (z *PostManager) update(tx Querier, id int64, typ string, source string) error {
 	var tr post_translators.PostTranslator
 	var content string
 	var err error
@@ -59,7 +59,7 @@ func (me *xPostManager) update(id int64, typ string, source string) error {
 
 	modTime := time.Now().UTC().Format("2006:01:02 15:04:05")
 
-	ret, err := me.db.Exec(
+	ret, err := tx.Exec(
 		"UPDATE posts SET content=?,source=?,source_type=?,modified=? WHERE id=? LIMIT 1",
 		content,
 		source,
@@ -72,20 +72,15 @@ func (me *xPostManager) update(id int64, typ string, source string) error {
 		return err
 	}
 
-	/*
-		if n, err := ret.RowsAffected(); err != nil || n != 1 {
-			return errors.New("affected rows != 1: n=" + strconv.FormatInt(n, 10))
-		}
-	*/
-
 	_ = ret
 
 	return nil
 }
 
-func (me *xPostManager) getCommentCount(pid int64) (count int) {
+// GetCommentCount gets the comment count of a post.
+func (z *PostManager) GetCommentCount(tx Querier, pid int64) (count int) {
 	query := `SELECT comments FROM posts WHERE id=` + fmt.Sprint(pid) + ` LIMIT 1`
-	row := me.db.QueryRow(query)
+	row := tx.QueryRow(query)
 	switch row.Scan(&count) {
 	case sql.ErrNoRows:
 		count = -1
@@ -97,7 +92,7 @@ func (me *xPostManager) getCommentCount(pid int64) (count int) {
 	return
 }
 
-func (z *xPostManager) BeforeQuery(q map[string]interface{}) map[string]interface{} {
+func (z *PostManager) beforeQuery(q map[string]interface{}) map[string]interface{} {
 	if _, ok := q["where"]; !ok {
 		q["where"] = []string{}
 	}
@@ -107,12 +102,12 @@ func (z *xPostManager) BeforeQuery(q map[string]interface{}) map[string]interfac
 	return q
 }
 
-func (z *xPostManager) getRowPosts(q map[string]interface{}) ([]*PostForArchiveQuery, error) {
-	q = z.BeforeQuery(q)
+func (z *PostManager) getRowPosts(tx Querier, q map[string]interface{}) ([]*PostForArchiveQuery, error) {
+	q = z.beforeQuery(q)
 	s := BuildQueryString(q)
 	log.Println(s)
 
-	rows, err := z.db.Query(s)
+	rows, err := tx.Query(s)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +127,8 @@ func (z *xPostManager) getRowPosts(q map[string]interface{}) ([]*PostForArchiveQ
 	return ps, rows.Err()
 }
 
-func (z *xPostManager) GetPostsByCategory(catID int64) ([]*PostForArchiveQuery, error) {
+// GetPostsByCategory gets category posts.
+func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArchiveQuery, error) {
 	q := make(map[string]interface{})
 
 	q["select"] = "id,title"
@@ -143,12 +139,13 @@ func (z *xPostManager) GetPostsByCategory(catID int64) ([]*PostForArchiveQuery, 
 	}
 	q["orderby"] = "date DESC"
 
-	return z.getRowPosts(q)
+	return z.getRowPosts(tx, q)
 }
 
-func (z *xPostManager) GetPostsByTags(tag string) ([]*PostForArchiveQuery, error) {
-	id := tagmgr.getTagID(tag)
-	ids := tagmgr.getAliasTagsAll([]int64{id})
+// GetPostsByTags gets tag posts.
+func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQuery, error) {
+	id := tagmgr.getTagID(tx, tag)
+	ids := tagmgr.getAliasTagsAll(tx, []int64{id})
 
 	q := make(map[string]interface{})
 
@@ -159,10 +156,11 @@ func (z *xPostManager) GetPostsByTags(tag string) ([]*PostForArchiveQuery, error
 		fmt.Sprintf("post_tags.tag_id in (%s)", joinInts(ids, ",")),
 	}
 
-	return z.getRowPosts(q)
+	return z.getRowPosts(tx, q)
 }
 
-func (z *xPostManager) GetPostsByDate(yy, mm int64) ([]*PostForArchiveQuery, error) {
+// GetPostsByDate get date posts.
+func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiveQuery, error) {
 	q := make(map[string]interface{})
 	q["select"] = "id,title"
 	q["from"] = "posts"
@@ -181,10 +179,11 @@ func (z *xPostManager) GetPostsByDate(yy, mm int64) ([]*PostForArchiveQuery, err
 
 	q["orderby"] = "date DESC"
 
-	return z.getRowPosts(q)
+	return z.getRowPosts(tx, q)
 }
 
-func (z *xPostManager) GetVars(fields string, wheres string, outs ...interface{}) error {
+// GetVars gets custom column values.
+func (z *PostManager) GetVars(tx Querier, fields string, wheres string, outs ...interface{}) error {
 	q := make(map[string]interface{})
 	q["select"] = fields
 	q["from"] = "posts"
@@ -195,7 +194,7 @@ func (z *xPostManager) GetVars(fields string, wheres string, outs ...interface{}
 
 	query := BuildQueryString(q)
 
-	row := z.db.QueryRow(query)
+	row := tx.QueryRow(query)
 
 	return row.Scan(outs...)
 }

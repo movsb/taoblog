@@ -1,9 +1,5 @@
 package main
 
-import (
-	"database/sql"
-)
-
 type xAllPostResult struct {
 	ID    int64  `json:"id"`
 	Title string `json:"title"`
@@ -11,10 +7,10 @@ type xAllPostResult struct {
 
 type xAllPostResults []xAllPostResult
 
-func getAllPosts(db *sql.DB) (xAllPostResults, error) {
+func getAllPosts(tx Querier) (xAllPostResults, error) {
 	var err error
 	query := `SELECT id,title FROM posts WHERE type='post' AND status='public' ORDER BY date DESC`
-	rows, err := db.Query(query)
+	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
 	}

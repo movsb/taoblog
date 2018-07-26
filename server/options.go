@@ -1,13 +1,11 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 )
 
 type OptionManager struct {
-	db *sql.DB
 }
 
 type Option struct {
@@ -15,62 +13,60 @@ type Option struct {
 	Value string `json:"value"`
 }
 
-func newOptionsModel(db *sql.DB) *OptionManager {
-	return &OptionManager{
-		db: db,
-	}
+func newOptionsModel() *OptionManager {
+	return &OptionManager{}
 }
 
-func (o *OptionManager) Has(name string) error {
+func (o *OptionManager) Has(tx Querier, name string) error {
 	query := `SELECT name FROM options WHERE name=? LIMIT 1`
 	val := ""
-	row := o.db.QueryRow(query, name)
+	row := tx.QueryRow(query, name)
 	return row.Scan(&val)
 }
 
-func (o *OptionManager) Get(name string) (string, error) {
+func (o *OptionManager) Get(tx Querier, name string) (string, error) {
 	query := `SELECT value FROM options WHERE name=? LIMIT 1`
-	row := o.db.QueryRow(query, name)
+	row := tx.QueryRow(query, name)
 	val := ""
 	err := row.Scan(&val)
 	return val, err
 }
 
-func (o *OptionManager) GetDef(name string, def string) string {
-	val, err := o.Get(name)
+func (o *OptionManager) GetDef(tx Querier, name string, def string) string {
+	val, err := o.Get(tx, name)
 	if err == nil {
 		return val
 	}
 	return def
 }
 
-func (o *OptionManager) Set(name string, val interface{}) error {
+func (o *OptionManager) Set(tx Querier, name string, val interface{}) error {
 	strVal := fmt.Sprint(val)
 
 	query := ""
 	var err error
 
-	if o.Has(name) == nil {
+	if o.Has(tx, name) == nil {
 		query = `UPDATE options SET value=? WHERE name=? LIMIT 1`
-		_, err = o.db.Exec(query, strVal, name)
+		_, err = tx.Exec(query, strVal, name)
 	} else {
 		query = `INSERT INTO options (name,value) VALUES (?,?)`
-		_, err = o.db.Exec(query, name, strVal)
+		_, err = tx.Exec(query, name, strVal)
 	}
 	log.Println(query)
 	return err
 }
 
-func (o *OptionManager) Del(name string) error {
+func (o *OptionManager) Del(tx Querier, name string) error {
 	query := `DELETE FROM options WHERE name=? LIMIT 1`
-	_, err := o.db.Exec(query, name)
+	_, err := tx.Exec(query, name)
 	return err
 }
 
-func (o *OptionManager) List() ([]Option, error) {
+func (o *OptionManager) List(tx Querier) ([]Option, error) {
 	items := make([]Option, 0)
 	query := `SELECT name,value FROM options`
-	rows, err := o.db.Query(query)
+	rows, err := tx.Query(query)
 	if err != nil {
 		return items, err
 	}
