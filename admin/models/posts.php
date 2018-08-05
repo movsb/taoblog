@@ -164,7 +164,8 @@ class TB_Posts {
         }
 
         if($succeed) {
-            $tbtag->update_post_tags((int)$arg['id'], $arg['tags']);
+            $tag_json = json_encode(explode(',', $arg['tags']));
+            Invoke('/posts/'.(int)$arg['id'].'/tags', 'json', $tag_json);
             return true;
         } else {
             $this->error = $stmt->error;
@@ -284,7 +285,8 @@ class TB_Posts {
                 if($r) {
                     $iid = $tbdb->insert_id;
 
-                    $tbtag->update_post_tags($iid, $arg['tags']);
+                    $tag_json = json_encode(explode(',', $arg['tags']));
+                    Invoke('/posts/'.$iid.'/tags', 'json', $tag_json);
                     return $iid;
                 }
             }

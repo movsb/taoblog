@@ -537,4 +537,40 @@ func tagsV1(routerV1 *gin.RouterGroup) {
 		EndReq(c, nil, tags)
 		return
 	})
+
+	tagsV1.POST("/:parent", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		tagID := toInt64(c.Param("parent"))
+
+		var tag Tag
+
+		if err := c.ShouldBindJSON(&tag); err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		tag.ID = tagID
+
+		tx, err := gdb.Begin()
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		err = tagmgr.UpdateTag(tx, &tag)
+		if err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+	})
 }

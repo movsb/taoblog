@@ -190,6 +190,15 @@ func (tm *TagManager) removeObjectTag(tx Querier, pid, tid int64) {
 	_ = ret
 }
 
+// this is temp
+func (tm *TagManager) hasObjectTag(tx Querier, pid, tid int64) bool {
+	query := "SELECT id FROM post_tags WHERE post_id=? AND tag_id=? LIMIT 1"
+	row := tx.QueryRow(query, pid, tid)
+	id := 0
+	row.Scan(&id)
+	return id > 0
+}
+
 // UpdateObjectTags updates
 func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
 	// seperators are "," "，" ";" "；"
@@ -232,9 +241,12 @@ func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
 			tid = tm.addTag(tx, t, 0)
 		} else {
 			tag, _ := tm.GetRootTag(tx, tm.getTagID(tx, t))
+			log.Println("root tag:", tag)
 			tid = tag.ID
 		}
-		tm.addObjectTag(tx, pid, tid)
+		if !tm.hasObjectTag(tx, pid, tid) {
+			tm.addObjectTag(tx, pid, tid)
+		}
 	}
 }
 
@@ -283,4 +295,17 @@ func (tm *TagManager) GetRootTag(tx Querier, id int64) (tag *Tag, err error) {
 		}
 		id = tag.Alias
 	}
+}
+
+// UpdateTag updates a tag.
+func (tm *TagManager) UpdateTag(tx Querier, tag *Tag) error {
+	if _, err := tm.GetTagByID(tx, tag.ID); err != nil {
+		return err
+	}
+	query := "UPDATE tags SET name=?,alias=? WHERE id=? LIMIT 1"
+	_, err := tx.Exec(query, tag.Name, tag.Alias, tag.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

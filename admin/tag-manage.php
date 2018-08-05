@@ -100,27 +100,31 @@ $('.table').click(function(e) {
         <input name="alias" type="text" value="" />
     </div>
     <div>
-        <input type="hidden" name="do" value="update" />
         <input class="submit" type="submit" value="保存" />
         <input class="cancel" type="button" value="取消" />
     </div>
 </form>
 <script>
 $('#edit-form .submit').click(function(){
-    $.post('', $('#edit-form').serialize(),
-        function(data) {
-            if (data.errno != 'ok') {
-                alert(data.error);
-                return;
-            }
+    $.ajax({
+        type: 'POST',
+        url: '/v1/tags/'+$('#edit-form input[name="id"]').val(),
+        data: JSON.stringify({
+            name: $('#edit-form input[name="name"]').val(),
+            alias: +$('#edit-form input[name="alias"]').val(),
+        }) , 
+        contentType: 'application/json',
+        success: function(data) {
             var f = $('#edit-box');
             var t = cur_edit_tr;
             t.find('.name').text(f.find('input[name=name]').val());
             t.find('.alias').text(f.find('input[name=alias]').val());
             f.fadeOut();
         },
-        'json'
-    );
+        error: function() {
+            alert('error');
+        },
+    });
     return false;
 });
 $('#edit-form .cancel').click(function() {
@@ -142,41 +146,4 @@ admin_footer();
 
 die(0);
 
-else : // POST
-
-function tag_die_json($arg)
-{
-    header('HTTP/1.1 200 OK');
-    header('Content-Type: application/json');
-
-    echo json_encode($arg, JSON_UNESCAPED_UNICODE);
-    die(0);
-}
-
-require_once 'login-auth.php';
-
-if (!login_auth()) {
-    tag_die_json([
-        'errno' => 'unauthorized',
-        'error' => '需要登录后才能进行该操作！',
-        ]);
-}
-
-require_once('load.php');
-
-$do = $_POST['do'] ?? '';
-if ($do == 'update') {
-    $id = (int)$_POST['id'];
-    $name = (string)$_POST['name'];
-    $alias = (int)$_POST['alias'];
-
-    $r = $tbtag->updateTag($id, $name, $alias);
-
-    tag_die_json([
-        'errno' => $r ? 'ok' : 'error',
-        'error' => $tbtag->error,
-    ]);
-}
-
 endif;
-
