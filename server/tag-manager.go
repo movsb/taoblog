@@ -6,20 +6,23 @@ import (
 	"strings"
 )
 
-type xTagObject struct {
-	id    int64
-	name  string
-	alias int64
+// Tag is a tag.
+type Tag struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Alias int64  `json:"alias"`
 }
 
-type xTagManager struct {
+// TagManager manages tags.
+type TagManager struct {
 }
 
-func newTagManager() *xTagManager {
-	return &xTagManager{}
+// NewTagManager news
+func NewTagManager() *TagManager {
+	return &TagManager{}
 }
 
-func (tm *xTagManager) addTag(tx Querier, name string, alias uint) int64 {
+func (tm *TagManager) addTag(tx Querier, name string, alias uint) int64 {
 	sql := `INSERT INTO tags (name,alias) values (?,?)`
 	ret, err := tx.Exec(sql, name, alias)
 	if err != nil {
@@ -30,7 +33,7 @@ func (tm *xTagManager) addTag(tx Querier, name string, alias uint) int64 {
 	return id
 }
 
-func (tm *xTagManager) searchTag(tx Querier, tag string) (tags []xTagObject) {
+func (tm *TagManager) searchTag(tx Querier, tag string) (tags []Tag) {
 	sql := `SELECT * FROM tags WHERE name LIKE ?`
 	rows, err := tx.Query(sql, "%"+tag+"%")
 	if err != nil {
@@ -38,8 +41,8 @@ func (tm *xTagManager) searchTag(tx Querier, tag string) (tags []xTagObject) {
 	}
 
 	for rows.Next() {
-		var tag xTagObject
-		if err = rows.Scan(&tag.id, &tag.name, &tag.alias); err != nil {
+		var tag Tag
+		if err = rows.Scan(&tag.ID, &tag.Name, &tag.Alias); err != nil {
 			panic(err)
 		}
 		tags = append(tags, tag)
@@ -48,7 +51,7 @@ func (tm *xTagManager) searchTag(tx Querier, tag string) (tags []xTagObject) {
 	return
 }
 
-func (tm *xTagManager) getTagID(tx Querier, name string) int64 {
+func (tm *TagManager) getTagID(tx Querier, name string) int64 {
 	sql := `SELECT id FROM tags WHERE name=? LIMIT 1`
 	row := tx.QueryRow(sql, name)
 
@@ -61,11 +64,11 @@ func (tm *xTagManager) getTagID(tx Querier, name string) int64 {
 	return id
 }
 
-func (tm *xTagManager) hasTagName(tx Querier, name string) bool {
+func (tm *TagManager) hasTagName(tx Querier, name string) bool {
 	return tm.getTagID(tx, name) > 0
 }
 
-func (tm *xTagManager) getTagNames(tx Querier, pid int64) (names []string) {
+func (tm *TagManager) getTagNames(tx Querier, pid int64) (names []string) {
 	sql := `SELECT tags.name FROM post_tags,tags WHERE post_tags.post_id=` + fmt.Sprint(pid) + ` AND post_tags.tag_id=tags.id`
 	rows, err := tx.Query(sql)
 	if err != nil {
@@ -88,7 +91,7 @@ func (tm *xTagManager) getTagNames(tx Querier, pid int64) (names []string) {
 	return
 }
 
-func (tm *xTagManager) getTagIDs(tx Querier, pid int64, alias bool) (ids []int64) {
+func (tm *TagManager) getTagIDs(tx Querier, pid int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=` + fmt.Sprint(pid)
 
 	rows, err := tx.Query(sql)
@@ -114,7 +117,7 @@ func (tm *xTagManager) getTagIDs(tx Querier, pid int64, alias bool) (ids []int64
 	return
 }
 
-func (tm *xTagManager) getAliasTagsAll(tx Querier, ids []int64) []int64 {
+func (tm *TagManager) getAliasTagsAll(tx Querier, ids []int64) []int64 {
 	sids := joinInts(ids, ",")
 
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
@@ -157,7 +160,7 @@ func (tm *xTagManager) getAliasTagsAll(tx Querier, ids []int64) []int64 {
 	return ids
 }
 
-func (tm *xTagManager) addObjectTag(tx Querier, pid int64, tid int64) int64 {
+func (tm *TagManager) addObjectTag(tx Querier, pid int64, tid int64) int64 {
 	sql := `INSERT INTO post_tags (post_id,tag_id) VALUES (?,?)`
 	ret, err := tx.Exec(sql, pid, tid)
 	if err != nil {
@@ -169,7 +172,7 @@ func (tm *xTagManager) addObjectTag(tx Querier, pid int64, tid int64) int64 {
 	return id
 }
 
-func (tm *xTagManager) removeObjectTag(tx Querier, pid, tid int64) {
+func (tm *TagManager) removeObjectTag(tx Querier, pid, tid int64) {
 	sql := `DELETE FROM post_tags WHERE post_id=? AND tag_id=? LIMIT 1`
 	ret, err := tx.Exec(sql, pid, tid)
 	if err != nil {
@@ -178,7 +181,13 @@ func (tm *xTagManager) removeObjectTag(tx Querier, pid, tid int64) {
 	_ = ret
 }
 
-func (tm *xTagManager) updateObjectTags(tx Querier, pid int64, tagstr string) {
+// UpdateObjectTags updates
+func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
+	// seperators are "," "，" ";" "；"
+	tagstr = strings.Replace(tagstr, "，", ",", -1)
+	tagstr = strings.Replace(tagstr, "；", ",", -1)
+	tagstr = strings.Replace(tagstr, ";", ",", -1)
+
 	newTags := strings.Split(tagstr, ",")
 	oldTags := tm.getTagNames(tx, pid)
 
@@ -214,4 +223,26 @@ func (tm *xTagManager) updateObjectTags(tx Querier, pid int64, tagstr string) {
 		}
 		tm.addObjectTag(tx, pid, tid)
 	}
+}
+
+// List lists all tags.
+func (tm *TagManager) List(tx Querier) ([]*Tag, error) {
+	rows, err := tx.Query("SELECT * FROM tags")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	tags := make([]*Tag, 0)
+
+	for rows.Next() {
+		var tag Tag
+		if err = rows.Scan(&tag.ID, &tag.Name, &tag.Alias); err != nil {
+			return nil, err
+		}
+		tags = append(tags, &tag)
+	}
+
+	return tags, rows.Err()
 }

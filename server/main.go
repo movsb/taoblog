@@ -33,7 +33,7 @@ type xConfig struct {
 var gkey string
 var config xConfig
 var gdb *sql.DB
-var tagmgr *xTagManager
+var tagmgr *TagManager
 var postmgr *PostManager
 var optmgr *OptionManager
 var auther *GenericAuth
@@ -80,7 +80,7 @@ func main() {
 
 	defer gdb.Close()
 
-	tagmgr = newTagManager()
+	tagmgr = NewTagManager()
 	postmgr = NewPostManager()
 	optmgr = newOptionsModel()
 	auther = &GenericAuth{}
@@ -94,12 +94,6 @@ func main() {
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
-
-	tagapi := router.Group("/tags")
-
-	tagapi.GET("/list", func(c *gin.Context) {
-
-	})
 
 	postapi := router.Group("/posts")
 
@@ -415,6 +409,7 @@ func routerV1(router *gin.Engine) {
 	})
 
 	optionsV1(v1)
+	tagsV1(v1)
 }
 
 func optionsV1(routerV1 *gin.RouterGroup) {
@@ -486,5 +481,19 @@ func optionsV1(routerV1 *gin.RouterGroup) {
 			return
 		}
 		EndReq(c, err, nil)
+	})
+}
+
+func tagsV1(routerV1 *gin.RouterGroup) {
+	tagsV1 := routerV1.Group("/tags")
+
+	tagsV1.GET("", func(c *gin.Context) {
+		tags, err := tagmgr.List(gdb)
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		EndReq(c, nil, tags)
+		return
 	})
 }
