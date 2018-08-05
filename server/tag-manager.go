@@ -68,27 +68,36 @@ func (tm *TagManager) hasTagName(tx Querier, name string) bool {
 	return tm.getTagID(tx, name) > 0
 }
 
-func (tm *TagManager) getTagNames(tx Querier, pid int64) (names []string) {
-	sql := `SELECT tags.name FROM post_tags,tags WHERE post_tags.post_id=` + fmt.Sprint(pid) + ` AND post_tags.tag_id=tags.id`
-	rows, err := tx.Query(sql)
+// GetObjectTagNames gets all tag names of an object.
+func (tm *TagManager) GetObjectTagNames(tx Querier, oid int64) ([]string, error) {
+	q := make(map[string]interface{})
+	q["select"] = "tags.name"
+	q["from"] = "post_tags,tags"
+	q["where"] = []string{
+		"post_tags.post_id=" + fmt.Sprint(oid),
+		"post_tags.tag_id=tags.id",
+	}
+	query := BuildQueryString(q)
+
+	rows, err := tx.Query(query)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	defer rows.Close()
 
-	names = make([]string, 0)
+	names := make([]string, 0)
 
 	for rows.Next() {
 		var name string
 		err = rows.Scan(&name)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		names = append(names, name)
 	}
 
-	return
+	return names, rows.Err()
 }
 
 func (tm *TagManager) getTagIDs(tx Querier, pid int64, alias bool) (ids []int64) {
@@ -189,7 +198,10 @@ func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
 	tagstr = strings.Replace(tagstr, ";", ",", -1)
 
 	newTags := strings.Split(tagstr, ",")
-	oldTags := tm.getTagNames(tx, pid)
+	oldTags, err := tm.GetObjectTagNames(tx, pid)
+	if err != nil {
+		return // TODO
+	}
 
 	var (
 		toBeDeled []string
@@ -219,14 +231,15 @@ func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
 		if !tm.hasTagName(tx, t) {
 			tid = tm.addTag(tx, t, 0)
 		} else {
-			tid = tm.getTagID(tx, t)
+			tag, _ := tm.GetRootTag(tx, tm.getTagID(tx, t))
+			tid = tag.ID
 		}
 		tm.addObjectTag(tx, pid, tid)
 	}
 }
 
-// List lists all tags.
-func (tm *TagManager) List(tx Querier) ([]*Tag, error) {
+// ListTags lists all tags.
+func (tm *TagManager) ListTags(tx Querier) ([]*Tag, error) {
 	rows, err := tx.Query("SELECT * FROM tags")
 	if err != nil {
 		return nil, err
@@ -245,4 +258,29 @@ func (tm *TagManager) List(tx Querier) ([]*Tag, error) {
 	}
 
 	return tags, rows.Err()
+}
+
+// GetTagByID gets a tag ID.
+func (tm *TagManager) GetTagByID(tx Querier, id int64) (*Tag, error) {
+	query := "SELECT id,name,alias FROM tags WHERE id=?"
+	row := tx.QueryRow(query, id)
+	var tag Tag
+	if err := row.Scan(&tag.ID, &tag.Name, &tag.Alias); err != nil {
+		return nil, err
+	}
+	return &tag, nil
+}
+
+// GetRootTag gets the root tag of an alias-ed tag.
+func (tm *TagManager) GetRootTag(tx Querier, id int64) (tag *Tag, err error) {
+	for {
+		tag, err = tm.GetTagByID(tx, id)
+		if err != nil {
+			return
+		}
+		if tag.Alias == 0 {
+			return
+		}
+		id = tag.Alias
+	}
 }

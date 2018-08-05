@@ -369,6 +369,47 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, nil)
 	})
 
+	posts.GET("/:parent/tags", func(c *gin.Context) {
+		pid := toInt64(c.Param("parent"))
+		tags, err := tagmgr.GetObjectTagNames(gdb, pid)
+		EndReq(c, err, tags)
+	})
+
+	posts.POST("/:parent/tags", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		var tags []string
+		if err := c.ShouldBindJSON(&tags); err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		pid := toInt64(c.Param("parent"))
+		if has, err := postmgr.Has(gdb, pid); true {
+			if err != nil {
+				EndReq(c, err, nil)
+				return
+			} else if !has {
+				EndReq(c, fmt.Errorf("post not found: %v", pid), nil)
+				return
+			}
+		}
+
+		tx, err := gdb.Begin()
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		tagmgr.UpdateObjectTags(tx, pid, strings.Join(tags, ","))
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+		EndReq(c, nil, nil)
+	})
+
 	archives := v1.Group("/archives")
 
 	archives.GET("/categories/:name", func(c *gin.Context) {
@@ -488,7 +529,7 @@ func tagsV1(routerV1 *gin.RouterGroup) {
 	tagsV1 := routerV1.Group("/tags")
 
 	tagsV1.GET("", func(c *gin.Context) {
-		tags, err := tagmgr.List(gdb)
+		tags, err := tagmgr.ListTags(gdb)
 		if err != nil {
 			EndReq(c, err, nil)
 			return
