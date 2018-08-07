@@ -1,29 +1,13 @@
-<?php
-
-// 请在安装成功之后取消注释下面一条语句
-die('Setup: Silence is golden.');
-
-require_once dirname(__FILE__).'/../admin/utils/die.php';
-require_once 'config.php';
-require_once dirname(__FILE__).'/../admin/models/base.php';
-
-$my = $tbdb;
-
-// 创建表 options
-$sql = "CREATE TABLE IF NOT EXISTS `options` (
+-- 创建表 options
+CREATE TABLE IF NOT EXISTS `options` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `value` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     PRIMARY KEY(`id`)
-    );";
+);
 
-if(!$my->query($sql)){
-    tb_die(200, '无法创建表：options - '.$my->error);
-}
-
-// 创建表 posts
-
-$sql = "CREATE TABLE IF NOT EXISTS `posts` (
+-- 创建表 posts
+CREATE TABLE IF NOT EXISTS `posts` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
     `modified` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
@@ -40,14 +24,10 @@ $sql = "CREATE TABLE IF NOT EXISTS `posts` (
     `source` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     `source_type` ENUM('html', 'markdown'),
     PRIMARY KEY(`id`)
-    );";
+);
 
-if(!$my->query($sql)){
-    tb_die(200, '无法创建表：posts - '.$my->error);
-}
-
-// 创建表 comments
-$sql = "CREATE TABLE IF NOT EXISTS `comments` (
+-- 创建表 comments
+CREATE TABLE IF NOT EXISTS `comments` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `post_id` INT(20) UNSIGNED NOT NULL,
     `author` TINYTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -59,27 +39,20 @@ $sql = "CREATE TABLE IF NOT EXISTS `comments` (
     `parent` INT(20) UNSIGNED NOT NULL,
     `ancestor` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)
-    );";
+);
 
-if(!$my->query($sql)){
-    tb_die(200, '无法创建表：comments - '.$my->error);
-}
-
-// 创建表 taxonomies
-$sql = "CREATE TABLE IF NOT EXISTS taxonomies (
+-- 创建表 taxonomies
+CREATE TABLE IF NOT EXISTS taxonomies (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `slug` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `parent` INT(20) UNSIGNED NOT NULL,
     `ancestor` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)
-    );";
-if(!$my->query($sql)){
-    tb_die(200, '无法创建表：taxonomies - '.$my->error);
-}
+);
 
-// 创建表 /分类/文章样式和JavaScript/关键字表 post_metas
-$sql = "CREATE TABLE IF NOT EXISTS post_metas (
+-- 创建表 /分类/文章样式和JavaScript/关键字表 post_metas
+CREATE TABLE IF NOT EXISTS post_metas (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `type` ENUM('post','page','tax'),
     `tid` INT(20) UNSIGNED NOT NULL,
@@ -87,32 +60,21 @@ $sql = "CREATE TABLE IF NOT EXISTS post_metas (
     `footer` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `keywords` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     PRIMARY KEY(`id`)
-    );";
-if(!$my->query($sql)) {
-    tb_die(200, '无法创建表：post_metas - '.$my->error);
-}
+);
 
-// 创建表 tag标签/post_tags
-$sql = "CREATE TABLE IF NOT EXISTS tags (
+-- 创建表 tag标签/post_tags
+CREATE TABLE IF NOT EXISTS tags (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `alias` INT(20) UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`)
-    );";
-if(!$my->query($sql)) {
-    tb_die(200, '无法创建表：tags - '.$my->error);
-}
+);
 
-$sql = "CREATE TABLE IF NOT EXISTS post_tags (
+-- 创建表 文章标签表
+CREATE TABLE IF NOT EXISTS post_tags (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `post_id` INT(20) UNSIGNED NOT NULL,
     `tag_id` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)
-    );";
-if(!$my->query($sql)) {
-    tb_die(200, '无法创建表：post_tags - '.$my->error);
-}
-
-//-----------------------------------------------------------------------------
-tb_die(200, '操作成功！');
+);
