@@ -22,8 +22,6 @@ require_once 'models/tags.php';
 
 require_once 'tbmain.php';
 
-require_once 'hooks/post.php';
-
 require_once 'query.php';
 require_once 'canonical.php';
 

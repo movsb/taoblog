@@ -692,7 +692,7 @@ function post_new_post() {
     global $tbmain;
 
     if(($id=$tbpost->insert($_POST))){
-        apply_hooks('post_posted', $id, $_POST);
+        $tbpost->after_post_posted($id, $_POST);
         header('HTTP/1.1 302 Found');
         header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id);
         die(0);

@@ -324,6 +324,33 @@ class TB_Posts {
         return $posts;
     }
 
+    private function before_posts_query(array $sql) {
+        global $logged_in;
+
+        if (!$logged_in) {
+            $sql['where'][] = "status='public'";
+        }
+
+        return $sql;
+    }
+
+    public function after_post_posted($id, $post) {
+        global $tbopt;
+
+        $last = $tbopt->get('last_post_time');
+        $pdate = $post['date'];
+
+        if (!$last || $pdate >= $last) {
+            $tbopt->set('last_post_time', $pdate);
+        }
+
+        $post_count = $this->get_count_of_type('post');
+        $page_count = $this->get_count_of_type('page');
+
+        $tbopt->set('post_count', $post_count);
+        $tbopt->set('page_count', $page_count);
+    }
+
     // 根据 id 查询单篇文章
     // 未查询到文章时返回 false 或 []
     // 查询到文章时返回数组（仅一篇文章）
@@ -342,7 +369,7 @@ class TB_Posts {
         }
         $sql['limit'] = 1;
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -381,7 +408,7 @@ class TB_Posts {
         $sql['where'][] = "posts.id=post_tags.post_id";
         $sql['where'][] = "post_tags.tag_id in ($ids)";
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $results = $tbdb->query($sql);
@@ -431,7 +458,7 @@ class TB_Posts {
             $sql['limit'] = $count;
         }
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -477,7 +504,7 @@ class TB_Posts {
         }
         $sql['limit']   = 1;
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -517,7 +544,7 @@ class TB_Posts {
             $sql['where'][] = "modified>'".$modified."'";
         }
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -562,7 +589,7 @@ class TB_Posts {
 
         $sql['oderby']  = 'date DESC';
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -591,7 +618,7 @@ class TB_Posts {
             $sql['where'][] = "taxonomy=$t";
         }
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -609,7 +636,7 @@ class TB_Posts {
         $sql['from']    = 'posts';
         $sql['groupby'] = 'taxonomy';
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -644,7 +671,7 @@ class TB_Posts {
             $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
         }
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -718,7 +745,7 @@ class TB_Posts {
         $sql['orderby'] = 'relevance DESC';
         $sql['limit']   = 9;   // TODO make configable
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -812,7 +839,7 @@ class TB_Posts {
         $sql['where']   = [];
         $sql['where'][] = "type='post'";
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $sql = "SELECT year,month,count(id) count FROM ("
@@ -850,7 +877,7 @@ class TB_Posts {
         $sql['where']   = [];
         $sql['where'][] = "type='$type'";
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
@@ -874,7 +901,7 @@ class TB_Posts {
         $sql['where'][] = "type='post'";
         $sql['orderby'] = 'id DESC';
 
-        $sql = apply_hooks('before_query_posts', 0, $sql);
+        $sql = $this->before_posts_query($sql);
         $sql = make_query_string($sql);
 
         $rows = $tbdb->query($sql);
