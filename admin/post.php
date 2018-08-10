@@ -715,7 +715,6 @@ function post_update() {
     }
 
     $id = (int)$_POST['id'];
-    apply_hooks('post_updated', $id, $_POST);
 
     header('HTTP/1.1 302 Updated');
     header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id);
