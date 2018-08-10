@@ -26,19 +26,7 @@ class TB_Query {
     public function is_feed()       { return $this->type === 'feed'; }
     public function is_archive()    { return $this->type === 'archive'; }
 
-    // 临时使用，待寻找更好的解决办法
-    public function push_404() {
-        $this->type_origin = $this->type;
-        $this->type = '404';
-    }
-
-    // 临时使用，待寻找更好的解决办法
-    public function pop_404() {
-        $this->type = $this->type_origin;
-    }
-
     public function __construct() {
-        global $tbopt;
         $this->internal_query = [];
     }
 

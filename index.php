@@ -31,7 +31,7 @@ if(!login_auth() && file_exists('MAINTENANCE')) {
 
 
 if($tbquery->query() === false){
-    tb_die(404, '404 Page not found.');
+    tb_die(404, '404 页面未找到');
 }
 
 if(!$tbquery->have() 
