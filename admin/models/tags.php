@@ -31,19 +31,6 @@ class TB_Tags
     }
 
     /**
-     * 判断某个标签是否存在
-     *
-     * 该函数调用 get_tag_id 来判断某个名为 $name 的标签是否存在
-     *
-     * @param string $name 标签名
-     *
-     * @return 返回布尔值代表存在与否
-     */
-    public function has_tag_name($name) {
-        return !!$this->get_tag_id($name);
-    }
-
-    /**
      * 取得某篇文章的标签名列表
      *
      * @param int $id 文章编号
@@ -201,60 +188,4 @@ class TB_Tags
             return $tag_objs;
         }
     }
-
-    /**
-     * 更新某标签数据
-     * 
-     * @param int    $id    标签编号
-     * @param string $name  新标签名字
-     * @param int    $alias 新标签别名
-     *
-     * @return boolean
-     */
-    public function updateTag(int $id, string $name, int $alias)
-    {
-        global $tbdb;
-
-        $r = false;
-
-        // 如果是别名标签，被别名的标签不应是另一别名标签
-        // 即：被别名的标签的别名标签应该为空
-        if ($alias != 0) {
-            $ao = $this->getTagObject($alias);
-            if ($ao != null) {
-                if ($ao->alias != 0) {
-                    $this->error = "被别名的标签不应该是一个别名标签。";
-                    return false;
-                }
-            } else {
-                $this->error = "被别名的标签不存在。";
-                return false;
-            }
-        }
-
-        $sql = "UPDATE tags SET name=?,alias=? WHERE id=? LIMIT 1";
-        if ($stmt = $tbdb->prepare($sql)) {
-            if ($stmt->bind_param('sii', $name, $alias, $id)) {
-                $r = $stmt->execute();
-            }
-            $stmt->close();
-        }
-
-        return $r;
-    }
-
-    /**
-     * 取得一条标签对象
-     * 
-     * @param int $id 标签编号
-     * 
-     * @return 对应标签对象（找不到时返回空）
-     */
-    public function getTagObject(int $id)
-    {
-        global $tbdb;
-        $sql = "SELECT * FROM tags WHERE id=$id";
-        return $tbdb->query($sql)->fetch_object();
-    }
 }
-

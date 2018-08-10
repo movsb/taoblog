@@ -78,23 +78,4 @@ class TB_Options
 
         return false;
     }
-
-    /**
-     * Deletes value specified by key name
-     * 
-     * @param string $name the key name
-     * 
-     * @return boolean
-     */
-    public function del($name)
-    {
-        global $tbdb;
-        $sql = 'DELETE FROM options WHERE name=? LIMIT 1';
-        if ($stmt = $tbdb->prepare($sql)) {
-            $stmt->bind_param('s', $name);
-            return $stmt->execute();
-        }
-
-        return false;
-    }
 }

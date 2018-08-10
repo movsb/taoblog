@@ -561,72 +561,6 @@ class TB_Posts {
 
     }
 
-    // 根据分类查询文章
-    public function query_by_tax(string $tax){
-        global $tbdb;
-        global $tbtax;
-        global $tbquery;
-
-        $taxid = (int)$tbtax->id_from_tree($tax);
-        if(!$taxid) return false;
-
-        $tbquery->category = $tbtax->tree_from_id($taxid);
-
-        $sql = array();
-
-        $fields = "id,date,title,slug,type,taxonomy";
-
-        $sql['select']  = $fields;
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-
-        $s = "taxonomy=$taxid";
-        $offsprings = $tbtax->get_offsprings($taxid);
-        foreach($offsprings as $os)
-            $s .= " OR taxonomy=$os";
-
-        $sql['where'][] = $s;
-
-        $sql['oderby']  = 'date DESC';
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-        $p = [];
-        while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        $p = $this->after_posts_query($p);
-
-        return $p;
-
-    }
-
-    public function get_count_of_taxes($taxes=[]) {
-        global $tbdb;
-
-        $sql = array();
-        $sql['select']  = 'count(id) as total';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-
-        foreach($taxes as $t) {
-            $t = (int)$t;
-            $sql['where'][] = "taxonomy=$t";
-        }
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        return $rows->fetch_object()->total;
-    }
-
     // 虽然名字跟上下两个很像，并完全不是在同一个时间段写的，功能貌似也并不相同
     public function get_count_of_cats_all() {
         global $tbdb;
@@ -647,37 +581,6 @@ class TB_Posts {
             $ca[$r->taxonomy] = $r->count;
 
         return $ca;
-    }
-
-    public function get_count_of_date($yy=0, $mm=0) {
-        global $tbdb;
-        global $tbdate;
-
-        $yy = (int)$yy;
-        $mm = (int)$mm;
-
-        $sql = array();
-        $sql['select']  = 'count(id) as total';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-
-        if($yy >= 1970) {
-            if($mm >= 1 && $mm <= 12) {
-                $startend = $tbdate->the_month_startend_gmdate($yy, $mm);
-            } else {
-                $startend = $tbdate->the_year_startend_gmdate($yy);
-            }
-
-            $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
-        }
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        return $rows->fetch_object()->total;
     }
 
     // Go!

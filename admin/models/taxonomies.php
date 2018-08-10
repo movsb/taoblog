@@ -302,21 +302,5 @@ class TB_Taxonomies {
                 )
             ;
     }
-
-    public function &get_vars($fields, $where) {
-        global $tbdb;
-
-        $sql = "SELECT $fields FROM taxonomies WHERE $where LIMIT 1";
-        $rows = $tbdb->query($sql);
-        if(!$rows) {
-            $this->error = $tbdb->error;
-            return false;
-        }
-
-        if(!$rows->num_rows) return null;
-
-        $r = $rows->fetch_object();
-        return $r;
-    }
 }
 

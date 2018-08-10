@@ -11,11 +11,6 @@ class TB_DateTime {
         return date('Y-m-d H:i:s');
     }
 
-    // MySQL时间转换成HTTP协议的GMT格式
-    public function mysql_datetime_to_http_gmt($t) {
-        return gmdate('D, d M Y H:i:s \G\M\T', strtotime($t.' GMT+0000'));
-    }
-
     // HTTP GMT时间转本地MySQL时间
     public function http_gmt_to_mysql_datetime_gmt($g) {
         return $this->mysql_datetime_gmt(strtotime($g));
@@ -36,10 +31,6 @@ class TB_DateTime {
 
     public function mysql_local_to_timestamp($t) {
         return strtotime($t.' GMT+0800');
-    }
-
-    public function http_gmt_now() {
-        return $this->mysql_local_to_http_gmt($this->mysql_datetime_local());
     }
 
     public function is_valid_mysql_datetime($t) {
