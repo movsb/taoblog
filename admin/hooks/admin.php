@@ -20,6 +20,5 @@ function adminLeftAll()
     echo '<li><a href="post-manage.php">文章管理</a></li>';
     echo '<li><a href="taxonomy.php">分类管理</a></li>';
     echo '<li><a href="tag-manage.php">标签管理</a></li>';
-    echo '<li><a href="settings.php">设置</a></li>';
     echo '<li><a href="login.php?do=logout">退出</a></li>';
 }
