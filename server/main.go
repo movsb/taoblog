@@ -33,7 +33,7 @@ type xConfig struct {
 var gkey string
 var config xConfig
 var gdb *sql.DB
-var tagmgr *xTagManager
+var tagmgr *TagManager
 var postmgr *PostManager
 var optmgr *OptionManager
 var auther *GenericAuth
@@ -80,7 +80,7 @@ func main() {
 
 	defer gdb.Close()
 
-	tagmgr = newTagManager()
+	tagmgr = NewTagManager()
 	postmgr = NewPostManager()
 	optmgr = newOptionsModel()
 	auther = &GenericAuth{}
@@ -94,12 +94,6 @@ func main() {
 
 	gin.DisableConsoleColor()
 	router := gin.Default()
-
-	tagapi := router.Group("/tags")
-
-	tagapi.GET("/list", func(c *gin.Context) {
-
-	})
 
 	postapi := router.Group("/posts")
 
@@ -375,6 +369,47 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, nil)
 	})
 
+	posts.GET("/:parent/tags", func(c *gin.Context) {
+		pid := toInt64(c.Param("parent"))
+		tags, err := tagmgr.GetObjectTagNames(gdb, pid)
+		EndReq(c, err, tags)
+	})
+
+	posts.POST("/:parent/tags", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		var tags []string
+		if err := c.ShouldBindJSON(&tags); err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		pid := toInt64(c.Param("parent"))
+		if has, err := postmgr.Has(gdb, pid); true {
+			if err != nil {
+				EndReq(c, err, nil)
+				return
+			} else if !has {
+				EndReq(c, fmt.Errorf("post not found: %v", pid), nil)
+				return
+			}
+		}
+
+		tx, err := gdb.Begin()
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		tagmgr.UpdateObjectTags(tx, pid, strings.Join(tags, ","))
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+		EndReq(c, nil, nil)
+	})
+
 	archives := v1.Group("/archives")
 
 	archives.GET("/categories/:name", func(c *gin.Context) {
@@ -415,6 +450,7 @@ func routerV1(router *gin.Engine) {
 	})
 
 	optionsV1(v1)
+	tagsV1(v1)
 }
 
 func optionsV1(routerV1 *gin.RouterGroup) {
@@ -486,5 +522,55 @@ func optionsV1(routerV1 *gin.RouterGroup) {
 			return
 		}
 		EndReq(c, err, nil)
+	})
+}
+
+func tagsV1(routerV1 *gin.RouterGroup) {
+	tagsV1 := routerV1.Group("/tags")
+
+	tagsV1.GET("", func(c *gin.Context) {
+		tags, err := tagmgr.ListTags(gdb)
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		EndReq(c, nil, tags)
+		return
+	})
+
+	tagsV1.POST("/:parent", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		tagID := toInt64(c.Param("parent"))
+
+		var tag Tag
+
+		if err := c.ShouldBindJSON(&tag); err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		tag.ID = tagID
+
+		tx, err := gdb.Begin()
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+
+		err = tagmgr.UpdateTag(tx, &tag)
+		if err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
+
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
+			EndReq(c, err, nil)
+			return
+		}
 	})
 }

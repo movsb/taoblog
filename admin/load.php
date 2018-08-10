@@ -1,6 +1,6 @@
 <?php 
 
-define('TB_VERSION', '1.1.10');
+define('TB_VERSION', '1.1.11');
 
 require_once dirname(__FILE__).'/../setup/config.php';
 
@@ -26,6 +26,8 @@ require_once 'hooks/post.php';
 
 require_once 'query.php';
 require_once 'canonical.php';
+
+require_once 'invoke.php';
 
 apply_hooks('tb_load');
 
