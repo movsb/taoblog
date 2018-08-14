@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -129,18 +130,6 @@ func main() {
 		}
 
 		EndReq(c, err, nil)
-	})
-
-	backupapi := router.Group("/backups")
-
-	backupapi.GET("backup", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-
-		var sb bytes.Buffer
-		err := backupmgr.Backup(&sb)
-		EndReq(c, err, sb.String())
 	})
 
 	routerV1(router)
@@ -451,6 +440,7 @@ func routerV1(router *gin.Engine) {
 
 	optionsV1(v1)
 	tagsV1(v1)
+	backupsV1(v1)
 }
 
 func optionsV1(routerV1 *gin.RouterGroup) {
@@ -572,5 +562,24 @@ func tagsV1(routerV1 *gin.RouterGroup) {
 			EndReq(c, err, nil)
 			return
 		}
+	})
+}
+
+func backupsV1(routerV1 *gin.RouterGroup) {
+	backups := routerV1.Group("/backups")
+
+	backups.GET("", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		var sb bytes.Buffer
+		err := backupmgr.Backup(&sb)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		c.String(http.StatusOK, "%s", sb.String())
 	})
 }
