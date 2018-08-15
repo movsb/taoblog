@@ -793,31 +793,4 @@ class TB_Posts {
         $sql = "UPDATE posts SET page_view=page_view+1 WHERE id=".$pid." LIMIT 1";
         $tbdb->query($sql);
     }
-
-    // 获取所有文章，给文章管理用
-    public function get_all_posts_for_manage() {
-        global $tbdb;
-
-        $sql = array();
-        $sql['select']  = 'id,date,modified,title,page_view,source_type,comments';
-        $sql['from']    = 'posts';
-        $sql['where'][] = "type='post'";
-        $sql['orderby'] = 'id DESC';
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return [];
-
-        $posts = [];
-        while($r = $rows->fetch_object()) {
-            $posts[] = $r;
-        }
-
-        $posts = $this->after_posts_query($posts);
-
-        return $posts;
-    }
 }
-
