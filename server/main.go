@@ -399,6 +399,15 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, nil, nil)
 	})
 
+	v1.GET("/posts!manage", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+
+		posts, err := postmgr.GetPostsForManagement(gdb)
+		EndReq(c, err, posts)
+	})
+
 	archives := v1.Group("/archives")
 
 	archives.GET("/categories/:name", func(c *gin.Context) {

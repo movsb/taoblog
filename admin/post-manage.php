@@ -1,7 +1,5 @@
 <?php
 
-if($_SERVER['REQUEST_METHOD'] === 'GET') :
-
 require_once('admin.php');
 
 function postmanage_admin_head() {
@@ -24,6 +22,8 @@ td.title {
 
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
 <?php }
 
 add_hook('admin_head', 'postmanage_admin_head');
@@ -32,7 +32,7 @@ admin_header();
 
 ?>
 
-<table>
+<table id="table">
 <thead>
 <tr>
 <th>编号</th>
@@ -46,33 +46,29 @@ admin_header();
 </tr>
 </thead>
 <tbody>
-<?php
-$posts = $tbpost->get_all_posts_for_manage();
-foreach($posts as $p) {
-    echo '<tr>',
-        '<td>',$p->id,'</td>',
-        '<td class="title">',htmlspecialchars($p->title),'</td>',
-        '<td>',$p->date,'</td>',
-        '<td>',$p->modified,'</td>',
-        '<td>',$p->page_view,'</td>',
-        '<td>',$p->comments,'</td>',
-        '<td>',htmlspecialchars($p->source_type),'</td>',
-        '<td>',the_edit_link($p, true, true),'</td>',
-        '</tr>'
-    ;
-}
-?>
+  <tr v-for="p in posts">
+    <td>{{ p.id }}</td>
+    <td>{{ p.title }}</td>
+    <td>{{ p.date }}</td>
+    <td>{{ p.modified }}</td>
+    <td>{{ p.page_view }}</td>
+    <td>{{ p.comment_count }}</td>
+    <td>{{ p.source_type }}</td>
+    <td><a target=_blank v-bind:href="'/admin/post.php?do=edit&amp;id=' + p.id">编辑</a></td>
+  </tr>
 </tbody>
 </table>
 
+<script>
+$.get('/v1/posts!manage', function(posts) {
+    new Vue({
+        el: '#table',
+        data: {
+            posts: posts,
+        },
+    })
+});
+</script>
+
 <?php
 admin_footer();
-
-die(0);
-
-else : // POST
-
-die(0);
-
-endif;
-

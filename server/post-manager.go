@@ -17,6 +17,37 @@ type PostForArchiveQuery struct {
 	Title string `json:"title"`
 }
 
+// PostForManagement for post management.
+type PostForManagement struct {
+	ID           int64  `json:"id"`
+	Date         string `json:"date"`
+	Modified     string `json:"modified"`
+	Title        string `json:"title"`
+	PageView     uint   `json:"page_view"`
+	SourceType   string `json:"source_type"`
+	CommentCount uint   `json:"comment_count"`
+}
+
+func (p *PostForManagement) Fields() string {
+	cols := "id,date,modified,title,page_view,source_type,comments"
+	return cols
+}
+
+func (p *PostForManagement) Pointers() []interface{} {
+	ptrs := []interface{}{
+		&p.ID,
+		&p.Date, &p.Modified,
+		&p.Title, &p.PageView,
+		&p.SourceType, &p.CommentCount,
+	}
+	return ptrs
+}
+
+func (p *PostForManagement) ToLocalTime() {
+	p.Date = datetime.My2Local(p.Date)
+	p.Modified = datetime.My2Local(p.Modified)
+}
+
 // PostManager manages posts.
 type PostManager struct {
 }
@@ -197,4 +228,33 @@ func (z *PostManager) GetVars(tx Querier, fields string, wheres string, outs ...
 	row := tx.QueryRow(query)
 
 	return row.Scan(outs...)
+}
+
+func (z *PostManager) GetPostsForManagement(tx Querier) ([]*PostForManagement, error) {
+	var dummy PostForManagement
+	cols := dummy.Fields()
+	q := make(map[string]interface{})
+	q["select"] = cols
+	q["from"] = "posts"
+	q["where"] = []string{"type='post'"}
+	q["orderby"] = "id DESC"
+
+	query := BuildQueryString(q)
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	posts := make([]*PostForManagement, 0)
+
+	for rows.Next() {
+		var post PostForManagement
+		if err := rows.Scan(post.Pointers()...); err != nil {
+			return nil, err
+		}
+		post.ToLocalTime()
+		posts = append(posts, &post)
+	}
+
+	return posts, nil
 }
