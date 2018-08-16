@@ -1,9 +1,8 @@
 <?php
 
 function feed_header() {
-    global $tbmain;
-    global $tbopt;
     global $tbdate;
+    global $tbopt;
 
     header('HTTP/1.1 200 OK');
     header('Content-Type: application/xml');
@@ -18,7 +17,7 @@ function feed_header() {
 <rss version="2.0">
     <channel>
         <title><?php echo htmlspecialchars($tbopt->get('blog_name')); ?></title>
-        <link><?php echo $tbmain->home; ?></link>
+        <link><?php echo home(); ?></link>
         <description></description>
 <?php
 }

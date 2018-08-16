@@ -689,12 +689,11 @@ require_once('load.php');
 
 function post_new_post() {
     global $tbpost;
-    global $tbmain;
 
     if(($id=$tbpost->insert($_POST))){
         $tbpost->after_post_posted($id, $_POST);
         header('HTTP/1.1 302 Found');
-        header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id);
+        header('Location: /admin/post.php?do=edit&id='.$id);
         die(0);
     } else {
         $j = [ 'errno' => 'error', 'error' => $tbpost->error];
@@ -704,7 +703,6 @@ function post_new_post() {
 
 function post_update() {
     global $tbpost;
-    global $tbmain;
 
     $r = $tbpost->update($_POST);
     if(!$r) {
@@ -717,7 +715,7 @@ function post_update() {
     $id = (int)$_POST['id'];
 
     header('HTTP/1.1 302 Updated');
-    header('Location: '.$tbmain->home.'/admin/post.php?do=edit&id='.$id);
+    header('Location: /admin/post.php?do=edit&id='.$id);
     die(0);
 }
 

@@ -33,15 +33,13 @@ function login_auth($redirect=false) {
 
     $opt = new TB_Options;
 
-    $is_ssl = ($_SERVER['HTTPS'] ?? 'off') === 'on';
     $cookie_login = $_COOKIE['login'] ?? '';
 
-    $loggedin = $is_ssl && $cookie_login && $cookie_login === login_gen_cookie();
+    $loggedin = $cookie_login && $cookie_login === login_gen_cookie();
 
     if(!$loggedin) {
         if($redirect) {
-            $home = ($is_ssl ? 'https://' : 'http://') . $opt->get('home');
-            $url = $home.'/admin/login.php?url='.urlencode($_SERVER['REQUEST_URI']);
+            $url = '/admin/login.php?url='.urlencode($_SERVER['REQUEST_URI']);
 
             header('HTTP/1.1 302 Login Required');
             header('Location: '.$url);

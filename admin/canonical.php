@@ -1,10 +1,15 @@
 <?php
 
+function home() {
+    global $tbopt;
+    return 'https://'.$tbopt->get('home');
+}
+
 function the_link(&$p, $home=true) {
     global $tbpost;
-    global $tbmain;
+    global $tbopt;
 
-    $home = $home ? $tbmain->home : '';
+    $home = $home ? home() : '';
     $link = '';
 
     if($p->type === 'post') {
@@ -20,9 +25,9 @@ function the_link(&$p, $home=true) {
 
 function the_id_link(&$p, $home=true) {
     global $tbpost;
-    global $tbmain;
+    global $tbopt;
 
-    $home = $home ? $tbmain->home : '';
+    $home = $home ? home() : '';
 
     return $home . '/' . $p->id . '/';
 }
@@ -34,4 +39,3 @@ function the_edit_link(&$p, $ret_anchor = true, $blank = false) {
         ? '<a href="'.$link.'"'.($blank?'target="_blank"':'').'>编辑</a>'
         : $link;
 }
-
