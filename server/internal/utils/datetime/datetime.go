@@ -81,6 +81,11 @@ func FeedNow() string {
 	return time.Now().Format(feedFormat)
 }
 
+func My2Feed(date string) string {
+	tim, _ := time.Parse(mysqlFormat, date)
+	return tim.Local().Format(feedFormat)
+}
+
 // MonthStartEnd returns
 // month: [1,12]
 func MonthStartEnd(year int, month int) (string, string) {

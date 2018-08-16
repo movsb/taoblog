@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
+	"strings"
 	"time"
 
 	"./internal/post_translators"
@@ -46,6 +48,23 @@ func (p *PostForManagement) Pointers() []interface{} {
 func (p *PostForManagement) ToLocalTime() {
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
+}
+
+// PostForRss for Rss Post.
+type PostForRss struct {
+	ID      int64
+	Link    string
+	Title   string
+	Content template.HTML
+	Date    string
+}
+
+// RssData for Rss template.
+type RssData struct {
+	BlogName    string
+	Home        string
+	Description string
+	Posts       []*PostForRss
 }
 
 // PostManager manages posts.
@@ -211,6 +230,43 @@ func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiv
 	q["orderby"] = "date DESC"
 
 	return z.getRowPosts(tx, q)
+}
+
+func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
+	q := make(map[string]interface{})
+	q["select"] = "id,date,title,content"
+	q["from"] = "posts"
+	q["orderby"] = "date DESC"
+	q["limit"] = 10
+
+	query := BuildQueryString(q)
+
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	posts := make([]*PostForRss, 0)
+
+	for rows.Next() {
+		var p PostForRss
+		if err := rows.Scan(&p.ID, &p.Date, &p.Title, &p.Content); err != nil {
+			return nil, err
+		}
+		posts = append(posts, &p)
+	}
+
+	home, _ := optmgr.Get(tx, "home")
+
+	for _, p := range posts {
+		p.Date = datetime.My2Feed(p.Date)
+		p.Link = fmt.Sprintf("https://%s/%d/", home, p.ID)
+		p.Content = template.HTML("<![CDATA[" + strings.Replace(string(p.Content), "]]>", "]]]]><!CDATA[>", -1) + "]]>")
+	}
+
+	return posts, nil
 }
 
 // GetVars gets custom column values.

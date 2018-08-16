@@ -408,6 +408,16 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, posts)
 	})
 
+	v1.GET("/posts!rss", func(c *gin.Context) {
+		rss, err := theFeed(gdb)
+		if err != nil {
+			EndReq(c, err, nil)
+			return
+		}
+		c.Header("Content-Type", "application/xml")
+		c.String(http.StatusOK, "%s", rss)
+	})
+
 	archives := v1.Group("/archives")
 
 	archives.GET("/categories/:name", func(c *gin.Context) {
