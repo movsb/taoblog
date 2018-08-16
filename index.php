@@ -50,6 +50,4 @@ if(!$tbquery->have()
 if($tbquery->is_home())             require('theme/index.php');
 else if($tbquery->is_singular())    require('theme/single.php');
 else if($tbquery->is_tag())         require('theme/tag.php');
-else if($tbquery->is_feed())        require('theme/feed.php');
 else if($tbquery->is_archive())     require('theme/archive.php');
-

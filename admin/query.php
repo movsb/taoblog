@@ -23,7 +23,6 @@ class TB_Query {
     public function is_singular()   { return $this->is_post() || $this->is_page(); }
     public function is_tag()        { return $this->type === 'tag'; }
     public function is_404()        { return $this->type === '404'; }
-    public function is_feed()       { return $this->type === 'feed'; }
     public function is_archive()    { return $this->type === 'archive'; }
 
     public function __construct() {
@@ -61,7 +60,6 @@ class TB_Query {
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
             '^/tags/(.+)$'                                      => 'tags=$1',
-            '^/(feed|rss)(\.xml)?$'                             => 'feed=1',
             '^/archives$'                                       => 'archives=1',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
@@ -118,14 +116,6 @@ class TB_Query {
             die(0);
         }
 
-        // 处理RSS
-        if($this->is_query_modification && isset($this->internal_query['feed'])) {
-            if($tbdate->mysql_local_to_http_gmt($tbopt->get('last_post_time')) === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
-                header('HTTP/1.1 304 Not Modified');
-                die(0);
-            }
-        }
-
         // 处理归档
         if(isset($this->internal_query['archives'])) {
             $this->type = 'archive'; // 没有 s
@@ -164,10 +154,6 @@ class TB_Query {
         } elseif ($q['tags'] ?? '') {
             $tbquery->type = 'tag';
             $r = $tbpost->query_by_tags($q['tags'], true);
-        }
-        else if($q['feed'] ?? '') {
-            $tbquery->type = 'feed';
-            $r = $tbpost->query_by_latest(20);
         }
         else {
             $tbquery->type = 'home';
