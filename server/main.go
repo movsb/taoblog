@@ -409,12 +409,24 @@ func routerV1(router *gin.Engine) {
 	})
 
 	v1.GET("/posts!rss", func(c *gin.Context) {
+		if ifModified := c.GetHeader("If-Modified-Since"); ifModified != "" {
+			if modified := optmgr.GetDef(gdb, "last_post_time", ""); modified != "" {
+				if ifModified == datetime.Local2Gmt(modified) {
+					c.Status(http.StatusNotModified)
+					return
+				}
+			}
+		}
+
 		rss, err := theFeed(gdb)
 		if err != nil {
 			EndReq(c, err, nil)
 			return
 		}
 		c.Header("Content-Type", "application/xml")
+		if modified := optmgr.GetDef(gdb, "last_post_time", ""); modified != "" {
+			c.Header("Last-Modified", datetime.Local2Gmt(modified))
+		}
 		c.String(http.StatusOK, "%s", rss)
 	})
 
