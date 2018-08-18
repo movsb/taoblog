@@ -625,6 +625,7 @@ DOM;
                     title: value('title'),
                     source: value('source'),
                     source_type: value('source_type'),
+                    type: value('type'),
                     tags: value('tags').replace('，',',').split(','),
                     metas: value('metas'),
                     category: +value('taxonomy'),
@@ -636,20 +637,19 @@ DOM;
                     post.tags = [];
                 }
                 console.log(post);
-                if (post.id === 0) {
-                    $.ajax('/v1/posts',{
-                        type: 'POST',
-                        data: JSON.stringify(post),
-                        contentType: 'application/json',
-                        success: function(data) {
-                            console.log(data);
-                            location.href = '/admin/post.php?do=edit&id='+data.id;
-                        },
-                        error: function(xhr) {
-                            alert(xhr.responseText);
-                        },
-                    });
-                }
+                var url = post.id === 0 ? '/v1/posts' : '/v1/posts/' + post.id;
+                $.ajax(url,{
+                    type: 'POST',
+                    data: JSON.stringify(post),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        console.log(data);
+                        location.href = '/admin/post.php?do=edit&id='+data;
+                    },
+                    error: function(xhr) {
+                        alert(xhr.responseText);
+                    },
+                });
                 return false;
             });
         </script>

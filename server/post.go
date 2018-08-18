@@ -42,6 +42,9 @@ func (*Post) insertions() string {
 func (*Post) marks() string {
 	return `?,?,?,?,?,?,?,?,?,?,?,?,?,?`
 }
+func (z *Post) updates() string {
+	return `date=?,modified=?,title=?,content=?,slug=?,type=?,taxonomy=?,status=?,comment_status=?,metas=?,source=?,source_type=?`
+}
 func (z *Post) _pointers() []interface{} {
 	return []interface{}{
 		&z.Date, &z.Modified,
@@ -59,6 +62,16 @@ func (z *Post) values() []interface{} {
 		z.Slug, z.Type, z.Category,
 		z.Status, z.PageView,
 		z.CommentStatus, z.Comments,
+		z.Metas, z.Source, z.SourceType,
+	}
+}
+func (z *Post) update_values() []interface{} {
+	return []interface{}{
+		z.Date, z.Modified,
+		z.Title, z.Content,
+		z.Slug, z.Type, z.Category,
+		z.Status,
+		z.CommentStatus,
 		z.Metas, z.Source, z.SourceType,
 	}
 }
@@ -80,6 +93,7 @@ func (z *Post) validate() error {
 			return fmt.Errorf("页面的slug不可以为空")
 		}
 	}
+	// TODO parent page check
 	// TODO category existence check
 	if z.Category != 0 {
 		// return fmt.Errorf("不能指定分类")
@@ -172,6 +186,29 @@ func (z *Post) Create(tx Querier) error {
 		return err
 	}
 	z.ID, err = ret.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	z.Date = datetime.My2Local(z.Date)
+	z.Modified = datetime.My2Local(z.Modified)
+
+	return nil
+}
+
+// Update updates a post.
+func (z *Post) Update(tx Querier) error {
+	var err error
+
+	if err = z.validate(); err != nil {
+		return err
+	}
+	if err = z.translate(); err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf(`UPDATE posts SET %s WHERE id=%d`, z.updates(), z.ID)
+	_, err = tx.Exec(query, z.update_values()...)
 	if err != nil {
 		return err
 	}

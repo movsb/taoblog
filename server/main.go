@@ -167,7 +167,25 @@ func routerV1(router *gin.Engine) {
 			EndReq(c, err, err)
 			return
 		}
-		EndReq(c, nil, &post)
+		EndReq(c, nil, post.ID)
+	})
+
+	posts.POST("/:parent", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		var post Post
+		if err := c.ShouldBindJSON(&post); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		if err := txCall(gdb, func(tx Querier) error {
+			return postmgr.UpdatePost(tx, &post)
+		}); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		EndReq(c, nil, post.ID)
 	})
 
 	posts.GET("/:parent/files/*name", func(c *gin.Context) {

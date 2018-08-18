@@ -81,6 +81,9 @@ func (z *PostManager) Has(tx Querier, id int64) (bool, error) {
 	rows := tx.QueryRow(query)
 	pid := 0
 	err := rows.Scan(&pid)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
 	return pid > 0, err
 }
 
@@ -370,6 +373,30 @@ func (z *PostManager) CreatePost(tx Querier, post *Post) error {
 			return err
 		}
 		optmgr.Set(tx, "page_count", count)
+	}
+
+	return nil
+}
+
+// UpdatePost updates a post.
+func (z *PostManager) UpdatePost(tx Querier, post *Post) error {
+	var err error
+
+	if has, err := z.Has(tx, post.ID); true {
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		if !has {
+			return fmt.Errorf("没有这篇文章")
+		}
+	}
+
+	if err = post.Update(tx); err != nil {
+		return err
+	}
+	if err = tagmgr.UpdateObjectTags(tx, post.ID, post.Tags); err != nil {
+		return err
 	}
 
 	return nil
