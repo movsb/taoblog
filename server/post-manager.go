@@ -328,3 +328,49 @@ func (z *PostManager) GetPostsForManagement(tx Querier) ([]*PostForManagement, e
 
 	return posts, nil
 }
+
+// GetCountOfType gets
+func (z *PostManager) GetCountOfType(tx Querier, typ string) (int64, error) {
+	q := make(map[string]interface{})
+	q["select"] = "count(*) as size"
+	q["from"] = "posts"
+	q["where"] = []string{
+		"type=?",
+	}
+	query := BuildQueryString(q)
+	row := tx.QueryRow(query, typ)
+	var count int64
+	return count, row.Scan(&count)
+}
+
+// CreatePost creates a new post into database.
+func (z *PostManager) CreatePost(tx Querier, post *Post) error {
+	var err error
+	if err = post.Create(tx); err != nil {
+		return err
+	}
+	if err = tagmgr.UpdateObjectTags(tx, post.ID, post.Tags); err != nil {
+		return err
+	}
+
+	lastTime := optmgr.GetDef(tx, "last_post_time", "")
+	if lastTime == "" || lastTime < post.Date {
+		optmgr.Set(tx, "last_post_time", post.Date)
+	}
+
+	if post.Type == "post" {
+		count, err := z.GetCountOfType(tx, "post")
+		if err != nil {
+			return err
+		}
+		optmgr.Set(tx, "post_count", count)
+	} else if post.Type == "page" {
+		count, err := z.GetCountOfType(tx, "page")
+		if err != nil {
+			return err
+		}
+		optmgr.Set(tx, "page_count", count)
+	}
+
+	return nil
+}

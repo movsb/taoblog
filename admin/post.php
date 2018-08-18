@@ -688,17 +688,8 @@ if(!login_auth()) {
 require_once('load.php');
 
 function post_new_post() {
-    global $tbpost;
-
-    if(($id=$tbpost->insert($_POST))){
-        $tbpost->after_post_posted($id, $_POST);
-        header('HTTP/1.1 302 Found');
-        header('Location: /admin/post.php?do=edit&id='.$id);
-        die(0);
-    } else {
-        $j = [ 'errno' => 'error', 'error' => $tbpost->error];
-        post_die_json($j);
-    }
+    $j = [ 'errno' => 'error'];
+    post_die_json($j);
 }
 
 function post_update() {

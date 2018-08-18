@@ -173,62 +173,8 @@ class TB_Posts {
         }
     }
 
+    /*
     public function insert(&$arg){
-        global $tbdb;
-        global $tbdate;
-        global $tbtax;
-        global $tbtag;
-
-        $def = [
-            'date'              => '',
-            'modified'          => '',
-            'title'             => '',
-            'content'           => '',
-            'slug'              => '',
-            'type'              => 'post',
-            'taxonomy'          => 1,
-            'status'            => 'public',
-            'comment_status'    => 1,
-            'tags'              => '',
-            'page_parents'      => '',
-            'metas'             => '',
-            'source'            => '',
-            'source_type'       => 'html',
-        ];
-
-        $arg = tb_parse_args($def, $arg);
-
-        if(!$arg['title']) {
-            $this->error = '标题不应为空！';
-            return false;
-        }
-
-        if(!$arg['content']) {
-            $this->error = '内容不应为空！';
-            return false;
-        }
-
-        if(!$arg['slug']) $arg['slug'] = '-';
-        if(!$arg['slug'] || preg_match('# |	|\'|"|;|/|\\\\|\\?|&|\\.|<|>|:|@|\\$|%|\\^|\\*#', $arg['slug'])) {
-            $this->error = '文章别名不规范！';
-            return false;
-        }
-
-        if(!$tbtax->has((int)$arg['taxonomy'])) {
-            $this->error = '文章所属分类不存在！';
-            return false;
-        }
-
-        if(!in_array($arg['status'], ['public', 'draft'])) {
-            $this->error = '文章发表状态不正确。';
-            return false;
-        }
-
-        if(!in_array($arg['source_type'], ['html', 'markdown'])) {
-            $this->error = '文章源类型不正确。';
-            return false;
-        }
-
         $type = $arg['type'];
         if($type == 'page') {
             $parents = $arg['page_parents'];
@@ -245,57 +191,9 @@ class TB_Posts {
                 $arg['taxonomy'] = 0;
             }
         }
-
-        if(!$arg['date']) {
-            $arg['date'] = $tbdate->mysql_datetime_local();
-        }
-
-        if(!$arg['modified']) {
-            $arg['modified'] = $arg['date']
-            ? $arg['date']
-            : $tbdate->mysql_datetime_local();
-        }
-
-        if(!$tbdate->is_valid_mysql_datetime($arg['date']) || !$tbdate->is_valid_mysql_datetime($arg['modified'])) {
-            $this->error = '无效的时间格式!';
-            return false;
-        }
-
-        // 转换成GMT时间
-        $arg['date_gmt'] = $tbdate->mysql_local_to_gmt($arg['date']);
-        $arg['modified_gmt'] = $tbdate->mysql_local_to_gmt($arg['modified']);
-
-        $sql = "INSERT INTO posts (
-            date,modified,title,content,slug,type,taxonomy,status,comment_status,metas,source,source_type)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-        if($stmt = $tbdb->prepare($sql)){
-            if($stmt->bind_param(
-                'ssssssisisss',
-                $arg['date_gmt'], $arg['modified_gmt'],
-                $arg['title'], $arg['content'],$arg['slug'],
-                $arg['type'], $arg['taxonomy'], $arg['status'],
-                $arg['comment_status'], $arg['metas'],
-                $arg['source'], $arg['source_type']
-                )
-            )
-            {
-                $r = $stmt->execute();
-                $stmt->close();
-
-                if($r) {
-                    $iid = $tbdb->insert_id;
-
-                    $tag_json = json_encode(explode(',', $arg['tags']));
-                    Invoke('/posts/'.$iid.'/tags', 'json', $tag_json);
-                    return $iid;
-                }
-            }
-        }
-
-        $this->error = $stmt->error;
-
         return false;
     }
+    */
 
     private function after_posts_query(array $posts) {
         global $tbquery;
@@ -332,23 +230,6 @@ class TB_Posts {
         }
 
         return $sql;
-    }
-
-    public function after_post_posted($id, $post) {
-        global $tbopt;
-
-        $last = $tbopt->get('last_post_time');
-        $pdate = $post['date'];
-
-        if (!$last || $pdate >= $last) {
-            $tbopt->set('last_post_time', $pdate);
-        }
-
-        $post_count = $this->get_count_of_type('post');
-        $page_count = $this->get_count_of_type('page');
-
-        $tbopt->set('post_count', $post_count);
-        $tbopt->set('page_count', $page_count);
     }
 
     // 根据 id 查询单篇文章
@@ -767,25 +648,6 @@ class TB_Posts {
         }
 
         return $x;
-    }
-
-    public function get_count_of_type($type) {
-        global $tbdb;
-
-        $type = $tbdb->real_escape_string($type);
-
-        $sql = array();
-        $sql['select']  = 'count(*) as size';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "type='$type'";
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return 0;
-        return $rows->fetch_object()->size;
     }
 
     public function increase_page_view_count(int $pid) {

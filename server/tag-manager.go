@@ -200,16 +200,11 @@ func (tm *TagManager) hasObjectTag(tx Querier, pid, tid int64) bool {
 }
 
 // UpdateObjectTags updates
-func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
-	// seperators are "," "，" ";" "；"
-	tagstr = strings.Replace(tagstr, "，", ",", -1)
-	tagstr = strings.Replace(tagstr, "；", ",", -1)
-	tagstr = strings.Replace(tagstr, ";", ",", -1)
-
-	newTags := strings.Split(tagstr, ",")
+func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tags []string) error {
+	newTags := tags
 	oldTags, err := tm.GetObjectTagNames(tx, pid)
 	if err != nil {
-		return // TODO
+		return err
 	}
 
 	var (
@@ -248,6 +243,8 @@ func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tagstr string) {
 			tm.addObjectTag(tx, pid, tid)
 		}
 	}
+
+	return nil
 }
 
 // ListTags lists all tags.
