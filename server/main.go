@@ -67,7 +67,7 @@ func main() {
 	flag.Parse()
 
 	if config.key == "" {
-		panic("invalid key")
+		// panic("invalid key")
 	}
 
 	var err error
@@ -151,6 +151,42 @@ func routerV1(router *gin.Engine) {
 	v1 := router.Group("/v1")
 
 	posts := v1.Group("/posts")
+
+	posts.POST("", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		var post Post
+		if err := c.ShouldBindJSON(&post); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		if err := txCall(gdb, func(tx Querier) error {
+			return postmgr.CreatePost(tx, &post)
+		}); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		EndReq(c, nil, post.ID)
+	})
+
+	posts.POST("/:parent", func(c *gin.Context) {
+		if !auth(c, true) {
+			return
+		}
+		var post Post
+		if err := c.ShouldBindJSON(&post); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		if err := txCall(gdb, func(tx Querier) error {
+			return postmgr.UpdatePost(tx, &post)
+		}); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		EndReq(c, nil, post.ID)
+	})
 
 	posts.GET("/:parent/files/*name", func(c *gin.Context) {
 		referrer := strings.ToLower(c.GetHeader("referer"))
@@ -385,7 +421,7 @@ func routerV1(router *gin.Engine) {
 			EndReq(c, err, nil)
 			return
 		}
-		tagmgr.UpdateObjectTags(tx, pid, strings.Join(tags, ","))
+		tagmgr.UpdateObjectTags(tx, pid, tags)
 		if err = tx.Commit(); err != nil {
 			tx.Rollback()
 			EndReq(c, err, nil)

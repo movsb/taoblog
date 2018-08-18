@@ -349,7 +349,7 @@ function post_widget_date($p=null) {
 
     $title = '日期';
     $content = '<input type="text" name="date" value="'.($p ? $p->date : '').'"/><br>'
-        .'<input type="text" name="modified" value="'.($p ? '-' : '').'" />';
+        .'<input type="text" name="modified" value="'.($p ? $p->modified : '').'" />';
 
     return compact('title', 'content');
 }
@@ -548,7 +548,6 @@ DOM;
                 <div>
                     <h2>内容</h2>
                     <div class="textarea-wrap">
-                        <input type="hidden" id="content" name="content"/>
                         <textarea id="source" name="source" wrap="off"><?php
                             if($p) {
                                 echo htmlspecialchars($p->source ? $p->source : $p->content);
@@ -617,20 +616,41 @@ DOM;
             },0);
 
             $('#form-post').submit(function() {
-                var source = $('#source');
-                var content = $('input[name="content"]');
-                var type = $('select[name="source_type"]').val();
-                if(type == 'html') {
-                    content.val(source.val());
+                var form = document.getElementById('form-post');
+                var value = function(name) {
+                    return form.elements[name].value;
+                };
+                var post = {
+                    id: value('do') === 'new' ? 0 : +value('id'),
+                    title: value('title'),
+                    source: value('source'),
+                    source_type: value('source_type'),
+                    type: value('type'),
+                    tags: value('tags').replace('，',',').split(','),
+                    metas: value('metas'),
+                    category: +value('taxonomy'),
+                    slug: value('slug'),
+                    date: value('date'),
+                    modified: value('modified'),
+                };
+                if (post.tags.length === 1 && post.tags[0] === "") {
+                    post.tags = [];
                 }
-                else if(type == 'markdown') {
-                    var result = marked(source.val());
-                    content.val(result);
-                }
-                else {
-                    alert('bad source type.');
-                    return false;
-                }
+                console.log(post);
+                var url = post.id === 0 ? '/v1/posts' : '/v1/posts/' + post.id;
+                $.ajax(url,{
+                    type: 'POST',
+                    data: JSON.stringify(post),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        console.log(data);
+                        location.href = '/admin/post.php?do=edit&id='+data;
+                    },
+                    error: function(xhr) {
+                        alert(xhr.responseText);
+                    },
+                });
+                return false;
             });
         </script>
     </form>
@@ -687,20 +707,6 @@ if(!login_auth()) {
 
 require_once('load.php');
 
-function post_new_post() {
-    global $tbpost;
-
-    if(($id=$tbpost->insert($_POST))){
-        $tbpost->after_post_posted($id, $_POST);
-        header('HTTP/1.1 302 Found');
-        header('Location: /admin/post.php?do=edit&id='.$id);
-        die(0);
-    } else {
-        $j = [ 'errno' => 'error', 'error' => $tbpost->error];
-        post_die_json($j);
-    }
-}
-
 function post_update() {
     global $tbpost;
 
@@ -721,13 +727,10 @@ function post_update() {
 
 $do = $_POST['do'];
 
-if($do == 'new') {
-    post_new_post();
-} else if($do == 'update') {
+if($do == 'update') {
     post_update();
 }
 
 die(0);
 
 endif; // POST
-

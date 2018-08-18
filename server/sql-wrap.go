@@ -12,3 +12,23 @@ type Querier interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
+
+func txCall(db *sql.DB, callback func(tx Querier) error) error {
+	var err error
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	if err = callback(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
