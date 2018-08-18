@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"strings"
 	"time"
 
@@ -155,7 +154,6 @@ func (z *PostManager) beforeQuery(q map[string]interface{}) map[string]interface
 func (z *PostManager) getRowPosts(tx Querier, q map[string]interface{}) ([]*PostForArchiveQuery, error) {
 	q = z.beforeQuery(q)
 	s := BuildQueryString(q)
-	log.Println(s)
 
 	rows, err := tx.Query(s)
 	if err != nil {
@@ -209,7 +207,7 @@ func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQ
 	return z.getRowPosts(tx, q)
 }
 
-// GetPostsByDate get date posts.
+// GetPostsByDate gets date posts.
 func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiveQuery, error) {
 	q := make(map[string]interface{})
 	q["select"] = "id,title"
@@ -232,6 +230,22 @@ func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiv
 	return z.getRowPosts(tx, q)
 }
 
+// ListAllPosts lists
+func (z *PostManager) ListAllPosts(tx Querier) ([]*PostForArchiveQuery, error) {
+	q := make(map[string]interface{})
+	q["select"] = "id,title"
+	q["from"] = "posts"
+	q["where"] = []string{
+		"type='post'",
+	}
+	q["orderby"] = "date DESC"
+
+	q = z.beforeQuery(q)
+
+	return z.getRowPosts(tx, q)
+}
+
+// GetPostsForRss gets
 func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
 	q := make(map[string]interface{})
 	q["select"] = "id,date,title,content"
