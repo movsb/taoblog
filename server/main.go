@@ -152,11 +152,6 @@ func routerV1(router *gin.Engine) {
 
 	posts := v1.Group("/posts")
 
-	posts.GET("", func(c *gin.Context) {
-		rets, err := getAllPosts(gdb)
-		EndReq(c, err, rets)
-	})
-
 	posts.GET("/:parent/files/*name", func(c *gin.Context) {
 		referrer := strings.ToLower(c.GetHeader("referer"))
 		if strings.Contains(referrer, "://blog.csdn.net") {
@@ -428,6 +423,11 @@ func routerV1(router *gin.Engine) {
 			c.Header("Last-Modified", datetime.Local2Gmt(modified))
 		}
 		c.String(http.StatusOK, "%s", rss)
+	})
+
+	v1.GET("/posts!all", func(c *gin.Context) {
+		posts, err := postmgr.ListAllPosts(gdb)
+		EndReq(c, err, posts)
 	})
 
 	archives := v1.Group("/archives")
