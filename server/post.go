@@ -82,7 +82,7 @@ func (z *Post) validate() error {
 	}
 	// TODO category existence check
 	if z.Category != 0 {
-		return fmt.Errorf("不能指定分类")
+		// return fmt.Errorf("不能指定分类")
 	}
 	if z.Type == "" {
 		z.Type = "post"
@@ -124,7 +124,9 @@ func (z *Post) validate() error {
 func (z *Post) translate() error {
 	var err error
 
-	z.Category = 1
+	if z.Category == 0 {
+		z.Category = 1
+	}
 	z.Metas = "{}"
 	z.CommentStatus = 1
 
