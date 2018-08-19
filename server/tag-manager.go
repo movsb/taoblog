@@ -1,10 +1,19 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
 )
+
+// TagNotFoundError is
+type TagNotFoundError struct {
+}
+
+func (z *TagNotFoundError) Error() string {
+	return "tag not found"
+}
 
 // Tag is a tag.
 type Tag struct {
@@ -269,15 +278,32 @@ func (tm *TagManager) ListTags(tx Querier) ([]*Tag, error) {
 	return tags, rows.Err()
 }
 
-// GetTagByID gets a tag ID.
+// GetTagByID gets a tag by ID.
 func (tm *TagManager) GetTagByID(tx Querier, id int64) (*Tag, error) {
 	query := "SELECT id,name,alias FROM tags WHERE id=?"
 	row := tx.QueryRow(query, id)
 	var tag Tag
 	if err := row.Scan(&tag.ID, &tag.Name, &tag.Alias); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &TagNotFoundError{}
+		}
 		return nil, err
 	}
 	return &tag, nil
+}
+
+// GetTagByName gets a tag by Name.
+func (tm *TagManager) GetTagByName(tx Querier, tag string) (*Tag, error) {
+	query := "SELECT id,name,alias FROM tags WHERE name=?"
+	row := tx.QueryRow(query, tag)
+	var tagObj Tag
+	if err := row.Scan(&tagObj.ID, &tagObj.Name, &tagObj.Alias); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &TagNotFoundError{}
+		}
+		return nil, err
+	}
+	return &tagObj, nil
 }
 
 // GetRootTag gets the root tag of an alias-ed tag.

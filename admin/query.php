@@ -21,8 +21,6 @@ class TB_Query {
     public function is_post()       { return $this->type === 'post'; }
     public function is_page()       { return $this->type === 'page'; }
     public function is_singular()   { return $this->is_post() || $this->is_page(); }
-    public function is_tag()        { return $this->type === 'tag'; }
-    public function is_404()        { return $this->type === '404'; }
     public function is_archive()    { return $this->type === 'archive'; }
 
     public function __construct() {
@@ -59,7 +57,6 @@ class TB_Query {
         $rules = [
             '^/(\d+)(/)?$'                                      => 'short=1&id=$1&slash=$2',
             '^/(.+)/([^/]+)\.html$'                             => 'long=1&tax=$1&slug=$2',
-            '^/tags/(.+)$'                                      => 'tags=$1',
             '^/archives$'                                       => 'archives=1',
             '^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$'         => 'parents=$1&page=$3',
             '^/index\.php$'                                     => '',
@@ -151,9 +148,6 @@ class TB_Query {
                 $r[0]->page_view++;
                 $tbpost->increase_page_view_count($r[0]->id);
             }
-        } elseif ($q['tags'] ?? '') {
-            $tbquery->type = 'tag';
-            $r = $tbpost->query_by_tags($q['tags'], true);
         }
         else {
             $tbquery->type = 'home';

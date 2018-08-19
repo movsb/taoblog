@@ -74,50 +74,6 @@ class TB_Posts {
         return $p;
     }
 
-    // 查询标签对应的文章集
-    public function query_by_tags(string $tag, bool $all)
-    {
-        global $tbdb;
-        global $tbquery;
-        global $tbtag;
-
-        $tbquery->tags = $tag;
-
-        $ids = $tbtag->get_tag_id($tag);
-        if ($ids === false) {
-            return [];
-        }
-        $ids = $tbtag->getAliasTagsAll([$ids]);
-        $ids = join(',', $ids);
-
-        $sql = array();
-        $sql['select']  = $all ? 'posts.*' : 'posts.id,posts.title';
-        $sql['from']    = 'posts,post_tags';
-        $sql['where']   = [];
-        $sql['where'][] = "posts.id=post_tags.post_id";
-        $sql['where'][] = "post_tags.tag_id in ($ids)";
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $results = $tbdb->query($sql);
-
-        if (!$results) {
-            return false;
-        }
-
-        $rows = $results;
-
-        $p = [];
-        while ($r = $rows->fetch_object()) {
-            $p[] = $r;
-        }
-
-        $p = $this->after_posts_query($p);
-
-        return $p;
-    }
-
     // 获取日期对应的文章集
     public function query_by_date(int $yy, int $mm, int $count) {
         global $tbdb;

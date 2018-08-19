@@ -195,8 +195,12 @@ func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArc
 
 // GetPostsByTags gets tag posts.
 func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQuery, error) {
-	id := tagmgr.getTagID(tx, tag)
-	ids := tagmgr.getAliasTagsAll(tx, []int64{id})
+	tagObj, err := tagmgr.GetTagByName(tx, tag)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := tagmgr.getAliasTagsAll(tx, []int64{tagObj.ID})
 
 	q := make(map[string]interface{})
 
