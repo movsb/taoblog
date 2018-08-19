@@ -134,10 +134,7 @@ ImageView.prototype.viewImage = function(img) {
 
             var initScale = 1;
             var initWidth = 0, initHeight = 0;
-            var $ele = $(img);
-
-            // If ! has width and height set
-            if (!($ele.css('width') && $ele.css('height'))) {
+            {
                 var scaleWidth =  this._$imgView.width() / this._rawWidth,
                     scaleHeight = this._$imgView.height() / this._rawHeight;
 
@@ -152,10 +149,6 @@ ImageView.prototype.viewImage = function(img) {
 
                 initWidth = this._rawWidth * initScale;
                 initHeight = this._rawHeight * initScale;
-            } else {
-                initWidth = parseInt($ele.css('width'));
-                initHeight = parseInt($ele.css('height'));
-                initScale = initWidth / this._rawWidth; // may be wrong
             }
 
             this._$img.css('left', (this._$imgView.width()-initWidth)/2 + 'px');
