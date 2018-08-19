@@ -663,16 +663,22 @@ func routerTheme(router *gin.Engine) {
 	theme.GET("/tags/:tag", func(c *gin.Context) {
 		tag := c.Param("tag")
 		posts, err := postmgr.GetPostsByTags(gdb, tag)
-		if err != nil {
-			EndReq(c, err, err)
-			return
-		}
 		data := struct {
 			Tag   string
 			Posts []*PostForArchiveQuery
+			Err   error
 		}{
 			Tag:   tag,
 			Posts: posts,
+			Err:   err,
+		}
+		if err != nil {
+			switch err.(type) {
+			case *TagNotFoundError:
+				c.Status(http.StatusNotFound)
+			default:
+				c.Status(http.StatusInternalServerError)
+			}
 		}
 		if err := templates["tag"].Execute(c.Writer, data); err != nil {
 			EndReq(c, err, err)
