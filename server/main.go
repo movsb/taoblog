@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -43,6 +44,8 @@ var backupmgr *BlogBackup
 var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
+
+var templates map[string]*template.Template
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
@@ -93,6 +96,8 @@ func main() {
 	postcmtsmgr = newPostCommentsManager()
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 
+	loadTemplates()
+
 	gin.DisableConsoleColor()
 	router := gin.Default()
 
@@ -134,6 +139,7 @@ func main() {
 
 	routerV1(router)
 	routerInternalV1(router)
+	routerTheme(router)
 
 	router.Run(config.listen)
 }
@@ -649,4 +655,42 @@ func backupsV1(routerV1 *gin.RouterGroup) {
 
 		c.String(http.StatusOK, "%s", sb.String())
 	})
+}
+
+func routerTheme(router *gin.Engine) {
+	theme := router.Group("/theme")
+
+	theme.GET("/tags/:tag", func(c *gin.Context) {
+		tag := c.Param("tag")
+		posts, err := postmgr.GetPostsByTags(gdb, tag)
+		if err != nil {
+			EndReq(c, err, err)
+			return
+		}
+		data := struct {
+			Tag   string
+			Posts []*PostForArchiveQuery
+		}{
+			Tag:   tag,
+			Posts: posts,
+		}
+		if err := templates["tag"].Execute(c.Writer, data); err != nil {
+			EndReq(c, err, err)
+			return
+		}
+	})
+}
+
+func loadTemplates() {
+	templates = make(map[string]*template.Template)
+
+	mp := func(path string) *template.Template {
+		tmpl, err := template.ParseFiles(path)
+		if err != nil {
+			panic(err)
+		}
+		return tmpl
+	}
+
+	templates["tag"] = mp("../theme/tag.html")
 }
