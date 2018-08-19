@@ -13,8 +13,6 @@
             echo '文章归档';
         } else if($tbquery->is_singular()) {
             echo htmlspecialchars($the->title);
-        } else if($tbquery->is_tag()) {
-            echo htmlspecialchars($tbquery->tags);
         } else if(!$tbquery->count) {
             echo '404';
         }
