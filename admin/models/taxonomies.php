@@ -3,45 +3,6 @@
 class TB_Taxonomies {
     public $error = '';
 
-    public function get($id=0) {
-        global $tbdb;
-
-        $sql = "SELECT * FROM taxonomies";
-        if($id) {
-            $id = (int)$id;
-            $sql .= " WHERE id=$id LIMIT 1";
-        }
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $taxes = [];
-        while($t = $rows->fetch_object())
-            $taxes[] = $t;
-
-        return $taxes;
-    }
-
-    private function _get_hiera_loop(&$tax, $p, $taxes) {
-        foreach($taxes as $t) {
-            if($t->parent == $p) {
-                $tax->sons[] = $t;
-                $this->_get_hiera_loop($t, $t->id, $taxes);
-            }
-        }
-
-        return $tax->sons ?? [];
-    }
-
-    public function get_hierarchically() {
-        if(($taxes = $this->get()) === false)
-            return false;
-
-        $t = new stdClass;
-        $t = $this->_get_hiera_loop($t, 0, $taxes);
-
-        return $t;
-    }
-
     public function get_sons_by_id($id){
         global $tbdb;
 
@@ -71,26 +32,6 @@ class TB_Taxonomies {
         }
 
         return array_reverse($parents);
-    }
-
-    public function get_offsprings($id) {
-        $oss = [];
-
-        function loop(&$oss, $id, $that){
-            $sons = $that->get_sons_by_id($id);
-            if(!$sons) return;
-
-            foreach($sons as $son) {
-                $oss[] = $son;
-            }
-            foreach($sons as $son) {
-                loop($oss, $son, $that);
-            }
-        }
-
-        loop($oss, $id, $this);
-
-        return $oss;
     }
 
     public function add(&$arg){
@@ -256,51 +197,6 @@ class TB_Taxonomies {
         if(!$rows || !$rows->num_rows) return false;
 
         return $rows->fetch_object()->id;
-    }
-
-    public function get_parent_id($id) {
-        global $tbdb;
-
-        $id = (int)$id;
-        if(!$this->has($id)) return false;
-
-        $sql = "SELECT parent FROM taxonomies WHERE id=$id LIMIT 1";
-        $r = $tbdb->query($sql);
-        if(!$r || !is_a($r, 'mysqli_result') || !$r->num_rows || !($row = $r->fetch_object())) {
-            $this->error = 'Fatal ???'.$tbdb->error;
-            return false;
-        }
-
-        return (int)$row->parent;
-    }
-
-    public function get_ancestor($id, $return_this_id_if_zero=false) {
-        global $tbdb;
-
-        if((int)$id == 0) return 0;
-        $id = (int)$id;
-
-        $sql = "SELECT ancestor FROM taxonomies WHERE id=$id LIMIT 1";
-        $rows = $tbdb->query($sql);
-
-        if(!$rows) {
-            $this->error = $tbdb->error;
-            return false;
-        }
-
-        if(!$rows->num_rows){
-            $this->error = '待查询祖先的分类的ID不存在！';
-            return false;
-        }
-
-        $ancestor = $rows->fetch_object()->ancestor;
-        return $ancestor
-            ? $ancestor
-            : ($return_this_id_if_zero
-                ? $id
-                : 0
-                )
-            ;
     }
 }
 
