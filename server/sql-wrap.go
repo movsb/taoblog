@@ -13,6 +13,11 @@ type Querier interface {
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
 
+// RowScanner is implemented by sql.Row & sql.Rows.
+type RowScanner interface {
+	Scan(dest ...interface{}) error
+}
+
 func txCall(db *sql.DB, callback func(tx Querier) error) error {
 	var err error
 
@@ -27,6 +32,7 @@ func txCall(db *sql.DB, callback func(tx Querier) error) error {
 	}
 
 	if err = tx.Commit(); err != nil {
+		tx.Rollback()
 		return err
 	}
 

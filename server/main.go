@@ -44,6 +44,7 @@ var backupmgr *BlogBackup
 var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
+var catmgr *CategoryManager
 
 var templates map[string]*template.Template
 
@@ -95,6 +96,7 @@ func main() {
 	cmtmgr = newCommentManager()
 	postcmtsmgr = newPostCommentsManager()
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
+	catmgr = NewCategoryManager()
 
 	loadTemplates()
 
@@ -514,6 +516,7 @@ func routerV1(router *gin.Engine) {
 	optionsV1(v1)
 	tagsV1(v1)
 	backupsV1(v1)
+	categoryV1(v1)
 }
 
 func optionsV1(routerV1 *gin.RouterGroup) {
@@ -654,6 +657,25 @@ func backupsV1(routerV1 *gin.RouterGroup) {
 		}
 
 		c.String(http.StatusOK, "%s", sb.String())
+	})
+}
+
+func categoryV1(router *gin.RouterGroup) {
+	cats := router.Group("/categories")
+
+	cats.GET("", func(c *gin.Context) {
+		cats, err := catmgr.ListCategories(gdb)
+		EndReq(c, err, cats)
+	})
+
+	router.GET("/categories:tree", func(c *gin.Context) {
+		cats, err := catmgr.GetTree(gdb)
+		EndReq(c, err, cats)
+	})
+	// TODO remove
+	router.POST("/categories:tree", func(c *gin.Context) {
+		cats, err := catmgr.GetTree(gdb)
+		EndReq(c, err, cats)
 	})
 }
 
