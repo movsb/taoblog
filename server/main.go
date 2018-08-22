@@ -219,6 +219,12 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, true, count)
 	})
 
+	// TODO remove
+	v1.GET("/posts!recentComments", func(c *gin.Context) {
+		cmts, err := cmtmgr.GetRecentComments(gdb, 10)
+		EndReq(c, err, cmts)
+	})
+
 	posts.GET("/:parent/comments", func(c *gin.Context) {
 		var err error
 
