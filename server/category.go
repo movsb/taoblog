@@ -9,3 +9,8 @@ type Category struct {
 	Ancestor int64       `json:"ancestor"`
 	Children []*Category `json:"children"`
 }
+
+// Create creates category into database.
+func (z *Category) Create(tx Querier) error {
+	return nil
+}

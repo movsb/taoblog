@@ -20,12 +20,12 @@ function list_all_cats() {
 
             $child_count_of_func = 0;
 
-            if(isset($t->sons))
-                $s3 = $_tax_add($t->sons, $child_count_of_func);
+            if(isset($t->children))
+                $s3 = $_tax_add($t->children, $child_count_of_func);
 
             $s4 = '</ul></li>';
 
-            $s .= $s1.$post_count_of_cat.(isset($t->sons) ? '/'.($post_count_of_cat+$child_count_of_func) : '').$s2.$s3.$s4;
+            $s .= $s1.$post_count_of_cat.(isset($t->children) ? '/'.($post_count_of_cat+$child_count_of_func) : '').$s2.$s3.$s4;
 
             $count_of_func += $post_count_of_cat + $child_count_of_func;
         }

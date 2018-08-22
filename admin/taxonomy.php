@@ -153,6 +153,7 @@ function tax_get_all() {
 function tax_update(&$arg) {
     global $tbtax;
 
+    // TODO removed
     $r = $tbtax->update($arg);
     if(!$r) {
         tax_die_json([

@@ -103,3 +103,21 @@ func (z *CategoryManager) GetTree(tx Querier) ([]*Category, error) {
 	makeChildren(&dummy)
 	return dummy.Children, nil
 }
+
+// GetChildren gets direct descendant children.
+func (z *CategoryManager) GetChildren(tx Querier, parent int64) ([]*Category, error) {
+	query := `SELECT * FROM taxonomies WHERE parent=?`
+	rows, err := tx.Query(query, parent)
+	if err != nil {
+		return nil, err
+	}
+	return z.scanMulti(rows)
+}
+
+func (z *CategoryManager) UpdateCategory(tx Querier, cat *Category) error {
+	return nil
+}
+
+func (z *CategoryManager) CreateCategory(tx Querier, cat *Category) error {
+	return nil
+}

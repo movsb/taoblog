@@ -288,9 +288,9 @@ function post_widget_tax_add(&$taxes, $tax=1) {
     foreach($taxes as $t) {
         $s .= '<li style="margin-bottom: 4px;"><label><input type="radio" style="margin-right: 6px" name="taxonomy" value="'.$t->id.'"'.
             ($tax==$t->id?' checked="checked"':'').'/>'.htmlspecialchars($t->name)."</label>\n";
-        if(isset($t->sons) && count($t->sons)) {
+        if(isset($t->children) && count($t->children)) {
             $s .= '<ul class="children" style="margin-left: 14px;">';
-            $s .= post_widget_tax_add($t->sons, $tax);
+            $s .= post_widget_tax_add($t->children, $tax);
             $s .= "</ul>\n";
         }
         $s .= '</li>'."\n";
@@ -301,7 +301,6 @@ function post_widget_tax_add(&$taxes, $tax=1) {
 function post_widget_tax($p=null) {
     global $tbtax;
     $taxes = $tbtax->get_hierarchically();
-
     $content = '<ul>'.post_widget_tax_add($taxes, ($p ? $p->taxonomy : 1)).'</ul>';
 
     return [

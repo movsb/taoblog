@@ -32,6 +32,7 @@ func txCall(db *sql.DB, callback func(tx Querier) error) error {
 	}
 
 	if err = tx.Commit(); err != nil {
+		tx.Rollback()
 		return err
 	}
 

@@ -1,8 +1,8 @@
 function myloop(t,p,tt) {
 	for(var i=0; i<tt.length; i++){
 		if(tt[i].parent==p){
-			t.sons = t.sons || [];
-			t.sons.push(tt[i]);
+			t.children = t.children || [];
+			t.children.push(tt[i]);
 			myloop(tt[i], tt[i].id, tt);
 		}
 	}
@@ -24,18 +24,18 @@ function myadd(t, l) {
 				t.slug + 
 			'</td>' +
 		'</tr>');
-	if(t.sons) {
-		for(var i=0; i<t.sons.length; i++){
-			myadd(t.sons[i], l+1);
+	if(t.children) {
+		for(var i=0; i<t.children.length; i++){
+			myadd(t.children[i], l+1);
 		}
 	}
 }
 
-var t = {sons:[]};
+var t = {children:[]};
 myloop(t, 0, taxes);
 
-for(var i=0; i<t.sons.length; i++){
-	myadd(t.sons[i], 0);
+for(var i=0; i<t.children.length; i++){
+	myadd(t.children[i], 0);
 }
 
 $('#add-new-tax').click(function() {
