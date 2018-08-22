@@ -403,6 +403,13 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, tags)
 	})
 
+	// TODO remove
+	posts.GET("/:parent/tags!ids", func(c *gin.Context) {
+		pid := toInt64(c.Param("parent"))
+		tags := tagmgr.getTagIDs(gdb, pid, true)
+		EndReq(c, nil, tags)
+	})
+
 	posts.POST("/:parent/tags", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
