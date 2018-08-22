@@ -17,7 +17,6 @@ require_once 'models/base.php';
 require_once 'models/options.php';
 require_once 'models/posts.php';
 require_once 'models/taxonomies.php';
-require_once 'models/comments.php';
 require_once 'models/tags.php';
 
 require_once 'query.php';
@@ -30,7 +29,6 @@ apply_hooks('tb_load');
 $tbopt          = new TB_Options;
 $tbpost         = new TB_Posts;
 $tbtax          = new TB_Taxonomies;
-$tbcmts         = new TB_Comments;
 $tbquery        = new TB_Query;
 $tbdate         = new TB_DateTime;
 $tbtag          = new TB_Tags;
