@@ -257,10 +257,9 @@ class TB_Posts {
         return $r;
     }
 
-    private function &the_tag_names($id) {
-        global $tbtag;
-
-        return $tbtag->get_post_tag_names($id);
+    private function the_tag_names($id) {
+        $names = Invoke('/posts/'.$id.'/tags', 'json', null, false);
+        return json_decode($names);
     }
 
     public function &get_related_posts($id) 
@@ -272,7 +271,7 @@ class TB_Posts {
 
         $posts = [];
 
-        $tagids = $tbtag->get_post_tag_ids($id, true);
+        $tagids = json_decode(Invoke("/posts/$id/tags!ids",'json',null,false));
 
         if (!$tagids || !count($tagids)) {
             return $posts;

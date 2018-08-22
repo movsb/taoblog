@@ -1,6 +1,6 @@
 <?php
 
-function Invoke($path, $type, $body) {
+function Invoke($path, $type='json', $body=null, $post=true) {
     $url = 'http://127.0.0.1:2564/v1'.$path;
     $type_header = 'text/plain';
     if ($type === 'json') {
@@ -16,7 +16,7 @@ function Invoke($path, $type, $body) {
     $options = array(
         'http' => array(
             'header'  => "User-Agent: $ua\r\nContent-type: ".$type_header."\r\nCookie: login=".$auth."\r\n",
-            'method'  => 'POST',
+            'method'  => $post ? 'POST':'GET',
             'content' => $body,
         )
     );
