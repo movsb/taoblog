@@ -9,7 +9,7 @@ function Invoke($path, $type='json', $body=null, $post=true) {
         $type_header = 'application/x-www-form-urlencoded';
     }
 
-    $auth = $_COOKIE["login"];
+    $auth = $_COOKIE["login"] ?? '';
     $ua = $_SERVER['HTTP_USER_AGENT'];
 
     // use key 'http' even if you send the request to https://...
