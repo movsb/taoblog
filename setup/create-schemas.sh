@@ -23,4 +23,4 @@ query() {
     echo "COMMIT;"
 }
 
-query | mysql -u$MYSQL_USER -h "$DB_HOST"
+query | mysql -u$MYSQL_USER -h "$DB_HOST" -p

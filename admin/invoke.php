@@ -1,7 +1,7 @@
 <?php
 
 function Invoke($path, $type='json', $body=null, $post=true) {
-    $url = 'http://127.0.0.1:2564/v1'.$path;
+    $url = 'http://127.0.0.1:'.TB_API_PORT.'/v1'.$path;
     $type_header = 'text/plain';
     if ($type === 'json') {
         $type_header = 'application/json';
