@@ -2,3 +2,7 @@ User-Agent: *
 Disallow: /admin/
 Disallow: /client/
 Disallow: /server/
+Disallow: /setup/
+Disallow: /plugins/
+Disallow: /theme/
+Disallow: /tools/
