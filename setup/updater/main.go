@@ -66,15 +66,16 @@ func main() {
 		return
 	}
 
-	txCall(gdb, func(tx *sql.Tx) {
-		for ; begin < len(gVersions); begin++ {
-			v := gVersions[begin]
-			fmt.Printf("updating to version %s ...\n", v.version)
-			v.updater(tx)
+	for ; begin < len(gVersions); begin++ {
+		v := gVersions[begin]
+		if v.updater != nil {
+			txCall(gdb, func(tx *sql.Tx) {
+				fmt.Printf("updating to version %s ...\n", v.version)
+				v.updater(tx)
+				if _, err := tx.Exec(`UPDATE options SET VALUE=? WHERE name='version'`, v.version); err != nil {
+					panic(err)
+				}
+			})
 		}
-		lastVer := gVersions[len(gVersions)-1]
-		if _, err := tx.Exec(`UPDATE options SET VALUE=? WHERE name='version'`, lastVer.version); err != nil {
-			panic(err)
-		}
-	})
+	}
 }
