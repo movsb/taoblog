@@ -1,7 +1,9 @@
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
-		评论<span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total" itemprop="commentCount">0</span></span>
+        文章评论
+        <span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total" itemprop="commentCount">0</span></span>
+        <span class="post-comment">发表评论</span>
 	</h3>
 
 	<!-- 评论列表  -->
@@ -11,10 +13,8 @@ document.write(function(){/*
 
 	<!-- 评论功能区  -->
 	<div class="comment-func">
-		<button id="post-comment" class="post-comment no-sel btn">发表评论</button>
-		<button id="load-comments" class="load-comments no-sel btn">加载评论</button>
-		&nbsp;<span id="loading-status"></span>
-		<input type="hidden" id="post-id" name="post-id" value="" />
+        <input type="hidden" id="post-id" name="post-id" value="" />
+        <div>还没有用户发表评论，<span class="post-comment">发表评论</span></div>
 	</div>
 
 	<!-- 评论框 -->
@@ -75,74 +75,12 @@ function Comment() {
 Comment.prototype.init = function() {
     var self = this;
 
-    // 发表评论按钮
-    $('#post-comment').click(function(){
+    $('.post-comment').click(function(){
         self.reply_to(0);
-    });
-
-    // 加载按钮
-    $('#load-comments').click(function() {
-        if($(this).attr('loading') === 'true')
-            return;
-
-        var load = this;
-        $(this).attr('loading', 'true');
-        $('#loading-status').html('<i class="fa fa-spin fa-spinner"></i><span>加载中...</span>');
-
-        var pid = $('#post-id').val();
-
-        $.get('/v1/posts/' + pid + '/comments',
-            {
-                order: 'desc',
-                count: 10,
-                offset: self._loaded,
-            },
-            function(cmts) {
-                var ch_count = 0;
-                for(var i=0; i<cmts.length; i++){
-                    $('#comment-list').append(self.gen_comment_item(cmts[i]));
-                    $('#comment-'+cmts[i].id).fadeIn();
-                    TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id));
-                    self.add_reply_div(cmts[i].id);
-
-                    self.append_children(cmts[i].children, cmts[i].id);
-
-                    ch_count += cmts[i].children.length;
-                }
-
-                if(typeof(jQuery)=='function' && typeof(jQuery.timeago)=='function')
-                    jQuery('.comment-meta .date').timeago();
-
-                $('#loading-status').text('');
-
-                if(cmts.length == 0) {
-                    $('#loading-status').html('<i class="fa fa-info-circle"></i><span>没有了！</span>');
-                    setTimeout(function(){
-                            $('#loading-status').text('');
-                        },
-                        1500
-                    );
-                } else {
-                    self._loaded += cmts.length;
-                }
-                $(load).removeAttr('loading');
-
-                self._loaded_ch += ch_count;
-                $('#comment-title .loaded').text(self._loaded + self._loaded_ch);
-            },
-            'json'
-        ).fail(function(x) {
-            alert(x.responseText);
-        })
-        .always(setTimeout(function(){
-            $(load).removeAttr('loading');
-        },1500));
     });
 
     // Ajax评论提交
     $('#comment-submit').click(function() {
-        var timeout = 1500;
-
         $(this).attr('disabled', 'disabled');
         $('#comment-submit').val('提交中...');
         $.post(
@@ -163,12 +101,14 @@ Comment.prototype.init = function() {
                 $('#comment-content').val('');
                 $('#comment-form-div').fadeOut();
                 self.save_info();
+                self._count++;
+                self.toggle_post_comment_button();
             },
             'json'
         )
         .fail(
             function(xhr, sta, e){
-                alert('未知错误！');
+                alert(JSON.parse(xhr.responseText));
             }
         )
         .always(
@@ -199,8 +139,28 @@ Comment.prototype.init = function() {
     $(window).on('load', function() {
         self.get_count(function() {
             self.load_essential_comments();
+            self.toggle_post_comment_button(self._count == 0);
         });
     });
+};
+
+Comment.prototype.toggle_post_comment_button = function(show) {
+    if (typeof show == 'undefined') {
+        if (this._count <= 0) {
+            show = true
+        } else if(this._count == 1) {
+            show = false;
+        } else {
+            return;
+        }
+    }
+    if(show) {
+        $('#comment-title .post-comment').fadeOut();
+        $('.comment-func').fadeIn();
+    } else {
+        $('#comment-title .post-comment').fadeIn();
+        $('.comment-func').fadeOut();
+    }
 };
 
 Comment.prototype.load_essential_comments = function() {
@@ -354,12 +314,15 @@ Comment.prototype.reply_to = function(p){
 };
 
 Comment.prototype.delete_me = function(p) {
+    var self = this;
     var pid = $('#post-id').val();
 	$.ajax({
         url: '/v1/posts/' + pid + '/comments/' + p,
         type: 'DELETE',
         success: function() {
             $('#comment-'+p).remove();
+            self._count--;
+            self.toggle_post_comment_button();
 		},
         error: function(){
             alert('删除失败。');
@@ -403,9 +366,49 @@ Comment.prototype.save_info = function() {
 };
 
 Comment.prototype.load_comments = function() {
-    $('#load-comments').click();
+    if (this.loading) {
+        return;
+    }
+    this.loading = true;
+
+    var self = this;
+    var pid = $('#post-id').val();
+
+    $.get('/v1/posts/' + pid + '/comments',
+        {
+            order: 'desc',
+            count: 10,
+            offset: self._loaded,
+        },
+        function(cmts) {
+            var ch_count = 0;
+            for(var i=0; i<cmts.length; i++){
+                $('#comment-list').append(self.gen_comment_item(cmts[i]));
+                $('#comment-'+cmts[i].id).fadeIn();
+                TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id));
+                self.add_reply_div(cmts[i].id);
+
+                self.append_children(cmts[i].children, cmts[i].id);
+
+                ch_count += cmts[i].children.length;
+            }
+
+            if(typeof(jQuery)=='function' && typeof(jQuery.timeago)=='function')
+                jQuery('.comment-meta .date').timeago();
+
+            if(cmts.length != 0) {
+                self._loaded += cmts.length;
+            }
+            self._loaded_ch += ch_count;
+            $('#comment-title .loaded').text(self._loaded + self._loaded_ch);
+        },
+        'json'
+    ).fail(function(x) {
+        alert(x.responseText);
+    }).always(function(){
+        self.loading = false;
+    });
 };
 
 var comment = new Comment();
 comment.init();
-

@@ -36,7 +36,7 @@ function the_recent_comments() {
             $author = strcasecmp($c->EMail, $admin_email) == 0 ? '博主' : $c->Author;
 
             echo '<li style="margin-bottom: 8px; overflow: hidden;"><b>', htmlspecialchars($author),'</b>: ',htmlspecialchars($c->Content),
-                '<span style="float: right;">《','<a href="/',$c->PostID,'/">',htmlspecialchars($title),'</a>》</span>','</li>',PHP_EOL;
+                '<span style="float: right;">《','<a href="/',$c->PostID,'/#comments">',htmlspecialchars($title),'</a>》</span>','</li>',PHP_EOL;
         }
         echo '</ul>';
     }

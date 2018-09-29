@@ -4,6 +4,14 @@
     overflow: hidden;
 }
 
+.post-comment {
+    font-weight: bold;
+    cursor: pointer;
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 /* 评论标题 */
 #comment-title {
     font-size: 1.5em;
@@ -15,6 +23,13 @@
         color: #cfcfcf;
         font-weight: normal;
         font-size: 0.7em;
+    }
+
+    .post-comment {
+        margin-left: 1em;
+        font-weight: normal;
+        font-size: 0.7em;
+        display: none;
     }
 }
 
@@ -110,7 +125,7 @@
 
 /* 评论功能区 */
 #comments .comment-func {
-    margin: 2em;
+    margin: 2em 1em;
 }
 
 .comment-meta {

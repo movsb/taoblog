@@ -71,7 +71,7 @@ func main() {
 	flag.Parse()
 
 	if config.key == "" {
-		// panic("invalid key")
+		panic("invalid key")
 	}
 
 	var err error
@@ -345,7 +345,7 @@ func routerV1(router *gin.Engine) {
 				EndReq(c, err, nil)
 				return
 			}
-			cmts[0].private = !loggedin
+			cmts[0].private = loggedin
 			EndReq(c, err, cmts[0])
 		}
 
