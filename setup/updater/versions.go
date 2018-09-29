@@ -6,10 +6,10 @@ import (
 
 // VersionUpdater is
 type VersionUpdater struct {
-	version string
+	version int
 	updater func(tx *sql.Tx)
 }
 
 var gVersions = []VersionUpdater{
-	{"1.1.11", v1_1_11},
+	{0, v0},
 }

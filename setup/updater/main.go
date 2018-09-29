@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -43,18 +44,24 @@ func main() {
 		panic(err)
 	}
 	defer gdb.Close()
-	row := gdb.QueryRow(`SELECT value FROM options WHERE name='version'`)
-	ver := ""
-	if err := row.Scan(&ver); err != nil {
+	row := gdb.QueryRow(`SELECT value FROM options WHERE name='db_ver'`)
+	strDBVer := ""
+	dbVer := 0
+	if err := row.Scan(&strDBVer); err != nil {
 		if err == sql.ErrNoRows {
-			ver = "1.1.11"
+			dbVer = 0
 		} else {
+			panic(err)
+		}
+	} else {
+		dbVer, err = strconv.Atoi(strDBVer)
+		if err != nil {
 			panic(err)
 		}
 	}
 	begin := -1
 	for i, v := range gVersions {
-		if v.version == ver {
+		if v.version == dbVer {
 			begin = i + 1
 			break
 		}
@@ -66,16 +73,20 @@ func main() {
 		return
 	}
 
-	for ; begin < len(gVersions); begin++ {
-		v := gVersions[begin]
-		if v.updater != nil {
-			txCall(gdb, func(tx *sql.Tx) {
-				fmt.Printf("updating to version %s ...\n", v.version)
+	txCall(gdb, func(tx *sql.Tx) {
+		for ; begin < len(gVersions); begin++ {
+			v := gVersions[begin]
+			if v.updater != nil {
+				fmt.Printf("updating to DB version %d ...\n", v.version)
 				v.updater(tx)
-				if _, err := tx.Exec(`UPDATE options SET VALUE=? WHERE name='version'`, v.version); err != nil {
-					panic(err)
-				}
-			})
+			}
 		}
-	}
+		lastVer := gVersions[len(gVersions)-1]
+		if _, err := tx.Exec(
+			`UPDATE options SET VALUE=? WHERE name='version'`,
+			fmt.Sprint(lastVer.version),
+		); err != nil {
+			panic(err)
+		}
+	})
 }
