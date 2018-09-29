@@ -98,9 +98,10 @@ func newPostCommentsManager() *PostCommentsManager {
 }
 
 func (o *PostCommentsManager) UpdatePostCommentsCount(tx Querier, pid int64) error {
-	sql := `UPDATE posts INNER JOIN (SELECT post_id,count(post_id) count FROM comments WHERE post_id=%d) x ON posts.id=x.post_id SET posts.comments=x.count WHERE posts.id=%d`
-	sql = fmt.Sprintf(sql, pid, pid)
-	_, err := tx.Exec(sql)
+	query := `UPDATE posts INNER JOIN (SELECT count(post_id) count FROM comments WHERE post_id=%d) x ON posts.id=%d SET posts.comments=x.count`
+	query = fmt.Sprintf(query, pid, pid)
+	fmt.Println(query)
+	_, err := tx.Exec(query)
 	return err
 }
 
