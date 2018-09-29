@@ -1,11 +1,9 @@
-/* 代码块的最大高度 */
-code[class*="lang"] {
-    max-height: 600px;
-    max-height: 60vh;
+/* old */
+pre.code {
+	line-height: 1.5em;
 }
-
 /* 代码块 */
-code[class*="lang"] {
+pre > code {
     display: inline-block;
 	background: none;
 	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
@@ -14,7 +12,9 @@ code[class*="lang"] {
 	word-spacing: normal;
 	word-break: normal;
 	word-wrap: normal;
-	line-height: 1.5;
+	line-height: 1.5em;
+    max-height: 600px;
+    max-height: 60vh;
 
 	-moz-tab-size: 4;
 	tab-size: 4;
