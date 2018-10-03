@@ -23,3 +23,8 @@ function Invoke($path, $type='json', $body=null, $post=true) {
     $context  = stream_context_create($options);
     return file_get_contents($url, false, $context);
 }
+
+function get_tax_tree() {
+    $cats = Invoke('/categories!tree', 'json', null);
+    return json_decode($cats);
+}

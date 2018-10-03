@@ -92,3 +92,22 @@ func BuildQueryString(fields map[string]interface{}) string {
 
 	return q
 }
+
+// CreateSQLInMarks creates "?,?,?" string.
+func CreateSQLInMarks(count int) string {
+	s := "?"
+	for i := 1; i < count; i++ {
+		s += ",?"
+	}
+	return s
+}
+
+// ConvertStringSliceToInterfaceSlice converts
+// https://golang.org/doc/faq#convert_slice_of_interface
+func ConvertStringSliceToInterfaceSlice(slice []string) []interface{} {
+	s := make([]interface{}, len(slice))
+	for i, v := range slice {
+		s[i] = v
+	}
+	return s
+}

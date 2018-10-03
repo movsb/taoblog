@@ -67,8 +67,7 @@ function new_tax_html() { ?>
         <input type="hidden" name="do" value="add-new" />
     </div>
     <script><?php
-        global $tbtax;
-        echo 'var taxes = JSON.parse(\''.json_encode($tbtax->get_hierarchically(), JSON_UNESCAPED_UNICODE).'\');';
+        echo 'var taxes = JSON.parse(\''.json_encode(get_tax_tree(), JSON_UNESCAPED_UNICODE).'\');';
         ?>
     </script>
 </form>
@@ -140,66 +139,10 @@ if(!login_auth()) {
 
 require_once('load.php');
 
-function tax_new_tax() {
-    
-
-}
-
-function tax_get_all() {
-    echo json_encode($tbtax->get(), JSON_UNESCAPED_UNICODE);
-    die(0);
-}
-
-function tax_update(&$arg) {
-    global $tbtax;
-
-    // TODO removed
-    $r = $tbtax->update($arg);
-    if(!$r) {
-        tax_die_json([
-            'errno' => 'error',
-            'error' => $tbtax->error
-            ]);
-    }
-
-    tax_die_json([
-        'errno' => 'success'
-        ]);
-}
-
-function tax_delete(&$arg) {
-    global $tbtax;
-
-    tax_die_json([
-        'errno' => 'error',
-        'error' => '当前不支持分类的删除。',
-        ]);
-}
-
 $do = $_POST['do'] ?? '';
 if($do === 'get-all') {
     tax_get_all();
-} else if($do === 'add-new') {
-    $id = $tbtax->add($_POST);
-    if($id === false) {
-        echo json_encode([
-            'errno' => 'error',
-            'error' => $tbtax->error,
-            ], JSON_UNESCAPED_UNICODE);
-        die(0);
-    } else {
-        echo json_encode([
-            'errno' => 'success',
-            'tax' => $tbtax->get($id),
-            ], JSON_UNESCAPED_UNICODE);
-        die(0);
-    }
-} else if($do === 'update') {
-    tax_update($_POST);
-} else if($do === 'delete') {
-    tax_delete($_POST);
 }
-
 
 endif;
 

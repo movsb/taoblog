@@ -45,8 +45,6 @@ class TB_Posts {
     // 查询到文章时返回数组（仅一篇文章）
     public function query_by_id(int $id, string $modified) {
         global $tbdb;
-        global $tbtax;
-        global $tbopt;
 
         $sql = array();
         $sql['select']  = '*';
@@ -128,13 +126,12 @@ class TB_Posts {
     // 查询别名对应的单篇文章
     public function query_by_slug(string $tax, string $slug, string $modified){
         global $tbdb;
-        global $tbtax;
 
         // 根据类似 /path/to/folder/post 的形式
         // 中 /path/to/folder 文件夹（分类层次）
         // 对应的分类中最后一个分类的 ID
-        $taxid = $tbtax->id_from_tree($tax);
-        if(!$taxid) return false;
+        $taxid = Invoke('/categories!parse?tree='.$tax, 'json', null, false);
+        $taxid = json_decode($taxid);
         
         $slug = $tbdb->real_escape_string($slug);
 
