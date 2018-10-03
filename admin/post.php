@@ -299,8 +299,7 @@ function post_widget_tax_add(&$taxes, $tax=1) {
 }
 
 function post_widget_tax($p=null) {
-    global $tbtax;
-    $taxes = $tbtax->get_hierarchically();
+    $taxes = get_tax_tree();
     $content = '<ul>'.post_widget_tax_add($taxes, ($p ? $p->taxonomy : 1)).'</ul>';
 
     return [

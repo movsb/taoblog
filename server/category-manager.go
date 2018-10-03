@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 // CategoryNotFoundError is
@@ -120,4 +121,38 @@ func (z *CategoryManager) UpdateCategory(tx Querier, cat *Category) error {
 
 func (z *CategoryManager) CreateCategory(tx Querier, cat *Category) error {
 	return nil
+}
+
+// ParseTree parses category tree from URL to get last sub-category ID.
+// e.g. /path/to/folder/post.html, then tree is path/to/folder
+// It will get the ID of folder
+func (z *CategoryManager) ParseTree(tx Querier, tree string) (id int64, err error) {
+	parts := strings.Split(tree, "/")
+	query := fmt.Sprintf(
+		`SELECT * FROM taxonomies WHERE slug IN (%s)`,
+		CreateSQLInMarks(len(parts)),
+	)
+	rows, err := tx.Query(query, ConvertStringSliceToInterfaceSlice(parts)...)
+	if err != nil {
+		return 0, err
+	}
+	cats, err := z.scanMulti(rows)
+	if err != nil {
+		return 0, err
+	}
+	var parent int64
+	for i := 0; i < len(parts); i++ {
+		found := false
+		for _, cat := range cats {
+			if cat.Parent == parent && cat.Slug == parts[i] {
+				parent = cat.ID
+				found = true
+				break
+			}
+		}
+		if !found {
+			return 0, fmt.Errorf("找不到分类：%s", parts[i])
+		}
+	}
+	return parent, nil
 }

@@ -1,8 +1,6 @@
 <?php
 
 class TB_Query {
-    public $category;
-
     public $type;
     public $objs;
 
@@ -10,7 +8,6 @@ class TB_Query {
     public $query;
     private $internal_query;
 
-    public $total;
     public $count;
     private $index;
 
@@ -44,7 +41,6 @@ class TB_Query {
         global $tbquery;
         global $tbopt;
         global $tbpost;
-        global $tbtax;
         global $tbdate;
 
         global $logged_in;

@@ -681,14 +681,19 @@ func categoryV1(router *gin.RouterGroup) {
 		EndReq(c, err, cats)
 	})
 
-	router.GET("/categories:tree", func(c *gin.Context) {
+	router.GET("/categories!tree", func(c *gin.Context) {
 		cats, err := catmgr.GetTree(gdb)
 		EndReq(c, err, cats)
 	})
 	// TODO remove
-	router.POST("/categories:tree", func(c *gin.Context) {
+	router.POST("/categories!tree", func(c *gin.Context) {
 		cats, err := catmgr.GetTree(gdb)
 		EndReq(c, err, cats)
+	})
+	router.GET("/categories!parse", func(c *gin.Context) {
+		tree := c.Query("tree")
+		id, err := catmgr.ParseTree(gdb, tree)
+		EndReq(c, err, id)
 	})
 }
 
