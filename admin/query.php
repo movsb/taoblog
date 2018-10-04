@@ -125,7 +125,7 @@ class TB_Query {
             if(is_array($r) && count($r)) {
                 $tbquery->related_posts = $tbpost->get_related_posts($r[0]->id);
                 $r[0]->page_view++;
-                $tbpost->increase_page_view_count($r[0]->id);
+                inc_page_view($r[0]->id);
             }
         }
         else if($q['slug'] ?? '') {
@@ -134,7 +134,7 @@ class TB_Query {
             if(is_array($r) && count($r)) {
                 $tbquery->related_posts = $tbpost->get_related_posts($r[0]->id);
                 $r[0]->page_view++;
-                $tbpost->increase_page_view_count($r[0]->id);
+                inc_page_view($r[0]->id);
             }
         }
         else if($q['page'] ?? '') {
@@ -142,7 +142,7 @@ class TB_Query {
             $r = $tbpost->query_by_page($q['parents'], $q['page'], $q['modified']??'');
             if(is_array($r) && count($r)) {
                 $r[0]->page_view++;
-                $tbpost->increase_page_view_count($r[0]->id);
+                inc_page_view($r[0]->id);
             }
         }
         else {

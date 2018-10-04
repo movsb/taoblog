@@ -451,6 +451,11 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, nil, nil)
 	})
 
+	posts.POST("/:parent/view", func(c *gin.Context) {
+		pid := toInt64(c.Param("parent"))
+		postmgr.IncrementPageView(gdb, pid)
+	})
+
 	v1.GET("/posts!manage", func(c *gin.Context) {
 		if !auth(c, true) {
 			return

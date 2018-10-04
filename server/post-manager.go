@@ -438,3 +438,9 @@ func (z *PostManager) UpdatePost(tx Querier, post *Post) error {
 
 	return nil
 }
+
+// IncrementPageView increases page view by one.
+func (z *PostManager) IncrementPageView(tx Querier, id int64) {
+	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
+	tx.Exec(query, id)
+}

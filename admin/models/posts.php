@@ -357,10 +357,4 @@ class TB_Posts {
 
         return $x;
     }
-
-    public function increase_page_view_count(int $pid) {
-        global $tbdb;
-        $sql = "UPDATE posts SET page_view=page_view+1 WHERE id=".$pid." LIMIT 1";
-        $tbdb->query($sql);
-    }
 }

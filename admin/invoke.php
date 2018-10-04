@@ -33,3 +33,7 @@ function get_all_tags(int $limit, bool $merge) {
     $tags = Invoke('/tags!count?limit='.$limit.'&merge='.($merge?1:0), 'json', null, false);
     return json_decode($tags);
 }
+
+function inc_page_view(int $id) {
+    Invoke('/posts/'.$id.'/view', 'json', null, true);
+}
