@@ -262,7 +262,6 @@ class TB_Posts {
     public function &get_related_posts($id) 
     {
         global $tbdb;
-        global $tbtag;
 
         $id = (int)$id;
 

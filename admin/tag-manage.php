@@ -55,7 +55,7 @@ admin_header();
 </thead>
 <tbody>
 <?php
-$tags = $tbtag->list_all_tags(-1, false);
+$tags = get_all_tags(0, false);
 foreach ($tags as $t) {
     echo '<tr data-id="',$t->id,'">',
         '<td>',$t->id,'</td>',

@@ -22,6 +22,12 @@ type Tag struct {
 	Alias int64  `json:"alias"`
 }
 
+// TagWithCount is a tag with associated post count.
+type TagWithCount struct {
+	Tag
+	Count int64 `json:"count"`
+}
+
 // TagManager manages tags.
 type TagManager struct {
 }
@@ -331,4 +337,56 @@ func (tm *TagManager) UpdateTag(tx Querier, tag *Tag) error {
 		return err
 	}
 	return nil
+}
+
+// ListTagsWithCount list all tags with associated post count.
+func (tm *TagManager) ListTagsWithCount(tx Querier, limit int64, mergeAlias bool) ([]*TagWithCount, error) {
+	q := make(map[string]interface{})
+	q["select"] = "t.*,COUNT(pt.id) size"
+	q["from"] = "post_tags pt,tags t"
+	q["where"] = []string{"pt.tag_id=t.id"}
+	q["groupby"] = "t.id"
+	q["orderby"] = "size DESC"
+	if limit > 0 {
+		q["limit"] = limit
+	}
+
+	query := BuildQueryString(q)
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rootTags := make([]*TagWithCount, 0)
+	aliasTags := make([]*TagWithCount, 0)
+	rootMap := make(map[int64]*TagWithCount, 0)
+
+	for rows.Next() {
+		var tag TagWithCount
+		err = rows.Scan(&tag.ID, &tag.Name, &tag.Alias, &tag.Count)
+		if err != nil {
+			return nil, err
+		}
+		if !mergeAlias {
+			rootTags = append(rootTags, &tag)
+		} else {
+			if tag.Alias == 0 {
+				rootTags = append(rootTags, &tag)
+				rootMap[tag.ID] = &tag
+			} else {
+				aliasTags = append(aliasTags, &tag)
+			}
+		}
+	}
+
+	if mergeAlias {
+		for _, tag := range aliasTags {
+			if root, ok := rootMap[tag.Alias]; ok {
+				root.Count += tag.Count
+			}
+		}
+	}
+
+	return rootTags, rows.Err()
 }

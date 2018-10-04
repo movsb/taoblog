@@ -28,3 +28,8 @@ function get_tax_tree() {
     $cats = Invoke('/categories!tree', 'json', null);
     return json_decode($cats);
 }
+
+function get_all_tags(int $limit, bool $merge) {
+    $tags = Invoke('/tags!count?limit='.$limit.'&merge='.($merge?1:0), 'json', null, false);
+    return json_decode($tags);
+}

@@ -52,14 +52,13 @@ function list_all_cats() {
 }
 
 function list_all_tags() {
-    global $tbtag;
-    $tags = $tbtag->list_all_tags(50, true);
+    $tags = get_all_tags(50, true);
 
     echo '<ul class="roots">';
     foreach($tags as &$t) {
         echo '<li class="tag" data-name="', htmlspecialchars($t->name),'">';
         echo    '<i class="tag-name fa fa-tag"></i>';
-        echo    '<span class="tag-name">',htmlspecialchars($t->name),'(',$t->size,')</span>';
+        echo    '<span class="tag-name">',htmlspecialchars($t->name),'(',$t->count,')</span>';
         echo    '<ul></ul>';
         echo '</li>';
     }
