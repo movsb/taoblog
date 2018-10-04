@@ -18,6 +18,12 @@ type PostForArchiveQuery struct {
 	Title string `json:"title"`
 }
 
+type PostForLatest struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+}
+
 // PostForManagement for post management.
 type PostForManagement struct {
 	ID           int64  `json:"id"`
@@ -247,9 +253,36 @@ func (z *PostManager) ListAllPosts(tx Querier) ([]*PostForArchiveQuery, error) {
 	}
 	q["orderby"] = "date DESC"
 
-	q = z.beforeQuery(q)
-
 	return z.getRowPosts(tx, q)
+}
+
+// GetLatest gets
+func (z *PostManager) GetLatest(tx Querier, limit int64) ([]*PostForLatest, error) {
+	q := make(map[string]interface{})
+	q["select"] = "id,title,type"
+	q["from"] = "posts"
+	q["where"] = []string{
+		"type='post'",
+	}
+	q["orderby"] = "date DESC"
+	if limit > 0 {
+		q["limit"] = limit
+	}
+	query := BuildQueryString(q)
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	posts := make([]*PostForLatest, 0)
+	for rows.Next() {
+		var p PostForLatest
+		if err := rows.Scan(&p.ID, &p.Title, &p.Type); err != nil {
+			return nil, err
+		}
+		posts = append(posts, &p)
+	}
+	return posts, nil
 }
 
 // GetPostsForRss gets

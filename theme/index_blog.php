@@ -5,7 +5,6 @@ $blog_name = $tbopt->get('blog_name');
 function the_recent_posts() {
     global $tbquery;
 
-    $q = ['count'=>20, 'no_content'=>true];
     $posts = $tbquery->objs;
     if(is_array($posts) && count($posts)) {
         echo '<h2>近期文章</h2>',PHP_EOL;

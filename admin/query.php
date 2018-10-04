@@ -147,7 +147,8 @@ class TB_Query {
         }
         else {
             $tbquery->type = 'home';
-            $r = $tbpost->query_by_latest(20);
+            $posts = Invoke('/posts!latest?limit=20', 'json', null, false);
+            $r = json_decode($posts);
         }
 
         if($r === false || !is_array($r)) return $r;
@@ -155,14 +156,6 @@ class TB_Query {
         // 页面不能通过id访问，重定向到slug
         if(isset($this->internal_query['short']) && count($r) && $r[0]->type == 'page'){
             $need_redirect = true;
-        }
-
-        // 输出内容之前过滤
-        for($i=0; $i<count($r); $i++) {
-            $p = &$r[$i];
-
-            if(isset($p->content))
-                $p->content = apply_hooks('the_content', $p->content, $p->id);
         }
 
         $this->objs = &$r;

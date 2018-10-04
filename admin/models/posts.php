@@ -72,57 +72,6 @@ class TB_Posts {
         return $p;
     }
 
-    // 获取日期对应的文章集
-    public function query_by_date(int $yy, int $mm, int $count) {
-        global $tbdb;
-        global $tbquery;
-        global $tbdate;
-
-        $sql = array();
-        $sql['select']  = '*';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-
-        if($yy >= 1970) {
-            if($mm >= 1 && $mm <= 12) {
-                $startend = $tbdate->the_month_startend_gmdate($yy, $mm);
-            } else {
-                $startend = $tbdate->the_year_startend_gmdate($yy);
-            }
-
-            $sql['where'][] = "date>='{$startend->start}' AND date<='{$startend->end}'";
-        }
-
-        $tbquery->date = (object)['yy'=>$yy,'mm'=>$mm];
-
-        $sql['orderby'] = 'date DESC';
-
-        if($count > 0) {
-            $sql['limit'] = $count;
-        }
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        $p = $this->after_posts_query($p);
-
-        return $p;
-    }
-
-    // 获取最近（依据 date）
-    public function query_by_latest(int $count)
-    {
-        return $this->query_by_date(0, 0, $count);
-    }
-
     // 查询别名对应的单篇文章
     public function query_by_slug(string $tax, string $slug, string $modified){
         global $tbdb;

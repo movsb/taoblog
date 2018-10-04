@@ -487,6 +487,12 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, posts)
 	})
 
+	v1.GET("/posts!latest", func(c *gin.Context) {
+		limit := toInt64(c.Query("limit"))
+		posts, err := postmgr.GetLatest(gdb, limit)
+		EndReq(c, err, posts)
+	})
+
 	archives := v1.Group("/archives")
 
 	archives.GET("/categories/:name", func(c *gin.Context) {
