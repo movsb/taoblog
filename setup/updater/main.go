@@ -49,6 +49,7 @@ func main() {
 	dbVer := 0
 	if err := row.Scan(&strDBVer); err != nil {
 		if err == sql.ErrNoRows {
+			gdb.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',0)`)
 			dbVer = 0
 		} else {
 			panic(err)
@@ -83,7 +84,7 @@ func main() {
 		}
 		lastVer := gVersions[len(gVersions)-1]
 		if _, err := tx.Exec(
-			`UPDATE options SET VALUE=? WHERE name='version'`,
+			`UPDATE options SET VALUE=? WHERE name='db_ver'`,
 			fmt.Sprint(lastVer.version),
 		); err != nil {
 			panic(err)

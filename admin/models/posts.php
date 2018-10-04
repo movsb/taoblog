@@ -3,7 +3,7 @@
 class TB_Posts {
     public $error = '';
 
-    private function after_posts_query(array $posts) {
+    private function after_posts_query(array $posts, bool $date=true) {
         global $tbquery;
         global $tbdate;
 
@@ -11,11 +11,13 @@ class TB_Posts {
         for($i=0; $i<count($posts); $i++) {
             $p = &$posts[$i];
 
-            if(isset($p->date))
-                $p->date = $tbdate->mysql_datetime_to_local($p->date);
+            if($date) {
+                if(isset($p->date))
+                    $p->date = $tbdate->mysql_datetime_to_local($p->date);
 
-            if(isset($p->modified))
-                $p->modified = $tbdate->mysql_datetime_to_local($p->modified);
+                if(isset($p->modified))
+                    $p->modified = $tbdate->mysql_datetime_to_local($p->modified);
+            }
 
             $p->tag_names = $this->the_tag_names($p->id);
 
@@ -44,32 +46,9 @@ class TB_Posts {
     // 未查询到文章时返回 false 或 []
     // 查询到文章时返回数组（仅一篇文章）
     public function query_by_id(int $id, string $modified) {
-        global $tbdb;
-
-        $sql = array();
-        $sql['select']  = '*';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = 'id=' . $id;
-        if($modified) {
-            $sql['where'][] = "modified>'".$modified."'";
-        }
-        $sql['limit'] = 1;
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        if($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        $p = $this->after_posts_query($p);
-
-        return $p;
+        $posts = Invoke('/posts/'.$id.'?modified='.urlencode($modified), 'json', null, false);
+        $posts = json_decode($posts);
+        return $this->after_posts_query($posts,false);
     }
 
     // 查询别名对应的单篇文章

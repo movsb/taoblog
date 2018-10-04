@@ -12,4 +12,5 @@ type VersionUpdater struct {
 
 var gVersions = []VersionUpdater{
 	{0, v0},
+	{1, v1},
 }

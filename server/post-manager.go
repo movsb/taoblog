@@ -184,6 +184,29 @@ func (z *PostManager) getRowPosts(tx Querier, q map[string]interface{}) ([]*Post
 	return ps, rows.Err()
 }
 
+// GetPostByID gets
+func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post, error) {
+	q := make(map[string]interface{})
+	q["select"] = "*"
+	q["from"] = "posts"
+	q["where"] = []string{
+		fmt.Sprintf("id=%d", id),
+	}
+	if datetime.IsValidMy(modified) {
+		q["where"] = append(q["where"].([]string), fmt.Sprintf("modified>'%s'", modified))
+	}
+	q["orderby"] = "date DESC"
+	query := BuildQueryString(q)
+	row := tx.QueryRow(query)
+	p := Post{}
+	if err := row.Scan(&p.ID, &p.Date, &p.Modified, &p.Title, &p.Content, &p.Slug, &p.Type, &p.Category, &p.Status, &p.PageView, &p.CommentStatus, &p.Comments, &p.Metas, &p.Source, &p.SourceType); err != nil {
+		return nil, err
+	}
+	p.Date = datetime.My2Local(p.Date)
+	p.Modified = datetime.My2Local(p.Modified)
+	return &p, nil
+}
+
 // GetPostsByCategory gets category posts.
 func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArchiveQuery, error) {
 	q := make(map[string]interface{})

@@ -178,6 +178,20 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, nil, post.ID)
 	})
 
+	posts.GET("/:parent", func(c *gin.Context) {
+		pid := toInt64(c.Param("parent"))
+		modified := c.Query("modified")
+		post, err := postmgr.GetPostByID(gdb, pid, modified)
+		posts := make([]*Post, 0)
+		if err == nil {
+			posts = append(posts, post)
+		} else if err == sql.ErrNoRows {
+			err = nil
+		}
+		// TODO don't return array.
+		EndReq(c, err, posts)
+	})
+
 	posts.POST("/:parent", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
