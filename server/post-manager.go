@@ -207,6 +207,37 @@ func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post,
 	return &p, nil
 }
 
+// GetPostBySlug gets
+func (z *PostManager) GetPostBySlug(tx Querier, taxTree string, slug string, modified string) (*Post, error) {
+	taxID, err := catmgr.ParseTree(tx, taxTree)
+	if err != nil {
+		return nil, err
+	}
+	if modified != "" && !datetime.IsValidMy(modified) {
+		return nil, fmt.Errorf("invalid modified")
+	}
+	q := make(map[string]interface{})
+	q["select"] = "*"
+	q["from"] = "posts"
+	q["where"] = []string{
+		"slug=?",
+		"taxonomy=?",
+	}
+	if datetime.IsValidMy(modified) {
+		q["where"] = append(q["where"].([]string), fmt.Sprintf("modified>'%s'", modified))
+	}
+	q["orderby"] = "date DESC"
+	query := BuildQueryString(q)
+	row := tx.QueryRow(query, slug, taxID)
+	p := Post{}
+	if err := row.Scan(&p.ID, &p.Date, &p.Modified, &p.Title, &p.Content, &p.Slug, &p.Type, &p.Category, &p.Status, &p.PageView, &p.CommentStatus, &p.Comments, &p.Metas, &p.Source, &p.SourceType); err != nil {
+		return nil, err
+	}
+	p.Date = datetime.My2Local(p.Date)
+	p.Modified = datetime.My2Local(p.Modified)
+	return &p, nil
+}
+
 // GetPostsByCategory gets category posts.
 func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArchiveQuery, error) {
 	q := make(map[string]interface{})

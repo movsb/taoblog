@@ -164,6 +164,25 @@ func routerV1(router *gin.Engine) {
 
 	posts := v1.Group("/posts")
 
+	posts.GET("", func(c *gin.Context) {
+		tax, hasTax := c.GetQuery("tax")
+		slug, hasSlug := c.GetQuery("slug")
+		modified := c.Query("modified")
+		if hasTax && hasSlug {
+			post, err := postmgr.GetPostBySlug(gdb, tax, slug, modified)
+			posts := make([]*Post, 0)
+			if err == nil {
+				posts = append(posts, post)
+			} else if err == sql.ErrNoRows {
+				err = nil
+			}
+			// TODO don't return array.
+			EndReq(c, err, posts)
+			return
+		}
+		c.Status(400)
+	})
+
 	posts.POST("", func(c *gin.Context) {
 		if !auth(c, true) {
 			return

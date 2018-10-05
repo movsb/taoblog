@@ -53,41 +53,9 @@ class TB_Posts {
 
     // 查询别名对应的单篇文章
     public function query_by_slug(string $tax, string $slug, string $modified){
-        global $tbdb;
-
-        // 根据类似 /path/to/folder/post 的形式
-        // 中 /path/to/folder 文件夹（分类层次）
-        // 对应的分类中最后一个分类的 ID
-        $taxid = Invoke('/categories!parse?tree='.$tax, 'json', null, false);
-        $taxid = json_decode($taxid);
-        
-        $slug = $tbdb->real_escape_string($slug);
-
-        $sql = array();
-        $sql['select']  = '*';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "taxonomy=$taxid";
-        $sql['where'][] = "slug='".$slug."'";
-        if($modified) {
-            $sql['where'][] = "modified>'".$modified."'";
-        }
-        $sql['limit']   = 1;
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        $p = $this->after_posts_query($p);
-
-        return $p;
+        $posts = Invoke('/posts?modified='.urlencode($modified).'&tax='.urlencode($tax).'&slug='.urlencode($slug), 'json', null, false);
+        $posts = json_decode($posts);
+        return $this->after_posts_query($posts,false);
     }
 
     // 查询指定页面
