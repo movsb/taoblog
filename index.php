@@ -14,6 +14,15 @@ if(!file_exists('theme/') || !file_exists('theme/index.php')) {
 require('admin/load.php');
 require('theme/functions.php');
 
+$pong = Invoke('/ping', 'text', null, false);
+if($pong != 'pong') {
+    header('HTTP/1.1 503 In Maintenance');
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Retry-After: 300');
+    echo '博客后台服务没有启动，暂时无法访问。';
+    die(-1);
+}
+
 // 是否对外开放
 if(TB_PRIVATE === TRUE) {
     login_auth(true);

@@ -158,6 +158,10 @@ func routerInternalV1(router *gin.Engine) {
 func routerV1(router *gin.Engine) {
 	v1 := router.Group("/v1")
 
+	v1.GET("/ping", func(c *gin.Context) {
+		c.String(200, "pong")
+	})
+
 	posts := v1.Group("/posts")
 
 	posts.POST("", func(c *gin.Context) {
