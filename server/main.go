@@ -152,7 +152,15 @@ func toInt64(s string) int64 {
 }
 
 func routerInternalV1(router *gin.Engine) {
-	_ = router.Group("/.v1/")
+	v1 := router.Group("/.v1")
+
+	optapi := v1.Group("/options")
+
+	optapi.GET("/:name", func(c *gin.Context) {
+		name := c.Param("name")
+		varlue, err := optmgr.Get(gdb, name)
+		EndReq(c, err, varlue)
+	})
 }
 
 func routerV1(router *gin.Engine) {

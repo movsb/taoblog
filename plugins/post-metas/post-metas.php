@@ -51,7 +51,6 @@ class TB_Post_Metas {
 
 function postmetas_head() {
     global $tbquery;
-    global $tbopt;
 
     if(!$tbquery->is_singular() || !$tbquery->count) {
         return false;
@@ -80,7 +79,7 @@ function postmetas_head() {
         $keywords_post = $metas->post ? $metas->post->keywords : '';
         if($keywords_post) $keywords = $keywords_post . $keywords;
     }
-    echo '	<meta name="keywords" content="',htmlspecialchars($keywords),',',htmlspecialchars($tbopt->get('blog_name')),'" />'."\n";
+    echo '	<meta name="keywords" content="',htmlspecialchars($keywords),',',htmlspecialchars(get_opt('blog_name')),'" />'."\n";
 
     if($metas->post) echo $metas->post->header;
 }

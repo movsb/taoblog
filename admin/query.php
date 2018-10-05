@@ -39,7 +39,6 @@ class TB_Query {
 
     public function query() {
         global $tbquery;
-        global $tbopt;
         global $tbpost;
         global $tbdate;
 

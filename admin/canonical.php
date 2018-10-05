@@ -1,13 +1,11 @@
 <?php
 
 function home() {
-    global $tbopt;
-    return 'https://'.$tbopt->get('home');
+    return 'https://'.get_opt('home');
 }
 
 function the_link(&$p, $home=true) {
     global $tbpost;
-    global $tbopt;
 
     $home = $home ? home() : '';
     $link = '';
@@ -25,7 +23,6 @@ function the_link(&$p, $home=true) {
 
 function the_id_link(&$p, $home=true) {
     global $tbpost;
-    global $tbopt;
 
     $home = $home ? home() : '';
 

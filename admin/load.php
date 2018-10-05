@@ -14,7 +14,6 @@ require_once 'utils/hooks.php';
 require_once 'plugin.php';
 
 require_once 'models/base.php';
-require_once 'models/options.php';
 require_once 'models/posts.php';
 
 require_once 'query.php';
@@ -24,7 +23,6 @@ require_once 'invoke.php';
 
 apply_hooks('tb_load');
 
-$tbopt          = new TB_Options;
 $tbpost         = new TB_Posts;
 $tbquery        = new TB_Query;
 $tbdate         = new TB_DateTime;

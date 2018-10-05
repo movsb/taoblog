@@ -17,7 +17,7 @@
         <?php if ($the->type == 'post') { ?>
         <div class="meta clearfix">
             <p><span class="item author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-                <span itemprop="name"><?php echo htmlspecialchars($tbopt->get('author')); ?></span>
+                <span itemprop="name"><?php echo htmlspecialchars(get_opt('author')); ?></span>
             </span>
             发表于：<?php echo the_meta_date();?>，阅读量：<?php echo $the->page_view; ?><?php
             $s = the_meta_tag();

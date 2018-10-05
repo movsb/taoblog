@@ -1,7 +1,7 @@
 <?php
 
-function Invoke($path, $type='json', $body=null, $post=true) {
-    $url = 'http://127.0.0.1:'.TB_API_PORT.'/v1'.$path;
+function Invoke($path, $type='json', $body=null, $post=true, $ver='/v1') {
+    $url = 'http://127.0.0.1:'.TB_API_PORT.$ver.$path;
     $type_header = 'text/plain';
     if ($type === 'json') {
         $type_header = 'application/json';
@@ -36,4 +36,10 @@ function get_all_tags(int $limit, bool $merge) {
 
 function inc_page_view(int $id) {
     Invoke('/posts/'.$id.'/view', 'json', null, true);
+}
+
+function get_opt(string $name, string $def='') {
+    $value = Invoke('/options/'.urlencode($name), 'json', null, false, '/.v1');
+    $value = json_decode($value);
+    return $value ?? $def;
 }

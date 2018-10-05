@@ -1,5 +1,5 @@
 <?php
-    $blog_name = $tbopt->get('blog_name');
+    $blog_name = get_opt('blog_name');
     $content_only = ($_GET['content_only'] ?? '0') == '1';
 ?><!DOCTYPE html> 
 <html lang="zh-CN">
@@ -21,7 +21,7 @@
         echo htmlspecialchars($blog_name);
     ?></title>
     <?php if($tbquery->is_home()) {
-        echo '<meta name="keywords" content="', htmlspecialchars($tbopt->get('keywords')), '" />', PHP_EOL;
+        echo '<meta name="keywords" content="', htmlspecialchars(get_opt('keywords')), '" />', PHP_EOL;
 } ?>
     <link rel="stylesheet" type="text/css" href="/theme/style.css" />
     <?php if ($tbquery->is_archive()) { echo '<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />'; } ?>
@@ -46,7 +46,7 @@
         <div class="content">
             <div class="padding">
                 <div class="sitename"><a href="/"><?php echo htmlspecialchars($blog_name); ?></a></div>
-                <p class="motto"><?php echo htmlspecialchars($tbopt->get('blog_desc'));?></p>
+                <p class="motto"><?php echo htmlspecialchars(get_opt('blog_desc'));?></p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
                     <img src="/theme/images/search.svg" class="icon" /><!--
                     --><input name="q" placeholder="Google Search" />

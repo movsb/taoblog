@@ -1,6 +1,5 @@
 <?php
-global $tbopt;
-$blog_name = $tbopt->get('blog_name');
+$blog_name = get_opt('blog_name');
 
 function the_recent_posts() {
     global $tbquery;
@@ -20,9 +19,8 @@ function the_recent_posts() {
 
 function the_recent_comments() {
     global $tbpost;
-    global $tbopt;
 
-    $admin_email = $tbopt->get('email');
+    $admin_email = get_opt('email');
 
     $cmts = Invoke('/posts!recentComments', 'json', null, false);
     $cmts = json_decode($cmts);
@@ -97,9 +95,9 @@ the_recent_comments();
     <ul>
     <li>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</li>
     <li>博客归档：<?php
-        echo '文章数：', $tbopt->get('post_count', '?');
-        echo '，页面数：', $tbopt->get('page_count', '?');
-        echo '，评论数：', $tbopt->get('comment_count', '?');
+        echo '文章数：', get_opt('post_count', '?');
+        echo '，页面数：', get_opt('page_count', '?');
+        echo '，评论数：', get_opt('comment_count', '?');
         echo '。';
     ?></li>
     </ul>

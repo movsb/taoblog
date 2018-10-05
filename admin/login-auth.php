@@ -3,13 +3,11 @@
 require_once dirname(__FILE__).'/../setup/config.php';
 require_once 'utils/die.php';
 require_once 'models/base.php';
+require_once 'invoke.php';
 
 // 用于登录页面的验证
 function login_auth_passwd($arg = []) {
-    require_once('models/options.php');
-    $opt = new TB_Options;
-
-    $saved_login = explode(',', $opt->get('login'));
+    $saved_login = explode(',', get_opt('login'));
     if($saved_login === false || count($saved_login) != 2)
         return false;
 
@@ -29,10 +27,6 @@ function login_auth_passwd($arg = []) {
 
 // 用于通过cookie认证客户端
 function login_auth($redirect=false) {
-    require_once('models/options.php');
-
-    $opt = new TB_Options;
-
     $cookie_login = $_COOKIE['login'] ?? '';
 
     $loggedin = $cookie_login && $cookie_login === login_gen_cookie();
@@ -54,16 +48,13 @@ function login_auth($redirect=false) {
 
 // 用于生成认证 cookie，独立出来的原因是 api 部分会用到
 function login_gen_cookie() {
-    $opt = new TB_Options;
     $agent = $_SERVER['HTTP_USER_AGENT'];
-    $login = $opt->get('login');
+    $login = get_opt('login');
     return sha1($agent.$login);
 }
 
 // 用于在登录成功之后设置客户端认证的cookie
 // 保存的是 sha1(UA + login)
 function login_auth_set_cookie() {
-    $opt = new TB_Options;
     setcookie('login', login_gen_cookie(), 0, '/', '', true, true);
 }
-
