@@ -1,13 +1,7 @@
 /* 头部 */
 
 #header .content {
-    max-width: $max_width_1;
-}
-
-@media screen and (min-width: 1500px) {
-    #header .content {
-        max-width: $max_width_2;
-    }
+    max-width: $max_width;
 }
 
 #header {
@@ -101,14 +95,14 @@
     }
 }
 
-@media screen and (max-width: $max_width_1) {
+@media screen and (max-width: $max_width) {
     #header .content {
         background-color: rgba(0,0,0,0.6);
         text-align: center;
     }
 }
 
-@media screen and (min-width: $max_width_1+1) {
+@media screen and (min-width: $max_width+1) {
     #header {
         background-color: rgba(0,0,0,0.6);
         .content {

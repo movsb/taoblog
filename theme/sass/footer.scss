@@ -40,13 +40,13 @@
     }
 }
 
-@media screen and (min-width: $max_width_1+1) {
+@media screen and (min-width: $max_width+1) {
     #mobile-footer {
         display: none;
     }
 }
 
-@media screen and (max-width: $max_width_1) {
+@media screen and (max-width: $max_width) {
     #mobile-footer {
         border-top: 1px solid $border_color;
         margin-top: 10px;

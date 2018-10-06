@@ -1,13 +1,7 @@
 /* 内容 */
 
 #content {
-    max-width: $max_width_1;
-}
-
-@media screen and (min-width: 1500px) {
-    #content {
-        max-width: $max_width_2;
-    }
+    max-width: $max_width;
 }
 
 #content {
@@ -154,19 +148,19 @@
 }
 
 /* 文章内容 */
-@media screen and (max-width: $max_width_1) {
+@media screen and (max-width: $max_width) {
     .entry {
         padding: 0px 0px 16px;
     }
 }
-@media screen and (min-width: $max_width_1+1) {
+@media screen and (min-width: $max_width+1) {
     .entry {
         padding-bottom: 16px;
         line-height: 2em;
     }
 }
 
-@media screen and (max-width: $max_width_1) {
+@media screen and (max-width: $max_width) {
     .entry img {
         height: unset !important;
         max-width: 100%;
