@@ -1,18 +1,15 @@
 <?php
 
 function list_all_dates() {
-    global $tbpost;
-    $dd = $tbpost->get_date_archives();
+    $dd = get_date_archives();
 
     echo '<ul class="roots">';
-    foreach(array_reverse($dd, true) as $yy => &$ya) {
-        foreach(array_reverse($ya, true) as $mm => $n) {
-            echo '<li class="year-month" data-yy="',$yy,'" data-mm="',$mm,'">';
-            echo    '<i class="datetime fa fa-clock-o"></i>';
-            echo    '<span class="datetime">',$yy,'年',($mm<10?'0':''),$mm,'月(',$n,')</span>';
-            echo    '<ul></ul>';
-            echo '</li>';
-        }
+    foreach(array_reverse($dd, true) as $d) {
+        echo '<li class="year-month" data-yy="',$d->year,'" data-mm="',$d->month,'">';
+        echo    '<i class="datetime fa fa-clock-o"></i>';
+        echo    '<span class="datetime">',$d->year,'年',($d->month<10?'0':''),$d->month,'月(',$d->count,')</span>';
+        echo    '<ul></ul>';
+        echo '</li>';
     }
     echo '</ul>';
 }

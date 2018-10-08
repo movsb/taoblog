@@ -268,40 +268,4 @@ class TB_Posts {
 
         return $uri ? '/'.$uri : '';
     }
-
-    public function get_date_archives() {
-        global $tbdb;
-
-        $sql = array();
-        $sql['select']  = 'id,DATE_ADD(date, INTERVAL 8 HOUR) date';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "type='post'";
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $sql = "SELECT year,month,count(id) count FROM ("
-            . "SELECT id,date,year(date) year, month(date) month FROM ("
-            . $sql
-            .') x) x GROUP BY year,month;';
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $dd = [];
-        // $r = {year:2011, month: 2, count: 3}
-        while($r = $rows->fetch_object())
-            $dd[] = $r;
-
-        $x = [];
-        foreach($dd as $d) {
-            if(!isset($x[$d->year])) {
-                $x[$d->year] = [];
-            }
-            $x[$d->year][$d->month] = $d->count;
-        }
-
-        return $x;
-    }
 }

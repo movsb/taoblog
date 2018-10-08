@@ -24,6 +24,12 @@ type PostForLatest struct {
 	Type  string `json:"type"`
 }
 
+type PostForDate struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
+	Count int `json:"count"`
+}
+
 // PostForManagement for post management.
 type PostForManagement struct {
 	ID           int64  `json:"id"`
@@ -497,4 +503,26 @@ func (z *PostManager) UpdatePost(tx Querier, post *Post) error {
 func (z *PostManager) IncrementPageView(tx Querier, id int64) {
 	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
 	tx.Exec(query, id)
+}
+
+func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
+	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month"
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	ps := make([]*PostForDate, 0)
+
+	for rows.Next() {
+		p := &PostForDate{}
+		if err = rows.Scan(&p.Year, &p.Month, &p.Count); err != nil {
+			return nil, err
+		}
+		ps = append(ps, p)
+	}
+
+	return ps, rows.Err()
 }

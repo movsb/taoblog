@@ -565,6 +565,11 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, ps)
 	})
 
+	archives.GET("/dates", func(c *gin.Context) {
+		posts, err := postmgr.GetDateArchives(gdb)
+		EndReq(c, err, posts)
+	})
+
 	tools := v1.Group("/tools")
 
 	tools.POST("/aes2htm", func(c *gin.Context) {
