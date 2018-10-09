@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/movsb/taoblog/server/modules/sql_helpers"
 )
 
 // TagNotFoundError is
@@ -85,16 +87,9 @@ func (tm *TagManager) hasTagName(tx Querier, name string) bool {
 
 // GetObjectTagNames gets all tag names of an object.
 func (tm *TagManager) GetObjectTagNames(tx Querier, oid int64) ([]string, error) {
-	q := make(map[string]interface{})
-	q["select"] = "tags.name"
-	q["from"] = "post_tags,tags"
-	q["where"] = []string{
-		"post_tags.post_id=" + fmt.Sprint(oid),
-		"post_tags.tag_id=tags.id",
-	}
-	query := BuildQueryString(q)
-
-	rows, err := tx.Query(query)
+	query, args := sql_helpers.NewSelect().From("post_tags", "").From("tags", "").
+		Select("tags.name").Where("post_tags.post_id=?", oid).Where("post_tags.tag_id=tags.id").SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -341,18 +336,15 @@ func (tm *TagManager) UpdateTag(tx Querier, tag *Tag) error {
 
 // ListTagsWithCount list all tags with associated post count.
 func (tm *TagManager) ListTagsWithCount(tx Querier, limit int64, mergeAlias bool) ([]*TagWithCount, error) {
-	q := make(map[string]interface{})
-	q["select"] = "t.*,COUNT(pt.id) size"
-	q["from"] = "post_tags pt,tags t"
-	q["where"] = []string{"pt.tag_id=t.id"}
-	q["groupby"] = "t.id"
-	q["orderby"] = "size DESC"
-	if limit > 0 {
-		q["limit"] = limit
-	}
-
-	query := BuildQueryString(q)
-	rows, err := tx.Query(query)
+	query, args := sql_helpers.NewSelect().
+		From("post_tags", "pt").From("tags", "t").
+		Select("t.*,COUNT(pt.id) size").
+		Where("pt.tag_id=t.id").
+		GroupBy("t.id").
+		OrderBy("size DESC").
+		Limit(limit).
+		SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

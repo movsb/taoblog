@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/movsb/taoblog/server/modules/sql_helpers"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
@@ -259,17 +260,8 @@ func (o *CommentManager) CreateComment(tx Querier, c *Comment) error {
 }
 
 func (o *CommentManager) GetVars(tx Querier, fields string, wheres string, outs ...interface{}) error {
-	q := make(map[string]interface{})
-	q["select"] = fields
-	q["from"] = "comments"
-	q["where"] = []string{
-		wheres,
-	}
-	q["limit"] = 1
-
-	query := BuildQueryString(q)
-
-	row := tx.QueryRow(query)
-
+	query, args := sql_helpers.NewSelect().From("comments", "").
+		Select(fields).Where(wheres).Limit(1).SQL()
+	row := tx.QueryRow(query, args...)
 	return row.Scan(outs...)
 }

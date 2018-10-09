@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/server/modules/post_translators"
+	"github.com/movsb/taoblog/server/modules/sql_helpers"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
@@ -143,8 +144,9 @@ func (z *PostManager) update(tx Querier, id int64, typ string, source string) er
 
 // GetCommentCount gets the comment count of a post.
 func (z *PostManager) GetCommentCount(tx Querier, pid int64) (count int) {
-	query := `SELECT comments FROM posts WHERE id=` + fmt.Sprint(pid) + ` LIMIT 1`
-	row := tx.QueryRow(query)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("comments").Where("id=?", pid).Limit(1).SQL()
+	row := tx.QueryRow(query, args...)
 	switch row.Scan(&count) {
 	case sql.ErrNoRows:
 		count = -1
@@ -156,21 +158,8 @@ func (z *PostManager) GetCommentCount(tx Querier, pid int64) (count int) {
 	return
 }
 
-func (z *PostManager) beforeQuery(q map[string]interface{}) map[string]interface{} {
-	if _, ok := q["where"]; !ok {
-		q["where"] = []string{}
-	}
-	ws := q["where"].([]string)
-	ws = append(ws, "status='public'")
-	q["where"] = ws
-	return q
-}
-
-func (z *PostManager) getRowPosts(tx Querier, q map[string]interface{}) ([]*PostForArchiveQuery, error) {
-	q = z.beforeQuery(q)
-	s := BuildQueryString(q)
-
-	rows, err := tx.Query(s)
+func (z *PostManager) getRowPosts(tx Querier, query string, args ...interface{}) ([]*PostForArchiveQuery, error) {
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -192,18 +181,13 @@ func (z *PostManager) getRowPosts(tx Querier, q map[string]interface{}) ([]*Post
 
 // GetPostByID gets
 func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post, error) {
-	q := make(map[string]interface{})
-	q["select"] = "*"
-	q["from"] = "posts"
-	q["where"] = []string{
-		fmt.Sprintf("id=%d", id),
-	}
+	seldb := sql_helpers.NewSelect().From("posts", "").Select("*").Where("id=?", id)
 	if datetime.IsValidMy(modified) {
-		q["where"] = append(q["where"].([]string), fmt.Sprintf("modified>'%s'", modified))
+		seldb.Where("modified>?", modified)
 	}
-	q["orderby"] = "date DESC"
-	query := BuildQueryString(q)
-	row := tx.QueryRow(query)
+	seldb.OrderBy("date DESC")
+	query, args := seldb.SQL()
+	row := tx.QueryRow(query, args...)
 	p := Post{}
 	if err := row.Scan(&p.ID, &p.Date, &p.Modified, &p.Title, &p.Content, &p.Slug, &p.Type, &p.Category, &p.Status, &p.PageView, &p.CommentStatus, &p.Comments, &p.Metas, &p.Source, &p.SourceType); err != nil {
 		return nil, err
@@ -222,19 +206,13 @@ func (z *PostManager) GetPostBySlug(tx Querier, taxTree string, slug string, mod
 	if modified != "" && !datetime.IsValidMy(modified) {
 		return nil, fmt.Errorf("invalid modified")
 	}
-	q := make(map[string]interface{})
-	q["select"] = "*"
-	q["from"] = "posts"
-	q["where"] = []string{
-		"slug=?",
-		"taxonomy=?",
-	}
-	if datetime.IsValidMy(modified) {
-		q["where"] = append(q["where"].([]string), fmt.Sprintf("modified>'%s'", modified))
-	}
-	q["orderby"] = "date DESC"
-	query := BuildQueryString(q)
-	row := tx.QueryRow(query, slug, taxID)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("*").
+		Where("slug=? AND taxonomy=?", slug, taxID).
+		WhereIf(datetime.IsValidMy(modified), "modified>?", modified).
+		OrderBy("date DESC").
+		SQL()
+	row := tx.QueryRow(query, args...)
 	p := Post{}
 	if err := row.Scan(&p.ID, &p.Date, &p.Modified, &p.Title, &p.Content, &p.Slug, &p.Type, &p.Category, &p.Status, &p.PageView, &p.CommentStatus, &p.Comments, &p.Metas, &p.Source, &p.SourceType); err != nil {
 		return nil, err
@@ -246,17 +224,13 @@ func (z *PostManager) GetPostBySlug(tx Querier, taxTree string, slug string, mod
 
 // GetPostsByCategory gets category posts.
 func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArchiveQuery, error) {
-	q := make(map[string]interface{})
-
-	q["select"] = "id,title"
-	q["from"] = "posts"
-	q["where"] = []string{
-		fmt.Sprintf("taxonomy=%d", catID),
-		"type='post'",
-	}
-	q["orderby"] = "date DESC"
-
-	return z.getRowPosts(tx, q)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("id,title").
+		Where("taxonomy=?", catID).
+		Where("type='post'").
+		OrderBy("date DESC").
+		SQL()
+	return z.getRowPosts(tx, query, args...)
 }
 
 // GetPostsByTags gets tag posts.
@@ -268,26 +242,19 @@ func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQ
 
 	ids := tagmgr.getAliasTagsAll(tx, []int64{tagObj.ID})
 
-	q := make(map[string]interface{})
-
-	q["select"] = "posts.id,posts.title"
-	q["from"] = "posts,post_tags"
-	q["where"] = []string{
-		"posts.id=post_tags.post_id",
-		fmt.Sprintf("post_tags.tag_id in (%s)", joinInts(ids, ",")),
-	}
-
-	return z.getRowPosts(tx, q)
+	query, args := sql_helpers.NewSelect().From("posts,post_tags", "").
+		Select("posts.id,posts.title").
+		Where("posts.id=post_tags.post_id").
+		Where("post_tags.tag_id in (?)", ids).
+		SQL()
+	return z.getRowPosts(tx, query, args...)
 }
 
 // GetPostsByDate gets date posts.
 func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiveQuery, error) {
-	q := make(map[string]interface{})
-	q["select"] = "id,title"
-	q["from"] = "posts"
-	q["where"] = []string{
-		"type='post'",
-	}
+	seldb := sql_helpers.NewSelect().From("posts", "").
+		Select("id,title").
+		Where("type='post'")
 	if yy > 1970 {
 		var start, end string
 		if 1 <= mm && mm <= 12 {
@@ -295,41 +262,32 @@ func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiv
 		} else {
 			start, end = datetime.YearStartEnd(int(yy))
 		}
-		q["where"] = append(q["where"].([]string), fmt.Sprintf("date>='%s' AND date<='%s'", start, end))
+		seldb.Where("date>=? AND date<=?", start, end)
 	}
-
-	q["orderby"] = "date DESC"
-
-	return z.getRowPosts(tx, q)
+	seldb.OrderBy("date DESC")
+	query, args := seldb.SQL()
+	return z.getRowPosts(tx, query, args...)
 }
 
 // ListAllPosts lists
 func (z *PostManager) ListAllPosts(tx Querier) ([]*PostForArchiveQuery, error) {
-	q := make(map[string]interface{})
-	q["select"] = "id,title"
-	q["from"] = "posts"
-	q["where"] = []string{
-		"type='post'",
-	}
-	q["orderby"] = "date DESC"
-
-	return z.getRowPosts(tx, q)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("id,title").
+		Where("type='post'").
+		OrderBy("date DESC").
+		SQL()
+	return z.getRowPosts(tx, query, args...)
 }
 
 // GetLatest gets
 func (z *PostManager) GetLatest(tx Querier, limit int64) ([]*PostForLatest, error) {
-	q := make(map[string]interface{})
-	q["select"] = "id,title,type"
-	q["from"] = "posts"
-	q["where"] = []string{
-		"type='post'",
-	}
-	q["orderby"] = "date DESC"
-	if limit > 0 {
-		q["limit"] = limit
-	}
-	query := BuildQueryString(q)
-	rows, err := tx.Query(query)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("id,title,type").
+		Where("type='post'").
+		OrderBy("date DESC").
+		Limit(limit).
+		SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -347,15 +305,9 @@ func (z *PostManager) GetLatest(tx Querier, limit int64) ([]*PostForLatest, erro
 
 // GetPostsForRss gets
 func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
-	q := make(map[string]interface{})
-	q["select"] = "id,date,title,content"
-	q["from"] = "posts"
-	q["orderby"] = "date DESC"
-	q["limit"] = 10
-
-	query := BuildQueryString(q)
-
-	rows, err := tx.Query(query)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("id,date,title,content").OrderBy("date DESC").Limit(10).SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -385,32 +337,17 @@ func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
 
 // GetVars gets custom column values.
 func (z *PostManager) GetVars(tx Querier, fields string, wheres string, outs ...interface{}) error {
-	q := make(map[string]interface{})
-	q["select"] = fields
-	q["from"] = "posts"
-	q["where"] = []string{
-		wheres,
-	}
-	q["limit"] = 1
-
-	query := BuildQueryString(q)
-
-	row := tx.QueryRow(query)
-
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select(fields).Where(wheres).Limit(1).SQL()
+	row := tx.QueryRow(query, args...)
 	return row.Scan(outs...)
 }
 
 func (z *PostManager) GetPostsForManagement(tx Querier) ([]*PostForManagement, error) {
 	var dummy PostForManagement
-	cols := dummy.Fields()
-	q := make(map[string]interface{})
-	q["select"] = cols
-	q["from"] = "posts"
-	q["where"] = []string{"type='post'"}
-	q["orderby"] = "id DESC"
-
-	query := BuildQueryString(q)
-	rows, err := tx.Query(query)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select(dummy.Fields()).Where("type='post'").OrderBy("id DESC").SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -431,14 +368,11 @@ func (z *PostManager) GetPostsForManagement(tx Querier) ([]*PostForManagement, e
 
 // GetCountOfType gets
 func (z *PostManager) GetCountOfType(tx Querier, typ string) (int64, error) {
-	q := make(map[string]interface{})
-	q["select"] = "count(*) as size"
-	q["from"] = "posts"
-	q["where"] = []string{
-		"type=?",
-	}
-	query := BuildQueryString(q)
-	row := tx.QueryRow(query, typ)
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("count(*) size").
+		Where("type=?", typ).
+		SQL()
+	row := tx.QueryRow(query, args...)
 	var count int64
 	return count, row.Scan(&count)
 }

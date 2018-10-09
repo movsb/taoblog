@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/movsb/taoblog/server/modules/sql_helpers"
 )
 
 // CategoryNotFoundError is
@@ -25,25 +27,11 @@ func NewCategoryManager() *CategoryManager {
 	return &CategoryManager{}
 }
 
-// GetVars gets vars.
-func (z *CategoryManager) GetVars(tx Querier, fields string, wheres string, outs ...interface{}) error {
-	q := make(map[string]interface{})
-	q["select"] = fields
-	q["from"] = "taxonomies"
-	q["where"] = []string{
-		wheres,
-	}
-	q["limit"] = 1
-
-	query := BuildQueryString(q)
-	row := tx.QueryRow(query)
-	return row.Scan(outs...)
-}
-
 // GetCategoryByID gets a category by its ID.
 func (z *CategoryManager) GetCategoryByID(tx Querier, id int64) (*Category, error) {
-	query := `SELECT * FROM taxonomies WHERE id = ? LIMIT 1`
-	row := tx.QueryRow(query, id)
+	query, args := sql_helpers.NewSelect().From("taxonomies", "").
+		Select("*").Where("id=?", id).Limit(1).SQL()
+	row := tx.QueryRow(query, args...)
 	return z.scanOne(row)
 }
 
@@ -73,8 +61,8 @@ func (z *CategoryManager) scanMulti(rows *sql.Rows) ([]*Category, error) {
 
 // ListCategories lists categories.
 func (z *CategoryManager) ListCategories(tx Querier) ([]*Category, error) {
-	query := `SELECT * FROM taxonomies`
-	rows, err := tx.Query(query)
+	query, args := sql_helpers.NewSelect().From("taxonomies", "").Select("*").SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,8 +95,9 @@ func (z *CategoryManager) GetTree(tx Querier) ([]*Category, error) {
 
 // GetChildren gets direct descendant children.
 func (z *CategoryManager) GetChildren(tx Querier, parent int64) ([]*Category, error) {
-	query := `SELECT * FROM taxonomies WHERE parent=?`
-	rows, err := tx.Query(query, parent)
+	query, args := sql_helpers.NewSelect().From("taxonomies", "").
+		Select("*").Where("parent=?", parent).SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,11 +117,9 @@ func (z *CategoryManager) CreateCategory(tx Querier, cat *Category) error {
 // It will get the ID of folder
 func (z *CategoryManager) ParseTree(tx Querier, tree string) (id int64, err error) {
 	parts := strings.Split(tree, "/")
-	query := fmt.Sprintf(
-		`SELECT * FROM taxonomies WHERE slug IN (%s)`,
-		CreateSQLInMarks(len(parts)),
-	)
-	rows, err := tx.Query(query, ConvertStringSliceToInterfaceSlice(parts)...)
+	query, args := sql_helpers.NewSelect().From("taxonomies", "").
+		Select("*").Where("slug IN (?)", parts).SQL()
+	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return 0, err
 	}
