@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"./internal/post_translators"
-	"./internal/utils/datetime"
+	"github.com/movsb/taoblog/server/modules/post_translators"
+	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
 // PostForArchiveQuery is an archive query result.

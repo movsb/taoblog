@@ -16,8 +16,8 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
-	"./internal/file_managers"
-	"./internal/utils/datetime"
+	"github.com/movsb/taoblog/server/modules/file_managers"
+	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
 type xConfig struct {

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"./internal/utils/datetime"
+	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
 type AjaxComment struct {

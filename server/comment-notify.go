@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"./internal/mailer"
+	"github.com/movsb/taoblog/server/modules/mailer"
 )
 
 func doSendMailAsync(recipient, nickname, subject, body string) {
