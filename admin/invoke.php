@@ -25,7 +25,7 @@ function Invoke($path, $type='json', $body=null, $post=true, $ver='/v1') {
 }
 
 function get_tax_tree() {
-    $cats = Invoke('/categories!tree', 'json', null);
+    $cats = Invoke('/categories!tree', 'json', null, false);
     return json_decode($cats);
 }
 

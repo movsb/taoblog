@@ -12,11 +12,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/movsb/taoblog/server/modules/file_managers"
+	"github.com/movsb/taoblog/server/modules/memory_cache"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
@@ -45,6 +47,7 @@ var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
 var catmgr *CategoryManager
+var memcch *memory_cache.MemoryCache
 
 var templates map[string]*template.Template
 
@@ -97,6 +100,8 @@ func main() {
 	postcmtsmgr = newPostCommentsManager()
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 	catmgr = NewCategoryManager()
+	memcch = memory_cache.NewMemoryCache(time.Minute * 5)
+	defer memcch.Stop()
 
 	loadTemplates()
 
@@ -566,7 +571,12 @@ func routerV1(router *gin.Engine) {
 	})
 
 	archives.GET("/dates", func(c *gin.Context) {
+		if posts, ok := memcch.Get("/archives/dates"); ok {
+			EndReq(c, nil, posts)
+			return
+		}
 		posts, err := postmgr.GetDateArchives(gdb)
+		memcch.SetIf(err == nil, "/archives/dates", posts)
 		EndReq(c, err, posts)
 	})
 
@@ -750,12 +760,12 @@ func categoryV1(router *gin.RouterGroup) {
 	})
 
 	router.GET("/categories!tree", func(c *gin.Context) {
+		if cats, ok := memcch.Get("/categories!tree"); ok {
+			EndReq(c, nil, cats)
+			return
+		}
 		cats, err := catmgr.GetTree(gdb)
-		EndReq(c, err, cats)
-	})
-	// TODO remove
-	router.POST("/categories!tree", func(c *gin.Context) {
-		cats, err := catmgr.GetTree(gdb)
+		memcch.SetIf(err == nil, "/categories!tree", cats)
 		EndReq(c, err, cats)
 	})
 	router.GET("/categories!parse", func(c *gin.Context) {
