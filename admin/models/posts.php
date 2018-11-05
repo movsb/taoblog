@@ -61,42 +61,9 @@ class TB_Posts {
     // 查询指定页面
     // 页面格式：/parent/page
     public function query_by_page(string $parents, string $page, string $modified){
-        global $tbdb;
-
-        $parents = strlen($parents) ? explode('/', substr($parents, 1)) : [];
-        $pid = $this->get_the_last_parents_id($parents);
-
-        if($pid === false) return false;
-
-        $page = $tbdb->real_escape_string($page);
-
-        $sql = array();
-        $sql['select']  = '*';
-        $sql['from']    = 'posts';
-        $sql['where']   = [];
-        $sql['where'][] = "type='page'";
-        $sql['where'][] = "taxonomy=$pid";
-        $sql['where'][] = "slug='".$page."'";
-        $sql['limit']   = 1;
-        if($modified) {
-            $sql['where'][] = "modified>'".$modified."'";
-        }
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $p = [];
-        while($r = $rows->fetch_object()){
-            $p[] = $r;
-        }
-
-        $p = $this->after_posts_query($p);
-
-        return $p;
-
+        $posts = Invoke('/posts?modified='.urlencode($modified).'&parents='.urlencode($parents).'&slug='.urlencode($page), 'json', null, false);
+        $posts = json_decode($posts);
+        return $this->after_posts_query($posts,false);
     }
 
     // 虽然名字跟上下两个很像，并完全不是在同一个时间段写的，功能貌似也并不相同
@@ -203,32 +170,6 @@ class TB_Posts {
         $sql = "SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='posts' AND table_schema = DATABASE()";
 
         return $tbdb->query($sql)->fetch_object()->AUTO_INCREMENT;
-    }
-
-    // 通过父页面树得到最后一个父页面的id（也就是当前待查询页面的id的父页面）
-    // 比如：uri -> /aaa/bbb/ccc/ddd
-    // 则 传入 ['aaa', 'bbb', 'ccc], 传出 ccc 的id
-    public function get_the_last_parents_id($parents) {
-        global $tbdb;
-
-        if(count($parents) <= 0) return 0;
-
-        $sql = "SELECT id FROM posts WHERE slug='".$tbdb->real_escape_string($parents[count($parents)-1])."'";
-        if(count($parents) == 1) {
-            $sql .= " AND taxonomy=0 LIMIT 1";
-        } else {
-            $sql .= " AND taxonomy IN (";
-            for($i=count($parents)-2; $i>0; --$i)
-                $sql .= "SELECT id FROM posts WHERE slug='".$tbdb->real_escape_string($parents[$i])."' AND taxonomy IN (";
-            $sql .= "SELECT id FROM posts WHERE slug='".$tbdb->real_escape_string($parents[0])."'";
-            for($i=count($parents)-1; $i > 0; --$i)
-                $sql .= ")";
-        }
-
-        $rows = $tbdb->query($sql);
-        if(!$rows || !$rows->num_rows) return false;
-
-        return $rows->fetch_object()->id;
     }
 
     // 得到父页面uri

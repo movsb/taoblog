@@ -105,7 +105,6 @@ func main() {
 
 	loadTemplates()
 
-	gin.DisableConsoleColor()
 	router := gin.Default()
 
 	postapi := router.Group("/posts")
@@ -179,10 +178,14 @@ func routerV1(router *gin.Engine) {
 
 	posts.GET("", func(c *gin.Context) {
 		tax, hasTax := c.GetQuery("tax")
+		parents, hasParents := c.GetQuery("parents")
 		slug, hasSlug := c.GetQuery("slug")
 		modified := c.Query("modified")
-		if hasTax && hasSlug {
-			post, err := postmgr.GetPostBySlug(gdb, tax, slug, modified)
+		if (hasTax || hasParents) && hasSlug {
+			if hasParents {
+				tax = parents
+			}
+			post, err := postmgr.GetPostBySlug(gdb, tax, slug, modified, hasParents)
 			posts := make([]*Post, 0)
 			if err == nil {
 				posts = append(posts, post)

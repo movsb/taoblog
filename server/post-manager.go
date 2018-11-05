@@ -198,8 +198,18 @@ func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post,
 }
 
 // GetPostBySlug gets
-func (z *PostManager) GetPostBySlug(tx Querier, taxTree string, slug string, modified string) (*Post, error) {
-	taxID, err := catmgr.ParseTree(tx, taxTree)
+func (z *PostManager) GetPostBySlug(tx Querier, taxTreeOrParents string, slug string, modified string, isPage bool) (*Post, error) {
+	var catID int64
+	var err error
+	if !isPage {
+		catID, err = catmgr.ParseTree(tx, taxTreeOrParents)
+	} else {
+		catID, err = z.GetPageParentID(tx, taxTreeOrParents)
+		// this is a hack
+		if err != nil {
+			err = sql.ErrNoRows
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +218,9 @@ func (z *PostManager) GetPostBySlug(tx Querier, taxTree string, slug string, mod
 	}
 	query, args := sql_helpers.NewSelect().From("posts", "").
 		Select("*").
-		Where("slug=? AND taxonomy=?", slug, taxID).
+		Where("slug=? AND taxonomy=?", slug, catID).
 		WhereIf(datetime.IsValidMy(modified), "modified>?", modified).
+		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC").
 		SQL()
 	row := tx.QueryRow(query, args...)
@@ -459,4 +470,53 @@ func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
 	}
 
 	return ps, rows.Err()
+}
+
+func (z *PostManager) GetPageParentID(tx Querier, parents string) (int64, error) {
+	if len(parents) == 0 {
+		return 0, nil
+	}
+	parents = parents[1:]
+	slugs := strings.Split(parents, "/")
+	query, args := sql_helpers.NewSelect().From("posts", "").
+		Select("id,slug,taxonomy").
+		Where("slug IN (?)", slugs).
+		Where("type = 'page'").
+		SQL()
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	type Result struct {
+		ID     int64
+		Slug   string
+		Parent int64
+	}
+
+	var results []*Result
+	for rows.Next() {
+		var r Result
+		if err := rows.Scan(&r.ID, &r.Slug, &r.Parent); err != nil {
+			return 0, err
+		}
+		results = append(results, &r)
+	}
+
+	var parent int64
+	for i := 0; i < len(slugs); i++ {
+		found := false
+		for _, r := range results {
+			if r.Parent == parent && r.Slug == slugs[i] {
+				parent = r.ID
+				found = true
+				break
+			}
+			if !found {
+				return 0, fmt.Errorf("找不到父页面：%s", slugs[i])
+			}
+		}
+	}
+
+	return parent, nil
 }
