@@ -122,46 +122,10 @@ class TB_Posts {
         return json_decode($names);
     }
 
-    public function &get_related_posts($id) 
+    public function get_related_posts($id) 
     {
-        global $tbdb;
-
-        $id = (int)$id;
-
-        $posts = [];
-
-        $tagids = json_decode(Invoke("/posts/$id/tags!ids",'json',null,false));
-
-        if (!$tagids || !count($tagids)) {
-            return $posts;
-        }
-
-        $in_tags = join(',', $tagids);
-
-        $sql = array();
-        $sql['select']  = 'p.id,p.title,count(p.id) as relevance';
-        $sql['from']    = 'posts p, post_tags pt';
-
-        $sql['where'] = [];
-        $sql['where'][] = "pt.post_id!=$id";
-        $sql['where'][] = "p.id=pt.post_id";
-        $sql['where'][] = "pt.tag_id in ($in_tags)";
-
-        $sql['groupby'] = 'p.id';
-        $sql['orderby'] = 'relevance DESC';
-        $sql['limit']   = 9;   // TODO make configable
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows || !$rows->num_rows)
-            return $posts;
-
-        while($r = $rows->fetch_object())
-            $posts[] = $r;
-
-        return $posts;
+        $relates = Invoke('/posts/'.$id.'/relates', 'json', null, false);
+        return json_decode($relates);
     }
 
     public function the_next_id() {

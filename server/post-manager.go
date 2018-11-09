@@ -25,6 +25,11 @@ type PostForLatest struct {
 	Type  string `json:"type"`
 }
 
+type PostForRelated struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+}
+
 type PostForDate struct {
 	Year  int `json:"year"`
 	Month int `json:"month"`
@@ -519,4 +524,39 @@ func (z *PostManager) GetPageParentID(tx Querier, parents string) (int64, error)
 	}
 
 	return parent, nil
+}
+
+func (z *PostManager) GetRelatedPosts(tx Querier, id int64) ([]*PostForRelated, error) {
+	tagIDs := tagmgr.getTagIDs(tx, id, true)
+	if len(tagIDs) == 0 {
+		return []*PostForRelated{}, nil
+	}
+	query, args := sql_helpers.NewSelect().
+		From("posts", "p").
+		From("post_tags", "pt").
+		Select("p.id,p.title,COUNT(p.id) relevance").
+		Where("pt.post_id != ?", id).
+		Where("p.id = pt.post_id").
+		Where("pt.tag_id IN (?)", tagIDs).
+		GroupBy("p.id").
+		OrderBy("relevance DESC").
+		Limit(9).
+		SQL()
+
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	relates := make([]*PostForRelated, 0)
+	for rows.Next() {
+		var rel PostForRelated
+		var dummy int64
+		if err := rows.Scan(&rel.ID, &rel.Title, &dummy); err != nil {
+			return nil, err
+		}
+		relates = append(relates, &rel)
+	}
+
+	return relates, nil
 }

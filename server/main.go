@@ -462,13 +462,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, tags)
 	})
 
-	// TODO remove
-	posts.GET("/:parent/tags!ids", func(c *gin.Context) {
-		pid := toInt64(c.Param("parent"))
-		tags := tagmgr.getTagIDs(gdb, pid, true)
-		EndReq(c, nil, tags)
-	})
-
 	posts.POST("/:parent/tags", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
@@ -507,6 +500,12 @@ func routerV1(router *gin.Engine) {
 	posts.POST("/:parent/view", func(c *gin.Context) {
 		pid := toInt64(c.Param("parent"))
 		postmgr.IncrementPageView(gdb, pid)
+	})
+
+	posts.GET("/:parent/relates", func(c *gin.Context) {
+		pid := toInt64(c.Param("parent"))
+		relates, err := postmgr.GetRelatedPosts(gdb, pid)
+		EndReq(c, err, relates)
 	})
 
 	v1.GET("/posts!manage", func(c *gin.Context) {
