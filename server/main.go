@@ -504,7 +504,13 @@ func routerV1(router *gin.Engine) {
 
 	posts.GET("/:parent/relates", func(c *gin.Context) {
 		pid := toInt64(c.Param("parent"))
+		key := fmt.Sprintf("relates:%d", pid)
+		if relates, ok := memcch.Get(key); ok {
+			EndReq(c, nil, relates)
+			return
+		}
 		relates, err := postmgr.GetRelatedPosts(gdb, pid)
+		memcch.SetIf(err == nil, key, relates)
 		EndReq(c, err, relates)
 	})
 
