@@ -781,6 +781,15 @@ func categoryV1(router *gin.RouterGroup) {
 		id, err := catmgr.ParseTree(gdb, tree)
 		EndReq(c, err, id)
 	})
+	router.GET("/categories!cat-count", func(c *gin.Context) {
+		if cats, ok := memcch.Get("cat-count"); ok {
+			EndReq(c, nil, cats)
+			return
+		}
+		cats, err := catmgr.GetCountOfCategoriesAll(gdb)
+		memcch.SetIf(err == nil, "cat-count", cats)
+		EndReq(c, err, cats)
+	})
 }
 
 func routerTheme(router *gin.Engine) {

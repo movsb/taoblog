@@ -68,24 +68,14 @@ class TB_Posts {
 
     // 虽然名字跟上下两个很像，并完全不是在同一个时间段写的，功能貌似也并不相同
     public function get_count_of_cats_all() {
-        global $tbdb;
-
-        $sql = array();
-        $sql['select']  = 'count(id) count,taxonomy';
-        $sql['from']    = 'posts';
-        $sql['groupby'] = 'taxonomy';
-
-        $sql = $this->before_posts_query($sql);
-        $sql = make_query_string($sql);
-
-        $rows = $tbdb->query($sql);
-        if(!$rows) return false;
-
-        $ca = [];
-        while($r = $rows->fetch_object())
-            $ca[$r->taxonomy] = $r->count;
-
-        return $ca;
+        $cats = Invoke('/categories!cat-count', 'json', null, false);
+        $cats = json_decode($cats);
+        // for compatible with php
+        $c = [];
+        foreach($cats as $cat) {
+            $c[$cat->id] = $cat->count;
+        }
+        return $c;
     }
 
     // Go!
