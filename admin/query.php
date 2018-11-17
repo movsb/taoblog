@@ -1,5 +1,20 @@
 <?php
 
+function &parse_query_string($q, $dk=true, $dv=true){
+    $segs = explode('&', $q);
+    $r = [];
+    foreach($segs as $s){
+        $p = explode('=', $s);
+        if(count($p) && $p[0]){
+            $k = $dk ? urldecode($p[0]) : $p[0];
+            $v = isset($p[1]) ? ($dv ? urldecode($p[1]) : $p[1]) : '';
+            $r[$k] = $v;
+        }
+    }
+    
+    return $r;
+}
+
 class TB_Query {
     public $type;
     public $objs;

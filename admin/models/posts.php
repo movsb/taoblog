@@ -3,21 +3,9 @@
 class TB_Posts {
     public $error = '';
 
-    private function after_posts_query(array $posts, bool $date=true) {
-        global $tbquery;
-        global $tbdate;
-
-
+    private function after_posts_query(array $posts) {
         for($i=0; $i<count($posts); $i++) {
             $p = &$posts[$i];
-
-            if($date) {
-                if(isset($p->date))
-                    $p->date = $tbdate->mysql_datetime_to_local($p->date);
-
-                if(isset($p->modified))
-                    $p->modified = $tbdate->mysql_datetime_to_local($p->modified);
-            }
 
             $p->tag_names = $this->the_tag_names($p->id);
 
@@ -32,30 +20,20 @@ class TB_Posts {
         return $posts;
     }
 
-    private function before_posts_query(array $sql) {
-        global $logged_in;
-
-        if (!$logged_in) {
-            $sql['where'][] = "status='public'";
-        }
-
-        return $sql;
-    }
-
     // 根据 id 查询单篇文章
     // 未查询到文章时返回 false 或 []
     // 查询到文章时返回数组（仅一篇文章）
     public function query_by_id(int $id, string $modified) {
         $posts = Invoke('/posts/'.$id.'?modified='.urlencode($modified), 'json', null, false);
         $posts = json_decode($posts);
-        return $this->after_posts_query($posts,false);
+        return $this->after_posts_query($posts);
     }
 
     // 查询别名对应的单篇文章
     public function query_by_slug(string $tax, string $slug, string $modified){
         $posts = Invoke('/posts?modified='.urlencode($modified).'&tax='.urlencode($tax).'&slug='.urlencode($slug), 'json', null, false);
         $posts = json_decode($posts);
-        return $this->after_posts_query($posts,false);
+        return $this->after_posts_query($posts);
     }
 
     // 查询指定页面
@@ -63,7 +41,7 @@ class TB_Posts {
     public function query_by_page(string $parents, string $page, string $modified){
         $posts = Invoke('/posts?modified='.urlencode($modified).'&parents='.urlencode($parents).'&slug='.urlencode($page), 'json', null, false);
         $posts = json_decode($posts);
-        return $this->after_posts_query($posts,false);
+        return $this->after_posts_query($posts);
     }
 
     // 虽然名字跟上下两个很像，并完全不是在同一个时间段写的，功能貌似也并不相同
