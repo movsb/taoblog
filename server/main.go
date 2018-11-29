@@ -174,6 +174,10 @@ func routerV1(router *gin.Engine) {
 		c.String(200, "pong")
 	})
 
+	v1.GET("/avatar", func(c *gin.Context) {
+		GetAvatar(c)
+	})
+
 	posts := v1.Group("/posts")
 
 	posts.GET("", func(c *gin.Context) {
