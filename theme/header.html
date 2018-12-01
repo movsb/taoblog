@@ -57,10 +57,7 @@ input, textarea, button {
 {{if eq .PageType "post"}}
 <base href="/{{.ID}}/" />
 <script>var _post_id = {{.ID}};</script>
-{{end}}
-{{if eq .PageType "page"}}
-<base href="/{{.ID}}/" />
-<script>var _post_id = {{.ID}};</script>
+<link rel="stylesheet" href="/plugins/highlight/prism.css" />
 {{end}}
 </head>
 

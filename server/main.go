@@ -149,7 +149,6 @@ func main() {
 
 	routerV1(router)
 	routerInternalV1(router)
-	routerTheme(router)
 	routerBlog(router)
 
 	router.Run(config.listen)
@@ -800,36 +799,6 @@ func routerBlog(router *gin.Engine) {
 	b.GET("/*path", func(c *gin.Context) {
 		path := c.Param("path")
 		blog.Query(c, path)
-	})
-}
-
-func routerTheme(router *gin.Engine) {
-	theme := router.Group("/theme")
-
-	theme.GET("/tags/:tag", func(c *gin.Context) {
-		tag := c.Param("tag")
-		posts, err := postmgr.GetPostsByTags(gdb, tag)
-		data := struct {
-			Tag   string
-			Posts []*PostForArchiveQuery
-			Err   error
-		}{
-			Tag:   tag,
-			Posts: posts,
-			Err:   err,
-		}
-		if err != nil {
-			switch err.(type) {
-			case *TagNotFoundError:
-				c.Status(http.StatusNotFound)
-			default:
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		if err := templates.Lookup("tag").Execute(c.Writer, data); err != nil {
-			EndReq(c, err, err)
-			return
-		}
 	})
 }
 

@@ -9,11 +9,12 @@ import (
 )
 
 var (
+	regexpHome       = regexp.MustCompile(`^/$`)
 	regexpByID       = regexp.MustCompile(`/(\d+)/$`)
 	regexpBySlug     = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
+	regexpByTags     = regexp.MustCompile(`^/tags/(.*)$`)
 	regexpByArchives = regexp.MustCompile(`^/archives$`)
 	regexpByPage     = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
-	regexpHome       = regexp.MustCompile(`^/$`)
 )
 
 type Home struct {
@@ -27,6 +28,15 @@ type Home struct {
 
 func (h *Home) PageType() string {
 	return "home"
+}
+
+type QueryTags struct {
+	Tag   string
+	Posts []*PostForArchiveQuery
+}
+
+func (t *QueryTags) PageType() string {
+	return "tags"
 }
 
 type Blog struct {
@@ -48,6 +58,12 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		b.queryByID(c, id)
 		return
 	}
+	if regexpByTags.MatchString(path) {
+		matches := regexpByTags.FindStringSubmatch(path)
+		tags := matches[1]
+		b.queryByTags(c, tags)
+		return
+	}
 	if regexpBySlug.MatchString(path) {
 		matches := regexpBySlug.FindStringSubmatch(path)
 		tree := matches[1]
@@ -63,10 +79,6 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		}
 		slug := matches[3]
 		b.queryByPage(c, parents, slug)
-		return
-	}
-	if regexpByArchives.MatchString(path) {
-		b.queryByArchives(c)
 		return
 	}
 	c.File(filepath.Join(config.base, path))
@@ -110,6 +122,11 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 	renderer.RenderPost(c, post)
 }
 
-func (b *Blog) queryByArchives(c *gin.Context) {
-
+func (b *Blog) queryByTags(c *gin.Context, tags string) {
+	posts, err := postmgr.GetPostsByTags(gdb, tags)
+	if err != nil {
+		EndReq(c, err, posts)
+		return
+	}
+	renderer.RenderTags(c, &QueryTags{Posts: posts, Tag: tags})
 }

@@ -40,3 +40,7 @@ func (r *Renderer) RenderHome(c *gin.Context, home *Home) {
 func (r *Renderer) RenderPost(c *gin.Context, post *Post) {
 	r.execTemplate(c, "single", post)
 }
+
+func (r *Renderer) RenderTags(c *gin.Context, posts *QueryTags) {
+	r.execTemplate(c, "tags", posts)
+}
