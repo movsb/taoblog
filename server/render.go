@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -20,15 +19,6 @@ func NewRenderer() *Renderer {
 }
 
 func (r *Renderer) execTemplate(c *gin.Context, t string, d IRendererData) {
-	funcs := template.FuncMap{
-		"get_config": func(name string) string {
-			return optmgr.GetDef(gdb, name, "")
-		},
-	}
-	templates, err := template.New("taoblog").Funcs(funcs).ParseGlob("../theme/*.html")
-	if err != nil {
-		panic(err)
-	}
 	log.Println("before executing post template")
 	if err := templates.ExecuteTemplate(c.Writer, t, d); err != nil {
 		panic(err)

@@ -803,5 +803,14 @@ func routerBlog(router *gin.Engine) {
 }
 
 func loadTemplates() {
-
+	funcs := template.FuncMap{
+		"get_config": func(name string) string {
+			return optmgr.GetDef(gdb, name, "")
+		},
+	}
+	var err error
+	templates, err = template.New("taoblog").Funcs(funcs).ParseGlob("../theme/*.html")
+	if err != nil {
+		panic(err)
+	}
 }
