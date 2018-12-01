@@ -101,6 +101,7 @@ func (b *Blog) queryByID(c *gin.Context, id int64) {
 		EndReq(c, err, post)
 		return
 	}
+	postmgr.IncrementPageView(gdb, post.ID)
 	renderer.RenderPost(c, post)
 }
 
@@ -110,6 +111,7 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 		EndReq(c, err, post)
 		return
 	}
+	postmgr.IncrementPageView(gdb, post.ID)
 	renderer.RenderPost(c, post)
 }
 
@@ -119,6 +121,7 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 		EndReq(c, err, post)
 		return
 	}
+	postmgr.IncrementPageView(gdb, post.ID)
 	renderer.RenderPost(c, post)
 }
 

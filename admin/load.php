@@ -14,7 +14,6 @@ require_once 'utils/hooks.php';
 require_once 'models/base.php';
 require_once 'models/posts.php';
 
-require_once 'query.php';
 require_once 'canonical.php';
 
 require_once 'invoke.php';

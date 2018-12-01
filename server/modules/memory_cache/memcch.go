@@ -43,6 +43,7 @@ func (m *MemoryCache) checkTTL() {
 		case <-time.After(m.ttl):
 			log.Println("before collect")
 			m.collect()
+			log.Println("after collect")
 		}
 	}
 }

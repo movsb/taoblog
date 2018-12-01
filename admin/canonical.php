@@ -20,19 +20,3 @@ function the_link(&$p, $home=true) {
 
     return $link;
 }
-
-function the_id_link(&$p, $home=true) {
-    global $tbpost;
-
-    $home = $home ? home() : '';
-
-    return $home . '/' . $p->id . '/';
-}
-
-function the_edit_link(&$p, $ret_anchor = true, $blank = false) {
-    $link = '/admin/post.php?do=edit&amp;id='.(int)$p->id;
-
-    return $ret_anchor
-        ? '<a href="'.$link.'"'.($blank?'target="_blank"':'').'>编辑</a>'
-        : $link;
-}
