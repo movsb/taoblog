@@ -2,6 +2,7 @@ package main
 
 import (
 	"html/template"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,9 +29,11 @@ func (r *Renderer) execTemplate(c *gin.Context, t string, d IRendererData) {
 	if err != nil {
 		panic(err)
 	}
+	log.Println("before executing post template")
 	if err := templates.ExecuteTemplate(c.Writer, t, d); err != nil {
 		panic(err)
 	}
+	log.Println("after executing post template")
 }
 
 func (r *Renderer) RenderHome(c *gin.Context, home *Home) {
