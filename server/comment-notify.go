@@ -55,7 +55,7 @@ func doNotifyAdmin(tx Querier, cmt *Comment, postTitle string) {
 
 	link := "https://" + optmgr.GetDef(tx, "home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
 	write(`<b>链接：</b>%s<br/>`, link)
-	write(`<b>作者：</b>%s<br/>`, html.EscapeString(cmt.Author))
+	write(`<b>作者：</b>%s<br/>`, html.EscapeString(string(cmt.Author)))
 	write(`<b>邮箱：</b>%s<br/>`, cmt.EMail)
 	write(`<b>网址：</b>%s<br/>`, html.EscapeString(cmt.URL))
 	write(`<b>时间：</b>%s<br/>`, cmt.Date)
@@ -86,7 +86,7 @@ func doNotifyUser(tx Querier, cmt *Comment, postTitle string, parent ParentInfo)
 
 	write(`<b>您在博文“%s”的评论有新的回复啦！</b><br/><br/>`, postTitle)
 	write(`<b>链接：</b>%s<br/>`, link)
-	write(`<b>作者：</b>%s<br/>`, html.EscapeString(cmt.Author))
+	write(`<b>作者：</b>%s<br/>`, html.EscapeString(string(cmt.Author)))
 	write(`<b>时间：</b>%s<br/>`, cmt.Date)
 	write(`<b>内容：</b>%s<br>`, html.EscapeString(cmt.Content))
 	write(`<br/>该邮件为系统自动发出，请勿直接回复该邮件。<br/>`)

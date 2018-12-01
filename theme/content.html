@@ -1,0 +1,38 @@
+{{define "content"}}
+<article class="post" itemscope itemtype="http://schema.org/Article">
+    <div class="title clearfix">
+        <h1 itemprop="name">{{ .Title }}</h1>
+    </div>
+
+    <div class="entry clearfix" itemprop="articleBody">
+        {{ .Content }}
+        <div class="meta clearfix">
+            <p>
+                发表于：<span class="value" title="发表时间：{{.DateString}} 修改时间：{{.ModifiedString}}">{{.DateString}}</span>
+                ，阅读量：<span class="value">{{.PageView}}</span>
+                {{if .Tags}}
+                    ，标签：<span class="value">{{.TagsString}}</span>
+                {{end}}
+            </p>
+            <p>版权声明：若非特别注明，本站所有文章均为作者原创，转载请务必注明原文地址。</p>
+</div>
+    </div><!-- end entry -->
+
+    <div class="related clearfix">
+        {{with .RelatedPosts}}
+            <h3>相关文章</h3>
+            <ol>
+                {{range .}}
+                    <li><a href="/{{.ID}}/">{{.Title}}</a></li>
+                {{end}}
+            </ol>
+        {{end}}
+    </div><!-- end related -->
+
+    <!-- comments begin -->
+    <div id="comments" class="clearfix">
+        <script src="/theme/scripts/comment.js"></script>
+    </div>
+    <!-- comments end -->
+</article>
+{{end}}

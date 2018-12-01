@@ -48,8 +48,10 @@ var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
 var catmgr *CategoryManager
 var memcch *memory_cache.MemoryCache
+var blog *Blog
+var renderer *Renderer
 
-var templates map[string]*template.Template
+var templates *template.Template
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
@@ -101,6 +103,8 @@ func main() {
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 	catmgr = NewCategoryManager()
 	memcch = memory_cache.NewMemoryCache(time.Minute * 5)
+	blog = NewBlog()
+	renderer = NewRenderer()
 	defer memcch.Stop()
 
 	loadTemplates()
@@ -146,6 +150,7 @@ func main() {
 	routerV1(router)
 	routerInternalV1(router)
 	routerTheme(router)
+	routerBlog(router)
 
 	router.Run(config.listen)
 }
@@ -276,12 +281,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, true, count)
 	})
 
-	// TODO remove
-	v1.GET("/posts!recentComments", func(c *gin.Context) {
-		cmts, err := cmtmgr.GetRecentComments(gdb, 10)
-		EndReq(c, err, cmts)
-	})
-
 	posts.GET("/:parent/comments", func(c *gin.Context) {
 		var err error
 
@@ -359,7 +358,7 @@ func routerV1(router *gin.Engine) {
 				}
 
 				for _, author := range notAllowedAuthors {
-					if author != "" && cmt.Author != "" && strings.EqualFold(author, cmt.Author) {
+					if author != "" && cmt.Author != "" && strings.EqualFold(author, string(cmt.Author)) {
 						EndReq(c, errors.New("不能使用此昵称"), nil)
 						tx.Rollback()
 						return
@@ -796,6 +795,14 @@ func categoryV1(router *gin.RouterGroup) {
 	})
 }
 
+func routerBlog(router *gin.Engine) {
+	b := router.Group("/blog")
+	b.GET("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		blog.Query(c, path)
+	})
+}
+
 func routerTheme(router *gin.Engine) {
 	theme := router.Group("/theme")
 
@@ -819,7 +826,7 @@ func routerTheme(router *gin.Engine) {
 				c.Status(http.StatusInternalServerError)
 			}
 		}
-		if err := templates["tag"].Execute(c.Writer, data); err != nil {
+		if err := templates.Lookup("tag").Execute(c.Writer, data); err != nil {
 			EndReq(c, err, err)
 			return
 		}
@@ -827,15 +834,5 @@ func routerTheme(router *gin.Engine) {
 }
 
 func loadTemplates() {
-	templates = make(map[string]*template.Template)
 
-	mp := func(path string) *template.Template {
-		tmpl, err := template.ParseFiles(path)
-		if err != nil {
-			panic(err)
-		}
-		return tmpl
-	}
-
-	templates["tag"] = mp("../theme/tag.html")
 }

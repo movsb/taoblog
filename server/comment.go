@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"regexp"
 	"strings"
@@ -27,6 +28,25 @@ type Comment struct {
 	Date     string
 	Content  string
 	Children []*Comment
+}
+
+func (c *Comment) AuthorString() string {
+	mail := optmgr.GetDef(gdb, "email", "")
+	if mail == c.EMail {
+		return "博主"
+	}
+	return c.Author
+}
+
+func (c *Comment) PostTitle() template.HTML {
+	key := fmt.Sprintf("title:%d", c.PostID)
+	if t, ok := memcch.Get(key); ok {
+		return t.(template.HTML)
+	}
+	var title template.HTML
+	postmgr.GetVars(gdb, "title", fmt.Sprintf("id = %d", c.PostID), &title)
+	memcch.SetIf(title != "", key, title)
+	return title
 }
 
 type CommentManager struct {
@@ -198,7 +218,7 @@ func (o *CommentManager) beforeCreateComment(tx Querier, c *Comment) error {
 	}
 
 	// Author
-	if len(c.Author) == 0 || utf8.RuneCountInString(c.Author) > 32 {
+	if len(c.Author) == 0 || utf8.RuneCountInString(string(c.Author)) > 32 {
 		return errors.New("昵称不能为空或超出最大长度")
 	}
 
