@@ -580,16 +580,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, ps)
 	})
 
-	archives.GET("/dates", func(c *gin.Context) {
-		if posts, ok := memcch.Get("/archives/dates"); ok {
-			EndReq(c, nil, posts)
-			return
-		}
-		posts, err := postmgr.GetDateArchives(gdb)
-		memcch.SetIf(err == nil, "/archives/dates", posts)
-		EndReq(c, err, posts)
-	})
-
 	tools := v1.Group("/tools")
 
 	tools.POST("/aes2htm", func(c *gin.Context) {
@@ -782,15 +772,6 @@ func categoryV1(router *gin.RouterGroup) {
 		tree := c.Query("tree")
 		id, err := catmgr.ParseTree(gdb, tree)
 		EndReq(c, err, id)
-	})
-	router.GET("/categories!cat-count", func(c *gin.Context) {
-		if cats, ok := memcch.Get("cat-count"); ok {
-			EndReq(c, nil, cats)
-			return
-		}
-		cats, err := catmgr.GetCountOfCategoriesAll(gdb)
-		memcch.SetIf(err == nil, "cat-count", cats)
-		EndReq(c, err, cats)
 	})
 }
 

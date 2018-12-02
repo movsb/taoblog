@@ -37,3 +37,7 @@ func (r *Renderer) RenderPost(c *gin.Context, post *Post) {
 func (r *Renderer) RenderTags(c *gin.Context, posts *QueryTags) {
 	r.execTemplate(c, "tags", posts)
 }
+
+func (r *Renderer) RenderArchives(c *gin.Context, archives *Archives) {
+	r.execTemplate(c, "archives", archives)
+}

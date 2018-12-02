@@ -39,9 +39,3 @@ function get_opt(string $name, string $def='') {
     $value = json_decode($value);
     return $value ?? $def;
 }
-
-function get_date_archives() {
-    $d = Invoke('/archives/dates', 'json', null, false);
-    $d = json_decode($d);
-    return $d;
-}

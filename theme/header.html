@@ -56,8 +56,20 @@ input, textarea, button {
 {{end}}
 {{if eq .PageType "post"}}
 <base href="/{{.ID}}/" />
-<script>var _post_id = {{.ID}};</script>
+<script>var _post_id = +"{{.ID}}";</script>
 <link rel="stylesheet" href="/plugins/highlight/prism.css" />
+{{end}}
+{{if eq .PageType "archives"}}
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />
+<style>
+    .archives a {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        max-width: 100%;
+    }
+</style>
 {{end}}
 </head>
 
@@ -79,6 +91,7 @@ input, textarea, button {
                         <li><a href="/friends">朋友们</a></li>
                         <li><a href="https://github.com/movsb" target="_blank">GitHub</a></li>
                         <!--li><a href="/archives">文章归档</a></li-->
+                        <li><a href="/archives">文章归档</a></li>
                         <li><a href="/blog">博客程序</a></li>
                         <li><a href="/echo">建议反馈</a></li>
                         <li><a href="/rss">博客订阅</a></li>

@@ -144,7 +144,7 @@ func (z *CategoryManager) ParseTree(tx Querier, tree string) (id int64, err erro
 	return parent, nil
 }
 
-func (z *CategoryManager) GetCountOfCategoriesAll(tx Querier) ([]*CategoryForGetAll, error) {
+func (z *CategoryManager) GetCountOfCategoriesAll(tx Querier) (map[int64]int64, error) {
 	query, args := sql_helpers.NewSelect().
 		From("posts", "").
 		Select("taxonomy,count(id) count").
@@ -154,13 +154,13 @@ func (z *CategoryManager) GetCountOfCategoriesAll(tx Querier) ([]*CategoryForGet
 		return nil, err
 	}
 	defer rows.Close()
-	cats := []*CategoryForGetAll{}
+	cats := make(map[int64]int64)
 	for rows.Next() {
-		var cat CategoryForGetAll
-		if err := rows.Scan(&cat.ID, &cat.Count); err != nil {
+		var id, count int64
+		if err := rows.Scan(&id, &count); err != nil {
 			return nil, err
 		}
-		cats = append(cats, &cat)
+		cats[id] = count
 	}
 	return cats, rows.Err()
 }

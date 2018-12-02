@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"html/template"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -28,6 +30,17 @@ type Home struct {
 
 func (h *Home) PageType() string {
 	return "home"
+}
+
+type Archives struct {
+	Tags  []*TagWithCount
+	Dates []*PostForDate
+	Cats  template.HTML
+	Title string
+}
+
+func (a *Archives) PageType() string {
+	return "archives"
 }
 
 type QueryTags struct {
@@ -62,6 +75,10 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		matches := regexpByTags.FindStringSubmatch(path)
 		tags := matches[1]
 		b.queryByTags(c, tags)
+		return
+	}
+	if regexpByArchives.MatchString(path) {
+		b.queryByArchives(c)
 		return
 	}
 	if regexpBySlug.MatchString(path) {
@@ -132,4 +149,42 @@ func (b *Blog) queryByTags(c *gin.Context, tags string) {
 		return
 	}
 	renderer.RenderTags(c, &QueryTags{Posts: posts, Tag: tags})
+}
+
+func (b *Blog) queryByArchives(c *gin.Context) {
+	tags, _ := tagmgr.ListTagsWithCount(gdb, 50, true)
+	posts, _ := postmgr.GetDateArchives(gdb)
+
+	cats, _ := catmgr.GetTree(gdb)
+	postCounts, _ := catmgr.GetCountOfCategoriesAll(gdb)
+
+	var fn func([]*Category) (string, int64)
+	fn = func(cats []*Category) (string, int64) {
+		s := ""
+		n := int64(0)
+		for _, cat := range cats {
+			postCount := postCounts[cat.ID]
+			s1 := fmt.Sprintf(`<li data-cid=%d class=folder><i class="folder-name fa fa-folder-o"></i><span class="folder-name">%s(`, cat.ID, cat.Name)
+			s2 := `)</span><ul>`
+			s3, childCount := fn(cat.Children)
+			s4 := `</ul></li>`
+			c := fmt.Sprint(postCount)
+			if len(cat.Children) > 0 {
+				c += fmt.Sprintf("/%d", postCount+childCount)
+			}
+			s += s1 + c + s2 + s3 + s4
+			n += postCount + childCount
+		}
+		return s, n
+	}
+
+	catstr, _ := fn(cats)
+
+	a := &Archives{
+		Title: "文章归档",
+		Tags:  tags,
+		Dates: posts,
+		Cats:  template.HTML(catstr),
+	}
+	renderer.RenderArchives(c, a)
 }
