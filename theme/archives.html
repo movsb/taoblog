@@ -1,91 +1,40 @@
-<?php
+{{define "archives"}}
 
-function list_all_dates() {
-    $dd = get_date_archives();
+{{template "header" .}}
 
-    echo '<ul class="roots">';
-    foreach(array_reverse($dd, true) as $d) {
-        echo '<li class="year-month" data-yy="',$d->year,'" data-mm="',$d->month,'">';
-        echo    '<i class="datetime fa fa-clock-o"></i>';
-        echo    '<span class="datetime">',$d->year,'年',($d->month<10?'0':''),$d->month,'月(',$d->count,')</span>';
-        echo    '<ul></ul>';
-        echo '</li>';
-    }
-    echo '</ul>';
-}
-
-// 这代码加这命名加这逻辑，我估计你得看醉，反正我是醉了
-function list_all_cats() {
-    global $tbpost;
-
-    $taxes = get_tax_tree();
-    $cat_posts = $tbpost->get_count_of_cats_all();
-
-    $_tax_add = function( &$taxes,&$count_of_func) use($cat_posts,&$_tax_add) {
-        $count_of_func = 0;
-        $s = '';
-        foreach($taxes as $t) {
-            $post_count_of_cat = $cat_posts[$t->id] ?? 0;
-
-            $s1 = '<li data-cid="'.$t->id.'" class="folder"><i class="folder-name fa fa-folder-o"></i><span class="folder-name">'.htmlspecialchars($t->name).'(';
-            $s2 = ')</span><ul>';
-            $s3 = '';
-
-            $child_count_of_func = 0;
-
-            if(isset($t->children))
-                $s3 = $_tax_add($t->children, $child_count_of_func);
-
-            $s4 = '</ul></li>';
-
-            $s .= $s1.$post_count_of_cat.(isset($t->children) ? '/'.($post_count_of_cat+$child_count_of_func) : '').$s2.$s3.$s4;
-
-            $count_of_func += $post_count_of_cat + $child_count_of_func;
-        }
-        return $s;
-    };
-
-    echo '<ul class="roots">',$_tax_add($taxes, $count_of_total/*not used*/),'</ul>';
-}
-
-function list_all_tags() {
-    $tags = get_all_tags(50, true);
-
-    echo '<ul class="roots">';
-    foreach($tags as &$t) {
-        echo '<li class="tag" data-name="', htmlspecialchars($t->name),'">';
-        echo    '<i class="tag-name fa fa-tag"></i>';
-        echo    '<span class="tag-name">',htmlspecialchars($t->name),'(',$t->count,')</span>';
-        echo    '<ul></ul>';
-        echo '</li>';
-    }
-    echo '</ul>';
-}
-
-function tb_head_hook() { ?>
-<style>
-    .archives a {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
-        max-width: 100%;
-    }
-</style>
-<?php }
-add_hook('tb_head', 'tb_head_hook');
-
-require('header.php');
-?>
 <div class="archives">
-    <div class="tags"><h2>标签</h2><?php list_all_tags(); ?></div>
-    <div class="cats"><h2>分类</h2><?php list_all_cats(); ?></div>
-    <div class="date"><h2>日期</h2><?php list_all_dates(); ?></div>
+    <div class="tags">
+        <h2>标签</h2>
+        <ul class=roots>
+            {{range .Tags}}
+                <li class=tag data-name="{{.Name}}">
+                    <i class="tag-name fa fa-tag"></i>
+                    <span class="tag-name">{{.Name}}({{.Count}})</span>
+                    <ul></ul>
+                </li>
+            {{end}}
+        </ul>
+    </div>
+    <div class="cats">
+        <h2>分类</h2>
+        <ul class=roots>
+            {{.Cats}}
+        </ul>
+    </div>
+    <div class="date">
+        <h2>日期</h2>
+        <ul class=roots>
+            {{range .Dates}}
+                <li class=year-month data-yy={{.Year}} data-mm={{.Month}}>
+                    <i class="datetime fa fa-clock-o"></i>
+                    <span class="datetime">{{.Year}}年{{.Month | printf "%02d"}}月({{.Count}})</span>
+                    <ul></ul>
+                </li>
+            {{end}}
+        </ul>
+    </div>
 </div>
 
-<?php
-
-function tb_footer_hook() { ?>
 <script>
 function gen_entry(p) {
     return $('<li/>')
@@ -197,9 +146,7 @@ $('.tags').on('click',function(e) {
     e.stopPropagation();
 });
 </script>
-<?php
-}
 
-add_hook('tb_footer', 'tb_footer_hook');
-require('footer.php');
+{{template "footer" .}}
 
+{{end}}

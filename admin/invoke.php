@@ -34,18 +34,8 @@ function get_all_tags(int $limit, bool $merge) {
     return json_decode($tags);
 }
 
-function inc_page_view(int $id) {
-    Invoke('/posts/'.$id.'/view', 'json', null, true);
-}
-
 function get_opt(string $name, string $def='') {
     $value = Invoke('/options/'.urlencode($name), 'json', null, false, '/.v1');
     $value = json_decode($value);
     return $value ?? $def;
-}
-
-function get_date_archives() {
-    $d = Invoke('/archives/dates', 'json', null, false);
-    $d = json_decode($d);
-    return $d;
 }

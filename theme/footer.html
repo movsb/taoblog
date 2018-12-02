@@ -1,0 +1,106 @@
+{{define "footer"}}
+</div><!-- content -->	
+</section>
+</div><!-- wrapper -->
+
+{{if eq .PageType "post"}}
+<script type="text/javascript" src="/plugins/timeago/timeago.js"></script>
+<script type="text/javascript">
+    $('.comment-meta .date').timeago();
+    TaoBlog.events.add('comment', 'post', function(item) {
+        $(item).find('.date').timeago();
+    });
+</script>
+
+<script>
+function hasMath() {
+    var has = false;
+    $('code:not([class*="lang"])').each(function(_, e){
+        var t = $(e).html();
+        if(t.startsWith('$') && t.endsWith('$')) {
+            has = true;
+            // break;
+        }
+    })
+    return has;
+}
+
+if(hasMath()) {
+    var $body = $('body');
+
+    var config = function(){/*
+        MathJax.Hub.Config({
+            jax: ["input/TeX", "output/CommonHTML"],
+            extensions: ["tex2jax.js"],
+            tex2jax: {
+                skipTags: [],
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+            },
+            skipStartupTypeset: true,
+            //showMathMenu: false,
+            menuSettings: {
+                zoom: 'Click',
+            }
+        });
+    */}.toString().slice(14,-3);
+
+    $('<script/>')
+        .attr('type', 'text/x-mathjax-config')
+        .text(config)
+        .appendTo($body);
+
+    // jQuery adds _ parameter to skip cache
+    var s = document.createElement('script');
+    s.src= 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js';
+    // s.src = '/plugins/mathjax/MathJax-2.7.4/unpacked/MathJax.js';
+    s.async = true;
+    $body[0].appendChild(s);
+
+    s = document.createElement('script');
+    s.src = '/plugins/mathjax/mathjax.js';
+    s.async = true;
+    $body[0].appendChild(s);
+}
+</script>
+
+<script type="text/javascript" src="/plugins/highlight/prism.js" data-manual></script>
+<script>
+$('pre').each(function(_, re, _){
+    var e = $(re);
+    var lang = e.attr('lang');
+    // https://stackoverflow.com/a/1318091/3628322
+    var hasLang = typeof lang !== typeof undefined && lang !== false;
+    var hasCode = e.find('>code').length > 0;
+    // console.log(re, hasLang, hasCode);
+    if(hasLang && !hasCode) {
+        var code = $('<code/>').html(e.html());
+        code.addClass("language-" + lang);
+        e.removeAttr('lang');
+        e.html('');
+        e.append(code);
+        hasCode = true;
+    }
+    if(hasCode) {
+        e.removeClass('code');
+        // TODO
+        // e.addClass('line-numbers');
+        Prism.highlightAllUnder(re);
+    }
+});
+</script>
+{{end}}
+
+<div class="footer-toolbar" id="footer-toolbar">
+<div class="back-to-top" id="back-to-top" title="回到顶端">
+    <img src="/theme/images/gotop.png" alt="" width="32" height="32"/>
+</div>
+</div>
+
+<div style="display: none;">
+<script src="/theme/scripts/footer.js"></script>
+<script src="/theme/scripts/image-view.js"></script>
+</div>
+</body>
+</html>
+{{end}}

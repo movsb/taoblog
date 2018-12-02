@@ -43,6 +43,7 @@ func (m *MemoryCache) checkTTL() {
 		case <-time.After(m.ttl):
 			log.Println("before collect")
 			m.collect()
+			log.Println("after collect")
 		}
 	}
 }
@@ -58,6 +59,8 @@ func (m *MemoryCache) collect() {
 			m.vals.Remove(elem)
 			delete(m.keys, item.key)
 			log.Println("collected key: ", item.key, ", len: ", m.vals.Len())
+		} else {
+			break
 		}
 	}
 }

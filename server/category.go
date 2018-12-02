@@ -10,11 +10,6 @@ type Category struct {
 	Children []*Category `json:"children"`
 }
 
-type CategoryForGetAll struct {
-	ID    int64 `json:"id"`
-	Count int64 `json:"count"`
-}
-
 // Create creates category into database.
 func (z *Category) Create(tx Querier) error {
 	return nil

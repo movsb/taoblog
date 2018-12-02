@@ -61,7 +61,7 @@ foreach ($tags as $t) {
         '<td>',$t->id,'</td>',
         '<td class="name">',htmlspecialchars($t->name),'</td>',
         '<td class="alias">',$t->alias,'</td>',
-        '<td>',$t->size,'</td>',
+        '<td>',$t->count,'</td>',
         '<td><button class="edit">编辑</button></td>',
         '</tr>'
     ;

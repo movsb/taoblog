@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 )
 
 type OptionManager struct {
@@ -36,6 +37,15 @@ func (o *OptionManager) GetDef(tx Querier, name string, def string) string {
 	val, err := o.Get(tx, name)
 	if err == nil {
 		return val
+	}
+	return def
+}
+
+func (o *OptionManager) GetDefInt(tx Querier, name string, def int64) int64 {
+	val, err := o.Get(tx, name)
+	if err == nil {
+		num, _ := strconv.ParseInt(val, 10, 64)
+		return num
 	}
 	return def
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html"
+	"html/template"
 	"regexp"
 	"strings"
 
@@ -12,28 +14,65 @@ import (
 
 // Post is the model of a post.
 type Post struct {
-	ID            int64    `json:"id"`
-	Date          string   `json:"date"`
-	Modified      string   `json:"modified"`
-	Title         string   `json:"title"`
-	Content       string   `json:"content"`
-	Slug          string   `json:"slug"`
-	Type          string   `json:"type"`
-	Category      uint     `json:"category"`
-	Status        string   `json:"status"`
-	PageView      uint     `json:"page_view"`
-	CommentStatus uint     `json:"comment_status"`
-	Comments      uint     `json:"comments"`
-	Metas         string   `json:"metas"`
-	Source        string   `json:"source"`
-	SourceType    string   `json:"source_type"`
-	Tags          []string `json:"tags"`
+	ID            int64         `json:"id"`
+	Date          string        `json:"date"`
+	Modified      string        `json:"modified"`
+	Title         template.HTML `json:"title"`
+	Content       template.HTML `json:"content"`
+	Slug          string        `json:"slug"`
+	Type          string        `json:"type"`
+	Category      uint          `json:"category"`
+	Status        string        `json:"status"`
+	PageView      uint          `json:"page_view"`
+	CommentStatus uint          `json:"comment_status"`
+	Comments      uint          `json:"comments"`
+	Metas         string        `json:"metas"`
+	Source        string        `json:"source"`
+	SourceType    string        `json:"source_type"`
+	Tags          []string      `json:"tags"`
 }
 
 // NewPost news a post object.
 func NewPost() *Post {
 	p := Post{}
 	return &p
+}
+
+func (p *Post) PageType() string {
+	return "post"
+}
+
+func (p *Post) DateString() string {
+	d := strings.Split(strings.Split(p.Date, " ")[0], "-")
+	return fmt.Sprintf("%v年%v月%v日", d[0], d[1], d[2])
+}
+
+func (p *Post) ModifiedString() string {
+	d := strings.Split(strings.Split(p.Modified, " ")[0], "-")
+	return fmt.Sprintf("%v年%v月%v日", d[0], d[1], d[2])
+}
+
+func (p *Post) TagsString() template.HTML {
+	var ts []string
+	for _, t := range p.Tags {
+		et := html.EscapeString(t)
+		ts = append(ts, fmt.Sprintf(
+			`<a href="/tags/%s">%s</a>`,
+			et, et,
+		),
+		)
+	}
+	return template.HTML(strings.Join(ts, " · "))
+}
+
+func (p *Post) RelatedPosts() []*PostForRelated {
+	key := fmt.Sprintf("related:%d", p.ID)
+	if r, ok := memcch.Get(key); ok {
+		return r.([]*PostForRelated)
+	}
+	r, err := postmgr.GetRelatedPosts(gdb, p.ID)
+	memcch.SetIf(err == nil, key, r)
+	return r
 }
 
 func (*Post) insertions() string {
@@ -78,7 +117,7 @@ func (z *Post) update_values() []interface{} {
 
 // validate validates fields.
 func (z *Post) validate() error {
-	if strings.TrimSpace(z.Title) == "" {
+	if strings.TrimSpace(string(z.Title)) == "" {
 		return fmt.Errorf("标题不能为空")
 	}
 	if z.Content != "" {
@@ -160,10 +199,12 @@ func (z *Post) translate() error {
 		return errors.New("no translator found for " + z.Type)
 	}
 
-	z.Content, err = tr.Translate(z.Source)
+	content, err := tr.Translate(z.Source)
 	if err != nil {
 		return err
 	}
+
+	z.Content = template.HTML(content)
 
 	return nil
 }

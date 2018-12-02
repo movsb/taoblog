@@ -10,12 +10,10 @@ require_once 'utils/datetime.php';
 require_once 'login-auth.php';
 
 require_once 'utils/hooks.php';
-require_once 'plugin.php';
 
 require_once 'models/base.php';
 require_once 'models/posts.php';
 
-require_once 'query.php';
 require_once 'canonical.php';
 
 require_once 'invoke.php';

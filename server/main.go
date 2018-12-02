@@ -48,8 +48,10 @@ var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
 var catmgr *CategoryManager
 var memcch *memory_cache.MemoryCache
+var blog *Blog
+var renderer *Renderer
 
-var templates map[string]*template.Template
+var templates *template.Template
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
@@ -101,6 +103,8 @@ func main() {
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 	catmgr = NewCategoryManager()
 	memcch = memory_cache.NewMemoryCache(time.Minute * 5)
+	blog = NewBlog()
+	renderer = NewRenderer()
 	defer memcch.Stop()
 
 	loadTemplates()
@@ -145,7 +149,7 @@ func main() {
 
 	routerV1(router)
 	routerInternalV1(router)
-	routerTheme(router)
+	routerBlog(router)
 
 	router.Run(config.listen)
 }
@@ -276,12 +280,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, true, count)
 	})
 
-	// TODO remove
-	v1.GET("/posts!recentComments", func(c *gin.Context) {
-		cmts, err := cmtmgr.GetRecentComments(gdb, 10)
-		EndReq(c, err, cmts)
-	})
-
 	posts.GET("/:parent/comments", func(c *gin.Context) {
 		var err error
 
@@ -359,7 +357,7 @@ func routerV1(router *gin.Engine) {
 				}
 
 				for _, author := range notAllowedAuthors {
-					if author != "" && cmt.Author != "" && strings.EqualFold(author, cmt.Author) {
+					if author != "" && cmt.Author != "" && strings.EqualFold(author, string(cmt.Author)) {
 						EndReq(c, errors.New("不能使用此昵称"), nil)
 						tx.Rollback()
 						return
@@ -582,16 +580,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, ps)
 	})
 
-	archives.GET("/dates", func(c *gin.Context) {
-		if posts, ok := memcch.Get("/archives/dates"); ok {
-			EndReq(c, nil, posts)
-			return
-		}
-		posts, err := postmgr.GetDateArchives(gdb)
-		memcch.SetIf(err == nil, "/archives/dates", posts)
-		EndReq(c, err, posts)
-	})
-
 	tools := v1.Group("/tools")
 
 	tools.POST("/aes2htm", func(c *gin.Context) {
@@ -785,57 +773,25 @@ func categoryV1(router *gin.RouterGroup) {
 		id, err := catmgr.ParseTree(gdb, tree)
 		EndReq(c, err, id)
 	})
-	router.GET("/categories!cat-count", func(c *gin.Context) {
-		if cats, ok := memcch.Get("cat-count"); ok {
-			EndReq(c, nil, cats)
-			return
-		}
-		cats, err := catmgr.GetCountOfCategoriesAll(gdb)
-		memcch.SetIf(err == nil, "cat-count", cats)
-		EndReq(c, err, cats)
-	})
 }
 
-func routerTheme(router *gin.Engine) {
-	theme := router.Group("/theme")
-
-	theme.GET("/tags/:tag", func(c *gin.Context) {
-		tag := c.Param("tag")
-		posts, err := postmgr.GetPostsByTags(gdb, tag)
-		data := struct {
-			Tag   string
-			Posts []*PostForArchiveQuery
-			Err   error
-		}{
-			Tag:   tag,
-			Posts: posts,
-			Err:   err,
-		}
-		if err != nil {
-			switch err.(type) {
-			case *TagNotFoundError:
-				c.Status(http.StatusNotFound)
-			default:
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		if err := templates["tag"].Execute(c.Writer, data); err != nil {
-			EndReq(c, err, err)
-			return
-		}
+func routerBlog(router *gin.Engine) {
+	b := router.Group("/blog")
+	b.GET("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		blog.Query(c, path)
 	})
 }
 
 func loadTemplates() {
-	templates = make(map[string]*template.Template)
-
-	mp := func(path string) *template.Template {
-		tmpl, err := template.ParseFiles(path)
-		if err != nil {
-			panic(err)
-		}
-		return tmpl
+	funcs := template.FuncMap{
+		"get_config": func(name string) string {
+			return optmgr.GetDef(gdb, name, "")
+		},
 	}
-
-	templates["tag"] = mp("../theme/tag.html")
+	var err error
+	templates, err = template.New("taoblog").Funcs(funcs).ParseGlob("../theme/*.html")
+	if err != nil {
+		panic(err)
+	}
 }

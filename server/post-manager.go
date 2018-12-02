@@ -20,9 +20,13 @@ type PostForArchiveQuery struct {
 }
 
 type PostForLatest struct {
-	ID    int64  `json:"id"`
-	Title string `json:"title"`
-	Type  string `json:"type"`
+	ID    int64         `json:"id"`
+	Title template.HTML `json:"title"`
+	Type  string        `json:"type"`
+}
+
+func (p *PostForLatest) Link() string {
+	return fmt.Sprintf("/%d/", p.ID)
 }
 
 type PostForRelated struct {
@@ -199,6 +203,7 @@ func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post,
 	}
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
+	p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
 	return &p, nil
 }
 
@@ -235,6 +240,7 @@ func (z *PostManager) GetPostBySlug(tx Querier, taxTreeOrParents string, slug st
 	}
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
+	p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
 	return &p, nil
 }
 
@@ -456,7 +462,7 @@ func (z *PostManager) IncrementPageView(tx Querier, id int64) {
 }
 
 func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
-	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month"
+	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month ORDER BY year DESC"
 	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
