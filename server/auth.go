@@ -61,7 +61,8 @@ func (o *GenericAuth) AuthHeader(c *gin.Context) bool {
 	return key == o.key
 }
 
-func (o *GenericAuth) MakeCookie(c *gin.Context) string {
+func (o *GenericAuth) MakeCookie(c *gin.Context) {
 	agent := c.GetHeader("User-Agent")
-	return o.sha1(agent + o.Login())
+	cookie := o.sha1(agent + o.Login())
+	c.SetCookie("login", cookie, 0, "/", "", true, true)
 }

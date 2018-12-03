@@ -41,3 +41,7 @@ func (r *Renderer) RenderTags(c *gin.Context, posts *QueryTags) {
 func (r *Renderer) RenderArchives(c *gin.Context, archives *Archives) {
 	r.execTemplate(c, "archives", archives)
 }
+
+func (r *Renderer) RenderLogin(c *gin.Context, login *LoginData) {
+	r.execTemplate(c, "login", login)
+}

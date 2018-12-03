@@ -49,6 +49,7 @@ var fileredir *FileRedirect
 var catmgr *CategoryManager
 var memcch *memory_cache.MemoryCache
 var blog *Blog
+var admin *Admin
 var renderer *Renderer
 
 var templates *template.Template
@@ -102,8 +103,9 @@ func main() {
 	postcmtsmgr = newPostCommentsManager()
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 	catmgr = NewCategoryManager()
-	memcch = memory_cache.NewMemoryCache(time.Minute * 5)
+	memcch = memory_cache.NewMemoryCache(time.Minute * 10)
 	blog = NewBlog()
+	admin = NewAdmin()
 	renderer = NewRenderer()
 	defer memcch.Stop()
 
@@ -150,6 +152,7 @@ func main() {
 	routerV1(router)
 	routerInternalV1(router)
 	routerBlog(router)
+	routerAdmin(router)
 
 	router.Run(config.listen)
 }
@@ -783,15 +786,35 @@ func routerBlog(router *gin.Engine) {
 	})
 }
 
+func routerAdmin(router *gin.Engine) {
+	a := router.Group("/admin")
+	a.GET("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		switch path {
+		case "", "/":
+			c.Redirect(302, "/admin/login")
+			return
+		}
+		admin.Query(c, path)
+	})
+	a.POST("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		admin.Post(c, path)
+	})
+}
+
 func loadTemplates() {
 	funcs := template.FuncMap{
 		"get_config": func(name string) string {
 			return optmgr.GetDef(gdb, name, "")
 		},
 	}
+	templates = template.New("taoblog").Funcs(funcs)
 	var err error
-	templates, err = template.New("taoblog").Funcs(funcs).ParseGlob("../theme/*.html")
-	if err != nil {
+	if templates, err = templates.ParseGlob("../theme/*.html"); err != nil {
+		panic(err)
+	}
+	if templates, err = templates.ParseGlob("../admin/*.html"); err != nil {
 		panic(err)
 	}
 }

@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"net/http"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -96,6 +98,10 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		}
 		slug := matches[3]
 		b.queryByPage(c, parents, slug)
+		return
+	}
+	if strings.HasSuffix(path, "/") {
+		c.String(http.StatusForbidden, "403 Forbidden")
 		return
 	}
 	c.File(filepath.Join(config.base, path))

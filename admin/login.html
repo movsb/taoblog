@@ -1,0 +1,81 @@
+{{define "login" -}}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>登录 - TaoBlog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+    <style>
+body {
+    padding: 0px;
+    margin: 0px;
+}
+
+#wrapper {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+#login-form {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    right: 0;
+    width: 220px;
+    margin: auto;
+    border: 1px solid gray;
+    transform: translateY(-50%);
+}
+
+#title {
+    font-size: 20px;
+    text-align: center;
+    height: 3em;
+    line-height: 3em;
+}
+
+#input-wrapper {
+    padding: 0 1.5em 1em 1.5em;
+}
+
+.input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5em;
+    line-height: 1em;
+    margin-bottom: 0.5em;
+    border: 1px solid gray;
+}
+
+.btn {
+    line-height: 1.8em;
+    font-size: 1em;   
+}
+
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <form method="post" id="login-form">
+        <div id="title">登录</div>
+        <div id="input-wrapper">
+            <div>
+                <input class="input" type="text" name="user" placeholder="用户名" />
+                <input class="input" type="password" name="passwd" placeholder="密码" />
+            </div>	
+            <div class="submit" style="text-align: right;">
+                <input class="btn" type="submit" value="登录" />
+                <input class="btn" type="button" value="取消" onclick="location.href='/';" />
+            </div>
+        </div>
+        <div class="hidden">
+            <input type="hidden" name="redirect" value="{{.Redirect}}" />
+        </div>
+    </form>
+</div>
+</body>
+</html>
+{{end}}
