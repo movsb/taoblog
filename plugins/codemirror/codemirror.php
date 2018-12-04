@@ -9,9 +9,6 @@ function is_mobile() {
 }
 
 
-add_hook('admin:post:head', 'codemirror\post_head');
-add_hook('admin:post:foot', 'codemirror\post_foot');
-
 function post_head() {
     if(!is_mobile()) { ?>
         <link rel="stylesheet" href="/plugins/codemirror/codemirror.css" />

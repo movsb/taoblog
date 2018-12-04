@@ -26,22 +26,6 @@ func (r *Renderer) execTemplate(c *gin.Context, t string, d IRendererData) {
 	log.Println("after executing post template")
 }
 
-func (r *Renderer) RenderHome(c *gin.Context, home *Home) {
-	r.execTemplate(c, "home", home)
-}
-
-func (r *Renderer) RenderPost(c *gin.Context, post *Post) {
-	r.execTemplate(c, "single", post)
-}
-
-func (r *Renderer) RenderTags(c *gin.Context, posts *QueryTags) {
-	r.execTemplate(c, "tags", posts)
-}
-
-func (r *Renderer) RenderArchives(c *gin.Context, archives *Archives) {
-	r.execTemplate(c, "archives", archives)
-}
-
-func (r *Renderer) RenderLogin(c *gin.Context, login *LoginData) {
-	r.execTemplate(c, "login", login)
+func (r *Renderer) Render(c *gin.Context, name string, d IRendererData) {
+	r.execTemplate(c, name, d)
 }

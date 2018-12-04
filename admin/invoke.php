@@ -29,11 +29,6 @@ function get_tax_tree() {
     return json_decode($cats);
 }
 
-function get_all_tags(int $limit, bool $merge) {
-    $tags = Invoke('/tags!count?limit='.$limit.'&merge='.($merge?1:0), 'json', null, false);
-    return json_decode($tags);
-}
-
 function get_opt(string $name, string $def='') {
     $value = Invoke('/options/'.urlencode($name), 'json', null, false, '/.v1');
     $value = json_decode($value);

@@ -117,32 +117,4 @@ new_tax_html();
 
 admin_footer();
 
-
-else : // POST
-
-function tax_die_json($arg) {
-    header('HTTP/1.1 200 OK');
-    header('Content-Type: application/json');
-
-    echo json_encode($arg, JSON_UNESCAPED_UNICODE);
-    die(0);
-}
-
-require_once('login-auth.php');
-
-if(!login_auth()) {
-    tax_die_json([
-        'errno' => 'unauthorized',
-        'error' => '需要登录后才能进行该操作！',
-        ]);
-}
-
-require_once('load.php');
-
-$do = $_POST['do'] ?? '';
-if($do === 'get-all') {
-    tax_get_all();
-}
-
 endif;
-

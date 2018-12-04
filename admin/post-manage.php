@@ -5,25 +5,6 @@ require_once('admin.php');
 function postmanage_admin_head() {
 ?>
 
-<style>
-
-table, td, th {
-    border: 1px solid gray;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 8px;
-}
-
-td.title {
-    max-width: 300px;
-}
-
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/vue"></script>
-
 <?php }
 
 add_hook('admin_head', 'postmanage_admin_head');

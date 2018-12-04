@@ -7,8 +7,6 @@ require_once dirname(__FILE__).'/../setup/config.php';
 require_once 'utils/die.php';
 require_once 'utils/datetime.php';
 
-require_once 'login-auth.php';
-
 require_once 'utils/hooks.php';
 
 require_once 'models/base.php';

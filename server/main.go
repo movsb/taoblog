@@ -726,13 +726,6 @@ func tagsV1(routerV1 *gin.RouterGroup) {
 			return
 		}
 	})
-
-	routerV1.GET("/tags!count", func(c *gin.Context) {
-		limit := toInt64(c.Query("limit"))
-		merge := toInt64(c.Query("merge")) == 1
-		cats, err := tagmgr.ListTagsWithCount(gdb, limit, merge)
-		EndReq(c, err, cats)
-	})
 }
 
 func backupsV1(routerV1 *gin.RouterGroup) {

@@ -1,48 +1,5 @@
-<?php
-
-if($_SERVER['REQUEST_METHOD'] === 'GET') :
-
-require_once 'admin.php';
-
-function tagmanage_admin_head()
-{
-?>
-
-<style>
-
-table, td, th {
-    border: 1px solid gray;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 8px;
-}
-
-td.name {
-    max-width: 300px;
-}
-
-#edit-box {
-    display: none;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: gray;
-}
-
-</style>
-
-<?php }
-
-add_hook('admin_head', 'tagmanage_admin_head');
-
-admin_header();
-
-?>
-
+{{define "tag_manage" -}}
+{{template "admin_header" .}}
 <table class="table">
 <thead>
 <tr>
@@ -54,19 +11,15 @@ admin_header();
 </tr>
 </thead>
 <tbody>
-<?php
-$tags = get_all_tags(0, false);
-foreach ($tags as $t) {
-    echo '<tr data-id="',$t->id,'">',
-        '<td>',$t->id,'</td>',
-        '<td class="name">',htmlspecialchars($t->name),'</td>',
-        '<td class="alias">',$t->alias,'</td>',
-        '<td>',$t->count,'</td>',
-        '<td><button class="edit">编辑</button></td>',
-        '</tr>'
-    ;
-}
-?>
+{{range .Tags}}
+    <tr data-id="{{.ID}}">
+        <td>{{.ID}}</td>
+        <td class=name>{{.Name}}</td>
+        <td class=alias>{{.Alias}}</td>
+        <td>{{.Count}}</td>
+        <td><button class=edit>编辑</button></td>
+    </tr>
+{{end}}
 </tbody>
 </table>
 
@@ -140,10 +93,5 @@ function showEditBox(id, name, alias) {
 }
 </script>
 </div>
-
-<?php
-admin_footer();
-
-die(0);
-
-endif;
+{{template "admin_footer" .}}
+{{end}}

@@ -1,0 +1,165 @@
+{{define "admin_header" -}}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" type="text/css" href="admin.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+    <script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
+    {{if eq .PageType "admin_tag_manage"}}
+<style>
+
+table, td, th {
+    border: 1px solid gray;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+}
+
+td.name {
+    max-width: 300px;
+}
+
+#edit-box {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: gray;
+}
+
+</style>
+{{end}}
+{{if eq .PageType "post_manage"}}
+<style>
+
+table, td, th {
+    border: 1px solid gray;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+}
+
+td.title {
+    max-width: 300px;
+}
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+{{end}}
+{{if eq .PageType "post_edit"}}
+<script src="scripts/marked.js"></script>
+
+<script>
+    marked.setOptions({
+        sanitize: false,
+    });
+</script>
+
+<style>
+    .sidebar {
+
+    }
+
+    .sidebar input[type="text"] {
+        padding: 4px;
+    }
+
+    .sidebar .widget {
+        background-color: white;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    .sidebar .widget h3 {
+        padding: 4px 6px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .sidebar .widget-content {
+        padding: 10px;
+    }
+
+    .sidebar .widget ul {
+        list-style: none;
+    }
+
+    .post-area {
+        margin-bottom: 3em;
+    }
+
+    .widget-category .widget-content {
+        max-height: 200px;
+        overflow: auto;
+    }
+
+    .widget-content input[type=text], .widget-content textarea {
+        padding: 4px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #source {
+        max-height: 2000px;
+        height: 70vh;
+        min-height: 300px;
+        width: 100%;
+        padding: 4px;
+        box-sizing: border-box;
+    }
+
+#form-post {
+    display: flex;
+}
+
+.post {
+    flex: 1;
+}
+.sidebar-right {
+    flex: 1;
+}
+
+/* TODO 根据主题修改 */
+@media screen and (min-width: 851px) {
+    .sidebar-right {
+        width: 280px;
+        max-width: 280px;
+        min-width: 280px;
+    }
+    .post {
+        margin-right: 1em;
+    }
+}
+
+/* TODO 根据主题修改 */
+@media screen and (max-width: 850px) {
+    #form-post {
+        flex-direction: column;
+    }
+}
+</style>
+{{end}}
+</head>
+<body>
+<div>
+    <div id="admin-left">
+        <ul>
+            <li><a href="/">首页</a></li>
+            <li><a href="post-edit">发表文章</a></li>
+            <li><a href="post-edit">发表页面</a></li>
+            <li><a href="post-manage">文章管理</a></li>
+            <li><a href="taxonomy-manage">分类管理</a></li>
+            <li><a href="tag-manage">标签管理</a></li>
+            <li><a href="logout">退出</a></li>
+        </ul>
+    </div>
+    <div id="admin-wrap">
+{{end}}

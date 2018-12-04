@@ -66,3 +66,7 @@ func (o *GenericAuth) MakeCookie(c *gin.Context) {
 	cookie := o.sha1(agent + o.Login())
 	c.SetCookie("login", cookie, 0, "/", "", true, true)
 }
+
+func (o *GenericAuth) DeleteCookie(c *gin.Context) {
+	c.SetCookie("login", "", -1, "/", "", true, true)
+}
