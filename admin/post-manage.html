@@ -1,18 +1,5 @@
-<?php
-
-require_once('admin.php');
-
-function postmanage_admin_head() {
-?>
-
-<?php }
-
-add_hook('admin_head', 'postmanage_admin_head');
-
-admin_header();
-
-?>
-
+{{define "admin_post_manage" -}}
+{{template "admin_header" .}}
 <table id="table">
 <thead>
 <tr>
@@ -28,13 +15,13 @@ admin_header();
 </thead>
 <tbody>
   <tr v-for="p in posts">
-    <td>{{ p.id }}</td>
-    <td>{{ p.title }}</td>
-    <td>{{ p.date }}</td>
-    <td>{{ p.modified }}</td>
-    <td>{{ p.page_view }}</td>
-    <td>{{ p.comment_count }}</td>
-    <td>{{ p.source_type }}</td>
+    <td>{{`{{ p.id }}`}}</td>
+    <td>{{`{{ p.title }}`}}</td>
+    <td>{{`{{ p.date }}`}}</td>
+    <td>{{`{{ p.modified }}`}}</td>
+    <td>{{`{{ p.page_view }}`}}</td>
+    <td>{{`{{ p.comment_count }}`}}</td>
+    <td>{{`{{ p.source_type }}`}}</td>
     <td><a target=_blank v-bind:href="'/admin/post.php?do=edit&amp;id=' + p.id">编辑</a></td>
   </tr>
 </tbody>
@@ -50,6 +37,5 @@ $.get('/v1/posts!manage', function(posts) {
     })
 });
 </script>
-
-<?php
-admin_footer();
+{{template "admin_footer" .}}
+{{end}}

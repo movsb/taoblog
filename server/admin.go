@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	regexpAdminLogin     = regexp.MustCompile(`^/login$`)
-	regexpAdminLogout    = regexp.MustCompile(`^/logout$`)
-	regexpAdminIndex     = regexp.MustCompile(`^/index$`)
-	regexpAdminTagManage = regexp.MustCompile(`^/tag-manage$`)
+	regexpAdminLogin      = regexp.MustCompile(`^/login$`)
+	regexpAdminLogout     = regexp.MustCompile(`^/logout$`)
+	regexpAdminIndex      = regexp.MustCompile(`^/index$`)
+	regexpAdminTagManage  = regexp.MustCompile(`^/tag-manage$`)
+	regexpAdminPostManage = regexp.MustCompile(`^/post-manage$`)
 )
 
 type LoginData struct {
@@ -37,6 +38,13 @@ type AdminTagManageData struct {
 
 func (d *AdminTagManageData) PageType() string {
 	return "admin_tag_manage"
+}
+
+type AdminPostManageData struct {
+}
+
+func (d *AdminPostManageData) PageType() string {
+	return "admin_post_manage"
 }
 
 type Admin struct {
@@ -71,6 +79,10 @@ func (a *Admin) Query(c *gin.Context, path string) {
 	}
 	if regexpAdminTagManage.MatchString(path) {
 		a.queryTagManage(c)
+		return
+	}
+	if regexpAdminPostManage.MatchString(path) {
+		a.queryPostManage(c)
 		return
 	}
 	c.File(filepath.Join(config.base, "admin", path))
@@ -132,4 +144,9 @@ func (a *Admin) queryTagManage(c *gin.Context) {
 		Tags: tags,
 	}
 	renderer.Render(c, "tag_manage", d)
+}
+
+func (a *Admin) queryPostManage(c *gin.Context) {
+	d := &AdminPostManageData{}
+	renderer.Render(c, "admin_post_manage", d)
 }
