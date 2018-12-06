@@ -1,12 +1,5 @@
-<?php
-
-$admin_url = 'taxonomy.php';
-
-if($_SERVER['REQUEST_METHOD'] === 'GET') :
-
-require_once('admin.php');
-
-function new_tax_html() { ?>
+{{define "admin_category_manage"}}
+{{template "admin_header" .}}
 <style>
     .tax-lv-0 {
         padding-left: 0.5em;
@@ -66,10 +59,6 @@ function new_tax_html() { ?>
     <div style="display: none;">
         <input type="hidden" name="do" value="add-new" />
     </div>
-    <script><?php
-        echo 'var taxes = JSON.parse(\''.json_encode(get_tax_tree(), JSON_UNESCAPED_UNICODE).'\');';
-        ?>
-    </script>
 </form>
 </div>
 <div id="tax-list-div" style="margin-left: 450px; padding: 1em; background-color: palevioletred; box-shadow: 2px 2px 4px purple;">
@@ -109,12 +98,5 @@ function new_tax_html() { ?>
 <script src="scripts/taxonomy.js">
 </script>
 </div>
-<?php }
-
-admin_header();
-
-new_tax_html();
-
-admin_footer();
-
-endif;
+{{template "admin_footer" .}}
+{{end}}

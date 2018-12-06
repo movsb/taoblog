@@ -32,11 +32,12 @@ function myadd(t, l) {
 }
 
 var t = {children:[]};
-myloop(t, 0, taxes);
-
-for(var i=0; i<t.children.length; i++){
-	myadd(t.children[i], 0);
-}
+$.get('/v1/categories!tree', function(data) {
+    myloop(t, 0, data);
+    for(var i=0; i<t.children.length; i++){
+        myadd(t.children[i], 0);
+    }
+});
 
 $('#add-new-tax').click(function() {
 	var newid = 0;
