@@ -1,29 +1,84 @@
-<?php
+{{define "admin_post_edit"}}
+<div id="admin-post">
+    <form method="POST" id="form-post">
+        <div class="post">
+            <div class="post-area">
+                <div style="margin-bottom: 1em;">
+                    <h2>标题</h2>
+                    <div>
+                    <input style="padding: 8px; width: 100%; box-sizing: border-box;" type="text" name="title" value="{{.Title}}" />
+                    </div>
+                </div>
+                {{if .New}}
+                <div class="permalink_id" style="margin-bottom: 1em;">
+                    <span>文章ID：</span>
+                    <span>{{.ID}}</span>
+                </div>
+                {{else}}
+                <div class="permanlink" style="margin-bottom: 1em;">
+                    <span>固定链接：</span>
+                    <a id="permalink" href="{{.Link}}">{{.Link}}</a>
+                    <script>
+                        var new_window = null;
+                        $('#permalink').click(function() {
+                            if(!new_window || new_window.closed) {
+                                new_window = window.open($('#permalink').prop('href'));
+                            } else {
+                                new_window.location.href = $('#permalink').prop('href');
+                            }
+                            return false;
+                        });
+                    </script>
+                </div>
+                {{end}}
+                <div>
+                    <h2>内容</h2>
+                    <div class="textarea-wrap">
+                        <textarea id="source" name="source" wrap="off">
+                            {{- if not .New -}}
+                                {{- if .Source -}}
+                                    {{- .Source -}}
+                                {{- else -}}
+                                    {{- .Content -}}
+                                {{- end -}}
+                            {{- end -}}
+                        </textarea>
+                    </div>
+                </div>
+                <div>
+                    <input type="hidden" name="do" value="{{if .New}}new{{else}}update{{end}}" />
+                    <input type="hidden" name="type" value="post" />
+                    <input type="hidden" name="id" value="{{.ID}}" />
+                </div>
+            </div><!-- post-area -->
+            <div class="sidebar sidebar-left">
 
-if($_SERVER['REQUEST_METHOD'] === 'GET') :
-
-require_once('admin.php');
-
-function post_widget_tag($p=null) {
-    $tag = $p ? join(',', $p->tag_names) : '';
-
-    $title = '标签';
-    $classname = 'tags';
-    $types = 'post';
-    $content = <<<EOD
-<input type="text" name="tags" value="$tag" placeholder="中英文逗号分隔" />
-EOD;
-
-    return compact('title', 'classname', 'types', 'content');
-}
-
-add_hook('post_widget', 'post_widget_tag');
-
-function post_widget_files($p=null) {
-    $title = '文件';
-    $classname = 'files';
-    $types = 'page,post';
-    $content = <<<EOD
+            </div>
+        </div><!-- post -->
+        <div class="sidebar sidebar-right">
+            <div class="widget widget-post">
+                <h3>发表</h3>
+                <div class="widget-content">
+                    <input type="submit" value="发表" />
+                    <select name="status">
+                        <option value="public" {{if eq .Status `public`}}selected{{end}}>公开</option>
+                        <option value="draft" {{if eq .Status `draft`}}selected{{end}}>草稿</option>
+                    </select>
+                    <select name="source_type">
+                        <option value="markdown" {{if eq .SourceType `markdown`}}selected{{end}}>Markdown</option>
+                        <option value="html" {{if eq .SourceType `html`}}selected{{end}}>HTML</option>
+                    </select>
+                </div>
+            </div>
+            <div class="widget widget-tags">
+                <h3>标签</h3>
+                <div class="widget-content">
+                    <input type="text" name="tags" value="{{.TagStr}}" placeholder="中英文逗号分隔" />
+                </div>
+            </div>
+            <div class="widget widget-files">
+                <h3>文件</h3>
+                <div class="widget-content">
 <label>文件列表：</label>
 <ul class="list" style="max-height:200px;overflow:auto;">
 </ul>
@@ -192,18 +247,11 @@ function post_widget_files($p=null) {
         return false;
     });
 </script>
-EOD;
-
-    return compact('title', 'classname', 'types', 'content');
-}
-
-add_hook('post_widget', 'post_widget_files');
-
-function post_widget_metas($p=null) {
-    $metas = str_replace(['\\','\''], ['\\\\','\\\''], $p ? $p->metas_raw : '{}');
-    $title = '自定义';
-    $classname = 'metas';
-    $content = <<< DOM
+                </div>
+            </div>
+            <div class="widget widget-metas">
+                <h3>自定义</h3>
+                <div class="widget-content">
 <label>类型：</label>
 <select class="keys">
     <option>&lt;新建&gt;</option>
@@ -276,202 +324,21 @@ function post_widget_metas($p=null) {
     });
 })();
 </script>
-DOM;
-
-    return compact('title', 'content', 'classname');
-}
-
-add_hook('post_widget', 'post_widget_metas');
-
-function post_widget_tax_add(&$taxes, $tax=1) {
-    $s = '';
-    foreach($taxes as $t) {
-        $s .= '<li style="margin-bottom: 4px;"><label><input type="radio" style="margin-right: 6px" name="taxonomy" value="'.$t->id.'"'.
-            ($tax==$t->id?' checked="checked"':'').'/>'.htmlspecialchars($t->name)."</label>\n";
-        if(isset($t->children) && count($t->children)) {
-            $s .= '<ul class="children" style="margin-left: 14px;">';
-            $s .= post_widget_tax_add($t->children, $tax);
-            $s .= "</ul>\n";
-        }
-        $s .= '</li>'."\n";
-    }
-    return $s;
-}
-
-function post_widget_tax($p=null) {
-    $taxes = get_tax_tree();
-    $content = '<ul>'.post_widget_tax_add($taxes, ($p ? $p->category : 1)).'</ul>';
-
-    return [
-        'title'		=> '分类',
-        'content'	=> $content,
-        'classname'	=> 'category',
-        'types' => 'post',
-        ];
-}
-
-add_hook('post_widget', 'post_widget_tax');
-
-function post_widget_page_parents($p=null) {
-    global $tbpost;
-    if($p) {
-        $v = $tbpost->get_the_parents_string($p->id);
-        if($v) {
-            $v = substr($v, 1);
-            $v = implode(',', explode('/',$v));
-        }
-    }
-    $content = '<input type="text" name="page_parents" value="'.($p ? $v : '').'" />';
-
-    return [
-        'title' => '父页面',
-        'content' => $content,
-        'types' => 'page',
-    ];
-}
-
-add_hook('post_widget', 'post_widget_page_parents');
-
-function post_widget_slug($p=null) {
-    return [
-        'title' => '别名',
-        'types' => 'page,post',
-        'content' => '<input type="text" name="slug" value="'.($p ? htmlspecialchars($p->slug) : '').'" />',
-        ];
-}
-
-add_hook('post_widget', 'post_widget_slug');
-
-function post_widget_date($p=null) {
-    global $tbdate;
-
-    $title = '日期';
-    $content = '<input type="text" name="date" value="'.($p ? $p->date : '').'"/><br>'
-        .'<input type="text" name="modified" value="'.($p ? $p->modified : '').'" />';
-
-    return compact('title', 'content');
-}
-
-add_hook('post_widget', 'post_widget_date');
-
-function new_post_html($p=null){
-    global $tbpost;
-
-    // 先生成所有的挂件对象
-    // 因为分布在不同地方（hook对象无法保存这些分布）
-    $widgets = [];
-
-    $widget_objs = get_hooks('post_widget');
-    foreach($widget_objs as $wo) {
-        $fn = $wo->func;
-        $w = (object)$fn($p);
-        $w->classname = $w->classname ?? 'widget';
-
-        $dom = <<< DOM
-<div class="widget widget-$w->classname">
-    <h3>$w->title</h3>
-    <div class="widget-content">
-        $w->content
-    </div>
-</div> 
-DOM;
-        $widget = new stdClass;
-        $widget->dom = $dom;
-        $widget->pos = $w->position ?? 'right';
-        $widget->types = $w->types ?? 'post,page';
-
-        $widgets[] = $widget;
-    }
-
-    $type = $p ? $p->type : ($_GET['type'] ?? '');
-    if(!in_array($type, ['post','page']))
-        $type = 'post';
-
-?><div id="admin-post">
-    <form method="POST" id="form-post">
-        <div class="post">
-            <div class="post-area">
-                <div style="margin-bottom: 1em;">
-                    <h2>标题</h2>
-                    <div>
-                    <input style="padding: 8px; width: 100%; box-sizing: border-box;" type="text" name="title" value="<?php
-                        if($p) {
-                            echo htmlspecialchars($p->title);
-                        }
-                    ?>" />
-                    </div>
                 </div>
-                <?php if($p) {
-                    $link = the_link($p);
-                ?>
-                <div class="permanlink" style="margin-bottom: 1em;">
-                    <span>固定链接：</span>
-                    <a id="permalink" href="<?php echo $link; ?>"><?php echo $link; ?></a>
-                    <script type="text/javascript">
-                        var new_window = null;
-                        $('#permalink').click(function() {
-                            if(!new_window || new_window.closed) {
-                                new_window = window.open($('#permalink').prop('href'));
-                            } else {
-                                new_window.location.href = $('#permalink').prop('href');
-                            }
-                            return false;
-                        });
-                    </script>
-                </div>
-                <?php } else {
-                    $next_id = $tbpost->the_next_id();
-                ?>
-                <div class="permalink_id" style="margin-bottom: 1em;">
-                    <span>文章ID：</span>
-                    <span><?php echo $next_id; ?></span>
-                </div>
-                <?php } ?>
-                <div>
-                    <h2>内容</h2>
-                    <div class="textarea-wrap">
-                        <textarea id="source" name="source" wrap="off"><?php
-                            if($p) {
-                                echo htmlspecialchars($p->source ? $p->source : $p->content);
-                            }
-                        ?></textarea>
-                    </div>
-                </div>
-                <div>
-                    <input type="hidden" name="do" value="<?php echo $p ? 'update' : 'new'; ?>" />
-                    <input type="hidden" name="type" value="<?php echo $p ? $p->type : $type; ?>" />
-                    <input type="hidden" name="id" value="<?php echo $p ? $p->id : $next_id; ?>" />
-                </div>
-            </div><!-- post-area -->
-            <div class="sidebar sidebar-left">
-                <?php foreach($widgets as &$widget) {
-                    if(in_array($type, explode(',',$widget->types)) && $widget->pos == 'left') {
-                        echo $widget->dom;
-                    }
-                } ?>
             </div>
-        </div><!-- post -->
-        <div class="sidebar sidebar-right">
-            <div class="widget widget-post">
-                <h3>发表</h3>
+            <div class="widget widget-dates">
+                <h3>日期</h3>
                 <div class="widget-content">
-                    <input type="submit" value="发表" />
-                    <select name="status">
-                        <option value="public"<?php if($p && $p->status == 'public') echo ' selected'; ?>>公开</option>
-                        <option value="draft"<?php if($p && $p->status == 'draft') echo ' selected'; ?>>草稿</option>
-                    </select>
-                    <select name="source_type">
-                        <?php if($p && $p->source_type === '') $p->source_type = 'html'; ?>
-                        <option value="markdown"<?php if($p && $p->source_type == 'markdown') echo ' selected'; ?>>Markdown</option>
-                        <option value="html"<?php if($p && $p->source_type == 'html') echo ' selected'; ?>>HTML</option>
-                    </select>
+                    <input type="text" name="date" value="{{.Date}}"/><br>
+                    <input type="text" name="modified" value="{{.Modified}}" />
                 </div>
             </div>
-            <?php foreach($widgets as &$widget) {
-                if(in_array($type, explode(',',$widget->types)) && $widget->pos == 'right') {
-                    echo $widget->dom;
-                }
-            } ?>
+            <div class="widget widget-slug">
+                <h3>别名</h3>
+                <div class="widget-content">
+                    <input type="text" name="slug" value="{{.Slug}}" />
+                </div>
+            </div>
         </div><!-- sidebar right -->
         <script>
             // TODO 临时代码，在切换源的类型时切换编辑器语法
@@ -526,7 +393,7 @@ DOM;
                     contentType: 'application/json',
                     success: function(data) {
                         console.log(data);
-                        location.href = '/admin/post.php?do=edit&id='+data;
+                        location.href = '/admin/post-edit?id='+data;
                     },
                     error: function(xhr) {
                         alert(xhr.responseText);
@@ -537,31 +404,4 @@ DOM;
         </script>
     </form>
 </div><!-- admin-post -->
-<?php } 
-
-$do = $_GET['do'] ?? '';
-if(!$do) {
-    admin_header();
-    new_post_html();
-    admin_footer();
-    die(0);
-} else if($do === 'edit') {
-    $id = intval($_GET['id']);
-    $post = $tbpost->query_by_id($id,'');
-    if($post === false || empty($post)){
-        tb_die(200, '没有这篇文章！');
-    }
-
-    // 罪过，使用全局变量了
-    $GLOBALS['__p__'] = $post[0];
-
-    admin_header();
-    new_post_html($post[0]);
-    admin_footer();
-    die(0);
-}
-
-
-die(0);
-
-endif; // POST
+{{end}}

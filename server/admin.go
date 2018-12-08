@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -13,6 +14,7 @@ var (
 	regexpAdminLogin          = regexp.MustCompile(`^/login$`)
 	regexpAdminLogout         = regexp.MustCompile(`^/logout$`)
 	regexpAdminIndex          = regexp.MustCompile(`^/index$`)
+	regexpAdminPostEdit       = regexp.MustCompile(`^/post-edit$`)
 	regexpAdminTagManage      = regexp.MustCompile(`^/tag-manage$`)
 	regexpAdminPostManage     = regexp.MustCompile(`^/post-manage$`)
 	regexpAdminCategoryManage = regexp.MustCompile(`^/category-manage$`)
@@ -56,6 +58,29 @@ func (d *AdminCategoryManageData) PageType() string {
 	return "admin_category_manage"
 }
 
+type AdminPostEditData struct {
+	*Post
+	New bool
+}
+
+func (d *AdminPostEditData) PageType() string {
+	return "admin_post_edit"
+}
+
+func (d *AdminPostEditData) Link() string {
+	if d.New {
+		return fmt.Sprint(d.ID)
+	}
+	return fmt.Sprintf("https://%s/%d/", optmgr.GetDef(gdb, "home", ""), d.ID)
+}
+
+func (d *AdminPostEditData) TagStr() string {
+	if d.New {
+		return ""
+	}
+	return strings.Join(d.Tags, ",")
+}
+
 type Admin struct {
 }
 
@@ -84,6 +109,10 @@ func (a *Admin) Query(c *gin.Context, path string) {
 	a.noCache(c)
 	if regexpAdminIndex.MatchString(path) {
 		a.queryIndex(c)
+		return
+	}
+	if regexpAdminPostEdit.MatchString(path) {
+		a.queryPostEdit(c)
 		return
 	}
 	if regexpAdminTagManage.MatchString(path) {
@@ -167,4 +196,14 @@ func (a *Admin) queryPostManage(c *gin.Context) {
 func (a *Admin) queryCategoryManage(c *gin.Context) {
 	d := &AdminCategoryManageData{}
 	renderer.Render(c, "admin_category_manage", d)
+}
+
+func (a *Admin) queryPostEdit(c *gin.Context) {
+	p := &Post{}
+	d := AdminPostEditData{
+		Post: p,
+	}
+	renderer.Render(c, "admin_header", &d)
+	renderer.Render(c, "admin_post_edit", &d)
+	renderer.Render(c, "admin_footer", &d)
 }

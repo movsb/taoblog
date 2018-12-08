@@ -28,7 +28,6 @@
 
 文件名|文件描述
 ------|--------
-index.php   | 网站索引文件，整个博客系统从这里开始运行
 robots.txt  | 搜索引擎收录规则文件
 favicon.ico | 网站图标
 README.md   | 此文件
@@ -38,8 +37,8 @@ docs/       | 一些文档
 plugins/    | 插件目录
 setup/      | 安装脚本目录、配置文件目录
 theme/      | 主题文件
-server/     | API服务端
-client/     | API客户端
+server/     | 博客服务端
+client/     | 博客客户端
 tools/      | 一些工具
 
 ## 联系我
