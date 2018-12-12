@@ -8,7 +8,8 @@
         {{ .Content }}
         <div class="meta clearfix">
             <p>
-                发表于：<span class="value" title="发表时间：{{.DateString}} 修改时间：{{.ModifiedString}}">{{.DateString}}</span>
+                发表于：<span class="value" title="发表时间：{{.DateString}}
+修改时间：{{.ModifiedString}}">{{.DateString}}</span>
                 ，阅读量：<span class="value">{{.PageView}}</span>
                 {{if .Tags}}
                     ，标签：<span class="value">{{.TagsString}}</span>
