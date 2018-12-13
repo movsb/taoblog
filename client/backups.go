@@ -2,9 +2,9 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
+	"os"
 )
 
 func doBackup() {
@@ -18,7 +18,7 @@ func doBackup() {
 		},
 	}
 
-	req, err := http.NewRequest("GET", initConfig.api+"/backups/backup", nil)
+	req, err := http.NewRequest("GET", initConfig.api+"/backups", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -34,14 +34,7 @@ func doBackup() {
 	if resp.StatusCode != 200 {
 		panic("bad code:" + resp.Status)
 	}
-
-	dec := json.NewDecoder(resp.Body)
-	ret := JSONRet{}
-	err = dec.Decode(&ret)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Print(ret.Data)
+	io.Copy(os.Stdout, resp.Body)
 }
 
 func evalBackup(args []string) {

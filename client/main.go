@@ -14,12 +14,6 @@ func parseFlags() {
 	flag.Parse()
 }
 
-type JSONRet struct {
-	Code int         `json:"code"`
-	Msgs string      `json:"msgs"`
-	Data interface{} `json:"data"`
-}
-
 type xInitConfig struct {
 	api    string // the api root, like https://taoblog/apiv2
 	verify bool   // verify host key
