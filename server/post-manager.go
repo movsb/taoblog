@@ -462,7 +462,7 @@ func (z *PostManager) IncrementPageView(tx Querier, id int64) {
 }
 
 func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
-	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month ORDER BY year DESC"
+	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month ORDER BY year DESC, month DESC"
 	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
