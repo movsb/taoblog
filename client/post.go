@@ -1,18 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
-	"crypto/tls"
-	"fmt"
+	"encoding/json"
 	"io/ioutil"
-	"log"
-	"mime/multipart"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 var sourceNames = []string{
@@ -22,56 +18,67 @@ var sourceNames = []string{
 	"index.html",
 }
 
-func update(id int64, args map[string]string) {
+type PostConfig struct {
+	ID    int64
+	Title string
+	Tags  []string
+}
 
-	var err error
-	buf := bytes.NewBuffer(nil)
-	mpw := multipart.NewWriter(buf)
+type Post struct {
+	PostConfig
+	SourceType string `json:"source_type"`
+	Source     string
+}
 
-	// arg: pid
-	err = mpw.WriteField("pid", fmt.Sprint(id))
+// CreatePost ...
+func (c *Client) CreatePost() {
+	p := &Post{}
+	p.PostConfig = *c.readPostConfig()
+	if p.ID > 0 {
+		panic("post already posted, use update instead")
+	}
+	sourceType, source := readSource(".")
+	p.SourceType = sourceType
+	p.Source = source
+	bys, err := json.Marshal(p)
 	if err != nil {
 		panic(err)
 	}
-
-	// args to be posted
-	for k, a := range args {
-		err = mpw.WriteField(k, a)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !initConfig.verify,
-			},
-		},
-	}
-
-	mpw.Close()
-
-	req, err := http.NewRequest("POST", initConfig.api+"/posts/update", buf)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Content-Type", mpw.FormDataContentType())
-	req.Header.Set("Authorization", initConfig.key)
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
+	resp := c.mustPost("/posts", bytes.NewReader(bys))
 	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	rp := Post{}
+	if err := dec.Decode(&rp); err != nil {
+		panic(err)
+	}
+	p.PostConfig.ID = rp.ID
+	c.savePostConfig(&p.PostConfig)
+}
 
-	code := resp.StatusCode
-	body, err := ioutil.ReadAll(resp.Body)
+func (c *Client) readPostConfig() *PostConfig {
+	config := PostConfig{}
+	file, err := os.Open("config.yml")
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
+	dec := yaml.NewDecoder(file)
+	if err := dec.Decode(&config); err != nil {
+		panic(err)
+	}
+	return &config
+}
 
-	fmt.Printf("code: %d\nbody: %s\n", code, body)
+func (c *Client) savePostConfig(config *PostConfig) {
+	file, err := os.Create("config.yml")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	enc := yaml.NewEncoder(file)
+	if err := enc.Encode(config); err != nil {
+		panic(err)
+	}
 }
 
 func readSource(dir string) (string, string) {
@@ -105,48 +112,4 @@ func readSource(dir string) (string, string) {
 	}
 
 	return typ, source
-}
-
-func readPostMetas(dir string) map[string]string {
-	path := filepath.Join(dir, "metas")
-	fp, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
-	defer fp.Close()
-	metas := make(map[string]string)
-	buf := bufio.NewScanner(fp)
-	for buf.Scan() {
-		line := strings.TrimSpace(buf.Text())
-		if line == "" {
-			continue
-		}
-		toks := strings.SplitN(line, ":", 2)
-		if len(toks) < 2 {
-			log.Printf("invalid meta: %s\n", line)
-			continue
-		}
-		metas[toks[0]] = toks[1]
-	}
-	return metas
-}
-
-func evalPost(args []string) {
-	if len(args) >= 1 {
-		if args[0] == "update" {
-			if len(args) >= 2 {
-				dir := args[1]
-				metas := readPostMetas(dir)
-				pid, err := strconv.ParseInt(metas["id"], 10, 64)
-				if err != nil {
-					panic(err)
-				}
-				delete(metas, "id")
-				typ, src := readSource(dir)
-				metas["source_type"] = typ
-				metas["source"] = src
-				update(pid, metas)
-			}
-		}
-	}
 }

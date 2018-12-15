@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"errors"
+	"io"
 	"net/http"
 )
 
@@ -44,6 +45,28 @@ func (c *Client) get(path string) *http.Response {
 
 func (c *Client) mustGet(path string) *http.Response {
 	resp := c.get(path)
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		panic(ErrStatusCode)
+	}
+	return resp
+}
+
+func (c *Client) post(path string, body io.Reader) *http.Response {
+	req, err := http.NewRequest("POST", initConfig.api+path, body)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Authorization", initConfig.key)
+	resp, err := c.client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
+
+func (c *Client) mustPost(path string, body io.Reader) *http.Response {
+	resp := c.post(path, body)
 	if resp.StatusCode != 200 {
 		resp.Body.Close()
 		panic(ErrStatusCode)

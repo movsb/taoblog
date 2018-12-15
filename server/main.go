@@ -225,7 +225,7 @@ func routerV1(router *gin.Engine) {
 			EndReq(c, err, err)
 			return
 		}
-		EndReq(c, nil, post.ID)
+		EndReq(c, nil, &post)
 	})
 
 	posts.GET("/:parent", func(c *gin.Context) {

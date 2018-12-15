@@ -68,7 +68,10 @@ func main() {
 	if len(os.Args) >= 2 {
 		command := os.Args[1]
 		if command == "post" {
-			evalPost(os.Args[2:])
+			switch os.Args[2] {
+			case "create":
+				client.CreatePost()
+			}
 		} else if command == "backup" {
 			client.Backup(os.Stdout)
 		}
