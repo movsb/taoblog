@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -30,6 +31,12 @@ type Post struct {
 	Source     string
 }
 
+// InitPost ...
+func (c *Client) InitPost() {
+	config := PostConfig{}
+	c.savePostConfig(&config)
+}
+
 // CreatePost ...
 func (c *Client) CreatePost() {
 	p := &Post{}
@@ -44,7 +51,7 @@ func (c *Client) CreatePost() {
 	if err != nil {
 		panic(err)
 	}
-	resp := c.mustPost("/posts", bytes.NewReader(bys))
+	resp := c.mustPost("/posts", bytes.NewReader(bys), contentTypeJSON)
 	defer resp.Body.Close()
 	dec := json.NewDecoder(resp.Body)
 	rp := Post{}
@@ -53,6 +60,51 @@ func (c *Client) CreatePost() {
 	}
 	p.PostConfig.ID = rp.ID
 	c.savePostConfig(&p.PostConfig)
+}
+
+// UploadPostFiles ...
+func (c *Client) UploadPostFiles() {
+	config := c.readPostConfig()
+	if config.ID <= 0 {
+		panic("post not posted, post it first.")
+	}
+	includedExts := map[string]bool{
+		".jpg": true,
+		".png": true,
+		".gif": true,
+		".zip": true,
+	}
+	root := "."
+	list, err := ioutil.ReadDir(root)
+	if err != nil {
+		panic(err)
+	}
+	postFiles := []os.FileInfo{}
+	fmt.Println("Scanning files ...")
+	for _, file := range list {
+		if file.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(file.Name()))
+		if _, ok := includedExts[ext]; !ok {
+			continue
+		}
+		postFiles = append(postFiles, file)
+		fmt.Println("  +", file.Name())
+	}
+	fmt.Println("Uploading files ...")
+	for _, file := range postFiles {
+		fmt.Println("  +", file.Name())
+		var err error
+		fp, err := os.Open(filepath.Join(root, file.Name()))
+		if err != nil {
+			panic(err)
+		}
+		defer fp.Close()
+		path := fmt.Sprintf("/posts/%d/files/%s", config.ID, file.Name())
+		resp := c.mustPost(path, fp, contentTypeBinary)
+		_ = resp
+	}
 }
 
 func (c *Client) readPostConfig() *PostConfig {

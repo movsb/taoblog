@@ -69,8 +69,12 @@ func main() {
 		command := os.Args[1]
 		if command == "post" {
 			switch os.Args[2] {
+			case "init":
+				client.InitPost()
 			case "create":
 				client.CreatePost()
+			case "upload":
+				client.UploadPostFiles()
 			}
 		} else if command == "backup" {
 			client.Backup(os.Stdout)

@@ -12,6 +12,12 @@ var (
 	ErrStatusCode = errors.New("http.statusCode != 200")
 )
 
+const (
+	contentTypeBinary = "application/octet-stream"
+	contentTypeJSON   = "application/json"
+	contentTypeForm   = "application/x-www-form-urlencoded"
+)
+
 // Client ...
 type Client struct {
 	client *http.Client
@@ -52,12 +58,13 @@ func (c *Client) mustGet(path string) *http.Response {
 	return resp
 }
 
-func (c *Client) post(path string, body io.Reader) *http.Response {
+func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
 	req, err := http.NewRequest("POST", initConfig.api+path, body)
 	if err != nil {
 		panic(err)
 	}
 	req.Header.Set("Authorization", initConfig.key)
+	req.Header.Set("Content-Type", ty)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		panic(err)
@@ -65,8 +72,8 @@ func (c *Client) post(path string, body io.Reader) *http.Response {
 	return resp
 }
 
-func (c *Client) mustPost(path string, body io.Reader) *http.Response {
-	resp := c.post(path, body)
+func (c *Client) mustPost(path string, body io.Reader, ty string) *http.Response {
+	resp := c.post(path, body, ty)
 	if resp.StatusCode != 200 {
 		resp.Body.Close()
 		panic(ErrStatusCode)

@@ -31,21 +31,10 @@ func (o *FileUpload) Upload(c *gin.Context) error {
 	var err error
 
 	parent := toInt64(c.Param("parent"))
+	name := c.Param("name")
 
-	form, err := c.MultipartForm()
-	if err != nil {
+	if err = o.mgr.Put(parent, name, c.Request.Body); err != nil {
 		return err
-	}
-
-	for _, file := range form.File["files[]"] {
-		fp, err := file.Open()
-		if err != nil {
-			return err
-		}
-		defer fp.Close()
-		if err = o.mgr.Put(parent, file.Filename, fp); err != nil {
-			return err
-		}
 	}
 
 	return nil

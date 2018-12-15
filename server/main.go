@@ -443,7 +443,7 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, files)
 	})
 
-	posts.POST("/:parent/files", func(c *gin.Context) {
+	posts.POST("/:parent/files/:name", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
 		}
@@ -452,7 +452,7 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, nil)
 	})
 
-	posts.DELETE("/:parent/files/*name", func(c *gin.Context) {
+	posts.DELETE("/:parent/files/:name", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
 		}
