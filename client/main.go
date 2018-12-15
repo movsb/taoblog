@@ -21,6 +21,7 @@ type xInitConfig struct {
 }
 
 var initConfig xInitConfig
+var client *Client
 
 func readInitConfig() {
 	var err error
@@ -62,13 +63,14 @@ func readInitConfig() {
 func main() {
 	parseFlags()
 	readInitConfig()
+	client = NewClient()
 
 	if len(os.Args) >= 2 {
 		command := os.Args[1]
 		if command == "post" {
 			evalPost(os.Args[2:])
 		} else if command == "backup" {
-			evalBackup(os.Args[2:])
+			client.Backup(os.Stdout)
 		}
 	}
 }
