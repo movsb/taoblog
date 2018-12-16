@@ -1,4 +1,4 @@
-module github.com/movsb/taoblog/server
+module github.com/movsb/taoblog
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -13,8 +13,8 @@ require (
 	github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.2.2 // indirect
-	github.com/ugorji/go/codec v0.0.0-20180927125128-99ea80c8b19a // indirect
+	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
-	gopkg.in/yaml.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )
