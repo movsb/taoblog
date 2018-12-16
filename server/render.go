@@ -1,31 +1,31 @@
 package main
 
 import (
-	"log"
-
-	"github.com/gin-gonic/gin"
+	"html/template"
+	"io"
 )
 
-type IRendererData interface {
-	PageType() string
-}
-
+// Renderer is the blog theme renderer.
 type Renderer struct {
+	tmpl *template.Template
 }
 
-func NewRenderer() *Renderer {
-	r := &Renderer{}
+// NewRenderer ...
+func NewRenderer(tmpl *template.Template) *Renderer {
+	r := &Renderer{
+		tmpl: tmpl,
+	}
 	return r
 }
 
-func (r *Renderer) execTemplate(c *gin.Context, t string, d IRendererData) {
-	log.Println("before executing post template")
-	if err := templates.ExecuteTemplate(c.Writer, t, d); err != nil {
+func (r *Renderer) mustExecuteTemplate(w io.Writer, name string, data interface{}) {
+	err := r.tmpl.ExecuteTemplate(w, name, data)
+	if err != nil {
 		panic(err)
 	}
-	log.Println("after executing post template")
 }
 
-func (r *Renderer) Render(c *gin.Context, name string, d IRendererData) {
-	r.execTemplate(c, name, d)
+// Render renders the named template with data data.
+func (r *Renderer) Render(w io.Writer, name string, data interface{}) {
+	r.mustExecuteTemplate(w, name, data)
 }

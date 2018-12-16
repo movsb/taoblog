@@ -115,7 +115,7 @@ func (b *Blog) queryHome(c *gin.Context) {
 	home.CommentCount = optmgr.GetDefInt(gdb, "comment_count", 0)
 	home.LatestPosts, _ = postmgr.GetLatest(gdb, 20)
 	home.LatestComments, _ = cmtmgr.GetRecentComments(gdb, 10)
-	renderer.Render(c, "home", home)
+	themeRender.Render(c.Writer, "home", home)
 }
 
 func (b *Blog) queryByID(c *gin.Context, id int64) {
@@ -125,7 +125,7 @@ func (b *Blog) queryByID(c *gin.Context, id int64) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	renderer.Render(c, "single", post)
+	themeRender.Render(c.Writer, "single", post)
 }
 
 func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
@@ -135,7 +135,7 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	renderer.Render(c, "single", post)
+	themeRender.Render(c.Writer, "single", post)
 }
 
 func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
@@ -145,7 +145,7 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	renderer.Render(c, "single", post)
+	themeRender.Render(c.Writer, "single", post)
 }
 
 func (b *Blog) queryByTags(c *gin.Context, tags string) {
@@ -154,7 +154,7 @@ func (b *Blog) queryByTags(c *gin.Context, tags string) {
 		EndReq(c, err, posts)
 		return
 	}
-	renderer.Render(c, "tags", &QueryTags{Posts: posts, Tag: tags})
+	themeRender.Render(c.Writer, "tags", &QueryTags{Posts: posts, Tag: tags})
 }
 
 func (b *Blog) queryByArchives(c *gin.Context) {
@@ -192,5 +192,5 @@ func (b *Blog) queryByArchives(c *gin.Context) {
 		Dates: posts,
 		Cats:  template.HTML(catstr),
 	}
-	renderer.Render(c, "archives", a)
+	themeRender.Render(c.Writer, "archives", a)
 }

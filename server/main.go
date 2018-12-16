@@ -50,9 +50,8 @@ var catmgr *CategoryManager
 var memcch *memory_cache.MemoryCache
 var blog *Blog
 var admin *Admin
-var renderer *Renderer
-
-var templates *template.Template
+var themeRender *Renderer
+var adminRender *Renderer
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
@@ -106,7 +105,6 @@ func main() {
 	memcch = memory_cache.NewMemoryCache(time.Minute * 10)
 	blog = NewBlog()
 	admin = NewAdmin()
-	renderer = NewRenderer()
 	defer memcch.Stop()
 
 	loadTemplates()
@@ -802,12 +800,18 @@ func loadTemplates() {
 			return optmgr.GetDef(gdb, name, "")
 		},
 	}
-	templates = template.New("taoblog").Funcs(funcs)
+
 	var err error
-	if templates, err = templates.ParseGlob("../theme/*.html"); err != nil {
+
+	themeTemplate := template.New("theme").Funcs(funcs)
+	if themeTemplate, err = themeTemplate.ParseGlob("../theme/*.html"); err != nil {
 		panic(err)
 	}
-	if templates, err = templates.ParseGlob("../admin/*.html"); err != nil {
+	themeRender = NewRenderer(themeTemplate)
+
+	adminTemplate := template.New("admin").Funcs(funcs)
+	if adminTemplate, err = adminTemplate.ParseGlob("../admin/*.html"); err != nil {
 		panic(err)
 	}
+	adminRender = NewRenderer(adminTemplate)
 }

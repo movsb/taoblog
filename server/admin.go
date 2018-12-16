@@ -25,14 +25,14 @@ type LoginData struct {
 }
 
 func (d *LoginData) PageType() string {
-	return "admin_login"
+	return "login"
 }
 
 type AdminIndexData struct {
 }
 
 func (d *AdminIndexData) PageType() string {
-	return "admin_index"
+	return "index"
 }
 
 type AdminTagManageData struct {
@@ -40,14 +40,14 @@ type AdminTagManageData struct {
 }
 
 func (d *AdminTagManageData) PageType() string {
-	return "admin_tag_manage"
+	return "tag_manage"
 }
 
 type AdminPostManageData struct {
 }
 
 func (d *AdminPostManageData) PageType() string {
-	return "admin_post_manage"
+	return "post_manage"
 }
 
 type AdminCategoryManageData struct {
@@ -55,7 +55,7 @@ type AdminCategoryManageData struct {
 }
 
 func (d *AdminCategoryManageData) PageType() string {
-	return "admin_category_manage"
+	return "category_manage"
 }
 
 type AdminPostEditData struct {
@@ -64,7 +64,7 @@ type AdminPostEditData struct {
 }
 
 func (d *AdminPostEditData) PageType() string {
-	return "admin_post_edit"
+	return "post_edit"
 }
 
 func (d *AdminPostEditData) Link() string {
@@ -155,7 +155,7 @@ func (a *Admin) queryLogin(c *gin.Context) {
 		Redirect: redirect,
 	}
 
-	renderer.Render(c, "admin_login", &d)
+	adminRender.Render(c.Writer, "login", &d)
 }
 
 func (a *Admin) queryLogout(c *gin.Context) {
@@ -177,7 +177,7 @@ func (a *Admin) postLogin(c *gin.Context) {
 
 func (a *Admin) queryIndex(c *gin.Context) {
 	d := &AdminIndexData{}
-	renderer.Render(c, "admin_index", d)
+	adminRender.Render(c.Writer, "index", d)
 }
 
 func (a *Admin) queryTagManage(c *gin.Context) {
@@ -185,25 +185,26 @@ func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
 		Tags: tags,
 	}
-	renderer.Render(c, "tag_manage", d)
+	adminRender.Render(c.Writer, "tag_manage", d)
 }
 
 func (a *Admin) queryPostManage(c *gin.Context) {
 	d := &AdminPostManageData{}
-	renderer.Render(c, "admin_post_manage", d)
+	adminRender.Render(c.Writer, "post_manage", d)
 }
 
 func (a *Admin) queryCategoryManage(c *gin.Context) {
 	d := &AdminCategoryManageData{}
-	renderer.Render(c, "admin_category_manage", d)
+	adminRender.Render(c.Writer, "category_manage", d)
 }
 
 func (a *Admin) queryPostEdit(c *gin.Context) {
 	p := &Post{}
 	d := AdminPostEditData{
+		New:  true,
 		Post: p,
 	}
-	renderer.Render(c, "admin_header", &d)
-	renderer.Render(c, "admin_post_edit", &d)
-	renderer.Render(c, "admin_footer", &d)
+	adminRender.Render(c.Writer, "header", &d)
+	adminRender.Render(c.Writer, "post_edit", &d)
+	adminRender.Render(c.Writer, "footer", &d)
 }

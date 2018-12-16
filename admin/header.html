@@ -1,4 +1,4 @@
-{{define "admin_header" -}}
+{{define "header" -}}
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,7 +6,7 @@
     <link rel="stylesheet" type="text/css" href="admin.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
     <script type="text/javascript" src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
-    {{if eq .PageType "admin_tag_manage"}}
+    {{if eq .PageType "tag_manage"}}
 <style>
 
 table, td, th {
@@ -34,7 +34,7 @@ td.name {
 
 </style>
 {{end}}
-{{if eq .PageType "admin_post_manage"}}
+{{if eq .PageType "post_manage"}}
 <style>
 
 table, td, th {
@@ -55,7 +55,7 @@ td.title {
 <script src="https://cdn.jsdelivr.net/npm/vue"></script>
 
 {{end}}
-{{if eq .PageType "admin_post_edit"}}
+{{if eq .PageType "post_edit"}}
 <script src="scripts/marked.js"></script>
 
 <script>
