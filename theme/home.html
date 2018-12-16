@@ -1,6 +1,4 @@
 {{define "home"}}
-{{template "header" .}}
-
 <h2>近期文章</h2>
 <ul>
 {{range .LatestPosts}}
@@ -27,6 +25,4 @@
         <li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
     </ul>
 </div>
-
-{{template "footer" .}}
 {{end}}

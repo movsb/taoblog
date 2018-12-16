@@ -1,5 +1,4 @@
 {{define "post_manage" -}}
-{{template "header" .}}
 <table id="table">
 <thead>
 <tr>
@@ -37,5 +36,4 @@ $.get('/v1/posts!manage', function(posts) {
     })
 });
 </script>
-{{template "footer" .}}
 {{end}}

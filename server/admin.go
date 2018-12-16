@@ -177,7 +177,9 @@ func (a *Admin) postLogin(c *gin.Context) {
 
 func (a *Admin) queryIndex(c *gin.Context) {
 	d := &AdminIndexData{}
+	adminRender.Render(c.Writer, "header", &d)
 	adminRender.Render(c.Writer, "index", d)
+	adminRender.Render(c.Writer, "footer", &d)
 }
 
 func (a *Admin) queryTagManage(c *gin.Context) {
@@ -185,17 +187,23 @@ func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
 		Tags: tags,
 	}
+	adminRender.Render(c.Writer, "header", &d)
 	adminRender.Render(c.Writer, "tag_manage", d)
+	adminRender.Render(c.Writer, "footer", &d)
 }
 
 func (a *Admin) queryPostManage(c *gin.Context) {
 	d := &AdminPostManageData{}
+	adminRender.Render(c.Writer, "header", &d)
 	adminRender.Render(c.Writer, "post_manage", d)
+	adminRender.Render(c.Writer, "footer", &d)
 }
 
 func (a *Admin) queryCategoryManage(c *gin.Context) {
 	d := &AdminCategoryManageData{}
+	adminRender.Render(c.Writer, "header", &d)
 	adminRender.Render(c.Writer, "category_manage", d)
+	adminRender.Render(c.Writer, "footer", &d)
 }
 
 func (a *Admin) queryPostEdit(c *gin.Context) {
