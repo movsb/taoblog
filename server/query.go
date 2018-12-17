@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -21,6 +22,33 @@ var (
 	regexpByPage     = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
 )
 
+// ThemeHeaderData ...
+type ThemeHeaderData struct {
+	Title  string
+	Header func()
+}
+
+// HeaderHook ...
+func (d *ThemeHeaderData) HeaderHook() string {
+	if d.Header != nil {
+		d.Header()
+	}
+	return ""
+}
+
+// ThemeFooterData ...
+type ThemeFooterData struct {
+	Footer func()
+}
+
+// FooterHook ...
+func (d *ThemeFooterData) FooterHook() string {
+	if d.Footer != nil {
+		d.Footer()
+	}
+	return ""
+}
+
 type Home struct {
 	Title          string
 	PostCount      int64
@@ -30,10 +58,6 @@ type Home struct {
 	LatestComments []*Comment
 }
 
-func (h *Home) PageType() string {
-	return "home"
-}
-
 type Archives struct {
 	Tags  []*TagWithCount
 	Dates []*PostForDate
@@ -41,17 +65,9 @@ type Archives struct {
 	Title string
 }
 
-func (a *Archives) PageType() string {
-	return "archives"
-}
-
 type QueryTags struct {
 	Tag   string
 	Posts []*PostForArchiveQuery
-}
-
-func (t *QueryTags) PageType() string {
-	return "tags"
 }
 
 type Blog struct {
@@ -108,16 +124,29 @@ func (b *Blog) Query(c *gin.Context, path string) {
 }
 
 func (b *Blog) queryHome(c *gin.Context) {
+	header := &ThemeHeaderData{
+		Title: "",
+		Header: func() {
+			themeRender.Render(c.Writer, "home_header", nil)
+		},
+	}
+
+	footer := &ThemeFooterData{
+		Footer: func() {
+			themeRender.Render(c.Writer, "home_footer", nil)
+		},
+	}
+
 	home := &Home{}
-	home.Title = "首页"
 	home.PostCount = optmgr.GetDefInt(gdb, "post_count", 0)
 	home.PageCount = optmgr.GetDefInt(gdb, "page_count", 0)
 	home.CommentCount = optmgr.GetDefInt(gdb, "comment_count", 0)
 	home.LatestPosts, _ = postmgr.GetLatest(gdb, 20)
 	home.LatestComments, _ = cmtmgr.GetRecentComments(gdb, 10)
-	themeRender.Render(c.Writer, "header", home)
+
+	themeRender.Render(c.Writer, "header", header)
 	themeRender.Render(c.Writer, "home", home)
-	themeRender.Render(c.Writer, "footer", home)
+	themeRender.Render(c.Writer, "footer", footer)
 }
 
 func (b *Blog) queryByID(c *gin.Context, id int64) {
@@ -127,9 +156,7 @@ func (b *Blog) queryByID(c *gin.Context, id int64) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	themeRender.Render(c.Writer, "header", post)
-	themeRender.Render(c.Writer, "content", post)
-	themeRender.Render(c.Writer, "footer", post)
+	tempRenderPost(c.Writer, post)
 }
 
 func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
@@ -139,9 +166,7 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	themeRender.Render(c.Writer, "header", post)
-	themeRender.Render(c.Writer, "content", post)
-	themeRender.Render(c.Writer, "footer", post)
+	tempRenderPost(c.Writer, post)
 }
 
 func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
@@ -151,9 +176,24 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	themeRender.Render(c.Writer, "header", post)
-	themeRender.Render(c.Writer, "content", post)
-	themeRender.Render(c.Writer, "footer", post)
+	tempRenderPost(c.Writer, post)
+}
+
+func tempRenderPost(w io.Writer, post *Post) {
+	header := &ThemeHeaderData{
+		Title: post.Title,
+		Header: func() {
+			themeRender.Render(w, "content_header", post)
+		},
+	}
+	footer := &ThemeFooterData{
+		Footer: func() {
+			themeRender.Render(w, "content_footer", post)
+		},
+	}
+	themeRender.Render(w, "header", header)
+	themeRender.Render(w, "content", post)
+	themeRender.Render(w, "footer", footer)
 }
 
 func (b *Blog) queryByTags(c *gin.Context, tags string) {
@@ -194,13 +234,27 @@ func (b *Blog) queryByArchives(c *gin.Context) {
 
 	catstr, _ := fn(cats)
 
+	header := &ThemeHeaderData{
+		Title: "文章归档",
+		Header: func() {
+			themeRender.Render(c.Writer, "archives_header", nil)
+		},
+	}
+
+	footer := &ThemeFooterData{
+		Footer: func() {
+			themeRender.Render(c.Writer, "archives_footer", nil)
+		},
+	}
+
 	a := &Archives{
 		Title: "文章归档",
 		Tags:  tags,
 		Dates: posts,
 		Cats:  template.HTML(catstr),
 	}
-	themeRender.Render(c.Writer, "header", a)
+
+	themeRender.Render(c.Writer, "header", header)
 	themeRender.Render(c.Writer, "archives", a)
-	themeRender.Render(c.Writer, "footer", a)
+	themeRender.Render(c.Writer, "footer", footer)
 }

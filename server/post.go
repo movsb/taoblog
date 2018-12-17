@@ -17,7 +17,7 @@ type Post struct {
 	ID            int64         `json:"id"`
 	Date          string        `json:"date"`
 	Modified      string        `json:"modified"`
-	Title         template.HTML `json:"title"`
+	Title         string        `json:"title"`
 	Content       template.HTML `json:"content"`
 	Slug          string        `json:"slug"`
 	Type          string        `json:"type"`

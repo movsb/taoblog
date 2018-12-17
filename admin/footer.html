@@ -1,14 +1,7 @@
 {{define "footer"}}
     </div><!-- admin-wrap -->
 </div><!-- admin-main -->
-{{if eq .PageType "post_edit"}}
-<script type="text/javascript">
-    $('.widget h3').click(function(e) {
-        var div = e.target.nextElementSibling;
-        $(div).toggle();
-    });
-</script>
-{{end}}
+{{.FooterHook}}
 </body>
 </html>
 {{end}}

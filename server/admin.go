@@ -20,51 +20,54 @@ var (
 	regexpAdminCategoryManage = regexp.MustCompile(`^/category-manage$`)
 )
 
+// AdminHeaderData ...
+type AdminHeaderData struct {
+	Title  string
+	Header func()
+}
+
+// HeaderHook ...
+func (d *AdminHeaderData) HeaderHook() string {
+	if d.Header != nil {
+		d.Header()
+	}
+	return ""
+}
+
+// AdminFooterData ...
+type AdminFooterData struct {
+	Footer func()
+}
+
+// FooterHook ...
+func (d *AdminFooterData) FooterHook() string {
+	if d.Footer != nil {
+		d.Footer()
+	}
+	return ""
+}
+
 type LoginData struct {
 	Redirect string
 }
 
-func (d *LoginData) PageType() string {
-	return "login"
-}
-
 type AdminIndexData struct {
-}
-
-func (d *AdminIndexData) PageType() string {
-	return "index"
 }
 
 type AdminTagManageData struct {
 	Tags []*TagWithCount
 }
 
-func (d *AdminTagManageData) PageType() string {
-	return "tag_manage"
-}
-
 type AdminPostManageData struct {
-}
-
-func (d *AdminPostManageData) PageType() string {
-	return "post_manage"
 }
 
 type AdminCategoryManageData struct {
 	CategoryJSON string
 }
 
-func (d *AdminCategoryManageData) PageType() string {
-	return "category_manage"
-}
-
 type AdminPostEditData struct {
 	*Post
 	New bool
-}
-
-func (d *AdminPostEditData) PageType() string {
-	return "post_edit"
 }
 
 func (d *AdminPostEditData) Link() string {
@@ -177,9 +180,20 @@ func (a *Admin) postLogin(c *gin.Context) {
 
 func (a *Admin) queryIndex(c *gin.Context) {
 	d := &AdminIndexData{}
-	adminRender.Render(c.Writer, "header", &d)
+	header := &AdminHeaderData{
+		Title: "首页",
+		Header: func() {
+			adminRender.Render(c.Writer, "index_header", nil)
+		},
+	}
+	footer := &AdminFooterData{
+		Footer: func() {
+			adminRender.Render(c.Writer, "index_footer", nil)
+		},
+	}
+	adminRender.Render(c.Writer, "header", header)
 	adminRender.Render(c.Writer, "index", d)
-	adminRender.Render(c.Writer, "footer", &d)
+	adminRender.Render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryTagManage(c *gin.Context) {
@@ -187,23 +201,56 @@ func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
 		Tags: tags,
 	}
-	adminRender.Render(c.Writer, "header", &d)
+	header := &AdminHeaderData{
+		Title: "标签管理",
+		Header: func() {
+			adminRender.Render(c.Writer, "tag_manage_header", nil)
+		},
+	}
+	footer := &AdminFooterData{
+		Footer: func() {
+			adminRender.Render(c.Writer, "tag_manage_footer", nil)
+		},
+	}
+	adminRender.Render(c.Writer, "header", header)
 	adminRender.Render(c.Writer, "tag_manage", d)
-	adminRender.Render(c.Writer, "footer", &d)
+	adminRender.Render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryPostManage(c *gin.Context) {
 	d := &AdminPostManageData{}
-	adminRender.Render(c.Writer, "header", &d)
+	header := &AdminHeaderData{
+		Title: "文章管理",
+		Header: func() {
+			adminRender.Render(c.Writer, "post_manage_header", nil)
+		},
+	}
+	footer := &AdminFooterData{
+		Footer: func() {
+			adminRender.Render(c.Writer, "post_manage_footer", nil)
+		},
+	}
+	adminRender.Render(c.Writer, "header", header)
 	adminRender.Render(c.Writer, "post_manage", d)
-	adminRender.Render(c.Writer, "footer", &d)
+	adminRender.Render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryCategoryManage(c *gin.Context) {
 	d := &AdminCategoryManageData{}
-	adminRender.Render(c.Writer, "header", &d)
+	header := &AdminHeaderData{
+		Title: "分类管理",
+		Header: func() {
+			adminRender.Render(c.Writer, "category_manage_header", nil)
+		},
+	}
+	footer := &AdminFooterData{
+		Footer: func() {
+			adminRender.Render(c.Writer, "category_manage_footer", nil)
+		},
+	}
+	adminRender.Render(c.Writer, "header", header)
 	adminRender.Render(c.Writer, "category_manage", d)
-	adminRender.Render(c.Writer, "footer", &d)
+	adminRender.Render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryPostEdit(c *gin.Context) {
@@ -212,7 +259,18 @@ func (a *Admin) queryPostEdit(c *gin.Context) {
 		New:  true,
 		Post: p,
 	}
-	adminRender.Render(c.Writer, "header", &d)
+	header := &AdminHeaderData{
+		Title: "文章编辑",
+		Header: func() {
+			adminRender.Render(c.Writer, "post_edit_header", nil)
+		},
+	}
+	footer := &AdminFooterData{
+		Footer: func() {
+			adminRender.Render(c.Writer, "post_edit_footer", nil)
+		},
+	}
+	adminRender.Render(c.Writer, "header", header)
 	adminRender.Render(c.Writer, "post_edit", &d)
-	adminRender.Render(c.Writer, "footer", &d)
+	adminRender.Render(c.Writer, "footer", footer)
 }

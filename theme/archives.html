@@ -1,3 +1,16 @@
+{{define "archives_header"}}
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css" />
+<style>
+    .archives a {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        max-width: 100%;
+    }
+</style>
+{{end}}
+
 {{define "archives"}}
 <div class="archives">
     <div class="tags">
@@ -143,4 +156,8 @@ $('.tags').on('click',function(e) {
     e.stopPropagation();
 });
 </script>
+{{end}}
+
+{{define "archives_footer"}}
+
 {{end}}

@@ -1,3 +1,24 @@
+{{define "post_manage_header"}}
+<style>
+
+table, td, th {
+    border: 1px solid gray;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+}
+
+td.title {
+    max-width: 300px;
+}
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+{{end}}
+
 {{define "post_manage" -}}
 <table id="table">
 <thead>
@@ -36,4 +57,8 @@ $.get('/v1/posts!manage', function(posts) {
     })
 });
 </script>
+{{end}}
+
+{{define "post_manage_footer"}}
+
 {{end}}
