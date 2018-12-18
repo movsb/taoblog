@@ -80,6 +80,9 @@ func NewBlog() *Blog {
 
 func (b *Blog) Query(c *gin.Context, path string) {
 	if regexpHome.MatchString(path) {
+		if b.processHomeQueries(c) {
+			return
+		}
 		b.queryHome(c)
 		return
 	}
@@ -121,6 +124,14 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		return
 	}
 	c.File(filepath.Join(config.base, path))
+}
+
+func (b *Blog) processHomeQueries(c *gin.Context) bool {
+	if p, ok := c.GetQuery("p"); ok {
+		c.Redirect(301, fmt.Sprintf("/%s/", p))
+		return true
+	}
+	return false
 }
 
 func (b *Blog) queryHome(c *gin.Context) {
