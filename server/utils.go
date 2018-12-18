@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -39,6 +40,10 @@ func EndReq(c *gin.Context, err interface{}, dat interface{}) {
 		c.JSON(http.StatusOK, dat)
 	} else {
 		if e, ok := err.(error); ok {
+			if e == sql.ErrNoRows {
+				c.Status(404)
+				return
+			}
 			c.JSON(http.StatusInternalServerError, e.Error())
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{

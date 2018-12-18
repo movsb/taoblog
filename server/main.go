@@ -155,7 +155,6 @@ func main() {
 	})
 
 	routerV1(router)
-	routerInternalV1(router)
 	routerBlog(router)
 	routerAdmin(router)
 
@@ -163,20 +162,11 @@ func main() {
 }
 
 func toInt64(s string) int64 {
-	n, _ := strconv.ParseInt(s, 10, 64)
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		//panic(fmt.Errorf("expect number: %s", s))
+	}
 	return n
-}
-
-func routerInternalV1(router *gin.Engine) {
-	v1 := router.Group("/.v1")
-
-	optapi := v1.Group("/options")
-
-	optapi.GET("/:name", func(c *gin.Context) {
-		name := c.Param("name")
-		varlue, err := optmgr.Get(gdb, name)
-		EndReq(c, err, varlue)
-	})
 }
 
 func routerV1(router *gin.Engine) {
@@ -237,17 +227,10 @@ func routerV1(router *gin.Engine) {
 		pid := toInt64(c.Param("parent"))
 		modified := c.Query("modified")
 		post, err := postmgr.GetPostByID(gdb, pid, modified)
-		posts := make([]*Post, 0)
-		if err == nil {
-			posts = append(posts, post)
-		} else if err == sql.ErrNoRows {
-			err = nil
-		}
-		// TODO don't return array.
-		EndReq(c, err, posts)
+		EndReq(c, err, post)
 	})
 
-	posts.POST("/:parent", func(c *gin.Context) {
+	posts.PATCH("/:parent", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
 		}
@@ -543,11 +526,20 @@ func routerV1(router *gin.Engine) {
 			}
 		}
 
-		rss, err := theFeed(gdb)
-		if err != nil {
-			EndReq(c, err, nil)
-			return
+		var rss string
+
+		if s, ok := memcch.Get("rss"); ok {
+			rss = s.(string)
+		} else {
+			s, err := theFeed(gdb)
+			if err != nil {
+				EndReq(c, err, nil)
+				return
+			}
+			rss = s
+			memcch.Set("rss", s)
 		}
+
 		c.Header("Content-Type", "application/xml")
 		if modified := optmgr.GetDef(gdb, "last_post_time", ""); modified != "" {
 			c.Header("Last-Modified", datetime.Local2Gmt(modified))
@@ -556,14 +548,37 @@ func routerV1(router *gin.Engine) {
 	})
 
 	v1.GET("/posts!all", func(c *gin.Context) {
-		posts, err := postmgr.ListAllPosts(gdb)
-		EndReq(c, err, posts)
+		var posts []*PostForArchiveQuery
+		if p, ok := memcch.Get("posts:all"); ok {
+			posts = p.([]*PostForArchiveQuery)
+		} else {
+			p, err := postmgr.ListAllPosts(gdb)
+			if err != nil {
+				EndReq(c, err, posts)
+				return
+			}
+			memcch.Set("posts:all", p)
+			posts = p
+		}
+		EndReq(c, nil, posts)
 	})
 
 	v1.GET("/posts!latest", func(c *gin.Context) {
 		limit := toInt64(c.Query("limit"))
-		posts, err := postmgr.GetLatest(gdb, limit)
-		EndReq(c, err, posts)
+		var posts []*PostForLatest
+		var key = fmt.Sprintf("posts:latest?limit=%d", limit)
+		if p, ok := memcch.Get(key); ok {
+			posts = p.([]*PostForLatest)
+		} else {
+			p, err := postmgr.GetLatest(gdb, limit)
+			if err != nil {
+				EndReq(c, err, p)
+				return
+			}
+			memcch.Set(key, p)
+			posts = p
+		}
+		EndReq(c, nil, posts)
 	})
 
 	archives := v1.Group("/archives")

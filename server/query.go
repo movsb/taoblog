@@ -127,7 +127,7 @@ func (b *Blog) Query(c *gin.Context, path string) {
 }
 
 func (b *Blog) processHomeQueries(c *gin.Context) bool {
-	if p, ok := c.GetQuery("p"); ok {
+	if p, ok := c.GetQuery("p"); ok && p != "" {
 		c.Redirect(301, fmt.Sprintf("/%s/", p))
 		return true
 	}
