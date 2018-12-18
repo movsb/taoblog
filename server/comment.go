@@ -9,6 +9,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/movsb/taoblog/server/modules/taorm"
+
 	"github.com/movsb/taoblog/server/modules/sql_helpers"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
@@ -22,7 +24,7 @@ type Comment struct {
 	Ancestor int64
 	PostID   int64
 	Author   string
-	EMail    string
+	Email    string
 	URL      string
 	IP       string
 	Date     string
@@ -32,7 +34,7 @@ type Comment struct {
 
 func (c *Comment) AuthorString() string {
 	mail := optmgr.GetDef(gdb, "email", "")
-	if mail == c.EMail {
+	if mail == c.Email {
 		return "博主"
 	}
 	return c.Author
@@ -76,62 +78,31 @@ func (o *CommentManager) DeleteComments(tx Querier, id int64) error {
 
 // GetComment returns the specified comment object.
 func (o *CommentManager) GetComment(tx Querier, id int64) (*Comment, error) {
-	query := fmt.Sprintf(`SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE id=%d LIMIT 1`, id)
-	row := tx.QueryRow(query)
-	cmt := &Comment{}
-	err := row.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content)
-	return cmt, err
+	query := fmt.Sprintf(`SELECT * FROM comments WHERE id=%d LIMIT 1`, id)
+	var c Comment
+	return &c, taorm.QueryRows(&c, tx, query)
 }
 
 // GetRecentComments gets the recent comments
 // TODO Not tested
 func (o *CommentManager) GetRecentComments(tx Querier, num int) ([]*Comment, error) {
-	var err error
-	query := `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments ORDER BY date DESC LIMIT ` + fmt.Sprint(num)
-	rows, err := tx.Query(query)
-	if err != nil {
+	query := `SELECT * FROM comments ORDER BY date DESC LIMIT ` + fmt.Sprint(num)
+	var cmts []*Comment
+	if err := taorm.QueryRows(&cmts, tx, query); err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	var cmts []*Comment
-
-	for rows.Next() {
-		var cmt Comment
-		if err = rows.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content); err != nil {
-			return nil, err
-		}
-		cmts = append(cmts, &cmt)
-	}
-
-	return cmts, rows.Err()
+	return cmts, nil
 }
 
 // GetChildren gets all children comments of an ancestor
 // TODO Not tested
 func (o *CommentManager) GetChildren(tx Querier, id int64) ([]*Comment, error) {
-	var err error
-
-	query := `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE ancestor=` + fmt.Sprint(id)
-	rows, err := tx.Query(query)
-	if err != nil {
+	query := `SELECT * FROM comments WHERE ancestor=` + fmt.Sprint(id)
+	var cmts []*Comment
+	if err := taorm.QueryRows(&cmts, tx, query); err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	cmts := make([]*Comment, 0)
-
-	for rows.Next() {
-		var cmt Comment
-		if err = rows.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content); err != nil {
-			return nil, err
-		}
-		cmts = append(cmts, &cmt)
-	}
-
-	return cmts, rows.Err()
+	return cmts, nil
 }
 
 // GetAncestor returns the ancestor of a comment
@@ -154,9 +125,9 @@ func (o *CommentManager) GetCommentAndItsChildren(tx Querier, cid int64, offset 
 	var query string
 
 	if cid > 0 {
-		query += `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE id=` + fmt.Sprint(cid)
+		query += `SELECT * FROM comments WHERE id=` + fmt.Sprint(cid)
 	} else {
-		query += `SELECT id,parent,ancestor,post_id,author,email,url,ip,date,content FROM comments WHERE parent=0`
+		query += `SELECT * FROM comments WHERE parent=0`
 		if pid > 0 {
 			query += ` AND post_id=` + fmt.Sprint(pid)
 		}
@@ -176,31 +147,20 @@ func (o *CommentManager) GetCommentAndItsChildren(tx Querier, cid int64, offset 
 		}
 	}
 
-	cmts := make([]*Comment, 0)
-
-	rows, err := tx.Query(query)
-	if err != nil {
-		return cmts, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var cmt Comment
-		if err = rows.Scan(&cmt.ID, &cmt.Parent, &cmt.Ancestor, &cmt.PostID, &cmt.Author, &cmt.EMail, &cmt.URL, &cmt.IP, &cmt.Date, &cmt.Content); err != nil {
-			return cmts, err
-		}
-		cmts = append(cmts, &cmt)
+	var cmts []*Comment
+	if err := taorm.QueryRows(&cmts, tx, query); err != nil {
+		return nil, err
 	}
 
 	for _, cmt := range cmts {
+		var err error
 		cmt.Children, err = o.GetChildren(tx, cmt.ID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return cmts, rows.Err()
+	return cmts, nil
 }
 
 // BeforeCreate hooks
@@ -223,7 +183,7 @@ func (o *CommentManager) beforeCreateComment(tx Querier, c *Comment) error {
 	}
 
 	// Email
-	if !regexpValidEmail.MatchString(c.EMail) {
+	if !regexpValidEmail.MatchString(c.Email) {
 		return errors.New("邮箱不正确")
 	}
 
@@ -269,7 +229,7 @@ func (o *CommentManager) CreateComment(tx Querier, c *Comment) error {
 	}
 
 	query := `INSERT INTO comments (post_id,author,email,url,ip,date,content,parent,ancestor) VALUES (?,?,?,?,?,?,?,?,?)`
-	ret, err := tx.Exec(query, c.PostID, c.Author, c.EMail, c.URL, c.IP, c.Date, c.Content, c.Parent, c.Ancestor)
+	ret, err := tx.Exec(query, c.PostID, c.Author, c.Email, c.URL, c.IP, c.Date, c.Content, c.Parent, c.Ancestor)
 	if err != nil {
 		return err
 	}

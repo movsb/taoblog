@@ -19,6 +19,7 @@ import (
 
 	"github.com/movsb/taoblog/server/modules/file_managers"
 	"github.com/movsb/taoblog/server/modules/memory_cache"
+	"github.com/movsb/taoblog/server/modules/taorm"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
@@ -108,6 +109,12 @@ func main() {
 	defer memcch.Stop()
 
 	loadTemplates()
+
+	taorm.Register(Option{})
+	taorm.Register(Post{})
+	taorm.Register(Comment{})
+	taorm.Register(Category{})
+	taorm.Register(Tag{})
 
 	router := gin.Default()
 
@@ -315,7 +322,7 @@ func routerV1(router *gin.Engine) {
 		cmt.PostID = toInt64(c.Param("parent"))
 		cmt.Parent = toInt64(c.DefaultPostForm("parent", "0"))
 		cmt.Author = c.DefaultPostForm("author", "")
-		cmt.EMail = c.DefaultPostForm("email", "")
+		cmt.Email = c.DefaultPostForm("email", "")
 		cmt.URL = c.DefaultPostForm("url", "")
 		cmt.IP = c.ClientIP()
 		cmt.Date = datetime.MyLocal()
@@ -344,7 +351,7 @@ func routerV1(router *gin.Engine) {
 
 				// TODO use regexp to detect equality.
 				for _, email := range notAllowedEmails {
-					if email != "" && cmt.EMail != "" && strings.EqualFold(email, cmt.EMail) {
+					if email != "" && cmt.Email != "" && strings.EqualFold(email, cmt.Email) {
 						EndReq(c, errors.New("不能使用此邮箱地址"), nil)
 						tx.Rollback()
 						return

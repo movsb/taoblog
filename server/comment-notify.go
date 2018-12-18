@@ -56,7 +56,7 @@ func doNotifyAdmin(tx Querier, cmt *Comment, postTitle string) {
 	link := "https://" + optmgr.GetDef(tx, "home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
 	write(`<b>链接：</b>%s<br/>`, link)
 	write(`<b>作者：</b>%s<br/>`, html.EscapeString(string(cmt.Author)))
-	write(`<b>邮箱：</b>%s<br/>`, cmt.EMail)
+	write(`<b>邮箱：</b>%s<br/>`, cmt.Email)
 	write(`<b>网址：</b>%s<br/>`, html.EscapeString(cmt.URL))
 	write(`<b>时间：</b>%s<br/>`, cmt.Date)
 	write(`<b>内容：</b>%s<br/>`, html.EscapeString(cmt.Content))
@@ -107,7 +107,7 @@ func doNotify(tx Querier, cmt *Comment) {
 		return
 	}
 
-	if cmt.EMail != adminEmail {
+	if cmt.Email != adminEmail {
 		doNotifyAdmin(tx, cmt, postTitle)
 	}
 

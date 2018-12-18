@@ -55,7 +55,7 @@ func (o *AjaxComment) marshal(ac *AjaxComment, sb *bytes.Buffer, private bool, c
 	f(`is_admin`, ac.IsAdmin)
 
 	if private {
-		f(`email`, c.EMail)
+		f(`email`, c.Email)
 		f(`ip`, c.IP)
 	}
 
@@ -146,8 +146,8 @@ func (o *PostCommentsManager) GetPostComments(tx Querier, cid int64, offset int6
 
 		pc.c.Date = datetime.My2Local(pc.c.Date)
 
-		pc.Avatar = md5it(c.EMail)
-		pc.IsAdmin = strings.ToLower(c.EMail) == adminEmail
+		pc.Avatar = md5it(c.Email)
+		pc.IsAdmin = strings.ToLower(c.Email) == adminEmail
 
 		return pc
 	}
