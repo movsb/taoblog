@@ -67,7 +67,10 @@ func main() {
 
 	if len(os.Args) >= 2 {
 		command := os.Args[1]
-		if command == "post" {
+		switch command {
+		case "get", "post", "delete", "patch":
+			client.CRUD(command, os.Args[2])
+		case "posts":
 			switch os.Args[2] {
 			case "init":
 				client.InitPost()
@@ -76,7 +79,7 @@ func main() {
 			case "upload":
 				client.UploadPostFiles()
 			}
-		} else if command == "backup" {
+		case "backup":
 			client.Backup(os.Stdout)
 		}
 	}
