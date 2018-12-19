@@ -15,7 +15,7 @@ func parseFlags() {
 }
 
 type xInitConfig struct {
-	api    string // the api root, like https://taoblog/apiv2
+	api    string // the api root, like https://taoblog/v1
 	verify bool   // verify host key
 	key    string // the key
 }

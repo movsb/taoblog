@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
 	"io"
@@ -21,6 +22,12 @@ var (
 	regexpByArchives = regexp.MustCompile(`^/archives$`)
 	regexpByPage     = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
 )
+
+var nonCategoryNames = map[string]bool{
+	"/admin/": true,
+	"/theme/": true,
+	"/tags/":  true,
+}
 
 // ThemeHeaderData ...
 type ThemeHeaderData struct {
@@ -102,14 +109,14 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		b.queryByArchives(c)
 		return
 	}
-	if regexpBySlug.MatchString(path) {
+	if regexpBySlug.MatchString(path) && b.isCategoryPath(path) {
 		matches := regexpBySlug.FindStringSubmatch(path)
 		tree := matches[1]
 		slug := matches[2]
 		b.queryBySlug(c, tree, slug)
 		return
 	}
-	if regexpByPage.MatchString(path) {
+	if regexpByPage.MatchString(path) && b.isCategoryPath(path) {
 		matches := regexpByPage.FindStringSubmatch(path)
 		parents := matches[1]
 		if parents != "" {
@@ -124,6 +131,19 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		return
 	}
 	c.File(filepath.Join(config.base, path))
+}
+
+func (b *Blog) isCategoryPath(path string) bool {
+	p := strings.IndexByte(path[1:], '/')
+	if p == -1 {
+		return true
+	}
+	p++
+	first := path[0 : p+1]
+	if _, ok := nonCategoryNames[first]; ok {
+		return false
+	}
+	return true
 }
 
 func (b *Blog) processHomeQueries(c *gin.Context) bool {
@@ -163,6 +183,10 @@ func (b *Blog) queryHome(c *gin.Context) {
 func (b *Blog) queryByID(c *gin.Context, id int64) {
 	post, err := postmgr.GetPostByID(gdb, id, "")
 	if err != nil {
+		if err == sql.ErrNoRows {
+			b.postNotFound(c)
+			return
+		}
 		EndReq(c, err, post)
 		return
 	}
@@ -173,6 +197,10 @@ func (b *Blog) queryByID(c *gin.Context, id int64) {
 func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 	post, err := postmgr.GetPostBySlug(gdb, tree, slug, "", false)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			b.postNotFound(c)
+			return
+		}
 		EndReq(c, err, post)
 		return
 	}
@@ -183,6 +211,10 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 	post, err := postmgr.GetPostBySlug(gdb, parents, slug, "", true)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			b.postNotFound(c)
+			return
+		}
 		EndReq(c, err, post)
 		return
 	}
@@ -268,4 +300,9 @@ func (b *Blog) queryByArchives(c *gin.Context) {
 	themeRender.Render(c.Writer, "header", header)
 	themeRender.Render(c.Writer, "archives", a)
 	themeRender.Render(c.Writer, "footer", footer)
+}
+
+func (b *Blog) postNotFound(c *gin.Context) {
+	c.Status(404)
+	themeRender.Render(c.Writer, "404", nil)
 }
