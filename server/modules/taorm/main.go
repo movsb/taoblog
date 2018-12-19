@@ -43,7 +43,7 @@ func queryRow(out interface{}, rows *sql.Rows) (err error) {
 
 func queryRows(out interface{}, rows *sql.Rows) error {
 	ty := reflect.TypeOf(out).Elem()
-	slice := reflect.New(ty).Elem()
+	slice := reflect.MakeSlice(ty, 0, 0)
 
 	ty = ty.Elem()
 	if ty.Kind() != reflect.Ptr {
