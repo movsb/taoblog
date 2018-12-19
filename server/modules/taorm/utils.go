@@ -30,6 +30,22 @@ func isColumnField(field reflect.StructField) bool {
 	}
 }
 
+func getColumnName(field reflect.StructField) string {
+	tag := field.Tag.Get("taorm")
+	kvs := strings.Split(tag, ",")
+	for _, kv := range kvs {
+		s := strings.Split(kv, ":")
+		switch s[0] {
+		case "name":
+			if len(s) > 1 {
+				return s[1]
+			}
+			return ""
+		}
+	}
+	return toSnakeCase(field.Name)
+}
+
 type _EmptyEface struct {
 	typ *struct{}
 	ptr unsafe.Pointer

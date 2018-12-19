@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+
+	"github.com/movsb/taoblog/server/modules/taorm"
 )
 
 type OptionManager struct {
@@ -73,20 +75,11 @@ func (o *OptionManager) Del(tx Querier, name string) error {
 	return err
 }
 
-func (o *OptionManager) List(tx Querier) ([]Option, error) {
-	items := make([]Option, 0)
+func (o *OptionManager) List(tx Querier) ([]*Option, error) {
+	var items []*Option
 	query := `SELECT name,value FROM options`
-	rows, err := tx.Query(query)
-	if err != nil {
-		return items, err
+	if err := taorm.QueryRows(&items, tx, query); err != nil {
+		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var item Option
-		if err := rows.Scan(&item.Name, &item.Value); err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	return items, rows.Err()
+	return items, nil
 }

@@ -2,7 +2,9 @@ package taorm
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
+	"sync"
 )
 
 type _FieldInfo struct {
@@ -29,12 +31,13 @@ func (s *_StructInfo) FieldPointers(base uintptr, fields []string) (ptrs []inter
 			ptrs = append(ptrs, i)
 			continue
 		}
-		panic("no place to save field")
+		panic(fmt.Errorf("no place to save field: %s", field))
 	}
 	return
 }
 
 var structs = make(map[string]*_StructInfo)
+var rwLock = &sync.RWMutex{}
 
 func structType(_struct interface{}) reflect.Type {
 	t := reflect.TypeOf(_struct)
@@ -50,15 +53,20 @@ func structType(_struct interface{}) reflect.Type {
 	return t
 }
 
-// Register ...
-func Register(_struct interface{}) {
+// register ...
+func register(_struct interface{}) *_StructInfo {
+	rwLock.Lock()
+	defer rwLock.Unlock()
 	t := structType(_struct)
 	typeName := t.String()
 	structInfo := newStructInfo()
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if isColumnField(f) {
-			columnName := toSnakeCase(f.Name)
+			columnName := getColumnName(f)
+			if columnName == "" {
+				continue
+			}
 			fieldInfo := _FieldInfo{
 				offset: f.Offset,
 				kind:   f.Type.Kind(),
@@ -67,15 +75,19 @@ func Register(_struct interface{}) {
 		}
 	}
 	structs[typeName] = structInfo
+	fmt.Printf("taorm: registered: %s\n", typeName)
+	return structInfo
 }
 
 func getRegistered(_struct interface{}) *_StructInfo {
-	t := structType(_struct)
-	typeName := t.String()
-	if si, ok := structs[typeName]; ok {
+	name := structType(_struct).String()
+	rwLock.RLock()
+	if si, ok := structs[name]; ok {
+		rwLock.RUnlock()
 		return si
 	}
-	panic("not registered")
+	rwLock.RUnlock()
+	return register(_struct)
 }
 
 func getPointers(out interface{}, rows *sql.Rows) []interface{} {

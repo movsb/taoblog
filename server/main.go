@@ -19,7 +19,6 @@ import (
 
 	"github.com/movsb/taoblog/server/modules/file_managers"
 	"github.com/movsb/taoblog/server/modules/memory_cache"
-	"github.com/movsb/taoblog/server/modules/taorm"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
 )
 
@@ -109,12 +108,6 @@ func main() {
 	defer memcch.Stop()
 
 	loadTemplates()
-
-	taorm.Register(Option{})
-	taorm.Register(Post{})
-	taorm.Register(Comment{})
-	taorm.Register(Category{})
-	taorm.Register(Tag{})
 
 	router := gin.Default()
 

@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"reflect"
 	"strings"
 	"time"
+
+	"github.com/movsb/taoblog/server/modules/taorm"
 
 	"github.com/movsb/taoblog/server/modules/post_translators"
 	"github.com/movsb/taoblog/server/modules/sql_helpers"
@@ -30,8 +33,9 @@ func (p *PostForLatest) Link() string {
 }
 
 type PostForRelated struct {
-	ID    int64  `json:"id"`
-	Title string `json:"title"`
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	Relevance uint   `json:"relevance"`
 }
 
 type PostForDate struct {
@@ -48,22 +52,7 @@ type PostForManagement struct {
 	Title        string `json:"title"`
 	PageView     uint   `json:"page_view"`
 	SourceType   string `json:"source_type"`
-	CommentCount uint   `json:"comment_count"`
-}
-
-func (p *PostForManagement) Fields() string {
-	cols := "id,date,modified,title,page_view,source_type,comments"
-	return cols
-}
-
-func (p *PostForManagement) Pointers() []interface{} {
-	ptrs := []interface{}{
-		&p.ID,
-		&p.Date, &p.Modified,
-		&p.Title, &p.PageView,
-		&p.SourceType, &p.CommentCount,
-	}
-	return ptrs
+	CommentCount uint   `json:"comment_count" taorm:"name:comments"`
 }
 
 func (p *PostForManagement) ToLocalTime() {
@@ -168,24 +157,11 @@ func (z *PostManager) GetCommentCount(tx Querier, pid int64) (count int) {
 }
 
 func (z *PostManager) getRowPosts(tx Querier, query string, args ...interface{}) ([]*PostForArchiveQuery, error) {
-	rows, err := tx.Query(query, args...)
-	if err != nil {
+	var ps []*PostForArchiveQuery
+	if err := taorm.QueryRows(&ps, tx, query, args...); err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	ps := make([]*PostForArchiveQuery, 0)
-
-	for rows.Next() {
-		p := &PostForArchiveQuery{}
-		if err = rows.Scan(&p.ID, &p.Title); err != nil {
-			return nil, err
-		}
-		ps = append(ps, p)
-	}
-
-	return ps, rows.Err()
+	return ps, nil
 }
 
 // GetPostByID gets
@@ -196,9 +172,8 @@ func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post,
 	}
 	seldb.OrderBy("date DESC")
 	query, args := seldb.SQL()
-	row := tx.QueryRow(query, args...)
-	p := Post{}
-	if err := row.Scan(&p.ID, &p.Date, &p.Modified, &p.Title, &p.Content, &p.Slug, &p.Type, &p.Category, &p.Status, &p.PageView, &p.CommentStatus, &p.Comments, &p.Metas, &p.Source, &p.SourceType); err != nil {
+	var p Post
+	if err := taorm.QueryRows(&p, tx, query, args...); err != nil {
 		return nil, err
 	}
 	p.Date = datetime.My2Local(p.Date)
@@ -233,9 +208,8 @@ func (z *PostManager) GetPostBySlug(tx Querier, taxTreeOrParents string, slug st
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC").
 		SQL()
-	row := tx.QueryRow(query, args...)
-	p := Post{}
-	if err := row.Scan(&p.ID, &p.Date, &p.Modified, &p.Title, &p.Content, &p.Slug, &p.Type, &p.Category, &p.Status, &p.PageView, &p.CommentStatus, &p.Comments, &p.Metas, &p.Source, &p.SourceType); err != nil {
+	var p Post
+	if err := taorm.QueryRows(&p, tx, query, args...); err != nil {
 		return nil, err
 	}
 	p.Date = datetime.My2Local(p.Date)
@@ -309,41 +283,20 @@ func (z *PostManager) GetLatest(tx Querier, limit int64) ([]*PostForLatest, erro
 		OrderBy("date DESC").
 		Limit(limit).
 		SQL()
-	rows, err := tx.Query(query, args...)
-	if err != nil {
+	var ps []*PostForLatest
+	if err := taorm.QueryRows(&ps, tx, query, args...); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	posts := make([]*PostForLatest, 0)
-	for rows.Next() {
-		var p PostForLatest
-		if err := rows.Scan(&p.ID, &p.Title, &p.Type); err != nil {
-			return nil, err
-		}
-		posts = append(posts, &p)
-	}
-	return posts, nil
+	return ps, nil
 }
 
 // GetPostsForRss gets
 func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
 	query, args := sql_helpers.NewSelect().From("posts", "").
 		Select("id,date,title,content").OrderBy("date DESC").Limit(10).SQL()
-	rows, err := tx.Query(query, args...)
-	if err != nil {
+	var posts []*PostForRss
+	if err := taorm.QueryRows(&posts, tx, query, args...); err != nil {
 		return nil, err
-	}
-
-	defer rows.Close()
-
-	posts := make([]*PostForRss, 0)
-
-	for rows.Next() {
-		var p PostForRss
-		if err := rows.Scan(&p.ID, &p.Date, &p.Title, &p.Content); err != nil {
-			return nil, err
-		}
-		posts = append(posts, &p)
 	}
 
 	home, _ := optmgr.Get(tx, "home")
@@ -366,25 +319,16 @@ func (z *PostManager) GetVars(tx Querier, fields string, wheres string, outs ...
 }
 
 func (z *PostManager) GetPostsForManagement(tx Querier) ([]*PostForManagement, error) {
-	var dummy PostForManagement
 	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select(dummy.Fields()).Where("type='post'").OrderBy("id DESC").SQL()
-	rows, err := tx.Query(query, args...)
-	if err != nil {
+		Select("id,date,modified,title,page_view,source_type,comments").
+		Where("type='post'").OrderBy("id DESC").SQL()
+	var posts []*PostForManagement
+	if err := taorm.QueryRows(&posts, tx, query, args...); err != nil {
 		return nil, err
 	}
-
-	posts := make([]*PostForManagement, 0)
-
-	for rows.Next() {
-		var post PostForManagement
-		if err := rows.Scan(post.Pointers()...); err != nil {
-			return nil, err
-		}
-		post.ToLocalTime()
-		posts = append(posts, &post)
+	for _, p := range posts {
+		p.ToLocalTime()
 	}
-
 	return posts, nil
 }
 
@@ -463,24 +407,11 @@ func (z *PostManager) IncrementPageView(tx Querier, id int64) {
 
 func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
 	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month ORDER BY year DESC, month DESC"
-	rows, err := tx.Query(query)
-	if err != nil {
+	var ps []*PostForDate
+	if err := taorm.QueryRows(&ps, tx, query); err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	ps := make([]*PostForDate, 0)
-
-	for rows.Next() {
-		p := &PostForDate{}
-		if err = rows.Scan(&p.Year, &p.Month, &p.Count); err != nil {
-			return nil, err
-		}
-		ps = append(ps, p)
-	}
-
-	return ps, rows.Err()
+	return ps, nil
 }
 
 func (z *PostManager) GetPageParentID(tx Querier, parents string) (int64, error) {
@@ -504,6 +435,8 @@ func (z *PostManager) GetPageParentID(tx Querier, parents string) (int64, error)
 		Slug   string
 		Parent int64
 	}
+
+	panic(reflect.TypeOf(Result{}))
 
 	var results []*Result
 	for rows.Next() {
@@ -549,19 +482,9 @@ func (z *PostManager) GetRelatedPosts(tx Querier, id int64) ([]*PostForRelated, 
 		Limit(9).
 		SQL()
 
-	rows, err := tx.Query(query, args...)
-	if err != nil {
+	var relates []*PostForRelated
+	if err := taorm.QueryRows(&relates, tx, query, args...); err != nil {
 		return nil, err
-	}
-
-	relates := make([]*PostForRelated, 0)
-	for rows.Next() {
-		var rel PostForRelated
-		var dummy int64
-		if err := rows.Scan(&rel.ID, &rel.Title, &dummy); err != nil {
-			return nil, err
-		}
-		relates = append(relates, &rel)
 	}
 
 	return relates, nil

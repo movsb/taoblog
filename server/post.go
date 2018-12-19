@@ -21,7 +21,7 @@ type Post struct {
 	Content       template.HTML `json:"content"`
 	Slug          string        `json:"slug"`
 	Type          string        `json:"type"`
-	Category      uint          `json:"category"`
+	Category      uint          `json:"category" taorm:"name:taxonomy"`
 	Status        string        `json:"status"`
 	PageView      uint          `json:"page_view"`
 	CommentStatus uint          `json:"comment_status"`
