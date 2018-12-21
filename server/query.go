@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
-	"io"
 	"net/http"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/movsb/taoblog/server/modules/utils/datetime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -133,6 +134,18 @@ func (b *Blog) Query(c *gin.Context, path string) {
 	c.File(filepath.Join(config.base, path))
 }
 
+func (b *Blog) handle304(c *gin.Context, p *Post) bool {
+	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
+		ht := datetime.Http2Time(modified)
+		pt := datetime.My2Time(p.Modified)
+		if ht.Equal(pt) {
+			c.Status(304)
+			return true
+		}
+	}
+	return false
+}
+
 func (b *Blog) isCategoryPath(path string) bool {
 	p := strings.IndexByte(path[1:], '/')
 	if p == -1 {
@@ -191,7 +204,10 @@ func (b *Blog) queryByID(c *gin.Context, id int64) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	tempRenderPost(c.Writer, post)
+	if b.handle304(c, post) {
+		return
+	}
+	tempRenderPost(c, post)
 }
 
 func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
@@ -205,7 +221,10 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	tempRenderPost(c.Writer, post)
+	if b.handle304(c, post) {
+		return
+	}
+	tempRenderPost(c, post)
 }
 
 func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
@@ -219,10 +238,15 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 		return
 	}
 	postmgr.IncrementPageView(gdb, post.ID)
-	tempRenderPost(c.Writer, post)
+	if b.handle304(c, post) {
+		return
+	}
+	tempRenderPost(c, post)
 }
 
-func tempRenderPost(w io.Writer, post *Post) {
+func tempRenderPost(c *gin.Context, post *Post) {
+	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
+	w := c.Writer
 	header := &ThemeHeaderData{
 		Title: post.Title,
 		Header: func() {

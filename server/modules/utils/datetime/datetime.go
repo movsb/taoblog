@@ -104,3 +104,13 @@ func YearStartEnd(year int) (string, string) {
 	t2 := time.Date(year, time.December, 31, 23, 59, 59, 999, time.Local)
 	return t1.UTC().Format(mysqlFormat), t2.UTC().Format(mysqlFormat)
 }
+
+func Http2Time(s string) time.Time {
+	t, _ := time.Parse(httpgmtFormat, s)
+	return t
+}
+
+func My2Time(s string) time.Time {
+	t, _ := time.Parse(mysqlFormat, s)
+	return t
+}
