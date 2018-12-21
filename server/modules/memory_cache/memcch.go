@@ -2,10 +2,16 @@ package memory_cache
 
 import (
 	"container/list"
+	"fmt"
 	"log"
 	"sync"
 	"time"
 )
+
+func debug(f string, a ...interface{}) {
+	s := fmt.Sprintf(f, a...)
+	log.Println("memory_cache:", s)
+}
 
 type _Item struct {
 	tim time.Time
@@ -38,12 +44,12 @@ func (m *MemoryCache) checkTTL() {
 	for {
 		select {
 		case <-m.c:
-			log.Println("quit")
+			debug("quit")
 			return
 		case <-time.After(m.ttl):
-			log.Println("before collect")
+			debug("before collect")
 			m.collect()
-			log.Println("after collect")
+			debug("after collect")
 		}
 	}
 }
@@ -58,7 +64,7 @@ func (m *MemoryCache) collect() {
 		if elapsed.Seconds() > m.ttl.Seconds() {
 			m.vals.Remove(elem)
 			delete(m.keys, item.key)
-			log.Println("collected key: ", item.key, ", len: ", m.vals.Len())
+			debug("collected key: %s, len: %d", item.key, m.vals.Len())
 		} else {
 			break
 		}
@@ -82,7 +88,7 @@ func (m *MemoryCache) Set(key string, val interface{}) {
 			val: val,
 		}
 		m.vals.MoveToFront(elem)
-		log.Println("move to front: ", key)
+		debug("move to front: %s", key)
 	} else {
 		elem := m.vals.PushFront(_Item{
 			tim: time.Now(),
@@ -90,7 +96,7 @@ func (m *MemoryCache) Set(key string, val interface{}) {
 			val: val,
 		})
 		m.keys[key] = elem
-		log.Println("new key: ", key)
+		debug("new key: %s", key)
 	}
 }
 
@@ -106,7 +112,7 @@ func (m *MemoryCache) Get(key string) (interface{}, bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	if elem, ok := m.keys[key]; ok {
-		log.Println("hit cache: ", key)
+		debug("hit cache: %s", key)
 		return elem.Value.(_Item).val, true
 	}
 	return nil, false
@@ -119,6 +125,6 @@ func (m *MemoryCache) Delete(key string) {
 	if elem, ok := m.keys[key]; ok {
 		m.vals.Remove(elem)
 		delete(m.keys, key)
-		log.Println("delete key: ", key)
+		debug("delete key: %s", key)
 	}
 }

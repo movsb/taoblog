@@ -7,6 +7,13 @@ import (
 
 // QueryRows queries results.
 // out can be either *Struct, or *[]*Struct.
+//
+// For querying single row, QueryRows returns:
+//   nil          : no error (got row)
+//   sql.ErrNoRows: an error (no data)
+// For querying multiple rows, QueryRows returns:
+//   nil          : no error (but can be empty slice)
+//   some error   : an error
 func QueryRows(out interface{}, tx Querier, query string, args ...interface{}) error {
 	rows, err := tx.Query(query, args...)
 	if err != nil {
@@ -37,6 +44,13 @@ func queryRow(out interface{}, rows *sql.Rows) (err error) {
 		err = rows.Scan(fields...)
 	} else {
 		err = rows.Err()
+		// Next() is used to get next record.
+		// err:
+		//    nil: no more record
+		//   !nil: error happened
+		if err == nil {
+			err = sql.ErrNoRows
+		}
 	}
 	return
 }
