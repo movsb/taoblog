@@ -4,5 +4,6 @@ package server
 type IServer interface {
 
 	// Comments
+	GetComment(in *GetCommentRequest) *Comment
 	ListComments(in *ListCommentsRequest) *ListCommentsResponse
 }

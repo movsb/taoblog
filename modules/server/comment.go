@@ -14,6 +14,10 @@ type Comment struct {
 	Content  string `json:"content"`
 }
 
+type GetCommentRequest struct {
+	Name int64
+}
+
 // ListCommentsRequest ...
 type ListCommentsRequest struct {
 	Parent int64
@@ -21,5 +25,5 @@ type ListCommentsRequest struct {
 
 // ListCommentsResponse ...
 type ListCommentsResponse struct {
-	Comments []*Comment
+	Comments []*Comment `json:"comments"`
 }

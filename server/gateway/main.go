@@ -23,6 +23,7 @@ func NewGateway(router *gin.RouterGroup, server server.IServer) *Gateway {
 
 func (g *Gateway) routeComments() {
 	c := g.router.Group("/comments")
+	c.GET("/:name", g.GetComment)
 	c.GET("", g.ListComments)
 }
 

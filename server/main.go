@@ -158,6 +158,23 @@ func main() {
 	routerBlog(router)
 	routerAdmin(router)
 
+	v2 := router.Group("/v2")
+	v2.Use(func(c *gin.Context) {
+		defer func() {
+			if e := recover(); e != nil {
+				if err, ok := e.(error); ok {
+					if err == sql.ErrNoRows {
+						c.Status(404)
+						return
+					}
+				}
+				panic(e)
+			}
+		}()
+		c.Next()
+	})
+	theGateway = gateway.NewGateway(v2, implServer)
+
 	router.Run(config.listen)
 }
 
@@ -171,8 +188,6 @@ func toInt64(s string) int64 {
 
 func routerV1(router *gin.Engine) {
 	v1 := router.Group("/v1")
-
-	theGateway = gateway.NewGateway(v1, implServer)
 
 	v1.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
