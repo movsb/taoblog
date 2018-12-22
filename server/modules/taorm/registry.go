@@ -95,27 +95,3 @@ func getPointers(out interface{}, rows *sql.Rows) []interface{} {
 	base := baseFromInterface(out)
 	return getRegistered(out).FieldPointers(base, fields)
 }
-
-/*
-func Test() {
-	Register(Comment{})
-	var err error
-	dataSource := fmt.Sprintf("%[1]s:%[1]s@/%[1]s", "taoblog")
-	gdb, err := sql.Open("mysql", dataSource)
-	if err != nil {
-		panic(err)
-	}
-	defer gdb.Close()
-
-	rows, err := gdb.Query("select id,author,email,ip,date from comments")
-	if err != nil {
-		panic(err)
-	}
-	var c Comment
-	rows.Next()
-	if err := Scan(rows, &c); err != nil {
-		panic(err)
-	}
-	fmt.Println(c)
-}
-*/

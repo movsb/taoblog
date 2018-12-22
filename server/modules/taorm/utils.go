@@ -1,6 +1,7 @@
 package taorm
 
 import (
+	"go/ast"
 	"reflect"
 	"regexp"
 	"strings"
@@ -18,6 +19,9 @@ func toSnakeCase(str string) string {
 }
 
 func isColumnField(field reflect.StructField) bool {
+	if !ast.IsExported(field.Name) {
+		return false
+	}
 	switch field.Type.Kind() {
 	case reflect.Bool, reflect.String:
 		return true

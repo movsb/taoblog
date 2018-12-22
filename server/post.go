@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -30,6 +31,8 @@ type Post struct {
 	Source        string        `json:"source"`
 	SourceType    string        `json:"source_type"`
 	Tags          []string      `json:"tags"`
+
+	_Metas map[string]interface{}
 }
 
 // NewPost news a post object.
@@ -258,4 +261,30 @@ func (z *Post) Update(tx Querier) error {
 	z.Modified = datetime.My2Local(z.Modified)
 
 	return nil
+}
+
+func (p *Post) decodeMetas() {
+	if p._Metas == nil {
+		json.Unmarshal([]byte(p.Metas), &p._Metas)
+	}
+}
+
+func (p *Post) CustomHeader() (header string) {
+	p.decodeMetas()
+	if i, ok := p._Metas["header"]; ok {
+		if s, ok := i.(string); ok {
+			header = s
+		}
+	}
+	return
+}
+
+func (p *Post) CustomFooter() (footer string) {
+	p.decodeMetas()
+	if i, ok := p._Metas["footer"]; ok {
+		if s, ok := i.(string); ok {
+			footer = s
+		}
+	}
+	return
 }

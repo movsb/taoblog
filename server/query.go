@@ -251,11 +251,13 @@ func tempRenderPost(c *gin.Context, post *Post) {
 		Title: post.Title,
 		Header: func() {
 			themeRender.Render(w, "content_header", post)
+			fmt.Fprint(w, post.CustomHeader())
 		},
 	}
 	footer := &ThemeFooterData{
 		Footer: func() {
 			themeRender.Render(w, "content_footer", post)
+			fmt.Fprint(w, post.CustomFooter())
 		},
 	}
 	themeRender.Render(w, "header", header)
