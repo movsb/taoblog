@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
 	"flag"
@@ -44,7 +43,6 @@ var postmgr *PostManager
 var optmgr *OptionManager
 var auther *GenericAuth
 var uploadmgr *FileUpload
-var backupmgr *BlogBackup
 var cmtmgr *CommentManager
 var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
@@ -102,7 +100,6 @@ func main() {
 	auther.SetLogin(optmgr.GetDef(gdb, "login", "x"))
 	auther.SetKey(config.key)
 	uploadmgr = NewFileUpload(file_managers.NewLocalFileManager(config.files))
-	backupmgr = NewBlogBackup()
 	cmtmgr = newCommentManager()
 	postcmtsmgr = newPostCommentsManager()
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
@@ -580,7 +577,6 @@ func routerV1(router *gin.Engine) {
 	})
 
 	tagsV1(v1)
-	backupsV1(v1)
 	categoryV1(v1)
 }
 
@@ -631,25 +627,6 @@ func tagsV1(routerV1 *gin.RouterGroup) {
 			EndReq(c, err, nil)
 			return
 		}
-	})
-}
-
-func backupsV1(routerV1 *gin.RouterGroup) {
-	backups := routerV1.Group("/backups")
-
-	backups.GET("", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-
-		var sb bytes.Buffer
-		err := backupmgr.Backup(&sb)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err)
-			return
-		}
-
-		c.String(http.StatusOK, "%s", sb.String())
 	})
 }
 

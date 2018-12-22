@@ -19,4 +19,7 @@ type IServer interface {
 
 	// Avatar
 	GetAvatar(in *GetAvatarRequest) *Empty
+
+	// Backup
+	GetBackup(in *GetBackupRequest) *Empty
 }
