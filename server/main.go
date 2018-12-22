@@ -108,7 +108,7 @@ func main() {
 	blog = NewBlog()
 	admin = NewAdmin()
 	defer memcch.Stop()
-	implServer = service.NewImplServer(gdb)
+	implServer = service.NewImplServer(gdb, auther)
 
 	loadTemplates()
 

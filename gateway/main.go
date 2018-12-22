@@ -17,30 +17,34 @@ func NewGateway(router *gin.RouterGroup, server protocols.IServer) *Gateway {
 		router: router,
 		server: server,
 	}
+
 	g.routeOptions()
 	g.routePosts()
 	g.routeComments()
-
-	g.router.GET("/avatar", g.GetAvatar)
-	g.router.GET("/backup", g.GetBackup)
+	g.routeOthers()
 
 	return g
 }
 
+func (g *Gateway) routeOthers() {
+	g.router.GET("/avatar", g.GetAvatar)
+	g.router.GET("/backup", g.auth, g.GetBackup)
+}
+
 func (g *Gateway) routeOptions() {
-	c := g.router.Group("/options")
+	c := g.router.Group("/options", g.auth)
 	c.GET("/:name", g.GetOption)
 	c.GET("", g.ListOptions)
 }
 
 func (g *Gateway) routePosts() {
-	c := g.router.Group("/posts")
+	c := g.router.Group("/posts", g.auth)
 	c.GET("/:name", g.GetPost)
 	c.GET("", g.ListPosts)
 }
 
 func (g *Gateway) routeComments() {
-	c := g.router.Group("/comments")
+	c := g.router.Group("/comments", g.auth)
 	c.GET("/:name", g.GetComment)
 	c.GET("", g.ListComments)
 }

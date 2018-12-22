@@ -2,6 +2,9 @@ package protocols
 
 // IServer is implemented by blog server & cache server.
 type IServer interface {
+	// Auth
+	Auth(in *AuthRequest) *AuthResponse
+
 	// Posts
 	GetPost(in *GetPostRequest) *Post
 	ListPosts(in *ListPostsRequest) *ListPostsResponse
