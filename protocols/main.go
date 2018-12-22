@@ -10,6 +10,10 @@ type IServer interface {
 	GetComment(in *GetCommentRequest) *Comment
 	ListComments(in *ListCommentsRequest) *ListCommentsResponse
 
-	// RSS
+	// Options
+	GetOption(in *GetOptionRequest) *Option
+	ListOptions(in *ListOptionsRequest) *ListOptionsResponse
 
+	// RSS
+	GetRss(in *GetRssRequest) *Rss
 }

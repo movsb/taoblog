@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -620,82 +619,9 @@ func routerV1(router *gin.Engine) {
 		c.String(200, "%s", maps)
 	})
 
-	optionsV1(v1)
 	tagsV1(v1)
 	backupsV1(v1)
 	categoryV1(v1)
-}
-
-func optionsV1(routerV1 *gin.RouterGroup) {
-	optapi := routerV1.Group("/options")
-
-	optapi.GET("", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		items, err := optmgr.List(gdb)
-		EndReq(c, err, items)
-	})
-
-	optapi.GET("/:name", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.Param("name")
-		varlue, err := optmgr.Get(gdb, name)
-		EndReq(c, err, varlue)
-	})
-
-	optapi.POST("/:name", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.Param("name")
-		value, _ := ioutil.ReadAll(c.Request.Body) // WARN: Body is consumed
-
-		tx, err := gdb.Begin()
-		if err != nil {
-			EndReq(c, err, nil)
-			return
-		}
-		err = optmgr.Set(tx, name, string(value))
-		if err != nil {
-			tx.Rollback()
-			EndReq(c, err, nil)
-			return
-		}
-		if err = tx.Commit(); err != nil {
-			tx.Rollback()
-			EndReq(c, err, nil)
-			return
-		}
-		EndReq(c, err, nil)
-	})
-
-	optapi.DELETE("/:name", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		name := c.Param("name")
-
-		tx, err := gdb.Begin()
-		if err != nil {
-			EndReq(c, err, nil)
-			return
-		}
-		err = optmgr.Del(tx, name)
-		if err != nil {
-			tx.Rollback()
-			EndReq(c, err, nil)
-			return
-		}
-		if err = tx.Commit(); err != nil {
-			tx.Rollback()
-			EndReq(c, err, nil)
-			return
-		}
-		EndReq(c, err, nil)
-	})
 }
 
 func tagsV1(routerV1 *gin.RouterGroup) {

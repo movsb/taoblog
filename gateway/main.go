@@ -17,9 +17,16 @@ func NewGateway(router *gin.RouterGroup, server protocols.IServer) *Gateway {
 		router: router,
 		server: server,
 	}
+	g.routeOptions()
 	g.routePosts()
 	g.routeComments()
 	return g
+}
+
+func (g *Gateway) routeOptions() {
+	c := g.router.Group("/options")
+	c.GET("/:name", g.GetOption)
+	c.GET("", g.ListOptions)
 }
 
 func (g *Gateway) routePosts() {
