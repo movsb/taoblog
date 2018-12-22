@@ -5,7 +5,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/movsb/taoblog/server/modules/taorm"
+	"github.com/movsb/taoblog/modules/taorm"
 )
 
 type OptionManager struct {

@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/movsb/taoblog/server/modules/sql_helpers"
+	"github.com/movsb/taoblog/modules/sql_helpers"
 )
 
 // TagNotFoundError is

@@ -4,15 +4,15 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/movsb/taoblog/modules/server"
+	"github.com/movsb/taoblog/protocols"
 )
 
 type Gateway struct {
 	router *gin.RouterGroup
-	server server.IServer
+	server protocols.IServer
 }
 
-func NewGateway(router *gin.RouterGroup, server server.IServer) *Gateway {
+func NewGateway(router *gin.RouterGroup, server protocols.IServer) *Gateway {
 	g := &Gateway{
 		router: router,
 		server: server,

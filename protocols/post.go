@@ -1,4 +1,4 @@
-package server
+package protocols
 
 // Post ...
 type Post struct {

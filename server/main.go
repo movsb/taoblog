@@ -17,12 +17,12 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/movsb/taoblog/modules/server"
-	"github.com/movsb/taoblog/server/gateway"
-	"github.com/movsb/taoblog/server/modules/file_managers"
-	"github.com/movsb/taoblog/server/modules/memory_cache"
-	"github.com/movsb/taoblog/server/modules/utils/datetime"
-	"github.com/movsb/taoblog/server/service"
+	"github.com/movsb/taoblog/gateway"
+	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/modules/memory_cache"
+	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/modules/file_managers"
 )
 
 type xConfig struct {
@@ -55,8 +55,8 @@ var blog *Blog
 var admin *Admin
 var themeRender *Renderer
 var adminRender *Renderer
-var implServer server.IServer
-var cacheServer server.IServer
+var implServer protocols.IServer
+var cacheServer protocols.IServer
 var theGateway *gateway.Gateway
 
 func auth(c *gin.Context, finish bool) bool {

@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/server/modules/taorm"
+	"github.com/movsb/taoblog/modules/taorm"
 
-	"github.com/movsb/taoblog/server/modules/post_translators"
-	"github.com/movsb/taoblog/server/modules/sql_helpers"
-	"github.com/movsb/taoblog/server/modules/utils/datetime"
+	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/modules/sql_helpers"
+	"github.com/movsb/taoblog/service/modules/post_translators"
 )
 
 // PostForArchiveQuery is an archive query result.

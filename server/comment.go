@@ -9,10 +9,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/movsb/taoblog/server/modules/taorm"
+	"github.com/movsb/taoblog/modules/taorm"
 
-	"github.com/movsb/taoblog/server/modules/sql_helpers"
-	"github.com/movsb/taoblog/server/modules/utils/datetime"
+	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/modules/sql_helpers"
 )
 
 // hand write regex, not tested well.

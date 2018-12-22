@@ -1,4 +1,4 @@
-package server
+package protocols
 
 // Comment ...
 type Comment struct {

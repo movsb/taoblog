@@ -2,12 +2,12 @@ package gateway
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/movsb/taoblog/modules/server"
+	"github.com/movsb/taoblog/protocols"
 )
 
 func (g *Gateway) GetComment(c *gin.Context) {
 	name := toInt64(c.Param("name"))
-	in := &server.GetCommentRequest{
+	in := &protocols.GetCommentRequest{
 		Name: name,
 	}
 	out := g.server.GetComment(in)
@@ -16,7 +16,7 @@ func (g *Gateway) GetComment(c *gin.Context) {
 
 func (g *Gateway) ListComments(c *gin.Context) {
 	parent := toInt64(c.Query("parent"))
-	in := &server.ListCommentsRequest{
+	in := &protocols.ListCommentsRequest{
 		Parent: parent,
 	}
 	out := g.server.ListComments(in)

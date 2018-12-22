@@ -3,7 +3,7 @@ package models
 import (
 	"encoding/json"
 
-	"github.com/movsb/taoblog/modules/server"
+	"github.com/movsb/taoblog/protocols"
 )
 
 type Post struct {
@@ -33,10 +33,10 @@ func (p *Post) decodeMetas() {
 	}
 }
 
-func (p *Post) Serialize() *server.Post {
+func (p *Post) Serialize() *protocols.Post {
 	p.decodeMetas()
 
-	return &server.Post{
+	return &protocols.Post{
 		ID:            p.ID,
 		Date:          p.Date,
 		Modified:      p.Modified,
@@ -58,8 +58,8 @@ func (p *Post) Serialize() *server.Post {
 
 type Posts []*Post
 
-func (ps Posts) Serialize() []*server.Post {
-	sp := []*server.Post{}
+func (ps Posts) Serialize() []*protocols.Post {
+	sp := []*protocols.Post{}
 	for _, p := range ps {
 		sp = append(sp, p.Serialize())
 	}

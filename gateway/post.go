@@ -2,12 +2,12 @@ package gateway
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/movsb/taoblog/modules/server"
+	"github.com/movsb/taoblog/protocols"
 )
 
 func (g *Gateway) GetPost(c *gin.Context) {
 	name := toInt64(c.Param("name"))
-	in := &server.GetPostRequest{
+	in := &protocols.GetPostRequest{
 		Name: name,
 	}
 	out := g.server.GetPost(in)
@@ -15,7 +15,7 @@ func (g *Gateway) GetPost(c *gin.Context) {
 }
 
 func (g *Gateway) ListPosts(c *gin.Context) {
-	in := &server.ListPostsRequest{}
+	in := &protocols.ListPostsRequest{}
 	out := g.server.ListPosts(in)
 	c.JSON(200, out)
 }

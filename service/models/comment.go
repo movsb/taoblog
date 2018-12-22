@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/movsb/taoblog/modules/server"
+	"github.com/movsb/taoblog/protocols"
 )
 
 // Comment ...
@@ -18,8 +18,8 @@ type Comment struct {
 	Content  string
 }
 
-func (c *Comment) Serialize() *server.Comment {
-	sc := &server.Comment{
+func (c *Comment) Serialize() *protocols.Comment {
+	sc := &protocols.Comment{
 		ID:       c.ID,
 		Parent:   c.Parent,
 		Ancestor: c.Ancestor,
@@ -36,8 +36,8 @@ func (c *Comment) Serialize() *server.Comment {
 
 type Comments []*Comment
 
-func (cs Comments) Serialize() []*server.Comment {
-	sc := []*server.Comment{}
+func (cs Comments) Serialize() []*protocols.Comment {
+	sc := []*protocols.Comment{}
 	for _, c := range cs {
 		sc = append(sc, c.Serialize())
 	}

@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/movsb/taoblog/server/modules/post_translators"
-	"github.com/movsb/taoblog/server/modules/utils/datetime"
+	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/service/modules/post_translators"
 )
 
 // Post is the model of a post.
