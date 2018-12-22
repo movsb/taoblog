@@ -16,4 +16,7 @@ type IServer interface {
 
 	// RSS
 	GetRss(in *GetRssRequest) *Rss
+
+	// Avatar
+	GetAvatar(in *GetAvatarRequest) *Empty
 }

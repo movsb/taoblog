@@ -117,42 +117,6 @@ func main() {
 
 	router := gin.Default()
 
-	postapi := router.Group("/posts")
-
-	postapi.POST("/update", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		var err error
-		pidstr, has := c.GetPostForm("pid")
-		pid, err := strconv.ParseInt(pidstr, 10, 64)
-		if !has || err != nil || pid < 0 {
-			c.String(400, "expect: pid")
-			return
-		}
-		typ, has := c.GetPostForm("source_type")
-		if !has {
-			c.String(400, "expect: source_type")
-			return
-		}
-		source, has := c.GetPostForm("source")
-		if !has {
-			c.String(400, "expect: source")
-			return
-		}
-
-		tx, err := gdb.Begin()
-		if err == nil {
-			if err = postmgr.update(tx, pid, typ, source); err == nil {
-				if err = tx.Commit(); err != nil {
-					tx.Rollback()
-				}
-			}
-		}
-
-		EndReq(c, err, nil)
-	})
-
 	routerV1(router)
 	routerBlog(router)
 	routerAdmin(router)
@@ -190,10 +154,6 @@ func routerV1(router *gin.Engine) {
 
 	v1.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
-	})
-
-	v1.GET("/avatar", func(c *gin.Context) {
-		GetAvatar(c)
 	})
 
 	posts := v1.Group("/posts")

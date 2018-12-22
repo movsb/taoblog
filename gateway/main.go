@@ -20,6 +20,9 @@ func NewGateway(router *gin.RouterGroup, server protocols.IServer) *Gateway {
 	g.routeOptions()
 	g.routePosts()
 	g.routeComments()
+
+	g.router.GET("/avatar", g.GetAvatar)
+
 	return g
 }
 

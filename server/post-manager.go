@@ -2,18 +2,15 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"html/template"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/movsb/taoblog/modules/taorm"
 
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/sql_helpers"
-	"github.com/movsb/taoblog/service/modules/post_translators"
 )
 
 // PostForArchiveQuery is an archive query result.
@@ -96,48 +93,6 @@ func (z *PostManager) Has(tx Querier, id int64) (bool, error) {
 		return false, nil
 	}
 	return pid > 0, err
-}
-
-// internal use
-func (z *PostManager) update(tx Querier, id int64, typ string, source string) error {
-	var tr post_translators.PostTranslator
-	var content string
-	var err error
-
-	switch typ {
-	case "html":
-		tr = &post_translators.HTMLTranslator{}
-	case "markdown":
-		tr = &post_translators.MarkdownTranslator{}
-	}
-
-	if tr == nil {
-		return errors.New("no translator found for " + typ)
-	}
-
-	content, err = tr.Translate(source)
-	if err != nil {
-		return err
-	}
-
-	modTime := time.Now().UTC().Format("2006:01:02 15:04:05")
-
-	ret, err := tx.Exec(
-		"UPDATE posts SET content=?,source=?,source_type=?,modified=? WHERE id=? LIMIT 1",
-		content,
-		source,
-		typ,
-		modTime,
-		id,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	_ = ret
-
-	return nil
 }
 
 // GetCommentCount gets the comment count of a post.

@@ -185,7 +185,7 @@ Comment.prototype.get_count = function(callback) {
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {
-	return '/v1/avatar?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
+	return '/v2/avatar?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
 };
 
 Comment.prototype.emotions = ["狗头", "偷笑", "冷汗", "卖萌", "可爱", "呲牙", "喷血", "嘘", "坏笑", "小纠结", "尴尬", "幽灵", "微笑", "惊喜", "惊恐", "惊讶", "憨笑", "我最美", "托腮", "抠鼻", "拥抱", "撇嘴", "擦汗", "敲打", "斜眼笑", "无奈", "晕", "泪奔", "流汗", "流泪", "玫瑰", "疑问", "笑哭", "衰", "调皮", "阴险", "难过", "骚扰"];
