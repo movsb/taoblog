@@ -17,8 +17,15 @@ func NewGateway(router *gin.RouterGroup, server server.IServer) *Gateway {
 		router: router,
 		server: server,
 	}
+	g.routePosts()
 	g.routeComments()
 	return g
+}
+
+func (g *Gateway) routePosts() {
+	c := g.router.Group("/posts")
+	c.GET("/:name", g.GetPost)
+	c.GET("", g.ListPosts)
 }
 
 func (g *Gateway) routeComments() {
