@@ -38,6 +38,13 @@ func QueryRows(out interface{}, tx Querier, query string, args ...interface{}) e
 	}
 }
 
+// MustQueryRows ...
+func MustQueryRows(out interface{}, tx Querier, query string, args ...interface{}) {
+	if err := QueryRows(out, tx, query, args...); err != nil {
+		panic(err)
+	}
+}
+
 func queryRow(out interface{}, rows *sql.Rows) (err error) {
 	if rows.Next() {
 		fields := getPointers(out, rows)

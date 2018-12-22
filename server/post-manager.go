@@ -23,9 +23,9 @@ type PostForArchiveQuery struct {
 }
 
 type PostForLatest struct {
-	ID    int64         `json:"id"`
-	Title template.HTML `json:"title"`
-	Type  string        `json:"type"`
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
 }
 
 func (p *PostForLatest) Link() string {

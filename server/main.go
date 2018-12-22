@@ -17,9 +17,12 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
+	"github.com/movsb/taoblog/modules/server"
+	"github.com/movsb/taoblog/server/gateway"
 	"github.com/movsb/taoblog/server/modules/file_managers"
 	"github.com/movsb/taoblog/server/modules/memory_cache"
 	"github.com/movsb/taoblog/server/modules/utils/datetime"
+	"github.com/movsb/taoblog/server/service"
 )
 
 type xConfig struct {
@@ -52,6 +55,9 @@ var blog *Blog
 var admin *Admin
 var themeRender *Renderer
 var adminRender *Renderer
+var implServer server.IServer
+var cacheServer server.IServer
+var theGateway *gateway.Gateway
 
 func auth(c *gin.Context, finish bool) bool {
 	if auther.AuthHeader(c) || auther.AuthCookie(c) {
@@ -106,6 +112,7 @@ func main() {
 	blog = NewBlog()
 	admin = NewAdmin()
 	defer memcch.Stop()
+	implServer = service.NewImplServer(gdb)
 
 	loadTemplates()
 
@@ -164,6 +171,8 @@ func toInt64(s string) int64 {
 
 func routerV1(router *gin.Engine) {
 	v1 := router.Group("/v1")
+
+	theGateway = gateway.NewGateway(v1, implServer)
 
 	v1.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
@@ -481,23 +490,6 @@ func routerV1(router *gin.Engine) {
 			return
 		}
 		EndReq(c, nil, nil)
-	})
-
-	posts.POST("/:parent/view", func(c *gin.Context) {
-		pid := toInt64(c.Param("parent"))
-		postmgr.IncrementPageView(gdb, pid)
-	})
-
-	posts.GET("/:parent/relates", func(c *gin.Context) {
-		pid := toInt64(c.Param("parent"))
-		key := fmt.Sprintf("relates:%d", pid)
-		if relates, ok := memcch.Get(key); ok {
-			EndReq(c, nil, relates)
-			return
-		}
-		relates, err := postmgr.GetRelatedPosts(gdb, pid)
-		memcch.SetIf(err == nil, key, relates)
-		EndReq(c, err, relates)
 	})
 
 	v1.GET("/posts!manage", func(c *gin.Context) {
