@@ -1,6 +1,9 @@
 debug.test
 
+
 /server
 /debug
 
+/taoblog.conf
+/run.sh
 

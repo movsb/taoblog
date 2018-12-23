@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"strings"
 
@@ -108,75 +107,6 @@ func (tm *TagManager) GetObjectTagNames(tx Querier, oid int64) ([]string, error)
 	}
 
 	return names, rows.Err()
-}
-
-func (tm *TagManager) getTagIDs(tx Querier, pid int64, alias bool) (ids []int64) {
-	sql := `SELECT tag_id FROM post_tags WHERE post_id=` + fmt.Sprint(pid)
-
-	rows, err := tx.Query(sql)
-	if err != nil {
-		panic(err)
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int64
-		err = rows.Scan(&id)
-		if err != nil {
-			panic(err)
-		}
-		ids = append(ids, id)
-	}
-
-	if alias {
-		ids = tm.getAliasTagsAll(tx, ids)
-	}
-
-	return
-}
-
-func (tm *TagManager) getAliasTagsAll(tx Querier, ids []int64) []int64 {
-	sids := joinInts(ids, ",")
-
-	sql1 := `SELECT alias FROM tags WHERE id in (?)`
-	sql2 := `SELECT id FROM tags WHERE alias in (?)`
-
-	rows, err := tx.Query(sql1, sids)
-	if err != nil {
-		panic(err)
-	}
-
-	for rows.Next() {
-		var alias int64
-		if err = rows.Scan(&alias); err != nil {
-			panic(err)
-		}
-
-		if alias > 0 {
-			ids = append(ids, alias)
-		}
-	}
-
-	rows.Close()
-
-	rows, err = tx.Query(sql2, sids)
-	if err != nil {
-		panic(err)
-	}
-
-	for rows.Next() {
-		var id int64
-		if err = rows.Scan(&id); err != nil {
-			panic(err)
-		}
-
-		ids = append(ids, id)
-	}
-
-	rows.Close()
-
-	return ids
 }
 
 func (tm *TagManager) addObjectTag(tx Querier, pid int64, tid int64) int64 {

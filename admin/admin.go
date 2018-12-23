@@ -93,14 +93,34 @@ func (d *AdminPostEditData) TagStr() string {
 type Admin struct {
 	server    protocols.IServer
 	templates *template.Template
+	router    *gin.RouterGroup
 }
 
-func NewAdmin(server protocols.IServer) *Admin {
+func NewAdmin(server protocols.IServer, router *gin.RouterGroup) *Admin {
 	a := &Admin{
 		server: server,
+		router: router,
 	}
 	a.loadTemplates()
+	a.route()
 	return a
+}
+
+func (a *Admin) route() {
+	g := a.router.Group("/admin")
+	g.GET("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		switch path {
+		case "", "/":
+			c.Redirect(302, "/admin/login")
+			return
+		}
+		a.Query(c, path)
+	})
+	g.POST("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		a.Post(c, path)
+	})
 }
 
 func (a *Admin) auth(c *gin.Context) bool {

@@ -55,3 +55,88 @@ func (s *ImplServer) ListTagsWithCount(in *protocols.ListTagsWithCountRequest) *
 		Tags: models.TagWithCounts(rootTags).Serialize(),
 	}
 }
+
+func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
+	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
+	rows, err := s.db.Query(sql, postID)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		err = rows.Scan(&id)
+		if err != nil {
+			panic(err)
+		}
+		ids = append(ids, id)
+	}
+	if alias {
+		ids = s.getAliasTagsAll(ids)
+	}
+
+	return
+}
+
+func (s *ImplServer) getObjectTagNames(postID int64) []string {
+	query, args := sql_helpers.NewSelect().From("post_tags", "").From("tags", "").
+		Select("tags.name").Where("post_tags.post_id=?", postID).Where("post_tags.tag_id=tags.id").SQL()
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	names := make([]string, 0)
+	for rows.Next() {
+		var name string
+		err = rows.Scan(&name)
+		if err != nil {
+			panic(err)
+		}
+		names = append(names, name)
+	}
+	return names
+}
+
+func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
+	sids := joinInts(ids, ",")
+
+	sql1 := `SELECT alias FROM tags WHERE id in (?)`
+	sql2 := `SELECT id FROM tags WHERE alias in (?)`
+
+	rows, err := s.db.Query(sql1, sids)
+	if err != nil {
+		panic(err)
+	}
+
+	for rows.Next() {
+		var alias int64
+		if err = rows.Scan(&alias); err != nil {
+			panic(err)
+		}
+
+		if alias > 0 {
+			ids = append(ids, alias)
+		}
+	}
+
+	rows.Close()
+
+	rows, err = s.db.Query(sql2, sids)
+	if err != nil {
+		panic(err)
+	}
+
+	for rows.Next() {
+		var id int64
+		if err = rows.Scan(&id); err != nil {
+			panic(err)
+		}
+
+		ids = append(ids, id)
+	}
+
+	rows.Close()
+
+	return ids
+}

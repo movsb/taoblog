@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,6 +15,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/movsb/taoblog/admin"
+	"github.com/movsb/taoblog/front"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/memory_cache"
@@ -49,9 +49,8 @@ var postcmtsmgr *PostCommentsManager
 var fileredir *FileRedirect
 var catmgr *CategoryManager
 var memcch *memory_cache.MemoryCache
-var blog *Blog
+var theFront *front.Front
 var theAdmin *admin.Admin
-var themeRender *Renderer
 var implServer protocols.IServer
 var cacheServer protocols.IServer
 var theGateway *gateway.Gateway
@@ -105,18 +104,15 @@ func main() {
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
 	catmgr = NewCategoryManager()
 	memcch = memory_cache.NewMemoryCache(time.Minute * 10)
-	blog = NewBlog()
 	defer memcch.Stop()
 	implServer = service.NewImplServer(gdb, auther)
-	theAdmin = admin.NewAdmin(implServer)
-
-	loadTemplates()
 
 	router := gin.Default()
 
+	theAdmin = admin.NewAdmin(implServer, &router.RouterGroup)
+	theFront = front.NewFront(implServer, &router.RouterGroup)
+
 	routerV1(router)
-	routerBlog(router)
-	routerAdmin(router)
 
 	v2 := router.Group("/v2")
 	v2.Use(func(c *gin.Context) {
@@ -155,29 +151,6 @@ func routerV1(router *gin.Engine) {
 
 	posts := v1.Group("/posts")
 
-	posts.GET("", func(c *gin.Context) {
-		tax, hasTax := c.GetQuery("tax")
-		parents, hasParents := c.GetQuery("parents")
-		slug, hasSlug := c.GetQuery("slug")
-		modified := c.Query("modified")
-		if (hasTax || hasParents) && hasSlug {
-			if hasParents {
-				tax = parents
-			}
-			post, err := postmgr.GetPostBySlug(gdb, tax, slug, modified, hasParents)
-			posts := make([]*Post, 0)
-			if err == nil {
-				posts = append(posts, post)
-			} else if err == sql.ErrNoRows {
-				err = nil
-			}
-			// TODO don't return array.
-			EndReq(c, err, posts)
-			return
-		}
-		c.Status(400)
-	})
-
 	posts.POST("", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
@@ -194,31 +167,6 @@ func routerV1(router *gin.Engine) {
 			return
 		}
 		EndReq(c, nil, &post)
-	})
-
-	posts.GET("/:parent", func(c *gin.Context) {
-		pid := toInt64(c.Param("parent"))
-		modified := c.Query("modified")
-		post, err := postmgr.GetPostByID(gdb, pid, modified)
-		EndReq(c, err, post)
-	})
-
-	posts.PATCH("/:parent", func(c *gin.Context) {
-		if !auth(c, true) {
-			return
-		}
-		var post Post
-		if err := c.ShouldBindJSON(&post); err != nil {
-			EndReq(c, err, err)
-			return
-		}
-		if err := txCall(gdb, func(tx Querier) error {
-			return postmgr.UpdatePost(tx, &post)
-		}); err != nil {
-			EndReq(c, err, err)
-			return
-		}
-		EndReq(c, nil, post.ID)
 	})
 
 	posts.GET("/:parent/files/*name", func(c *gin.Context) {
@@ -422,12 +370,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, err, nil)
 	})
 
-	posts.GET("/:parent/tags", func(c *gin.Context) {
-		pid := toInt64(c.Param("parent"))
-		tags, err := tagmgr.GetObjectTagNames(gdb, pid)
-		EndReq(c, err, tags)
-	})
-
 	posts.POST("/:parent/tags", func(c *gin.Context) {
 		if !auth(c, true) {
 			return
@@ -519,24 +461,6 @@ func routerV1(router *gin.Engine) {
 		EndReq(c, nil, posts)
 	})
 
-	v1.GET("/posts!latest", func(c *gin.Context) {
-		limit := toInt64(c.Query("limit"))
-		var posts []*PostForLatest
-		var key = fmt.Sprintf("posts:latest?limit=%d", limit)
-		if p, ok := memcch.Get(key); ok {
-			posts = p.([]*PostForLatest)
-		} else {
-			p, err := postmgr.GetLatest(gdb, limit)
-			if err != nil {
-				EndReq(c, err, p)
-				return
-			}
-			memcch.Set(key, p)
-			posts = p
-		}
-		EndReq(c, nil, posts)
-	})
-
 	archives := v1.Group("/archives")
 
 	archives.GET("/categories/:name", func(c *gin.Context) {
@@ -577,7 +501,6 @@ func routerV1(router *gin.Engine) {
 	})
 
 	tagsV1(v1)
-	categoryV1(v1)
 }
 
 func tagsV1(routerV1 *gin.RouterGroup) {
@@ -628,69 +551,4 @@ func tagsV1(routerV1 *gin.RouterGroup) {
 			return
 		}
 	})
-}
-
-func categoryV1(router *gin.RouterGroup) {
-	cats := router.Group("/categories")
-
-	cats.GET("", func(c *gin.Context) {
-		cats, err := catmgr.ListCategories(gdb)
-		EndReq(c, err, cats)
-	})
-
-	router.GET("/categories!tree", func(c *gin.Context) {
-		if cats, ok := memcch.Get("/categories!tree"); ok {
-			EndReq(c, nil, cats)
-			return
-		}
-		cats, err := catmgr.GetTree(gdb)
-		memcch.SetIf(err == nil, "/categories!tree", cats)
-		EndReq(c, err, cats)
-	})
-	router.GET("/categories!parse", func(c *gin.Context) {
-		tree := c.Query("tree")
-		id, err := catmgr.ParseTree(gdb, tree)
-		EndReq(c, err, id)
-	})
-}
-
-func routerBlog(router *gin.Engine) {
-	b := router.Group("/blog")
-	b.GET("/*path", func(c *gin.Context) {
-		path := c.Param("path")
-		blog.Query(c, path)
-	})
-}
-
-func routerAdmin(router *gin.Engine) {
-	a := router.Group("/admin")
-	a.GET("/*path", func(c *gin.Context) {
-		path := c.Param("path")
-		switch path {
-		case "", "/":
-			c.Redirect(302, "/admin/login")
-			return
-		}
-		theAdmin.Query(c, path)
-	})
-	a.POST("/*path", func(c *gin.Context) {
-		path := c.Param("path")
-		theAdmin.Post(c, path)
-	})
-}
-
-func loadTemplates() {
-	funcs := template.FuncMap{
-		"get_config": func(name string) string {
-			return optmgr.GetDef(gdb, name, "")
-		},
-	}
-
-	var err error
-
-	themeTemplate := template.New("theme").Funcs(funcs)
-	if themeTemplate, err = themeTemplate.ParseGlob("../theme/*.html"); err != nil {
-		panic(err)
-	}
-	themeRender = NewRenderer(themeTemplate)
 }

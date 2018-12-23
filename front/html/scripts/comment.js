@@ -22,8 +22,8 @@ document.write(function(){/*
 		<div class="comment-form-div-1 no-sel">
 			<div class="no-sel" class="nc">
                 <div class="ncbtns">
-                    <img src="/theme/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
-                    <img src="/theme/images/question.svg" width="20" height="20" title="支持部分QQ表情，如：
+                    <img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
+                    <img src="/images/question.svg" width="20" height="20" title="支持部分QQ表情，如：
 
     [笑哭] [小纠结] [无奈]
 
@@ -200,7 +200,7 @@ Comment.prototype.normalize_content = function(c) {
                     .attr('width', '20px')
                     .attr('height', '20px')
                     .css('vertical-align', 'bottom')
-                    .attr('src', '/theme/emotions/' + alt + '.png')[0]
+                    .attr('src', '/emotions/' + alt + '.png')[0]
                     .outerHTML;
             else
                 return all;

@@ -20,7 +20,9 @@ type GetCommentRequest struct {
 
 // ListCommentsRequest ...
 type ListCommentsRequest struct {
-	Parent int64
+	Parent  int64
+	Limit   int64
+	OrderBy string
 }
 
 // ListCommentsResponse ...

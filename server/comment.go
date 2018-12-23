@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"log"
 	"regexp"
 	"strings"
@@ -30,25 +29,6 @@ type Comment struct {
 	Date     string
 	Content  string
 	Children []*Comment
-}
-
-func (c *Comment) AuthorString() string {
-	mail := optmgr.GetDef(gdb, "email", "")
-	if mail == c.Email {
-		return "博主"
-	}
-	return c.Author
-}
-
-func (c *Comment) PostTitle() template.HTML {
-	key := fmt.Sprintf("title:%d", c.PostID)
-	if t, ok := memcch.Get(key); ok {
-		return t.(template.HTML)
-	}
-	var title template.HTML
-	postmgr.GetVars(gdb, "title", fmt.Sprintf("id = %d", c.PostID), &title)
-	memcch.SetIf(title != "", key, title)
-	return title
 }
 
 type CommentManager struct {

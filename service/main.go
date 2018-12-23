@@ -1,6 +1,10 @@
 package service
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+)
 
 // ImplServer implements IServer.
 type ImplServer struct {
@@ -15,4 +19,8 @@ func NewImplServer(db *sql.DB, auth IAuth) *ImplServer {
 		auth: auth,
 	}
 	return s
+}
+
+func joinInts(ints []int64, delim string) string {
+	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(ints)), delim), "[]")
 }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
-	"reflect"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/taorm"
@@ -20,13 +19,9 @@ type PostForArchiveQuery struct {
 }
 
 type PostForLatest struct {
-	ID    int64  `json:"id"`
-	Title string `json:"title"`
-	Type  string `json:"type"`
-}
-
-func (p *PostForLatest) Link() string {
-	return fmt.Sprintf("/%d/", p.ID)
+	ID    int64
+	Title string
+	Type  string
 }
 
 type PostForRelated struct {
@@ -119,60 +114,6 @@ func (z *PostManager) getRowPosts(tx Querier, query string, args ...interface{})
 	return ps, nil
 }
 
-// GetPostByID gets
-func (z *PostManager) GetPostByID(tx Querier, id int64, modified string) (*Post, error) {
-	seldb := sql_helpers.NewSelect().From("posts", "").Select("*").Where("id=?", id)
-	if datetime.IsValidMy(modified) {
-		seldb.Where("modified>?", modified)
-	}
-	seldb.OrderBy("date DESC")
-	query, args := seldb.SQL()
-	var p Post
-	if err := taorm.QueryRows(&p, tx, query, args...); err != nil {
-		return nil, err
-	}
-	p.Date = datetime.My2Local(p.Date)
-	p.Modified = datetime.My2Local(p.Modified)
-	p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
-	return &p, nil
-}
-
-// GetPostBySlug gets
-func (z *PostManager) GetPostBySlug(tx Querier, taxTreeOrParents string, slug string, modified string, isPage bool) (*Post, error) {
-	var catID int64
-	var err error
-	if !isPage {
-		catID, err = catmgr.ParseTree(tx, taxTreeOrParents)
-	} else {
-		catID, err = z.GetPageParentID(tx, taxTreeOrParents)
-		// this is a hack
-		if err != nil {
-			err = sql.ErrNoRows
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	if modified != "" && !datetime.IsValidMy(modified) {
-		return nil, fmt.Errorf("invalid modified")
-	}
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("*").
-		Where("slug=? AND taxonomy=?", slug, catID).
-		WhereIf(datetime.IsValidMy(modified), "modified>?", modified).
-		WhereIf(isPage, "type = 'page'").
-		OrderBy("date DESC").
-		SQL()
-	var p Post
-	if err := taorm.QueryRows(&p, tx, query, args...); err != nil {
-		return nil, err
-	}
-	p.Date = datetime.My2Local(p.Date)
-	p.Modified = datetime.My2Local(p.Modified)
-	p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
-	return &p, nil
-}
-
 // GetPostsByCategory gets category posts.
 func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArchiveQuery, error) {
 	query, args := sql_helpers.NewSelect().From("posts", "").
@@ -187,11 +128,13 @@ func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArc
 // GetPostsByTags gets tag posts.
 func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQuery, error) {
 	tagObj, err := tagmgr.GetTagByName(tx, tag)
+	_ = tagObj
 	if err != nil {
 		return nil, err
 	}
 
-	ids := tagmgr.getAliasTagsAll(tx, []int64{tagObj.ID})
+	// TODO
+	ids := []int64{}
 
 	query, args := sql_helpers.NewSelect().From("posts,post_tags", "").
 		Select("posts.id,posts.title").
@@ -228,21 +171,6 @@ func (z *PostManager) ListAllPosts(tx Querier) ([]*PostForArchiveQuery, error) {
 		OrderBy("date DESC").
 		SQL()
 	return z.getRowPosts(tx, query, args...)
-}
-
-// GetLatest gets
-func (z *PostManager) GetLatest(tx Querier, limit int64) ([]*PostForLatest, error) {
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("id,title,type").
-		Where("type='post'").
-		OrderBy("date DESC").
-		Limit(limit).
-		SQL()
-	var ps []*PostForLatest
-	if err := taorm.QueryRows(&ps, tx, query, args...); err != nil {
-		return nil, err
-	}
-	return ps, nil
 }
 
 // GetPostsForRss gets
@@ -354,12 +282,6 @@ func (z *PostManager) UpdatePost(tx Querier, post *Post) error {
 	return nil
 }
 
-// IncrementPageView increases page view by one.
-func (z *PostManager) IncrementPageView(tx Querier, id int64) {
-	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
-	tx.Exec(query, id)
-}
-
 func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
 	query := "SELECT year,month,count(id) count FROM (SELECT id,date,year(date) year,month(date) month FROM(SELECT id,DATE_ADD(date,INTERVAL 8 HOUR) date FROM posts WHERE type='post') x) x GROUP BY year,month ORDER BY year DESC, month DESC"
 	var ps []*PostForDate
@@ -367,80 +289,4 @@ func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
 		return nil, err
 	}
 	return ps, nil
-}
-
-func (z *PostManager) GetPageParentID(tx Querier, parents string) (int64, error) {
-	if len(parents) == 0 {
-		return 0, nil
-	}
-	parents = parents[1:]
-	slugs := strings.Split(parents, "/")
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("id,slug,taxonomy").
-		Where("slug IN (?)", slugs).
-		Where("type = 'page'").
-		SQL()
-	rows, err := tx.Query(query, args...)
-	if err != nil {
-		return 0, err
-	}
-
-	type Result struct {
-		ID     int64
-		Slug   string
-		Parent int64
-	}
-
-	panic(reflect.TypeOf(Result{}))
-
-	var results []*Result
-	for rows.Next() {
-		var r Result
-		if err := rows.Scan(&r.ID, &r.Slug, &r.Parent); err != nil {
-			return 0, err
-		}
-		results = append(results, &r)
-	}
-
-	var parent int64
-	for i := 0; i < len(slugs); i++ {
-		found := false
-		for _, r := range results {
-			if r.Parent == parent && r.Slug == slugs[i] {
-				parent = r.ID
-				found = true
-				break
-			}
-			if !found {
-				return 0, fmt.Errorf("找不到父页面：%s", slugs[i])
-			}
-		}
-	}
-
-	return parent, nil
-}
-
-func (z *PostManager) GetRelatedPosts(tx Querier, id int64) ([]*PostForRelated, error) {
-	tagIDs := tagmgr.getTagIDs(tx, id, true)
-	if len(tagIDs) == 0 {
-		return []*PostForRelated{}, nil
-	}
-	query, args := sql_helpers.NewSelect().
-		From("posts", "p").
-		From("post_tags", "pt").
-		Select("p.id,p.title,COUNT(p.id) relevance").
-		Where("pt.post_id != ?", id).
-		Where("p.id = pt.post_id").
-		Where("pt.tag_id IN (?)", tagIDs).
-		GroupBy("p.id").
-		OrderBy("relevance DESC").
-		Limit(9).
-		SQL()
-
-	var relates []*PostForRelated
-	if err := taorm.QueryRows(&relates, tx, query, args...); err != nil {
-		return nil, err
-	}
-
-	return relates, nil
 }

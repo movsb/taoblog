@@ -11,9 +11,9 @@
         {{- end -}}
         {{- get_config "blog_name" -}}
     </title>
-    <link rel="stylesheet" type="text/css" href="/theme/style.css" />
+    <link rel="stylesheet" type="text/css" href="/style.css" />
     <script src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
-    <script src="/theme/scripts/header.js"></script>
+    <script src="/scripts/header.js"></script>
     {{.HeaderHook}}
 </head>
 <body>
@@ -25,7 +25,7 @@
                 <div class="sitename"><a href="/">{{get_config "blog_name"}}</a></div>
                 <p class="motto">{{get_config "blog_desc"}}</p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
-                    <img src="/theme/images/search.svg" class="icon" /><!--
+                    <img src="/images/search.svg" class="icon" /><!--
                     --><input name="q" placeholder="Google Search" />
                 </form>
                 <div class="nav">

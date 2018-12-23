@@ -65,3 +65,51 @@ func (ps Posts) Serialize() []*protocols.Post {
 	}
 	return sp
 }
+
+type PostForLatest struct {
+	ID    int64
+	Title string
+	Type  string
+}
+
+func (p *PostForLatest) Serialize() *protocols.PostForLatest {
+	return &protocols.PostForLatest{
+		ID:    p.ID,
+		Title: p.Title,
+		Type:  p.Type,
+	}
+}
+
+type PostForLatests []*PostForLatest
+
+func (ps PostForLatests) Serialize() []*protocols.PostForLatest {
+	sp := []*protocols.PostForLatest{}
+	for _, p := range ps {
+		sp = append(sp, p.Serialize())
+	}
+	return sp
+}
+
+type PostForRelated struct {
+	ID        int64
+	Title     string
+	Relevance uint
+}
+
+func (p *PostForRelated) Serialize() *protocols.PostForRelated {
+	return &protocols.PostForRelated{
+		ID:        p.ID,
+		Title:     p.Title,
+		Relevance: p.Relevance,
+	}
+}
+
+type PostForRelateds []*PostForRelated
+
+func (ps PostForRelateds) Serialize() []*protocols.PostForRelated {
+	sp := []*protocols.PostForRelated{}
+	for _, p := range ps {
+		sp = append(sp, p.Serialize())
+	}
+	return sp
+}

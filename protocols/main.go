@@ -9,6 +9,14 @@ type IServer interface {
 	// Posts
 	GetPost(in *GetPostRequest) *Post
 	ListPosts(in *ListPostsRequest) *ListPostsResponse
+	GetPostByID(in *GetPostByIDRequest) *Post
+	GetPostBySlug(in *GetPostBySlugRequest) *Post
+	GetPostByPage(in *GetPostByPageRequest) *Post
+	GetLatestPosts(in *GetLatestPostsRequest) *GetLatestPostsResponse
+	GetRelatedPosts(in *GetRelatedPostsRequest) *GetRelatedPostsResponse
+	IncrementPostView(in *IncrementPostViewRequest) *IncrementPostViewResponse
+	GetPostTitle(ID int64) string
+	GetPostTags(ID int64) []string
 
 	// Comments
 	GetComment(in *GetCommentRequest) *Comment
