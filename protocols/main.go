@@ -4,6 +4,7 @@ package protocols
 type IServer interface {
 	// Auth
 	Auth(in *AuthRequest) *AuthResponse
+	AuthLogin(in *AuthLoginRequest) *AuthLoginResponse
 
 	// Posts
 	GetPost(in *GetPostRequest) *Post
@@ -16,6 +17,9 @@ type IServer interface {
 	// Options
 	GetOption(in *GetOptionRequest) *Option
 	ListOptions(in *ListOptionsRequest) *ListOptionsResponse
+
+	// Tags
+	ListTagsWithCount(in *ListTagsWithCountRequest) *ListTagsWithCountResponse
 
 	// RSS
 	GetRss(in *GetRssRequest) *Rss

@@ -6,7 +6,9 @@ type Option struct {
 }
 
 type GetOptionRequest struct {
-	Name string
+	Name    string
+	Default bool
+	Value   string
 }
 
 type ListOptionsRequest struct {

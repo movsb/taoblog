@@ -1,13 +1,18 @@
-package main
+package admin
 
 import (
 	"fmt"
+	"html/template"
+	"io"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/movsb/taoblog/protocols"
 )
 
 var (
@@ -55,7 +60,7 @@ type AdminIndexData struct {
 }
 
 type AdminTagManageData struct {
-	Tags []*TagWithCount
+	Tags []*protocols.TagWithCount
 }
 
 type AdminPostManageData struct {
@@ -66,7 +71,7 @@ type AdminCategoryManageData struct {
 }
 
 type AdminPostEditData struct {
-	*Post
+	*protocols.Post
 	New bool
 }
 
@@ -74,7 +79,8 @@ func (d *AdminPostEditData) Link() string {
 	if d.New {
 		return fmt.Sprint(d.ID)
 	}
-	return fmt.Sprintf("https://%s/%d/", optmgr.GetDef(gdb, "home", ""), d.ID)
+	// TODO with home
+	return fmt.Sprintf("/%d/", d.ID)
 }
 
 func (d *AdminPostEditData) TagStr() string {
@@ -85,15 +91,51 @@ func (d *AdminPostEditData) TagStr() string {
 }
 
 type Admin struct {
+	server    protocols.IServer
+	templates *template.Template
 }
 
-func NewAdmin() *Admin {
-	a := &Admin{}
+func NewAdmin(server protocols.IServer) *Admin {
+	a := &Admin{
+		server: server,
+	}
+	a.loadTemplates()
 	return a
+}
+
+func (a *Admin) auth(c *gin.Context) bool {
+	return a.server.Auth(&protocols.AuthRequest{c}).Success
 }
 
 func (a *Admin) noCache(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
+}
+
+func (a *Admin) render(w io.Writer, name string, data interface{}) {
+	if err := a.templates.ExecuteTemplate(w, name, data); err != nil {
+		panic(err)
+	}
+}
+
+func (a *Admin) loadTemplates() {
+	funcs := template.FuncMap{
+		"get_config": func(name string) string {
+			return a.server.GetOption(&protocols.GetOptionRequest{
+				Name:    name,
+				Default: true,
+				Value:   "",
+			}).Value
+		},
+	}
+
+	var tmpl *template.Template
+	tmpl = template.New("admin").Funcs(funcs)
+	path := filepath.Join(os.Getenv("BASE"), "admin", "templates", "*.html")
+	tmpl, err := a.templates.ParseGlob(path)
+	if err != nil {
+		panic(err)
+	}
+	a.templates = tmpl
 }
 
 func (a *Admin) Query(c *gin.Context, path string) {
@@ -105,7 +147,7 @@ func (a *Admin) Query(c *gin.Context, path string) {
 		a.queryLogout(c)
 		return
 	}
-	if !auth(c, false) {
+	if !a.auth(c) {
 		c.Redirect(302, "/admin/login?redirect="+url.QueryEscape("/admin"+path))
 		return
 	}
@@ -130,7 +172,7 @@ func (a *Admin) Query(c *gin.Context, path string) {
 		a.queryCategoryManage(c)
 		return
 	}
-	c.File(filepath.Join(config.base, "admin", path))
+	c.File(filepath.Join(os.Getenv("BASE"), "admin/templates", path))
 }
 
 func (a *Admin) Post(c *gin.Context, path string) {
@@ -138,14 +180,14 @@ func (a *Admin) Post(c *gin.Context, path string) {
 		a.postLogin(c)
 		return
 	}
-	if !auth(c, false) {
+	if !a.auth(c) {
 		c.String(403, "")
 		return
 	}
 }
 
 func (a *Admin) queryLogin(c *gin.Context) {
-	if auth(c, false) {
+	if a.auth(c) {
 		c.Redirect(302, "/admin/index")
 		return
 	}
@@ -158,11 +200,11 @@ func (a *Admin) queryLogin(c *gin.Context) {
 		Redirect: redirect,
 	}
 
-	adminRender.Render(c.Writer, "login", &d)
+	a.render(c.Writer, "login", &d)
 }
 
 func (a *Admin) queryLogout(c *gin.Context) {
-	auther.DeleteCookie(c)
+	c.SetCookie("login", "", -1, "/", "", true, true)
 	c.Redirect(302, "/admin/login")
 }
 
@@ -170,8 +212,13 @@ func (a *Admin) postLogin(c *gin.Context) {
 	user := c.PostForm("user")
 	password := c.PostForm("passwd")
 	redirect := c.PostForm("redirect")
-	if auther.Auth(user, password) {
-		auther.MakeCookie(c)
+	auth := a.server.AuthLogin(&protocols.AuthLoginRequest{
+		UserAgent: c.GetHeader("User-Agent"),
+		Username:  user,
+		Password:  password,
+	})
+	if auth.Success {
+		c.SetCookie("login", auth.Cookie, 0, "/", "", true, true)
 		c.Redirect(302, redirect)
 	} else {
 		c.Redirect(302, c.Request.URL.String())
@@ -183,38 +230,40 @@ func (a *Admin) queryIndex(c *gin.Context) {
 	header := &AdminHeaderData{
 		Title: "首页",
 		Header: func() {
-			adminRender.Render(c.Writer, "index_header", nil)
+			a.render(c.Writer, "index_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			adminRender.Render(c.Writer, "index_footer", nil)
+			a.render(c.Writer, "index_footer", nil)
 		},
 	}
-	adminRender.Render(c.Writer, "header", header)
-	adminRender.Render(c.Writer, "index", d)
-	adminRender.Render(c.Writer, "footer", footer)
+	a.render(c.Writer, "header", header)
+	a.render(c.Writer, "index", d)
+	a.render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryTagManage(c *gin.Context) {
-	tags, _ := tagmgr.ListTagsWithCount(gdb, 0, false)
 	d := &AdminTagManageData{
-		Tags: tags,
+		Tags: a.server.ListTagsWithCount(&protocols.ListTagsWithCountRequest{
+			Limit:      0,
+			MergeAlias: false,
+		}).Tags,
 	}
 	header := &AdminHeaderData{
 		Title: "标签管理",
 		Header: func() {
-			adminRender.Render(c.Writer, "tag_manage_header", nil)
+			a.render(c.Writer, "tag_manage_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			adminRender.Render(c.Writer, "tag_manage_footer", nil)
+			a.render(c.Writer, "tag_manage_footer", nil)
 		},
 	}
-	adminRender.Render(c.Writer, "header", header)
-	adminRender.Render(c.Writer, "tag_manage", d)
-	adminRender.Render(c.Writer, "footer", footer)
+	a.render(c.Writer, "header", header)
+	a.render(c.Writer, "tag_manage", d)
+	a.render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryPostManage(c *gin.Context) {
@@ -222,17 +271,17 @@ func (a *Admin) queryPostManage(c *gin.Context) {
 	header := &AdminHeaderData{
 		Title: "文章管理",
 		Header: func() {
-			adminRender.Render(c.Writer, "post_manage_header", nil)
+			a.render(c.Writer, "post_manage_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			adminRender.Render(c.Writer, "post_manage_footer", nil)
+			a.render(c.Writer, "post_manage_footer", nil)
 		},
 	}
-	adminRender.Render(c.Writer, "header", header)
-	adminRender.Render(c.Writer, "post_manage", d)
-	adminRender.Render(c.Writer, "footer", footer)
+	a.render(c.Writer, "header", header)
+	a.render(c.Writer, "post_manage", d)
+	a.render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryCategoryManage(c *gin.Context) {
@@ -240,21 +289,21 @@ func (a *Admin) queryCategoryManage(c *gin.Context) {
 	header := &AdminHeaderData{
 		Title: "分类管理",
 		Header: func() {
-			adminRender.Render(c.Writer, "category_manage_header", nil)
+			a.render(c.Writer, "category_manage_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			adminRender.Render(c.Writer, "category_manage_footer", nil)
+			a.render(c.Writer, "category_manage_footer", nil)
 		},
 	}
-	adminRender.Render(c.Writer, "header", header)
-	adminRender.Render(c.Writer, "category_manage", d)
-	adminRender.Render(c.Writer, "footer", footer)
+	a.render(c.Writer, "header", header)
+	a.render(c.Writer, "category_manage", d)
+	a.render(c.Writer, "footer", footer)
 }
 
 func (a *Admin) queryPostEdit(c *gin.Context) {
-	p := &Post{}
+	p := &protocols.Post{}
 	d := AdminPostEditData{
 		New:  true,
 		Post: p,
@@ -262,15 +311,15 @@ func (a *Admin) queryPostEdit(c *gin.Context) {
 	header := &AdminHeaderData{
 		Title: "文章编辑",
 		Header: func() {
-			adminRender.Render(c.Writer, "post_edit_header", nil)
+			a.render(c.Writer, "post_edit_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			adminRender.Render(c.Writer, "post_edit_footer", nil)
+			a.render(c.Writer, "post_edit_footer", nil)
 		},
 	}
-	adminRender.Render(c.Writer, "header", header)
-	adminRender.Render(c.Writer, "post_edit", &d)
-	adminRender.Render(c.Writer, "footer", footer)
+	a.render(c.Writer, "header", header)
+	a.render(c.Writer, "post_edit", &d)
+	a.render(c.Writer, "footer", footer)
 }

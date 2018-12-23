@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/movsb/taoblog/protocols"
+
 	"github.com/movsb/taoblog/modules/datetime"
 
 	"github.com/gin-gonic/gin"
@@ -67,7 +69,7 @@ type Home struct {
 }
 
 type Archives struct {
-	Tags  []*TagWithCount
+	Tags  []*protocols.TagWithCount
 	Dates []*PostForDate
 	Cats  template.HTML
 	Title string
@@ -275,7 +277,10 @@ func (b *Blog) queryByTags(c *gin.Context, tags string) {
 }
 
 func (b *Blog) queryByArchives(c *gin.Context) {
-	tags, _ := tagmgr.ListTagsWithCount(gdb, 50, true)
+	tags := implServer.ListTagsWithCount(&protocols.ListTagsWithCountRequest{
+		Limit:      50,
+		MergeAlias: true,
+	}).Tags
 	posts, _ := postmgr.GetDateArchives(gdb)
 
 	cats, _ := catmgr.GetTree(gdb)

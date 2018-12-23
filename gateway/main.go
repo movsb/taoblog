@@ -21,6 +21,7 @@ func NewGateway(router *gin.RouterGroup, server protocols.IServer) *Gateway {
 	g.routeOptions()
 	g.routePosts()
 	g.routeComments()
+	g.routeTags()
 	g.routeOthers()
 
 	return g
@@ -47,6 +48,12 @@ func (g *Gateway) routeComments() {
 	c := g.router.Group("/comments", g.auth)
 	c.GET("/:name", g.GetComment)
 	c.GET("", g.ListComments)
+}
+
+func (g *Gateway) routeTags() {
+	c := g.router.Group("/tags")
+	_ = c
+	g.router.GET("/tags!withCount", g.ListTagsWithCount)
 }
 
 // TODO remove

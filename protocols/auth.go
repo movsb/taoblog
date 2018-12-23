@@ -9,3 +9,14 @@ type AuthRequest struct {
 type AuthResponse struct {
 	Success bool
 }
+
+type AuthLoginRequest struct {
+	UserAgent string
+	Username  string
+	Password  string
+}
+
+type AuthLoginResponse struct {
+	Success bool
+	Cookie  string
+}

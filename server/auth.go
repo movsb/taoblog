@@ -33,7 +33,7 @@ func (*GenericAuth) sha1(in string) string {
 	return fmt.Sprintf("%x", h)
 }
 
-func (o *GenericAuth) Auth(username string, password string) bool {
+func (o *GenericAuth) AuthLogin(username string, password string) bool {
 	if username == o.savedUser {
 		if o.sha1(password) == o.savedPassword {
 			return true
@@ -61,12 +61,7 @@ func (o *GenericAuth) AuthHeader(c *gin.Context) bool {
 	return key == o.key
 }
 
-func (o *GenericAuth) MakeCookie(c *gin.Context) {
-	agent := c.GetHeader("User-Agent")
-	cookie := o.sha1(agent + o.Login())
-	c.SetCookie("login", cookie, 0, "/", "", true, true)
-}
-
-func (o *GenericAuth) DeleteCookie(c *gin.Context) {
-	c.SetCookie("login", "", -1, "/", "", true, true)
+func (o *GenericAuth) MakeCookie(userAgent string) string {
+	cookie := o.sha1(userAgent + o.Login())
+	return cookie
 }

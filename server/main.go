@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
+	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/memory_cache"
@@ -49,9 +50,8 @@ var fileredir *FileRedirect
 var catmgr *CategoryManager
 var memcch *memory_cache.MemoryCache
 var blog *Blog
-var admin *Admin
+var theAdmin *admin.Admin
 var themeRender *Renderer
-var adminRender *Renderer
 var implServer protocols.IServer
 var cacheServer protocols.IServer
 var theGateway *gateway.Gateway
@@ -106,9 +106,9 @@ func main() {
 	catmgr = NewCategoryManager()
 	memcch = memory_cache.NewMemoryCache(time.Minute * 10)
 	blog = NewBlog()
-	admin = NewAdmin()
 	defer memcch.Stop()
 	implServer = service.NewImplServer(gdb, auther)
+	theAdmin = admin.NewAdmin(implServer)
 
 	loadTemplates()
 
@@ -671,11 +671,11 @@ func routerAdmin(router *gin.Engine) {
 			c.Redirect(302, "/admin/login")
 			return
 		}
-		admin.Query(c, path)
+		theAdmin.Query(c, path)
 	})
 	a.POST("/*path", func(c *gin.Context) {
 		path := c.Param("path")
-		admin.Post(c, path)
+		theAdmin.Post(c, path)
 	})
 }
 
@@ -693,10 +693,4 @@ func loadTemplates() {
 		panic(err)
 	}
 	themeRender = NewRenderer(themeTemplate)
-
-	adminTemplate := template.New("admin").Funcs(funcs)
-	if adminTemplate, err = adminTemplate.ParseGlob("../admin/*.html"); err != nil {
-		panic(err)
-	}
-	adminRender = NewRenderer(adminTemplate)
 }
