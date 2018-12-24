@@ -92,3 +92,18 @@ func ptrToInterface(ptr uintptr, kind reflect.Kind) interface{} {
 	}
 	return i
 }
+
+// createSQLInMarks creates "?,?,?" string.
+func createSQLInMarks(count int) string {
+	s := "?"
+	for i := 1; i < count; i++ {
+		s += ",?"
+	}
+	return s
+}
+
+func panicIf(cond bool, v interface{}) {
+	if cond {
+		panic(v)
+	}
+}

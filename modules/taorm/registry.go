@@ -14,13 +14,21 @@ type _FieldInfo struct {
 
 // StructInfo ...
 type _StructInfo struct {
-	fields map[string]_FieldInfo
+	tableName string
+	fields    map[string]_FieldInfo
 }
 
 func newStructInfo() *_StructInfo {
 	return &_StructInfo{
 		fields: make(map[string]_FieldInfo),
 	}
+}
+
+func (s *_StructInfo) mustBeTable() *_StructInfo {
+	if s.tableName == "" {
+		panic("not table")
+	}
+	return s
 }
 
 // FieldPointers ...
@@ -54,12 +62,13 @@ func structType(_struct interface{}) reflect.Type {
 }
 
 // register ...
-func register(_struct interface{}) *_StructInfo {
+func register(_struct interface{}, tableName string) *_StructInfo {
 	rwLock.Lock()
 	defer rwLock.Unlock()
 	t := structType(_struct)
 	typeName := t.String()
 	structInfo := newStructInfo()
+	structInfo.tableName = tableName
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if isColumnField(f) {
@@ -87,7 +96,7 @@ func getRegistered(_struct interface{}) *_StructInfo {
 		return si
 	}
 	rwLock.RUnlock()
-	return register(_struct)
+	return register(_struct, "")
 }
 
 func getPointers(out interface{}, rows *sql.Rows) []interface{} {
