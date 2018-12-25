@@ -29,11 +29,25 @@ func TestStmt(t *testing.T) {
 	}
 
 	tdb := DB{db: gdb}
+	_ = tdb
 
 	var comments []*Comment
-
-	tdb.Model(Comment{ID: 1}, "comments").Find(&comments)
-	for _, comment := range comments {
-		t.Log(comment)
+	out := func() {
+		for _, comment := range comments {
+			t.Log(comment)
+		}
 	}
+	_ = out
+
+	tdb.Model(Comment{}, "comments").Where("id=?", 100).Find(&comments)
+	//out()
+
+	//tdb.Model(Comment{}, "comments_copy").UpdateMap(map[string]interface{}{
+	//	"author": "桃子",
+	//})
+
+	//tdb.Model(Comment{ID: 10000000}, "comments_copy").Limit(1).Delete()
+
+	tdb.Model(comments[0], "comments_copy").Create()
+	fmt.Println("new id:", comments[0].ID)
 }

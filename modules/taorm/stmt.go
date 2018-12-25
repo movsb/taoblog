@@ -140,12 +140,27 @@ func (s *Stmt) buildWheres() (string, []interface{}) {
 	return sb.String(), args
 }
 
+func (s *Stmt) buildCreate() string {
+	panicIf(s.name == "", "model is empty")
+	return fmt.Sprintf(`INSERT INTO %s `, s.name)
+}
+
 func (s *Stmt) buildSelect() string {
 	if s.fields == "" {
 		s.fields = "*"
 	}
 	panicIf(s.name == "", "model is empty")
 	return fmt.Sprintf(`SELECT %s FROM %s`, s.fields, s.name)
+}
+
+func (s *Stmt) buildUpdate() string {
+	panicIf(s.name == "", "model is empty")
+	return fmt.Sprintf(`UPDATE %s SET `, s.name)
+}
+
+func (s *Stmt) buildDelete() string {
+	panicIf(s.name == "", "model is empty")
+	return fmt.Sprintf(`DELETE FROM %s`, s.name)
 }
 
 func (s *Stmt) buildGroupBy() (groupBy string) {
@@ -172,6 +187,33 @@ func (s *Stmt) buildLimit() (limit string) {
 	return
 }
 
+func (s *Stmt) Create() {
+	fields, values := collectDataFromModel(s.model)
+	if len(fields) == 0 {
+		panic("no fields to insert")
+	}
+
+	var query string
+	query += s.buildCreate()
+	query += fmt.Sprintf(` (%s) VALUES (%s)`,
+		strings.Join(fields, ","),
+		createSQLInMarks(len(fields)),
+	)
+
+	result, err := s.db.db.Exec(query, values...)
+	_ = result
+	if err != nil {
+		panic(err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		panic(err)
+	}
+
+	setPrimaryKeyValue(s.model, id)
+}
+
 func (s *Stmt) Find(out interface{}) {
 	var query string
 	var args = []interface{}{}
@@ -187,6 +229,71 @@ func (s *Stmt) Find(out interface{}) {
 	query += s.buildOrderBy()
 	query += s.buildLimit()
 
-	fmt.Printf(strings.Replace(query, "?", "%v", -1)+"\n", args...)
+	dumpSQL(query, args...)
 	MustQueryRows(out, s.db.db, query, args...)
+}
+
+func (s *Stmt) UpdateField(field string, value interface{}) {
+	s.UpdateMap(map[string]interface{}{
+		field: value,
+	})
+}
+
+func (s *Stmt) UpdateMap(fields map[string]interface{}) {
+	var query string
+	var args []interface{}
+
+	query += s.buildUpdate()
+
+	var updates []string
+	var values []interface{}
+
+	if len(fields) == 0 {
+		panic("no fields to update")
+	}
+
+	for field, value := range fields {
+		pair := fmt.Sprintf("%s=?", field)
+		updates = append(updates, pair)
+		values = append(values, value)
+	}
+
+	query += strings.Join(updates, ",")
+	args = append(args, values...)
+
+	whereQuery, whereArgs := s.buildWheres()
+
+	query += whereQuery
+	args = append(args, whereArgs...)
+
+	query += s.buildLimit()
+
+	dumpSQL(query, args...)
+
+	result, err := s.db.db.Exec(query, args...)
+	_ = result
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (s *Stmt) Delete() {
+	var query string
+	var args []interface{}
+
+	query += s.buildDelete()
+
+	whereQuery, whereArgs := s.buildWheres()
+	query += whereQuery
+	args = append(args, whereArgs...)
+
+	query += s.buildLimit()
+
+	dumpSQL(query, args...)
+
+	result, err := s.db.db.Exec(query, args...)
+	_ = result
+	if err != nil {
+		panic(err)
+	}
 }
