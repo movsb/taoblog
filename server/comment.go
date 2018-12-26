@@ -11,7 +11,6 @@ import (
 	"github.com/movsb/taoblog/modules/taorm"
 
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/modules/sql_helpers"
 )
 
 // hand write regex, not tested well.
@@ -33,6 +32,8 @@ type Comment struct {
 
 type CommentManager struct {
 }
+
+var cmtmgr = &CommentManager{}
 
 func newCommentManager() *CommentManager {
 	return &CommentManager{}
@@ -220,8 +221,7 @@ func (o *CommentManager) CreateComment(tx Querier, c *Comment) error {
 }
 
 func (o *CommentManager) GetVars(tx Querier, fields string, wheres string, outs ...interface{}) error {
-	query, args := sql_helpers.NewSelect().From("comments", "").
-		Select(fields).Where(wheres).Limit(1).SQL()
-	row := tx.QueryRow(query, args...)
+	query := fmt.Sprintf(`select %s from %s where %s limit 1`, fields, "comments", wheres)
+	row := tx.QueryRow(query)
 	return row.Scan(outs...)
 }

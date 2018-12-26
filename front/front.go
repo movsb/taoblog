@@ -284,7 +284,7 @@ func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
 func (f *Front) tempRenderPost(c *gin.Context, p *models.Post) {
 	post := newPost(p, f.server)
 	post.RelatedPosts = f.server.GetRelatedPosts(post.ID)
-	post.Tags = f.server.GetPostTags(post.ID)
+	//post.Tags = f.server.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
 	header := &ThemeHeaderData{

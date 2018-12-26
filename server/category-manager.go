@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/movsb/taoblog/modules/sql_helpers"
 )
 
 // CategoryNotFoundError is
@@ -53,9 +51,8 @@ func (z *CategoryManager) GetTree(tx Querier) ([]*Category, error) {
 
 // GetChildren gets direct descendant children.
 func (z *CategoryManager) GetChildren(tx Querier, parent int64) ([]*Category, error) {
-	query, args := sql_helpers.NewSelect().From("taxonomies", "").
-		Select("*").Where("parent=?", parent).SQL()
-	rows, err := tx.Query(query, args...)
+	query := `select * from taxonomies where parent=` + fmt.Sprint(parent)
+	rows, err := tx.Query(query)
 	_ = rows
 	if err != nil {
 		return nil, err
@@ -65,11 +62,8 @@ func (z *CategoryManager) GetChildren(tx Querier, parent int64) ([]*Category, er
 }
 
 func (z *CategoryManager) GetCountOfCategoriesAll(tx Querier) (map[int64]int64, error) {
-	query, args := sql_helpers.NewSelect().
-		From("posts", "").
-		Select("taxonomy,count(id) count").
-		GroupBy("taxonomy").SQL()
-	rows, err := tx.Query(query, args...)
+	query := `select taxonomy,count(id) count from posts group by taxonomy`
+	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
 	}

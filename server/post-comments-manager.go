@@ -131,7 +131,7 @@ func (o *PostCommentsManager) GetPostComments(tx Querier, cid int64, offset int6
 		return nil, err
 	}
 
-	adminEmail := strings.ToLower(optmgr.GetDef(tx, "email", ""))
+	adminEmail := strings.ToLower(implServer.GetDefaultStringOption("email", ""))
 
 	md5it := func(s string) string {
 		md5 := md5.New()

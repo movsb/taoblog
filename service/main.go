@@ -4,11 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/movsb/taoblog/modules/taorm"
 )
 
 // ImplServer implements IServer.
 type ImplServer struct {
-	db *sql.DB
+	db  *sql.DB
+	tdb *taorm.DB
 }
 
 // NewImplServer ...

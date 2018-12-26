@@ -1,10 +1,6 @@
 package service
 
-import (
-	"github.com/movsb/taoblog/modules/sql_helpers"
-	"github.com/movsb/taoblog/service/models"
-)
-
+/*
 func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagWithCount {
 	query, args := sql_helpers.NewSelect().
 		From("post_tags", "pt").From("tags", "t").
@@ -52,6 +48,7 @@ func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.T
 
 	return rootTags
 }
+*/
 
 func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
@@ -75,6 +72,7 @@ func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	return
 }
 
+/*
 func (s *ImplServer) getObjectTagNames(postID int64) []string {
 	query, args := sql_helpers.NewSelect().From("post_tags", "").From("tags", "").
 		Select("tags.name").Where("post_tags.post_id=?", postID).Where("post_tags.tag_id=tags.id").SQL()
@@ -94,6 +92,7 @@ func (s *ImplServer) getObjectTagNames(postID int64) []string {
 	}
 	return names
 }
+*/
 
 func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
 	sids := joinInts(ids, ",")

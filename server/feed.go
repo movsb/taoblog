@@ -29,6 +29,7 @@ func theFeed(tx Querier) (string, error) {
 	buf := bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>`)
 
 	tmpl, err := template.New("feed").Parse(feedTemplate)
+	_ = tmpl
 	if err != nil {
 		return "", err
 	}

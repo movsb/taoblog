@@ -4,24 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
-	"strings"
 
 	"github.com/movsb/taoblog/modules/taorm"
 
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/modules/sql_helpers"
 )
 
 // PostForArchiveQuery is an archive query result.
 type PostForArchiveQuery struct {
 	ID    int64  `json:"id"`
 	Title string `json:"title"`
-}
-
-type PostForLatest struct {
-	ID    int64
-	Title string
-	Type  string
 }
 
 type PostForRelated struct {
@@ -92,8 +84,8 @@ func (z *PostManager) Has(tx Querier, id int64) (bool, error) {
 
 // GetCommentCount gets the comment count of a post.
 func (z *PostManager) GetCommentCount(tx Querier, pid int64) (count int) {
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("comments").Where("id=?", pid).Limit(1).SQL()
+	query := `select comments from posts where id = ?`
+	args := []interface{}{pid}
 	row := tx.QueryRow(query, args...)
 	switch row.Scan(&count) {
 	case sql.ErrNoRows:
@@ -116,15 +108,12 @@ func (z *PostManager) getRowPosts(tx Querier, query string, args ...interface{})
 
 // GetPostsByCategory gets category posts.
 func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArchiveQuery, error) {
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("id,title").
-		Where("taxonomy=?", catID).
-		Where("type='post'").
-		OrderBy("date DESC").
-		SQL()
+	query := `select id,title from posts where taxonomy=? and type='post' order by date desc`
+	args := []interface{}{catID}
 	return z.getRowPosts(tx, query, args...)
 }
 
+/*
 // GetPostsByTags gets tag posts.
 func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQuery, error) {
 	tagObj, err := tagmgr.GetTagByName(tx, tag)
@@ -143,7 +132,9 @@ func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQ
 		SQL()
 	return z.getRowPosts(tx, query, args...)
 }
+*/
 
+/*
 // GetPostsByDate gets date posts.
 func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiveQuery, error) {
 	seldb := sql_helpers.NewSelect().From("posts", "").
@@ -162,7 +153,9 @@ func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiv
 	query, args := seldb.SQL()
 	return z.getRowPosts(tx, query, args...)
 }
+*/
 
+/*
 // ListAllPosts lists
 func (z *PostManager) ListAllPosts(tx Querier) ([]*PostForArchiveQuery, error) {
 	query, args := sql_helpers.NewSelect().From("posts", "").
@@ -192,7 +185,9 @@ func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
 
 	return posts, nil
 }
+*/
 
+/*
 // GetVars gets custom column values.
 func (z *PostManager) GetVars(tx Querier, fields string, wheres string, outs ...interface{}) error {
 	query, args := sql_helpers.NewSelect().From("posts", "").
@@ -200,7 +195,9 @@ func (z *PostManager) GetVars(tx Querier, fields string, wheres string, outs ...
 	row := tx.QueryRow(query, args...)
 	return row.Scan(outs...)
 }
+*/
 
+/*
 func (z *PostManager) GetPostsForManagement(tx Querier) ([]*PostForManagement, error) {
 	query, args := sql_helpers.NewSelect().From("posts", "").
 		Select("id,date,modified,title,page_view,source_type,comments").
@@ -290,3 +287,5 @@ func (z *PostManager) GetDateArchives(tx Querier) ([]*PostForDate, error) {
 	}
 	return ps, nil
 }
+
+*/

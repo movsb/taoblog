@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"strings"
-
-	"github.com/movsb/taoblog/modules/sql_helpers"
 )
 
 // TagNotFoundError is
@@ -86,8 +84,8 @@ func (tm *TagManager) hasTagName(tx Querier, name string) bool {
 
 // GetObjectTagNames gets all tag names of an object.
 func (tm *TagManager) GetObjectTagNames(tx Querier, oid int64) ([]string, error) {
-	query, args := sql_helpers.NewSelect().From("post_tags", "").From("tags", "").
-		Select("tags.name").Where("post_tags.post_id=?", oid).Where("post_tags.tag_id=tags.id").SQL()
+	query := `select tags.name from post_tags,tags where post_tags.tag_id=tags.id and post_tags.post_id=?`
+	args := []interface{}{oid}
 	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err

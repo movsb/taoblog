@@ -5,16 +5,14 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/modules/sql_helpers"
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/service/models"
 )
 
 // GetPost ...
 func (s *ImplServer) GetPost(name int64) *models.Post {
-	query := `SELECT * FROM posts WHERE id = ?`
 	var post models.Post
-	taorm.MustQueryRows(&post, s.db, query, name)
+	s.tdb.Model(models.Post{}, "posts").Where("id=?", name).Find(&post)
 	return &post
 }
 
@@ -26,20 +24,13 @@ func (s *ImplServer) ListPosts(in *ListPostsRequest) []*models.Post {
 	return posts
 }
 
-/*
-func (s *ImplServer) ListLatestPosts(in *ListLatestPostsRequest) []*models.PostForLatest {
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("id,title,type").
-		Where("type='post'").
-		OrderBy("date DESC").
-		Limit(in.Limit).
-		SQL()
-	var ps []*models.PostForLatest
-	taorm.MustQueryRows(&ps, s.db, query, args...)
+func (s *ImplServer) ListLatestPosts(name int64) []*models.Post {
+	var ps []*models.Post
+	s.tdb.Model(models.Post{}, "posts").Select("id,title,type").
+		Where("type='post'").Where("id=?", name).
+		OrderBy("date DESC").Find(&ps)
 	return ps
 }
-
-*/
 
 func (s *ImplServer) GetPostTitle(ID int64) string {
 	var p models.Post
@@ -49,10 +40,8 @@ func (s *ImplServer) GetPostTitle(ID int64) string {
 }
 
 func (s *ImplServer) GetPostByID(id int64) *models.Post {
-	seldb := sql_helpers.NewSelect().From("posts", "").Select("*").Where("id=?", id)
-	query, args := seldb.SQL()
 	var p models.Post
-	taorm.MustQueryRows(&p, s.db, query, args...)
+	s.tdb.Model(models.Post{}, "posts").Where("id=?", id).Find(&p)
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
 	// TODO tags
@@ -80,14 +69,12 @@ func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug strin
 	} else {
 		catID = s.getPageParentID(parents)
 	}
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("*").
+	var p models.Post
+	s.tdb.Model(models.Post{}, "posts").
 		Where("slug=? AND taxonomy=?", slug, catID).
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC").
-		SQL()
-	var p models.Post
-	taorm.MustQueryRows(&p, s.db, query, args...)
+		Find(&p)
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
 	// TODO
@@ -100,10 +87,8 @@ func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug strin
 // It will get the ID of folder
 func (s *ImplServer) parseCategoryTree(tree string) (id int64) {
 	parts := strings.Split(tree, "/")
-	query, args := sql_helpers.NewSelect().From("taxonomies", "").
-		Select("*").Where("slug IN (?)", parts).SQL()
 	var cats []*models.Category
-	taorm.MustQueryRows(&cats, s.db, query, args...)
+	s.tdb.Model(models.Post{}, "posts").Where("slug IN (?)", parts).Find(&cats)
 	var parent int64
 	for i := 0; i < len(parts); i++ {
 		found := false
@@ -127,11 +112,6 @@ func (s *ImplServer) getPageParentID(parents string) int64 {
 	}
 	parents = parents[1:]
 	slugs := strings.Split(parents, "/")
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("id,slug,taxonomy").
-		Where("slug IN (?)", slugs).
-		Where("type = 'page'").
-		SQL()
 
 	type getPageParentID_Result struct {
 		ID     int64
@@ -140,8 +120,11 @@ func (s *ImplServer) getPageParentID(parents string) int64 {
 	}
 
 	var results []*getPageParentID_Result
-	taorm.MustQueryRows(&results, s.db, query, args...)
-
+	s.tdb.Model(models.Post{}, "posts").
+		Select("id,slug,taxonomy").
+		Where("slug IN (?)", slugs).
+		Where("type = 'page'").
+		Find(&results)
 	var parent int64
 	for i := 0; i < len(slugs); i++ {
 		found := false
@@ -165,22 +148,28 @@ func (s *ImplServer) GetRelatedPosts(id int64) []*models.Post {
 	if len(tagIDs) == 0 {
 		return make([]*models.Post, 0)
 	}
-	query, args := sql_helpers.NewSelect().
-		From("posts", "p").
-		From("post_tags", "pt").
-		Select("p.id,p.title,COUNT(p.id) relevance").
-		Where("pt.post_id != ?", id).
-		Where("p.id = pt.post_id").
-		Where("pt.tag_id IN (?)", tagIDs).
-		GroupBy("p.id").
-		OrderBy("relevance DESC").
-		Limit(9).
-		SQL()
+	/*
+		query, args := sql_helpers.NewSelect().
+			From("posts", "p").
+			From("post_tags", "pt").
+			Select("p.id,p.title,COUNT(p.id) relevance").
+			Where("pt.post_id != ?", id).
+			Where("p.id = pt.post_id").
+			Where("pt.tag_id IN (?)", tagIDs).
+			GroupBy("p.id").
+			OrderBy("relevance DESC").
+			Limit(9).
+			SQL()
+	*/
+	query := ""
+	args := []interface{}{}
 	var relates []*models.Post
 	taorm.MustQueryRows(&relates, s.db, query, args...)
 	return relates
 }
 
+/*
 func (s *ImplServer) GetPostTags(ID int64) []string {
 	return s.getObjectTagNames(ID)
 }
+*/

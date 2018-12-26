@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/front"
 	"github.com/movsb/taoblog/gateway"
@@ -37,7 +36,8 @@ var uploadmgr *FileUpload
 var fileredir *FileRedirect
 var theAuth *auth.Auth
 var theFront *front.Front
-var theAdmin *admin.Admin
+
+//var theAdmin *admin.Admin
 var implServer *service.ImplServer
 var theGateway *gateway.Gateway
 
@@ -84,7 +84,7 @@ func main() {
 
 	router := gin.Default()
 
-	theAdmin = admin.NewAdmin(implServer, &router.RouterGroup)
+	//theAdmin = admin.NewAdmin(implServer, &router.RouterGroup)
 	theFront = front.NewFront(implServer, &router.RouterGroup)
 
 	routerV1(router)
@@ -135,6 +135,7 @@ func routerV1(router *gin.Engine) {
 		if err := txCall(gdb, func(tx Querier) error {
 			// TODO
 			//return postmgr.CreatePost(tx, &post)
+			panic("create post")
 		}); err != nil {
 			EndReq(c, err, err)
 			return
@@ -161,6 +162,7 @@ func routerV1(router *gin.Engine) {
 
 	posts.GET("/:parent/comments:count", func(c *gin.Context) {
 		parent := toInt64(c.Param("parent"))
+		_ = parent
 		count := implServer.ListPosts(&service.ListPostsRequest{
 			Fields: "comments",
 			Limit:  1,
