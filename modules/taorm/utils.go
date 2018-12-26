@@ -1,6 +1,7 @@
 package taorm
 
 import (
+	"fmt"
 	"go/ast"
 	"reflect"
 	"regexp"
@@ -91,4 +92,71 @@ func ptrToInterface(ptr uintptr, kind reflect.Kind) interface{} {
 		panic("unknown kind")
 	}
 	return i
+}
+
+// createSQLInMarks creates "?,?,?" string.
+func createSQLInMarks(count int) string {
+	s := "?"
+	for i := 1; i < count; i++ {
+		s += ",?"
+	}
+	return s
+}
+
+func panicIf(cond bool, v interface{}) {
+	if cond {
+		panic(v)
+	}
+}
+
+func dumpSQL(query string, args ...interface{}) {
+	fmt.Printf(strings.Replace(query, "?", "%v", -1)+"\n", args...)
+}
+
+func iterateFields(model interface{}, callback func(name string, field *reflect.StructField, value *reflect.Value) bool) {
+	var rt reflect.Type
+	var rv reflect.Value
+
+	rt = reflect.TypeOf(model)
+	rv = reflect.ValueOf(model)
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+		rv = rv.Elem()
+	}
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		field := rt.Field(i)
+		if isColumnField(field) {
+			columnName := getColumnName(field)
+			if columnName == "" {
+				continue
+			}
+			value := rv.Field(i)
+			if !callback(columnName, &field, &value) {
+				break
+			}
+		}
+	}
+}
+
+func collectDataFromModel(model interface{}) (fields []string, values []interface{}) {
+	iterateFields(model, func(name string, field *reflect.StructField, value *reflect.Value) bool {
+		if name == "id" {
+			return true
+		}
+		fields = append(fields, name)
+		values = append(values, value.Interface())
+		return true
+	})
+	return
+}
+
+func setPrimaryKeyValue(model interface{}, id int64) {
+	iterateFields(model, func(name string, field *reflect.StructField, value *reflect.Value) bool {
+		if getColumnName(*field) == "id" {
+			value.SetInt(id)
+			return false
+		}
+		return true
+	})
+	return
 }
