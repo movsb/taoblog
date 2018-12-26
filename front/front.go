@@ -11,9 +11,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/movsb/taoblog/service"
+
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/models"
 )
 
 var (
@@ -64,32 +66,32 @@ func (d *ThemeFooterData) FooterHook() string {
 
 type Home struct {
 	Title          string
-	PostCount      string // TODO
-	PageCount      string
-	CommentCount   string
-	LatestPosts    []*protocols.PostForLatest
+	PostCount      int64
+	PageCount      int64
+	CommentCount   int64
+	LatestPosts    []*models.Post
 	LatestComments []*Comment
 }
 
 type Archives struct {
-	Tags  []*protocols.TagWithCount
-	Dates []*protocols.PostForDate
+	Tags  []*models.TagWithCount
+	Dates []*models.PostForDate
 	Cats  template.HTML
 	Title string
 }
 
 type QueryTags struct {
 	Tag   string
-	Posts []*protocols.PostForArchive
+	Posts []*models.PostForArchive
 }
 
 type Front struct {
-	server    protocols.IServer
+	server    *service.ImplServer
 	templates *template.Template
 	router    *gin.RouterGroup
 }
 
-func NewFront(server protocols.IServer, router *gin.RouterGroup) *Front {
+func NewFront(server *service.ImplServer, router *gin.RouterGroup) *Front {
 	f := &Front{
 		server: server,
 		router: router,
@@ -116,11 +118,7 @@ func (f *Front) render(w io.Writer, name string, data interface{}) {
 func (f *Front) loadTemplates() {
 	funcs := template.FuncMap{
 		"get_config": func(name string) string {
-			return f.server.GetOption(&protocols.GetOptionRequest{
-				Name:    name,
-				Default: true,
-				Value:   "",
-			}).Value
+			return f.server.GetStringOption(name)
 		},
 	}
 
@@ -184,7 +182,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 	c.File(filepath.Join(os.Getenv("BASE"), "front/html", path))
 }
 
-func (f *Front) handle304(c *gin.Context, p *protocols.Post) bool {
+func (f *Front) handle304(c *gin.Context, p *models.Post) bool {
 	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
 		ht := datetime.Http2Time(modified)
 		pt := datetime.My2Time(p.Modified)
@@ -231,16 +229,21 @@ func (f *Front) queryHome(c *gin.Context) {
 		},
 	}
 
-	home := &Home{}
-	home.PostCount = f.server.GetOption(&protocols.GetOptionRequest{"post_count", true, "0"}).Value
-	home.PageCount = f.server.GetOption(&protocols.GetOptionRequest{"page_count", true, "0"}).Value
-	home.CommentCount = f.server.GetOption(&protocols.GetOptionRequest{"comment_count", true, "0"}).Value
-	home.LatestPosts = f.server.GetLatestPosts(&protocols.GetLatestPostsRequest{Limit: 20}).Posts
-	home.LatestComments = newComments(f.server.ListComments(&protocols.ListCommentsRequest{
+	home := &Home{
+		PostCount:    f.server.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    f.server.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: f.server.GetDefaultIntegerOption("comment_count", 0),
+	}
+	home.LatestPosts = f.server.ListPosts(&service.ListPostsRequest{
+		Fields:  "id,title,type",
+		Limit:   20,
+		OrderBy: "date DESC",
+	})
+	home.LatestComments = newComments(f.server.ListComments(&service.ListCommentsRequest{
 		Parent:  0,
 		Limit:   10,
 		OrderBy: "date DESC",
-	}).Comments, f.server)
+	}), f.server)
 
 	f.render(c.Writer, "header", header)
 	f.render(c.Writer, "home", home)
@@ -248,7 +251,7 @@ func (f *Front) queryHome(c *gin.Context) {
 }
 
 func (f *Front) queryByID(c *gin.Context, id int64) {
-	post := f.server.GetPostByID(&protocols.GetPostByIDRequest{ID: id})
+	post := f.server.GetPostByID(id)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
 		return
@@ -257,14 +260,11 @@ func (f *Front) queryByID(c *gin.Context, id int64) {
 }
 
 func (f *Front) incView(id int64) {
-	f.server.IncrementPostView(&protocols.IncrementPostViewRequest{id})
+	f.server.IncrementPostView(id)
 }
 
 func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
-	post := f.server.GetPostBySlug(&protocols.GetPostBySlugRequest{
-		Category: tree,
-		Slug:     slug,
-	})
+	post := f.server.GetPostBySlug(tree, slug)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
 		return
@@ -273,10 +273,7 @@ func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
 }
 
 func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
-	post := f.server.GetPostByPage(&protocols.GetPostByPageRequest{
-		Parents: parents,
-		Slug:    slug,
-	})
+	post := f.server.GetPostByPage(parents, slug)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
 		return
@@ -284,11 +281,9 @@ func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
 	f.tempRenderPost(c, post)
 }
 
-func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
+func (f *Front) tempRenderPost(c *gin.Context, p *models.Post) {
 	post := newPost(p, f.server)
-	post.RelatedPosts = f.server.GetRelatedPosts(&protocols.GetRelatedPostsRequest{
-		PostID: post.ID,
-	}).Posts
+	post.RelatedPosts = f.server.GetRelatedPosts(post.ID)
 	post.Tags = f.server.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
@@ -296,13 +291,14 @@ func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
 		Title: post.Title,
 		Header: func() {
 			f.render(w, "content_header", post)
-			fmt.Fprint(w, post.CustomHeader())
+			// TODO
+			//fmt.Fprint(w, post.CustomHeader())
 		},
 	}
 	footer := &ThemeFooterData{
 		Footer: func() {
 			f.render(w, "content_footer", post)
-			fmt.Fprint(w, post.CustomFooter())
+			//fmt.Fprint(w, post.CustomFooter())
 		},
 	}
 	f.render(w, "header", header)
@@ -322,7 +318,7 @@ func (f *Front) queryByTags(c *gin.Context, tags string) {
 }
 
 func (f *Front) queryByArchives(c *gin.Context) {
-	tags := f.server.ListTagsWithCount(&protocols.ListTagsWithCountRequest{
+	tags := f.server.ListTagsWithCount(&models.ListTagsWithCountRequest{
 		Limit:      50,
 		MergeAlias: true,
 	}).Tags

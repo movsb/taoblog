@@ -3,22 +3,23 @@ package front
 import (
 	"html/template"
 
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/models"
 )
 
 type Comment struct {
-	*protocols.Comment
-	server protocols.IServer
+	*models.Comment
+	server *service.ImplServer
 }
 
-func newComment(comment *protocols.Comment, server protocols.IServer) *Comment {
+func newComment(comment *models.Comment, server *service.ImplServer) *Comment {
 	return &Comment{
 		Comment: comment,
 		server:  server,
 	}
 }
 
-func newComments(comments []*protocols.Comment, server protocols.IServer) []*Comment {
+func newComments(comments []*models.Comment, server *service.ImplServer) []*Comment {
 	cmts := []*Comment{}
 	for _, c := range comments {
 		cmts = append(cmts, newComment(c, server))
@@ -27,11 +28,7 @@ func newComments(comments []*protocols.Comment, server protocols.IServer) []*Com
 }
 
 func (c *Comment) AuthorString() string {
-	mail := c.server.GetOption(&protocols.GetOptionRequest{
-		Name:    "email",
-		Default: true,
-		Value:   "",
-	}).Value
+	mail := c.server.GetDefaultStringOption("email", "")
 	if mail == c.Email {
 		return "博主"
 	}

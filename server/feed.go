@@ -33,20 +33,23 @@ func theFeed(tx Querier) (string, error) {
 		return "", err
 	}
 
-	posts, err := postmgr.GetPostsForRss(tx)
-	if err != nil {
-		return "", err
-	}
+	/*
+		// TODO
+		posts, err := nil, nil
+		if err != nil {
+			return "", err
+		}
 
-	data := RssData{}
-	data.Home = "https://" + optmgr.GetDef(tx, "home", "localhost")
-	data.BlogName = optmgr.GetDef(tx, "blog_name", "TaoBlog")
-	data.Description = optmgr.GetDef(tx, "desc", "")
-	data.Posts = posts
+		data := RssData{}
+		data.Home = "https://" + optmgr.GetDef(tx, "home", "localhost")
+		data.BlogName = optmgr.GetDef(tx, "blog_name", "TaoBlog")
+		data.Description = optmgr.GetDef(tx, "desc", "")
+		data.Posts = posts
 
-	if err := tmpl.Execute(buf, data); err != nil {
-		return "", err
-	}
+		if err := tmpl.Execute(buf, data); err != nil {
+			return "", err
+		}
+	*/
 
 	return buf.String(), nil
 }

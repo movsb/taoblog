@@ -3,13 +3,12 @@ package service
 import (
 	"bytes"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
-
-	"github.com/movsb/taoblog/protocols"
 )
 
-func (s *ImplServer) GetBackup(in *protocols.GetBackupRequest) *protocols.Empty {
+func (s *ImplServer) GetBackup(w io.Writer) {
 	opts := []string{
 		"--add-drop-database",
 		"--add-drop-table",
@@ -27,13 +26,13 @@ func (s *ImplServer) GetBackup(in *protocols.GetBackupRequest) *protocols.Empty 
 		opts...,
 	)
 
-	cmd.Stdout = in.W
+	cmd.Stdout = w
 
 	eb := bytes.NewBuffer(nil)
 	cmd.Stderr = eb
 
 	if cmd.Run() == nil {
-		return nil
+		return
 	}
 
 	panic(errors.New(eb.String()))

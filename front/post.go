@@ -6,17 +6,18 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/models"
 )
 
 type Post struct {
-	*protocols.Post
+	*models.Post
 	Content      template.HTML
-	RelatedPosts []*protocols.PostForRelated
-	server       protocols.IServer
+	RelatedPosts []*models.Post
+	server       *service.ImplServer
 }
 
-func newPost(post *protocols.Post, server protocols.IServer) *Post {
+func newPost(post *models.Post, server *service.ImplServer) *Post {
 	return &Post{
 		Post:    post,
 		server:  server,
@@ -24,7 +25,7 @@ func newPost(post *protocols.Post, server protocols.IServer) *Post {
 	}
 }
 
-func newPosts(posts []*protocols.Post, server protocols.IServer) []*Post {
+func newPosts(posts []*models.Post, server *service.ImplServer) []*Post {
 	ps := []*Post{}
 	for _, p := range posts {
 		ps = append(ps, newPost(p, server))

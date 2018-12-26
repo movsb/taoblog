@@ -2,18 +2,17 @@ package service
 
 import (
 	"github.com/movsb/taoblog/modules/sql_helpers"
-	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 )
 
-func (s *ImplServer) ListTagsWithCount(in *protocols.ListTagsWithCountRequest) *protocols.ListTagsWithCountResponse {
+func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagWithCount {
 	query, args := sql_helpers.NewSelect().
 		From("post_tags", "pt").From("tags", "t").
 		Select("t.*,COUNT(pt.id) size").
 		Where("pt.tag_id=t.id").
 		GroupBy("t.id").
 		OrderBy("size DESC").
-		Limit(in.Limit).
+		Limit(limit).
 		SQL()
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
@@ -31,7 +30,7 @@ func (s *ImplServer) ListTagsWithCount(in *protocols.ListTagsWithCountRequest) *
 		if err != nil {
 			panic(err)
 		}
-		if !in.MergeAlias {
+		if !mergeAlias {
 			rootTags = append(rootTags, &tag)
 		} else {
 			if tag.Alias == 0 {
@@ -43,7 +42,7 @@ func (s *ImplServer) ListTagsWithCount(in *protocols.ListTagsWithCountRequest) *
 		}
 	}
 
-	if in.MergeAlias {
+	if mergeAlias {
 		for _, tag := range aliasTags {
 			if root, ok := rootMap[tag.Alias]; ok {
 				root.Count += tag.Count
@@ -51,9 +50,7 @@ func (s *ImplServer) ListTagsWithCount(in *protocols.ListTagsWithCountRequest) *
 		}
 	}
 
-	return &protocols.ListTagsWithCountResponse{
-		Tags: models.TagWithCounts(rootTags).Serialize(),
-	}
+	return rootTags
 }
 
 func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {

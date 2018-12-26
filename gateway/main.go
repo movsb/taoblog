@@ -4,18 +4,21 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/service"
 )
 
 type Gateway struct {
 	router *gin.RouterGroup
-	server protocols.IServer
+	server *service.ImplServer
+	auther *auth.Auth
 }
 
-func NewGateway(router *gin.RouterGroup, server protocols.IServer) *Gateway {
+func NewGateway(router *gin.RouterGroup, server *service.ImplServer, auther *auth.Auth) *Gateway {
 	g := &Gateway{
 		router: router,
 		server: server,
+		auther: auther,
 	}
 
 	g.routeOptions()
@@ -34,14 +37,16 @@ func (g *Gateway) routeOthers() {
 
 func (g *Gateway) routeOptions() {
 	c := g.router.Group("/options", g.auth)
-	c.GET("/:name", g.GetOption)
-	c.GET("", g.ListOptions)
+	_ = c
+	//c.GET("/:name", g.GetOption)
+	//c.GET("", g.ListOptions)
 }
 
 func (g *Gateway) routePosts() {
 	c := g.router.Group("/posts", g.auth)
-	c.GET("/:name", g.GetPost)
-	c.GET("", g.ListPosts)
+	_ = c
+	//c.GET("/:name", g.GetPost)
+	//c.GET("", g.ListPosts)
 }
 
 func (g *Gateway) routeComments() {
@@ -53,7 +58,7 @@ func (g *Gateway) routeComments() {
 func (g *Gateway) routeTags() {
 	c := g.router.Group("/tags")
 	_ = c
-	g.router.GET("/tags!withCount", g.ListTagsWithCount)
+	//g.router.GET("/tags!withCount", g.ListTagsWithCount)
 }
 
 // TODO remove

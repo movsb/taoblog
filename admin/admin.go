@@ -11,8 +11,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/models"
 )
 
 var (
@@ -60,7 +61,7 @@ type AdminIndexData struct {
 }
 
 type AdminTagManageData struct {
-	Tags []*protocols.TagWithCount
+	Tags []*models.TagWithCount
 }
 
 type AdminPostManageData struct {
@@ -71,7 +72,7 @@ type AdminCategoryManageData struct {
 }
 
 type AdminPostEditData struct {
-	*protocols.Post
+	*models.Post
 	New bool
 }
 
@@ -91,12 +92,13 @@ func (d *AdminPostEditData) TagStr() string {
 }
 
 type Admin struct {
-	server    protocols.IServer
+	server    *service.ImplServer
 	templates *template.Template
 	router    *gin.RouterGroup
+	auth      *auth.Auth
 }
 
-func NewAdmin(server protocols.IServer, router *gin.RouterGroup) *Admin {
+func NewAdmin(server *service.ImplServer, router *gin.RouterGroup) *Admin {
 	a := &Admin{
 		server: server,
 		router: router,
@@ -123,8 +125,8 @@ func (a *Admin) route() {
 	})
 }
 
-func (a *Admin) auth(c *gin.Context) bool {
-	return a.server.Auth(&protocols.AuthRequest{c}).Success
+func (a *Admin) _auth(c *gin.Context) bool {
+	return a.auth.AuthCookie(c)
 }
 
 func (a *Admin) noCache(c *gin.Context) {
@@ -140,11 +142,7 @@ func (a *Admin) render(w io.Writer, name string, data interface{}) {
 func (a *Admin) loadTemplates() {
 	funcs := template.FuncMap{
 		"get_config": func(name string) string {
-			return a.server.GetOption(&protocols.GetOptionRequest{
-				Name:    name,
-				Default: true,
-				Value:   "",
-			}).Value
+			return a.server.GetDefaultStringOption(name, "")
 		},
 	}
 
@@ -167,7 +165,7 @@ func (a *Admin) Query(c *gin.Context, path string) {
 		a.queryLogout(c)
 		return
 	}
-	if !a.auth(c) {
+	if !a._auth(c) {
 		c.Redirect(302, "/admin/login?redirect="+url.QueryEscape("/admin"+path))
 		return
 	}
@@ -200,14 +198,14 @@ func (a *Admin) Post(c *gin.Context, path string) {
 		a.postLogin(c)
 		return
 	}
-	if !a.auth(c) {
+	if !a._auth(c) {
 		c.String(403, "")
 		return
 	}
 }
 
 func (a *Admin) queryLogin(c *gin.Context) {
-	if a.auth(c) {
+	if a._auth(c) {
 		c.Redirect(302, "/admin/index")
 		return
 	}
@@ -229,16 +227,11 @@ func (a *Admin) queryLogout(c *gin.Context) {
 }
 
 func (a *Admin) postLogin(c *gin.Context) {
-	user := c.PostForm("user")
+	username := c.PostForm("user")
 	password := c.PostForm("passwd")
 	redirect := c.PostForm("redirect")
-	auth := a.server.AuthLogin(&protocols.AuthLoginRequest{
-		UserAgent: c.GetHeader("User-Agent"),
-		Username:  user,
-		Password:  password,
-	})
-	if auth.Success {
-		c.SetCookie("login", auth.Cookie, 0, "/", "", true, true)
+	if a.auth.AuthLogin(username, password) {
+		a.auth.MakeCookie(c)
 		c.Redirect(302, redirect)
 	} else {
 		c.Redirect(302, c.Request.URL.String())
@@ -265,10 +258,7 @@ func (a *Admin) queryIndex(c *gin.Context) {
 
 func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
-		Tags: a.server.ListTagsWithCount(&protocols.ListTagsWithCountRequest{
-			Limit:      0,
-			MergeAlias: false,
-		}).Tags,
+		Tags: a.server.ListTagsWithCount(0, false),
 	}
 	header := &AdminHeaderData{
 		Title: "标签管理",
@@ -323,7 +313,7 @@ func (a *Admin) queryCategoryManage(c *gin.Context) {
 }
 
 func (a *Admin) queryPostEdit(c *gin.Context) {
-	p := &protocols.Post{}
+	p := &models.Post{}
 	d := AdminPostEditData{
 		New:  true,
 		Post: p,

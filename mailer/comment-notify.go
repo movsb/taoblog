@@ -53,7 +53,7 @@ func doNotifyAdmin(tx Querier, cmt *Comment, postTitle string) {
 
 	write(`<b>您的博文“%s”有新的评论啦！</b><br/><br/>`, html.EscapeString(postTitle))
 
-	link := "https://" + optmgr.GetDef(tx, "home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
+	link := "https://" + s.(tx, "home", "localhost") + "/?p=" + fmt.Sprint(cmt.PostID) + "#comments"
 	write(`<b>链接：</b>%s<br/>`, link)
 	write(`<b>作者：</b>%s<br/>`, html.EscapeString(string(cmt.Author)))
 	write(`<b>邮箱：</b>%s<br/>`, cmt.Email)

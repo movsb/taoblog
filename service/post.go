@@ -7,29 +7,27 @@ import (
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/sql_helpers"
 	"github.com/movsb/taoblog/modules/taorm"
-	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 )
 
 // GetPost ...
-func (s *ImplServer) GetPost(in *protocols.GetPostRequest) *protocols.Post {
+func (s *ImplServer) GetPost(name int64) *models.Post {
 	query := `SELECT * FROM posts WHERE id = ?`
 	var post models.Post
-	taorm.MustQueryRows(&post, s.db, query, in.Name)
-	return post.Serialize()
+	taorm.MustQueryRows(&post, s.db, query, name)
+	return &post
 }
 
 // ListPosts ...
-func (s *ImplServer) ListPosts(in *protocols.ListPostsRequest) *protocols.ListPostsResponse {
+func (s *ImplServer) ListPosts(in *ListPostsRequest) []*models.Post {
 	query := `SELECT * FROM posts`
-	var posts models.Posts
+	var posts []*models.Post
 	taorm.MustQueryRows(&posts, s.db, query)
-	return &protocols.ListPostsResponse{
-		Posts: posts.Serialize(),
-	}
+	return posts
 }
 
-func (s *ImplServer) GetLatestPosts(in *protocols.GetLatestPostsRequest) *protocols.GetLatestPostsResponse {
+/*
+func (s *ImplServer) ListLatestPosts(in *ListLatestPostsRequest) []*models.PostForLatest {
 	query, args := sql_helpers.NewSelect().From("posts", "").
 		Select("id,title,type").
 		Where("type='post'").
@@ -38,61 +36,10 @@ func (s *ImplServer) GetLatestPosts(in *protocols.GetLatestPostsRequest) *protoc
 		SQL()
 	var ps []*models.PostForLatest
 	taorm.MustQueryRows(&ps, s.db, query, args...)
-	return &protocols.GetLatestPostsResponse{
-		Posts: models.PostForLatests(ps).Serialize(),
-	}
+	return ps
 }
 
-func (s *ImplServer) GetRelatedPosts(in *protocols.GetRelatedPostsRequest) *protocols.GetRelatedPostsResponse {
-	tagIDs := s.getObjectTagIDs(in.PostID, true)
-	if len(tagIDs) == 0 {
-		return &protocols.GetRelatedPostsResponse{
-			Posts: make([]*protocols.PostForRelated, 0),
-		}
-	}
-	query, args := sql_helpers.NewSelect().
-		From("posts", "p").
-		From("post_tags", "pt").
-		Select("p.id,p.title,COUNT(p.id) relevance").
-		Where("pt.post_id != ?", in.PostID).
-		Where("p.id = pt.post_id").
-		Where("pt.tag_id IN (?)", tagIDs).
-		GroupBy("p.id").
-		OrderBy("relevance DESC").
-		Limit(9).
-		SQL()
-	var relates models.PostForRelateds
-	taorm.MustQueryRows(&relates, s.db, query, args...)
-	return &protocols.GetRelatedPostsResponse{
-		Posts: relates.Serialize(),
-	}
-}
-
-func (s *ImplServer) GetPostByID(in *protocols.GetPostByIDRequest) *protocols.Post {
-	seldb := sql_helpers.NewSelect().From("posts", "").Select("*").Where("id=?", in.ID)
-	query, args := seldb.SQL()
-	var p models.Post
-	taorm.MustQueryRows(&p, s.db, query, args...)
-	p.Date = datetime.My2Local(p.Date)
-	p.Modified = datetime.My2Local(p.Modified)
-	// TODO tags
-	//p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
-	return p.Serialize()
-}
-
-func (s *ImplServer) IncrementPostView(in *protocols.IncrementPostViewRequest) *protocols.IncrementPostViewResponse {
-	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
-	s.db.Exec(query, in.PostID)
-	return &protocols.IncrementPostViewResponse{}
-}
-
-func (s *ImplServer) GetPostByPage(in *protocols.GetPostByPageRequest) *protocols.Post {
-	return s.getPostBySlugOrPage(true, in.Parents, in.Slug)
-}
-
-func (s *ImplServer) GetPostBySlug(in *protocols.GetPostBySlugRequest) *protocols.Post {
-	return s.getPostBySlugOrPage(false, in.Category, in.Slug)
-}
+*/
 
 func (s *ImplServer) GetPostTitle(ID int64) string {
 	var p models.Post
@@ -101,11 +48,32 @@ func (s *ImplServer) GetPostTitle(ID int64) string {
 	return p.Title
 }
 
-func (s *ImplServer) GetPostTags(ID int64) []string {
-	return s.getObjectTagNames(ID)
+func (s *ImplServer) GetPostByID(id int64) *models.Post {
+	seldb := sql_helpers.NewSelect().From("posts", "").Select("*").Where("id=?", id)
+	query, args := seldb.SQL()
+	var p models.Post
+	taorm.MustQueryRows(&p, s.db, query, args...)
+	p.Date = datetime.My2Local(p.Date)
+	p.Modified = datetime.My2Local(p.Modified)
+	// TODO tags
+	//p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
+	return &p
 }
 
-func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug string) *protocols.Post {
+func (s *ImplServer) IncrementPostView(id int64) {
+	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
+	s.db.Exec(query, id)
+}
+
+func (s *ImplServer) GetPostByPage(parents string, slug string) *models.Post {
+	return s.getPostBySlugOrPage(true, parents, slug)
+}
+
+func (s *ImplServer) GetPostBySlug(categories string, slug string) *models.Post {
+	return s.getPostBySlugOrPage(false, categories, slug)
+}
+
+func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug string) *models.Post {
 	var catID int64
 	if !isPage {
 		catID = s.parseCategoryTree(parents)
@@ -124,7 +92,7 @@ func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug strin
 	p.Modified = datetime.My2Local(p.Modified)
 	// TODO
 	// p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
-	return p.Serialize()
+	return &p
 }
 
 // ParseTree parses category tree from URL to get last sub-category ID.
@@ -190,4 +158,29 @@ func (s *ImplServer) getPageParentID(parents string) int64 {
 	}
 
 	return parent
+}
+
+func (s *ImplServer) GetRelatedPosts(id int64) []*models.Post {
+	tagIDs := s.getObjectTagIDs(id, true)
+	if len(tagIDs) == 0 {
+		return make([]*models.Post, 0)
+	}
+	query, args := sql_helpers.NewSelect().
+		From("posts", "p").
+		From("post_tags", "pt").
+		Select("p.id,p.title,COUNT(p.id) relevance").
+		Where("pt.post_id != ?", id).
+		Where("p.id = pt.post_id").
+		Where("pt.tag_id IN (?)", tagIDs).
+		GroupBy("p.id").
+		OrderBy("relevance DESC").
+		Limit(9).
+		SQL()
+	var relates []*models.Post
+	taorm.MustQueryRows(&relates, s.db, query, args...)
+	return relates
+}
+
+func (s *ImplServer) GetPostTags(ID int64) []string {
+	return s.getObjectTagNames(ID)
 }

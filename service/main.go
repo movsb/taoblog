@@ -8,15 +8,13 @@ import (
 
 // ImplServer implements IServer.
 type ImplServer struct {
-	db   *sql.DB
-	auth IAuth
+	db *sql.DB
 }
 
 // NewImplServer ...
-func NewImplServer(db *sql.DB, auth IAuth) *ImplServer {
+func NewImplServer(db *sql.DB) *ImplServer {
 	s := &ImplServer{
-		db:   db,
-		auth: auth,
+		db: db,
 	}
 	return s
 }
