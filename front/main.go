@@ -179,6 +179,9 @@ func (f *Front) Query(c *gin.Context, path string) {
 			parents = parents[1:]
 		}
 		slug := matches[3]
+		if f.handleSpecialPages(c, parents, slug) {
+			return
+		}
 		f.queryByPage(c, parents, slug)
 		return
 	}
@@ -187,6 +190,14 @@ func (f *Front) Query(c *gin.Context, path string) {
 		return
 	}
 	c.File(filepath.Join(os.Getenv("BASE"), "front/statics", path))
+}
+
+func (f *Front) handleSpecialPages(c *gin.Context, parents string, slug string) bool {
+	if parents == "" && slug == "rss" {
+		f.GetRss(c)
+		return true
+	}
+	return false
 }
 
 func (f *Front) handle304(c *gin.Context, p *models.Post) bool {

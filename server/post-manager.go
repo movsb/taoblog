@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
 
 	"github.com/movsb/taoblog/modules/taorm"
 
@@ -42,23 +41,6 @@ type PostForManagement struct {
 func (p *PostForManagement) ToLocalTime() {
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
-}
-
-// PostForRss for Rss Post.
-type PostForRss struct {
-	ID      int64
-	Link    string
-	Title   string
-	Content template.HTML
-	Date    string
-}
-
-// RssData for Rss template.
-type RssData struct {
-	BlogName    string
-	Home        string
-	Description string
-	Posts       []*PostForRss
 }
 
 // PostManager manages posts.
@@ -144,27 +126,6 @@ func (z *PostManager) ListAllPosts(tx Querier) ([]*PostForArchiveQuery, error) {
 		SQL()
 	return z.getRowPosts(tx, query, args...)
 }
-
-// GetPostsForRss gets
-func (z *PostManager) GetPostsForRss(tx Querier) ([]*PostForRss, error) {
-	query, args := sql_helpers.NewSelect().From("posts", "").
-		Select("id,date,title,content").OrderBy("date DESC").Limit(10).SQL()
-	var posts []*PostForRss
-	if err := taorm.QueryRows(&posts, tx, query, args...); err != nil {
-		return nil, err
-	}
-
-	home, _ := optmgr.Get(tx, "home")
-
-	for _, p := range posts {
-		p.Date = datetime.My2Feed(p.Date)
-		p.Link = fmt.Sprintf("https://%s/%d/", home, p.ID)
-		p.Content = template.HTML("<![CDATA[" + strings.Replace(string(p.Content), "]]>", "]]]]><!CDATA[>", -1) + "]]>")
-	}
-
-	return posts, nil
-}
-*/
 
 /*
 // GetVars gets custom column values.

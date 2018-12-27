@@ -44,10 +44,11 @@ func (s *ImplServer) GetDefaultIntegerOption(name string, def int64) (value int6
 	var option models.Option
 	switch err := taorm.QueryRows(&option, s.db, query, name); err {
 	case nil:
-		if n, err := strconv.ParseInt(option.Value, 10, 64); err != nil {
+		n, err := strconv.ParseInt(option.Value, 10, 64)
+		if err != nil {
 			panic(err)
-			value = n
 		}
+		value = n
 		return
 	case sql.ErrNoRows:
 		return def

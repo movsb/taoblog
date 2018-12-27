@@ -1,0 +1,17 @@
+{{define "rss"}}
+<rss version="2.0">
+	<channel>
+		<title>{{.BlogName}}</title>
+		<link>{{.Home}}</link>
+		<description>{{.Description}}</description>
+		{{range .Posts}}
+		<item>
+			<title>{{.Title}}</title>
+			<link>{{.Link}}</link>
+			<pubDate>{{.Date}}</pubDate>
+			<description>{{.Content}}</description>
+		</item>
+		{{end}}
+	</channel>
+</rss>
+{{end}}
