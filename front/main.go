@@ -91,17 +91,25 @@ type Front struct {
 	router    *gin.RouterGroup
 	auth      *auth.Auth
 	api       *gin.RouterGroup
+	// dynamic files, rather than static files.
+	// Not thread safe. Don't write after initializing.
+	specialFiles map[string]func(c *gin.Context)
 }
 
 func NewFront(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup) *Front {
 	f := &Front{
-		server: server,
-		router: router,
-		auth:   auth,
-		api:    api,
+		server:       server,
+		router:       router,
+		auth:         auth,
+		api:          api,
+		specialFiles: make(map[string]func(c *gin.Context)),
 	}
 	f.loadTemplates()
 	f.route()
+	f.specialFiles = map[string]func(c *gin.Context){
+		"/sitemap.xml": f.GetSitemap,
+		"/rss":         f.GetRss,
+	}
 	return f
 }
 
@@ -175,9 +183,6 @@ func (f *Front) Query(c *gin.Context, path string) {
 			parents = parents[1:]
 		}
 		slug := matches[3]
-		if f.handleSpecialPages(c, parents, slug) {
-			return
-		}
 		f.queryByPage(c, parents, slug)
 		return
 	}
@@ -185,18 +190,11 @@ func (f *Front) Query(c *gin.Context, path string) {
 		c.String(http.StatusForbidden, "403 Forbidden")
 		return
 	}
+	if handler, ok := f.specialFiles[path]; ok {
+		handler(c)
+		return
+	}
 	c.File(filepath.Join(os.Getenv("BASE"), "front/statics", path))
-}
-
-func (f *Front) handleSpecialPages(c *gin.Context, parents string, slug string) bool {
-	if parents == "" && slug == "rss" {
-		f.GetRss(c)
-		return true
-	}
-	if parents == "" && slug == "archives" {
-		return true
-	}
-	return false
 }
 
 func (f *Front) handle304(c *gin.Context, p *models.Post) bool {
