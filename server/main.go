@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/front"
 	"github.com/movsb/taoblog/gateway"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/file_managers"
 )
@@ -35,6 +35,7 @@ var gdb *sql.DB
 var uploadmgr *FileUpload
 var fileredir *FileRedirect
 var theAuth *auth.Auth
+
 var theFront *front.Front
 
 //var theAdmin *admin.Admin
@@ -76,18 +77,18 @@ func main() {
 	defer gdb.Close()
 
 	theAuth = &auth.Auth{}
+	implServer = service.NewImplServer(gdb)
 	theAuth.SetLogin(implServer.GetDefaultStringOption("login", "x"))
 	theAuth.SetKey(config.key)
 	uploadmgr = NewFileUpload(file_managers.NewLocalFileManager(config.files))
 	fileredir = NewFileRedirect(config.base, config.files, config.fileHost)
-	implServer = service.NewImplServer(gdb)
 
 	router := gin.Default()
 
 	//theAdmin = admin.NewAdmin(implServer, &router.RouterGroup)
 	theFront = front.NewFront(implServer, &router.RouterGroup)
 
-	routerV1(router)
+	//routerV1(router)
 
 	v2 := router.Group("/v2")
 	v2.Use(func(c *gin.Context) {
@@ -107,14 +108,6 @@ func main() {
 	theGateway = gateway.NewGateway(v2, implServer, theAuth)
 
 	router.Run(config.listen)
-}
-
-func toInt64(s string) int64 {
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		//panic(fmt.Errorf("expect number: %s", s))
-	}
-	return n
 }
 
 func routerV1(router *gin.Engine) {
@@ -149,7 +142,7 @@ func routerV1(router *gin.Engine) {
 			c.Redirect(302, "/1.jpg")
 			return
 		}
-		parent := toInt64(c.Param("parent"))
+		parent := utils.MustToInt64(c.Param("parent"))
 		name := c.Param("name")
 		if strings.Contains(name, "/../") {
 			c.String(400, "bad file")
@@ -161,7 +154,7 @@ func routerV1(router *gin.Engine) {
 	})
 
 	posts.GET("/:parent/comments:count", func(c *gin.Context) {
-		parent := toInt64(c.Param("parent"))
+		parent := utils.MustToInt64(c.Param("parent"))
 		_ = parent
 		count := implServer.ListPosts(&service.ListPostsRequest{
 			Fields: "comments",

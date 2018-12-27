@@ -5,22 +5,22 @@ import (
 )
 
 type Post struct {
-	ID            int64    `json:"id"`
-	Date          string   `json:"date"`
-	Modified      string   `json:"modified"`
-	Title         string   `json:"title"`
-	Content       string   `json:"content"`
-	Slug          string   `json:"slug"`
-	Type          string   `json:"type"`
-	Category      uint     `json:"category" taorm:"name:taxonomy"`
-	Status        string   `json:"status"`
-	PageView      uint     `json:"page_view"`
-	CommentStatus uint     `json:"comment_status"`
-	Comments      uint     `json:"comments"`
-	Metas         string   `json:"metas"`
-	Source        string   `json:"source"`
-	SourceType    string   `json:"source_type"`
-	Tags          []string `json:"tags"`
+	ID            int64    `json:"id,omitempty"`
+	Date          string   `json:"date,omitempty"`
+	Modified      string   `json:"modified,omitempty"`
+	Title         string   `json:"title,omitempty"`
+	Content       string   `json:"content,omitempty"`
+	Slug          string   `json:"slug,omitempty"`
+	Type          string   `json:"type,omitempty"`
+	Category      uint     `json:"category,omitempty" taorm:"name:taxonomy"`
+	Status        string   `json:"status,omitempty"`
+	PageView      uint     `json:"page_view,omitempty"`
+	CommentStatus uint     `json:"comment_status,omitempty"`
+	Comments      uint     `json:"comments,omitempty"`
+	Metas         string   `json:"metas,omitempty"`
+	Source        string   `json:"source,omitempty"`
+	SourceType    string   `json:"source_type,omitempty"`
+	Tags          []string `json:"tags,omitempty"`
 
 	_Metas map[string]interface{}
 }

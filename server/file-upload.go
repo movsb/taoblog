@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/movsb/taoblog/modules/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,7 +32,7 @@ func NewFileUpload(mgr IFileManager) *FileUpload {
 func (o *FileUpload) Upload(c *gin.Context) error {
 	var err error
 
-	parent := toInt64(c.Param("parent"))
+	parent := utils.MustToInt64(c.Param("parent"))
 	name := c.Param("name")
 
 	if err = o.mgr.Put(parent, name, c.Request.Body); err != nil {
@@ -42,13 +44,13 @@ func (o *FileUpload) Upload(c *gin.Context) error {
 
 // List does file listing
 func (o *FileUpload) List(c *gin.Context) ([]string, error) {
-	parent := toInt64(c.Param("parent"))
+	parent := utils.MustToInt64(c.Param("parent"))
 	return o.mgr.List(parent)
 }
 
 // Delete does file deleting
 func (o *FileUpload) Delete(c *gin.Context) error {
-	parent := toInt64(c.Param("parent"))
+	parent := utils.MustToInt64(c.Param("parent"))
 	name := c.Param("name")
 
 	if name == "" {

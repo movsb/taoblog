@@ -13,7 +13,7 @@ import (
 type Post struct {
 	*models.Post
 	Content      template.HTML
-	RelatedPosts []*models.Post
+	RelatedPosts []*models.PostForRelated
 	server       *service.ImplServer
 }
 
@@ -31,6 +31,10 @@ func newPosts(posts []*models.Post, server *service.ImplServer) []*Post {
 		ps = append(ps, newPost(p, server))
 	}
 	return ps
+}
+
+func (p *Post) Link() string {
+	return fmt.Sprintf("/%d/", p.ID)
 }
 
 func (p *Post) DateString() string {

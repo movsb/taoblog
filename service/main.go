@@ -17,7 +17,8 @@ type ImplServer struct {
 // NewImplServer ...
 func NewImplServer(db *sql.DB) *ImplServer {
 	s := &ImplServer{
-		db: db,
+		db:  db,
+		tdb: taorm.NewDB(db),
 	}
 	return s
 }

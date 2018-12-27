@@ -9,34 +9,56 @@ import (
 )
 
 type Stmt struct {
-	db      *DB
-	model   interface{}
-	name    string
-	fields  string
-	wheres  []_Where
-	ors     []_Where
-	groupBy string
-	orderBy string
-	limit   int64
-	offset  int64
+	db         *DB
+	model      interface{}
+	tableNames []string
+	fields     string
+	wheres     []_Where
+	ors        []_Where
+	groupBy    string
+	orderBy    string
+	limit      int64
+	offset     int64
 }
 
 type DB struct {
 	db *sql.DB
 }
 
+func NewDB(db *sql.DB) *DB {
+	t := &DB{
+		db: db,
+	}
+	return t
+}
+
 func (db *DB) Model(model interface{}, name string) *Stmt {
 	stmt := &Stmt{
-		db:     db,
-		model:  model,
-		name:   name,
-		limit:  -1,
-		offset: -1,
+		db:         db,
+		model:      model,
+		tableNames: []string{name},
+		limit:      -1,
+		offset:     -1,
 	}
 
 	stmt.initPrimaryKey()
 
 	return stmt
+}
+
+func (db *DB) From(table string) *Stmt {
+	stmt := &Stmt{
+		db:         db,
+		tableNames: []string{table},
+		limit:      -1,
+		offset:     -1,
+	}
+	return stmt
+}
+
+func (s *Stmt) From(table string) *Stmt {
+	s.tableNames = append(s.tableNames, table)
+	return s
 }
 
 func (s *Stmt) Select(fields string) *Stmt {
@@ -141,26 +163,26 @@ func (s *Stmt) buildWheres() (string, []interface{}) {
 }
 
 func (s *Stmt) buildCreate() string {
-	panicIf(s.name == "", "model is empty")
-	return fmt.Sprintf(`INSERT INTO %s `, s.name)
+	panicIf(len(s.tableNames) != 1, "model length is not 1")
+	return fmt.Sprintf(`INSERT INTO %s `, s.tableNames[0])
 }
 
 func (s *Stmt) buildSelect() string {
 	if s.fields == "" {
 		s.fields = "*"
 	}
-	panicIf(s.name == "", "model is empty")
-	return fmt.Sprintf(`SELECT %s FROM %s`, s.fields, s.name)
+	panicIf(len(s.tableNames) == 0, "model is empty")
+	return fmt.Sprintf(`SELECT %s FROM %s`, s.fields, strings.Join(s.tableNames, ","))
 }
 
 func (s *Stmt) buildUpdate() string {
-	panicIf(s.name == "", "model is empty")
-	return fmt.Sprintf(`UPDATE %s SET `, s.name)
+	panicIf(len(s.tableNames) == 0, "model is empty")
+	return fmt.Sprintf(`UPDATE %s SET `, strings.Join(s.tableNames, ","))
 }
 
 func (s *Stmt) buildDelete() string {
-	panicIf(s.name == "", "model is empty")
-	return fmt.Sprintf(`DELETE FROM %s`, s.name)
+	panicIf(len(s.tableNames) == 0, "model is empty")
+	return fmt.Sprintf(`DELETE FROM %s`, strings.Join(s.tableNames, ","))
 }
 
 func (s *Stmt) buildGroupBy() (groupBy string) {

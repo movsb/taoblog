@@ -72,10 +72,9 @@ func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	return
 }
 
-/*
-func (s *ImplServer) getObjectTagNames(postID int64) []string {
-	query, args := sql_helpers.NewSelect().From("post_tags", "").From("tags", "").
-		Select("tags.name").Where("post_tags.post_id=?", postID).Where("post_tags.tag_id=tags.id").SQL()
+func (s *ImplServer) GetObjectTagNames(postID int64) []string {
+	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
+	args := []interface{}{postID}
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		panic(err)
@@ -92,7 +91,6 @@ func (s *ImplServer) getObjectTagNames(postID int64) []string {
 	}
 	return names
 }
-*/
 
 func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
 	sids := joinInts(ids, ",")

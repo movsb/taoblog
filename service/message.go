@@ -22,6 +22,7 @@ type ListPostsRequest struct {
 
 type ListCommentsRequest struct {
 	Parent  int64
+	Fields  string
 	Limit   int64
 	OrderBy string
 }

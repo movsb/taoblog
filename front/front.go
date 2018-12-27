@@ -69,7 +69,7 @@ type Home struct {
 	PostCount      int64
 	PageCount      int64
 	CommentCount   int64
-	LatestPosts    []*models.Post
+	LatestPosts    []*Post
 	LatestComments []*Comment
 }
 
@@ -234,11 +234,11 @@ func (f *Front) queryHome(c *gin.Context) {
 		PageCount:    f.server.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: f.server.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.LatestPosts = f.server.ListPosts(&service.ListPostsRequest{
+	home.LatestPosts = newPosts(f.server.ListPosts(&service.ListPostsRequest{
 		Fields:  "id,title,type",
 		Limit:   20,
 		OrderBy: "date DESC",
-	})
+	}), f.server)
 	home.LatestComments = newComments(f.server.ListComments(&service.ListCommentsRequest{
 		Parent:  0,
 		Limit:   10,
@@ -260,7 +260,7 @@ func (f *Front) queryByID(c *gin.Context, id int64) {
 }
 
 func (f *Front) incView(id int64) {
-	f.server.IncrementPostView(id)
+	f.server.IncrementPostPageView(id)
 }
 
 func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
@@ -284,7 +284,7 @@ func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
 func (f *Front) tempRenderPost(c *gin.Context, p *models.Post) {
 	post := newPost(p, f.server)
 	post.RelatedPosts = f.server.GetRelatedPosts(post.ID)
-	//post.Tags = f.server.GetPostTags(post.ID)
+	post.Tags = f.server.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
 	header := &ThemeHeaderData{

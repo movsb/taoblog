@@ -9,49 +9,46 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
+func (s *ImplServer) posts() *taorm.Stmt {
+	return s.tdb.Model(models.Post{}, "posts")
+}
+
 // GetPost ...
 func (s *ImplServer) GetPost(name int64) *models.Post {
 	var post models.Post
-	s.tdb.Model(models.Post{}, "posts").Where("id=?", name).Find(&post)
+	s.posts().Where("id = ?", name).Find(&post)
 	return &post
 }
 
 // ListPosts ...
 func (s *ImplServer) ListPosts(in *ListPostsRequest) []*models.Post {
-	query := `SELECT * FROM posts`
 	var posts []*models.Post
-	taorm.MustQueryRows(&posts, s.db, query)
+	s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy).Find(&posts)
 	return posts
 }
 
-func (s *ImplServer) ListLatestPosts(name int64) []*models.Post {
-	var ps []*models.Post
-	s.tdb.Model(models.Post{}, "posts").Select("id,title,type").
-		Where("type='post'").Where("id=?", name).
-		OrderBy("date DESC").Find(&ps)
-	return ps
+func (s *ImplServer) GetLatestPosts(fields string, limit int64) []*models.Post {
+	in := ListPostsRequest{
+		Fields:  fields,
+		Limit:   limit,
+		OrderBy: "date DESC",
+	}
+	return s.ListPosts(&in)
 }
 
 func (s *ImplServer) GetPostTitle(ID int64) string {
 	var p models.Post
-	query := `SELECT title FROM posts WHERE id = ?`
-	taorm.MustQueryRows(&p, s.db, query, ID)
+	s.posts().Select("title").Where("id = ?", ID).Find(&p)
 	return p.Title
 }
 
 func (s *ImplServer) GetPostByID(id int64) *models.Post {
-	var p models.Post
-	s.tdb.Model(models.Post{}, "posts").Where("id=?", id).Find(&p)
-	p.Date = datetime.My2Local(p.Date)
-	p.Modified = datetime.My2Local(p.Modified)
-	// TODO tags
-	//p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
-	return &p
+	return s.GetPost(id)
 }
 
-func (s *ImplServer) IncrementPostView(id int64) {
+func (s *ImplServer) IncrementPostPageView(id int64) {
 	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
-	s.db.Exec(query, id)
+	s.tdb.MustExec(query, id)
 }
 
 func (s *ImplServer) GetPostByPage(parents string, slug string) *models.Post {
@@ -143,33 +140,24 @@ func (s *ImplServer) getPageParentID(parents string) int64 {
 	return parent
 }
 
-func (s *ImplServer) GetRelatedPosts(id int64) []*models.Post {
+func (s *ImplServer) GetRelatedPosts(id int64) []*models.PostForRelated {
 	tagIDs := s.getObjectTagIDs(id, true)
 	if len(tagIDs) == 0 {
-		return make([]*models.Post, 0)
+		return make([]*models.PostForRelated, 0)
 	}
-	/*
-		query, args := sql_helpers.NewSelect().
-			From("posts", "p").
-			From("post_tags", "pt").
-			Select("p.id,p.title,COUNT(p.id) relevance").
-			Where("pt.post_id != ?", id).
-			Where("p.id = pt.post_id").
-			Where("pt.tag_id IN (?)", tagIDs).
-			GroupBy("p.id").
-			OrderBy("relevance DESC").
-			Limit(9).
-			SQL()
-	*/
-	query := ""
-	args := []interface{}{}
-	var relates []*models.Post
-	taorm.MustQueryRows(&relates, s.db, query, args...)
+	var relates []*models.PostForRelated
+	s.tdb.From("posts").From("post_tags").
+		Select("posts.id,posts.title,COUNT(posts.id) relevance").
+		Where("post_tags.post_id != ?", id).
+		Where("posts.id = post_tags.post_id").
+		Where("post_tags.tag_id IN (?)", tagIDs).
+		GroupBy("posts.id").
+		OrderBy("relevance DESC").
+		Limit(9).
+		Find(&relates)
 	return relates
 }
 
-/*
 func (s *ImplServer) GetPostTags(ID int64) []string {
-	return s.getObjectTagNames(ID)
+	return s.GetObjectTagNames(ID)
 }
-*/

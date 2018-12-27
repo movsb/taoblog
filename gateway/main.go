@@ -1,8 +1,6 @@
 package gateway
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/service"
@@ -44,9 +42,11 @@ func (g *Gateway) routeOptions() {
 
 func (g *Gateway) routePosts() {
 	c := g.router.Group("/posts", g.auth)
-	_ = c
-	//c.GET("/:name", g.GetPost)
-	//c.GET("", g.ListPosts)
+	g.router.GET("/posts!latest", g.GetLatestPosts)
+	c.GET("/:name", g.GetPost)
+	c.GET("", g.ListPosts)
+	c.GET("/:name/title", g.GetPostTitle)
+	c.POST("/:name/page_view", g.IncrementPostPageView)
 }
 
 func (g *Gateway) routeComments() {
@@ -59,13 +59,4 @@ func (g *Gateway) routeTags() {
 	c := g.router.Group("/tags")
 	_ = c
 	//g.router.GET("/tags!withCount", g.ListTagsWithCount)
-}
-
-// TODO remove
-func toInt64(s string) int64 {
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		//panic(fmt.Errorf("expect number: %s", s))
-	}
-	return n
 }
