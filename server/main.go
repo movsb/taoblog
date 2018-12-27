@@ -113,23 +113,6 @@ func routerV1(router *gin.Engine) {
 
 	posts := v1.Group("/posts")
 
-	posts.POST("", theAuth.Middle, func(c *gin.Context) {
-		var post Post
-		if err := c.ShouldBindJSON(&post); err != nil {
-			EndReq(c, err, err)
-			return
-		}
-		if err := txCall(gdb, func(tx Querier) error {
-			// TODO
-			//return postmgr.CreatePost(tx, &post)
-			panic("create post")
-		}); err != nil {
-			EndReq(c, err, err)
-			return
-		}
-		EndReq(c, nil, &post)
-	})
-
 	posts.GET("/:parent/files/*name", func(c *gin.Context) {
 		referrer := strings.ToLower(c.GetHeader("referer"))
 		if strings.Contains(referrer, "://blog.csdn.net") {
@@ -146,30 +129,6 @@ func routerV1(router *gin.Engine) {
 		path := fileredir.Redirect(logged, fmt.Sprintf("%d/%s", parent, name))
 		c.Redirect(302, path)
 	})
-
-	posts.GET("/:parent/comments:count", func(c *gin.Context) {
-		parent := utils.MustToInt64(c.Param("parent"))
-		_ = parent
-		count := implServer.ListPosts(&service.ListPostsRequest{
-			Fields: "comments",
-			Limit:  1,
-		})[0].Comments
-		EndReq(c, true, count)
-	})
-
-	/*
-		posts.POST("/:parent/comments", func(c *gin.Context) {
-			var err error
-			var cmt Comment
-			var loggedin bool
-
-
-			postcmtsmgr.UpdatePostCommentsCount(tx, cmt.PostID)
-
-
-			doNotify(gdb, &cmt) // TODO use cmts[0]
-		})
-	*/
 
 	/*
 		posts.GET("/:parent/files", theAuth.Middle, func(c *gin.Context) {
@@ -189,50 +148,6 @@ func routerV1(router *gin.Engine) {
 	*/
 
 	/*
-		posts.POST("/:parent/tags", func(c *gin.Context) {
-			if !auth(c, true) {
-				return
-			}
-			var tags []string
-			if err := c.ShouldBindJSON(&tags); err != nil {
-				EndReq(c, err, nil)
-				return
-			}
-
-			pid := toInt64(c.Param("parent"))
-			if has, err := postmgr.Has(gdb, pid); true {
-				if err != nil {
-					EndReq(c, err, nil)
-					return
-				} else if !has {
-					EndReq(c, fmt.Errorf("post not found: %v", pid), nil)
-					return
-				}
-			}
-
-			tx, err := gdb.Begin()
-			if err != nil {
-				EndReq(c, err, nil)
-				return
-			}
-			tagmgr.UpdateObjectTags(tx, pid, tags)
-			if err = tx.Commit(); err != nil {
-				tx.Rollback()
-				EndReq(c, err, nil)
-				return
-			}
-			EndReq(c, nil, nil)
-		})
-
-		v1.GET("/posts!manage", func(c *gin.Context) {
-			if !auth(c, true) {
-				return
-			}
-
-			posts, err := postmgr.GetPostsForManagement(gdb)
-			EndReq(c, err, posts)
-		})
-
 		v1.GET("/posts!all", func(c *gin.Context) {
 			var posts []*PostForArchiveQuery
 			if p, ok := memcch.Get("posts:all"); ok {
@@ -271,58 +186,5 @@ func routerV1(router *gin.Engine) {
 			aes2htm(c)
 		})
 
-	*/
-	tagsV1(v1)
-}
-
-func tagsV1(routerV1 *gin.RouterGroup) {
-	/*
-		tagsV1 := routerV1.Group("/tags")
-
-		tagsV1.GET("", func(c *gin.Context) {
-			tags, err := tagmgr.ListTags(gdb)
-			if err != nil {
-				EndReq(c, err, nil)
-				return
-			}
-			EndReq(c, nil, tags)
-			return
-		})
-
-		tagsV1.POST("/:parent", func(c *gin.Context) {
-			if !auth(c, true) {
-				return
-			}
-
-			tagID := toInt64(c.Param("parent"))
-
-			var tag Tag
-
-			if err := c.ShouldBindJSON(&tag); err != nil {
-				EndReq(c, err, nil)
-				return
-			}
-
-			tag.ID = tagID
-
-			tx, err := gdb.Begin()
-			if err != nil {
-				EndReq(c, err, nil)
-				return
-			}
-
-			err = tagmgr.UpdateTag(tx, &tag)
-			if err != nil {
-				tx.Rollback()
-				EndReq(c, err, nil)
-				return
-			}
-
-			if err = tx.Commit(); err != nil {
-				tx.Rollback()
-				EndReq(c, err, nil)
-				return
-			}
-		})
 	*/
 }

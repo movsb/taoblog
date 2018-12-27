@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/movsb/taoblog/modules/taorm"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -40,6 +42,47 @@ func (s *ImplServer) GetAllCommentsCount() int64 {
 
 func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *models.Comment {
 	user := s.auth.AuthContext(ctx)
+
+	if c.ID != 0 {
+		panic("评论ID必须为0")
+	}
+
+	if c.Ancestor != 0 {
+		panic("不能指定祖先ID")
+	}
+
+	if c.Author == "" {
+		panic("昵称不能为空")
+	}
+
+	if utf8.RuneCountInString(c.Author) >= 32 {
+		panic("昵称太长")
+	}
+
+	if !utils.IsEmail(c.Email) {
+		panic("邮箱不正确")
+	}
+
+	if c.URL != "" && !utils.IsURL(c.URL) {
+		panic("网址不正确")
+	}
+
+	if c.Content == "" {
+		panic("评论内容不能为空")
+	}
+
+	if utf8.RuneCountInString(c.Content) >= 4096 {
+		panic("评论内容太长")
+	}
+
+	if c.Parent > 0 {
+		pc := s.GetComment(c.Parent)
+		c.Ancestor = pc.Ancestor
+		if pc.Ancestor == 0 {
+			c.Ancestor = pc.ID
+		}
+	}
+
 	if user.IsGuest() {
 		notAllowedEmails := strings.Split(s.GetDefaultStringOption("not_allowed_emails", ""), ",")
 		if adminEmail := s.GetDefaultStringOption("email", ""); adminEmail != "" {
