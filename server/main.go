@@ -85,12 +85,13 @@ func main() {
 
 	router := gin.Default()
 
+	v2 := router.Group("/v2")
+
 	//theAdmin = admin.NewAdmin(implServer, &router.RouterGroup)
-	theFront = front.NewFront(implServer, &router.RouterGroup)
+	theFront = front.NewFront(implServer, theAuth, &router.RouterGroup, v2)
 
 	//routerV1(router)
 
-	v2 := router.Group("/v2")
 	v2.Use(func(c *gin.Context) {
 		defer func() {
 			if e := recover(); e != nil {

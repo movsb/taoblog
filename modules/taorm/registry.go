@@ -66,7 +66,10 @@ func register(_struct interface{}, tableName string) *_StructInfo {
 	rwLock.Lock()
 	defer rwLock.Unlock()
 	t := structType(_struct)
-	typeName := t.String()
+	typeName := t.PkgPath() + "." + t.Name()
+	if si, ok := structs[typeName]; ok {
+		return si
+	}
 	structInfo := newStructInfo()
 	structInfo.tableName = tableName
 	for i := 0; i < t.NumField(); i++ {

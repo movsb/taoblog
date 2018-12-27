@@ -40,3 +40,9 @@ func (g *Gateway) IncrementPostPageView(c *gin.Context) {
 	g.server.IncrementPostPageView(name)
 	c.JSON(200, nil)
 }
+
+func (g *Gateway) GetPostCommentCount(c *gin.Context) {
+	name := utils.MustToInt64(c.Param("name"))
+	count := g.server.GetPostCommentCount(name)
+	c.JSON(200, count)
+}

@@ -14,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/service/models"
 )
@@ -89,12 +90,16 @@ type Front struct {
 	server    *service.ImplServer
 	templates *template.Template
 	router    *gin.RouterGroup
+	auth      *auth.Auth
+	api       *gin.RouterGroup
 }
 
-func NewFront(server *service.ImplServer, router *gin.RouterGroup) *Front {
+func NewFront(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup) *Front {
 	f := &Front{
 		server: server,
 		router: router,
+		auth:   auth,
+		api:    api,
 	}
 	f.loadTemplates()
 	f.route()
@@ -107,6 +112,9 @@ func (f *Front) route() {
 		path := c.Param("path")
 		f.Query(c, path)
 	})
+
+	posts := f.api.Group("/posts")
+	posts.GET("/:name/comments", f.listPostComments)
 }
 
 func (f *Front) render(w io.Writer, name string, data interface{}) {
@@ -239,9 +247,9 @@ func (f *Front) queryHome(c *gin.Context) {
 		OrderBy: "date DESC",
 	}), f.server)
 	home.LatestComments = newComments(f.server.ListComments(&service.ListCommentsRequest{
-		Parent:  0,
-		Limit:   10,
-		OrderBy: "date DESC",
+		Ancestor: -1,
+		Limit:    10,
+		OrderBy:  "date DESC",
 	}), f.server)
 
 	f.render(c.Writer, "header", header)

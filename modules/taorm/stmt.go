@@ -200,7 +200,7 @@ func (s *Stmt) buildOrderBy() (orderBy string) {
 }
 
 func (s *Stmt) buildLimit() (limit string) {
-	if s.limit >= 0 {
+	if s.limit > 0 {
 		limit += fmt.Sprintf(" LIMIT %d", s.limit)
 		if s.offset >= 0 {
 			limit += fmt.Sprintf(" OFFSET %d", s.offset)

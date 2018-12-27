@@ -21,10 +21,12 @@ type ListPostsRequest struct {
 }
 
 type ListCommentsRequest struct {
-	Parent  int64
-	Fields  string
-	Limit   int64
-	OrderBy string
+	PostID   int64
+	Ancestor int64
+	Fields   string
+	Limit    int64
+	Offset   int64
+	OrderBy  string
 }
 
 type ListTagsWithCountRequest struct {

@@ -174,7 +174,7 @@ Comment.prototype.load_essential_comments = function() {
 Comment.prototype.get_count = function(callback) {
     var self = this;
     var pid = $('#post-id').val();
-    $.get('/v1/posts/' + pid + '/comments:count',
+    $.get('/v2/posts/' + pid + '/comments!count',
         function(data) {
             self._count = data;
             $('#comment-title .total').text(self._count);
@@ -374,10 +374,9 @@ Comment.prototype.load_comments = function() {
     var self = this;
     var pid = $('#post-id').val();
 
-    $.get('/v1/posts/' + pid + '/comments',
+    $.get('/v2/posts/' + pid + '/comments',
         {
-            order: 'desc',
-            count: 10,
+            limit: 10,
             offset: self._loaded,
         },
         function(cmts) {

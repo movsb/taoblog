@@ -47,6 +47,7 @@ func (g *Gateway) routePosts() {
 	c.GET("", g.ListPosts)
 	c.GET("/:name/title", g.GetPostTitle)
 	c.POST("/:name/page_view", g.IncrementPostPageView)
+	c.GET("/:name/comments!count", g.GetPostCommentCount)
 }
 
 func (g *Gateway) routeComments() {

@@ -173,3 +173,13 @@ func (s *ImplServer) GetRelatedPosts(id int64) []*models.PostForRelated {
 func (s *ImplServer) GetPostTags(ID int64) []string {
 	return s.GetObjectTagNames(ID)
 }
+
+func (s *ImplServer) GetPostCommentCount(name int64) (count int64) {
+	var post models.Post
+	s.posts().Select("comments").Where("id=?", name).Find(&post)
+	return int64(post.Comments)
+}
+
+func (s *ImplServer) ListPostComments(in *ListCommentsRequest) []*models.Comment {
+	return s.ListComments(in)
+}

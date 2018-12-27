@@ -19,7 +19,8 @@ func (s *ImplServer) GetComment(name int64) *models.Comment {
 // ListComments ...
 func (s *ImplServer) ListComments(in *ListCommentsRequest) []*models.Comment {
 	var comments []*models.Comment
-	s.comments().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy).
-		WhereIf(in.Parent > 0, "post_id=?", in.Parent).Find(&comments)
+	s.comments().Select(in.Fields).Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
+		WhereIf(in.PostID > 0, "post_id=?", in.PostID).
+		WhereIf(in.Ancestor >= 0, "ancestor=?", in.Ancestor).Find(&comments)
 	return comments
 }
