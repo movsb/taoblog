@@ -1,6 +1,7 @@
 package front
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -15,6 +16,7 @@ type Post struct {
 	Content      template.HTML
 	RelatedPosts []*models.PostForRelated
 	server       *service.ImplServer
+	_Metas       map[string]interface{}
 }
 
 func newPost(post *models.Post, server *service.ImplServer) *Post {
@@ -54,4 +56,30 @@ func (p *Post) TagsString() template.HTML {
 		ts = append(ts, fmt.Sprintf(`<a href="/tags/%[1]s">%[1]s</a>`, et))
 	}
 	return template.HTML(strings.Join(ts, " · "))
+}
+
+func (p *Post) decodeMetas() {
+	if p._Metas == nil {
+		json.Unmarshal([]byte(p.Metas), &p._Metas)
+	}
+}
+
+func (p *Post) CustomHeader() (header string) {
+	p.decodeMetas()
+	if i, ok := p._Metas["header"]; ok {
+		if s, ok := i.(string); ok {
+			header = s
+		}
+	}
+	return
+}
+
+func (p *Post) CustomFooter() (footer string) {
+	p.decodeMetas()
+	if i, ok := p._Metas["footer"]; ok {
+		if s, ok := i.(string); ok {
+			footer = s
+		}
+	}
+	return
 }

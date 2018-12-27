@@ -1,5 +1,21 @@
 package service
 
+import (
+	"github.com/movsb/taoblog/modules/taorm"
+	"github.com/movsb/taoblog/service/models"
+)
+
+func (s *ImplServer) tags() *taorm.Stmt {
+	return s.tdb.Model(models.Tag{}, "tags")
+}
+
+// GetTagByName gets a tag by Name.
+func (s *ImplServer) GetTagByName(name string) *models.Tag {
+	var tag models.Tag
+	s.tags().Where("name=?", name).Find(&tag)
+	return &tag
+}
+
 /*
 func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagWithCount {
 	query, args := sql_helpers.NewSelect().

@@ -221,20 +221,6 @@ func (tm *TagManager) GetTagByID(tx Querier, id int64) (*Tag, error) {
 	return &tag, nil
 }
 
-// GetTagByName gets a tag by Name.
-func (tm *TagManager) GetTagByName(tx Querier, tag string) (*Tag, error) {
-	query := "SELECT id,name,alias FROM tags WHERE name=?"
-	row := tx.QueryRow(query, tag)
-	var tagObj Tag
-	if err := row.Scan(&tagObj.ID, &tagObj.Name, &tagObj.Alias); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &TagNotFoundError{}
-		}
-		return nil, err
-	}
-	return &tagObj, nil
-}
-
 // GetRootTag gets the root tag of an alias-ed tag.
 func (tm *TagManager) GetRootTag(tx Querier, id int64) (tag *Tag, err error) {
 	for {

@@ -405,12 +405,6 @@ func routerV1(router *gin.Engine) {
 			EndReq(c, err, ps)
 		})
 
-		archives.GET("/tags/:name", func(c *gin.Context) {
-			tag := c.Param("name")
-			ps, err := postmgr.GetPostsByTags(gdb, tag)
-			EndReq(c, err, ps)
-		})
-
 		archives.GET("/dates/:year/:month", func(c *gin.Context) {
 			year := toInt64(c.Param("year"))
 			month := toInt64(c.Param("month"))

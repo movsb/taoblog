@@ -190,7 +190,7 @@ func (a *Admin) Query(c *gin.Context, path string) {
 		a.queryCategoryManage(c)
 		return
 	}
-	c.File(filepath.Join(os.Getenv("BASE"), "admin/templates", path))
+	c.File(filepath.Join(os.Getenv("BASE"), "admin/statics", path))
 }
 
 func (a *Admin) Post(c *gin.Context, path string) {

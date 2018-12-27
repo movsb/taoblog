@@ -59,6 +59,18 @@ func (s *ImplServer) GetPostBySlug(categories string, slug string) *models.Post 
 	return s.getPostBySlugOrPage(false, categories, slug)
 }
 
+// GetPostsByTags gets tag posts.
+func (s *ImplServer) GetPostsByTags(tagName string) []*models.PostForArchive {
+	tag := s.GetTagByName(tagName)
+	tagIDs := s.getAliasTagsAll([]int64{tag.ID})
+	var posts []*models.PostForArchive
+	s.tdb.From("posts").From("post_tags").Select("posts.id,posts.title").
+		Where("posts.id=post_tags.post_id").
+		Where("post_tags.tag_id in (?)", tagIDs).
+		Find(&posts)
+	return posts
+}
+
 func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug string) *models.Post {
 	var catID int64
 	if !isPage {

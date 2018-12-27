@@ -147,10 +147,9 @@ func (f *Front) Query(c *gin.Context, path string) {
 		return
 	}
 	if regexpByTags.MatchString(path) {
-		//matches := regexpByTags.FindStringSubmatch(path)
-		//tags := matches[1]
-		// TODO
-		//f.queryByTags(c, tags)
+		matches := regexpByTags.FindStringSubmatch(path)
+		tags := matches[1]
+		f.queryByTags(c, tags)
 		return
 	}
 	if regexpByArchives.MatchString(path) {
@@ -179,7 +178,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 		c.String(http.StatusForbidden, "403 Forbidden")
 		return
 	}
-	c.File(filepath.Join(os.Getenv("BASE"), "front/html", path))
+	c.File(filepath.Join(os.Getenv("BASE"), "front/statics", path))
 }
 
 func (f *Front) handle304(c *gin.Context, p *models.Post) bool {
@@ -291,14 +290,13 @@ func (f *Front) tempRenderPost(c *gin.Context, p *models.Post) {
 		Title: post.Title,
 		Header: func() {
 			f.render(w, "content_header", post)
-			// TODO
-			//fmt.Fprint(w, post.CustomHeader())
+			fmt.Fprint(w, post.CustomHeader())
 		},
 	}
 	footer := &ThemeFooterData{
 		Footer: func() {
 			f.render(w, "content_footer", post)
-			//fmt.Fprint(w, post.CustomFooter())
+			fmt.Fprint(w, post.CustomFooter())
 		},
 	}
 	f.render(w, "header", header)
@@ -306,17 +304,13 @@ func (f *Front) tempRenderPost(c *gin.Context, p *models.Post) {
 	f.render(w, "footer", footer)
 }
 
-// TODO
-/*
 func (f *Front) queryByTags(c *gin.Context, tags string) {
-	posts, err := postmgr.GetPostsByTags(gdb, tags)
-	if err != nil {
-		EndReq(c, err, posts)
-		return
-	}
-	f.render(c.Writer, "tags", &QueryTags{Posts: posts, Tag: tags})
+	posts := f.server.GetPostsByTags(tags)
+	in := QueryTags{Posts: posts, Tag: tags}
+	f.render(c.Writer, "tags", &in)
 }
 
+/*
 func (f *Front) queryByArchives(c *gin.Context) {
 	tags := f.server.ListTagsWithCount(&models.ListTagsWithCountRequest{
 		Limit:      50,

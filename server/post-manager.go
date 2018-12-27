@@ -114,27 +114,6 @@ func (z *PostManager) GetPostsByCategory(tx Querier, catID int64) ([]*PostForArc
 }
 
 /*
-// GetPostsByTags gets tag posts.
-func (z *PostManager) GetPostsByTags(tx Querier, tag string) ([]*PostForArchiveQuery, error) {
-	tagObj, err := tagmgr.GetTagByName(tx, tag)
-	_ = tagObj
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO
-	ids := []int64{}
-
-	query, args := sql_helpers.NewSelect().From("posts,post_tags", "").
-		Select("posts.id,posts.title").
-		Where("posts.id=post_tags.post_id").
-		Where("post_tags.tag_id in (?)", ids).
-		SQL()
-	return z.getRowPosts(tx, query, args...)
-}
-*/
-
-/*
 // GetPostsByDate gets date posts.
 func (z *PostManager) GetPostsByDate(tx Querier, yy, mm int64) ([]*PostForArchiveQuery, error) {
 	seldb := sql_helpers.NewSelect().From("posts", "").
