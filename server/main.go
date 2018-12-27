@@ -42,13 +42,6 @@ var theFront *front.Front
 var implServer *service.ImplServer
 var theGateway *gateway.Gateway
 
-func _auth(c *gin.Context) bool {
-	if theAuth.AuthHeader(c) || theAuth.AuthCookie(c) {
-		return true
-	}
-	return false
-}
-
 func main() {
 	flag.StringVar(&config.listen, "listen", "127.0.0.1:2564", "the port to which the server listen")
 	flag.StringVar(&config.username, "username", "taoblog", "the database username")
@@ -77,7 +70,7 @@ func main() {
 	defer gdb.Close()
 
 	theAuth = &auth.Auth{}
-	implServer = service.NewImplServer(gdb)
+	implServer = service.NewImplServer(gdb, theAuth)
 	theAuth.SetLogin(implServer.GetDefaultStringOption("login", "x"))
 	theAuth.SetKey(config.key)
 	uploadmgr = NewFileUpload(file_managers.NewLocalFileManager(config.files))
@@ -149,7 +142,7 @@ func routerV1(router *gin.Engine) {
 			c.String(400, "bad file")
 			return
 		}
-		logged := _auth(c)
+		logged := false
 		path := fileredir.Redirect(logged, fmt.Sprintf("%d/%s", parent, name))
 		c.Redirect(302, path)
 	})
@@ -170,126 +163,15 @@ func routerV1(router *gin.Engine) {
 			var cmt Comment
 			var loggedin bool
 
-			loggedin = _auth(c)
-
-			cmt.PostID = toInt64(c.Param("parent"))
-			cmt.Parent = toInt64(c.DefaultPostForm("parent", "0"))
-			cmt.Author = c.DefaultPostForm("author", "")
-			cmt.Email = c.DefaultPostForm("email", "")
-			cmt.URL = c.DefaultPostForm("url", "")
-			cmt.IP = c.ClientIP()
-			cmt.Date = datetime.MyLocal()
-			cmt.Content = c.DefaultPostForm("content", "")
-
-			tx, err := gdb.Begin()
-			if err != nil {
-				EndReq(c, err, nil)
-				return
-			}
-
-			if has, err := postmgr.Has(tx, cmt.PostID); err != nil || !has {
-				EndReq(c, errors.New("找不到文章"), nil)
-				tx.Rollback()
-				return
-			}
-
-			if !loggedin {
-				{
-					notAllowedEmails := strings.Split(optmgr.GetDef(tx, "not_allowed_emails", ""), ",")
-					if adminEmail := optmgr.GetDef(tx, "email", ""); adminEmail != "" {
-						notAllowedEmails = append(notAllowedEmails, adminEmail)
-					}
-
-					log.Println(notAllowedEmails)
-
-					// TODO use regexp to detect equality.
-					for _, email := range notAllowedEmails {
-						if email != "" && cmt.Email != "" && strings.EqualFold(email, cmt.Email) {
-							EndReq(c, errors.New("不能使用此邮箱地址"), nil)
-							tx.Rollback()
-							return
-						}
-					}
-				}
-				{
-					notAllowedAuthors := strings.Split(optmgr.GetDef(tx, "not_allowed_authors", ""), ",")
-					if adminName := optmgr.GetDef(tx, "nickname", ""); adminName != "" {
-						notAllowedAuthors = append(notAllowedAuthors, adminName)
-					}
-
-					for _, author := range notAllowedAuthors {
-						if author != "" && cmt.Author != "" && strings.EqualFold(author, string(cmt.Author)) {
-							EndReq(c, errors.New("不能使用此昵称"), nil)
-							tx.Rollback()
-							return
-						}
-					}
-				}
-			}
-
-			if err = cmtmgr.CreateComment(tx, &cmt); err != nil {
-				EndReq(c, err, nil)
-				tx.Rollback()
-				return
-			}
-
-			count := cmtmgr.GetAllCount(tx)
-			optmgr.Set(tx, "comment_count", count)
 
 			postcmtsmgr.UpdatePostCommentsCount(tx, cmt.PostID)
 
-			retCmt := c.DefaultQuery("return_cmt", "0") == "1"
-
-			if !retCmt {
-				if err = tx.Commit(); err != nil {
-					tx.Rollback()
-					EndReq(c, err, nil)
-					return
-				}
-				EndReq(c, nil, gin.H{
-					"id": cmt.ID,
-				})
-			} else {
-				cmts, err := postcmtsmgr.GetPostComments(tx, cmt.ID, 0, 1, cmt.PostID, true)
-				if err != nil || len(cmts) == 0 {
-					EndReq(c, errors.New("error get comment"), nil)
-					tx.Rollback()
-					return
-				}
-				if err = tx.Commit(); err != nil {
-					tx.Rollback()
-					EndReq(c, err, nil)
-					return
-				}
-				cmts[0].private = loggedin
-				EndReq(c, err, cmts[0])
-			}
 
 			doNotify(gdb, &cmt) // TODO use cmts[0]
 		})
 	*/
 
 	/*
-		posts.DELETE("/:parent/comments/:name", theAuth.Middle, func(c *gin.Context) {
-			var err error
-
-			parent := toInt64(c.Param("parent"))
-			id := toInt64(c.Param("name"))
-
-			// TODO check referrer
-			_ = parent
-
-			tx, err := gdb.Begin()
-			if err != nil {
-				panic(err)
-			}
-			err = postcmtsmgr.DeletePostComment(tx, id)
-			if err = tx.Commit(); err != nil {
-				tx.Rollback()
-			}
-			EndReq(c, err, nil)
-		})
-
 		posts.GET("/:parent/files", theAuth.Middle, func(c *gin.Context) {
 			files, err := uploadmgr.List(c)
 			EndReq(c, err, files)

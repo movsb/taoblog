@@ -1,12 +1,39 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha1"
 	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
+
+type ctxAuthKey struct{}
+
+type AuthContext struct {
+	User *User
+}
+
+type User struct {
+	ID int64
+}
+
+var guest = &User{
+	ID: 0,
+}
+
+var admin = &User{
+	ID: 1,
+}
+
+func (u *User) IsGuest() bool {
+	return u.ID == 0
+}
+
+func (u *User) Context(parent context.Context) context.Context {
+	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
+}
 
 type Auth struct {
 	savedUser     string
@@ -42,23 +69,37 @@ func (o *Auth) AuthLogin(username string, password string) bool {
 	return false
 }
 
-func (o *Auth) AuthCookie(c *gin.Context) bool {
+func (o *Auth) AuthCookie(c *gin.Context) *User {
 	login, err := c.Cookie("login")
 	if err != nil {
-		return false
+		return guest
 	}
 
 	agent := c.GetHeader("User-Agent")
 	if agent == "" {
-		return false
+		return guest
 	}
 
-	return o.sha1(agent+o.Login()) == login
+	if o.sha1(agent+o.Login()) == login {
+		return admin
+	}
+
+	return guest
 }
 
-func (o *Auth) AuthHeader(c *gin.Context) bool {
+func (o *Auth) AuthHeader(c *gin.Context) *User {
 	key := c.GetHeader("Authorization")
-	return key == o.key
+	if key == o.key {
+		return admin
+	}
+	return guest
+}
+
+func (a *Auth) AuthContext(ctx context.Context) *User {
+	if value, ok := ctx.Value(ctxAuthKey{}).(AuthContext); ok {
+		return value.User
+	}
+	return nil
 }
 
 func (o *Auth) MakeCookie(c *gin.Context) {
@@ -72,7 +113,13 @@ func (o *Auth) DeleteCookie(c *gin.Context) {
 }
 
 func (o *Auth) Middle(c *gin.Context) {
-	if o.AuthCookie(c) || o.AuthHeader(c) {
+	cookieUser := o.AuthCookie(c)
+	if !cookieUser.IsGuest() {
+		c.Next()
+		return
+	}
+	headerUser := o.AuthHeader(c)
+	if !headerUser.IsGuest() {
 		c.Next()
 		return
 	}

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 	"strings"
+
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 // TagNotFoundError is
@@ -151,14 +153,14 @@ func (tm *TagManager) UpdateObjectTags(tx Querier, pid int64, tags []string) err
 	)
 
 	for _, t := range oldTags {
-		if !strInSlice(newTags, t) {
+		if !utils.StrInSlice(newTags, t) {
 			toBeDeled = append(toBeDeled, t)
 		}
 	}
 
 	for _, t := range newTags {
 		t = strings.TrimSpace(t)
-		if t != "" && !strInSlice(oldTags, t) {
+		if t != "" && !utils.StrInSlice(oldTags, t) {
 			toBeAdded = append(toBeAdded, t)
 		}
 	}

@@ -49,18 +49,6 @@ func (z *CategoryManager) GetTree(tx Querier) ([]*Category, error) {
 }
 */
 
-// GetChildren gets direct descendant children.
-func (z *CategoryManager) GetChildren(tx Querier, parent int64) ([]*Category, error) {
-	query := `select * from taxonomies where parent=` + fmt.Sprint(parent)
-	rows, err := tx.Query(query)
-	_ = rows
-	if err != nil {
-		return nil, err
-	}
-	//return z.scanMulti(rows)
-	return nil, nil
-}
-
 func (z *CategoryManager) GetCountOfCategoriesAll(tx Querier) (map[int64]int64, error) {
 	query := `select taxonomy,count(id) count from posts group by taxonomy`
 	rows, err := tx.Query(query)

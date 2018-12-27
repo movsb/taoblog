@@ -64,22 +64,6 @@ func (z *PostManager) Has(tx Querier, id int64) (bool, error) {
 	return pid > 0, err
 }
 
-// GetCommentCount gets the comment count of a post.
-func (z *PostManager) GetCommentCount(tx Querier, pid int64) (count int) {
-	query := `select comments from posts where id = ?`
-	args := []interface{}{pid}
-	row := tx.QueryRow(query, args...)
-	switch row.Scan(&count) {
-	case sql.ErrNoRows:
-		count = -1
-	case nil:
-		break
-	default:
-		count = -1
-	}
-	return
-}
-
 func (z *PostManager) getRowPosts(tx Querier, query string, args ...interface{}) ([]*PostForArchiveQuery, error) {
 	var ps []*PostForArchiveQuery
 	if err := taorm.QueryRows(&ps, tx, query, args...); err != nil {

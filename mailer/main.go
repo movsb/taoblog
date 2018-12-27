@@ -96,7 +96,7 @@ func doNotifyUser(tx Querier, cmt *Comment, postTitle string, parent ParentInfo)
 	doSendMailAsync(parent.Email, parent.Author, subject, body.String())
 }
 
-func doNotify(tx Querier, cmt *Comment) {
+func DoNotify(tx Querier, cmt *Comment) {
 	var err error
 
 	adminEmail := optmgr.GetDef(tx, "email", "")

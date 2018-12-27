@@ -7,15 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func strInSlice(str []string, s string) bool {
-	for _, b := range str {
-		if b == s {
-			return true
-		}
-	}
-	return false
-}
-
 // EndReq succs or fails a request.
 func EndReq(c *gin.Context, err interface{}, dat interface{}) {
 	succ := false

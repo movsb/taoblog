@@ -180,6 +180,11 @@ func (s *ImplServer) GetPostCommentCount(name int64) (count int64) {
 	return int64(post.Comments)
 }
 
+func (s *ImplServer) UpdatePostCommentCount(name int64) {
+	query := `UPDATE posts INNER JOIN (SELECT count(post_id) count FROM comments WHERE post_id=?) x ON posts.id=? SET posts.comments=x.count`
+	s.tdb.MustExec(query, name, name)
+}
+
 func (s *ImplServer) ListPostComments(in *ListCommentsRequest) []*models.Comment {
 	return s.ListComments(in)
 }

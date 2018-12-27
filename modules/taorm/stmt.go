@@ -22,12 +22,22 @@ type Stmt struct {
 }
 
 type DB struct {
-	db *sql.DB
+	rdb *sql.DB
+	db  Querier
 }
 
 func NewDB(db *sql.DB) *DB {
 	t := &DB{
-		db: db,
+		rdb: db,
+		db:  db,
+	}
+	return t
+}
+
+func NewTx(db Querier) *DB {
+	t := &DB{
+		rdb: nil,
+		db:  db,
 	}
 	return t
 }

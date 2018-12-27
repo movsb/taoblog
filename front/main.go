@@ -20,12 +20,11 @@ import (
 )
 
 var (
-	regexpHome       = regexp.MustCompile(`^/$`)
-	regexpByID       = regexp.MustCompile(`/(\d+)/$`)
-	regexpBySlug     = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
-	regexpByTags     = regexp.MustCompile(`^/tags/(.*)$`)
-	regexpByArchives = regexp.MustCompile(`^/archives$`)
-	regexpByPage     = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
+	regexpHome   = regexp.MustCompile(`^/$`)
+	regexpByID   = regexp.MustCompile(`/(\d+)/$`)
+	regexpBySlug = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
+	regexpByTags = regexp.MustCompile(`^/tags/(.*)$`)
+	regexpByPage = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
 )
 
 var nonCategoryNames = map[string]bool{
@@ -115,6 +114,8 @@ func (f *Front) route() {
 
 	posts := f.api.Group("/posts")
 	posts.GET("/:name/comments", f.listPostComments)
+	posts.POST("/:name/comments", f.createPostComment)
+	posts.DELETE("/:name/comments/:comment_name", f.deletePostComment)
 }
 
 func (f *Front) render(w io.Writer, name string, data interface{}) {
@@ -160,11 +161,6 @@ func (f *Front) Query(c *gin.Context, path string) {
 		f.queryByTags(c, tags)
 		return
 	}
-	if regexpByArchives.MatchString(path) {
-		// TODO
-		//f.queryByArchives(c)
-		return
-	}
 	if regexpBySlug.MatchString(path) && f.isCategoryPath(path) {
 		matches := regexpBySlug.FindStringSubmatch(path)
 		tree := matches[1]
@@ -195,6 +191,9 @@ func (f *Front) Query(c *gin.Context, path string) {
 func (f *Front) handleSpecialPages(c *gin.Context, parents string, slug string) bool {
 	if parents == "" && slug == "rss" {
 		f.GetRss(c)
+		return true
+	}
+	if parents == "" && slug == "archives" {
 		return true
 	}
 	return false
@@ -387,6 +386,7 @@ func (f *Front) queryByArchives(c *gin.Context) {
 	f.render(c.Writer, "footer", footer)
 }
 */
+
 func (f *Front) postNotFound(c *gin.Context) {
 	c.Status(404)
 	f.render(c.Writer, "404", nil)

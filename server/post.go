@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/post_translators"
 )
 
@@ -101,19 +102,19 @@ func (z *Post) validate() error {
 	if z.Type == "" {
 		z.Type = "post"
 	}
-	if !strInSlice([]string{"post", "page"}, z.Type) {
+	if !utils.StrInSlice([]string{"post", "page"}, z.Type) {
 		return fmt.Errorf("类型不正确")
 	}
 	if z.Status == "" {
 		z.Status = "public"
 	}
-	if !strInSlice([]string{"public", "draft"}, z.Status) {
+	if !utils.StrInSlice([]string{"public", "draft"}, z.Status) {
 		return fmt.Errorf("发表状态不正确")
 	}
 	if z.SourceType == "" {
 		z.SourceType = "html"
 	}
-	if !strInSlice([]string{"html", "markdown"}, z.SourceType) {
+	if !utils.StrInSlice([]string{"html", "markdown"}, z.SourceType) {
 		return fmt.Errorf("不支持的文章分类：%v", z.SourceType)
 	}
 	if z.Source == "" {

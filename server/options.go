@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-
-	"github.com/movsb/taoblog/modules/taorm"
 )
 
 type OptionManager struct {
@@ -67,19 +65,4 @@ func (o *OptionManager) Set(tx Querier, name string, val interface{}) error {
 	}
 	log.Println(query)
 	return err
-}
-
-func (o *OptionManager) Del(tx Querier, name string) error {
-	query := `DELETE FROM options WHERE name=? LIMIT 1`
-	_, err := tx.Exec(query, name)
-	return err
-}
-
-func (o *OptionManager) List(tx Querier) ([]*Option, error) {
-	var items []*Option
-	query := `SELECT name,value FROM options`
-	if err := taorm.QueryRows(&items, tx, query); err != nil {
-		return nil, err
-	}
-	return items, nil
 }

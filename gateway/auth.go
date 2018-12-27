@@ -5,8 +5,9 @@ import (
 )
 
 func (g *Gateway) auth(c *gin.Context) {
-	ok := g.auther.AuthCookie(c) || g.auther.AuthHeader(c)
-	if !ok {
+	cookieUser := g.auther.AuthCookie(c)
+	headerUser := g.auther.AuthContext(c)
+	if cookieUser.IsGuest() && headerUser.IsGuest() {
 		c.Status(401)
 		c.Abort()
 	}

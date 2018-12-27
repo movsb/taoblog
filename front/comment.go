@@ -106,18 +106,42 @@ func (f *Front) listPostComments(c *gin.Context) {
 		})
 	}
 
-	logged := f.auth.AuthCookie(c)
+	user := f.auth.AuthCookie(c)
 	adminEmail := f.server.GetStringOption("email")
 
 	outParents := make([]*AjaxComment, 0, len(parents))
 	for _, parent := range parents {
-		outParent := NewAjaxComment(parent, logged, adminEmail)
+		outParent := NewAjaxComment(parent, !user.IsGuest(), adminEmail)
 		outParents = append(outParents, outParent)
 		outParent.Children = make([]*AjaxComment, 0, 0)
 		for _, child := range childrenMap[parent.ID] {
-			outChild := NewAjaxComment(child, logged, adminEmail)
+			outChild := NewAjaxComment(child, !user.IsGuest(), adminEmail)
 			outParent.Children = append(outParent.Children, outChild)
 		}
 	}
 	c.JSON(200, outParents)
+}
+
+func (f *Front) createPostComment(c *gin.Context) {
+	cmt := models.Comment{
+		PostID:  utils.MustToInt64(c.Param("name")),
+		Parent:  utils.MustToInt64(c.DefaultPostForm("parent", "0")),
+		Author:  c.DefaultPostForm("author", ""),
+		Email:   c.DefaultPostForm("email", ""),
+		URL:     c.DefaultPostForm("url", ""),
+		IP:      c.ClientIP(),
+		Date:    datetime.MyLocal(), // TODO
+		Content: c.DefaultPostForm("content", ""),
+	}
+	user := f.auth.AuthCookie(c)
+	f.server.CreateComment(user.Context(nil), &cmt)
+	adminEmail := f.server.GetDefaultStringOption("email", "")
+	c.JSON(200, NewAjaxComment(&cmt, !user.IsGuest(), adminEmail))
+}
+
+func (f *Front) deletePostComment(c *gin.Context) {
+	_ = utils.MustToInt64(c.Param("name"))
+	commentName := utils.MustToInt64(c.Param("comment_name"))
+	user := f.auth.AuthCookie(c)
+	f.server.DeleteComment(user.Context(nil), commentName)
 }

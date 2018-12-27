@@ -2,11 +2,19 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/service/models"
 )
+
+func (s *ImplServer) GetOption(name string) *models.Option {
+	query := `SELECT * FROM options WHERE name = ?`
+	var option models.Option
+	taorm.MustQueryRows(&option, s.db, query, name)
+	return &option
+}
 
 func (s *ImplServer) GetStringOption(name string) string {
 	query := `SELECT * FROM options WHERE name = ?`
@@ -54,5 +62,29 @@ func (s *ImplServer) GetDefaultIntegerOption(name string, def int64) (value int6
 		return def
 	default:
 		panic(err)
+	}
+}
+
+func (s *ImplServer) HaveOption(name string) (have bool) {
+	defer func() {
+		if e := recover(); e != nil {
+			have = false
+		}
+	}()
+	s.GetStringOption(name)
+	return true
+}
+
+func (s *ImplServer) SetOption(name string, value interface{}) {
+	if s.HaveOption(name) {
+		option := s.GetOption(name)
+		stmt := s.tdb.Model(option, "options")
+		stmt.UpdateField("value", value)
+	} else {
+		option := models.Option{
+			Name:  name,
+			Value: fmt.Sprint(value),
+		}
+		s.tdb.Model(&option, "options").Create()
 	}
 }

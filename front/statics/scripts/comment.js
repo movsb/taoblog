@@ -84,7 +84,7 @@ Comment.prototype.init = function() {
         $(this).attr('disabled', 'disabled');
         $('#comment-submit').val('提交中...');
         $.post(
-            '/v1/posts/' + $('#post-id').val() + '/comments?return_cmt=1',
+            '/v2/posts/' + $('#post-id').val() + '/comments',
             $('#comment-form').serialize(),
             function(cmt){
                 var parent = $('#comment-form input[name="parent"]').val();
@@ -317,7 +317,7 @@ Comment.prototype.delete_me = function(p) {
     var self = this;
     var pid = $('#post-id').val();
 	$.ajax({
-        url: '/v1/posts/' + pid + '/comments/' + p,
+        url: '/v2/posts/' + pid + '/comments/' + p,
         type: 'DELETE',
         success: function() {
             $('#comment-'+p).remove();
