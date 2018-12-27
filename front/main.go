@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -114,8 +113,7 @@ func NewFront(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGro
 }
 
 func (f *Front) route() {
-	g := f.router.Group("/blog")
-	g.GET("/*path", func(c *gin.Context) {
+	f.router.GET("/*path", func(c *gin.Context) {
 		path := c.Param("path")
 		f.Query(c, path)
 	})
@@ -124,6 +122,9 @@ func (f *Front) route() {
 	posts.GET("/:name/comments", f.listPostComments)
 	posts.POST("/:name/comments", f.createPostComment)
 	posts.DELETE("/:name/comments/:comment_name", f.deletePostComment)
+
+	tools := f.api.Group("/tools")
+	tools.POST("/aes2htm", aes2htm)
 }
 
 func (f *Front) render(w io.Writer, name string, data interface{}) {
@@ -141,7 +142,7 @@ func (f *Front) loadTemplates() {
 
 	var tmpl *template.Template
 	tmpl = template.New("front").Funcs(funcs)
-	path := filepath.Join(os.Getenv("BASE"), "front/templates", "*.html")
+	path := filepath.Join("front/templates", "*.html")
 	tmpl, err := tmpl.ParseGlob(path)
 	if err != nil {
 		panic(err)
@@ -194,7 +195,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 		handler(c)
 		return
 	}
-	c.File(filepath.Join(os.Getenv("BASE"), "front/statics", path))
+	c.File(filepath.Join("front/statics", path))
 }
 
 func (f *Front) handle304(c *gin.Context, p *models.Post) bool {
@@ -325,65 +326,6 @@ func (f *Front) queryByTags(c *gin.Context, tags string) {
 	in := QueryTags{Posts: posts, Tag: tags}
 	f.render(c.Writer, "tags", &in)
 }
-
-/*
-func (f *Front) queryByArchives(c *gin.Context) {
-	tags := f.server.ListTagsWithCount(&models.ListTagsWithCountRequest{
-		Limit:      50,
-		MergeAlias: true,
-	}).Tags
-	posts, _ := postmgr.GetDateArchives(gdb)
-
-	cats, _ := catmgr.GetTree(gdb)
-	postCounts, _ := catmgr.GetCountOfCategoriesAll(gdb)
-
-	var fn func([]*Category) (string, int64)
-	fn = func(cats []*Category) (string, int64) {
-		s := ""
-		n := int64(0)
-		for _, cat := range cats {
-			postCount := postCounts[cat.ID]
-			s1 := fmt.Sprintf(`<li data-cid=%d class=folder><i class="folder-name fa fa-folder-o"></i><span class="folder-name">%s(`, cat.ID, cat.Name)
-			s2 := `)</span><ul>`
-			s3, childCount := fn(cat.Children)
-			s4 := `</ul></li>`
-			c := fmt.Sprint(postCount)
-			if len(cat.Children) > 0 {
-				c += fmt.Sprintf("/%d", postCount+childCount)
-			}
-			s += s1 + c + s2 + s3 + s4
-			n += postCount + childCount
-		}
-		return s, n
-	}
-
-	catstr, _ := fn(cats)
-
-	header := &ThemeHeaderData{
-		Title: "文章归档",
-		Header: func() {
-			f.render(c.Writer, "archives_header", nil)
-		},
-	}
-
-	footer := &ThemeFooterData{
-		Footer: func() {
-			f.render(c.Writer, "archives_footer", nil)
-		},
-	}
-
-	a := &Archives{
-		Title: "文章归档",
-		Tags:  tags,
-		Dates: posts,
-		Cats:  template.HTML(catstr),
-	}
-
-	f.render(c.Writer, "header", header)
-	f.render(c.Writer, "archives", a)
-	f.render(c.Writer, "footer", footer)
-}
-*/
 
 func (f *Front) postNotFound(c *gin.Context) {
 	c.Status(404)

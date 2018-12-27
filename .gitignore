@@ -2,8 +2,7 @@
 *.swp
 .DS_Store
 
-
 /.vscode/
-/contents/
 /files/
-
+/run.sh
+/taoblog.conf

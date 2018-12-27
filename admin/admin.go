@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"io"
 	"net/url"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -148,7 +147,7 @@ func (a *Admin) loadTemplates() {
 
 	var tmpl *template.Template
 	tmpl = template.New("admin").Funcs(funcs)
-	path := filepath.Join(os.Getenv("BASE"), "admin", "templates", "*.html")
+	path := filepath.Join("admin", "templates", "*.html")
 	tmpl, err := a.templates.ParseGlob(path)
 	if err != nil {
 		panic(err)
@@ -190,7 +189,7 @@ func (a *Admin) Query(c *gin.Context, path string) {
 		a.queryCategoryManage(c)
 		return
 	}
-	c.File(filepath.Join(os.Getenv("BASE"), "admin/statics", path))
+	c.File(filepath.Join("admin/statics", path))
 }
 
 func (a *Admin) Post(c *gin.Context, path string) {

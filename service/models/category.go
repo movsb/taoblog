@@ -2,10 +2,10 @@ package models
 
 // Category is a post category
 type Category struct {
-	ID       int64
-	Name     string
-	Slug     string
-	Parent   int64
-	Ancestor int64
-	Children []*Category
+	ID       int64       `json:"id"`
+	Name     string      `json:"name"`
+	Slug     string      `json:"slug"`
+	Parent   int64       `json:"parent"`
+	Ancestor int64       `json:"ancestor"`
+	Children []*Category `json:"children"`
 }
