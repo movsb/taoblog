@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -13,17 +14,26 @@ func (s *ImplServer) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{}, "posts")
 }
 
-// GetPost ...
-func (s *ImplServer) GetPost(name int64) *models.Post {
+// MustGetPost ...
+func (s *ImplServer) MustGetPost(name int64) *models.Post {
 	var post models.Post
-	s.posts().Where("id = ?", name).Find(&post)
+	stmt := s.posts().Where("id = ?", name)
+	if err := stmt.Find(&post); err != nil {
+		if err == sql.ErrNoRows {
+			panic(&PostNotFoundError{})
+		}
+		panic(err)
+	}
 	return &post
 }
 
-// ListPosts ...
-func (s *ImplServer) ListPosts(in *ListPostsRequest) []*models.Post {
+// MustListPosts ...
+func (s *ImplServer) MustListPosts(in *ListPostsRequest) []*models.Post {
 	var posts []*models.Post
-	s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy).Find(&posts)
+	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
+	if err := stmt.Find(&posts); err != nil {
+		panic(err)
+	}
 	return posts
 }
 
@@ -33,17 +43,17 @@ func (s *ImplServer) GetLatestPosts(fields string, limit int64) []*models.Post {
 		Limit:   limit,
 		OrderBy: "date DESC",
 	}
-	return s.ListPosts(&in)
+	return s.MustListPosts(&in)
 }
 
 func (s *ImplServer) GetPostTitle(ID int64) string {
 	var p models.Post
-	s.posts().Select("title").Where("id = ?", ID).Find(&p)
+	s.posts().Select("title").Where("id = ?", ID).MustFind(&p)
 	return p.Title
 }
 
 func (s *ImplServer) GetPostByID(id int64) *models.Post {
-	return s.GetPost(id)
+	return s.MustGetPost(id)
 }
 
 func (s *ImplServer) IncrementPostPageView(id int64) {
@@ -52,11 +62,11 @@ func (s *ImplServer) IncrementPostPageView(id int64) {
 }
 
 func (s *ImplServer) GetPostByPage(parents string, slug string) *models.Post {
-	return s.getPostBySlugOrPage(true, parents, slug)
+	return s.mustGetPostBySlugOrPage(true, parents, slug)
 }
 
 func (s *ImplServer) GetPostBySlug(categories string, slug string) *models.Post {
-	return s.getPostBySlugOrPage(false, categories, slug)
+	return s.mustGetPostBySlugOrPage(false, categories, slug)
 }
 
 // GetPostsByTags gets tag posts.
@@ -67,11 +77,11 @@ func (s *ImplServer) GetPostsByTags(tagName string) []*models.PostForArchive {
 	s.tdb.From("posts").From("post_tags").Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
-		Find(&posts)
+		MustFind(&posts)
 	return posts
 }
 
-func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug string) *models.Post {
+func (s *ImplServer) mustGetPostBySlugOrPage(isPage bool, parents string, slug string) *models.Post {
 	var catID int64
 	if !isPage {
 		catID = s.parseCategoryTree(parents)
@@ -79,11 +89,16 @@ func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug strin
 		catID = s.getPageParentID(parents)
 	}
 	var p models.Post
-	s.tdb.Model(models.Post{}, "posts").
+	stmt := s.tdb.Model(models.Post{}, "posts").
 		Where("slug=? AND taxonomy=?", slug, catID).
 		WhereIf(isPage, "type = 'page'").
-		OrderBy("date DESC").
-		Find(&p)
+		OrderBy("date DESC")
+	if err := stmt.Find(&p); err != nil {
+		if err == sql.ErrNoRows {
+			panic(&PostNotFoundError{})
+		}
+		panic(err)
+	}
 	p.Date = datetime.My2Local(p.Date)
 	p.Modified = datetime.My2Local(p.Modified)
 	// TODO
@@ -97,7 +112,7 @@ func (s *ImplServer) getPostBySlugOrPage(isPage bool, parents string, slug strin
 func (s *ImplServer) parseCategoryTree(tree string) (id int64) {
 	parts := strings.Split(tree, "/")
 	var cats []*models.Category
-	s.tdb.Model(models.Post{}, "posts").Where("slug IN (?)", parts).Find(&cats)
+	s.tdb.Model(models.Category{}, "taxonomies").Where("slug IN (?)", parts).MustFind(&cats)
 	var parent int64
 	for i := 0; i < len(parts); i++ {
 		found := false
@@ -133,7 +148,7 @@ func (s *ImplServer) getPageParentID(parents string) int64 {
 		Select("id,slug,taxonomy").
 		Where("slug IN (?)", slugs).
 		Where("type = 'page'").
-		Find(&results)
+		MustFind(&results)
 	var parent int64
 	for i := 0; i < len(slugs); i++ {
 		found := false
@@ -166,7 +181,7 @@ func (s *ImplServer) GetRelatedPosts(id int64) []*models.PostForRelated {
 		GroupBy("posts.id").
 		OrderBy("relevance DESC").
 		Limit(9).
-		Find(&relates)
+		MustFind(&relates)
 	return relates
 }
 
@@ -176,7 +191,7 @@ func (s *ImplServer) GetPostTags(ID int64) []string {
 
 func (s *ImplServer) GetPostCommentCount(name int64) (count int64) {
 	var post models.Post
-	s.posts().Select("comments").Where("id=?", name).Find(&post)
+	s.posts().Select("comments").Where("id=?", name).MustFind(&post)
 	return int64(post.Comments)
 }
 

@@ -12,7 +12,7 @@ func (s *ImplServer) tags() *taorm.Stmt {
 // GetTagByName gets a tag by Name.
 func (s *ImplServer) GetTagByName(name string) *models.Tag {
 	var tag models.Tag
-	s.tags().Where("name=?", name).Find(&tag)
+	s.tags().Where("name=?", name).MustFind(&tag)
 	return &tag
 }
 

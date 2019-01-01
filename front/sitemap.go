@@ -31,7 +31,7 @@ func (f *Front) GetSitemap(c *gin.Context) {
 		}
 	}
 
-	rawPosts := f.server.ListPosts(&service.ListPostsRequest{
+	rawPosts := f.server.MustListPosts(&service.ListPostsRequest{
 		Fields:  "id",
 		OrderBy: "date DESC",
 	})

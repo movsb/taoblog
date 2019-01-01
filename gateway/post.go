@@ -8,7 +8,7 @@ import (
 
 func (g *Gateway) GetPost(c *gin.Context) {
 	name := utils.MustToInt64(c.Param("name"))
-	post := g.server.GetPost(name)
+	post := g.server.MustGetPost(name)
 	c.JSON(200, post)
 }
 
@@ -18,7 +18,7 @@ func (g *Gateway) ListPosts(c *gin.Context) {
 		Limit:   utils.MustToInt64(c.DefaultQuery("limit", "-1")),
 		OrderBy: c.Query("order_by"),
 	}
-	posts := g.server.ListPosts(&in)
+	posts := g.server.MustListPosts(&in)
 	c.JSON(200, posts)
 }
 

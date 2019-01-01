@@ -17,7 +17,7 @@ func (s *ImplServer) comments() *taorm.Stmt {
 // GetComment ...
 func (s *ImplServer) GetComment(name int64) *models.Comment {
 	var comment models.Comment
-	s.comments().Where("id=?", name).Find(&comment)
+	s.comments().Where("id=?", name).MustFind(&comment)
 	return &comment
 }
 
@@ -26,7 +26,7 @@ func (s *ImplServer) ListComments(in *ListCommentsRequest) []*models.Comment {
 	var comments []*models.Comment
 	s.comments().Select(in.Fields).Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
 		WhereIf(in.PostID > 0, "post_id=?", in.PostID).
-		WhereIf(in.Ancestor >= 0, "ancestor=?", in.Ancestor).Find(&comments)
+		WhereIf(in.Ancestor >= 0, "ancestor=?", in.Ancestor).MustFind(&comments)
 	return comments
 }
 

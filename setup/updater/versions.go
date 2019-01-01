@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/movsb/taoblog/server/modules/taorm"
+	"github.com/movsb/taoblog/modules/taorm"
 )
 
 func v0(tx *sql.Tx) {

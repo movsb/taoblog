@@ -39,7 +39,7 @@ func TestStmt(t *testing.T) {
 	}
 	_ = out
 
-	tdb.Model(Comment{}, "comments").Where("id=?", 100).Find(&comments)
+	tdb.Model(Comment{}, "comments").Where("id=?", 100).MustFind(&comments)
 	//out()
 
 	//tdb.Model(Comment{}, "comments_copy").UpdateMap(map[string]interface{}{

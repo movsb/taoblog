@@ -246,7 +246,7 @@ func (s *Stmt) Create() {
 	setPrimaryKeyValue(s.model, id)
 }
 
-func (s *Stmt) Find(out interface{}) {
+func (s *Stmt) Find(out interface{}) error {
 	var query string
 	var args = []interface{}{}
 
@@ -262,7 +262,13 @@ func (s *Stmt) Find(out interface{}) {
 	query += s.buildLimit()
 
 	dumpSQL(query, args...)
-	MustQueryRows(out, s.db.db, query, args...)
+	return QueryRows(out, s.db.db, query, args...)
+}
+
+func (s *Stmt) MustFind(out interface{}) {
+	if err := s.Find(out); err != nil {
+		panic(err)
+	}
 }
 
 func (s *Stmt) UpdateField(field string, value interface{}) {
@@ -309,7 +315,7 @@ func (s *Stmt) UpdateMap(fields map[string]interface{}) {
 	}
 }
 
-func (s *Stmt) Delete() {
+func (s *Stmt) Delete() (sql.Result, error) {
 	var query string
 	var args []interface{}
 
@@ -323,9 +329,13 @@ func (s *Stmt) Delete() {
 
 	dumpSQL(query, args...)
 
-	result, err := s.db.db.Exec(query, args...)
-	_ = result
+	return s.db.db.Exec(query, args...)
+}
+
+func (s *Stmt) MustDelete() sql.Result {
+	result, err := s.Delete()
 	if err != nil {
 		panic(err)
 	}
+	return result
 }

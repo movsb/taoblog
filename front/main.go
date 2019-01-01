@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
+
+	"github.com/movsb/taoblog/modules/utils"
 
 	"github.com/movsb/taoblog/service"
 
@@ -17,24 +17,6 @@ import (
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/service/models"
 )
-
-var (
-	regexpHome   = regexp.MustCompile(`^/$`)
-	regexpByID   = regexp.MustCompile(`/(\d+)/$`)
-	regexpBySlug = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
-	regexpByTags = regexp.MustCompile(`^/tags/(.*)$`)
-	regexpByPage = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
-)
-
-var nonCategoryNames = map[string]bool{
-	"/admin/":    true,
-	"/emotions/": true,
-	"/scripts/":  true,
-	"/images/":   true,
-	"/sass/":     true,
-	"/tags/":     true,
-	"/plugins/":  true,
-}
 
 // ThemeHeaderData ...
 type ThemeHeaderData struct {
@@ -151,6 +133,18 @@ func (f *Front) loadTemplates() {
 }
 
 func (f *Front) Query(c *gin.Context, path string) {
+	defer func() {
+		if e := recover(); e != nil {
+			switch e.(type) {
+			case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
+				c.Status(404)
+				f.render(c.Writer, "404", nil)
+				return
+			}
+			panic(e)
+		}
+	}()
+
 	if regexpHome.MatchString(path) {
 		if f.processHomeQueries(c) {
 			return
@@ -160,7 +154,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 	}
 	if regexpByID.MatchString(path) {
 		matches := regexpByID.FindStringSubmatch(path)
-		id, _ := strconv.ParseInt(matches[1], 10, 64)
+		id := utils.MustToInt64(matches[1])
 		f.queryByID(c, id)
 		return
 	}
@@ -168,6 +162,10 @@ func (f *Front) Query(c *gin.Context, path string) {
 		matches := regexpByTags.FindStringSubmatch(path)
 		tags := matches[1]
 		f.queryByTags(c, tags)
+		return
+	}
+	if handler, ok := f.specialFiles[path]; ok {
+		handler(c)
 		return
 	}
 	if regexpBySlug.MatchString(path) && f.isCategoryPath(path) {
@@ -189,10 +187,6 @@ func (f *Front) Query(c *gin.Context, path string) {
 	}
 	if strings.HasSuffix(path, "/") {
 		c.String(http.StatusForbidden, "403 Forbidden")
-		return
-	}
-	if handler, ok := f.specialFiles[path]; ok {
-		handler(c)
 		return
 	}
 	c.File(filepath.Join("front/statics", path))
@@ -250,7 +244,7 @@ func (f *Front) queryHome(c *gin.Context) {
 		PageCount:    f.server.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: f.server.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.LatestPosts = newPosts(f.server.ListPosts(&service.ListPostsRequest{
+	home.LatestPosts = newPosts(f.server.MustListPosts(&service.ListPostsRequest{
 		Fields:  "id,title,type",
 		Limit:   20,
 		OrderBy: "date DESC",
@@ -325,9 +319,4 @@ func (f *Front) queryByTags(c *gin.Context, tags string) {
 	posts := f.server.GetPostsByTags(tags)
 	in := QueryTags{Posts: posts, Tag: tags}
 	f.render(c.Writer, "tags", &in)
-}
-
-func (f *Front) postNotFound(c *gin.Context) {
-	c.Status(404)
-	f.render(c.Writer, "404", nil)
 }
