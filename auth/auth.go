@@ -99,7 +99,7 @@ func (a *Auth) AuthContext(ctx context.Context) *User {
 	if value, ok := ctx.Value(ctxAuthKey{}).(AuthContext); ok {
 		return value.User
 	}
-	return nil
+	return guest
 }
 
 func (o *Auth) MakeCookie(c *gin.Context) {

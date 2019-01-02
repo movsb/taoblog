@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/movsb/taoblog/modules/taorm"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -109,7 +110,7 @@ func (s *ImplServer) GetObjectTagNames(postID int64) []string {
 }
 
 func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
-	sids := joinInts(ids, ",")
+	sids := utils.JoinInts(ids, ",")
 
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
 	sql2 := `SELECT id FROM tags WHERE alias in (?)`

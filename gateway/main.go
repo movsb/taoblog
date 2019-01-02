@@ -41,13 +41,18 @@ func (g *Gateway) routeOptions() {
 }
 
 func (g *Gateway) routePosts() {
-	c := g.router.Group("/posts", g.auth)
+	c := g.router.Group("/posts")
 	g.router.GET("/posts!latest", g.GetLatestPosts)
 	c.GET("/:name", g.GetPost)
 	c.GET("", g.ListPosts)
 	c.GET("/:name/title", g.GetPostTitle)
-	c.POST("/:name/page_view", g.IncrementPostPageView)
+	c.POST("/:name/page_view", g.auth, g.IncrementPostPageView)
 	c.GET("/:name/comments!count", g.GetPostCommentCount)
+	// files
+	c.GET("/:name/files/*file", g.GetFile)
+	c.GET("/:name/files", g.ListFiles)
+	c.POST("/:name/files/*file", g.auth, g.UploadFile)
+	c.DELETE("/:name/files/*file", g.auth, g.DeleteFile)
 }
 
 func (g *Gateway) routeComments() {

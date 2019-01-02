@@ -14,7 +14,9 @@ type LocalFileManager struct {
 }
 
 // NewLocalFileManager creates a new LocalFileManager.
-func NewLocalFileManager(root string) *LocalFileManager {
+func NewLocalFileManager() *LocalFileManager {
+	root, _ := os.Getwd()
+	root = filepath.Join(root, "files")
 	return &LocalFileManager{
 		root: root,
 	}

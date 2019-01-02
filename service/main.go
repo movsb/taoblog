@@ -2,18 +2,26 @@ package service
 
 import (
 	"database/sql"
-	"fmt"
-	"strings"
+	"io"
 
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/taorm"
+	"github.com/movsb/taoblog/service/modules/file_managers"
 )
+
+// IFileManager exposes interfaces to manage upload files.
+type IFileManager interface {
+	Put(pid int64, name string, r io.Reader) error
+	Delete(pid int64, name string) error
+	List(pid int64) ([]string, error)
+}
 
 // ImplServer implements IServer.
 type ImplServer struct {
 	db   *sql.DB
 	tdb  *taorm.DB
 	auth *auth.Auth
+	fmgr IFileManager
 }
 
 // NewImplServer ...
@@ -22,10 +30,7 @@ func NewImplServer(db *sql.DB, auth *auth.Auth) *ImplServer {
 		db:   db,
 		tdb:  taorm.NewDB(db),
 		auth: auth,
+		fmgr: file_managers.NewLocalFileManager(),
 	}
 	return s
-}
-
-func joinInts(ints []int64, delim string) string {
-	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(ints)), delim), "[]")
 }
