@@ -138,10 +138,3 @@ func (f *Front) createPostComment(c *gin.Context) {
 	adminEmail := f.server.GetDefaultStringOption("email", "")
 	c.JSON(200, NewAjaxComment(&cmt, !user.IsGuest(), adminEmail))
 }
-
-func (f *Front) deletePostComment(c *gin.Context) {
-	_ = utils.MustToInt64(c.Param("name"))
-	commentName := utils.MustToInt64(c.Param("comment_name"))
-	user := f.auth.AuthCookie(c)
-	f.server.DeleteComment(user.Context(nil), commentName)
-}

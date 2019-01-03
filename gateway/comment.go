@@ -18,3 +18,9 @@ func (g *Gateway) ListComments(c *gin.Context) {
 	out := g.server.ListComments(in)
 	c.JSON(200, out)
 }
+
+func (g *Gateway) DeleteComment(c *gin.Context) {
+	_ = utils.MustToInt64(c.Param("name"))
+	commentName := utils.MustToInt64(c.Param("comment_name"))
+	g.server.DeleteComment(nil, commentName)
+}

@@ -103,7 +103,6 @@ func (f *Front) route() {
 	posts := f.api.Group("/posts")
 	posts.GET("/:name/comments", f.listPostComments)
 	posts.POST("/:name/comments", f.createPostComment)
-	posts.DELETE("/:name/comments/:comment_name", f.deletePostComment)
 
 	tools := f.api.Group("/tools")
 	tools.POST("/aes2htm", aes2htm)

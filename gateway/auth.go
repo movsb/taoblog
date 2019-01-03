@@ -9,7 +9,6 @@ func (g *Gateway) auth(c *gin.Context) {
 	headerUser := g.auther.AuthContext(c)
 	authUser := g.auther.AuthHeader(c)
 	if cookieUser.IsGuest() && headerUser.IsGuest() && authUser.IsGuest() {
-		c.Status(401)
-		c.Abort()
+		c.AbortWithStatus(401)
 	}
 }
