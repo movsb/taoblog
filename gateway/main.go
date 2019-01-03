@@ -53,6 +53,10 @@ func (g *Gateway) routePosts() {
 	c.GET("/:name/files", g.auth, g.ListFiles)
 	c.POST("/:name/files/*file", g.auth, g.CreateFile)
 	c.DELETE("/:name/files/*file", g.auth, g.DeleteFile)
+
+	// for mirror host
+	files := g.router.Group("/files")
+	files.GET("/:name/*file", g.GetFile)
 }
 
 func (g *Gateway) routeComments() {
