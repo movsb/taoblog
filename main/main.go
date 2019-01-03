@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/front"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/service"
@@ -40,6 +41,11 @@ func main() {
 	theAPI.Use(func(c *gin.Context) {
 		defer func() {
 			if e := recover(); e != nil {
+				if iHTTPError, ok := e.(exception.IHTTPError); ok {
+					err := iHTTPError.ToHTTPError()
+					c.JSON(err.Code, err)
+					return
+				}
 				if err, ok := e.(error); ok {
 					if err == sql.ErrNoRows {
 						c.Status(404)

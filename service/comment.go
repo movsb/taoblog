@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
@@ -44,35 +45,35 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 	user := s.auth.AuthContext(ctx)
 
 	if c.ID != 0 {
-		panic("评论ID必须为0")
+		panic(exception.NewValidationError("评论ID必须为0"))
 	}
 
 	if c.Ancestor != 0 {
-		panic("不能指定祖先ID")
+		panic(exception.NewValidationError("不能指定祖先ID"))
 	}
 
 	if c.Author == "" {
-		panic("昵称不能为空")
+		panic(exception.NewValidationError("昵称不能为空"))
 	}
 
 	if utf8.RuneCountInString(c.Author) >= 32 {
-		panic("昵称太长")
+		panic(exception.NewValidationError("昵称太长"))
 	}
 
 	if !utils.IsEmail(c.Email) {
-		panic("邮箱不正确")
+		panic(exception.NewValidationError("邮箱不正确"))
 	}
 
 	if c.URL != "" && !utils.IsURL(c.URL) {
-		panic("网址不正确")
+		panic(exception.NewValidationError("网址不正确"))
 	}
 
 	if c.Content == "" {
-		panic("评论内容不能为空")
+		panic(exception.NewValidationError("评论内容不能为空"))
 	}
 
 	if utf8.RuneCountInString(c.Content) >= 4096 {
-		panic("评论内容太长")
+		panic(exception.NewValidationError("评论内容太长"))
 	}
 
 	if c.Parent > 0 {
@@ -91,7 +92,7 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 		// TODO use regexp to detect equality.
 		for _, email := range notAllowedEmails {
 			if email != "" && c.Email != "" && strings.EqualFold(email, c.Email) {
-				panic("不能使用此邮箱地址")
+				panic(exception.NewValidationError("不能使用此邮箱地址"))
 			}
 		}
 		notAllowedAuthors := strings.Split(s.GetDefaultStringOption("not_allowed_authors", ""), ",")
@@ -100,7 +101,7 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 		}
 		for _, author := range notAllowedAuthors {
 			if author != "" && c.Author != "" && strings.EqualFold(author, string(c.Author)) {
-				panic("不能使用此昵称")
+				panic(exception.NewValidationError("不能使用此昵称"))
 			}
 		}
 	}

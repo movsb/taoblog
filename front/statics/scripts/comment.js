@@ -108,7 +108,7 @@ Comment.prototype.init = function() {
         )
         .fail(
             function(xhr, sta, e){
-                alert(JSON.parse(xhr.responseText));
+                alert(JSON.parse(xhr.responseText).message);
             }
         )
         .always(
