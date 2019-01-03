@@ -22,10 +22,10 @@ func (g *Gateway) ListFiles(c *gin.Context) {
 	c.JSON(200, files)
 }
 
-func (g *Gateway) UploadFile(c *gin.Context) {
+func (g *Gateway) CreateFile(c *gin.Context) {
 	postID := utils.MustToInt64(c.Param("name"))
 	file := c.Param("file")
-	if err := g.server.UploadFile(postID, file, c.Request.Body); err != nil {
+	if err := g.server.CreateFile(postID, file, c.Request.Body); err != nil {
 		c.JSON(500, err)
 		return
 	}

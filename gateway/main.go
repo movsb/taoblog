@@ -50,8 +50,8 @@ func (g *Gateway) routePosts() {
 	c.GET("/:name/comments!count", g.GetPostCommentCount)
 	// files
 	c.GET("/:name/files/*file", g.GetFile)
-	c.GET("/:name/files", g.ListFiles)
-	c.POST("/:name/files/*file", g.auth, g.UploadFile)
+	c.GET("/:name/files", g.auth, g.ListFiles)
+	c.POST("/:name/files/*file", g.auth, g.CreateFile)
 	c.DELETE("/:name/files/*file", g.auth, g.DeleteFile)
 }
 

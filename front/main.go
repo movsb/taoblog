@@ -158,6 +158,13 @@ func (f *Front) Query(c *gin.Context, path string) {
 		f.queryByID(c, id)
 		return
 	}
+	if regexpFile.MatchString(path) {
+		matches := regexpFile.FindStringSubmatch(path)
+		postID := utils.MustToInt64(matches[1])
+		file := matches[2]
+		f.queryByFile(c, postID, file)
+		return
+	}
 	if regexpByTags.MatchString(path) {
 		matches := regexpByTags.FindStringSubmatch(path)
 		tags := matches[1]

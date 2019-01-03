@@ -15,7 +15,7 @@ func (s *ImplServer) GetFile(postID int64, file string) string {
 	return filePath(postID, file)
 }
 
-func (s *ImplServer) UploadFile(postID int64, file string, data io.Reader) error {
+func (s *ImplServer) CreateFile(postID int64, file string, data io.Reader) error {
 	return s.fmgr.Put(postID, file, data)
 }
 
