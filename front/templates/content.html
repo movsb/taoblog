@@ -53,6 +53,22 @@
     });
 </script>
 
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    jax: ["input/TeX", "output/CommonHTML"],
+    extensions: ["tex2jax.js"],
+    tex2jax: {
+        skipTags: [],
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+    },
+    skipStartupTypeset: true,
+    //showMathMenu: false,
+    menuSettings: {
+        zoom: 'Click',
+    }
+});
+</script>
 <script>
 function hasMath() {
     var has = false;
@@ -68,29 +84,6 @@ function hasMath() {
 
 if(hasMath()) {
     var $body = $('body');
-
-    var config = function(){/*
-        MathJax.Hub.Config({
-            jax: ["input/TeX", "output/CommonHTML"],
-            extensions: ["tex2jax.js"],
-            tex2jax: {
-                skipTags: [],
-                inlineMath: [['$', '$']],
-                displayMath: [['$$', '$$']],
-            },
-            skipStartupTypeset: true,
-            //showMathMenu: false,
-            menuSettings: {
-                zoom: 'Click',
-            }
-        });
-    */}.toString().slice(14,-3);
-
-    $('<script/>')
-        .attr('type', 'text/x-mathjax-config')
-        .text(config)
-        .appendTo($body);
-
     // jQuery adds _ parameter to skip cache
     var s = document.createElement('script');
     s.src= 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js';
