@@ -78,6 +78,8 @@ func main() {
 				client.CreatePost()
 			case "upload":
 				client.UploadPostFiles()
+			case "update":
+				client.UpdatePost()
 			}
 		case "backup":
 			client.Backup(os.Stdout)

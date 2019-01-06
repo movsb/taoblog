@@ -20,19 +20,24 @@ var sourceNames = []string{
 }
 
 type PostConfig struct {
-	ID    int64
-	Title string
-	Tags  []string
+	ID    int64    `json:"id"`
+	Title string   `json:"title"`
+	Tags  []string `json:"tags"`
 }
 
 type Post struct {
 	PostConfig
 	SourceType string `json:"source_type"`
-	Source     string
+	Source     string `json:"source"`
 }
 
 // InitPost ...
 func (c *Client) InitPost() {
+	fp, err := os.Open("config.yml")
+	if err == nil {
+		fp.Close()
+		panic("post already initialized, abort")
+	}
 	config := PostConfig{}
 	c.savePostConfig(&config)
 }
@@ -60,6 +65,28 @@ func (c *Client) CreatePost() {
 	}
 	p.PostConfig.ID = rp.ID
 	c.savePostConfig(&p.PostConfig)
+}
+
+func (c *Client) UpdatePost() {
+	p := &Post{}
+	p.PostConfig = *c.readPostConfig()
+	if p.ID == 0 {
+		panic("post not created, use create instead")
+	}
+	sourceType, source := readSource(".")
+	p.SourceType = sourceType
+	p.Source = source
+	bys, err := json.Marshal(p)
+	if err != nil {
+		panic(err)
+	}
+	resp := c.mustPost(fmt.Sprintf("/posts/%d", p.ID), bytes.NewReader(bys), contentTypeJSON)
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	rp := Post{}
+	if err := dec.Decode(&rp); err != nil {
+		panic(err)
+	}
 }
 
 // UploadPostFiles ...

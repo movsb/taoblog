@@ -33,6 +33,10 @@ func (g *Gateway) routeOthers() {
 func (g *Gateway) routePosts() {
 	c := g.router.Group("/posts")
 
+	// posts
+	c.POST("", g.auth, g.CreatePost)
+	c.POST("/:name", g.auth, g.UpdatePost)
+
 	// comments
 	c.GET("/:name/comments!count", g.GetPostCommentCount)
 	c.DELETE("/:name/comments/:comment_name", g.auth, g.DeleteComment)

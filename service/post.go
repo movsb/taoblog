@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/post_translators"
 )
 
 func (s *ImplServer) posts() *taorm.Stmt {
@@ -202,4 +204,66 @@ func (s *ImplServer) UpdatePostCommentCount(name int64) {
 
 func (s *ImplServer) ListPostComments(in *ListCommentsRequest) []*models.Comment {
 	return s.ListComments(in)
+}
+
+func (s *ImplServer) CreatePost(p *models.Post) {
+	var err error
+	p.ID = 0
+	p.Date = datetime.MyGmt()
+	p.Modified = p.Date
+	p.Title = strings.TrimSpace(p.Title)
+	if p.Title == "" {
+		panic(exception.NewValidationError("标题不能为空"))
+	}
+	p.Slug = ""
+	p.Category = 1
+	p.Status = "public"
+	p.Metas = "{}"
+
+	var tr post_translators.PostTranslator
+	switch p.SourceType {
+	case "html":
+		tr = &post_translators.HTMLTranslator{}
+	case "markdown":
+		tr = &post_translators.MarkdownTranslator{}
+	default:
+		panic("no translator found")
+	}
+	p.Content, err = tr.Translate(p.Source)
+	if err != nil {
+		panic(err)
+	}
+
+	s.tdb.Model(p, "posts").Create()
+}
+
+func (s *ImplServer) UpdatePost(p *models.Post) {
+	var err error
+
+	if p.ID == 0 {
+		panic(exception.NewValidationError("无效文章编号"))
+	}
+
+	var tr post_translators.PostTranslator
+	switch p.SourceType {
+	case "html":
+		tr = &post_translators.HTMLTranslator{}
+	case "markdown":
+		tr = &post_translators.MarkdownTranslator{}
+	default:
+		panic("no translator found")
+	}
+	p.Content, err = tr.Translate(p.Source)
+	if err != nil {
+		panic(err)
+	}
+
+	p.Modified = datetime.MyGmt()
+
+	s.tdb.Model(p, "posts").UpdateMap(map[string]interface{}{
+		"modified":    p.Modified,
+		"source_type": p.SourceType,
+		"source":      p.Source,
+		"content":     p.Content,
+	})
 }
