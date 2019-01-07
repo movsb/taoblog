@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
+	"os/signal"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -30,10 +34,6 @@ func main() {
 	db.SetMaxIdleConns(10)
 	defer db.Close()
 
-	// /admin/
-	// /blog/
-	// /v1/
-	// /v2/
 	router := gin.Default()
 
 	theAPI := router.Group("/v2")
@@ -70,5 +70,18 @@ func main() {
 	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
 	theAuth.SetKey(os.Getenv("KEY"))
 
-	router.Run(os.Getenv("LISTEN"))
+	server := &http.Server{
+		Addr:    os.Getenv("LISTEN"),
+		Handler: router,
+	}
+
+	go server.ListenAndServe()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+
+	log.Println("server shutting down")
+	server.Shutdown(context.Background())
+	log.Println("server shutted down")
 }
