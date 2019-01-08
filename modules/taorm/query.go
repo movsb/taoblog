@@ -6,7 +6,7 @@ import (
 )
 
 // QueryRows queries results.
-// out can be either *Struct, or *[]*Struct.
+// out can be either *Struct, *[]Struct, or *[]*Struct.
 //
 // For querying single row, QueryRows returns:
 //   nil          : no error (got row)
@@ -14,7 +14,8 @@ import (
 // For querying multiple rows, QueryRows returns:
 //   nil          : no error (but can be empty slice)
 //   some error   : an error
-func QueryRows(out interface{}, tx Querier, query string, args ...interface{}) error {
+func QueryRows(out interface{}, tx _SQLCommon, query string, args ...interface{}) error {
+	var err error
 	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return err
@@ -22,70 +23,69 @@ func QueryRows(out interface{}, tx Querier, query string, args ...interface{}) e
 
 	defer rows.Close()
 
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
 	ty := reflect.TypeOf(out)
 	if ty.Kind() != reflect.Ptr {
-		panic("out must be pointer")
+		return ErrInvalidOut
 	}
 
 	ty = ty.Elem()
 	switch ty.Kind() {
 	case reflect.Struct:
-		return queryRow(out, rows)
+		if rows.Next() {
+			pointers := getPointers(out, columns)
+			return rows.Scan(pointers...)
+		}
+		err = rows.Err()
+		if err == nil {
+			err = sql.ErrNoRows
+		}
+		return err
 	case reflect.Slice:
-		return queryRows(out, rows)
+		slice := reflect.MakeSlice(ty, 0, 0)
+		ty = ty.Elem()
+		isPtr := ty.Kind() == reflect.Ptr
+		if isPtr {
+			ty = ty.Elem()
+		}
+		if ty.Kind() != reflect.Struct {
+			return ErrInvalidOut
+		}
+		if isPtr {
+			for rows.Next() {
+				elem := reflect.New(ty)
+				elemPtr := elem.Interface()
+				pointers := getPointers(elemPtr, columns)
+				if err := rows.Scan(pointers...); err != nil {
+					return err
+				}
+				slice = reflect.Append(slice, elem)
+			}
+		} else {
+			elem := reflect.New(ty)
+			elemPtr := elem.Interface()
+			pointers := getPointers(elemPtr, columns)
+			for rows.Next() {
+				if err := rows.Scan(pointers...); err != nil {
+					return err
+				}
+				slice = reflect.Append(slice, elem.Elem())
+			}
+		}
+		reflect.ValueOf(out).Elem().Set(slice)
+		return rows.Err()
 	default:
-		panic("unknown pointer type")
+		return ErrInvalidOut
 	}
 }
 
 // MustQueryRows ...
-func MustQueryRows(out interface{}, tx Querier, query string, args ...interface{}) {
+func MustQueryRows(out interface{}, tx _SQLCommon, query string, args ...interface{}) {
 	if err := QueryRows(out, tx, query, args...); err != nil {
 		panic(err)
 	}
-}
-
-func queryRow(out interface{}, rows *sql.Rows) (err error) {
-	if rows.Next() {
-		fields := getPointers(out, rows)
-		err = rows.Scan(fields...)
-	} else {
-		err = rows.Err()
-		// Next() is used to get next record.
-		// err:
-		//    nil: no more record
-		//   !nil: error happened
-		if err == nil {
-			err = sql.ErrNoRows
-		}
-	}
-	return
-}
-
-func queryRows(out interface{}, rows *sql.Rows) error {
-	ty := reflect.TypeOf(out).Elem()
-	slice := reflect.MakeSlice(ty, 0, 0)
-
-	ty = ty.Elem()
-	if ty.Kind() != reflect.Ptr {
-		panic("must be slice of pointer to struct")
-	}
-	ty = ty.Elem()
-	if ty.Kind() != reflect.Struct {
-		panic("must be slice of pointer to struct")
-	}
-
-	for rows.Next() {
-		val := reflect.New(ty)
-		ptr := val.Interface()
-		fields := getPointers(ptr, rows)
-		if err := rows.Scan(fields...); err != nil {
-			return err
-		}
-		slice = reflect.Append(slice, val)
-	}
-
-	reflect.ValueOf(out).Elem().Set(slice)
-
-	return rows.Err()
 }

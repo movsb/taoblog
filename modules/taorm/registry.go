@@ -1,7 +1,6 @@
 package taorm
 
 import (
-	"database/sql"
 	"fmt"
 	"reflect"
 	"sync"
@@ -33,6 +32,7 @@ func (s *_StructInfo) mustBeTable() *_StructInfo {
 
 // FieldPointers ...
 func (s *_StructInfo) FieldPointers(base uintptr, fields []string) (ptrs []interface{}) {
+	ptrs = make([]interface{}, 0, len(fields))
 	for _, field := range fields {
 		if fs, ok := s.fields[field]; ok {
 			i := ptrToInterface(base+fs.offset, fs.kind)
@@ -102,8 +102,8 @@ func getRegistered(_struct interface{}) *_StructInfo {
 	return register(_struct, "")
 }
 
-func getPointers(out interface{}, rows *sql.Rows) []interface{} {
-	fields, _ := rows.Columns()
+func getPointers(out interface{}, columns []string) []interface{} {
 	base := baseFromInterface(out)
-	return getRegistered(out).FieldPointers(base, fields)
+	info := getRegistered(out)
+	return info.FieldPointers(base, columns)
 }
