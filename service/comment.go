@@ -36,8 +36,7 @@ func (s *ImplServer) GetAllCommentsCount() int64 {
 		Count int64
 	}
 	var result GetAllCommentsCount_Result
-	query := `SELECT count(1) as count FROM comments`
-	taorm.MustQueryRows(&result, s.db, query)
+	s.tdb.Model(models.Comment{}, "comments").Select("count(1) as count").Find(&result)
 	return result.Count
 }
 
@@ -106,14 +105,13 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 		}
 	}
 
-	s.tdb.TxCall(func(tx *taorm.DB) {
-		tx.Model(c, "comments").Create()
+	s.TxCall(func(txs *ImplServer) error {
+		txs.tdb.Model(c, "comments").Create()
+		count := txs.GetAllCommentsCount()
+		txs.SetOption("comment_count", count)
+		txs.UpdatePostCommentCount(c.PostID)
+		return nil
 	})
-
-	// TODO wrap in tx
-	count := s.GetAllCommentsCount()
-	s.SetOption("comment_count", count)
-	s.UpdatePostCommentCount(c.PostID)
 
 	return c
 }

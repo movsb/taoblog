@@ -5,28 +5,23 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/service/models"
 )
 
 func (s *ImplServer) GetOption(name string) *models.Option {
-	query := `SELECT * FROM options WHERE name = ?`
 	var option models.Option
-	taorm.MustQueryRows(&option, s.db, query, name)
+	s.tdb.Model(models.Option{}, "options").Where("name=?", name).MustFind(&option)
 	return &option
 }
 
 func (s *ImplServer) GetStringOption(name string) string {
-	query := `SELECT * FROM options WHERE name = ?`
-	var option models.Option
-	taorm.MustQueryRows(&option, s.db, query, name)
-	return option.Value
+	return s.GetOption(name).Value
 }
 
 func (s *ImplServer) GetDefaultStringOption(name string, def string) string {
-	query := `SELECT * FROM options WHERE name = ?`
 	var option models.Option
-	switch err := taorm.QueryRows(&option, s.db, query, name); err {
+	err := s.tdb.Model(models.Option{}, "options").Where("name=?", name).Find(&option)
+	switch err {
 	case nil:
 		return option.Value
 	case sql.ErrNoRows:
@@ -37,9 +32,8 @@ func (s *ImplServer) GetDefaultStringOption(name string, def string) string {
 }
 
 func (s *ImplServer) GetIntegerOption(name string) (value int64) {
-	query := `SELECT * FROM options WHERE name = ?`
 	var option models.Option
-	taorm.MustQueryRows(&option, s.db, query, name)
+	s.tdb.Model(models.Option{}, "options").Where("name=?", name).MustFind(&option)
 	if n, err := strconv.ParseInt(option.Value, 10, 64); err != nil {
 		panic(err)
 		value = n
@@ -48,9 +42,9 @@ func (s *ImplServer) GetIntegerOption(name string) (value int64) {
 }
 
 func (s *ImplServer) GetDefaultIntegerOption(name string, def int64) (value int64) {
-	query := `SELECT * FROM options WHERE name = ?`
 	var option models.Option
-	switch err := taorm.QueryRows(&option, s.db, query, name); err {
+	err := s.tdb.Model(models.Option{}, "options").Where("name=?", name).Find(&option)
+	switch err {
 	case nil:
 		n, err := strconv.ParseInt(option.Value, 10, 64)
 		if err != nil {
@@ -79,7 +73,9 @@ func (s *ImplServer) SetOption(name string, value interface{}) {
 	if s.HaveOption(name) {
 		option := s.GetOption(name)
 		stmt := s.tdb.Model(option, "options")
-		stmt.UpdateField("value", value)
+		stmt.MustUpdateMap(map[string]interface{}{
+			"value": value,
+		})
 	} else {
 		option := models.Option{
 			Name:  name,

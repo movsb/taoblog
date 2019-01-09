@@ -72,6 +72,10 @@ func NewDB(db *sql.DB) *DB {
 	return t
 }
 
+func (db *DB) Common() _SQLCommon {
+	return db.cdb
+}
+
 // TxCall calls callback within transaction.
 // It automatically catches and re-throws exceptions.
 func (db *DB) TxCall(callback func(tx *DB) error) error {
@@ -314,7 +318,7 @@ func (db *DB) MustExec(query string, args ...interface{}) sql.Result {
 
 // Create ...
 func (s *Stmt) Create() error {
-	fields, values := collectDataFromModel(s.model)
+	fields, args := collectDataFromModel(s.model)
 	if len(fields) == 0 {
 		return ErrNoFields
 	}
@@ -326,7 +330,9 @@ func (s *Stmt) Create() error {
 		createSQLInMarks(len(fields)),
 	)
 
-	result, err := s.db.cdb.Exec(query, values...)
+	dumpSQL(query, args...)
+
+	result, err := s.db.cdb.Exec(query, args...)
 	if err != nil {
 		return err
 	}

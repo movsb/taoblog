@@ -18,7 +18,6 @@ type IFileManager interface {
 
 // ImplServer implements IServer.
 type ImplServer struct {
-	db   *sql.DB
 	tdb  *taorm.DB
 	auth *auth.Auth
 	fmgr IFileManager
@@ -27,10 +26,21 @@ type ImplServer struct {
 // NewImplServer ...
 func NewImplServer(db *sql.DB, auth *auth.Auth) *ImplServer {
 	s := &ImplServer{
-		db:   db,
 		tdb:  taorm.NewDB(db),
 		auth: auth,
 		fmgr: file_managers.NewLocalFileManager(),
 	}
 	return s
+}
+
+// TxCall ...
+func (s *ImplServer) TxCall(callback func(txs *ImplServer) error) {
+	err := s.tdb.TxCall(func(tx *taorm.DB) error {
+		txs := *s
+		txs.tdb = tx
+		return callback(&txs)
+	})
+	if err != nil {
+		panic(err)
+	}
 }

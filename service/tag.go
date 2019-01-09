@@ -69,7 +69,7 @@ func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.T
 
 func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
-	rows, err := s.db.Query(sql, postID)
+	rows, err := s.tdb.Common().Query(sql, postID)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +92,7 @@ func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 func (s *ImplServer) GetObjectTagNames(postID int64) []string {
 	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
 	args := []interface{}{postID}
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.tdb.Common().Query(query, args...)
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +115,7 @@ func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
 	sql2 := `SELECT id FROM tags WHERE alias in (?)`
 
-	rows, err := s.db.Query(sql1, sids)
+	rows, err := s.tdb.Common().Query(sql1, sids)
 	if err != nil {
 		panic(err)
 	}
@@ -133,7 +133,7 @@ func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
 
 	rows.Close()
 
-	rows, err = s.db.Query(sql2, sids)
+	rows, err = s.tdb.Common().Query(sql2, sids)
 	if err != nil {
 		panic(err)
 	}
