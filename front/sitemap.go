@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/protocols"
 
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/datetime"
@@ -31,7 +31,7 @@ func (f *Front) GetSitemap(c *gin.Context) {
 		}
 	}
 
-	rawPosts := f.server.MustListPosts(&service.ListPostsRequest{
+	rawPosts := f.server.MustListPosts(&protocols.ListPostsRequest{
 		Fields:  "id",
 		OrderBy: "date DESC",
 	})

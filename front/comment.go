@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
@@ -90,7 +91,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	name := utils.MustToInt64(c.Param("name"))
 	limit := utils.MustToInt64(c.DefaultQuery("limit", "10"))
 	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
-	parents := f.server.ListPostComments(&service.ListCommentsRequest{
+	parents := f.server.ListPostComments(&protocols.ListCommentsRequest{
 		PostID:   name,
 		Ancestor: 0,
 		Limit:    limit,
@@ -99,7 +100,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	})
 	childrenMap := make(map[int64][]*models.Comment)
 	for _, parent := range parents {
-		childrenMap[parent.ID] = f.server.ListPostComments(&service.ListCommentsRequest{
+		childrenMap[parent.ID] = f.server.ListPostComments(&protocols.ListCommentsRequest{
 			PostID:   name,
 			Ancestor: parent.ID,
 			OrderBy:  "id ASC",

@@ -7,7 +7,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -40,7 +40,7 @@ func (f *Front) GetPagePosts(c *gin.Context) {
 		sort[1] = "desc"
 	}
 
-	pageData.Posts = f.server.MustListPosts(&service.ListPostsRequest{
+	pageData.Posts = f.server.MustListPosts(&protocols.ListPostsRequest{
 		Fields:  "id,title,date,page_view,comments",
 		OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
 	})

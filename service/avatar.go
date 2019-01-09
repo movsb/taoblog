@@ -3,13 +3,15 @@ package service
 import (
 	"io"
 	"net/http"
+
+	"github.com/movsb/taoblog/protocols"
 )
 
 const (
 	gGrAvatarHost = "https://www.gravatar.com/avatar/"
 )
 
-func (s *ImplServer) GetAvatar(in *GetAvatarRequest) {
+func (s *ImplServer) GetAvatar(in *protocols.GetAvatarRequest) {
 	u := gGrAvatarHost + in.Query
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {

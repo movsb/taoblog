@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -254,12 +255,12 @@ func (f *Front) queryHome(c *gin.Context) {
 		PageCount:    f.server.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: f.server.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.LatestPosts = newPosts(f.server.MustListPosts(&service.ListPostsRequest{
+	home.LatestPosts = newPosts(f.server.MustListPosts(&protocols.ListPostsRequest{
 		Fields:  "id,title,type",
 		Limit:   20,
 		OrderBy: "date DESC",
 	}), f.server)
-	home.LatestComments = newComments(f.server.ListComments(&service.ListCommentsRequest{
+	home.LatestComments = newComments(f.server.ListComments(&protocols.ListCommentsRequest{
 		Ancestor: -1,
 		Limit:    10,
 		OrderBy:  "date DESC",

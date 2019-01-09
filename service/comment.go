@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -23,7 +24,7 @@ func (s *ImplServer) GetComment(name int64) *models.Comment {
 }
 
 // ListComments ...
-func (s *ImplServer) ListComments(in *ListCommentsRequest) []*models.Comment {
+func (s *ImplServer) ListComments(in *protocols.ListCommentsRequest) []*models.Comment {
 	var comments []*models.Comment
 	s.comments().Select(in.Fields).Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
 		WhereIf(in.PostID > 0, "post_id=?", in.PostID).

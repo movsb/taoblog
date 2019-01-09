@@ -4,7 +4,7 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/protocols"
 )
 
 func (g *Gateway) GetAvatar(c *gin.Context) {
@@ -12,7 +12,7 @@ func (g *Gateway) GetAvatar(c *gin.Context) {
 	query, _ = url.QueryUnescape(query)
 	ifModified := c.GetHeader("If-Modified-Since")
 	ifNoneMatch := c.GetHeader("If-None-Match")
-	in := &service.GetAvatarRequest{
+	in := &protocols.GetAvatarRequest{
 		Query:           query,
 		IfModifiedSince: ifModified,
 		IfNoneMatch:     ifNoneMatch,

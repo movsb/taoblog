@@ -3,7 +3,7 @@ package gateway
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/protocols"
 )
 
 func (g *Gateway) GetComment(c *gin.Context) {
@@ -14,7 +14,7 @@ func (g *Gateway) GetComment(c *gin.Context) {
 
 func (g *Gateway) ListComments(c *gin.Context) {
 	//parent := toInt64(c.Query("parent"))
-	in := &service.ListCommentsRequest{}
+	in := &protocols.ListCommentsRequest{}
 	out := g.server.ListComments(in)
 	c.JSON(200, out)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/taorm"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/post_translators"
 )
@@ -30,7 +31,7 @@ func (s *ImplServer) MustGetPost(name int64) *models.Post {
 }
 
 // MustListPosts ...
-func (s *ImplServer) MustListPosts(in *ListPostsRequest) []*models.Post {
+func (s *ImplServer) MustListPosts(in *protocols.ListPostsRequest) []*models.Post {
 	var posts []*models.Post
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
 	if err := stmt.Find(&posts); err != nil {
@@ -40,7 +41,7 @@ func (s *ImplServer) MustListPosts(in *ListPostsRequest) []*models.Post {
 }
 
 func (s *ImplServer) GetLatestPosts(fields string, limit int64) []*models.Post {
-	in := ListPostsRequest{
+	in := protocols.ListPostsRequest{
 		Fields:  fields,
 		Limit:   limit,
 		OrderBy: "date DESC",
@@ -202,7 +203,7 @@ func (s *ImplServer) UpdatePostCommentCount(name int64) {
 	s.tdb.MustExec(query, name, name)
 }
 
-func (s *ImplServer) ListPostComments(in *ListCommentsRequest) []*models.Comment {
+func (s *ImplServer) ListPostComments(in *protocols.ListCommentsRequest) []*models.Comment {
 	return s.ListComments(in)
 }
 
