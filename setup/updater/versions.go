@@ -82,3 +82,10 @@ func v3(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v4(tx *sql.Tx) {
+	s := "CREATE UNIQUE INDEX `uix_post_id_and_tag_id` ON `post_tags` (`post_id`, `tag_id`)"
+	if _, err := tx.Exec(s); err != nil {
+		panic(err)
+	}
+}

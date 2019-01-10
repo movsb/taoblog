@@ -18,29 +18,32 @@ func (s *ImplServer) posts() *taorm.Stmt {
 }
 
 // MustGetPost ...
-func (s *ImplServer) MustGetPost(name int64) *models.Post {
-	var post models.Post
+func (s *ImplServer) MustGetPost(name int64) *protocols.Post {
+	var p models.Post
 	stmt := s.posts().Where("id = ?", name)
-	if err := stmt.Find(&post); err != nil {
+	if err := stmt.Find(&p); err != nil {
 		if err == sql.ErrNoRows {
 			panic(&PostNotFoundError{})
 		}
 		panic(err)
 	}
-	return &post
+
+	out := p.ToProtocols()
+
+	return out
 }
 
 // MustListPosts ...
-func (s *ImplServer) MustListPosts(in *protocols.ListPostsRequest) []*models.Post {
-	var posts []*models.Post
+func (s *ImplServer) MustListPosts(in *protocols.ListPostsRequest) []*protocols.Post {
+	var posts models.Posts
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
-	return posts
+	return posts.ToProtocols()
 }
 
-func (s *ImplServer) GetLatestPosts(fields string, limit int64) []*models.Post {
+func (s *ImplServer) GetLatestPosts(fields string, limit int64) []*protocols.Post {
 	in := protocols.ListPostsRequest{
 		Fields:  fields,
 		Limit:   limit,
@@ -55,7 +58,7 @@ func (s *ImplServer) GetPostTitle(ID int64) string {
 	return p.Title
 }
 
-func (s *ImplServer) GetPostByID(id int64) *models.Post {
+func (s *ImplServer) GetPostByID(id int64) *protocols.Post {
 	return s.MustGetPost(id)
 }
 
@@ -64,11 +67,11 @@ func (s *ImplServer) IncrementPostPageView(id int64) {
 	s.tdb.MustExec(query, id)
 }
 
-func (s *ImplServer) GetPostByPage(parents string, slug string) *models.Post {
+func (s *ImplServer) GetPostByPage(parents string, slug string) *protocols.Post {
 	return s.mustGetPostBySlugOrPage(true, parents, slug)
 }
 
-func (s *ImplServer) GetPostBySlug(categories string, slug string) *models.Post {
+func (s *ImplServer) GetPostBySlug(categories string, slug string) *protocols.Post {
 	return s.mustGetPostBySlugOrPage(false, categories, slug)
 }
 
@@ -84,7 +87,7 @@ func (s *ImplServer) GetPostsByTags(tagName string) []*models.PostForArchive {
 	return posts
 }
 
-func (s *ImplServer) mustGetPostBySlugOrPage(isPage bool, parents string, slug string) *models.Post {
+func (s *ImplServer) mustGetPostBySlugOrPage(isPage bool, parents string, slug string) *protocols.Post {
 	var catID int64
 	if !isPage {
 		catID = s.parseCategoryTree(parents)
@@ -106,7 +109,7 @@ func (s *ImplServer) mustGetPostBySlugOrPage(isPage bool, parents string, slug s
 	p.Modified = datetime.My2Local(p.Modified)
 	// TODO
 	// p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
-	return &p
+	return p.ToProtocols()
 }
 
 // ParseTree parses category tree from URL to get last sub-category ID.
@@ -207,19 +210,28 @@ func (s *ImplServer) ListPostComments(in *protocols.ListCommentsRequest) []*mode
 	return s.ListComments(in)
 }
 
-func (s *ImplServer) CreatePost(p *models.Post) {
+// CreatePost ...
+func (s *ImplServer) CreatePost(in *protocols.Post) {
 	var err error
-	p.ID = 0
-	p.Date = datetime.MyGmt()
-	p.Modified = p.Date
-	p.Title = strings.TrimSpace(p.Title)
-	if p.Title == "" {
-		panic(exception.NewValidationError("标题不能为空"))
+
+	createdAt := datetime.MyGmt()
+
+	p := models.Post{
+		Date:       createdAt,
+		Modified:   createdAt,
+		Title:      strings.TrimSpace(in.Title),
+		Slug:       "",
+		Type:       protocols.PostTypePost,
+		Category:   1,
+		Status:     "public",
+		Metas:      "{}",
+		Source:     in.Source,
+		SourceType: in.SourceType,
 	}
-	p.Slug = ""
-	p.Category = 1
-	p.Status = "public"
-	p.Metas = "{}"
+
+	if p.Title == "" {
+		p.Title = "Untitled"
+	}
 
 	var tr post_translators.PostTranslator
 	switch p.SourceType {
@@ -230,12 +242,16 @@ func (s *ImplServer) CreatePost(p *models.Post) {
 	default:
 		panic("no translator found")
 	}
-	p.Content, err = tr.Translate(p.Source)
+
+	p.Content, err = tr.Translate(in.Source)
 	if err != nil {
 		panic(err)
 	}
 
-	s.tdb.Model(p, "posts").Create()
+	s.TxCall(func(txs *ImplServer) error {
+		txs.tdb.Model(&p, "posts").MustCreate()
+		return nil
+	})
 }
 
 func (s *ImplServer) UpdatePost(p *models.Post) {

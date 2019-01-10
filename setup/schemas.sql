@@ -76,5 +76,6 @@ CREATE TABLE IF NOT EXISTS post_tags (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `post_id` INT(20) UNSIGNED NOT NULL,
     `tag_id` INT(20) UNSIGNED NOT NULL,
-    PRIMARY KEY(`id`)
+    PRIMARY KEY(`id`),
+    UNIQUE KEY `uix_post_id_and_tag_id` (`post_id`,`tag_id`)
 );

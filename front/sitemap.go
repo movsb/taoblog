@@ -9,11 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/service/models"
 )
 
 type PostForSitemap struct {
-	*models.Post
+	*protocols.Post
 	Link string
 }
 

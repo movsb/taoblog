@@ -1,25 +1,25 @@
 package front
 
 import (
-	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
 	"strings"
+
+	"github.com/movsb/taoblog/protocols"
 
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
 
 type Post struct {
-	*models.Post
+	*protocols.Post
 	Content      template.HTML
 	RelatedPosts []*models.PostForRelated
 	server       *service.ImplServer
-	_Metas       map[string]interface{}
 }
 
-func newPost(post *models.Post, server *service.ImplServer) *Post {
+func newPost(post *protocols.Post, server *service.ImplServer) *Post {
 	return &Post{
 		Post:    post,
 		server:  server,
@@ -27,7 +27,7 @@ func newPost(post *models.Post, server *service.ImplServer) *Post {
 	}
 }
 
-func newPosts(posts []*models.Post, server *service.ImplServer) []*Post {
+func newPosts(posts []*protocols.Post, server *service.ImplServer) []*Post {
 	ps := []*Post{}
 	for _, p := range posts {
 		ps = append(ps, newPost(p, server))
@@ -58,15 +58,8 @@ func (p *Post) TagsString() template.HTML {
 	return template.HTML(strings.Join(ts, " · "))
 }
 
-func (p *Post) decodeMetas() {
-	if p._Metas == nil {
-		json.Unmarshal([]byte(p.Metas), &p._Metas)
-	}
-}
-
 func (p *Post) CustomHeader() (header string) {
-	p.decodeMetas()
-	if i, ok := p._Metas["header"]; ok {
+	if i, ok := p.Metas["header"]; ok {
 		if s, ok := i.(string); ok {
 			header = s
 		}
@@ -75,8 +68,7 @@ func (p *Post) CustomHeader() (header string) {
 }
 
 func (p *Post) CustomFooter() (footer string) {
-	p.decodeMetas()
-	if i, ok := p._Metas["footer"]; ok {
+	if i, ok := p.Metas["footer"]; ok {
 		if s, ok := i.(string); ok {
 			footer = s
 		}

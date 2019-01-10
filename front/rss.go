@@ -8,14 +8,14 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/protocols"
 
 	"github.com/gin-gonic/gin"
 )
 
 // PostForRss for Rss Post.
 type PostForRss struct {
-	*models.Post
+	*protocols.Post
 	Date    string
 	Content template.HTML
 	Link    string

@@ -7,6 +7,13 @@ type Tag struct {
 	Alias int64
 }
 
+// ObjectTag ...
+type ObjectTag struct {
+	ID     int64
+	PostID int64
+	TagID  int64
+}
+
 // TagWithCount is a tag with associated post count.
 type TagWithCount struct {
 	Tag

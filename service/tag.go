@@ -1,6 +1,9 @@
 package service
 
 import (
+	"database/sql"
+	"strings"
+
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
@@ -89,6 +92,7 @@ func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	return
 }
 
+// GetObjectTagNames ...
 func (s *ImplServer) GetObjectTagNames(postID int64) []string {
 	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
 	args := []interface{}{postID}
@@ -150,4 +154,98 @@ func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
 	rows.Close()
 
 	return ids
+}
+
+// UpdateObjectTags ...
+func (s *ImplServer) UpdateObjectTags(pid int64, tags []string) {
+	newTags := tags
+	oldTags := s.GetObjectTagNames(pid)
+
+	var (
+		toBeDeled []string
+		toBeAdded []string
+	)
+
+	for _, t := range oldTags {
+		if !utils.StrInSlice(newTags, t) {
+			toBeDeled = append(toBeDeled, t)
+		}
+	}
+
+	for _, t := range newTags {
+		t = strings.TrimSpace(t)
+		if t != "" && !utils.StrInSlice(oldTags, t) {
+			toBeAdded = append(toBeAdded, t)
+		}
+	}
+
+	for _, t := range toBeDeled {
+		s.removeObjectTag(pid, t)
+	}
+
+	for _, t := range toBeAdded {
+		var tid int64
+		if !s.hasTagName(t) {
+			tid = s.addTag(t)
+		} else {
+			tag := s.getRootTag(t)
+			tid = tag.ID
+		}
+		s.addObjectTag(pid, tid)
+	}
+}
+
+func (s *ImplServer) removeObjectTag(pid int64, tagName string) {
+	tagObj := s.GetTagByName(tagName)
+	s.tdb.From("post_tags").
+		Where("post_id=? AND tag_id=?", pid, tagObj.ID).
+		MustDelete()
+}
+
+func (s *ImplServer) addObjectTag(pid int64, tid int64) {
+	objtag := models.ObjectTag{
+		PostID: pid,
+		TagID:  tid,
+	}
+	err := s.tdb.Model(&objtag, "post_tags").Create()
+	if _, ok := err.(*taorm.DupKeyError); ok {
+		return
+	}
+	panic(err)
+}
+
+func (s *ImplServer) hasTagName(tagName string) bool {
+	var tag models.Tag
+	err := s.tags().Where("name=?", tagName).Find(&tag)
+	if err == nil {
+		return true
+	}
+	if err == sql.ErrNoRows {
+		return false
+	}
+	panic(err)
+}
+
+func (s *ImplServer) addTag(tagName string) int64 {
+	tagObj := models.Tag{
+		Name: tagName,
+	}
+	s.tdb.Model(&tagObj, "tags").MustCreate()
+	return tagObj.ID
+}
+
+func (s *ImplServer) getRootTag(tagName string) models.Tag {
+	tagObj := s.GetTagByName(tagName)
+	if tagObj.Alias == 0 {
+		return *tagObj
+	}
+	ID := tagObj.Alias
+	for {
+		var tagObj models.Tag
+		s.tdb.From("tags").Where("id=?", ID).MustFind(&tagObj)
+		if tagObj.Alias == 0 {
+			return tagObj
+		}
+		ID = tagObj.Alias
+	}
 }

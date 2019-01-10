@@ -8,11 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service/models"
 )
 
 type PagePostsData struct {
-	Posts []*models.Post
+	Posts []*protocols.Post
 }
 
 func (f *Front) GetPagePosts(c *gin.Context) {

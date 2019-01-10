@@ -203,7 +203,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 	c.File(filepath.Join("front/statics", path))
 }
 
-func (f *Front) handle304(c *gin.Context, p *models.Post) bool {
+func (f *Front) handle304(c *gin.Context, p *protocols.Post) bool {
 	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
 		ht := datetime.Http2Time(modified)
 		pt := datetime.My2Time(p.Modified)
@@ -302,7 +302,7 @@ func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
 	f.tempRenderPost(c, post)
 }
 
-func (f *Front) tempRenderPost(c *gin.Context, p *models.Post) {
+func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
 	post := newPost(p, f.server)
 	post.RelatedPosts = f.server.GetRelatedPosts(post.ID)
 	post.Tags = f.server.GetPostTags(post.ID)

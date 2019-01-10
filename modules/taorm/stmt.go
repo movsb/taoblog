@@ -334,7 +334,7 @@ func (s *Stmt) Create() error {
 
 	result, err := s.db.cdb.Exec(query, args...)
 	if err != nil {
-		return err
+		return WrapError(err)
 	}
 
 	id, err := result.LastInsertId()
