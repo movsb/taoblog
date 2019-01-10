@@ -3,9 +3,12 @@ package service
 import (
 	"database/sql"
 	"io"
+	"os"
+	"strings"
 
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/taorm"
+	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/file_managers"
 )
 
@@ -18,9 +21,10 @@ type IFileManager interface {
 
 // ImplServer implements IServer.
 type ImplServer struct {
-	tdb  *taorm.DB
-	auth *auth.Auth
-	fmgr IFileManager
+	tdb    *taorm.DB
+	auth   *auth.Auth
+	cmtntf *comment_notify.CommentNotifier
+	fmgr   IFileManager
 }
 
 // NewImplServer ...
@@ -30,6 +34,19 @@ func NewImplServer(db *sql.DB, auth *auth.Auth) *ImplServer {
 		auth: auth,
 		fmgr: file_managers.NewLocalFileManager(),
 	}
+	mailConfig := strings.SplitN(os.Getenv("MAIL"), "/", 3)
+	if len(mailConfig) != 3 {
+		panic("bad mail")
+	}
+
+	s.cmtntf = &comment_notify.CommentNotifier{
+		MailServer: mailConfig[0],
+		Username:   mailConfig[1],
+		Password:   mailConfig[2],
+		AdminName:  s.GetDefaultStringOption("author", ""),
+		AdminEmail: s.GetDefaultStringOption("email", ""),
+	}
+
 	return s
 }
 

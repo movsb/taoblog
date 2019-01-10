@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/movsb/taoblog/service/modules/comment_notify"
 
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/modules/taorm"
@@ -96,7 +99,7 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 			}
 		}
 		notAllowedAuthors := strings.Split(s.GetDefaultStringOption("not_allowed_authors", ""), ",")
-		if adminName := s.GetDefaultStringOption("nickname", ""); adminName != "" {
+		if adminName := s.GetDefaultStringOption("author", ""); adminName != "" {
 			notAllowedAuthors = append(notAllowedAuthors, adminName)
 		}
 		for _, author := range notAllowedAuthors {
@@ -114,6 +117,8 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 		return nil
 	})
 
+	s.doCommentNotification(c)
+
 	return c
 }
 
@@ -121,4 +126,75 @@ func (s *ImplServer) DeleteComment(ctx context.Context, commentName int64) {
 	cmt := s.GetComment(commentName)
 	s.comments().Or("id=?", commentName).Or("ancestor=?", commentName).Delete()
 	s.UpdatePostCommentCount(cmt.PostID)
+}
+
+func (s *ImplServer) doCommentNotification(c *models.Comment) {
+	home := s.GetDefaultStringOption("home", "localhost")
+	postTitle := s.GetPostTitle(c.PostID)
+	postLink := fmt.Sprintf("https://%s/%d/", home, c.PostID)
+	adminEmail := s.GetDefaultStringOption("email", "")
+	if adminEmail == "" {
+		return
+	}
+
+	adminEmail = strings.ToLower(adminEmail)
+	commentEmail := strings.ToLower(c.Email)
+
+	if commentEmail != adminEmail {
+		s.cmtntf.NotifyAdmin(&comment_notify.AdminData{
+			Title:    postTitle,
+			Link:     postLink,
+			Date:     c.Date,
+			Author:   c.Author,
+			Content:  c.Content,
+			Email:    c.Email,
+			HomePage: c.URL,
+		})
+	}
+
+	var parents []models.Comment
+
+	for parentID := c.Parent; parentID > 0; {
+		var parent models.Comment
+		s.tdb.From("comments").
+			Select("id,author,email,parent").
+			Where("id=?", parentID).
+			MustFind(&parent)
+		parents = append(parents, parent)
+		parentID = parent.Parent
+	}
+
+	// not a reply to some comment
+	if len(parents) == 0 {
+		return
+	}
+
+	var distinctNames []string
+	var distinctEmails []string
+	distinct := map[string]bool{}
+	for _, parent := range parents {
+		email := strings.ToLower(parent.Email)
+		if email == adminEmail || email == commentEmail {
+			continue
+		}
+		if _, ok := distinct[email]; !ok {
+			distinct[email] = true
+			distinctNames = append(distinctNames, parent.Author)
+			distinctEmails = append(distinctEmails, parent.Email)
+		}
+	}
+
+	if len(distinctNames) == 0 {
+		return
+	}
+
+	guestData := comment_notify.GuestData{
+		Title:   postTitle,
+		Link:    postLink,
+		Date:    c.Date,
+		Author:  c.Author,
+		Content: c.Content,
+	}
+
+	s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
 }
