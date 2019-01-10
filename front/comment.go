@@ -1,7 +1,6 @@
 package front
 
 import (
-	"html/template"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/datetime"
@@ -15,34 +14,36 @@ import (
 
 type Comment struct {
 	*models.Comment
-	server *service.ImplServer
-}
-
-func newComment(comment *models.Comment, server *service.ImplServer) *Comment {
-	return &Comment{
-		Comment: comment,
-		server:  server,
-	}
+	PostTitle string
+	IsAdmin   bool
 }
 
 func newComments(comments []*models.Comment, server *service.ImplServer) []*Comment {
 	cmts := []*Comment{}
+	titles := make(map[int64]string)
+	adminEmail := strings.ToLower(server.GetDefaultStringOption("email", ""))
 	for _, c := range comments {
-		cmts = append(cmts, newComment(c, server))
+		title := ""
+		if t, ok := titles[c.PostID]; ok {
+			title = t
+		} else {
+			title = server.GetPostTitle(c.PostID)
+			titles[c.PostID] = title
+		}
+		cmts = append(cmts, &Comment{
+			Comment:   c,
+			PostTitle: title,
+			IsAdmin:   strings.ToLower(c.Email) == adminEmail,
+		})
 	}
 	return cmts
 }
 
 func (c *Comment) AuthorString() string {
-	mail := c.server.GetDefaultStringOption("email", "")
-	if mail == c.Email {
+	if c.IsAdmin {
 		return "博主"
 	}
 	return c.Author
-}
-
-func (c *Comment) PostTitle() template.HTML {
-	return template.HTML(c.server.GetPostTitle(c.PostID))
 }
 
 type AjaxComment struct {
