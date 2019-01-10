@@ -17,23 +17,8 @@ import (
 	"github.com/movsb/taoblog/front"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/setup/migration"
 )
-
-const (
-	dbVer = "4"
-)
-
-func checkDBVer(db *sql.DB) {
-	ver := ""
-	s := `SELECT value FROM options WHERE name='db_ver'`
-	row := db.QueryRow(s)
-	if err := row.Scan(&ver); err != nil {
-		panic(fmt.Sprintf("cannot check db_ver: %v", err))
-	}
-	if ver != dbVer {
-		panic(fmt.Sprintf("db_ver mismatch: %s != %s", ver, dbVer))
-	}
-}
 
 func main() {
 	var err error
@@ -50,7 +35,7 @@ func main() {
 	db.SetMaxIdleConns(10)
 	defer db.Close()
 
-	checkDBVer(db)
+	migration.Migrate(db)
 
 	router := gin.Default()
 

@@ -1,56 +1,24 @@
-package main
+package migration
 
 import (
 	"database/sql"
-	"flag"
 	"fmt"
 	"strconv"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
-func txCall(db *sql.DB, callback func(tx *sql.Tx)) {
-	tx, err := db.Begin()
-	if err != nil {
-		panic(err)
-	}
-	catchCall := func() (except interface{}) {
-		defer func() {
-			except = recover()
-		}()
-		callback(tx)
-		return
-	}
-	if except := catchCall(); except != nil {
-		tx.Rollback()
-		panic(except)
-	}
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-	}
-}
+const curDBVer = 4
 
-func main() {
-	username := flag.String("username", "", "mysql username")
-	password := flag.String("password", "", "mysql password")
-	database := flag.String("database", "", "mysql database")
-	flag.Parse()
-	dataSource := fmt.Sprintf("%s:%s@/%s", *username, *password, *database)
-	gdb, err := sql.Open("mysql", dataSource)
-	if err != nil {
-		panic(err)
-	}
+// Migrate ...
+func Migrate(gdb *sql.DB) {
 	if err := gdb.Ping(); err != nil {
 		panic(err)
 	}
-	defer gdb.Close()
 	row := gdb.QueryRow(`SELECT value FROM options WHERE name='db_ver'`)
 	strDBVer := ""
-	dbVer := 0
+	dbVer := curDBVer
 	if err := row.Scan(&strDBVer); err != nil {
 		if err == sql.ErrNoRows {
-			gdb.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',0)`)
-			dbVer = 0
+			gdb.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',?)`, curDBVer)
 		} else {
 			panic(err)
 		}
