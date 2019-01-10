@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -81,7 +82,9 @@ func main() {
 	go server.ListenAndServe()
 
 	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, syscall.SIGINT)
+	signal.Notify(quit, syscall.SIGKILL)
+	signal.Notify(quit, syscall.SIGTERM)
 	<-quit
 
 	log.Println("server shutting down")
