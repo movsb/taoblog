@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 
+	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/front"
@@ -70,6 +71,7 @@ func main() {
 	theService := service.NewImplServer(db, theAuth)
 	gateway.NewGateway(theAPI, theService, theAuth)
 	front.NewFront(theService, theAuth, router.Group("/blog"), theAPI)
+	admin.NewAdmin(theService, theAuth, router.Group("/admin"))
 
 	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
 	theAuth.SetKey(os.Getenv("KEY"))

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
@@ -71,7 +72,7 @@ type AdminCategoryManageData struct {
 }
 
 type AdminPostEditData struct {
-	*models.Post
+	*protocols.Post
 	New bool
 }
 
@@ -97,10 +98,11 @@ type Admin struct {
 	auth      *auth.Auth
 }
 
-func NewAdmin(server *service.ImplServer, router *gin.RouterGroup) *Admin {
+func NewAdmin(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGroup) *Admin {
 	a := &Admin{
 		server: server,
 		router: router,
+		auth:   auth,
 	}
 	a.loadTemplates()
 	a.route()
@@ -108,8 +110,7 @@ func NewAdmin(server *service.ImplServer, router *gin.RouterGroup) *Admin {
 }
 
 func (a *Admin) route() {
-	g := a.router.Group("/admin")
-	g.GET("/*path", func(c *gin.Context) {
+	a.router.GET("/*path", func(c *gin.Context) {
 		path := c.Param("path")
 		switch path {
 		case "", "/":
@@ -118,14 +119,15 @@ func (a *Admin) route() {
 		}
 		a.Query(c, path)
 	})
-	g.POST("/*path", func(c *gin.Context) {
+	a.router.POST("/*path", func(c *gin.Context) {
 		path := c.Param("path")
 		a.Post(c, path)
 	})
 }
 
 func (a *Admin) _auth(c *gin.Context) bool {
-	return a.auth.AuthCookie(c)
+	user := a.auth.AuthCookie(c)
+	return !user.IsGuest()
 }
 
 func (a *Admin) noCache(c *gin.Context) {
@@ -257,7 +259,7 @@ func (a *Admin) queryIndex(c *gin.Context) {
 
 func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
-		Tags: a.server.ListTagsWithCount(0, false),
+		//Tags: a.server.ListTagsWithCount(0, false),
 	}
 	header := &AdminHeaderData{
 		Title: "标签管理",
@@ -312,7 +314,7 @@ func (a *Admin) queryCategoryManage(c *gin.Context) {
 }
 
 func (a *Admin) queryPostEdit(c *gin.Context) {
-	p := &models.Post{}
+	p := &protocols.Post{}
 	d := AdminPostEditData{
 		New:  true,
 		Post: p,
