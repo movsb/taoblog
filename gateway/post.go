@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service/models"
 )
 
 func (g *Gateway) GetPostCommentCount(c *gin.Context) {
@@ -24,7 +23,7 @@ func (g *Gateway) CreatePost(c *gin.Context) {
 }
 
 func (g *Gateway) UpdatePost(c *gin.Context) {
-	p := models.Post{}
+	p := protocols.Post{}
 	if err := c.ShouldBindJSON(&p); err != nil {
 		c.String(400, "%s", err)
 		return

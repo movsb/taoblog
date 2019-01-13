@@ -208,6 +208,9 @@ func (s *ImplServer) addObjectTag(pid int64, tid int64) {
 		TagID:  tid,
 	}
 	err := s.tdb.Model(&objtag, "post_tags").Create()
+	if err == nil {
+		return
+	}
 	if _, ok := err.(*taorm.DupKeyError); ok {
 		return
 	}

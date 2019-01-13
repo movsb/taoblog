@@ -250,19 +250,25 @@ func (s *ImplServer) CreatePost(in *protocols.Post) {
 
 	s.TxCall(func(txs *ImplServer) error {
 		txs.tdb.Model(&p, "posts").MustCreate()
+		in.ID = p.ID
+		txs.UpdateObjectTags(p.ID, in.Tags)
 		return nil
 	})
 }
 
-func (s *ImplServer) UpdatePost(p *models.Post) {
+func (s *ImplServer) UpdatePost(in *protocols.Post) {
 	var err error
 
-	if p.ID == 0 {
+	if in.ID == 0 {
 		panic(exception.NewValidationError("无效文章编号"))
 	}
 
+	p := models.Post{
+		ID: in.ID,
+	}
+
 	var tr post_translators.PostTranslator
-	switch p.SourceType {
+	switch in.SourceType {
 	case "html":
 		tr = &post_translators.HTMLTranslator{}
 	case "markdown":
@@ -270,17 +276,22 @@ func (s *ImplServer) UpdatePost(p *models.Post) {
 	default:
 		panic("no translator found")
 	}
-	p.Content, err = tr.Translate(p.Source)
+	content, err := tr.Translate(in.Source)
 	if err != nil {
 		panic(err)
 	}
 
-	p.Modified = datetime.MyGmt()
+	modified := datetime.MyGmt()
 
-	s.tdb.Model(p, "posts").UpdateMap(map[string]interface{}{
-		"modified":    p.Modified,
-		"source_type": p.SourceType,
-		"source":      p.Source,
-		"content":     p.Content,
+	s.TxCall(func(txs *ImplServer) error {
+		txs.tdb.Model(p, "posts").UpdateMap(map[string]interface{}{
+			"title":       in.Title,
+			"modified":    modified,
+			"source_type": in.SourceType,
+			"source":      in.Source,
+			"content":     content,
+		})
+		txs.UpdateObjectTags(p.ID, in.Tags)
+		return nil
 	})
 }
