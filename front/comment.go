@@ -132,7 +132,7 @@ func (f *Front) createPostComment(c *gin.Context) {
 		Email:   c.DefaultPostForm("email", ""),
 		URL:     c.DefaultPostForm("url", ""),
 		IP:      c.ClientIP(),
-		Date:    datetime.MyLocal(), // TODO
+		Date:    datetime.MyGmt(),
 		Content: c.DefaultPostForm("content", ""),
 	}
 	user := f.auth.AuthCookie(c)
