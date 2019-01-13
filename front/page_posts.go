@@ -14,7 +14,7 @@ type PagePostsData struct {
 	Posts []*protocols.Post
 }
 
-func (f *Front) GetPagePosts(c *gin.Context) {
+func (f *Front) getPagePosts(c *gin.Context) {
 	header := &ThemeHeaderData{
 		Title: "全部文章",
 		Header: func() {

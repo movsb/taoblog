@@ -91,10 +91,11 @@ func NewFront(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGro
 	f.specialFiles = map[string]func(c *gin.Context){
 		"/sitemap.xml": f.GetSitemap,
 		"/rss":         f.GetRss,
-		"/posts":       f.GetPagePosts,
+		"/posts":       f.getPagePosts,
 		"/all-posts.html": func(c *gin.Context) {
 			c.Redirect(301, "/posts")
 		},
+		"/search": f.getPageSearch,
 	}
 	return f
 }
