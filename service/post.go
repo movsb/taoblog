@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -34,22 +35,24 @@ func (s *ImplServer) MustGetPost(name int64) *protocols.Post {
 }
 
 // MustListPosts ...
-func (s *ImplServer) MustListPosts(in *protocols.ListPostsRequest) []*protocols.Post {
+func (s *ImplServer) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
+	user := s.auth.AuthContext(ctx)
 	var posts models.Posts
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
+	stmt.WhereIf(user.IsGuest(), "status = 'public'")
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
 	return posts.ToProtocols()
 }
 
-func (s *ImplServer) GetLatestPosts(fields string, limit int64) []*protocols.Post {
+func (s *ImplServer) GetLatestPosts(ctx context.Context, fields string, limit int64) []*protocols.Post {
 	in := protocols.ListPostsRequest{
 		Fields:  fields,
 		Limit:   limit,
 		OrderBy: "date DESC",
 	}
-	return s.MustListPosts(&in)
+	return s.MustListPosts(ctx, &in)
 }
 
 func (s *ImplServer) GetPostTitle(ID int64) string {
@@ -204,10 +207,6 @@ func (s *ImplServer) GetPostCommentCount(name int64) (count int64) {
 func (s *ImplServer) UpdatePostCommentCount(name int64) {
 	query := `UPDATE posts INNER JOIN (SELECT count(post_id) count FROM comments WHERE post_id=?) x ON posts.id=? SET posts.comments=x.count`
 	s.tdb.MustExec(query, name, name)
-}
-
-func (s *ImplServer) ListPostComments(in *protocols.ListCommentsRequest) []*models.Comment {
-	return s.ListComments(in)
 }
 
 // CreatePost ...

@@ -27,11 +27,18 @@ func (s *ImplServer) GetComment(name int64) *models.Comment {
 }
 
 // ListComments ...
-func (s *ImplServer) ListComments(in *protocols.ListCommentsRequest) []*models.Comment {
+// TODO filter public post comments
+func (s *ImplServer) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) []*models.Comment {
+	user := s.auth.AuthContext(ctx)
 	var comments []*models.Comment
-	s.comments().Select(in.Fields).Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
+	stmt := s.tdb.From("comments").Select(in.Fields).
+		Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
 		WhereIf(in.PostID > 0, "post_id=?", in.PostID).
-		WhereIf(in.Ancestor >= 0, "ancestor=?", in.Ancestor).MustFind(&comments)
+		WhereIf(in.Ancestor >= 0, "ancestor=?", in.Ancestor)
+	if user.IsGuest() {
+		stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+	}
+	stmt.MustFind(&comments)
 	return comments
 }
 

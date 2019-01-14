@@ -15,6 +15,7 @@ type PagePostsData struct {
 }
 
 func (f *Front) getPagePosts(c *gin.Context) {
+	user := f.auth.AuthCookie(c)
 	header := &ThemeHeaderData{
 		Title: "全部文章",
 		Header: func() {
@@ -39,10 +40,11 @@ func (f *Front) getPagePosts(c *gin.Context) {
 		sort[1] = "desc"
 	}
 
-	pageData.Posts = f.server.MustListPosts(&protocols.ListPostsRequest{
-		Fields:  "id,title,date,page_view,comments",
-		OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
-	})
+	pageData.Posts = f.server.MustListPosts(user.Context(nil),
+		&protocols.ListPostsRequest{
+			Fields:  "id,title,date,page_view,comments",
+			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
+		})
 
 	f.render(c.Writer, "header", header)
 	f.render(c.Writer, "page_posts", pageData)
