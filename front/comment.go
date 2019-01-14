@@ -89,10 +89,11 @@ func NewAjaxComment(c *models.Comment, logged bool, adminEmail string) *AjaxComm
 }
 
 func (f *Front) listPostComments(c *gin.Context) {
+	userCtx := f.auth.AuthCookie(c).Context(nil)
 	name := utils.MustToInt64(c.Param("name"))
 	limit := utils.MustToInt64(c.DefaultQuery("limit", "10"))
 	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
-	parents := f.server.ListPostComments(&protocols.ListCommentsRequest{
+	parents := f.server.ListComments(userCtx, &protocols.ListCommentsRequest{
 		PostID:   name,
 		Ancestor: 0,
 		Limit:    limit,
@@ -101,7 +102,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	})
 	childrenMap := make(map[int64][]*models.Comment)
 	for _, parent := range parents {
-		childrenMap[parent.ID] = f.server.ListPostComments(&protocols.ListCommentsRequest{
+		childrenMap[parent.ID] = f.server.ListComments(userCtx, &protocols.ListCommentsRequest{
 			PostID:   name,
 			Ancestor: parent.ID,
 			OrderBy:  "id ASC",

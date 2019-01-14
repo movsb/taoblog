@@ -145,6 +145,10 @@ func (f *Front) Query(c *gin.Context, path string) {
 				c.Status(404)
 				f.render(c.Writer, "404", nil)
 				return
+			case *PermDeniedError:
+				c.Status(403)
+				f.render(c.Writer, "403", nil)
+				return
 			}
 			panic(e)
 		}
@@ -238,6 +242,7 @@ func (f *Front) processHomeQueries(c *gin.Context) bool {
 }
 
 func (f *Front) queryHome(c *gin.Context) {
+	user := f.auth.AuthCookie(c)
 	header := &ThemeHeaderData{
 		Title: "",
 		Header: func() {
@@ -256,16 +261,18 @@ func (f *Front) queryHome(c *gin.Context) {
 		PageCount:    f.server.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: f.server.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.LatestPosts = newPosts(f.server.MustListPosts(&protocols.ListPostsRequest{
-		Fields:  "id,title,type",
-		Limit:   20,
-		OrderBy: "date DESC",
-	}), f.server)
-	home.LatestComments = newComments(f.server.ListComments(&protocols.ListCommentsRequest{
-		Ancestor: -1,
-		Limit:    10,
-		OrderBy:  "date DESC",
-	}), f.server)
+	home.LatestPosts = newPosts(f.server.MustListPosts(user.Context(nil),
+		&protocols.ListPostsRequest{
+			Fields:  "id,title,type",
+			Limit:   20,
+			OrderBy: "date DESC",
+		}), f.server)
+	home.LatestComments = newComments(f.server.ListComments(user.Context(nil),
+		&protocols.ListCommentsRequest{
+			Ancestor: -1,
+			Limit:    10,
+			OrderBy:  "date DESC",
+		}), f.server)
 
 	f.render(c.Writer, "header", header)
 	f.render(c.Writer, "home", home)
@@ -274,6 +281,7 @@ func (f *Front) queryHome(c *gin.Context) {
 
 func (f *Front) queryByID(c *gin.Context, id int64) {
 	post := f.server.GetPostByID(id)
+	f.userMustCanSeePost(c, post)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
 		return
@@ -287,6 +295,7 @@ func (f *Front) incView(id int64) {
 
 func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
 	post := f.server.GetPostBySlug(tree, slug)
+	f.userMustCanSeePost(c, post)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
 		return
@@ -296,6 +305,7 @@ func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
 
 func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
 	post := f.server.GetPostByPage(parents, slug)
+	f.userMustCanSeePost(c, post)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
 		return
@@ -331,4 +341,11 @@ func (f *Front) queryByTags(c *gin.Context, tags string) {
 	posts := f.server.GetPostsByTags(tags)
 	in := QueryTags{Posts: posts, Tag: tags}
 	f.render(c.Writer, "tags", &in)
+}
+
+func (f *Front) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
+	user := f.auth.AuthCookie(c)
+	if user.IsGuest() && post.Status != "public" {
+		panic(&PermDeniedError{})
+	}
 }

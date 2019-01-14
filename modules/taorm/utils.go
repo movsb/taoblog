@@ -110,7 +110,11 @@ func panicIf(cond bool, v interface{}) {
 }
 
 func dumpSQL(query string, args ...interface{}) {
-	fmt.Printf(strings.Replace(query, "?", "%v", -1)+"\n", args...)
+	fmt.Println(strSQL(query, args...))
+}
+
+func strSQL(query string, args ...interface{}) string {
+	return fmt.Sprintf(strings.Replace(query, "?", "%v", -1), args...)
 }
 
 func iterateFields(model interface{}, callback func(name string, field *reflect.StructField, value *reflect.Value) bool) {

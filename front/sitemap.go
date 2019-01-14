@@ -21,6 +21,8 @@ type SitemapData struct {
 }
 
 func (f *Front) GetSitemap(c *gin.Context) {
+	user := f.auth.AuthCookie(c)
+
 	if ifModified := c.GetHeader("If-Modified-Since"); ifModified != "" {
 		if modified := f.server.GetDefaultStringOption("last_post_time", ""); modified != "" {
 			if ifModified == datetime.Local2Gmt(modified) {
@@ -30,10 +32,11 @@ func (f *Front) GetSitemap(c *gin.Context) {
 		}
 	}
 
-	rawPosts := f.server.MustListPosts(&protocols.ListPostsRequest{
-		Fields:  "id",
-		OrderBy: "date DESC",
-	})
+	rawPosts := f.server.MustListPosts(user.Context(nil),
+		&protocols.ListPostsRequest{
+			Fields:  "id",
+			OrderBy: "date DESC",
+		})
 
 	home := "https://" + f.server.GetDefaultStringOption("home", "taoblog.local")
 	sitemapPosts := make([]*PostForSitemap, 0, len(rawPosts))

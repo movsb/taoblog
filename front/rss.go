@@ -30,6 +30,8 @@ type RssData struct {
 }
 
 func (f *Front) GetRss(c *gin.Context) {
+	user := f.auth.AuthCookie(c)
+
 	if ifModified := c.GetHeader("If-Modified-Since"); ifModified != "" {
 		if modified := f.server.GetDefaultStringOption("last_post_time", ""); modified != "" {
 			if ifModified == datetime.Local2Gmt(modified) {
@@ -39,7 +41,7 @@ func (f *Front) GetRss(c *gin.Context) {
 		}
 	}
 
-	posts := f.server.GetLatestPosts("id,title,date,content", 10)
+	posts := f.server.GetLatestPosts(user.Context(nil), "id,title,date,content", 10)
 
 	data := RssData{
 		BlogName:    f.server.GetDefaultStringOption("blog_name", "TaoBlog"),

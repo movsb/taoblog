@@ -47,16 +47,17 @@ func (w *_Where) Rebuild() (query string, args []interface{}) {
 
 // Stmt is an SQL statement.
 type Stmt struct {
-	db         *DB
-	model      interface{}
-	tableNames []string
-	fields     string
-	ands       []_Where
-	ors        []_Where
-	groupBy    string
-	orderBy    string
-	limit      int64
-	offset     int64
+	db              *DB
+	model           interface{}
+	tableNames      []string
+	innerJoinTables []string
+	fields          []string
+	ands            []_Where
+	ors             []_Where
+	groupBy         string
+	orderBy         string
+	limit           int64
+	offset          int64
 }
 
 type DB struct {
@@ -146,8 +147,19 @@ func (s *Stmt) From(table string) *Stmt {
 	return s
 }
 
+func (s *Stmt) InnerJoin(table string, on string) *Stmt {
+	q := " INNER JOIN " + table
+	if on != "" {
+		q += " ON " + on
+	}
+	s.innerJoinTables = append(s.innerJoinTables, q)
+	return s
+}
+
 func (s *Stmt) Select(fields string) *Stmt {
-	s.fields = fields
+	if len(fields) > 0 {
+		s.fields = append(s.fields, fields)
+	}
 	return s
 }
 
@@ -255,27 +267,115 @@ func (s *Stmt) buildWheres() (string, []interface{}) {
 	return sb.String(), args
 }
 
-func (s *Stmt) buildCreate() string {
+func (s *Stmt) buildCreate() (string, []interface{}, error) {
 	panicIf(len(s.tableNames) != 1, "model length is not 1")
-	return fmt.Sprintf(`INSERT INTO %s `, s.tableNames[0])
-}
-
-func (s *Stmt) buildSelect() string {
-	if s.fields == "" {
-		s.fields = "*"
+	fields, args := collectDataFromModel(s.model)
+	if len(fields) == 0 {
+		return "", nil, ErrNoFields
 	}
-	panicIf(len(s.tableNames) == 0, "model is empty")
-	return fmt.Sprintf(`SELECT %s FROM %s`, s.fields, strings.Join(s.tableNames, ","))
+	query := fmt.Sprintf(`INSERT INTO %s `, s.tableNames[0])
+	query += fmt.Sprintf(` (%s) VALUES (%s)`,
+		strings.Join(fields, ","),
+		createSQLInMarks(len(fields)),
+	)
+	return query, args, nil
 }
 
-func (s *Stmt) buildUpdate() string {
+func (s *Stmt) buildSelect() (string, []interface{}, error) {
 	panicIf(len(s.tableNames) == 0, "model is empty")
-	return fmt.Sprintf(`UPDATE %s SET `, strings.Join(s.tableNames, ","))
+
+	fields := []string{}
+	if len(s.fields) == 0 {
+		if len(s.innerJoinTables) == 0 {
+			fields = []string{"*"}
+		} else {
+			fields = []string{s.tableNames[0] + ".*"}
+		}
+	} else {
+		if len(s.innerJoinTables) == 0 || len(s.fields) == 1 && s.fields[0] == "*" {
+			fields = s.fields
+		} else {
+			for _, list := range s.fields {
+				slice := strings.Split(list, ",")
+				for _, field := range slice {
+					index := strings.IndexByte(field, '.')
+					if index == -1 {
+						fields = append(fields, fmt.Sprintf("%s.%s", s.tableNames[0], field))
+					} else {
+						fields = append(fields, field)
+					}
+				}
+			}
+		}
+	}
+
+	strFields := strings.Join(fields, ",")
+
+	query := fmt.Sprintf(`SELECT %s FROM %s`, strFields, strings.Join(s.tableNames, ","))
+	if len(s.innerJoinTables) > 0 {
+		query += strings.Join(s.innerJoinTables, " ")
+	}
+
+	var args []interface{}
+
+	whereQuery, whereArgs := s.buildWheres()
+	query += whereQuery
+	args = append(args, whereArgs...)
+
+	query += s.buildGroupBy()
+	query += s.buildOrderBy()
+	query += s.buildLimit()
+
+	return query, args, nil
 }
 
-func (s *Stmt) buildDelete() string {
+func (s *Stmt) buildUpdate(fields map[string]interface{}) (string, []interface{}, error) {
 	panicIf(len(s.tableNames) == 0, "model is empty")
-	return fmt.Sprintf(`DELETE FROM %s`, strings.Join(s.tableNames, ","))
+	var args []interface{}
+	query := fmt.Sprintf(`UPDATE %s SET `, strings.Join(s.tableNames, ","))
+
+	var updates []string
+	var values []interface{}
+
+	if len(fields) == 0 {
+		return "", nil, ErrNoFields
+	}
+
+	for field, value := range fields {
+		if expr, ok := value.(Expr); ok {
+			pair := fmt.Sprintf("%s=%s", field, string(expr))
+			updates = append(updates, pair)
+			continue
+		}
+		pair := fmt.Sprintf("%s=?", field)
+		updates = append(updates, pair)
+		values = append(values, value)
+	}
+
+	query += strings.Join(updates, ",")
+	args = append(args, values...)
+
+	whereQuery, whereArgs := s.buildWheres()
+	query += whereQuery
+	args = append(args, whereArgs...)
+
+	query += s.buildLimit()
+
+	return query, args, nil
+}
+
+func (s *Stmt) buildDelete() (string, []interface{}, error) {
+	panicIf(len(s.tableNames) == 0, "model is empty")
+	var args []interface{}
+	query := fmt.Sprintf(`DELETE FROM %s`, strings.Join(s.tableNames, ","))
+
+	whereQuery, whereArgs := s.buildWheres()
+	query += whereQuery
+	args = append(args, whereArgs...)
+
+	query += s.buildLimit()
+
+	return query, args, nil
 }
 
 func (s *Stmt) buildGroupBy() (groupBy string) {
@@ -318,17 +418,10 @@ func (db *DB) MustExec(query string, args ...interface{}) sql.Result {
 
 // Create ...
 func (s *Stmt) Create() error {
-	fields, args := collectDataFromModel(s.model)
-	if len(fields) == 0 {
-		return ErrNoFields
+	query, args, err := s.buildCreate()
+	if err != nil {
+		return err
 	}
-
-	var query string
-	query += s.buildCreate()
-	query += fmt.Sprintf(` (%s) VALUES (%s)`,
-		strings.Join(fields, ","),
-		createSQLInMarks(len(fields)),
-	)
 
 	dumpSQL(query, args...)
 
@@ -354,20 +447,20 @@ func (s *Stmt) MustCreate() {
 	}
 }
 
+func (s *Stmt) CreateSQL() string {
+	query, args, err := s.buildCreate()
+	if err != nil {
+		panic(err)
+	}
+	return strSQL(query, args...)
+}
+
 // Find ...
 func (s *Stmt) Find(out interface{}) error {
-	var query string
-	var args = []interface{}{}
-
-	query += s.buildSelect()
-
-	whereQuery, whereArgs := s.buildWheres()
-	query += whereQuery
-	args = append(args, whereArgs...)
-
-	query += s.buildGroupBy()
-	query += s.buildOrderBy()
-	query += s.buildLimit()
+	query, args, err := s.buildSelect()
+	if err != nil {
+		return err
+	}
 
 	dumpSQL(query, args...)
 	return QueryRows(out, s.db.cdb, query, args...)
@@ -380,41 +473,27 @@ func (s *Stmt) MustFind(out interface{}) {
 	}
 }
 
+func (s *Stmt) FindSQL() string {
+	query, args, err := s.buildSelect()
+	if err != nil {
+		panic(err)
+	}
+	return strSQL(query, args...)
+}
+
 func (s *Stmt) updateMap(fields map[string]interface{}, anyway bool) error {
-	var query string
-	var args []interface{}
-
-	query += s.buildUpdate()
-
-	var updates []string
-	var values []interface{}
-
-	if len(fields) == 0 {
-		return ErrNoFields
+	query, args, err := s.buildUpdate(fields)
+	if err != nil {
+		return err
 	}
-
-	for field, value := range fields {
-		pair := fmt.Sprintf("%s=?", field)
-		updates = append(updates, pair)
-		values = append(values, value)
-	}
-
-	query += strings.Join(updates, ",")
-	args = append(args, values...)
 
 	if !anyway && s.noWheres() {
 		return ErrNoWhere
 	}
 
-	whereQuery, whereArgs := s.buildWheres()
-	query += whereQuery
-	args = append(args, whereArgs...)
-
-	query += s.buildLimit()
-
 	dumpSQL(query, args...)
 
-	_, err := s.db.cdb.Exec(query, args...)
+	_, err = s.db.cdb.Exec(query, args...)
 	if err != nil {
 		return err
 	}
@@ -446,25 +525,27 @@ func (s *Stmt) MustUpdateMapAnyway(updates map[string]interface{}) {
 	}
 }
 
-func (s *Stmt) _delete(anyway bool) error {
-	var query string
-	var args []interface{}
+func (s *Stmt) UpdateSQL(updates map[string]interface{}) string {
+	query, args, err := s.buildUpdate(updates)
+	if err != nil {
+		panic(err)
+	}
+	return strSQL(query, args...)
+}
 
-	query += s.buildDelete()
+func (s *Stmt) _delete(anyway bool) error {
+	query, args, err := s.buildDelete()
+	if err != nil {
+		return err
+	}
 
 	if !anyway && s.noWheres() {
 		return ErrNoWhere
 	}
 
-	whereQuery, whereArgs := s.buildWheres()
-	query += whereQuery
-	args = append(args, whereArgs...)
-
-	query += s.buildLimit()
-
 	dumpSQL(query, args...)
 
-	_, err := s.db.cdb.Exec(query, args...)
+	_, err = s.db.cdb.Exec(query, args...)
 	if err != nil {
 		return err
 	}
@@ -494,4 +575,12 @@ func (s *Stmt) MustDeleteAnyway() {
 	if err := s.DeleteAnyway(); err != nil {
 		panic(err)
 	}
+}
+
+func (s *Stmt) DeleteSQL() string {
+	query, args, err := s.buildDelete()
+	if err != nil {
+		panic(err)
+	}
+	return strSQL(query, args...)
 }
