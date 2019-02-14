@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-const curDBVer = 4
-
 // Migrate ...
 func Migrate(gdb *sql.DB) {
 	if err := gdb.Ping(); err != nil {
@@ -15,10 +13,10 @@ func Migrate(gdb *sql.DB) {
 	}
 	row := gdb.QueryRow(`SELECT value FROM options WHERE name='db_ver'`)
 	strDBVer := ""
-	dbVer := curDBVer
+	dbVer := 0
 	if err := row.Scan(&strDBVer); err != nil {
 		if err == sql.ErrNoRows {
-			gdb.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',?)`, curDBVer)
+			gdb.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',?)`, 0)
 		} else {
 			panic(err)
 		}

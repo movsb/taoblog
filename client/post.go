@@ -100,6 +100,7 @@ func (c *Client) UploadPostFiles() {
 		".png": true,
 		".gif": true,
 		".zip": true,
+		".mp4": true,
 	}
 	root := "."
 	list, err := ioutil.ReadDir(root)

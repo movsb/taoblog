@@ -251,6 +251,7 @@ func (s *ImplServer) CreatePost(in *protocols.Post) {
 		txs.tdb.Model(&p, "posts").MustCreate()
 		in.ID = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
+		txs.updateLastPostTime(p.Modified)
 		return nil
 	})
 }
@@ -291,6 +292,17 @@ func (s *ImplServer) UpdatePost(in *protocols.Post) {
 			"content":     content,
 		})
 		txs.UpdateObjectTags(p.ID, in.Tags)
+		txs.updateLastPostTime(modified)
 		return nil
 	})
+}
+
+// updateLastPostTime updates last_post_time in options.
+func (s *ImplServer) updateLastPostTime(ts string) {
+	if ts == "" {
+		ts = datetime.MyLocal()
+	} else {
+		ts = datetime.My2Local(ts)
+	}
+	s.SetOption("last_post_time", ts)
 }
