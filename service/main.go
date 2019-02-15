@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/file_managers"
@@ -25,14 +27,16 @@ type ImplServer struct {
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
 	fmgr   IFileManager
+	cache  *memory_cache.MemoryCache
 }
 
 // NewImplServer ...
 func NewImplServer(db *sql.DB, auth *auth.Auth) *ImplServer {
 	s := &ImplServer{
-		tdb:  taorm.NewDB(db),
-		auth: auth,
-		fmgr: file_managers.NewLocalFileManager(),
+		tdb:   taorm.NewDB(db),
+		auth:  auth,
+		fmgr:  file_managers.NewLocalFileManager(),
+		cache: memory_cache.NewMemoryCache(time.Minute * 10),
 	}
 	mailConfig := strings.SplitN(os.Getenv("MAIL"), "/", 3)
 	if len(mailConfig) != 3 {

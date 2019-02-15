@@ -89,3 +89,10 @@ func v4(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v5(tx *sql.Tx) {
+	s := "CREATE UNIQUE INDEX `uix_name` ON `options` (`name`)"
+	if _, err := tx.Exec(s); err != nil {
+		panic(err)
+	}
+}
