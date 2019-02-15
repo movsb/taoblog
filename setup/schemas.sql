@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS `options` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `value` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    PRIMARY KEY(`id`)
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`name`)
 );
 
 -- 创建表 posts
