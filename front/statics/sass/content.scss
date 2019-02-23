@@ -267,6 +267,14 @@
         margin: 0;
         border-left: gray 3px solid;
     }
+
+    figure {
+        text-align: center;
+    }
+    p > img:only-child {
+        display: block;
+        margin: auto;
+    }
 }
 
 /* 目录 */
