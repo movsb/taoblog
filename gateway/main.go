@@ -47,6 +47,8 @@ func (g *Gateway) routePosts() {
 	c.POST("/:name/files/*file", g.auth, g.CreateFile)
 	c.DELETE("/:name/files/*file", g.auth, g.DeleteFile)
 
+	c.POST("/:name/status", g.auth, g.SetPostStatus)
+
 	// for mirror host
 	files := g.router.Group("/files")
 	files.GET("/:name/*file", g.GetFile)

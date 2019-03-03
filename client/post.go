@@ -31,6 +31,11 @@ type Post struct {
 	Source     string `json:"source"`
 }
 
+type PostStatus struct {
+	ID     int64  `json:"id"`
+	Status string `json:"status"`
+}
+
 // InitPost ...
 func (c *Client) InitPost() {
 	fp, err := os.Open("config.yml")
@@ -65,6 +70,23 @@ func (c *Client) CreatePost() {
 	}
 	p.PostConfig.ID = rp.ID
 	c.savePostConfig(&p.PostConfig)
+}
+
+func (c *Client) SetPostStatus(status string) {
+	config := c.readPostConfig()
+	if config.ID == 0 {
+		panic("post not yet been created")
+	}
+	postStatus := &PostStatus{
+		ID:     config.ID,
+		Status: status,
+	}
+	bys, err := json.Marshal(postStatus)
+	if err != nil {
+		panic(err)
+	}
+	resp := c.mustPost(fmt.Sprintf("/posts/%d/status", config.ID), bytes.NewReader(bys), contentTypeJSON)
+	defer resp.Body.Close()
 }
 
 func (c *Client) UpdatePost() {
