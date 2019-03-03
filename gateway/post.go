@@ -32,3 +32,14 @@ func (g *Gateway) UpdatePost(c *gin.Context) {
 	g.server.UpdatePost(&p)
 	c.JSON(200, &p)
 }
+
+func (g *Gateway) SetPostStatus(c *gin.Context) {
+	p := protocols.Post{}
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.String(400, "%s", err)
+		return
+	}
+	id := utils.MustToInt64(c.Param("name"))
+	g.server.SetPostStatus(id, p.Status)
+	c.Status(200)
+}

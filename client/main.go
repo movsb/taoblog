@@ -80,9 +80,17 @@ func main() {
 				client.UploadPostFiles()
 			case "update":
 				client.UpdatePost()
+			case "pub", "publish":
+				client.SetPostStatus("public")
+			case "draft":
+				client.SetPostStatus("draft")
+			default:
+				panic("unknown operation")
 			}
 		case "backup":
 			client.Backup(os.Stdout)
+		default:
+			panic("unknown operation")
 		}
 	}
 }

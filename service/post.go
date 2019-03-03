@@ -222,7 +222,7 @@ func (s *ImplServer) CreatePost(in *protocols.Post) {
 		Slug:       "",
 		Type:       protocols.PostTypePost,
 		Category:   1,
-		Status:     "public",
+		Status:     "draft",
 		Metas:      "{}",
 		Source:     in.Source,
 		SourceType: in.SourceType,
@@ -305,4 +305,15 @@ func (s *ImplServer) updateLastPostTime(ts string) {
 		ts = datetime.My2Local(ts)
 	}
 	s.SetOption("last_post_time", ts)
+}
+
+func (s *ImplServer) SetPostStatus(id int64, status string) {
+	s.TxCall(func(txs *ImplServer) error {
+		var post models.Post
+		txs.tdb.From("posts").Select("id").Where("id=?", id).MustFind(&post)
+		txs.tdb.Model(&post, "posts").MustUpdateMap(map[string]interface{}{
+			"status": status,
+		})
+		return nil
+	})
 }
