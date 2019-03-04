@@ -201,3 +201,33 @@
         });
     });
 })();
+
+// 图片加来源
+(function() {
+    function replace(img) {
+        var figure = document.createElement('figure');
+
+        var newImg = img.cloneNode(false);
+        figure.appendChild(newImg);
+
+        var caption = document.createElement('figcaption');
+        caption.innerText = '图片来源：';
+
+        var a = document.createElement('a');
+        a.innerText = img.getAttribute('data-name');
+        a.setAttribute('href', img.getAttribute('data-origin'));
+        a.setAttribute('target', '_blank');
+
+        caption.appendChild(a);
+
+        figure.appendChild(caption);
+
+        img.parentNode.insertBefore(figure, img);
+        img.parentNode.removeChild(img);
+    }
+
+    var imgs = document.querySelectorAll('.entry p > img[data-name]');
+    imgs.forEach(function(img){
+        replace(img);
+    });
+})();
