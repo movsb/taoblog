@@ -1,6 +1,6 @@
 # taoblog
 
-我为自己编写的博客系统
+我为自己编写的博客系统。
 
 ## 编写目的
 
@@ -15,6 +15,8 @@
 
 这套博客系统功能并不完善，可以说是很不完善，而且存在非常多的安全隐患，并且使用起来非常不友好。
 
+博客程序最开始完全由PHP写成，后使用Go语言完全重构。
+
 ## 致对项目感兴趣的你们
 
 很感谢你们对此项目的 watch，star 与 fork。
@@ -28,18 +30,17 @@
 
 文件名|文件描述
 ------|--------
-robots.txt  | 搜索引擎收录规则文件
-favicon.ico | 网站图标
-README.md   | 此文件
-Makefile    | 编译、拉取相关数据
-admin/      | 博客程序目录、后台目录
-docs/       | 一些文档
-plugins/    | 插件目录
-setup/      | 安装脚本目录、配置文件目录
-theme/      | 主题文件
-server/     | 博客服务端
+admin/      | 后台目录
+auth/       | 授权管理
 client/     | 博客客户端
-tools/      | 一些工具
+exception/  | 异常处理
+front/      | 博客主题
+gateway     | 网关接口层
+modules/    | 公共模块
+protocols/  | 协议定义
+server/     | 博客后台
+service/    | 服务实现
+setup/      | 安装管理
 
 ## 联系我
 
