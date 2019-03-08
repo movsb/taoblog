@@ -21,8 +21,8 @@ type IFileManager interface {
 	List(pid int64) ([]string, error)
 }
 
-// ImplServer implements IServer.
-type ImplServer struct {
+// Service implements IServer.
+type Service struct {
 	tdb    *taorm.DB
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
@@ -30,9 +30,9 @@ type ImplServer struct {
 	cache  *memory_cache.MemoryCache
 }
 
-// NewImplServer ...
-func NewImplServer(db *sql.DB, auth *auth.Auth) *ImplServer {
-	s := &ImplServer{
+// NewService ...
+func NewService(db *sql.DB, auth *auth.Auth) *Service {
+	s := &Service{
 		tdb:   taorm.NewDB(db),
 		auth:  auth,
 		fmgr:  file_managers.NewLocalFileManager(),
@@ -55,7 +55,7 @@ func NewImplServer(db *sql.DB, auth *auth.Auth) *ImplServer {
 }
 
 // TxCall ...
-func (s *ImplServer) TxCall(callback func(txs *ImplServer) error) {
+func (s *Service) TxCall(callback func(txs *Service) error) {
 	err := s.tdb.TxCall(func(tx *taorm.DB) error {
 		txs := *s
 		txs.tdb = tx

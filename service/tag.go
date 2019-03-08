@@ -9,19 +9,19 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
-func (s *ImplServer) tags() *taorm.Stmt {
+func (s *Service) tags() *taorm.Stmt {
 	return s.tdb.Model(models.Tag{}, "tags")
 }
 
 // GetTagByName gets a tag by Name.
-func (s *ImplServer) GetTagByName(name string) *models.Tag {
+func (s *Service) GetTagByName(name string) *models.Tag {
 	var tag models.Tag
 	s.tags().Where("name=?", name).MustFind(&tag)
 	return &tag
 }
 
 /*
-func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagWithCount {
+func (s *Service) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagWithCount {
 	query, args := sql_helpers.NewSelect().
 		From("post_tags", "pt").From("tags", "t").
 		Select("t.*,COUNT(pt.id) size").
@@ -70,7 +70,7 @@ func (s *ImplServer) ListTagsWithCount(limit int64, mergeAlias bool) []*models.T
 }
 */
 
-func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
+func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
 	rows, err := s.tdb.Common().Query(sql, postID)
 	if err != nil {
@@ -93,7 +93,7 @@ func (s *ImplServer) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 }
 
 // GetObjectTagNames ...
-func (s *ImplServer) GetObjectTagNames(postID int64) []string {
+func (s *Service) GetObjectTagNames(postID int64) []string {
 	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
 	args := []interface{}{postID}
 	rows, err := s.tdb.Common().Query(query, args...)
@@ -113,7 +113,7 @@ func (s *ImplServer) GetObjectTagNames(postID int64) []string {
 	return names
 }
 
-func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
+func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 	sids := utils.JoinInts(ids, ",")
 
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
@@ -157,7 +157,7 @@ func (s *ImplServer) getAliasTagsAll(ids []int64) []int64 {
 }
 
 // UpdateObjectTags ...
-func (s *ImplServer) UpdateObjectTags(pid int64, tags []string) {
+func (s *Service) UpdateObjectTags(pid int64, tags []string) {
 	newTags := tags
 	oldTags := s.GetObjectTagNames(pid)
 
@@ -195,14 +195,14 @@ func (s *ImplServer) UpdateObjectTags(pid int64, tags []string) {
 	}
 }
 
-func (s *ImplServer) removeObjectTag(pid int64, tagName string) {
+func (s *Service) removeObjectTag(pid int64, tagName string) {
 	tagObj := s.GetTagByName(tagName)
 	s.tdb.From("post_tags").
 		Where("post_id=? AND tag_id=?", pid, tagObj.ID).
 		MustDelete()
 }
 
-func (s *ImplServer) addObjectTag(pid int64, tid int64) {
+func (s *Service) addObjectTag(pid int64, tid int64) {
 	objtag := models.ObjectTag{
 		PostID: pid,
 		TagID:  tid,
@@ -217,7 +217,7 @@ func (s *ImplServer) addObjectTag(pid int64, tid int64) {
 	panic(err)
 }
 
-func (s *ImplServer) hasTagName(tagName string) bool {
+func (s *Service) hasTagName(tagName string) bool {
 	var tag models.Tag
 	err := s.tags().Where("name=?", tagName).Find(&tag)
 	if err == nil {
@@ -229,7 +229,7 @@ func (s *ImplServer) hasTagName(tagName string) bool {
 	panic(err)
 }
 
-func (s *ImplServer) addTag(tagName string) int64 {
+func (s *Service) addTag(tagName string) int64 {
 	tagObj := models.Tag{
 		Name: tagName,
 	}
@@ -237,7 +237,7 @@ func (s *ImplServer) addTag(tagName string) int64 {
 	return tagObj.ID
 }
 
-func (s *ImplServer) getRootTag(tagName string) models.Tag {
+func (s *Service) getRootTag(tagName string) models.Tag {
 	tagObj := s.GetTagByName(tagName)
 	if tagObj.Alias == 0 {
 		return *tagObj

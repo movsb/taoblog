@@ -10,6 +10,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 )
 
+// PagePostsData ...
 type PagePostsData struct {
 	Posts []*protocols.Post
 }
@@ -40,7 +41,7 @@ func (f *Front) getPagePosts(c *gin.Context) {
 		sort[1] = "desc"
 	}
 
-	pageData.Posts = f.server.MustListPosts(user.Context(nil),
+	pageData.Posts = f.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,date,page_view,comments",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),

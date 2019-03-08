@@ -8,7 +8,7 @@ import (
 
 func (g *Gateway) GetPostCommentCount(c *gin.Context) {
 	name := utils.MustToInt64(c.Param("name"))
-	count := g.server.GetPostCommentCount(name)
+	count := g.service.GetPostCommentCount(name)
 	c.JSON(200, count)
 }
 
@@ -18,7 +18,7 @@ func (g *Gateway) CreatePost(c *gin.Context) {
 		c.String(400, "%s", err)
 		return
 	}
-	g.server.CreatePost(&p)
+	g.service.CreatePost(&p)
 	c.JSON(200, &p)
 }
 
@@ -29,7 +29,7 @@ func (g *Gateway) UpdatePost(c *gin.Context) {
 		return
 	}
 	p.ID = utils.MustToInt64(c.Param("name"))
-	g.server.UpdatePost(&p)
+	g.service.UpdatePost(&p)
 	c.JSON(200, &p)
 }
 
@@ -40,6 +40,6 @@ func (g *Gateway) SetPostStatus(c *gin.Context) {
 		return
 	}
 	id := utils.MustToInt64(c.Param("name"))
-	g.server.SetPostStatus(id, p.Status)
+	g.service.SetPostStatus(id, p.Status)
 	c.Status(200)
 }

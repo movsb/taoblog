@@ -7,16 +7,16 @@ import (
 )
 
 type Gateway struct {
-	router *gin.RouterGroup
-	server *service.ImplServer
-	auther *auth.Auth
+	router  *gin.RouterGroup
+	service *service.Service
+	auther  *auth.Auth
 }
 
-func NewGateway(router *gin.RouterGroup, server *service.ImplServer, auther *auth.Auth) *Gateway {
+func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.Auth) *Gateway {
 	g := &Gateway{
-		router: router,
-		server: server,
-		auther: auther,
+		router:  router,
+		service: service,
+		auther:  auther,
 	}
 
 	g.routePosts()

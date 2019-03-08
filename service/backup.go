@@ -8,7 +8,7 @@ import (
 	"os/exec"
 )
 
-func (s *ImplServer) GetBackup(w io.Writer) {
+func (s *Service) GetBackup(w io.Writer) {
 	opts := []string{
 		"--add-drop-database",
 		"--add-drop-table",

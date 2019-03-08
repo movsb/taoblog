@@ -68,7 +68,7 @@ func main() {
 	})
 
 	theAuth := &auth.Auth{}
-	theService := service.NewImplServer(db, theAuth)
+	theService := service.NewService(db, theAuth)
 	gateway.NewGateway(theAPI, theService, theAuth)
 	front.NewFront(theService, theAuth, router.Group("/blog"), theAPI)
 	admin.NewAdmin(theService, theAuth, router.Group("/admin"))

@@ -11,7 +11,7 @@ const (
 	gGrAvatarHost = "https://www.gravatar.com/avatar/"
 )
 
-func (s *ImplServer) GetAvatar(in *protocols.GetAvatarRequest) {
+func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
 	u := gGrAvatarHost + in.Query
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {

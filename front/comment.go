@@ -12,22 +12,23 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
+// Comment ...
 type Comment struct {
 	*models.Comment
 	PostTitle string
 	IsAdmin   bool
 }
 
-func newComments(comments []*models.Comment, server *service.ImplServer) []*Comment {
+func newComments(comments []*models.Comment, service *service.Service) []*Comment {
 	cmts := []*Comment{}
 	titles := make(map[int64]string)
-	adminEmail := strings.ToLower(server.GetDefaultStringOption("email", ""))
+	adminEmail := strings.ToLower(service.GetDefaultStringOption("email", ""))
 	for _, c := range comments {
 		title := ""
 		if t, ok := titles[c.PostID]; ok {
 			title = t
 		} else {
-			title = server.GetPostTitle(c.PostID)
+			title = service.GetPostTitle(c.PostID)
 			titles[c.PostID] = title
 		}
 		cmts = append(cmts, &Comment{
@@ -39,6 +40,7 @@ func newComments(comments []*models.Comment, server *service.ImplServer) []*Comm
 	return cmts
 }
 
+// AuthorString ...
 func (c *Comment) AuthorString() string {
 	if c.IsAdmin {
 		return "博主"
@@ -46,6 +48,7 @@ func (c *Comment) AuthorString() string {
 	return c.Author
 }
 
+// AjaxComment ...
 type AjaxComment struct {
 	// From Comment
 	ID       int64  `json:"id"`
@@ -65,6 +68,7 @@ type AjaxComment struct {
 	IsAdmin  bool           `json:"is_admin"`
 }
 
+// NewAjaxComment ...
 func NewAjaxComment(c *models.Comment, logged bool, adminEmail string) *AjaxComment {
 	a := AjaxComment{
 		ID:       c.ID,
@@ -93,7 +97,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	name := utils.MustToInt64(c.Param("name"))
 	limit := utils.MustToInt64(c.DefaultQuery("limit", "10"))
 	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
-	parents := f.server.ListComments(userCtx, &protocols.ListCommentsRequest{
+	parents := f.service.ListComments(userCtx, &protocols.ListCommentsRequest{
 		PostID:   name,
 		Ancestor: 0,
 		Limit:    limit,
@@ -102,7 +106,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	})
 	childrenMap := make(map[int64][]*models.Comment)
 	for _, parent := range parents {
-		childrenMap[parent.ID] = f.server.ListComments(userCtx, &protocols.ListCommentsRequest{
+		childrenMap[parent.ID] = f.service.ListComments(userCtx, &protocols.ListCommentsRequest{
 			PostID:   name,
 			Ancestor: parent.ID,
 			OrderBy:  "id ASC",
@@ -110,7 +114,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	}
 
 	user := f.auth.AuthCookie(c)
-	adminEmail := f.server.GetStringOption("email")
+	adminEmail := f.service.GetStringOption("email")
 
 	outParents := make([]*AjaxComment, 0, len(parents))
 	for _, parent := range parents {
@@ -137,7 +141,7 @@ func (f *Front) createPostComment(c *gin.Context) {
 		Content: c.DefaultPostForm("content", ""),
 	}
 	user := f.auth.AuthCookie(c)
-	f.server.CreateComment(user.Context(nil), &cmt)
-	adminEmail := f.server.GetDefaultStringOption("email", "")
+	f.service.CreateComment(user.Context(nil), &cmt)
+	adminEmail := f.service.GetDefaultStringOption("email", "")
 	c.JSON(200, NewAjaxComment(&cmt, !user.IsGuest(), adminEmail))
 }

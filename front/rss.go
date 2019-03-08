@@ -29,11 +29,12 @@ type RssData struct {
 	Posts       []*PostForRss
 }
 
+// GetRss ...
 func (f *Front) GetRss(c *gin.Context) {
 	user := f.auth.AuthCookie(c)
 
 	if ifModified := c.GetHeader("If-Modified-Since"); ifModified != "" {
-		if modified := f.server.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		if modified := f.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 			if ifModified == datetime.Local2Gmt(modified) {
 				c.Status(http.StatusNotModified)
 				return
@@ -41,12 +42,12 @@ func (f *Front) GetRss(c *gin.Context) {
 		}
 	}
 
-	posts := f.server.GetLatestPosts(user.Context(nil), "id,title,date,content", 10)
+	posts := f.service.GetLatestPosts(user.Context(nil), "id,title,date,content", 10)
 
 	data := RssData{
-		BlogName:    f.server.GetDefaultStringOption("blog_name", "TaoBlog"),
-		Home:        "https://" + f.server.GetDefaultStringOption("home", "taoblog.local"),
-		Description: f.server.GetDefaultStringOption("desc", ""),
+		BlogName:    f.service.GetDefaultStringOption("blog_name", "TaoBlog"),
+		Home:        "https://" + f.service.GetDefaultStringOption("home", "taoblog.local"),
+		Description: f.service.GetDefaultStringOption("desc", ""),
 	}
 
 	var rssPosts []*PostForRss
@@ -70,7 +71,7 @@ func (f *Front) GetRss(c *gin.Context) {
 	f.render(buf, "rss", data)
 	str := buf.String()
 	c.Header("Content-Type", "application/xml")
-	if modified := f.server.GetDefaultStringOption("last_post_time", ""); modified != "" {
+	if modified := f.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.Local2Gmt(modified))
 	}
 	c.String(200, "%s", str)

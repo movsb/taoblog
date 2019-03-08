@@ -12,7 +12,7 @@ var (
 
 func (f *Front) queryByFile(c *gin.Context, postID int64, file string) {
 	user := f.auth.AuthCookie(c)
-	path := f.server.GetFile(postID, file)
+	path := f.service.GetFile(postID, file)
 	if !user.IsGuest() {
 		if _, err := os.Stat(path); err == nil {
 			c.File(path)

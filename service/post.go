@@ -14,12 +14,12 @@ import (
 	"github.com/movsb/taoblog/service/modules/post_translators"
 )
 
-func (s *ImplServer) posts() *taorm.Stmt {
+func (s *Service) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{}, "posts")
 }
 
 // MustGetPost ...
-func (s *ImplServer) MustGetPost(name int64) *protocols.Post {
+func (s *Service) MustGetPost(name int64) *protocols.Post {
 	var p models.Post
 	stmt := s.posts().Where("id = ?", name)
 	if err := stmt.Find(&p); err != nil {
@@ -35,7 +35,7 @@ func (s *ImplServer) MustGetPost(name int64) *protocols.Post {
 }
 
 // MustListPosts ...
-func (s *ImplServer) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
+func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
 	user := s.auth.AuthContext(ctx)
 	var posts models.Posts
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
@@ -46,7 +46,7 @@ func (s *ImplServer) MustListPosts(ctx context.Context, in *protocols.ListPostsR
 	return posts.ToProtocols()
 }
 
-func (s *ImplServer) GetLatestPosts(ctx context.Context, fields string, limit int64) []*protocols.Post {
+func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64) []*protocols.Post {
 	in := protocols.ListPostsRequest{
 		Fields:  fields,
 		Limit:   limit,
@@ -55,31 +55,31 @@ func (s *ImplServer) GetLatestPosts(ctx context.Context, fields string, limit in
 	return s.MustListPosts(ctx, &in)
 }
 
-func (s *ImplServer) GetPostTitle(ID int64) string {
+func (s *Service) GetPostTitle(ID int64) string {
 	var p models.Post
 	s.posts().Select("title").Where("id = ?", ID).MustFind(&p)
 	return p.Title
 }
 
-func (s *ImplServer) GetPostByID(id int64) *protocols.Post {
+func (s *Service) GetPostByID(id int64) *protocols.Post {
 	return s.MustGetPost(id)
 }
 
-func (s *ImplServer) IncrementPostPageView(id int64) {
+func (s *Service) IncrementPostPageView(id int64) {
 	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
 	s.tdb.MustExec(query, id)
 }
 
-func (s *ImplServer) GetPostByPage(parents string, slug string) *protocols.Post {
+func (s *Service) GetPostByPage(parents string, slug string) *protocols.Post {
 	return s.mustGetPostBySlugOrPage(true, parents, slug)
 }
 
-func (s *ImplServer) GetPostBySlug(categories string, slug string) *protocols.Post {
+func (s *Service) GetPostBySlug(categories string, slug string) *protocols.Post {
 	return s.mustGetPostBySlugOrPage(false, categories, slug)
 }
 
 // GetPostsByTags gets tag posts.
-func (s *ImplServer) GetPostsByTags(tagName string) []*models.PostForArchive {
+func (s *Service) GetPostsByTags(tagName string) []*models.PostForArchive {
 	tag := s.GetTagByName(tagName)
 	tagIDs := s.getAliasTagsAll([]int64{tag.ID})
 	var posts []*models.PostForArchive
@@ -90,7 +90,7 @@ func (s *ImplServer) GetPostsByTags(tagName string) []*models.PostForArchive {
 	return posts
 }
 
-func (s *ImplServer) mustGetPostBySlugOrPage(isPage bool, parents string, slug string) *protocols.Post {
+func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug string) *protocols.Post {
 	var catID int64
 	if !isPage {
 		catID = s.parseCategoryTree(parents)
@@ -118,7 +118,7 @@ func (s *ImplServer) mustGetPostBySlugOrPage(isPage bool, parents string, slug s
 // ParseTree parses category tree from URL to get last sub-category ID.
 // e.g. /path/to/folder/post.html, then tree is path/to/folder
 // It will get the ID of folder
-func (s *ImplServer) parseCategoryTree(tree string) (id int64) {
+func (s *Service) parseCategoryTree(tree string) (id int64) {
 	parts := strings.Split(tree, "/")
 	var cats []*models.Category
 	s.tdb.Model(models.Category{}, "taxonomies").Where("slug IN (?)", parts).MustFind(&cats)
@@ -139,7 +139,7 @@ func (s *ImplServer) parseCategoryTree(tree string) (id int64) {
 	return parent
 }
 
-func (s *ImplServer) getPageParentID(parents string) int64 {
+func (s *Service) getPageParentID(parents string) int64 {
 	if len(parents) == 0 {
 		return 0
 	}
@@ -176,7 +176,7 @@ func (s *ImplServer) getPageParentID(parents string) int64 {
 	return parent
 }
 
-func (s *ImplServer) GetRelatedPosts(id int64) []*models.PostForRelated {
+func (s *Service) GetRelatedPosts(id int64) []*models.PostForRelated {
 	tagIDs := s.getObjectTagIDs(id, true)
 	if len(tagIDs) == 0 {
 		return make([]*models.PostForRelated, 0)
@@ -194,23 +194,23 @@ func (s *ImplServer) GetRelatedPosts(id int64) []*models.PostForRelated {
 	return relates
 }
 
-func (s *ImplServer) GetPostTags(ID int64) []string {
+func (s *Service) GetPostTags(ID int64) []string {
 	return s.GetObjectTagNames(ID)
 }
 
-func (s *ImplServer) GetPostCommentCount(name int64) (count int64) {
+func (s *Service) GetPostCommentCount(name int64) (count int64) {
 	var post models.Post
 	s.posts().Select("comments").Where("id=?", name).MustFind(&post)
 	return int64(post.Comments)
 }
 
-func (s *ImplServer) UpdatePostCommentCount(name int64) {
+func (s *Service) UpdatePostCommentCount(name int64) {
 	query := `UPDATE posts INNER JOIN (SELECT count(post_id) count FROM comments WHERE post_id=?) x ON posts.id=? SET posts.comments=x.count`
 	s.tdb.MustExec(query, name, name)
 }
 
 // CreatePost ...
-func (s *ImplServer) CreatePost(in *protocols.Post) {
+func (s *Service) CreatePost(in *protocols.Post) {
 	var err error
 
 	createdAt := datetime.MyGmt()
@@ -247,7 +247,7 @@ func (s *ImplServer) CreatePost(in *protocols.Post) {
 		panic(err)
 	}
 
-	s.TxCall(func(txs *ImplServer) error {
+	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(&p, "posts").MustCreate()
 		in.ID = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
@@ -256,7 +256,7 @@ func (s *ImplServer) CreatePost(in *protocols.Post) {
 	})
 }
 
-func (s *ImplServer) UpdatePost(in *protocols.Post) {
+func (s *Service) UpdatePost(in *protocols.Post) {
 	var err error
 
 	if in.ID == 0 {
@@ -283,7 +283,7 @@ func (s *ImplServer) UpdatePost(in *protocols.Post) {
 
 	modified := datetime.MyGmt()
 
-	s.TxCall(func(txs *ImplServer) error {
+	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(p, "posts").UpdateMap(map[string]interface{}{
 			"title":       in.Title,
 			"modified":    modified,
@@ -298,7 +298,7 @@ func (s *ImplServer) UpdatePost(in *protocols.Post) {
 }
 
 // updateLastPostTime updates last_post_time in options.
-func (s *ImplServer) updateLastPostTime(ts string) {
+func (s *Service) updateLastPostTime(ts string) {
 	if ts == "" {
 		ts = datetime.MyLocal()
 	} else {
@@ -307,8 +307,8 @@ func (s *ImplServer) updateLastPostTime(ts string) {
 	s.SetOption("last_post_time", ts)
 }
 
-func (s *ImplServer) SetPostStatus(id int64, status string) {
-	s.TxCall(func(txs *ImplServer) error {
+func (s *Service) SetPostStatus(id int64, status string) {
+	s.TxCall(func(txs *Service) error {
 		var post models.Post
 		txs.tdb.From("posts").Select("id").Where("id=?", id).MustFind(&post)
 		txs.tdb.Model(&post, "posts").MustUpdateMap(map[string]interface{}{

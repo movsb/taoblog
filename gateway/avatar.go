@@ -24,5 +24,5 @@ func (g *Gateway) GetAvatar(c *gin.Context) {
 		},
 		W: c.Writer,
 	}
-	g.server.GetAvatar(in)
+	g.service.GetAvatar(in)
 }

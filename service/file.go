@@ -11,18 +11,18 @@ func filePath(postID int64, file string) string {
 	return filepath.Join("./files", path)
 }
 
-func (s *ImplServer) GetFile(postID int64, file string) string {
+func (s *Service) GetFile(postID int64, file string) string {
 	return filePath(postID, file)
 }
 
-func (s *ImplServer) CreateFile(postID int64, file string, data io.Reader) error {
+func (s *Service) CreateFile(postID int64, file string, data io.Reader) error {
 	return s.fmgr.Put(postID, file, data)
 }
 
-func (s *ImplServer) ListFiles(postID int64) ([]string, error) {
+func (s *Service) ListFiles(postID int64) ([]string, error) {
 	return s.fmgr.List(postID)
 }
 
-func (s *ImplServer) DeleteFile(postID int64, file string) error {
+func (s *Service) DeleteFile(postID int64, file string) error {
 	return s.fmgr.Delete(postID, file)
 }

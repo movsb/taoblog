@@ -15,12 +15,12 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
-func (s *ImplServer) comments() *taorm.Stmt {
+func (s *Service) comments() *taorm.Stmt {
 	return s.tdb.Model(models.Comment{}, "comments")
 }
 
 // GetComment ...
-func (s *ImplServer) GetComment(name int64) *models.Comment {
+func (s *Service) GetComment(name int64) *models.Comment {
 	var comment models.Comment
 	s.comments().Where("id=?", name).MustFind(&comment)
 	return &comment
@@ -28,7 +28,7 @@ func (s *ImplServer) GetComment(name int64) *models.Comment {
 
 // ListComments ...
 // TODO filter public post comments
-func (s *ImplServer) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) []*models.Comment {
+func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) []*models.Comment {
 	user := s.auth.AuthContext(ctx)
 	var comments []*models.Comment
 	stmt := s.tdb.From("comments").Select(in.Fields).
@@ -42,7 +42,7 @@ func (s *ImplServer) ListComments(ctx context.Context, in *protocols.ListComment
 	return comments
 }
 
-func (s *ImplServer) GetAllCommentsCount() int64 {
+func (s *Service) GetAllCommentsCount() int64 {
 	type GetAllCommentsCount_Result struct {
 		Count int64
 	}
@@ -51,7 +51,7 @@ func (s *ImplServer) GetAllCommentsCount() int64 {
 	return result.Count
 }
 
-func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *models.Comment {
+func (s *Service) CreateComment(ctx context.Context, c *models.Comment) *models.Comment {
 	user := s.auth.AuthContext(ctx)
 
 	if c.ID != 0 {
@@ -116,7 +116,7 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 		}
 	}
 
-	s.TxCall(func(txs *ImplServer) error {
+	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(c, "comments").Create()
 		count := txs.GetAllCommentsCount()
 		txs.SetOption("comment_count", count)
@@ -129,13 +129,13 @@ func (s *ImplServer) CreateComment(ctx context.Context, c *models.Comment) *mode
 	return c
 }
 
-func (s *ImplServer) DeleteComment(ctx context.Context, commentName int64) {
+func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
 	cmt := s.GetComment(commentName)
 	s.comments().Or("id=?", commentName).Or("ancestor=?", commentName).Delete()
 	s.UpdatePostCommentCount(cmt.PostID)
 }
 
-func (s *ImplServer) doCommentNotification(c *models.Comment) {
+func (s *Service) doCommentNotification(c *models.Comment) {
 	home := s.GetDefaultStringOption("home", "localhost")
 	postTitle := s.GetPostTitle(c.PostID)
 	postLink := fmt.Sprintf("https://%s/%d/", home, c.PostID)

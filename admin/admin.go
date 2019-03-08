@@ -92,17 +92,17 @@ func (d *AdminPostEditData) TagStr() string {
 }
 
 type Admin struct {
-	server    *service.ImplServer
+	service   *service.Service
 	templates *template.Template
 	router    *gin.RouterGroup
 	auth      *auth.Auth
 }
 
-func NewAdmin(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGroup) *Admin {
+func NewAdmin(service *service.Service, auth *auth.Auth, router *gin.RouterGroup) *Admin {
 	a := &Admin{
-		server: server,
-		router: router,
-		auth:   auth,
+		service: service,
+		router:  router,
+		auth:    auth,
 	}
 	a.loadTemplates()
 	a.route()
@@ -143,7 +143,7 @@ func (a *Admin) render(w io.Writer, name string, data interface{}) {
 func (a *Admin) loadTemplates() {
 	funcs := template.FuncMap{
 		"get_config": func(name string) string {
-			return a.server.GetDefaultStringOption(name, "")
+			return a.service.GetDefaultStringOption(name, "")
 		},
 	}
 
@@ -259,7 +259,7 @@ func (a *Admin) queryIndex(c *gin.Context) {
 
 func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
-		//Tags: a.server.ListTagsWithCount(0, false),
+	//Tags: a.server.ListTagsWithCount(0, false),
 	}
 	header := &AdminHeaderData{
 		Title: "标签管理",

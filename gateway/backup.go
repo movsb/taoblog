@@ -5,5 +5,5 @@ import (
 )
 
 func (g *Gateway) GetBackup(c *gin.Context) {
-	g.server.GetBackup(c.Writer)
+	g.service.GetBackup(c.Writer)
 }

@@ -12,7 +12,7 @@ func optionCacheKey(name string) string {
 	return "option:" + name
 }
 
-func (s *ImplServer) GetStringOption(name string) string {
+func (s *Service) GetStringOption(name string) string {
 	if val, ok := s.cache.Get(optionCacheKey(name)); ok {
 		return val.(string)
 	}
@@ -22,7 +22,7 @@ func (s *ImplServer) GetStringOption(name string) string {
 	return option.Value
 }
 
-func (s *ImplServer) GetDefaultStringOption(name string, def string) string {
+func (s *Service) GetDefaultStringOption(name string, def string) string {
 	if val, ok := s.cache.Get(optionCacheKey(name)); ok {
 		return val.(string)
 	}
@@ -41,7 +41,7 @@ func (s *ImplServer) GetDefaultStringOption(name string, def string) string {
 }
 
 /*
-func (s *ImplServer) GetIntegerOption(name string) (value int64) {
+func (s *Service) GetIntegerOption(name string) (value int64) {
 	var option models.Option
 	s.tdb.Model(models.Option{}, "options").Where("name=?", name).MustFind(&option)
 	if n, err := strconv.ParseInt(option.Value, 10, 64); err != nil {
@@ -52,7 +52,7 @@ func (s *ImplServer) GetIntegerOption(name string) (value int64) {
 }
 */
 
-func (s *ImplServer) GetDefaultIntegerOption(name string, def int64) (value int64) {
+func (s *Service) GetDefaultIntegerOption(name string, def int64) (value int64) {
 	parse := func(s string) int64 {
 		n, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
@@ -77,7 +77,7 @@ func (s *ImplServer) GetDefaultIntegerOption(name string, def int64) (value int6
 	}
 }
 
-func (s *ImplServer) HaveOption(name string) (have bool) {
+func (s *Service) HaveOption(name string) (have bool) {
 	defer func() {
 		if e := recover(); e != nil {
 			have = false
@@ -87,7 +87,7 @@ func (s *ImplServer) HaveOption(name string) (have bool) {
 	return true
 }
 
-func (s *ImplServer) SetOption(name string, value interface{}) {
+func (s *Service) SetOption(name string, value interface{}) {
 	if s.HaveOption(name) {
 		stmt := s.tdb.From("options").Where("name = ?", name)
 		stmt.MustUpdateMap(map[string]interface{}{

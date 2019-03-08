@@ -46,6 +46,7 @@ func (d *ThemeFooterData) FooterHook() string {
 	return ""
 }
 
+// Home ...
 type Home struct {
 	Title          string
 	PostCount      int64
@@ -55,6 +56,7 @@ type Home struct {
 	LatestComments []*Comment
 }
 
+// Archives ...
 type Archives struct {
 	Tags  []*models.TagWithCount
 	Dates []*models.PostForDate
@@ -62,13 +64,15 @@ type Archives struct {
 	Title string
 }
 
+// QueryTags ...
 type QueryTags struct {
 	Tag   string
 	Posts []*models.PostForArchive
 }
 
+// Front ...
 type Front struct {
-	server    *service.ImplServer
+	service   *service.Service
 	templates *template.Template
 	router    *gin.RouterGroup
 	auth      *auth.Auth
@@ -78,9 +82,10 @@ type Front struct {
 	specialFiles map[string]func(c *gin.Context)
 }
 
-func NewFront(server *service.ImplServer, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup) *Front {
+// NewFront ...
+func NewFront(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup) *Front {
 	f := &Front{
-		server:       server,
+		service:      service,
 		router:       router,
 		auth:         auth,
 		api:          api,
@@ -123,7 +128,7 @@ func (f *Front) render(w io.Writer, name string, data interface{}) {
 func (f *Front) loadTemplates() {
 	funcs := template.FuncMap{
 		"get_config": func(name string) string {
-			return f.server.GetStringOption(name)
+			return f.service.GetStringOption(name)
 		},
 	}
 
@@ -137,6 +142,7 @@ func (f *Front) loadTemplates() {
 	f.templates = tmpl
 }
 
+// Query ...
 func (f *Front) Query(c *gin.Context, path string) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -257,22 +263,22 @@ func (f *Front) queryHome(c *gin.Context) {
 	}
 
 	home := &Home{
-		PostCount:    f.server.GetDefaultIntegerOption("post_count", 0),
-		PageCount:    f.server.GetDefaultIntegerOption("page_count", 0),
-		CommentCount: f.server.GetDefaultIntegerOption("comment_count", 0),
+		PostCount:    f.service.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    f.service.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: f.service.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.LatestPosts = newPosts(f.server.MustListPosts(user.Context(nil),
+	home.LatestPosts = newPosts(f.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,type",
 			Limit:   20,
 			OrderBy: "date DESC",
-		}), f.server)
-	home.LatestComments = newComments(f.server.ListComments(user.Context(nil),
+		}), f.service)
+	home.LatestComments = newComments(f.service.ListComments(user.Context(nil),
 		&protocols.ListCommentsRequest{
 			Ancestor: -1,
 			Limit:    10,
 			OrderBy:  "date DESC",
-		}), f.server)
+		}), f.service)
 
 	f.render(c.Writer, "header", header)
 	f.render(c.Writer, "home", home)
@@ -280,7 +286,7 @@ func (f *Front) queryHome(c *gin.Context) {
 }
 
 func (f *Front) queryByID(c *gin.Context, id int64) {
-	post := f.server.GetPostByID(id)
+	post := f.service.GetPostByID(id)
 	f.userMustCanSeePost(c, post)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
@@ -290,11 +296,11 @@ func (f *Front) queryByID(c *gin.Context, id int64) {
 }
 
 func (f *Front) incView(id int64) {
-	f.server.IncrementPostPageView(id)
+	f.service.IncrementPostPageView(id)
 }
 
 func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
-	post := f.server.GetPostBySlug(tree, slug)
+	post := f.service.GetPostBySlug(tree, slug)
 	f.userMustCanSeePost(c, post)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
@@ -304,7 +310,7 @@ func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
 }
 
 func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
-	post := f.server.GetPostByPage(parents, slug)
+	post := f.service.GetPostByPage(parents, slug)
 	f.userMustCanSeePost(c, post)
 	f.incView(post.ID)
 	if f.handle304(c, post) {
@@ -314,9 +320,9 @@ func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
 }
 
 func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
-	post := newPost(p, f.server)
-	post.RelatedPosts = f.server.GetRelatedPosts(post.ID)
-	post.Tags = f.server.GetPostTags(post.ID)
+	post := newPost(p, f.service)
+	post.RelatedPosts = f.service.GetRelatedPosts(post.ID)
+	post.Tags = f.service.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
 	header := &ThemeHeaderData{
@@ -338,7 +344,7 @@ func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
 }
 
 func (f *Front) queryByTags(c *gin.Context, tags string) {
-	posts := f.server.GetPostsByTags(tags)
+	posts := f.service.GetPostsByTags(tags)
 	in := QueryTags{Posts: posts, Tag: tags}
 	f.render(c.Writer, "tags", &in)
 }

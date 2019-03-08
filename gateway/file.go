@@ -8,13 +8,13 @@ import (
 func (g *Gateway) GetFile(c *gin.Context) {
 	postID := utils.MustToInt64(c.Param("name"))
 	file := c.Param("file")
-	fp := g.server.GetFile(postID, file)
+	fp := g.service.GetFile(postID, file)
 	c.File(fp)
 }
 
 func (g *Gateway) ListFiles(c *gin.Context) {
 	postID := utils.MustToInt64(c.Param("name"))
-	files, err := g.server.ListFiles(postID)
+	files, err := g.service.ListFiles(postID)
 	if err != nil {
 		c.String(500, "%v", err)
 		return
@@ -25,7 +25,7 @@ func (g *Gateway) ListFiles(c *gin.Context) {
 func (g *Gateway) CreateFile(c *gin.Context) {
 	postID := utils.MustToInt64(c.Param("name"))
 	file := c.Param("file")
-	if err := g.server.CreateFile(postID, file, c.Request.Body); err != nil {
+	if err := g.service.CreateFile(postID, file, c.Request.Body); err != nil {
 		c.JSON(500, err)
 		return
 	}
@@ -35,7 +35,7 @@ func (g *Gateway) CreateFile(c *gin.Context) {
 func (g *Gateway) DeleteFile(c *gin.Context) {
 	postID := utils.MustToInt64(c.Param("name"))
 	file := c.Param("file")
-	if err := g.server.DeleteFile(postID, file); err != nil {
+	if err := g.service.DeleteFile(postID, file); err != nil {
 		c.JSON(500, err)
 		return
 	}
