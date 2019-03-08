@@ -77,7 +77,7 @@ func NewAjaxComment(c *models.Comment, logged bool, adminEmail string) *AjaxComm
 		PostID:   c.PostID,
 		Author:   c.Author,
 		URL:      c.URL,
-		Date:     datetime.My2Local(c.Date),
+		Date:     c.Date,
 		Content:  c.Content,
 	}
 
@@ -137,7 +137,7 @@ func (f *Front) createPostComment(c *gin.Context) {
 		Email:   c.DefaultPostForm("email", ""),
 		URL:     c.DefaultPostForm("url", ""),
 		IP:      c.ClientIP(),
-		Date:    datetime.MyGmt(),
+		Date:    datetime.MyLocal(),
 		Content: c.DefaultPostForm("content", ""),
 	}
 	user := f.auth.AuthCookie(c)

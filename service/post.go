@@ -108,10 +108,6 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 		}
 		panic(err)
 	}
-	p.Date = datetime.My2Local(p.Date)
-	p.Modified = datetime.My2Local(p.Modified)
-	// TODO
-	// p.Tags, _ = tagmgr.GetObjectTagNames(gdb, p.ID)
 	return p.ToProtocols()
 }
 
@@ -213,7 +209,7 @@ func (s *Service) UpdatePostCommentCount(name int64) {
 func (s *Service) CreatePost(in *protocols.Post) {
 	var err error
 
-	createdAt := datetime.MyGmt()
+	createdAt := datetime.MyLocal()
 
 	p := models.Post{
 		Date:       createdAt,
@@ -281,7 +277,7 @@ func (s *Service) UpdatePost(in *protocols.Post) {
 		panic(err)
 	}
 
-	modified := datetime.MyGmt()
+	modified := datetime.MyLocal()
 
 	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(p, "posts").UpdateMap(map[string]interface{}{
@@ -301,12 +297,11 @@ func (s *Service) UpdatePost(in *protocols.Post) {
 func (s *Service) updateLastPostTime(ts string) {
 	if ts == "" {
 		ts = datetime.MyLocal()
-	} else {
-		ts = datetime.My2Local(ts)
 	}
 	s.SetOption("last_post_time", ts)
 }
 
+// SetPostStatus sets post status.
 func (s *Service) SetPostStatus(id int64, status string) {
 	s.TxCall(func(txs *Service) error {
 		var post models.Post
