@@ -96,3 +96,15 @@ func v5(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v6(tx *sql.Tx) {
+	ss := []string{
+		"UPDATE posts SET date=DATE_ADD(date, INTERVAL 8 HOUR),modified=DATE_ADD(modified, INTERVAL 8 HOUR)",
+		"UPDATE comments SET date=DATE_ADD(date, INTERVAL 8 HOUR)",
+	}
+	for _, s := range ss {
+		if _, err := tx.Exec(s); err != nil {
+			panic(err)
+		}
+	}
+}

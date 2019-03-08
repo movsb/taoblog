@@ -216,9 +216,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 
 func (f *Front) handle304(c *gin.Context, p *protocols.Post) bool {
 	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
-		ht := datetime.Http2Time(modified)
-		pt := datetime.My2Time(p.Modified)
-		if ht.Equal(pt) {
+		if datetime.My2Gmt(p.Modified) == modified {
 			c.Status(304)
 			return true
 		}
