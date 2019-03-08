@@ -6,7 +6,7 @@ pre.code {
 pre > code {
     display: inline-block;
 	background: none;
-	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-family: $mono_font;
 	text-align: left;
 	white-space: pre;
 	word-spacing: normal;

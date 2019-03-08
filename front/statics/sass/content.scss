@@ -198,7 +198,7 @@
         }
 
         &.mono {
-            font-family: Microsoft Yahei Mono, Consolas, monospace;
+            font-family: $mono_font;
         }
     }
 
@@ -304,7 +304,6 @@
 
         a {
             color: inherit;
-            font-family: Microsoft Yahei Mono, Consolas,"Microsoft YaHei";
             font-size: 12px;
         }
 
