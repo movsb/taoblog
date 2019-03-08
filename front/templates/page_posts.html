@@ -40,6 +40,11 @@ td:nth-child(2) {
     text-overflow: ellipsis;
     max-width: 0px;
 }
+@media screen and (max-width: 600px) {
+    tr>*:nth-child(3), tr>*:nth-child(4),tr>*:nth-child(5) {
+        display: none;
+    }
+}
 </style>
 {{end}}
 

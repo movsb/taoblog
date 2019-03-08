@@ -281,14 +281,17 @@
 @media screen and (min-width: 600px) {
     .entry div.toc {
         position: fixed;
-        top: 20px;
-        right: 20px;
-        max-width: 300px;
-        color: $toc_fg;
-        background-color: $toc_bg;
+        box-sizing: border-box;
         padding: 10px;
+        top: 3%;
+        right: 20px;
+        max-height: 94%;
+        max-width: 300px;
+        overflow: auto;
         border: 1px solid $toc_border_color;
         line-height: 1.5em;
+        color: $toc_fg;
+        background-color: $toc_bg;
     }
 }
 
