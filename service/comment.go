@@ -9,10 +9,10 @@ import (
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 
 	"github.com/movsb/taoblog/exception"
-	"github.com/movsb/taoblog/modules/taorm"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taorm"
 )
 
 func (s *Service) comments() *taorm.Stmt {
