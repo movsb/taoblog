@@ -70,7 +70,7 @@ func (s *Service) GetDefaultIntegerOption(name string, def int64) (value int64) 
 		s.cache.Set(optionCacheKey(name), option.Value)
 		return parse(option.Value)
 	case sql.ErrNoRows:
-		s.cache.Set(optionCacheKey(name), def)
+		s.cache.Set(optionCacheKey(name), fmt.Sprint(def))
 		return def
 	default:
 		panic(err)

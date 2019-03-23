@@ -20,6 +20,7 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
+	"github.com/movsb/taoblog/weekly"
 )
 
 func main() {
@@ -70,8 +71,16 @@ func main() {
 	theAuth := &auth.Auth{}
 	theService := service.NewService(db, theAuth)
 	gateway.NewGateway(theAPI, theService, theAuth)
-	front.NewFront(theService, theAuth, router.Group("/blog"), theAPI)
 	admin.NewAdmin(theService, theAuth, router.Group("/admin"))
+
+	switch themeName := os.Getenv("THEME"); themeName {
+	case "BLOG":
+		front.NewFront(theService, theAuth, router.Group("/blog"), theAPI)
+	case "WEEKLY":
+		weekly.NewWeekly(theService, theAuth, router.Group("/blog"), theAPI)
+	default:
+		panic("unknown theme")
+	}
 
 	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
 	theAuth.SetKey(os.Getenv("KEY"))
