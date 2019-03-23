@@ -1,0 +1,32 @@
+/* 头部 */
+
+#header {
+    height: 130px;
+    background-color: #30c3d8;
+    .content {
+        min-width: 200px;
+        max-width: $max_width;
+        margin: auto;
+        padding: 2em 1em 0;
+        overflow: hidden;
+
+        .padding {
+            position: relative;
+        }
+
+        .sitename {
+            margin: 0px;
+            color: white;
+            font-size: 4em;
+            a {
+                color: inherit;
+            }
+        }
+    }
+}
+
+@media screen and (max-width: $max_width) {
+    #header .content {
+        text-align: center;
+    }
+}

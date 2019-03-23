@@ -115,6 +115,9 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 // e.g. /path/to/folder/post.html, then tree is path/to/folder
 // It will get the ID of folder
 func (s *Service) parseCategoryTree(tree string) (id int64) {
+	if tree == "" {
+		return 1
+	}
 	parts := strings.Split(tree, "/")
 	var cats []*models.Category
 	s.tdb.Model(models.Category{}, "taxonomies").Where("slug IN (?)", parts).MustFind(&cats)
@@ -215,7 +218,7 @@ func (s *Service) CreatePost(in *protocols.Post) {
 		Date:       createdAt,
 		Modified:   createdAt,
 		Title:      strings.TrimSpace(in.Title),
-		Slug:       "",
+		Slug:       in.Slug,
 		Type:       protocols.PostTypePost,
 		Category:   1,
 		Status:     "draft",
@@ -286,6 +289,7 @@ func (s *Service) UpdatePost(in *protocols.Post) {
 			"source_type": in.SourceType,
 			"source":      in.Source,
 			"content":     content,
+			"slug":        in.Slug,
 		})
 		txs.UpdateObjectTags(p.ID, in.Tags)
 		txs.updateLastPostTime(modified)

@@ -1,0 +1,69 @@
+::-moz-selection {
+    color: $selection_fg;
+    background-color: $selection_bg;
+}
+
+.clearfix {
+    clear: both;
+    display: block;
+}
+
+body {
+    color: $body_fg;
+    background-color: $body_bg;
+    margin: 0px auto;
+    padding: 0px;
+    font: 13px "Microsoft YaHei", Georgia, 'Noto Sans', sans-serif {
+
+    }
+}
+
+@media screen and (max-width: $max_width) {
+    body {
+        text-shadow: 0 0 1px rgba(0,0,0,0.22);
+    }
+}
+
+a {
+    text-decoration: none;
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+
+.mono, tt, code {
+    font-family: $mono_font;
+}
+
+tt {
+    color: $tt_fg;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 1rem 0px;
+}
+
+h1 { font-size: 2.0em; }
+h2 { font-size: 1.6em; }
+h3 { font-size: 1.4em; }
+h4 { font-size: 1.2em; }
+h5 { font-size: 1.1em; }
+h6 { font-size: 1.0em; }
+
+a {
+    text-decoration: none;
+    color: $a_fg;
+    &:hover {
+        text-decoration: underline;
+    }
+    &:visited {
+        color: $a_visited_fg;
+    }
+    &:active {
+        color: $a_active_fg;
+    }
+    &:focus {
+        outline: none;
+    }
+}

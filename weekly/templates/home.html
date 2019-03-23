@@ -1,0 +1,28 @@
+{{define "home_header"}}
+<style>
+#content > ul {
+    list-style: none;
+    font-size: 1.5em;
+}
+
+/* TODO 这个最大宽度应该是变量 */
+@media screen and (max-width: 600px) {
+#content > ul {
+    padding: 0px;
+}
+}
+</style>
+{{end}}
+
+{{define "home"}}
+<ul>
+{{range .LatestPosts}}
+    <li><a href="{{.Link}}">{{.Title}}</a></li>
+{{end}}
+</ul>
+
+{{end}}
+
+{{define "home_footer"}}
+
+{{end}}

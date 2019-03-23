@@ -1,0 +1,35 @@
+$max_width:       600px;
+
+/* global */
+$selection_fg:      white;
+$selection_bg:      #30c3d8;
+
+$body_fg:           #292929;
+$body_bg:           white;
+$a_fg:              #005782;
+$tt_fg:             #ff0080;
+$a_visited_fg:      #3093d8;
+$a_active_fg:       #30c3d8;
+
+$border_color:      #f0f0f0;
+$border_color_hover:#c0c0c0;
+
+$btn_fg:            white;
+$btn_bg:            rgba(60,60,60,0.6);
+$btn_hover_bg:      rgba(20,20,20,0.7);
+
+
+/* header */
+$header_wrapper_desktop_bg:             none;
+$header_wrapper_desktop_border_right:   #f66;
+
+$header_wrapper_mobile_bg:              white;
+
+$post_title_fg:                 #333333;
+$post_meta_fg:                  #5a5a5a;
+$post_content_fg:               #292929;
+$post_pre_quote_bg:             aliceblue;
+$post_line_code_border_color:   rgb(201,163,163);
+$post_code_bg:                  rgba(220,220,220,0.5);
+
+$mono_font: Monaco, Consolas, Courier;
