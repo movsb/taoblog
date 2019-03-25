@@ -84,6 +84,8 @@ func main() {
 				client.SetPostStatus("public")
 			case "draft":
 				client.SetPostStatus("draft")
+			case "get":
+				client.GetPost()
 			default:
 				panic("unknown operation")
 			}

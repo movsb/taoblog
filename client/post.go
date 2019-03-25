@@ -29,6 +29,7 @@ type Post struct {
 	PostConfig
 	SourceType string `json:"source_type"`
 	Source     string `json:"source"`
+	Content    string `json:"content"`
 }
 
 type PostStatus struct {
@@ -70,6 +71,43 @@ func (c *Client) CreatePost() {
 	}
 	p.PostConfig.ID = rp.ID
 	c.savePostConfig(&p.PostConfig)
+}
+
+// GetPost ...
+func (c *Client) GetPost() {
+	p := &Post{}
+	p.PostConfig = *c.readPostConfig()
+	if p.ID == 0 {
+		panic("ID cannot be zero")
+	}
+	if p.Title != "" {
+		panic("must not be created")
+	}
+	resp := c.mustGet("/posts/" + fmt.Sprint(p.ID))
+	dec := json.NewDecoder(resp.Body)
+	rp := Post{}
+	if err := dec.Decode(&rp); err != nil {
+		panic(err)
+	}
+	c.savePostConfig(&p.PostConfig)
+	filename := "README.md"
+	switch rp.SourceType {
+	case "html":
+		filename = "README.html"
+		if rp.Source == "" {
+			rp.Source = rp.Content
+		}
+	case "markdown":
+		filename = "README.md"
+	}
+	fp, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer fp.Close()
+	if _, err := fp.WriteString(rp.Source); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Client) SetPostStatus(status string) {
