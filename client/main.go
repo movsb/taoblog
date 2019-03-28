@@ -1,69 +1,46 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
-func parseFlags() {
-	flag.Parse()
-}
-
-type xInitConfig struct {
-	api    string // the api root, like https://taoblog/v1
-	verify bool   // verify host key
-	key    string // the key
-}
-
-var initConfig xInitConfig
-var client *Client
-
-func readInitConfig() {
-	var err error
-
+func initHostConfigs() HostConfig {
 	usr, err := user.Current()
-	path := filepath.Join(usr.HomeDir, "/.taoblog.cfg")
+	if err != nil {
+		panic(err)
+	}
+	path := filepath.Join(usr.HomeDir, "/.taoblog.yml")
 	fp, err := os.Open(path)
 	if err != nil {
 		panic("cannot read init config: " + path)
 	}
-
 	defer fp.Close()
 
-	buf := bufio.NewScanner(fp)
-	for buf.Scan() {
-		line := strings.TrimSpace(buf.Text())
-		if line == "" {
-			continue
-		}
-		toks := strings.SplitN(line, ":", 2)
-		if len(toks) < 2 {
-			log.Printf("invalid config: %s\n", line)
-			continue
-		}
-
-		switch toks[0] {
-		case "api":
-			initConfig.api = toks[1]
-		case "verify":
-			initConfig.verify = toks[1] == "1"
-		case "key":
-			initConfig.key = toks[1]
-		default:
-			log.Printf("unrecognized config: %s\n", line)
-		}
+	hostConfigs := map[string]HostConfig{}
+	ymlDec := yaml.NewDecoder(fp)
+	if err := ymlDec.Decode(&hostConfigs); err != nil {
+		panic(err)
 	}
+
+	// select which host to use
+	host := os.Getenv("HOST")
+	hostConfig, ok := hostConfigs[host]
+	if !ok {
+		panic("cannot find init config for host: " + host)
+	}
+	return hostConfig
 }
 
 func main() {
-	parseFlags()
-	readInitConfig()
-	client = NewClient()
+	flag.Parse()
+
+	config := initHostConfigs()
+	client := NewClient(config)
 
 	if len(os.Args) >= 2 {
 		command := os.Args[1]

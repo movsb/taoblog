@@ -20,16 +20,19 @@ const (
 
 // Client ...
 type Client struct {
+	config HostConfig
 	client *http.Client
 }
 
 // NewClient ...
-func NewClient() *Client {
-	c := &Client{}
+func NewClient(config HostConfig) *Client {
+	c := &Client{
+		config: config,
+	}
 	c.client = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !initConfig.verify,
+				InsecureSkipVerify: !config.Verify,
 			},
 		},
 	}
@@ -37,11 +40,11 @@ func NewClient() *Client {
 }
 
 func (c *Client) get(path string) *http.Response {
-	req, err := http.NewRequest("GET", initConfig.api+path, nil)
+	req, err := http.NewRequest("GET", c.config.API+path, nil)
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Authorization", initConfig.key)
+	req.Header.Set("Authorization", c.config.Token)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		panic(err)
@@ -59,11 +62,11 @@ func (c *Client) mustGet(path string) *http.Response {
 }
 
 func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
-	req, err := http.NewRequest("POST", initConfig.api+path, body)
+	req, err := http.NewRequest("POST", c.config.API+path, body)
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Authorization", initConfig.key)
+	req.Header.Set("Authorization", c.config.Token)
 	req.Header.Set("Content-Type", ty)
 	resp, err := c.client.Do(req)
 	if err != nil {
