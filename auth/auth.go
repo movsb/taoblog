@@ -35,6 +35,10 @@ func (u *User) Context(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
+func CreateLogin(username, password string) string {
+	return username + "," + fmt.Sprintf("%x", sha1.Sum([]byte(password)))
+}
+
 type Auth struct {
 	savedUser     string
 	savedPassword string

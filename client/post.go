@@ -23,6 +23,7 @@ type PostConfig struct {
 	ID    int64    `json:"id"`
 	Title string   `json:"title"`
 	Tags  []string `json:"tags"`
+	Slug  string   `json:"slug"`
 }
 
 type Post struct {
