@@ -241,7 +241,6 @@ func (a *Admin) postLogin(c *gin.Context) {
 		success = a.auth.AuthLogin(username, password)
 	case "google":
 		token := c.PostForm("token")
-		fmt.Println("收到：", token)
 		success = !a.auth.AuthGoogle(token).IsGuest()
 	}
 

@@ -113,15 +113,12 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
                             console.log(xhr);
                             if(xhr.readyState == 4 && xhr.status == 200) {
                                 var auth2 = gapi.auth2.getAuthInstance();
-                                auth2.signOut().then(function () {
-                                    console.log('User signed out.');
+                                auth2.disconnect().then(function () {
                                     var data = JSON.parse(xhr.responseText);
                                     location.href = data.redirect;
                                 });
-
                             }
                         };
-                        console.log("发送TOKEN:", id_token);
                         xhr.send(data);
                     }
                 </script>
