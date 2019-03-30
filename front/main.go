@@ -21,6 +21,7 @@ import (
 
 // ThemeHeaderData ...
 type ThemeHeaderData struct {
+	TemplateCommon
 	Title  string
 	Header func()
 }
@@ -35,6 +36,7 @@ func (d *ThemeHeaderData) HeaderHook() string {
 
 // ThemeFooterData ...
 type ThemeFooterData struct {
+	TemplateCommon
 	Footer func()
 }
 
@@ -247,14 +249,19 @@ func (f *Front) processHomeQueries(c *gin.Context) bool {
 
 func (f *Front) queryHome(c *gin.Context) {
 	user := f.auth.AuthCookie(c)
+	tc := TemplateCommon{
+		User: user,
+	}
 	header := &ThemeHeaderData{
-		Title: "",
+		TemplateCommon: tc,
+		Title:          "",
 		Header: func() {
 			f.render(c.Writer, "home_header", nil)
 		},
 	}
 
 	footer := &ThemeFooterData{
+		TemplateCommon: tc,
 		Footer: func() {
 			f.render(c.Writer, "home_footer", nil)
 		},
@@ -323,14 +330,19 @@ func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
 	post.Tags = f.service.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
+	tc := TemplateCommon{
+		User: f.auth.AuthCookie(c),
+	}
 	header := &ThemeHeaderData{
-		Title: post.Title,
+		TemplateCommon: tc,
+		Title:          post.Title,
 		Header: func() {
 			f.render(w, "content_header", post)
 			fmt.Fprint(w, post.CustomHeader())
 		},
 	}
 	footer := &ThemeFooterData{
+		TemplateCommon: tc,
 		Footer: func() {
 			f.render(w, "content_footer", post)
 			fmt.Fprint(w, post.CustomFooter())
