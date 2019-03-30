@@ -11,7 +11,7 @@ import (
 	"github.com/movsb/taorm"
 )
 
-const dbVer = 6
+const dbVer = 7
 
 var liner = NewStdinLineReader()
 
@@ -74,9 +74,16 @@ func createDatabaseTables(db *taorm.DB, dbName string) {
 func createBlogUser(db *taorm.DB) {
 	blogUsername := liner.MustReadLine("博客用户名：")
 	blogPassword := liner.MustReadLine("博客密码：")
-	login := auth.CreateLogin(blogUsername, blogPassword)
+	googleClientID := liner.MustReadLine("谷歌ClientID：")
+	adminGoogleID := liner.MustReadLine("管理员谷歌ID：")
+	savedAuth := auth.SavedAuth{
+		Username:       blogUsername,
+		Password:       auth.HashPassword(blogPassword),
+		GoogleClientID: googleClientID,
+		AdminGoogleID:  adminGoogleID,
+	}
 	query := fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
-	db.MustExec(query, "login", login)
+	db.MustExec(query, "login", savedAuth.Encode())
 }
 
 func createBlogInfo(db *taorm.DB) {
