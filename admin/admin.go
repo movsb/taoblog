@@ -54,7 +54,8 @@ func (d *AdminFooterData) FooterHook() string {
 }
 
 type LoginData struct {
-	Redirect string
+	Redirect       string
+	GoogleClientID string
 }
 
 type AdminIndexData struct {
@@ -216,7 +217,8 @@ func (a *Admin) queryLogin(c *gin.Context) {
 	}
 
 	d := LoginData{
-		Redirect: redirect,
+		Redirect:       redirect,
+		GoogleClientID: a.auth.GoogleClientID,
 	}
 
 	a.render(c.Writer, "login", &d)
@@ -228,12 +230,29 @@ func (a *Admin) queryLogout(c *gin.Context) {
 }
 
 func (a *Admin) postLogin(c *gin.Context) {
-	username := c.PostForm("user")
-	password := c.PostForm("passwd")
 	redirect := c.PostForm("redirect")
-	if a.auth.AuthLogin(username, password) {
+	success := false
+
+	typ := c.DefaultQuery("type", "basic")
+	switch typ {
+	case "basic":
+		username := c.PostForm("user")
+		password := c.PostForm("passwd")
+		success = a.auth.AuthLogin(username, password)
+	case "google":
+		token := c.PostForm("token")
+		success = !a.auth.AuthGoogle(token).IsGuest()
+	}
+
+	if success {
 		a.auth.MakeCookie(c)
-		c.Redirect(302, redirect)
+		if typ == "google" {
+			c.JSON(200, gin.H{
+				"redirect": redirect,
+			})
+		} else {
+			c.Redirect(302, redirect)
+		}
 	} else {
 		c.Redirect(302, c.Request.URL.String())
 	}

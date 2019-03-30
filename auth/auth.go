@@ -3,10 +3,11 @@ package auth
 import (
 	"context"
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 )
 
 type ctxAuthKey struct{}
@@ -35,14 +36,25 @@ func (u *User) Context(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
-func CreateLogin(username, password string) string {
-	return username + "," + fmt.Sprintf("%x", sha1.Sum([]byte(password)))
+func HashPassword(password string) string {
+	return fmt.Sprintf("%x", sha1.Sum([]byte(password)))
 }
 
 type Auth struct {
-	savedUser     string
-	savedPassword string
-	key           string
+	key string
+	SavedAuth
+}
+
+type SavedAuth struct {
+	Username       string `json:"username,omitempty"`
+	Password       string `json:"password,omitempty"`
+	GoogleClientID string `json:"google_client_id,omitempty"`
+	AdminGoogleID  string `json:"admin_google_id,omitempty"`
+}
+
+func (a SavedAuth) Encode() string {
+	bys, _ := json.Marshal(&a)
+	return string(bys)
 }
 
 func (o *Auth) SetKey(key string) {
@@ -50,13 +62,13 @@ func (o *Auth) SetKey(key string) {
 }
 
 func (o *Auth) SetLogin(login string) {
-	ss := strings.SplitN(login, ",", 2)
-	o.savedUser = ss[0]
-	o.savedPassword = ss[1]
+	if err := json.Unmarshal([]byte(login), &o.SavedAuth); err != nil {
+		panic(err)
+	}
 }
 
 func (o *Auth) Login() string {
-	return o.savedUser + "," + o.savedPassword
+	return o.Username + "," + o.Password
 }
 
 func (*Auth) sha1(in string) string {
@@ -65,8 +77,8 @@ func (*Auth) sha1(in string) string {
 }
 
 func (o *Auth) AuthLogin(username string, password string) bool {
-	if username == o.savedUser {
-		if o.sha1(password) == o.savedPassword {
+	if username == o.Username {
+		if o.sha1(password) == o.Password {
 			return true
 		}
 	}
@@ -94,6 +106,18 @@ func (o *Auth) AuthCookie(c *gin.Context) *User {
 func (o *Auth) AuthHeader(c *gin.Context) *User {
 	key := c.GetHeader("Authorization")
 	if key == o.key {
+		return admin
+	}
+	return guest
+}
+
+func (o *Auth) AuthGoogle(token string) *User {
+	fullClientID := o.GoogleClientID + ".apps.googleusercontent.com"
+	claims, err := googleidtokenverifier.Verify(token, fullClientID)
+	if err != nil {
+		return guest
+	}
+	if claims.Sub == o.AdminGoogleID {
 		return admin
 	}
 	return guest

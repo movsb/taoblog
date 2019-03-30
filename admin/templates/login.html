@@ -24,7 +24,7 @@ body {
     left: 0;
     top: 50%;
     right: 0;
-    width: 220px;
+    width: 360px;
     margin: auto;
     border: 1px solid gray;
     transform: translateY(-50%);
@@ -33,12 +33,13 @@ body {
 #title {
     font-size: 20px;
     text-align: center;
-    height: 3em;
-    line-height: 3em;
+    line-height: 2.5em;
+    border-bottom: 1px solid gray;
 }
 
 #input-wrapper {
-    padding: 0 1.5em 1em 1.5em;
+    padding: 1em;
+    display: flex;
 }
 
 .input {
@@ -55,21 +56,74 @@ body {
     font-size: 1em;   
 }
 
+.right {
+    margin-left: 1em;
+}
+
     </style>
+<script>
+window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+    alert("Error occured: " + errorMsg);//or any message
+    return false;
+};
+</script>
+    {{ if .GoogleClientID }}
+    <meta name="google-signin-scope" content="profile email">
+    <meta name="google-signin-client_id" content="{{.GoogleClientID}}.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    {{ end }}
 </head>
 <body>
 <div id="wrapper">
     <form method="post" id="login-form">
         <div id="title">登录</div>
         <div id="input-wrapper">
-            <div>
-                <input class="input" type="text" name="user" placeholder="用户名" />
-                <input class="input" type="password" name="passwd" placeholder="密码" />
-            </div>	
-            <div class="submit" style="text-align: right;">
-                <input class="btn" type="submit" value="登录" />
-                <input class="btn" type="button" value="取消" onclick="location.href='/';" />
+            <div class=left>
+                <div>
+                    <input class="input" type="text" name="user" placeholder="用户名" />
+                    <input class="input" type="password" name="passwd" placeholder="密码" />
+                </div>	
+                <div class="submit" style="text-align: right;">
+                    <input class="btn" type="submit" value="登录" />
+                    <input class="btn" type="button" value="取消" onclick="location.href='/';" />
+                </div>
             </div>
+            {{ if .GoogleClientID }}
+            <div class=right>
+                <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+                <script>
+                    function onSignIn(googleUser) {
+                        // Useful data for your client-side scripts:
+                        var profile = googleUser.getBasicProfile();
+                        console.log("ID: " + profile.getId()); // Don't send this directly to your server!
+                        console.log('Full Name: ' + profile.getName());
+                        console.log('Given Name: ' + profile.getGivenName());
+                        console.log('Family Name: ' + profile.getFamilyName());
+                        console.log("Image URL: " + profile.getImageUrl());
+                        console.log("Email: " + profile.getEmail());
+
+                        // The ID token you need to pass to your backend:
+                        var id_token = googleUser.getAuthResponse().id_token;
+                        console.log("ID Token: " + id_token);
+                        var data = new FormData();
+                        data.append("token", id_token);
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", location.pathname + "?type=google");
+                        xhr.onload = function() {
+                            console.log(xhr);
+                            if(xhr.readyState == 4 && xhr.status == 200) {
+                                var auth2 = gapi.auth2.getAuthInstance();
+                                auth2.disconnect().then(function () {
+                                    var data = JSON.parse(xhr.responseText);
+                                    location.href = data.redirect;
+                                });
+                            }
+                        };
+                        xhr.send(data);
+                    }
+                </script>
+            </div>
+            {{ end }}
         </div>
         <div class="hidden">
             <input type="hidden" name="redirect" value="{{.Redirect}}" />

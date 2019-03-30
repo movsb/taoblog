@@ -18,6 +18,8 @@ github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460 h1:tbHbJHFHHsfOHiWHTTQyq0d1bSubUWFgRNF84zRv/mE=
 github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460/go.mod h1:1uvxVt9wTuHYsiwYurvgRoq4rTtRwzojc03U1agxL5o=
+github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:eeMZo/pDQ2Vdmq7jFlb3JMYDLHtQWELZIw+oeEevh4A=
+github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316/go.mod h1:yZbOV1cKd0igi4wBBcVrs4G2ooTWhjxUT9pYV5RDN44=
 github.com/movsb/taorm v0.0.0-20190320113140-0d1003a5a06c h1:0KbOq+C8Wmqk/HfdIyt/v695ZX7a1Cn6Vv+3ZeFYX20=
 github.com/movsb/taorm v0.0.0-20190320113140-0d1003a5a06c/go.mod h1:4bNL/BYCSif17tS1JDwvDlpEfJsa/hGaxWsOqmEx0S8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
