@@ -68,6 +68,8 @@ func main() {
 			}
 		case "backup":
 			client.Backup(os.Stdout)
+		case "settings":
+			client.Settings(os.Args[2:])
 		default:
 			panic("unknown operation")
 		}

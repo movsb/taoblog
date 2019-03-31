@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/movsb/taoblog/modules/stdinlinereader"
 )
 
 var (
@@ -22,6 +26,7 @@ const (
 type Client struct {
 	config HostConfig
 	client *http.Client
+	line   *stdinlinereader.StdinLineReader
 }
 
 // NewClient ...
@@ -36,6 +41,7 @@ func NewClient(config HostConfig) *Client {
 			},
 		},
 	}
+	c.line = stdinlinereader.NewStdinLineReader()
 	return c
 }
 
@@ -77,6 +83,16 @@ func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
 
 func (c *Client) mustPost(path string, body io.Reader, ty string) *http.Response {
 	resp := c.post(path, body, ty)
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		panic(ErrStatusCode)
+	}
+	return resp
+}
+
+func (c *Client) mustPostJSON(path string, data interface{}) *http.Response {
+	bys, _ := json.Marshal(data)
+	resp := c.post(path, bytes.NewReader(bys), contentTypeJSON)
 	if resp.StatusCode != 200 {
 		resp.Body.Close()
 		panic(ErrStatusCode)

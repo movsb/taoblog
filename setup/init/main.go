@@ -8,12 +8,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/modules/stdinlinereader"
 	"github.com/movsb/taorm"
 )
 
 const dbVer = 7
 
-var liner = NewStdinLineReader()
+var liner = stdinlinereader.NewStdinLineReader()
 
 func main() {
 	mysqlAdminUsername := liner.MustReadLine("MySQL数据库管理员用户名：")

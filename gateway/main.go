@@ -21,6 +21,7 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 
 	g.routePosts()
 	g.routeOthers()
+	g.routeOptions()
 
 	return g
 }
@@ -53,4 +54,10 @@ func (g *Gateway) routePosts() {
 	// for mirror host
 	files := g.router.Group("/files")
 	files.GET("/:name/*file", g.GetFile)
+}
+
+func (g *Gateway) routeOptions() {
+	c := g.router.Group("/options")
+	c.GET("/:name", g.auth, g.GetOption)
+	c.POST(":name", g.auth, g.SetOption)
 }
