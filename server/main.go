@@ -16,11 +16,11 @@ import (
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/exception"
-	"github.com/movsb/taoblog/front"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
-	"github.com/movsb/taoblog/weekly"
+	"github.com/movsb/taoblog/themes/front"
+	"github.com/movsb/taoblog/themes/weekly"
 )
 
 func main() {
@@ -75,9 +75,9 @@ func main() {
 
 	switch themeName := os.Getenv("THEME"); themeName {
 	case "BLOG":
-		front.NewFront(theService, theAuth, router.Group("/blog"), theAPI)
+		front.NewFront(theService, theAuth, router.Group("/blog"), theAPI, "themes/front")
 	case "WEEKLY":
-		weekly.NewWeekly(theService, theAuth, router.Group("/blog"), theAPI)
+		weekly.NewWeekly(theService, theAuth, router.Group("/blog"), theAPI, "themes/weekly")
 	default:
 		panic("unknown theme")
 	}

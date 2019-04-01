@@ -49,6 +49,7 @@ type Home struct {
 
 // Weekly ...
 type Weekly struct {
+	base      string // base directory
 	service   *service.Service
 	templates *template.Template
 	router    *gin.RouterGroup
@@ -60,8 +61,9 @@ type Weekly struct {
 }
 
 // NewWeekly ...
-func NewWeekly(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup) *Weekly {
+func NewWeekly(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Weekly {
 	w := &Weekly{
+		base:         base,
 		service:      service,
 		router:       router,
 		auth:         auth,
@@ -95,7 +97,7 @@ func (w *Weekly) loadTemplates() {
 
 	var tmpl *template.Template
 	tmpl = template.New("weekly").Funcs(funcs)
-	path := filepath.Join("weekly/templates", "*.html")
+	path := filepath.Join(w.base, "templates", "*.html")
 	tmpl, err := tmpl.ParseGlob(path)
 	if err != nil {
 		panic(err)
@@ -131,7 +133,7 @@ func (w *Weekly) Query(c *gin.Context, path string) {
 		w.queryBySlug(c, slug)
 		return
 	}
-	c.File(filepath.Join("weekly/statics", path))
+	c.File(filepath.Join(w.base, "statics", path))
 }
 
 func (w *Weekly) handle304(c *gin.Context, p *protocols.Post) bool {

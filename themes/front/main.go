@@ -74,6 +74,7 @@ type QueryTags struct {
 
 // Front ...
 type Front struct {
+	base      string // base directory
 	service   *service.Service
 	templates *template.Template
 	router    *gin.RouterGroup
@@ -85,8 +86,9 @@ type Front struct {
 }
 
 // NewFront ...
-func NewFront(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup) *Front {
+func NewFront(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Front {
 	f := &Front{
+		base:         base,
 		service:      service,
 		router:       router,
 		auth:         auth,
@@ -136,7 +138,7 @@ func (f *Front) loadTemplates() {
 
 	var tmpl *template.Template
 	tmpl = template.New("front").Funcs(funcs)
-	path := filepath.Join("front/templates", "*.html")
+	path := filepath.Join(f.base, "templates", "*.html")
 	tmpl, err := tmpl.ParseGlob(path)
 	if err != nil {
 		panic(err)
@@ -213,7 +215,7 @@ func (f *Front) Query(c *gin.Context, path string) {
 		c.String(http.StatusForbidden, "403 Forbidden")
 		return
 	}
-	c.File(filepath.Join("front/statics", path))
+	c.File(filepath.Join(f.base, "statics", path))
 }
 
 func (f *Front) handle304(c *gin.Context, p *protocols.Post) bool {
