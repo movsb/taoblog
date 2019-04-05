@@ -34,7 +34,7 @@ admin/      | 后台目录
 auth/       | 授权管理
 client/     | 博客客户端
 exception/  | 异常处理
-front/      | 博客主题
+themes/     | 主题目录
 gateway     | 网关接口层
 modules/    | 公共模块
 protocols/  | 协议定义
