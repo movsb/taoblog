@@ -1,4 +1,4 @@
-package front
+package blog
 
 import (
 	"fmt"
@@ -15,17 +15,17 @@ type PagePostsData struct {
 	Posts []*protocols.Post
 }
 
-func (f *Front) getPagePosts(c *gin.Context) {
-	user := f.auth.AuthCookie(c)
+func (b *Blog) getPagePosts(c *gin.Context) {
+	user := b.auth.AuthCookie(c)
 	header := &ThemeHeaderData{
 		Title: "全部文章",
 		Header: func() {
-			f.render(c.Writer, "page_posts_header", nil)
+			b.render(c.Writer, "page_posts_header", nil)
 		},
 	}
 	footer := &ThemeFooterData{
 		Footer: func() {
-			f.render(c.Writer, "page_posts_footer", nil)
+			b.render(c.Writer, "page_posts_footer", nil)
 		},
 	}
 	pageData := &PagePostsData{}
@@ -41,13 +41,13 @@ func (f *Front) getPagePosts(c *gin.Context) {
 		sort[1] = "desc"
 	}
 
-	pageData.Posts = f.service.MustListPosts(user.Context(nil),
+	pageData.Posts = b.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,date,page_view,comments",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
 		})
 
-	f.render(c.Writer, "header", header)
-	f.render(c.Writer, "page_posts", pageData)
-	f.render(c.Writer, "footer", footer)
+	b.render(c.Writer, "header", header)
+	b.render(c.Writer, "page_posts", pageData)
+	b.render(c.Writer, "footer", footer)
 }

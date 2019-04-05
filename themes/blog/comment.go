@@ -1,4 +1,4 @@
-package front
+package blog
 
 import (
 	"strings"
@@ -92,12 +92,12 @@ func NewAjaxComment(c *models.Comment, logged bool, adminEmail string) *AjaxComm
 	return &a
 }
 
-func (f *Front) listPostComments(c *gin.Context) {
-	userCtx := f.auth.AuthCookie(c).Context(nil)
+func (b *Blog) listPostComments(c *gin.Context) {
+	userCtx := b.auth.AuthCookie(c).Context(nil)
 	name := utils.MustToInt64(c.Param("name"))
 	limit := utils.MustToInt64(c.DefaultQuery("limit", "10"))
 	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
-	parents := f.service.ListComments(userCtx, &protocols.ListCommentsRequest{
+	parents := b.service.ListComments(userCtx, &protocols.ListCommentsRequest{
 		PostID:   name,
 		Ancestor: 0,
 		Limit:    limit,
@@ -106,15 +106,15 @@ func (f *Front) listPostComments(c *gin.Context) {
 	})
 	childrenMap := make(map[int64][]*models.Comment)
 	for _, parent := range parents {
-		childrenMap[parent.ID] = f.service.ListComments(userCtx, &protocols.ListCommentsRequest{
+		childrenMap[parent.ID] = b.service.ListComments(userCtx, &protocols.ListCommentsRequest{
 			PostID:   name,
 			Ancestor: parent.ID,
 			OrderBy:  "id ASC",
 		})
 	}
 
-	user := f.auth.AuthCookie(c)
-	adminEmail := f.service.GetStringOption("email")
+	user := b.auth.AuthCookie(c)
+	adminEmail := b.service.GetStringOption("email")
 
 	outParents := make([]*AjaxComment, 0, len(parents))
 	for _, parent := range parents {
@@ -129,7 +129,7 @@ func (f *Front) listPostComments(c *gin.Context) {
 	c.JSON(200, outParents)
 }
 
-func (f *Front) createPostComment(c *gin.Context) {
+func (b *Blog) createPostComment(c *gin.Context) {
 	cmt := models.Comment{
 		PostID:  utils.MustToInt64(c.Param("name")),
 		Parent:  utils.MustToInt64(c.DefaultPostForm("parent", "0")),
@@ -140,8 +140,8 @@ func (f *Front) createPostComment(c *gin.Context) {
 		Date:    datetime.MyLocal(),
 		Content: c.DefaultPostForm("content", ""),
 	}
-	user := f.auth.AuthCookie(c)
-	f.service.CreateComment(user.Context(nil), &cmt)
-	adminEmail := f.service.GetDefaultStringOption("email", "")
+	user := b.auth.AuthCookie(c)
+	b.service.CreateComment(user.Context(nil), &cmt)
+	adminEmail := b.service.GetDefaultStringOption("email", "")
 	c.JSON(200, NewAjaxComment(&cmt, !user.IsGuest(), adminEmail))
 }

@@ -1,4 +1,4 @@
-package front
+package blog
 
 // PermDeniedError ...
 type PermDeniedError struct {

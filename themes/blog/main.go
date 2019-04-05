@@ -1,4 +1,4 @@
-package front
+package blog
 
 import (
 	"fmt"
@@ -72,8 +72,8 @@ type QueryTags struct {
 	Posts []*models.PostForArchive
 }
 
-// Front ...
-type Front struct {
+// Blog ...
+type Blog struct {
 	base      string // base directory
 	service   *service.Service
 	templates *template.Template
@@ -85,9 +85,9 @@ type Front struct {
 	specialFiles map[string]func(c *gin.Context)
 }
 
-// NewFront ...
-func NewFront(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Front {
-	f := &Front{
+// NewBlog ...
+func NewBlog(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Blog {
+	b := &Blog{
 		base:         base,
 		service:      service,
 		router:       router,
@@ -95,69 +95,69 @@ func NewFront(service *service.Service, auth *auth.Auth, router *gin.RouterGroup
 		api:          api,
 		specialFiles: make(map[string]func(c *gin.Context)),
 	}
-	f.loadTemplates()
-	f.route()
-	f.specialFiles = map[string]func(c *gin.Context){
-		"/sitemap.xml": f.GetSitemap,
-		"/rss":         f.GetRss,
-		"/posts":       f.getPagePosts,
+	b.loadTemplates()
+	b.route()
+	b.specialFiles = map[string]func(c *gin.Context){
+		"/sitemap.xml": b.GetSitemap,
+		"/rss":         b.GetRss,
+		"/posts":       b.getPagePosts,
 		"/all-posts.html": func(c *gin.Context) {
 			c.Redirect(301, "/posts")
 		},
-		"/search": f.getPageSearch,
+		"/search": b.getPageSearch,
 	}
-	return f
+	return b
 }
 
-func (f *Front) route() {
-	f.router.GET("/*path", func(c *gin.Context) {
+func (b *Blog) route() {
+	b.router.GET("/*path", func(c *gin.Context) {
 		path := c.Param("path")
-		f.Query(c, path)
+		b.Query(c, path)
 	})
 
-	posts := f.api.Group("/posts")
-	posts.GET("/:name/comments", f.listPostComments)
-	posts.POST("/:name/comments", f.createPostComment)
+	posts := b.api.Group("/posts")
+	posts.GET("/:name/comments", b.listPostComments)
+	posts.POST("/:name/comments", b.createPostComment)
 
-	tools := f.api.Group("/tools")
+	tools := b.api.Group("/tools")
 	tools.POST("/aes2htm", aes2htm)
 }
 
-func (f *Front) render(w io.Writer, name string, data interface{}) {
-	if err := f.templates.ExecuteTemplate(w, name, data); err != nil {
+func (b *Blog) render(w io.Writer, name string, data interface{}) {
+	if err := b.templates.ExecuteTemplate(w, name, data); err != nil {
 		panic(err)
 	}
 }
 
-func (f *Front) loadTemplates() {
+func (b *Blog) loadTemplates() {
 	funcs := template.FuncMap{
 		"get_config": func(name string) string {
-			return f.service.GetStringOption(name)
+			return b.service.GetStringOption(name)
 		},
 	}
 
 	var tmpl *template.Template
-	tmpl = template.New("front").Funcs(funcs)
-	path := filepath.Join(f.base, "templates", "*.html")
+	tmpl = template.New("blog").Funcs(funcs)
+	path := filepath.Join(b.base, "templates", "*.html")
 	tmpl, err := tmpl.ParseGlob(path)
 	if err != nil {
 		panic(err)
 	}
-	f.templates = tmpl
+	b.templates = tmpl
 }
 
 // Query ...
-func (f *Front) Query(c *gin.Context, path string) {
+func (b *Blog) Query(c *gin.Context, path string) {
 	defer func() {
 		if e := recover(); e != nil {
 			switch e.(type) {
 			case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
 				c.Status(404)
-				f.render(c.Writer, "404", nil)
+				b.render(c.Writer, "404", nil)
 				return
 			case *PermDeniedError:
 				c.Status(403)
-				f.render(c.Writer, "403", nil)
+				b.render(c.Writer, "403", nil)
 				return
 			}
 			panic(e)
@@ -165,60 +165,60 @@ func (f *Front) Query(c *gin.Context, path string) {
 	}()
 
 	if regexpHome.MatchString(path) {
-		if f.processHomeQueries(c) {
+		if b.processHomeQueries(c) {
 			return
 		}
-		f.queryHome(c)
+		b.queryHome(c)
 		return
 	}
 	if regexpByID.MatchString(path) {
 		matches := regexpByID.FindStringSubmatch(path)
 		id := utils.MustToInt64(matches[1])
-		f.queryByID(c, id)
+		b.queryByID(c, id)
 		return
 	}
 	if regexpFile.MatchString(path) {
 		matches := regexpFile.FindStringSubmatch(path)
 		postID := utils.MustToInt64(matches[1])
 		file := matches[2]
-		f.queryByFile(c, postID, file)
+		b.queryByFile(c, postID, file)
 		return
 	}
 	if regexpByTags.MatchString(path) {
 		matches := regexpByTags.FindStringSubmatch(path)
 		tags := matches[1]
-		f.queryByTags(c, tags)
+		b.queryByTags(c, tags)
 		return
 	}
-	if handler, ok := f.specialFiles[path]; ok {
+	if handler, ok := b.specialFiles[path]; ok {
 		handler(c)
 		return
 	}
-	if regexpBySlug.MatchString(path) && f.isCategoryPath(path) {
+	if regexpBySlug.MatchString(path) && b.isCategoryPath(path) {
 		matches := regexpBySlug.FindStringSubmatch(path)
 		tree := matches[1]
 		slug := matches[2]
-		f.queryBySlug(c, tree, slug)
+		b.queryBySlug(c, tree, slug)
 		return
 	}
-	if regexpByPage.MatchString(path) && f.isCategoryPath(path) {
+	if regexpByPage.MatchString(path) && b.isCategoryPath(path) {
 		matches := regexpByPage.FindStringSubmatch(path)
 		parents := matches[1]
 		if parents != "" {
 			parents = parents[1:]
 		}
 		slug := matches[3]
-		f.queryByPage(c, parents, slug)
+		b.queryByPage(c, parents, slug)
 		return
 	}
 	if strings.HasSuffix(path, "/") {
 		c.String(http.StatusForbidden, "403 Forbidden")
 		return
 	}
-	c.File(filepath.Join(f.base, "statics", path))
+	c.File(filepath.Join(b.base, "statics", path))
 }
 
-func (f *Front) handle304(c *gin.Context, p *protocols.Post) bool {
+func (b *Blog) handle304(c *gin.Context, p *protocols.Post) bool {
 	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
 		if datetime.My2Gmt(p.Modified) == modified {
 			c.Status(304)
@@ -228,7 +228,7 @@ func (f *Front) handle304(c *gin.Context, p *protocols.Post) bool {
 	return false
 }
 
-func (f *Front) isCategoryPath(path string) bool {
+func (b *Blog) isCategoryPath(path string) bool {
 	p := strings.IndexByte(path[1:], '/')
 	if p == -1 {
 		return true
@@ -241,7 +241,7 @@ func (f *Front) isCategoryPath(path string) bool {
 	return true
 }
 
-func (f *Front) processHomeQueries(c *gin.Context) bool {
+func (b *Blog) processHomeQueries(c *gin.Context) bool {
 	if p, ok := c.GetQuery("p"); ok && p != "" {
 		c.Redirect(301, fmt.Sprintf("/%s/", p))
 		return true
@@ -249,8 +249,8 @@ func (f *Front) processHomeQueries(c *gin.Context) bool {
 	return false
 }
 
-func (f *Front) queryHome(c *gin.Context) {
-	user := f.auth.AuthCookie(c)
+func (b *Blog) queryHome(c *gin.Context) {
+	user := b.auth.AuthCookie(c)
 	tc := TemplateCommon{
 		User: user,
 	}
@@ -258,111 +258,111 @@ func (f *Front) queryHome(c *gin.Context) {
 		TemplateCommon: tc,
 		Title:          "",
 		Header: func() {
-			f.render(c.Writer, "home_header", nil)
+			b.render(c.Writer, "home_header", nil)
 		},
 	}
 
 	footer := &ThemeFooterData{
 		TemplateCommon: tc,
 		Footer: func() {
-			f.render(c.Writer, "home_footer", nil)
+			b.render(c.Writer, "home_footer", nil)
 		},
 	}
 
 	home := &Home{
-		PostCount:    f.service.GetDefaultIntegerOption("post_count", 0),
-		PageCount:    f.service.GetDefaultIntegerOption("page_count", 0),
-		CommentCount: f.service.GetDefaultIntegerOption("comment_count", 0),
+		PostCount:    b.service.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    b.service.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: b.service.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.LatestPosts = newPosts(f.service.MustListPosts(user.Context(nil),
+	home.LatestPosts = newPosts(b.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,type",
 			Limit:   20,
 			OrderBy: "date DESC",
-		}), f.service)
-	home.LatestComments = newComments(f.service.ListComments(user.Context(nil),
+		}), b.service)
+	home.LatestComments = newComments(b.service.ListComments(user.Context(nil),
 		&protocols.ListCommentsRequest{
 			Ancestor: -1,
 			Limit:    10,
 			OrderBy:  "date DESC",
-		}), f.service)
+		}), b.service)
 
-	f.render(c.Writer, "header", header)
-	f.render(c.Writer, "home", home)
-	f.render(c.Writer, "footer", footer)
+	b.render(c.Writer, "header", header)
+	b.render(c.Writer, "home", home)
+	b.render(c.Writer, "footer", footer)
 }
 
-func (f *Front) queryByID(c *gin.Context, id int64) {
-	post := f.service.GetPostByID(id)
-	f.userMustCanSeePost(c, post)
-	f.incView(post.ID)
-	if f.handle304(c, post) {
+func (b *Blog) queryByID(c *gin.Context, id int64) {
+	post := b.service.GetPostByID(id)
+	b.userMustCanSeePost(c, post)
+	b.incView(post.ID)
+	if b.handle304(c, post) {
 		return
 	}
-	f.tempRenderPost(c, post)
+	b.tempRenderPost(c, post)
 }
 
-func (f *Front) incView(id int64) {
-	f.service.IncrementPostPageView(id)
+func (b *Blog) incView(id int64) {
+	b.service.IncrementPostPageView(id)
 }
 
-func (f *Front) queryBySlug(c *gin.Context, tree string, slug string) {
-	post := f.service.GetPostBySlug(tree, slug)
-	f.userMustCanSeePost(c, post)
-	f.incView(post.ID)
-	if f.handle304(c, post) {
+func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
+	post := b.service.GetPostBySlug(tree, slug)
+	b.userMustCanSeePost(c, post)
+	b.incView(post.ID)
+	if b.handle304(c, post) {
 		return
 	}
-	f.tempRenderPost(c, post)
+	b.tempRenderPost(c, post)
 }
 
-func (f *Front) queryByPage(c *gin.Context, parents string, slug string) {
-	post := f.service.GetPostByPage(parents, slug)
-	f.userMustCanSeePost(c, post)
-	f.incView(post.ID)
-	if f.handle304(c, post) {
+func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
+	post := b.service.GetPostByPage(parents, slug)
+	b.userMustCanSeePost(c, post)
+	b.incView(post.ID)
+	if b.handle304(c, post) {
 		return
 	}
-	f.tempRenderPost(c, post)
+	b.tempRenderPost(c, post)
 }
 
-func (f *Front) tempRenderPost(c *gin.Context, p *protocols.Post) {
-	post := newPost(p, f.service)
-	post.RelatedPosts = f.service.GetRelatedPosts(post.ID)
-	post.Tags = f.service.GetPostTags(post.ID)
+func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
+	post := newPost(p, b.service)
+	post.RelatedPosts = b.service.GetRelatedPosts(post.ID)
+	post.Tags = b.service.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
 	tc := TemplateCommon{
-		User: f.auth.AuthCookie(c),
+		User: b.auth.AuthCookie(c),
 	}
 	header := &ThemeHeaderData{
 		TemplateCommon: tc,
 		Title:          post.Title,
 		Header: func() {
-			f.render(w, "content_header", post)
+			b.render(w, "content_header", post)
 			fmt.Fprint(w, post.CustomHeader())
 		},
 	}
 	footer := &ThemeFooterData{
 		TemplateCommon: tc,
 		Footer: func() {
-			f.render(w, "content_footer", post)
+			b.render(w, "content_footer", post)
 			fmt.Fprint(w, post.CustomFooter())
 		},
 	}
-	f.render(w, "header", header)
-	f.render(w, "content", post)
-	f.render(w, "footer", footer)
+	b.render(w, "header", header)
+	b.render(w, "content", post)
+	b.render(w, "footer", footer)
 }
 
-func (f *Front) queryByTags(c *gin.Context, tags string) {
-	posts := f.service.GetPostsByTags(tags)
+func (b *Blog) queryByTags(c *gin.Context, tags string) {
+	posts := b.service.GetPostsByTags(tags)
 	in := QueryTags{Posts: posts, Tag: tags}
-	f.render(c.Writer, "tags", &in)
+	b.render(c.Writer, "tags", &in)
 }
 
-func (f *Front) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
-	user := f.auth.AuthCookie(c)
+func (b *Blog) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
+	user := b.auth.AuthCookie(c)
 	if user.IsGuest() && post.Status != "public" {
 		panic(&PermDeniedError{})
 	}

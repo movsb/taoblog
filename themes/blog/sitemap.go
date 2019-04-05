@@ -1,4 +1,4 @@
-package front
+package blog
 
 import (
 	"bytes"
@@ -23,11 +23,11 @@ type SitemapData struct {
 }
 
 // GetSitemap ...
-func (f *Front) GetSitemap(c *gin.Context) {
-	user := f.auth.AuthCookie(c)
+func (b *Blog) GetSitemap(c *gin.Context) {
+	user := b.auth.AuthCookie(c)
 
 	if ifModified := c.GetHeader("If-Modified-Since"); ifModified != "" {
-		if modified := f.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 			if ifModified == datetime.My2Gmt(modified) {
 				c.Status(http.StatusNotModified)
 				return
@@ -35,13 +35,13 @@ func (f *Front) GetSitemap(c *gin.Context) {
 		}
 	}
 
-	rawPosts := f.service.MustListPosts(user.Context(nil),
+	rawPosts := b.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
 			Fields:  "id",
 			OrderBy: "date DESC",
 		})
 
-	home := "https://" + f.service.GetDefaultStringOption("home", "taoblog.local")
+	home := "https://" + b.service.GetDefaultStringOption("home", "taoblog.local")
 	sitemapPosts := make([]*PostForSitemap, 0, len(rawPosts))
 	for _, post := range rawPosts {
 		sitemapPosts = append(sitemapPosts, &PostForSitemap{
@@ -55,10 +55,10 @@ func (f *Front) GetSitemap(c *gin.Context) {
 	}
 
 	buf := bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>`)
-	f.render(buf, "sitemap", data)
+	b.render(buf, "sitemap", data)
 	str := buf.String()
 	c.Header("Content-Type", "application/xml")
-	if modified := f.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.My2Gmt(modified))
 	}
 	c.String(200, "%s", str)

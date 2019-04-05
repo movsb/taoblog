@@ -1,4 +1,4 @@
-package front
+package blog
 
 import (
 	"os/exec"
@@ -10,7 +10,7 @@ import (
 
 func toolpath(name string) string {
 	// TODO use base
-	return filepath.Join("front/tools/bin", name)
+	return filepath.Join("blog/tools/bin", name)
 }
 
 func aes2htm(c *gin.Context) {

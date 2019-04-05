@@ -1,4 +1,4 @@
-package front
+package blog
 
 import (
 	"bytes"
@@ -30,11 +30,11 @@ type RssData struct {
 }
 
 // GetRss ...
-func (f *Front) GetRss(c *gin.Context) {
-	user := f.auth.AuthCookie(c)
+func (b *Blog) GetRss(c *gin.Context) {
+	user := b.auth.AuthCookie(c)
 
 	if ifModified := c.GetHeader("If-Modified-Since"); ifModified != "" {
-		if modified := f.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 			if ifModified == datetime.My2Gmt(modified) {
 				c.Status(http.StatusNotModified)
 				return
@@ -42,12 +42,12 @@ func (f *Front) GetRss(c *gin.Context) {
 		}
 	}
 
-	posts := f.service.GetLatestPosts(user.Context(nil), "id,title,date,content", 10)
+	posts := b.service.GetLatestPosts(user.Context(nil), "id,title,date,content", 10)
 
 	data := RssData{
-		BlogName:    f.service.GetDefaultStringOption("blog_name", "TaoBlog"),
-		Home:        "https://" + f.service.GetDefaultStringOption("home", "taoblog.local"),
-		Description: f.service.GetDefaultStringOption("desc", ""),
+		BlogName:    b.service.GetDefaultStringOption("blog_name", "TaoBlog"),
+		Home:        "https://" + b.service.GetDefaultStringOption("home", "taoblog.local"),
+		Description: b.service.GetDefaultStringOption("desc", ""),
 	}
 
 	var rssPosts []*PostForRss
@@ -68,10 +68,10 @@ func (f *Front) GetRss(c *gin.Context) {
 	// TODO use package encoding/xml instead.
 	// See: https://github.com/golang/go/issues/3133
 	buf := bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>`)
-	f.render(buf, "rss", data)
+	b.render(buf, "rss", data)
 	str := buf.String()
 	c.Header("Content-Type", "application/xml")
-	if modified := f.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.My2Gmt(modified))
 	}
 	c.String(200, "%s", str)

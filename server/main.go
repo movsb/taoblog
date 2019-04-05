@@ -19,7 +19,7 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
-	"github.com/movsb/taoblog/themes/front"
+	"github.com/movsb/taoblog/themes/blog"
 	"github.com/movsb/taoblog/themes/weekly"
 )
 
@@ -75,7 +75,7 @@ func main() {
 
 	switch themeName := os.Getenv("THEME"); themeName {
 	case "BLOG":
-		front.NewFront(theService, theAuth, router.Group("/blog"), theAPI, "themes/front")
+		blog.NewBlog(theService, theAuth, router.Group("/blog"), theAPI, "themes/blog")
 	case "WEEKLY":
 		weekly.NewWeekly(theService, theAuth, router.Group("/blog"), theAPI, "themes/weekly")
 	default:
