@@ -6,7 +6,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taorm"
+	"github.com/movsb/taorm/taorm"
 )
 
 func (s *Service) tags() *taorm.Stmt {
@@ -72,7 +72,7 @@ func (s *Service) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagW
 
 func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
-	rows, err := s.tdb.Common().Query(sql, postID)
+	rows, err := s.tdb.Query(sql, postID)
 	if err != nil {
 		panic(err)
 	}
@@ -96,7 +96,7 @@ func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 func (s *Service) GetObjectTagNames(postID int64) []string {
 	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
 	args := []interface{}{postID}
-	rows, err := s.tdb.Common().Query(query, args...)
+	rows, err := s.tdb.Query(query, args...)
 	if err != nil {
 		panic(err)
 	}
@@ -119,7 +119,7 @@ func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
 	sql2 := `SELECT id FROM tags WHERE alias in (?)`
 
-	rows, err := s.tdb.Common().Query(sql1, sids)
+	rows, err := s.tdb.Query(sql1, sids)
 	if err != nil {
 		panic(err)
 	}
@@ -137,7 +137,7 @@ func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 
 	rows.Close()
 
-	rows, err = s.tdb.Common().Query(sql2, sids)
+	rows, err = s.tdb.Query(sql2, sids)
 	if err != nil {
 		panic(err)
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/stdinlinereader"
-	"github.com/movsb/taorm"
+	"github.com/movsb/taorm/taorm"
 )
 
 const dbVer = 7

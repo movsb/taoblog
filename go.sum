@@ -20,8 +20,8 @@ github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460 h1:tbHbJHFHHsfOHiWHTT
 github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460/go.mod h1:1uvxVt9wTuHYsiwYurvgRoq4rTtRwzojc03U1agxL5o=
 github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:eeMZo/pDQ2Vdmq7jFlb3JMYDLHtQWELZIw+oeEevh4A=
 github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316/go.mod h1:yZbOV1cKd0igi4wBBcVrs4G2ooTWhjxUT9pYV5RDN44=
-github.com/movsb/taorm v0.0.0-20190320113140-0d1003a5a06c h1:0KbOq+C8Wmqk/HfdIyt/v695ZX7a1Cn6Vv+3ZeFYX20=
-github.com/movsb/taorm v0.0.0-20190320113140-0d1003a5a06c/go.mod h1:4bNL/BYCSif17tS1JDwvDlpEfJsa/hGaxWsOqmEx0S8=
+github.com/movsb/taorm v0.0.0-20190525061256-d1ecf08e33c8 h1:URq9YiyTv7qXvrZY5yx6i53h9otwSigFGVSRMcMsmSE=
+github.com/movsb/taorm v0.0.0-20190525061256-d1ecf08e33c8/go.mod h1:PsH/jHfse+G72s2mhKMRnxTQsDdtK/vAn9Lzb5XAtDo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
