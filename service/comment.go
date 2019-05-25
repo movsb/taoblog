@@ -12,7 +12,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taorm"
+	"github.com/movsb/taorm/taorm"
 )
 
 func (s *Service) comments() *taorm.Stmt {
@@ -117,7 +117,7 @@ func (s *Service) CreateComment(ctx context.Context, c *models.Comment) *models.
 	}
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(c, "comments").Create()
+		txs.tdb.Model(c, "comments").MustCreate()
 		count := txs.GetAllCommentsCount()
 		txs.SetOption("comment_count", count)
 		txs.UpdatePostCommentCount(c.PostID)

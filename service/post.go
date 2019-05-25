@@ -11,7 +11,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/post_translators"
-	"github.com/movsb/taorm"
+	"github.com/movsb/taorm/taorm"
 )
 
 func (s *Service) posts() *taorm.Stmt {

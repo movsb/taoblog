@@ -7,7 +7,7 @@ import (
 
 	"github.com/movsb/taoblog/auth"
 
-	"github.com/movsb/taorm"
+	"github.com/movsb/taorm/taorm"
 )
 
 func v0(tx *sql.Tx) {
@@ -48,13 +48,13 @@ func v3(tx *sql.Tx) {
 		Metas string `json:"metas"`
 	}
 	var metas []*v3PostMetas
-	if err := taorm.QueryRows(&metas, tx, `SELECT * FROM post_metas WHERE type='post' OR type='page'`); err != nil {
+	if err := taorm.ScanRows(&metas, tx, `SELECT * FROM post_metas WHERE type='post' OR type='page'`); err != nil {
 		panic(err)
 	}
 	for _, meta := range metas {
 		var pm v3Meta
 		query := `SELECT id,metas FROM posts WHERE id=?`
-		if err := taorm.QueryRows(&pm, tx, query, meta.Tid); err != nil {
+		if err := taorm.ScanRows(&pm, tx, query, meta.Tid); err != nil {
 			panic(err)
 		}
 		var m map[string]interface{}

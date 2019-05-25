@@ -11,7 +11,7 @@ import (
 	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/file_managers"
-	"github.com/movsb/taorm"
+	"github.com/movsb/taorm/taorm"
 )
 
 // IFileManager exposes interfaces to manage upload files.
