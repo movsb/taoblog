@@ -6,6 +6,6 @@ type Category struct {
 	Name     string      `json:"name"`
 	Slug     string      `json:"slug"`
 	Parent   int64       `json:"parent"`
-	Ancestor int64       `json:"ancestor"`
+	Root     int64       `json:"root"`
 	Children []*Category `json:"children"`
 }

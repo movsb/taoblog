@@ -32,6 +32,10 @@ func (u *User) IsGuest() bool {
 	return u.ID == 0
 }
 
+func (u *User) IsAdmin() bool {
+	return u.ID != 0
+}
+
 func (u *User) Context(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }

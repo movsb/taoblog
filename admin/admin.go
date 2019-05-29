@@ -278,7 +278,7 @@ func (a *Admin) queryIndex(c *gin.Context) {
 
 func (a *Admin) queryTagManage(c *gin.Context) {
 	d := &AdminTagManageData{
-	//Tags: a.server.ListTagsWithCount(0, false),
+		//Tags: a.server.ListTagsWithCount(0, false),
 	}
 	header := &AdminHeaderData{
 		Title: "标签管理",

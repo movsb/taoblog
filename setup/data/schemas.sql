@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `comments` (
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
     `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `parent` INT(20) UNSIGNED NOT NULL,
-    `ancestor` INT(20) UNSIGNED NOT NULL,
+    `root` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)
 );
 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS taxonomies (
     `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `slug` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `parent` INT(20) UNSIGNED NOT NULL,
-    `ancestor` INT(20) UNSIGNED NOT NULL,
+    `root` INT(20) UNSIGNED NOT NULL,
     PRIMARY KEY(`id`)
 );
 

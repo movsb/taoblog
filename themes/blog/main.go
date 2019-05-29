@@ -282,9 +282,8 @@ func (b *Blog) queryHome(c *gin.Context) {
 		}), b.service)
 	home.LatestComments = newComments(b.service.ListComments(user.Context(nil),
 		&protocols.ListCommentsRequest{
-			Ancestor: -1,
-			Limit:    10,
-			OrderBy:  "date DESC",
+			Limit:   10,
+			OrderBy: "date DESC",
 		}), b.service)
 
 	b.render(c.Writer, "header", header)

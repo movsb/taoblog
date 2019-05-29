@@ -133,3 +133,10 @@ func v7(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v8(tx *sql.Tx) {
+	q := `ALTER TABLE comments CHANGE ancestor root INT(20) UNSIGNED NOT NULL`
+	if _, err := tx.Exec(q); err != nil {
+		panic(err)
+	}
+}
