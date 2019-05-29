@@ -33,9 +33,9 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	var parentProtocolComments []*protocols.Comment
 	{
 		var parents models.Comments
-		// TODO ensure that fields must include ancestor etc to be used later.
+		// TODO ensure that fields must include root etc to be used later.
 		stmt := s.tdb.From("comments").Select(in.Fields).
-			Where("ancestor = 0").
+			Where("root = 0").
 			// limit & offset apply to parent comments only
 			Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
 			WhereIf(in.PostID > 0, "post_id=?", in.PostID)
@@ -56,7 +56,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		}
 		var children models.Comments
 		stmt := s.tdb.From("comments").Select(in.Fields)
-		stmt.Where("ancestor IN (?)", parentIDs)
+		stmt.Where("root IN (?)", parentIDs)
 		if user.IsGuest() {
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
@@ -67,7 +67,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	if gotComments {
 		childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
 		for _, child := range childrenProtocolComments {
-			childrenMap[child.Ancestor] = append(childrenMap[child.Ancestor], child)
+			childrenMap[child.Root] = append(childrenMap[child.Root], child)
 		}
 		for _, parent := range parentProtocolComments {
 			parent.Children = childrenMap[parent.ID]
@@ -126,9 +126,9 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 
 	if c.Parent > 0 {
 		pc := s.GetComment(c.Parent)
-		comment.Ancestor = pc.Ancestor
-		if pc.Ancestor == 0 {
-			comment.Ancestor = pc.ID
+		comment.Root = pc.Root
+		if pc.Root == 0 {
+			comment.Root = pc.ID
 		}
 	}
 
@@ -171,7 +171,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 
 func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
 	cmt := s.GetComment(commentName)
-	s.comments().Or("id=?", commentName).Or("ancestor=?", commentName).Delete()
+	s.comments().Or("id=?", commentName).Or("root=?", commentName).Delete()
 	s.UpdatePostCommentCount(cmt.PostID)
 }
 
