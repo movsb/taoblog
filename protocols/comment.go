@@ -1,0 +1,29 @@
+package protocols
+
+// Comment ...
+type Comment struct {
+	// From Comment
+	ID       int64  `json:"id"`
+	Parent   int64  `json:"parent"`
+	Ancestor int64  `json:"ancestor"`
+	PostID   int64  `json:"post_id"`
+	Author   string `json:"author"`
+	Email    string `json:"email,omitempty"`
+	URL      string `json:"url"`
+	IP       string `json:"ip,omitempty"`
+	Date     string `json:"date"`
+	Content  string `json:"content"`
+
+	// Owned
+	Children []*Comment `json:"children"`
+	Avatar   string     `json:"avatar"`
+	IsAdmin  bool       `json:"is_admin"`
+}
+
+type ListCommentsRequest struct {
+	PostID   int64
+	Fields   string
+	Limit    int64
+	Offset   int64
+	OrderBy  string
+}

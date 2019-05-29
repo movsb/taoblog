@@ -384,10 +384,10 @@ Comment.prototype.load_comments = function() {
                 $('#comment-'+cmts[i].id).fadeIn();
                 TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id));
                 self.add_reply_div(cmts[i].id);
-
-                self.append_children(cmts[i].children, cmts[i].id);
-
-                ch_count += cmts[i].children.length;
+                if(cmts[i].children) {
+                    self.append_children(cmts[i].children, cmts[i].id);
+                    ch_count += cmts[i].children.length;
+                }
             }
 
             if(typeof(jQuery)=='function' && typeof(jQuery.timeago)=='function')

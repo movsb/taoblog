@@ -26,20 +26,55 @@ func (s *Service) GetComment(name int64) *models.Comment {
 	return &comment
 }
 
-// ListComments ...
-// TODO filter public post comments
-func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) []*models.Comment {
+func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) []*protocols.Comment {
 	user := s.auth.AuthContext(ctx)
-	var comments []*models.Comment
-	stmt := s.tdb.From("comments").Select(in.Fields).
-		Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
-		WhereIf(in.PostID > 0, "post_id=?", in.PostID).
-		WhereIf(in.Ancestor >= 0, "ancestor=?", in.Ancestor)
-	if user.IsGuest() {
-		stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+	adminEmail := s.GetStringOption("email")
+
+	var parentProtocolComments []*protocols.Comment
+	{
+		var parents models.Comments
+		// TODO ensure that fields must include ancestor etc to be used later.
+		stmt := s.tdb.From("comments").Select(in.Fields).
+			Where("ancestor = 0").
+			// limit & offset apply to parent comments only
+			Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
+			WhereIf(in.PostID > 0, "post_id=?", in.PostID)
+		if user.IsGuest() {
+			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+		}
+		stmt.MustFind(&parents)
+		parentProtocolComments = parents.ToProtocols(adminEmail, user)
 	}
-	stmt.MustFind(&comments)
-	return comments
+
+	gotComments := len(parentProtocolComments) > 0
+
+	var childrenProtocolComments []*protocols.Comment
+	if gotComments {
+		parentIDs := make([]int64, 0, len(parentProtocolComments))
+		for _, parent := range parentProtocolComments {
+			parentIDs = append(parentIDs, parent.ID)
+		}
+		var children models.Comments
+		stmt := s.tdb.From("comments").Select(in.Fields)
+		stmt.Where("ancestor IN (?)", parentIDs)
+		if user.IsGuest() {
+			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+		}
+		stmt.MustFind(&children)
+		childrenProtocolComments = children.ToProtocols(adminEmail, user)
+	}
+
+	if gotComments {
+		childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
+		for _, child := range childrenProtocolComments {
+			childrenMap[child.Ancestor] = append(childrenMap[child.Ancestor], child)
+		}
+		for _, parent := range parentProtocolComments {
+			parent.Children = childrenMap[parent.ID]
+		}
+	}
+
+	return parentProtocolComments
 }
 
 func (s *Service) GetAllCommentsCount() int64 {
@@ -51,15 +86,18 @@ func (s *Service) GetAllCommentsCount() int64 {
 	return result.Count
 }
 
-func (s *Service) CreateComment(ctx context.Context, c *models.Comment) *models.Comment {
+func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *protocols.Comment {
 	user := s.auth.AuthContext(ctx)
 
-	if c.ID != 0 {
-		panic(exception.NewValidationError("评论ID必须为0"))
-	}
-
-	if c.Ancestor != 0 {
-		panic(exception.NewValidationError("不能指定祖先ID"))
+	comment := models.Comment{
+		PostID:  c.PostID,
+		Parent:  c.Parent,
+		Author:  c.Author,
+		Email:   c.Email,
+		URL:     c.URL,
+		IP:      c.IP,
+		Date:    c.Date,
+		Content: c.Content,
 	}
 
 	if c.Author == "" {
@@ -88,15 +126,17 @@ func (s *Service) CreateComment(ctx context.Context, c *models.Comment) *models.
 
 	if c.Parent > 0 {
 		pc := s.GetComment(c.Parent)
-		c.Ancestor = pc.Ancestor
+		comment.Ancestor = pc.Ancestor
 		if pc.Ancestor == 0 {
-			c.Ancestor = pc.ID
+			comment.Ancestor = pc.ID
 		}
 	}
 
+	adminEmail := s.GetDefaultStringOption("email", "")
+
 	if user.IsGuest() {
 		notAllowedEmails := strings.Split(s.GetDefaultStringOption("not_allowed_emails", ""), ",")
-		if adminEmail := s.GetDefaultStringOption("email", ""); adminEmail != "" {
+		if adminEmail != "" {
 			notAllowedEmails = append(notAllowedEmails, adminEmail)
 		}
 		// TODO use regexp to detect equality.
@@ -117,16 +157,16 @@ func (s *Service) CreateComment(ctx context.Context, c *models.Comment) *models.
 	}
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(c, "comments").MustCreate()
+		txs.tdb.Model(&comment, "comments").MustCreate()
 		count := txs.GetAllCommentsCount()
 		txs.SetOption("comment_count", count)
-		txs.UpdatePostCommentCount(c.PostID)
+		txs.UpdatePostCommentCount(comment.PostID)
 		return nil
 	})
 
-	s.doCommentNotification(c)
+	s.doCommentNotification(&comment)
 
-	return c
+	return comment.ToProtocols(adminEmail, user)
 }
 
 func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
