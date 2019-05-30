@@ -231,3 +231,37 @@
         replace(img);
     });
 })();
+
+// Lazy load images
+(function() {
+    function setSrc(img) {
+        let src = img.getAttribute('data-src');
+        img.setAttribute('src', src);
+        return src;
+    }
+
+    let supportIntersectionObserver = !window.IntersectionObserver !== undefined;
+    let allDataSrcImgs = document.querySelectorAll('article img[data-src]');
+
+    if(!supportIntersectionObserver) {
+        console.warn("browser doesn't support IntersectionObserver");
+        allDataSrcImgs.forEach(img => {
+            setSrc(img);
+        })
+        return;
+    }
+
+    function onIntersection(entries, observer) {
+        entries.forEach(entry => {
+            if(entry.intersectionRatio != 0) {
+                let img = entry.target;
+                let src = setSrc(img);
+                observer.unobserve(img);
+                console.log("Lazy loading", src);
+            }
+        });
+    }
+
+    let observer = new IntersectionObserver(onIntersection);
+    allDataSrcImgs.forEach(img => { observer.observe(img); })
+})();

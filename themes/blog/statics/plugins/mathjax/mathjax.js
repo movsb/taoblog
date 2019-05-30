@@ -15,7 +15,7 @@
                         .css('margin', '3px')
                         .html(html)[0];
                     MathJax.Hub.Typeset(wrap);
-                    console.log('Typeset: ', e);
+                    // console.log('Typeset: ', e);
                     $(e).replaceWith(wrap);
                 }
             });
