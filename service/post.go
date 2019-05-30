@@ -241,7 +241,8 @@ func (s *Service) CreatePost(in *protocols.Post) {
 		panic("no translator found")
 	}
 
-	p.Content, err = tr.Translate(in.Source)
+	// TODO doesn't exist
+	p.Content, err = tr.Translate(in.Source, "./files/0")
 	if err != nil {
 		panic(err)
 	}
@@ -275,7 +276,7 @@ func (s *Service) UpdatePost(in *protocols.Post) {
 	default:
 		panic("no translator found")
 	}
-	content, err := tr.Translate(in.Source)
+	content, err := tr.Translate(in.Source, fmt.Sprintf("./files/%d", in.ID))
 	if err != nil {
 		panic(err)
 	}

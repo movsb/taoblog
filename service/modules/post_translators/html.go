@@ -4,6 +4,6 @@ type HTMLTranslator struct {
 	PostTranslator
 }
 
-func (me *HTMLTranslator) Translate(source string) (string, error) {
+func (me *HTMLTranslator) Translate(source string, base string) (string, error) {
 	return source, nil
 }

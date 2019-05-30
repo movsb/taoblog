@@ -1,5 +1,5 @@
 package post_translators
 
 type PostTranslator interface {
-	Translate(source string) (string, error)
+	Translate(source string, base string) (string, error)
 }

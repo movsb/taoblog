@@ -10,12 +10,13 @@ type MarkdownTranslator struct {
 	PostTranslator
 }
 
-func (me *MarkdownTranslator) Translate(source string) (string, error) {
+func (me *MarkdownTranslator) Translate(source string, base string) (string, error) {
 	var err error
 
 	cmd := exec.Command(
-		"marked",
-		`--lang-prefix "language-"`,
+		"node",
+		"./service/modules/post_translators/markdown.js",
+		base,
 	)
 
 	cmd.Stdin = strings.NewReader(source)
