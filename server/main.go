@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -22,6 +23,8 @@ import (
 	"github.com/movsb/taoblog/themes/blog"
 	"github.com/movsb/taoblog/themes/weekly"
 )
+
+const serverPidFilename = "server.pid"
 
 func main() {
 	var err error
@@ -90,7 +93,15 @@ func main() {
 		Handler: router,
 	}
 
-	go server.ListenAndServe()
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			if err != http.ErrServerClosed {
+				panic(err)
+			}
+		}
+	}()
+
+	ioutil.WriteFile(serverPidFilename, []byte(fmt.Sprint(os.Getpid())), 0644)
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT)
@@ -101,4 +112,6 @@ func main() {
 	log.Println("server shutting down")
 	server.Shutdown(context.Background())
 	log.Println("server shutted down")
+
+	os.Remove(serverPidFilename)
 }
