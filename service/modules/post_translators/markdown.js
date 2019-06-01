@@ -23,13 +23,17 @@ renderer.image = function(href, alt, text) {
         var file = dir + '/' + href;
         d  = sizeOf(file);
     } catch(err) {
-        return old();
+        // console.warn(err);
     }
 
     href = encodeAttr(href);
     alt = encodeAttr(alt || href);
 
-    return `<img data-src="${href}" alt="${alt}" width="${d.width}px" height="${d.height}px" />`;
+    if(d.width && d.height) {
+        return `<img data-src="${href}" alt="${alt}" width="${d.width}px" height="${d.height}px" />`;
+    } else {
+        return `<img data-src="${href}" alt="${alt}" />`;
+    }
 };
 
 marked.setOptions({

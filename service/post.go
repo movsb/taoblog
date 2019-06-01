@@ -284,7 +284,7 @@ func (s *Service) UpdatePost(in *protocols.Post) {
 	modified := datetime.MyLocal()
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(p, "posts").UpdateMap(map[string]interface{}{
+		txs.tdb.Model(p, "posts").MustUpdateMap(map[string]interface{}{
 			"title":       in.Title,
 			"modified":    modified,
 			"source_type": in.SourceType,

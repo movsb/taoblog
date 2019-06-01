@@ -208,13 +208,15 @@
         var figure = document.createElement('figure');
 
         var newImg = img.cloneNode(false);
+        newImg.removeAttribute('data-name');
+        newImg.removeAttribute('data-origin');
         figure.appendChild(newImg);
 
         var caption = document.createElement('figcaption');
         caption.innerText = '图片来源：';
 
         var a = document.createElement('a');
-        a.innerText = img.getAttribute('data-name');
+        a.innerText = img.getAttribute('data-name') || img.getAttribute('alt');
         a.setAttribute('href', img.getAttribute('data-origin'));
         a.setAttribute('target', '_blank');
 
@@ -226,10 +228,8 @@
         img.parentNode.removeChild(img);
     }
 
-    var imgs = document.querySelectorAll('.entry p > img[data-name]');
-    imgs.forEach(function(img){
-        replace(img);
-    });
+    var imgs = document.querySelectorAll('.entry img[data-origin]');
+    imgs.forEach(function(img){ replace(img); });
 })();
 
 // Lazy load images
@@ -237,6 +237,7 @@
     function setSrc(img) {
         let src = img.getAttribute('data-src');
         img.setAttribute('src', src);
+        img.removeAttribute('data-src');
         return src;
     }
 
