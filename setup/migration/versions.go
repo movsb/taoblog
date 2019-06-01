@@ -140,3 +140,10 @@ func v8(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v9(tx *sql.Tx) {
+	q := `ALTER TABLE taxonomies CHANGE ancestor root INT(20) UNSIGNED NOT NULL`
+	if _, err := tx.Exec(q); err != nil {
+		panic(err)
+	}
+}

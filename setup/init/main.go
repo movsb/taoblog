@@ -12,7 +12,7 @@ import (
 	"github.com/movsb/taorm/taorm"
 )
 
-const dbVer = 8
+const dbVer = 9
 
 var liner = stdinlinereader.NewStdinLineReader()
 
