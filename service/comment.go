@@ -34,11 +34,11 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	{
 		var parents models.Comments
 		// TODO ensure that fields must include root etc to be used later.
-		stmt := s.tdb.From("comments").Select(in.Fields).
-			Where("root = 0").
-			// limit & offset apply to parent comments only
-			Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy).
-			WhereIf(in.PostID > 0, "post_id=?", in.PostID)
+		stmt := s.tdb.From("comments").Select(in.Fields)
+		stmt.WhereIf(in.Mode == protocols.ListCommentsModeTree, "root = 0")
+		stmt.WhereIf(in.PostID > 0, "post_id=?", in.PostID)
+		// limit & offset apply to parent comments only
+		stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
 		if user.IsGuest() {
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
@@ -46,31 +46,32 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		parentProtocolComments = parents.ToProtocols(adminEmail, user)
 	}
 
-	gotComments := len(parentProtocolComments) > 0
+	needChildren := in.Mode == protocols.ListCommentsModeTree && len(parentProtocolComments) > 0
 
-	var childrenProtocolComments []*protocols.Comment
-	if gotComments {
-		parentIDs := make([]int64, 0, len(parentProtocolComments))
-		for _, parent := range parentProtocolComments {
-			parentIDs = append(parentIDs, parent.ID)
+	if needChildren {
+		var childrenProtocolComments []*protocols.Comment
+		{
+			parentIDs := make([]int64, 0, len(parentProtocolComments))
+			for _, parent := range parentProtocolComments {
+				parentIDs = append(parentIDs, parent.ID)
+			}
+			var children models.Comments
+			stmt := s.tdb.From("comments").Select(in.Fields)
+			stmt.Where("root IN (?)", parentIDs)
+			if user.IsGuest() {
+				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+			}
+			stmt.MustFind(&children)
+			childrenProtocolComments = children.ToProtocols(adminEmail, user)
 		}
-		var children models.Comments
-		stmt := s.tdb.From("comments").Select(in.Fields)
-		stmt.Where("root IN (?)", parentIDs)
-		if user.IsGuest() {
-			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
-		}
-		stmt.MustFind(&children)
-		childrenProtocolComments = children.ToProtocols(adminEmail, user)
-	}
-
-	if gotComments {
-		childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
-		for _, child := range childrenProtocolComments {
-			childrenMap[child.Root] = append(childrenMap[child.Root], child)
-		}
-		for _, parent := range parentProtocolComments {
-			parent.Children = childrenMap[parent.ID]
+		{
+			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
+			for _, child := range childrenProtocolComments {
+				childrenMap[child.Root] = append(childrenMap[child.Root], child)
+			}
+			for _, parent := range parentProtocolComments {
+				parent.Children = childrenMap[parent.ID]
+			}
 		}
 	}
 

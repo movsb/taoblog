@@ -4,5 +4,7 @@
 
 /.vscode/
 /files/
+/node_modules/
+/package-lock.json
 /run.sh
 /taoblog.conf

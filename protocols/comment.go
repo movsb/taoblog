@@ -20,7 +20,15 @@ type Comment struct {
 	IsAdmin  bool       `json:"is_admin"`
 }
 
+type ListCommentsMode int
+
+const (
+	ListCommentsModeTree = iota
+	ListCommentsModeFlat
+)
+
 type ListCommentsRequest struct {
+	Mode    ListCommentsMode
 	PostID  int64
 	Fields  string
 	Limit   int64

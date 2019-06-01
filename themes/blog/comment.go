@@ -55,6 +55,7 @@ func (b *Blog) listPostComments(c *gin.Context) {
 	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
 
 	comments := b.service.ListComments(userCtx, &protocols.ListCommentsRequest{
+		Mode:    protocols.ListCommentsModeTree,
 		PostID:  name,
 		Limit:   limit,
 		Offset:  offset,
