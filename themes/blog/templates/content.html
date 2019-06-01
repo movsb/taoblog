@@ -11,7 +11,9 @@
     </div>
 
     <div class="entry clearfix" itemprop="articleBody">
-        {{ .Content }}
+{{raw `<!--article begins here-->`}}
+{{ .Content }}
+{{raw `<!--article ends here-->`}}
         <div class="meta clearfix">
             <p>
                 发表于：<span class="value" title="发表时间：{{.DateString}}

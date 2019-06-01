@@ -131,6 +131,10 @@ func (b *Blog) render(w io.Writer, name string, data interface{}) {
 
 func (b *Blog) loadTemplates() {
 	funcs := template.FuncMap{
+		// https://github.com/golang/go/issues/14256
+		"raw": func(s string) template.HTML {
+			return template.HTML(s)
+		},
 		"get_config": func(name string) string {
 			return b.service.GetStringOption(name)
 		},
