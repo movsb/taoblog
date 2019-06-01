@@ -2,40 +2,40 @@
 <style>
 #main a {
   text-decoration: none;
-  color: #005782; }
+  color: #005782;
+}
 #main a:hover {
-    text-decoration: underline; }
+  text-decoration: underline;
+}
 #main  a:visited {
-    color: #924646; }
+  color: #924646;
+}
 #main  a:focus {
-    outline: none; }
+  outline: none;
+}
 
-a, input, textarea, button {
-  transition: all 0.2s ease-out; }
-
-button, input[type=submit] {
-  border: none; }
-  button::-moz-focus-inner, input[type=submit]::-moz-focus-inner {
-    border: 0; }
-
-acronym, abbr {
-  border-bottom: 1px dashed #ccc; }
+a, input {
+  transition: all 0.2s ease-out;
+}
 
 input:focus, a:focus, textarea:focus {
-  outline: none; }
+  outline: none;
+ }
 
-input, textarea, button {
-      border: 1px solid #ccc;
-        padding: 5px 7px; }
+input {
+  border: 1px solid #ccc;
+  padding: 5px 7px;
+ }
 
-#content > ul, .status > ul {
+#content > ul, .status > ul, #all-posts {
     list-style: none;
+    padding-left: 3em;
 }
 
 /* TODO 这个最大宽度应该是变量 */
 @media screen and (max-width: 850px) {
-#content > ul, .status > ul {
-    padding: 0px;
+#content > ul, .status > ul, #all-posts {
+    padding-left: 0px;
 }
 }
 </style>
@@ -49,7 +49,7 @@ input, textarea, button {
 {{end}}
 </ul>
 
-<p style="padding-left:3em;"><a href="/posts">所有文章...</a></p>
+<p id=all-posts><a href="/posts">所有文章...</a></p>
 
 <h2>近期评论</h2>
 <ul>
