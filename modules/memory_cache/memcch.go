@@ -2,15 +2,13 @@ package memory_cache
 
 import (
 	"container/list"
-	"fmt"
-	"log"
 	"sync"
 	"time"
 )
 
 func debug(f string, a ...interface{}) {
-	s := fmt.Sprintf(f, a...)
-	log.Println("memory_cache:", s)
+	// s := fmt.Sprintf(f, a...)
+	// log.Println("memory_cache:", s)
 }
 
 type _Item struct {

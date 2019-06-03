@@ -71,27 +71,30 @@ func (cn *CommentNotifier) sendMailAsync(
 ) {
 	log.Printf("SendMail: %s[%s] - %s", recipientName, recipientAddress, subject)
 	go func() {
-		mc, err := mailer.DialTLS(cn.MailServer)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		defer mc.Quit()
-		if err = mc.Auth(cn.Username, cn.Password); err != nil {
-			log.Println(err)
-			return
-		}
-		if err = mc.SetFrom("博客评论", cn.Username); err != nil {
-			log.Println("SetFrom:", err)
-			return
-		}
-		if err = mc.AddTo(recipientName, recipientAddress); err != nil {
-			log.Println("AddTo:", recipientAddress, err)
-			return
-		}
-		if err = mc.Send(subject, body); err != nil {
-			log.Println(err)
-			return
+		for i := 0; i < 3; i++ {
+			mc, err := mailer.DialTLS(cn.MailServer)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			defer mc.Quit()
+			if err = mc.Auth(cn.Username, cn.Password); err != nil {
+				log.Println(err)
+				return
+			}
+			if err = mc.SetFrom("博客评论", cn.Username); err != nil {
+				log.Println("SetFrom:", err)
+				return
+			}
+			if err = mc.AddTo(recipientName, recipientAddress); err != nil {
+				log.Println("AddTo:", recipientAddress, err)
+				return
+			}
+			if err = mc.Send(subject, body); err != nil {
+				log.Println(err)
+				return
+			}
+			break
 		}
 	}()
 }
