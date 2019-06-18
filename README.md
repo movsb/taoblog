@@ -35,7 +35,7 @@ auth/       | 授权管理
 client/     | 博客客户端
 exception/  | 异常处理
 themes/     | 主题目录
-gateway     | 网关接口层
+gateway/    | 网关接口层
 modules/    | 公共模块
 protocols/  | 协议定义
 server/     | 博客后台

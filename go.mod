@@ -10,7 +10,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
-	github.com/movsb/taorm v0.0.0-20190525061256-d1ecf08e33c8
+	github.com/movsb/taorm v0.0.0-20190614175522-d074080b869c
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
