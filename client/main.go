@@ -54,7 +54,7 @@ func main() {
 			case "create":
 				client.CreatePost()
 			case "upload":
-				client.UploadPostFiles()
+				client.UploadPostFiles(os.Args[3:])
 			case "update":
 				client.UpdatePost()
 			case "pub", "publish":

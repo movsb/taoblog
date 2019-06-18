@@ -45,8 +45,14 @@ func (c *Client) InitPost() {
 		fp.Close()
 		panic("post already initialized, abort")
 	}
+	fp.Close()
 	config := PostConfig{}
 	c.savePostConfig(&config)
+	// try to touch README.md
+	fp, _ = os.OpenFile("README.md", os.O_RDONLY|os.O_CREATE, 0644)
+	if fp != nil {
+		fp.Close()
+	}
 }
 
 // CreatePost ...
@@ -151,46 +157,23 @@ func (c *Client) UpdatePost() {
 }
 
 // UploadPostFiles ...
-func (c *Client) UploadPostFiles() {
+func (c *Client) UploadPostFiles(files []string) {
 	config := c.readPostConfig()
 	if config.ID <= 0 {
 		panic("post not posted, post it first.")
 	}
-	includedExts := map[string]bool{
-		".jpg": true,
-		".png": true,
-		".gif": true,
-		".zip": true,
-		".mp4": true,
+	if len(files) <= 0 {
+		panic("Specify files.")
 	}
-	root := "."
-	list, err := ioutil.ReadDir(root)
-	if err != nil {
-		panic(err)
-	}
-	postFiles := []os.FileInfo{}
-	fmt.Println("Scanning files ...")
-	for _, file := range list {
-		if file.IsDir() {
-			continue
-		}
-		ext := strings.ToLower(filepath.Ext(file.Name()))
-		if _, ok := includedExts[ext]; !ok {
-			continue
-		}
-		postFiles = append(postFiles, file)
-		fmt.Println("  +", file.Name())
-	}
-	fmt.Println("Uploading files ...")
-	for _, file := range postFiles {
-		fmt.Println("  +", file.Name())
+	for _, file := range files {
+		fmt.Println("  +", file)
 		var err error
-		fp, err := os.Open(filepath.Join(root, file.Name()))
+		fp, err := os.Open(file)
 		if err != nil {
 			panic(err)
 		}
 		defer fp.Close()
-		path := fmt.Sprintf("/posts/%d/files/%s", config.ID, file.Name())
+		path := fmt.Sprintf("/posts/%d/files/%s", config.ID, file)
 		resp := c.mustPost(path, fp, contentTypeBinary)
 		_ = resp
 	}
