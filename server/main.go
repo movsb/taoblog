@@ -77,7 +77,10 @@ func main() {
 	theAuth.SetKey(os.Getenv("KEY"))
 
 	gateway.NewGateway(theAPI, theService, theAuth)
-	admin.NewAdmin(theService, theAuth, router.Group("/admin"))
+
+	if disableAdmin := os.Getenv("DISABLE_ADMIN"); disableAdmin != "1" {
+		admin.NewAdmin(theService, theAuth, router.Group("/admin"))
+	}
 
 	indexGroup := router.Group("/blog", maybeSiteClosed(theService, theAuth))
 
