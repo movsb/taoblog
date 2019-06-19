@@ -65,3 +65,15 @@ func (s *Service) TxCall(callback func(txs *Service) error) {
 		panic(err)
 	}
 }
+
+func (s *Service) IsSiteClosed() bool {
+	closed := s.GetDefaultStringOption("site_closed", "false")
+	if closed == "1" || closed == "true" {
+		return true
+	}
+	closed = os.Getenv("SITE_CLOSED")
+	if closed == "1" || closed == "true" {
+		return true
+	}
+	return false
+}

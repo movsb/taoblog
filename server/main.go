@@ -73,20 +73,22 @@ func main() {
 
 	theAuth := &auth.Auth{}
 	theService := service.NewService(db, theAuth)
+	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
+	theAuth.SetKey(os.Getenv("KEY"))
+
 	gateway.NewGateway(theAPI, theService, theAuth)
 	admin.NewAdmin(theService, theAuth, router.Group("/admin"))
 
+	indexGroup := router.Group("/blog", maybeSiteClosed(theService, theAuth))
+
 	switch themeName := os.Getenv("THEME"); themeName {
 	case "BLOG":
-		blog.NewBlog(theService, theAuth, router.Group("/blog"), theAPI, "themes/blog")
+		blog.NewBlog(theService, theAuth, indexGroup, theAPI, "themes/blog")
 	case "WEEKLY":
-		weekly.NewWeekly(theService, theAuth, router.Group("/blog"), theAPI, "themes/weekly")
+		weekly.NewWeekly(theService, theAuth, indexGroup, theAPI, "themes/weekly")
 	default:
 		panic("unknown theme")
 	}
-
-	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
-	theAuth.SetKey(os.Getenv("KEY"))
 
 	server := &http.Server{
 		Addr:    os.Getenv("LISTEN"),
@@ -114,4 +116,36 @@ func main() {
 	log.Println("server shutted down")
 
 	os.Remove(serverPidFilename)
+}
+
+const siteClosedTemplate = `<!doctype html>
+<html>
+<body>
+<center><h1>503 Site Closed</h1></center>
+<hr/>
+</body>
+</html>
+`
+
+func maybeSiteClosed(svc *service.Service, auther *auth.Auth) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		shouldAbort := false
+		if svc.IsSiteClosed() {
+			user := auther.AuthHeader(c)
+			if user.IsGuest() {
+				user = auther.AuthCookie(c)
+			}
+			if user.IsGuest() {
+				shouldAbort = true
+			}
+		}
+		if shouldAbort {
+			c.Status(503)
+			c.Header("Retry-After", "86400")
+			c.Writer.WriteString(siteClosedTemplate)
+			c.Abort()
+		} else {
+			c.Next()
+		}
+	}
 }
