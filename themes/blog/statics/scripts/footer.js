@@ -238,6 +238,8 @@
         let src = img.getAttribute('data-src');
         img.setAttribute('src', src);
         img.removeAttribute('data-src');
+        img.removeAttribute('width');
+        img.removeAttribute('height');
         return src;
     }
 
