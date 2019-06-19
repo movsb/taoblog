@@ -165,7 +165,7 @@ ImageView.prototype.viewImage = function(img) {
         this._$img[0].onerror = function() {
             this._showInfo(0, 0, 0);
         }.bind(this);
-        this._$img.attr('src', img.src);
+        this._$img.attr('src', img.src || img.getAttribute('data-src'));
     } else {
         // 以下两行清除因拖动导致的设置
         this._$img.css('left', '0px');
