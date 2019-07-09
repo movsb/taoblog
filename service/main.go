@@ -77,3 +77,15 @@ func (s *Service) IsSiteClosed() bool {
 	}
 	return false
 }
+
+// HomeURL returns the home URL of format https://localhost.
+func (s *Service) HomeURL() string {
+	const homeURLKey = `home_url`
+	if val, ok := s.cache.Get(homeURLKey); ok {
+		return val.(string)
+	}
+	// TODO warn the owner if home isn't set
+	home := "https://" + s.GetDefaultStringOption("home", "localhost")
+	s.cache.Set(homeURLKey, home)
+	return home
+}

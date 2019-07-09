@@ -177,9 +177,8 @@ func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
 }
 
 func (s *Service) doCommentNotification(c *models.Comment) {
-	home := s.GetDefaultStringOption("home", "localhost")
 	postTitle := s.GetPostTitle(c.PostID)
-	postLink := fmt.Sprintf("https://%s/%d/", home, c.PostID)
+	postLink := fmt.Sprintf("%s/%d/", s.HomeURL(), c.PostID)
 	adminEmail := s.GetDefaultStringOption("email", "")
 	if adminEmail == "" {
 		return

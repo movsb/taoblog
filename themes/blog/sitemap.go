@@ -41,12 +41,11 @@ func (b *Blog) GetSitemap(c *gin.Context) {
 			OrderBy: "date DESC",
 		})
 
-	home := "https://" + b.service.GetDefaultStringOption("home", "taoblog.local")
 	sitemapPosts := make([]*PostForSitemap, 0, len(rawPosts))
 	for _, post := range rawPosts {
 		sitemapPosts = append(sitemapPosts, &PostForSitemap{
 			Post: post,
-			Link: fmt.Sprintf("%s/%d/", home, post.ID),
+			Link: fmt.Sprintf("%s/%d/", b.service.HomeURL(), post.ID),
 		})
 	}
 

@@ -46,7 +46,7 @@ func (b *Blog) GetRss(c *gin.Context) {
 
 	data := RssData{
 		BlogName:    b.service.GetDefaultStringOption("blog_name", "TaoBlog"),
-		Home:        "https://" + b.service.GetDefaultStringOption("home", "taoblog.local"),
+		Home:        b.service.HomeURL(),
 		Description: b.service.GetDefaultStringOption("desc", ""),
 	}
 

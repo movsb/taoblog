@@ -70,6 +70,7 @@ func createDatabaseTables(db *taorm.DB, dbName string) {
 
 	query = fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
 	db.MustExec(query, "db_ver", dbVer)
+	db.MustExec(query, "home", "localhost")
 }
 
 func createBlogUser(db *taorm.DB) {

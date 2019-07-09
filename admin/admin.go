@@ -81,7 +81,6 @@ func (d *AdminPostEditData) Link() string {
 	if d.New {
 		return fmt.Sprint(d.ID)
 	}
-	// TODO with home
 	return fmt.Sprintf("/%d/", d.ID)
 }
 
