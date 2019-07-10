@@ -99,7 +99,7 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 	}
 	var p models.Post
 	stmt := s.tdb.Model(models.Post{}, "posts").
-		Where("slug=? AND taxonomy=?", slug, catID).
+		Where("slug=? AND category=?", slug, catID).
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC")
 	if err := stmt.Find(&p); err != nil {
@@ -120,12 +120,12 @@ func (s *Service) parseCategoryTree(tree string) (id int64) {
 	}
 	parts := strings.Split(tree, "/")
 	var cats []*models.Category
-	s.tdb.Model(models.Category{}, "taxonomies").Where("slug IN (?)", parts).MustFind(&cats)
+	s.tdb.Model(models.Category{}, "categories").Where("slug IN (?)", parts).MustFind(&cats)
 	var parent int64
 	for i := 0; i < len(parts); i++ {
 		found := false
 		for _, cat := range cats {
-			if cat.Parent == parent && cat.Slug == parts[i] {
+			if cat.ParentID == parent && cat.Slug == parts[i] {
 				parent = cat.ID
 				found = true
 				break
@@ -153,7 +153,7 @@ func (s *Service) getPageParentID(parents string) int64 {
 
 	var results []*getPageParentID_Result
 	s.tdb.Model(models.Post{}, "posts").
-		Select("id,slug,taxonomy").
+		Select("id,slug,category").
 		Where("slug IN (?)", slugs).
 		Where("type = 'page'").
 		MustFind(&results)

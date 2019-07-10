@@ -18,7 +18,7 @@ type Post struct {
 	Content       string
 	Slug          string
 	Type          string
-	Category      uint `taorm:"name:taxonomy"`
+	Category      uint
 	Status        string
 	PageView      uint
 	CommentStatus uint

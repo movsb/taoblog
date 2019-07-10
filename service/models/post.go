@@ -14,7 +14,7 @@ type Post struct {
 	Content       string
 	Slug          string
 	Type          protocols.PostType
-	Category      uint `taorm:"name:taxonomy"`
+	Category      uint
 	Status        string
 	PageView      uint
 	CommentStatus uint
