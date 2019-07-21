@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/movsb/taoblog/exception"
@@ -99,7 +100,7 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 	}
 	var p models.Post
 	stmt := s.tdb.Model(models.Post{}, "posts").
-		Where("slug=? AND taxonomy=?", slug, catID).
+		Where("slug=? AND category=?", slug, catID).
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC")
 	if err := stmt.Find(&p); err != nil {
@@ -112,30 +113,30 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 }
 
 // ParseTree parses category tree from URL to get last sub-category ID.
+// e.g. /folder/post.html, then tree is folder
 // e.g. /path/to/folder/post.html, then tree is path/to/folder
 // It will get the ID of folder
+var reSplitPathAndSlug = regexp.MustCompile(`^(.*)/([^/]+)$`)
+
 func (s *Service) parseCategoryTree(tree string) (id int64) {
 	if tree == "" {
 		return 1
 	}
-	parts := strings.Split(tree, "/")
-	var cats []*models.Category
-	s.tdb.Model(models.Category{}, "taxonomies").Where("slug IN (?)", parts).MustFind(&cats)
-	var parent int64
-	for i := 0; i < len(parts); i++ {
-		found := false
-		for _, cat := range cats {
-			if cat.Parent == parent && cat.Slug == parts[i] {
-				parent = cat.ID
-				found = true
-				break
-			}
-		}
-		if !found {
-			panic(fmt.Errorf("找不到分类：%s", parts[i]))
-		}
+	tree = "/" + tree
+	matches := reSplitPathAndSlug.FindStringSubmatch(tree)
+	if matches == nil {
+		panic(&CategoryNotFoundError{})
 	}
-	return parent
+	path := matches[1]
+	if path == "" {
+		path = "/"
+	}
+	slug := matches[2]
+	var cat models.Category
+	if err := s.tdb.From("categories").Where("path=? AND slug=?", path, slug).Find(&cat); err != nil {
+		panic(&CategoryNotFoundError{})
+	}
+	return cat.ID
 }
 
 func (s *Service) getPageParentID(parents string) int64 {
@@ -153,7 +154,7 @@ func (s *Service) getPageParentID(parents string) int64 {
 
 	var results []*getPageParentID_Result
 	s.tdb.Model(models.Post{}, "posts").
-		Select("id,slug,taxonomy").
+		Select("id,slug,category").
 		Where("slug IN (?)", slugs).
 		Where("type = 'page'").
 		MustFind(&results)

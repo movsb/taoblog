@@ -147,3 +147,62 @@ func v9(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v10(tx *sql.Tx) {
+	queries := []string{
+		"RENAME TABLE `taxonomies` TO `categories`",
+		"ALTER TABLE `categories` ADD COLUMN `path` VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+	}
+	for _, query := range queries {
+		if _, err := tx.Exec(query); err != nil {
+			panic(err)
+		}
+	}
+
+	type v10Category struct {
+		ID     uint
+		Name   string
+		Slug   string
+		Parent uint
+		Root   uint
+		Path   string
+	}
+
+	var setPaths func(cat *v10Category, path string)
+	setPaths = func(cat *v10Category, path string) {
+		query := `UPDATE categories SET path=? WHERE id=?`
+		if _, err := tx.Exec(query, path, cat.ID); err != nil {
+			panic(err)
+		}
+		var children []*v10Category
+		query = `SELECT * FROM categories WHERE parent=?`
+		taorm.MustScanRows(&children, tx, query, cat.ID)
+		childPath := path + "/" + cat.Slug
+		if path == "/" {
+			childPath = childPath[1:]
+		}
+		for _, child := range children {
+			setPaths(child, childPath)
+		}
+	}
+
+	var topLevels []*v10Category
+	q := `SELECT * FROM categories WHERE parent = 0`
+	taorm.MustScanRows(&topLevels, tx, q)
+	for _, cat := range topLevels {
+		setPaths(cat, "/")
+	}
+
+	queries = []string{
+		"ALTER TABLE `categories` CHANGE `parent` `parent_id` INT(10) UNSIGNED NOT NULL",
+		"ALTER TABLE `categories` DROP `root`",
+		"DELETE FROM `categories` WHERE `path` = ''",
+		"CREATE INDEX `uix_path_slug` ON `categories` (`path`,`slug`)",
+		"ALTER TABLE `posts` CHANGE `taxonomy` `category` INT(10) UNSIGNED NOT NULL DEFAULT 1",
+	}
+	for _, query := range queries {
+		if _, err := tx.Exec(query); err != nil {
+			panic(err)
+		}
+	}
+}

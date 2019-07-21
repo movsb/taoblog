@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
     `content` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `slug` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `type` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `taxonomy` INT(20) UNSIGNED NOT NULL DEFAULT 1,
+    `category` INT(10) UNSIGNED NOT NULL DEFAULT 1,
     `status` ENUM('public', 'draft'),
     `page_view` INT(20) UNSIGNED NOT NULL DEFAULT 0,
     `comment_status` INT(1) UNSIGNED DEFAULT 1,
@@ -42,14 +42,15 @@ CREATE TABLE IF NOT EXISTS `comments` (
     PRIMARY KEY(`id`)
 );
 
--- 创建表 taxonomies
-CREATE TABLE IF NOT EXISTS taxonomies (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+-- 创建表 文章分类 categories
+CREATE TABLE IF NOT EXISTS categories (
+    `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `slug` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `parent` INT(20) UNSIGNED NOT NULL,
-    `root` INT(20) UNSIGNED NOT NULL,
-    PRIMARY KEY(`id`)
+    `parent_id` INT(10) UNSIGNED NOT NULL,
+    `path` VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    PRIMARY KEY(`id`),
+    UNIQUE KEY `uix_path_slug` (`path`,`slug`)
 );
 
 -- 创建表 /分类/文章样式和JavaScript/关键字表 post_metas

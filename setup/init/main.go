@@ -9,10 +9,11 @@ import (
 
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/stdinlinereader"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm/taorm"
 )
 
-const dbVer = 9
+const dbVer = 10
 
 var liner = stdinlinereader.NewStdinLineReader()
 
@@ -71,6 +72,14 @@ func createDatabaseTables(db *taorm.DB, dbName string) {
 	query = fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
 	db.MustExec(query, "db_ver", dbVer)
 	db.MustExec(query, "home", "localhost")
+
+	rootCategory := models.Category{
+		ID:   1,
+		Name: "未分类",
+		Slug: "uncategorized",
+		Path: "/",
+	}
+	db.Model(&rootCategory, "categories").MustCreate()
 }
 
 func createBlogUser(db *taorm.DB) {
