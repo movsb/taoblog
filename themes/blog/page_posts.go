@@ -12,7 +12,11 @@ import (
 
 // PagePostsData ...
 type PagePostsData struct {
-	Posts []*protocols.Post
+	Posts        []*protocols.Post
+	PostCount    int64
+	PageCount    int64
+	CommentCount int64
+	ViewCount    int64
 }
 
 func (b *Blog) getPagePosts(c *gin.Context) {
@@ -28,7 +32,11 @@ func (b *Blog) getPagePosts(c *gin.Context) {
 			b.render(c.Writer, "page_posts_footer", nil)
 		},
 	}
-	pageData := &PagePostsData{}
+	pageData := &PagePostsData{
+		PostCount:    b.service.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    b.service.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: b.service.GetDefaultIntegerOption("comment_count", 0),
+	}
 
 	sort := strings.SplitN(c.DefaultQuery("sort", "date.desc"), ".", 2)
 	if len(sort) != 2 {
@@ -46,6 +54,9 @@ func (b *Blog) getPagePosts(c *gin.Context) {
 			Fields:  "id,title,date,page_view,comments",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
 		})
+	for _, p := range pageData.Posts {
+		pageData.ViewCount += int64(p.PageView)
+	}
 
 	b.render(c.Writer, "header", header)
 	b.render(c.Writer, "page_posts", pageData)

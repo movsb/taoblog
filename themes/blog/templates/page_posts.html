@@ -22,6 +22,9 @@
     {{end}}
 </tbody>
 </table>
+<div class="footer">
+文章：{{.PostCount}}<span class=sep></span>页面：{{.PageCount}}<span class=sep></span>评论：{{.CommentCount}}<span class=sep></span>浏览：{{.ViewCount}}
+</div>
 {{end}}
 
 {{define "page_posts_header"}}
@@ -44,6 +47,15 @@ td:nth-child(2) {
     tr>*:nth-child(3), tr>*:nth-child(4),tr>*:nth-child(5) {
         display: none;
     }
+}
+.footer {
+    border-top: 1px solid gray;
+    margin: 2em 0 0 0;
+    padding: 1em;
+    text-align: center;
+}
+.footer .sep {
+    margin: 0 1em 0 1em;
 }
 </style>
 {{end}}
