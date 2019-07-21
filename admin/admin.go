@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -96,6 +97,7 @@ type Admin struct {
 	templates *template.Template
 	router    *gin.RouterGroup
 	auth      *auth.Auth
+	canGoogle bool
 }
 
 func NewAdmin(service *service.Service, auth *auth.Auth, router *gin.RouterGroup) *Admin {
@@ -106,7 +108,17 @@ func NewAdmin(service *service.Service, auth *auth.Auth, router *gin.RouterGroup
 	}
 	a.loadTemplates()
 	a.route()
+	go a.detectNetwork()
 	return a
+}
+
+func (a *Admin) detectNetwork() {
+	resp, err := http.Get("https://www.google.com")
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
+	a.canGoogle = true
 }
 
 func (a *Admin) route() {
@@ -216,8 +228,10 @@ func (a *Admin) queryLogin(c *gin.Context) {
 	}
 
 	d := LoginData{
-		Redirect:       redirect,
-		GoogleClientID: a.auth.GoogleClientID,
+		Redirect: redirect,
+	}
+	if a.canGoogle {
+		d.GoogleClientID = a.auth.GoogleClientID
 	}
 
 	a.render(c.Writer, "login", &d)
