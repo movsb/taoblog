@@ -57,6 +57,7 @@ func (d *AdminFooterData) FooterHook() string {
 type LoginData struct {
 	Redirect       string
 	GoogleClientID string
+	GitHubClientID string
 }
 
 type AdminIndexData struct {
@@ -218,6 +219,12 @@ func (a *Admin) Post(c *gin.Context, path string) {
 }
 
 func (a *Admin) queryLogin(c *gin.Context) {
+	// TODO this is a hack
+	if c.Query("type") == "github" {
+		a.postLogin(c)
+		return
+	}
+
 	if a._auth(c) {
 		c.Redirect(302, "/admin/index")
 		return
@@ -233,6 +240,7 @@ func (a *Admin) queryLogin(c *gin.Context) {
 	if a.canGoogle {
 		d.GoogleClientID = a.auth.GoogleClientID
 	}
+	d.GitHubClientID = a.auth.GitHubClientID
 
 	a.render(c.Writer, "login", &d)
 }
@@ -243,7 +251,7 @@ func (a *Admin) queryLogout(c *gin.Context) {
 }
 
 func (a *Admin) postLogin(c *gin.Context) {
-	redirect := c.PostForm("redirect")
+	redirect := ""
 	success := false
 
 	typ := c.DefaultQuery("type", "basic")
@@ -252,9 +260,14 @@ func (a *Admin) postLogin(c *gin.Context) {
 		username := c.PostForm("user")
 		password := c.PostForm("passwd")
 		success = a.auth.AuthLogin(username, password)
+		redirect = c.PostForm("redirect")
 	case "google":
 		token := c.PostForm("token")
 		success = !a.auth.AuthGoogle(token).IsGuest()
+		redirect = c.PostForm("redirect")
+	case "github":
+		code := c.Query("code")
+		success = !a.auth.AuthGitHub(code).IsGuest()
 	}
 
 	if success {
@@ -267,7 +280,7 @@ func (a *Admin) postLogin(c *gin.Context) {
 			c.Redirect(302, redirect)
 		}
 	} else {
-		c.Redirect(302, c.Request.URL.String())
+		c.Redirect(302, "/admin/login")
 	}
 }
 

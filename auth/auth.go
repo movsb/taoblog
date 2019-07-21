@@ -5,6 +5,8 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
@@ -50,10 +52,13 @@ type Auth struct {
 }
 
 type SavedAuth struct {
-	Username       string `json:"username,omitempty"`
-	Password       string `json:"password,omitempty"`
-	GoogleClientID string `json:"google_client_id,omitempty"`
-	AdminGoogleID  string `json:"admin_google_id,omitempty"`
+	Username           string `json:"username,omitempty"`
+	Password           string `json:"password,omitempty"`
+	GoogleClientID     string `json:"google_client_id,omitempty"`
+	AdminGoogleID      string `json:"admin_google_id,omitempty"`
+	GitHubClientID     string `json:"github_client_id,omitempty"`
+	GitHubClientSecret string `json:"github_client_secret,omitempty"`
+	AdminGitHubID      int64  `json:"admin_github_id,omitempty"`
 }
 
 func (a SavedAuth) Encode() string {
@@ -69,6 +74,12 @@ func (o *Auth) SetLogin(login string) {
 	if err := json.Unmarshal([]byte(login), &o.SavedAuth); err != nil {
 		panic(err)
 	}
+}
+
+func (o *Auth) SetGitHub(clientID string, clientSecret string, adminID string) {
+	o.GitHubClientID = clientID
+	o.GitHubClientSecret = clientSecret
+	fmt.Sscanf(adminID, "%d", &o.AdminGitHubID)
 }
 
 func (o *Auth) Login() string {
@@ -122,6 +133,57 @@ func (o *Auth) AuthGoogle(token string) *User {
 		return guest
 	}
 	if claims.Sub == o.AdminGoogleID {
+		return admin
+	}
+	return guest
+}
+
+func (o *Auth) AuthGitHub(code string) *User {
+	accessTokenURL, _ := url.Parse("https://github.com/login/oauth/access_token")
+	values := url.Values{}
+	values.Set("client_id", o.GitHubClientID)
+	values.Set("client_secret", o.GitHubClientSecret)
+	values.Set("code", code)
+	accessTokenURL.RawQuery = values.Encode()
+	req, err := http.NewRequest("POST", accessTokenURL.String(), nil)
+	if err != nil {
+		return guest
+	}
+	req.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return guest
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return guest
+	}
+	var accessTokenStruct struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&accessTokenStruct); err != nil {
+		return guest
+	}
+	req, err = http.NewRequest("GET", "https://api.github.com/user", nil)
+	if err != nil {
+		return guest
+	}
+	req.Header.Set("Authorization", "token "+accessTokenStruct.AccessToken)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return guest
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return guest
+	}
+	var user struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return guest
+	}
+	if user.ID != 0 && user.ID == o.AdminGitHubID {
 		return admin
 	}
 	return guest

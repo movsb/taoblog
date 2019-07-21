@@ -75,6 +75,11 @@ func main() {
 	theService := service.NewService(db, theAuth)
 	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
 	theAuth.SetKey(os.Getenv("KEY"))
+	theAuth.SetGitHub(
+		os.Getenv("GITHUB_CLIENT_ID"),
+		os.Getenv("GITHUB_CLIENT_SECRET"),
+		os.Getenv("GITHUB_ID"),
+	)
 
 	gateway.NewGateway(theAPI, theService, theAuth)
 
