@@ -116,6 +116,20 @@ func (m *MemoryCache) Get(key string) (interface{}, bool) {
 	return nil, false
 }
 
+// Pop gets and pops
+func (m *MemoryCache) Pop(key string) (interface{}, bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	if elem, ok := m.keys[key]; ok {
+		debug("hit cache: %s", key)
+		val := elem.Value.(_Item).val
+		m.vals.Remove(elem)
+		delete(m.keys, key)
+		return val, true
+	}
+	return nil, false
+}
+
 // Delete deletes
 func (m *MemoryCache) Delete(key string) {
 	m.lock.Lock()
