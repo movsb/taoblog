@@ -247,9 +247,14 @@
         border-collapse: collapse;
         margin: 1em 0px;
 
+        th {
+            background-color: #eee;
+        }
+
         td, th {
             border: 1px solid gray;
             padding: 0.5em;
+            text-align: center;
         }
 
         &.no-border, &.no-border td {
