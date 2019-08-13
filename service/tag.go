@@ -115,6 +115,9 @@ func (s *Service) GetObjectTagNames(postID int64) []string {
 
 func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 	sids := utils.JoinInts(ids, ",")
+	if sids == "" {
+		return ids
+	}
 
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
 	sql2 := `SELECT id FROM tags WHERE alias in (?)`

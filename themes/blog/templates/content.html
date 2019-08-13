@@ -28,13 +28,15 @@
     </div><!-- end entry -->
 
     <div class="related clearfix">
-        {{with .RelatedPosts}}
-            <h3>相关文章</h3>
-            <ol>
-                {{range .}}
-                    <li><a href="/{{.ID}}/">{{.Title}}</a></li>
-                {{end}}
-            </ol>
+        <h3>相关文章</h3>
+        {{if .RelatedPosts}}
+        <ol>
+        {{range .RelatedPosts}}
+            <li><a href="/{{.ID}}/">{{.Title}}</a></li>
+        {{end}}
+        </ol>
+        {{else}}
+            <div class="no-related">没有相关文章。</div>
         {{end}}
     </div><!-- end related -->
 
