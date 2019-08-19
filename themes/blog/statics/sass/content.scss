@@ -110,14 +110,9 @@
 /* 文章 */
 .post, .pages {
     /* 文章标题 */
-    .title {
-        overflow: hidden;
-
-        h1 {
-            margin: 2rem 0px 1.5rem;
-            color: $post_title_fg;
-            font-size: 1.5em;
-        }
+    h1 {
+        color: $post_title_fg;
+        font-size: 1.5em;
     }
 
     /* toolbar */
