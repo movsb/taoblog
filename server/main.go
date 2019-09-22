@@ -21,7 +21,6 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
-	"github.com/movsb/taoblog/themes/weekly"
 )
 
 const serverPidFilename = "server.pid"
@@ -90,10 +89,8 @@ func main() {
 	indexGroup := router.Group("/blog", maybeSiteClosed(theService, theAuth))
 
 	switch themeName := os.Getenv("THEME"); themeName {
-	case "BLOG":
+	case "", "BLOG":
 		blog.NewBlog(theService, theAuth, indexGroup, theAPI, "themes/blog")
-	case "WEEKLY":
-		weekly.NewWeekly(theService, theAuth, indexGroup, theAPI, "themes/weekly")
 	default:
 		panic("unknown theme")
 	}
