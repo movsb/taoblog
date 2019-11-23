@@ -268,3 +268,15 @@
     let observer = new IntersectionObserver(onIntersection);
     allDataSrcImgs.forEach(img => { observer.observe(img); })
 })();
+
+// Add anchors to outer links and open in new tab instead
+(function() {
+	let hostname = location.hostname;
+	let anchors = document.querySelectorAll('article a');
+	anchors.forEach(a => {
+		if (a.hostname !== hostname) {
+			a.setAttribute('target', '_blank');
+			a.classList.add('external');
+		}
+	});
+})();
