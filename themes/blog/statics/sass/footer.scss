@@ -1,41 +1,4 @@
 /* 底部 */
-#footer {
-    font-size: 13px;
-    margin-top: 30px;
-
-    .mb {
-        margin-bottom: 16px;
-    }
-
-    .footer-wrapper {
-        box-sizing: border-box;
-        margin: 0px auto;
-    }
-
-    .column {
-        max-height: 100%;
-        box-sizing: border-box;
-        ul {
-            padding: 0px;
-            list-style: none;
-            line-height: 1.5em;
-            a {
-                color: $footer_column_ul_a_fg;
-                cursor: pointer;
-                text-decoration: none;
-                &:hover {
-                    text-decoration: none;
-
-                }
-            }
-        }
-    }
-
-    .copy {
-        text-align: center;
-    }
-}
-
 @media screen and (min-width: $max_width+1) {
     #mobile-footer {
         display: none;

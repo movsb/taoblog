@@ -10,103 +10,6 @@
     padding: 0 1em;
 }
 
-/* 分类与日期查询 */
-.query {
-    padding: 0px 10px;
-
-    ul.item-list {
-        list-style: none;
-        line-height: 1.5em;
-        padding: 0 1em;
-
-        .item h2 {
-            margin: 0px;
-            font-size: 1em;
-        }
-    }
-}
-
-/* 文章归档页面 */
-.archives {
-    overflow: hidden;
-    > div:nth-child(n) {
-        float: left;
-        width: 30%;
-        margin-right: 2%;
-        min-width: 200px;
-    }
-
-    .tags {
-        ul {
-            list-style: none;
-            line-height: 1.5em;
-            padding-left: 2em;
-            display: none;
-            &.roots {
-                padding-left: 0px;
-                display: block;
-            }
-            li {
-                &.tag {
-                    > .tag-name {
-                        cursor: pointer;
-                        &.fa {
-                            width: 1em;
-                            margin-right: 6px;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    .cats {
-        ul {
-            list-style: none;
-            line-height: 1.5em;
-            padding-left: 2em;
-            display: none;
-            &.roots {
-                padding-left: 0px;
-                display: block;
-            }
-            li {
-                &.folder {
-                    > .folder-name {
-                        cursor: pointer;
-                        &.fa {
-                            width: 1em;
-                            margin-right: 6px;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    .date {
-        ul {
-            list-style: none;
-            line-height: 1.5em;
-            padding-left: 2em;
-            display: none;
-            &.roots {
-                padding-left: 0px;
-                display: block;
-            }
-            li {
-                &.year-month {
-                    > .datetime {
-                        cursor: pointer;
-                        &.fa {
-                            width: 1em;
-                            margin-right: 6px;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 /* 文章 */
 .post, .pages {
     /* 文章标题 */
@@ -338,7 +241,6 @@
     }
 
     ol {
-        padding-left: 2em;
         line-height: 1.7em;
     }
 
