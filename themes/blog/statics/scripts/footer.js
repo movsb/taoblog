@@ -280,3 +280,21 @@
 		}
 	});
 })();
+
+// merge code into one pre
+(function() {
+	let divs = document.querySelectorAll('article div.merge-code');
+	divs.forEach(function(div) {
+		let prev = div.previousElementSibling;
+		let next = div.nextElementSibling;
+		if(prev !== undefined && next !== undefined && prev.tagName === 'PRE' && next.tagName === 'PRE' && next.children.length > 0) {
+			let code = next.children[0];
+			code.remove();
+			let split = document.createElement('div');
+			prev.appendChild(split);
+			prev.appendChild(code);
+			div.remove();
+			next.remove();
+		}
+	});
+})();
