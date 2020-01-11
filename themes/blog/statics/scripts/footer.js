@@ -298,3 +298,21 @@
 		}
 	});
 })();
+
+// scroll shouldn't hide line numbers
+(function() {
+	let pres = document.querySelectorAll('pre.line-numbers');
+	pres.forEach(function(pre) {
+		let lines = pre.querySelector('span.line-numbers-rows');
+		if(lines === null) { return; }
+		let div = document.createElement('div');
+		div.classList.add('line-numbers-wrapper');
+		let code = lines.parentElement;
+		code.appendChild(div);
+		lines.remove();
+		div.appendChild(lines);
+		code.addEventListener('scroll', function() {
+			lines.style.top = '-' + code.scrollTop + 'px';
+		});
+	});
+})();
