@@ -21,7 +21,7 @@ ImageView.prototype._init = function() {
 
     this._initBindings();
 
-    this._images = $('.entry img:not(.nz)');
+    this._images = $('.entry img');
     this._images.click(this._onPostImageClick.bind(this));
 };
 

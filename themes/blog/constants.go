@@ -14,12 +14,11 @@ var (
 )
 
 var nonCategoryNames = map[string]bool{
-	"/admin/":    true,
-	"/emotions/": true,
-	"/scripts/":  true,
-	"/images/":   true,
-	"/sass/":     true,
-	"/tags/":     true,
-	"/plugins/":  true,
-	"/files/":    true,
+	"/admin/":   true,
+	"/scripts/": true,
+	"/images/":  true,
+	"/sass/":    true,
+	"/tags/":    true,
+	"/plugins/": true,
+	"/files/":   true,
 }

@@ -23,11 +23,7 @@ document.write(function(){/*
 			<div class="no-sel" class="nc">
                 <div class="ncbtns">
                     <img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
-                    <img src="/images/question.svg" width="20" height="20" title="支持部分QQ表情，如：
-
-    [笑哭] [小纠结] [无奈]
-
-支持插入代码片段，请使用3个反引号括起来，如：
+                    <img src="/images/question.svg" width="20" height="20" title="支持插入代码片段，请使用3个反引号括起来，如：
 
     ```
     #include <stdio.h>
@@ -188,23 +184,9 @@ Comment.prototype.gen_avatar = function(eh, sz) {
 	return '/v2/avatar?' + encodeURIComponent(eh + '?d=mm&s=' + sz);
 };
 
-Comment.prototype.emotions = ["狗头", "偷笑", "冷汗", "卖萌", "可爱", "呲牙", "喷血", "嘘", "坏笑", "小纠结", "尴尬", "幽灵", "微笑", "惊喜", "惊恐", "惊讶", "憨笑", "我最美", "托腮", "抠鼻", "拥抱", "撇嘴", "擦汗", "敲打", "斜眼笑", "无奈", "晕", "泪奔", "流汗", "流泪", "玫瑰", "疑问", "笑哭", "衰", "调皮", "阴险", "难过", "骚扰"];
-
 Comment.prototype.normalize_content = function(c) {
     var s = this.h2t(c);
     s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code"><code class="language-$2">$3</code></pre>');
-    s = s.replace(/\[([^\x20-\x7E]{1,3})\]/gm, function(all,alt) {
-            if(Comment.prototype.emotions.indexOf(alt) != -1)
-                return $('<img/>')
-                    .attr('alt', all)
-                    .attr('width', '20px')
-                    .attr('height', '20px')
-                    .css('vertical-align', 'bottom')
-                    .attr('src', '/emotions/' + alt + '.png')[0]
-                    .outerHTML;
-            else
-                return all;
-        });
     return s;
 };
 

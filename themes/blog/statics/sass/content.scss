@@ -128,12 +128,10 @@
         box-sizing: content-box;
         border: 1px solid transparent;
 
-        &:not(.nz) {
-            &:hover {
-                box-shadow: 0 0 5px gray;
-                cursor: zoom-in;
-            }
-        }
+		&:hover {
+			box-shadow: 0 0 5px gray;
+			cursor: zoom-in;
+		}
 
         &.shadow {
             box-shadow: 0px 0px 2px;
