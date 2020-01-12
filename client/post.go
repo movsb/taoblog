@@ -20,10 +20,10 @@ var sourceNames = []string{
 }
 
 type PostConfig struct {
-	ID    int64    `json:"id"`
-	Title string   `json:"title"`
-	Tags  []string `json:"tags"`
-	Slug  string   `json:"slug"`
+	ID    int64    `json:"id" yaml:"id"`
+	Title string   `json:"title" yaml:"title"`
+	Tags  []string `json:"tags" yaml:"tags"`
+	Slug  string   `json:"slug" yaml:"slug,omitempty"`
 }
 
 type Post struct {
@@ -96,7 +96,7 @@ func (c *Client) GetPost() {
 	if err := dec.Decode(&rp); err != nil {
 		panic(err)
 	}
-	c.savePostConfig(&p.PostConfig)
+	c.savePostConfig(&rp.PostConfig)
 	filename := "README.md"
 	switch rp.SourceType {
 	case "html":

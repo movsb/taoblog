@@ -29,6 +29,9 @@ func initHostConfigs() HostConfig {
 
 	// select which host to use
 	host := os.Getenv("HOST")
+	if host == "" {
+		host = "blog"
+	}
 	hostConfig, ok := hostConfigs[host]
 	if !ok {
 		panic("cannot find init config for host: " + host)
