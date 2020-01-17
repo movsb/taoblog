@@ -1,0 +1,9 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/protocols";
+
+import "protocols/backup.proto";
+
+service TaoBlog {
+	rpc Backup (BackupRequest) returns (BackupResponse);
+}

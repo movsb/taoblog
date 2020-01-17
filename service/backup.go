@@ -2,12 +2,23 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
+	"os"
 	"os/exec"
+
+	"github.com/movsb/taoblog/protocols"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-func (s *Service) GetBackup(w io.Writer) {
+// Backup ...
+func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*protocols.BackupResponse, error) {
+	if !s.auth.AuthGRPC(ctx).IsAdmin() {
+		return nil, status.Error(codes.Unauthenticated, "bad credentials")
+	}
+
 	opts := []string{
 		"--add-drop-database",
 		"--add-drop-table",
@@ -25,14 +36,16 @@ func (s *Service) GetBackup(w io.Writer) {
 		opts...,
 	)
 
-	cmd.Stdout = w
-
+	ob := bytes.NewBuffer(nil)
+	cmd.Stdout = ob
 	eb := bytes.NewBuffer(nil)
 	cmd.Stderr = eb
 
-	if cmd.Run() == nil {
-		return
+	if err := cmd.Run(); err != nil {
+		return nil, status.Errorf(codes.Internal, `%v:%s`, err, eb.String())
 	}
 
-	panic(errors.New(eb.String()))
+	return &protocols.BackupResponse{
+		Data: ob.String(),
+	}, nil
 }
