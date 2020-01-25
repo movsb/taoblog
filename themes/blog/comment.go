@@ -3,9 +3,8 @@ package blog
 import (
 	"strings"
 
-	"github.com/movsb/taoblog/modules/datetime"
-
 	"github.com/gin-gonic/gin"
+	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
@@ -24,11 +23,11 @@ func newComments(comments []*protocols.Comment, service *service.Service) []*Com
 	adminEmail := strings.ToLower(service.GetDefaultStringOption("email", ""))
 	for _, c := range comments {
 		title := ""
-		if t, ok := titles[c.PostID]; ok {
+		if t, ok := titles[c.PostId]; ok {
 			title = t
 		} else {
-			title = service.GetPostTitle(c.PostID)
-			titles[c.PostID] = title
+			title = service.GetPostTitle(c.PostId)
+			titles[c.PostId] = title
 		}
 		cmts = append(cmts, &Comment{
 			Comment:   c,
@@ -46,26 +45,29 @@ func (b *Blog) listPostComments(c *gin.Context) {
 	limit := utils.MustToInt64(c.DefaultQuery("limit", "10"))
 	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
 
-	comments := b.service.ListComments(userCtx, &protocols.ListCommentsRequest{
-		Mode:    protocols.ListCommentsModeTree,
-		PostID:  name,
+	comments, err := b.service.ListComments(userCtx, &protocols.ListCommentsRequest{
+		Mode:    protocols.ListCommentsMode_ListCommentsModeTree,
+		PostId:  name,
 		Limit:   limit,
 		Offset:  offset,
 		OrderBy: "id DESC",
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	c.JSON(200, comments)
 }
 
 func (b *Blog) createPostComment(c *gin.Context) {
 	comment := &protocols.Comment{
-		PostID:  utils.MustToInt64(c.Param("name")),
+		PostId:  utils.MustToInt64(c.Param("name")),
 		Parent:  utils.MustToInt64(c.DefaultPostForm("parent", "0")),
 		Author:  c.DefaultPostForm("author", ""),
 		Email:   c.DefaultPostForm("email", ""),
-		URL:     c.DefaultPostForm("url", ""),
-		IP:      c.ClientIP(),
-		Date:    datetime.MyLocal(),
+		Url:     c.DefaultPostForm("url", ""),
+		Ip:      c.ClientIP(),
+		Date:    datetime.ProtoLocal(),
 		Content: c.DefaultPostForm("content", ""),
 	}
 	user := b.auth.AuthCookie(c)

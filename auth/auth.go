@@ -40,6 +40,9 @@ func (u *User) IsAdmin() bool {
 }
 
 func (u *User) Context(parent context.Context) context.Context {
+	if parent == nil {
+		parent = context.TODO()
+	}
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
@@ -135,7 +138,7 @@ func (o *Auth) AuthGRPC(ctx context.Context) *User {
 			}
 		}
 	}
-	return guest
+	return o.AuthContext(ctx)
 }
 
 func (o *Auth) AuthGoogle(token string) *User {

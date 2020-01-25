@@ -193,9 +193,8 @@ Comment.prototype.normalize_content = function(c) {
 };
 
 Comment.prototype.friendly_date = function(d) {
-	var year = d.substring(0,4);
-	var start = year == (new Date()).getFullYear() ? 5 : 0;
-	return d.substring(start, 16);
+	let date = new Date(d.seconds * 1000);
+	return date.toLocaleString();
 };
 
 // https://stackoverflow.com/a/12034334/3628322
@@ -265,7 +264,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
-    s += '<time class="date" datetime="' + cmt.date + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
+    s += '<time class="date" datetime="' + (new Date(cmt.date.seconds*1000)).toJSON() + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
 	s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
     s += '<div class="toolbar no-sel" style="margin-left: 54px;">';
 	s += '<a onclick="comment.reply_to('+cmt.id+');return false;">回复</a>';
@@ -365,7 +364,8 @@ Comment.prototype.load_comments = function() {
             limit: 10,
             offset: self._loaded,
         },
-        function(cmts) {
+        function(resp) {
+			let cmts = resp.comments;
             var ch_count = 0;
             for(var i=0; i<cmts.length; i++){
                 $('#comment-list').append(self.gen_comment_item(cmts[i]));
