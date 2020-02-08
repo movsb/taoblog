@@ -278,6 +278,20 @@ ImageView.prototype._onImgMouseUp = function(e) {
 }
 
 ImageView.prototype._onImgClick =function(e) {
+	var smallMove = false;
+	{
+		var horz = Math.abs(e.clientX - this._offsetX);
+		var vert = Math.abs(e.clientY - this._offsetY);
+
+		if(horz <= 1 && vert <= 1) {
+			smallMove = true;
+		}
+	}
+
+	if(smallMove) {
+		this.viewImage(null);
+	}
+
     e.preventDefault();
     return false;
 };
