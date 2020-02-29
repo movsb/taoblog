@@ -33,14 +33,15 @@
 admin/      | 后台目录
 auth/       | 授权管理
 client/     | 博客客户端
+config/     | 配置模块
 exception/  | 异常处理
-themes/     | 主题目录
 gateway/    | 网关接口层
 modules/    | 公共模块
 protocols/  | 协议定义
 server/     | 博客后台
 service/    | 服务实现
 setup/      | 安装管理
+themes/     | 主题目录
 
 ## 联系我
 
