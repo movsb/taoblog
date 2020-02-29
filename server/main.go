@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +22,6 @@ import (
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
 )
-
-const serverPidFilename = "server.pid"
 
 func main() {
 	var err error
@@ -44,9 +42,8 @@ func main() {
 
 	migration.Migrate(db)
 
-	router := gin.Default()
-
-	theAPI := router.Group("/v2")
+	apiRouter := gin.Default()
+	theAPI := apiRouter.Group("/v2")
 
 	theAPI.Use(func(c *gin.Context) {
 		defer func() {
@@ -84,11 +81,15 @@ func main() {
 
 	gateway.NewGateway(theAPI, theService, theAuth)
 
+	var adminRouter *gin.Engine
+
 	if !cfg.Maintenance.DisableAdmin {
-		admin.NewAdmin(theService, theAuth, router.Group("/admin"))
+		adminRouter = gin.Default()
+		admin.NewAdmin(theService, theAuth, adminRouter.Group("/admin"))
 	}
 
-	indexGroup := router.Group("/blog", maybeSiteClosed(theService, theAuth))
+	themeRouter := gin.Default()
+	indexGroup := themeRouter.Group("/", maybeSiteClosed(theService, theAuth))
 
 	switch cfg.Theme.Name {
 	case "", "BLOG":
@@ -97,9 +98,24 @@ func main() {
 		panic("unknown theme: " + cfg.Theme.Name)
 	}
 
+	apiPrefix := regexp.MustCompile(`^/v\d+/`)
+	adminPrefix := regexp.MustCompile(`^/admin/`)
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		if apiPrefix.MatchString(req.URL.Path) {
+			apiRouter.ServeHTTP(w, req)
+			return
+		}
+		if adminRouter != nil && adminPrefix.MatchString(req.URL.Path) {
+			adminRouter.ServeHTTP(w, req)
+			return
+		}
+		themeRouter.ServeHTTP(w, req)
+	}
+
 	server := &http.Server{
 		Addr:    cfg.Server.Listen,
-		Handler: router,
+		Handler: http.HandlerFunc(handler),
 	}
 
 	go func() {
@@ -110,8 +126,6 @@ func main() {
 		}
 	}()
 
-	ioutil.WriteFile(serverPidFilename, []byte(fmt.Sprint(os.Getpid())), 0644)
-
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT)
 	signal.Notify(quit, syscall.SIGKILL)
@@ -121,8 +135,6 @@ func main() {
 	log.Println("server shutting down")
 	server.Shutdown(context.Background())
 	log.Println("server shutted down")
-
-	os.Remove(serverPidFilename)
 }
 
 const siteClosedTemplate = `<!doctype html>
