@@ -3,11 +3,10 @@ package service
 import (
 	"database/sql"
 	"io"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/file_managers"
@@ -23,6 +22,7 @@ type IFileManager interface {
 
 // Service implements IServer.
 type Service struct {
+	cfg    *config.Config
 	tdb    *taorm.DB
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
@@ -31,22 +31,19 @@ type Service struct {
 }
 
 // NewService ...
-func NewService(db *sql.DB, auth *auth.Auth) *Service {
+func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 	s := &Service{
+		cfg:   cfg,
 		tdb:   taorm.NewDB(db),
 		auth:  auth,
-		fmgr:  file_managers.NewLocalFileManager(),
+		fmgr:  file_managers.NewLocalFileManager(cfg.Data.File.Path),
 		cache: memory_cache.NewMemoryCache(time.Minute * 10),
-	}
-	mailConfig := strings.SplitN(os.Getenv("MAIL"), "/", 3)
-	if len(mailConfig) != 3 {
-		panic("bad mail")
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
-		MailServer: mailConfig[0],
-		Username:   mailConfig[1],
-		Password:   mailConfig[2],
+		MailServer: s.cfg.Server.Mailer.Server,
+		Username:   s.cfg.Server.Mailer.Account,
+		Password:   s.cfg.Server.Mailer.Password,
 		AdminName:  s.GetDefaultStringOption("author", ""),
 		AdminEmail: s.GetDefaultStringOption("email", ""),
 	}
@@ -71,8 +68,7 @@ func (s *Service) IsSiteClosed() bool {
 	if closed == "1" || closed == "true" {
 		return true
 	}
-	closed = os.Getenv("SITE_CLOSED")
-	if closed == "1" || closed == "true" {
+	if s.cfg.Maintenance.SiteClosed {
 		return true
 	}
 	return false

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"os"
 	"os/exec"
 )
 
@@ -17,9 +16,9 @@ func (s *Service) GetBackup(w io.Writer) {
 		"--compress",
 	}
 
-	opts = append(opts, "--user="+os.Getenv("DB_USERNAME"))
-	opts = append(opts, "--password="+os.Getenv("DB_PASSWORD"))
-	opts = append(opts, "--databases", os.Getenv("DB_DATABASE"))
+	opts = append(opts, "--user="+s.cfg.Database.Username)
+	opts = append(opts, "--password="+s.cfg.Database.Password)
+	opts = append(opts, "--databases", s.cfg.Database.Database)
 
 	cmd := exec.Command(
 		"mysqldump",

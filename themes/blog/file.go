@@ -6,14 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	fileHost = os.Getenv("FILE_HOST")
-)
-
 func (b *Blog) queryByFile(c *gin.Context, postID int64, file string) {
 	path := b.service.GetFile(postID, file)
 
 	redir := true
+
+	fileHost := b.cfg.Data.File.Mirror
 
 	// remote isn't enabled, use local only
 	if redir && fileHost == "" {
