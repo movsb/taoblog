@@ -76,10 +76,10 @@ func (o *Auth) SetLogin(login string) {
 	}
 }
 
-func (o *Auth) SetGitHub(clientID string, clientSecret string, adminID string) {
+func (o *Auth) SetGitHub(clientID string, clientSecret string, adminID int64) {
 	o.GitHubClientID = clientID
 	o.GitHubClientSecret = clientSecret
-	fmt.Sscanf(adminID, "%d", &o.AdminGitHubID)
+	o.AdminGitHubID = adminID
 }
 
 func (o *Auth) Login() string {

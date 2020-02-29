@@ -1,0 +1,30 @@
+database:
+  database: taoblog
+  username: taoblog
+  password: taoblog
+
+server:
+  listen: localhost:2564
+  mailer:
+    # server:
+    # account:
+    # password:
+
+data:
+  file:
+    path: ./files
+    mirror:
+
+theme:
+  name: BLOG
+
+maintenance:
+  site_closed: false
+  disable_admin: false
+
+auth:
+  # key:
+  github:
+    # user_id:
+    # client_id:
+    # client_secret:

@@ -8,14 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/utils"
-
-	"github.com/movsb/taoblog/service"
-
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/datetime"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -74,6 +73,7 @@ type QueryTags struct {
 
 // Blog ...
 type Blog struct {
+	cfg       *config.Config
 	base      string // base directory
 	service   *service.Service
 	templates *template.Template

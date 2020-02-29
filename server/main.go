@@ -13,9 +13,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/service"
@@ -28,10 +28,12 @@ const serverPidFilename = "server.pid"
 func main() {
 	var err error
 
+	cfg := config.LoadFile(`taoblog.yml`)
+
 	dataSource := fmt.Sprintf("%s:%s@/%s",
-		os.Getenv("DB_USERNAME"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_DATABASE"),
+		cfg.Database.Username,
+		cfg.Database.Password,
+		cfg.Database.Database,
 	)
 	db, err := sql.Open("mysql", dataSource)
 	if err != nil {
@@ -71,32 +73,32 @@ func main() {
 	})
 
 	theAuth := &auth.Auth{}
-	theService := service.NewService(db, theAuth)
+	theService := service.NewService(cfg, db, theAuth)
 	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
-	theAuth.SetKey(os.Getenv("KEY"))
+	theAuth.SetKey(cfg.Auth.Key)
 	theAuth.SetGitHub(
-		os.Getenv("GITHUB_CLIENT_ID"),
-		os.Getenv("GITHUB_CLIENT_SECRET"),
-		os.Getenv("GITHUB_ID"),
+		cfg.Auth.Github.ClientID,
+		cfg.Auth.Github.ClientSecret,
+		cfg.Auth.Github.UserID,
 	)
 
 	gateway.NewGateway(theAPI, theService, theAuth)
 
-	if disableAdmin := os.Getenv("DISABLE_ADMIN"); disableAdmin != "1" {
+	if !cfg.Maintenance.DisableAdmin {
 		admin.NewAdmin(theService, theAuth, router.Group("/admin"))
 	}
 
 	indexGroup := router.Group("/blog", maybeSiteClosed(theService, theAuth))
 
-	switch themeName := os.Getenv("THEME"); themeName {
+	switch cfg.Theme.Name {
 	case "", "BLOG":
 		blog.NewBlog(theService, theAuth, indexGroup, theAPI, "themes/blog")
 	default:
-		panic("unknown theme")
+		panic("unknown theme: " + cfg.Theme.Name)
 	}
 
 	server := &http.Server{
-		Addr:    os.Getenv("LISTEN"),
+		Addr:    cfg.Server.Listen,
 		Handler: router,
 	}
 
