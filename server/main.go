@@ -93,7 +93,7 @@ func main() {
 
 	switch cfg.Theme.Name {
 	case "", "BLOG":
-		blog.NewBlog(theService, theAuth, indexGroup, theAPI, "themes/blog")
+		blog.NewBlog(cfg, theService, theAuth, indexGroup, theAPI, "themes/blog")
 	default:
 		panic("unknown theme: " + cfg.Theme.Name)
 	}

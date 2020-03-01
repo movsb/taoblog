@@ -86,8 +86,9 @@ type Blog struct {
 }
 
 // NewBlog ...
-func NewBlog(service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Blog {
+func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Blog {
 	b := &Blog{
+		cfg:          cfg,
 		base:         base,
 		service:      service,
 		router:       router,
