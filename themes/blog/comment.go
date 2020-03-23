@@ -39,14 +39,6 @@ func newComments(comments []*protocols.Comment, service *service.Service) []*Com
 	return cmts
 }
 
-// AuthorString ...
-func (c *Comment) AuthorString() string {
-	if c.IsAdmin {
-		return "博主"
-	}
-	return c.Author
-}
-
 func (b *Blog) listPostComments(c *gin.Context) {
 	userCtx := b.auth.AuthCookie(c).Context(nil)
 

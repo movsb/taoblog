@@ -56,7 +56,7 @@ input {
 <ul>
 {{range .LatestComments}}
     <li style="margin-bottom: 8px; overflow: hidden;">
-        <b>{{.AuthorString}}</b>：{{.Content}}
+        <b>{{.Author}}</b>：{{.Content}}
         <span style="float: right;">《<a href="/{{.PostID}}/#comments">{{.PostTitle}}</a>》</span>
     </li>
 {{end}}
