@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 )
@@ -68,6 +69,21 @@ func main() {
 				client.GetPost()
 			default:
 				panic("unknown operation")
+			}
+		case "comments":
+			switch os.Args[2] {
+			default:
+				panic("unknown operation")
+			case "set-post-id":
+				cmtID, err := strconv.ParseInt(os.Args[3], 10, 0)
+				if err != nil {
+					panic(err)
+				}
+				postID, err := strconv.ParseInt(os.Args[4], 10, 0)
+				if err != nil {
+					panic(err)
+				}
+				client.SetCommentPostID(cmtID, postID)
 			}
 		case "backup":
 			client.Backup(os.Stdout)

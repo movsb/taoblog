@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/movsb/taoblog/modules/stdinlinereader"
 )
@@ -84,6 +85,7 @@ func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
 func (c *Client) mustPost(path string, body io.Reader, ty string) *http.Response {
 	resp := c.post(path, body, ty)
 	if resp.StatusCode != 200 {
+		io.Copy(os.Stderr, resp.Body)
 		resp.Body.Close()
 		panic(ErrStatusCode)
 	}
