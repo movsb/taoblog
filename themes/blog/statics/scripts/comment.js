@@ -69,7 +69,9 @@ function Comment() {
 }
 
 Comment.prototype.init = function() {
-    var self = this;
+	var self = this;
+
+	self.convert_commenter();
 
     $('.post-comment').click(function(){
         self.reply_to(0);
@@ -284,9 +286,10 @@ Comment.prototype.reply_to = function(p){
 
 	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
 	if(window.localStorage) {
-		$('#comment-form input[name=author]').val(localStorage.getItem('cmt_author'));
-		$('#comment-form input[name=email]').val(localStorage.getItem('cmt_email'));
-		$('#comment-form input[name=url]').val(localStorage.getItem('cmt_url'));
+		var commenter = JSON.parse(localStorage.getItem('commenter') || '{}');
+		$('#comment-form input[name=author]').val(commenter.name || '');
+		$('#comment-form input[name=email]').val(commenter.email || '');
+		$('#comment-form input[name=url]').val(commenter.url || '');
 	}
 
 	$('#comment-form-div').fadeIn();
@@ -335,9 +338,12 @@ Comment.prototype.append_children = function(ch, p) {
 
 Comment.prototype.save_info = function() {
 	if(window.localStorage) {
-		localStorage.setItem('cmt_author', $('#comment-form input[name=author]').val());
-		localStorage.setItem('cmt_email', $('#comment-form input[name=email]').val());
-		localStorage.setItem('cmt_url', $('#comment-form input[name=url]').val());
+		var commenter = {
+			name: $('#comment-form input[name=author]').val(),
+			email: $('#comment-form input[name=email]').val(),
+			url: $('#comment-form input[name=url]').val(),
+		};
+		localStorage.setItem('commenter', JSON.stringify(commenter));
 	} else {
 		if(typeof show_tips == 'function') {
 			show_tips('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
@@ -387,6 +393,20 @@ Comment.prototype.load_comments = function() {
     }).always(function(){
         self.loading = false;
     });
+};
+
+Comment.prototype.convert_commenter = function() {
+	if(window.localStorage && !localStorage.getItem('commenter') && localStorage.getItem('cmt_author')) {
+		var commenter = {
+			name: localStorage.getItem('cmt_author') || '',
+			email: localStorage.getItem('cmt_email') || '',
+			url: localStorage.getItem('cmt_url') || '',
+		};
+		localStorage.setItem('commenter', JSON.stringify(commenter));
+		localStorage.removeItem('cmt_author');
+		localStorage.removeItem('cmt_email');
+		localStorage.removeItem('cmt_url');
+	}
 };
 
 var comment = new Comment();
