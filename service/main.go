@@ -3,14 +3,23 @@ package service
 import (
 	"database/sql"
 	"io"
+	"net"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/memory_cache"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/file_managers"
 	"github.com/movsb/taorm/taorm"
+	"google.golang.org/grpc"
+)
+
+const (
+	grpcAddress = "0.0.0.0:2563"
 )
 
 // IFileManager exposes interfaces to manage upload files.
@@ -47,6 +56,15 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 		AdminName:  s.GetDefaultStringOption("author", ""),
 		AdminEmail: s.GetDefaultStringOption("email", ""),
 	}
+
+	server := grpc.NewServer()
+	protocols.RegisterTaoBlogServer(server, s)
+
+	listener, err := net.Listen("tcp", grpcAddress)
+	if err != nil {
+		panic(err)
+	}
+	go server.Serve(listener)
 
 	return s
 }

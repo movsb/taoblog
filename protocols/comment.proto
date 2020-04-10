@@ -1,0 +1,40 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/protocols";
+
+import "google/protobuf/timestamp.proto";
+
+message Comment {
+	int64 id = 1;
+	int64 parent = 2;
+	int64 root = 3;
+	int64 post_id = 4;
+	string author = 5;
+	string email = 6;
+	string url = 7;
+	string ip = 8;
+	google.protobuf.Timestamp date = 9;
+	string content = 10;
+	repeated Comment children = 11;
+	string avatar = 12;
+	bool is_admin = 13;
+}
+
+enum ListCommentsMode {
+	ListCommentsModeUnspecified = 0;
+	ListCommentsModeTree = 1;
+	ListCommentsModeFlat = 2;
+}
+
+message ListCommentsRequest {
+	ListCommentsMode mode = 1;
+	int64 post_id = 2;
+	repeated string fields = 3;
+	int64 limit = 4;
+	int64 offset = 5;
+	string order_by = 6;
+}
+
+message ListCommentsResponse {
+	repeated Comment comments = 1;
+}

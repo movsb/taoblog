@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
+	"google.golang.org/grpc/metadata"
 )
 
 type ctxAuthKey struct{}
@@ -39,6 +40,9 @@ func (u *User) IsAdmin() bool {
 }
 
 func (u *User) Context(parent context.Context) context.Context {
+	if parent == nil {
+		parent = context.TODO()
+	}
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
@@ -124,6 +128,17 @@ func (o *Auth) AuthHeader(c *gin.Context) *User {
 		return admin
 	}
 	return guest
+}
+
+func (o *Auth) AuthGRPC(ctx context.Context) *User {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if tokens, ok := md["token"]; ok && len(tokens) > 0 {
+			if tokens[0] == o.key {
+				return admin
+			}
+		}
+	}
+	return o.AuthContext(ctx)
 }
 
 func (o *Auth) AuthGoogle(token string) *User {

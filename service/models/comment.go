@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/auth"
-
+	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 )
@@ -24,13 +24,13 @@ type Comment struct {
 
 func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Comment {
 	comment := protocols.Comment{
-		ID:      c.ID,
+		Id:      c.ID,
 		Parent:  c.Parent,
 		Root:    c.Root,
-		PostID:  c.PostID,
+		PostId:  c.PostID,
 		Author:  c.Author,
-		URL:     c.URL,
-		Date:    c.Date,
+		Url:     c.URL,
+		Date:    datetime.My2Proto(c.Date),
 		Content: c.Content,
 	}
 
@@ -39,7 +39,7 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 
 	if user.IsAdmin() {
 		comment.Email = c.Email
-		comment.IP = c.IP
+		comment.Ip = c.IP
 	}
 
 	return &comment

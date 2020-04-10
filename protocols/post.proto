@@ -1,0 +1,29 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/protocols";
+
+import "google/protobuf/timestamp.proto";
+
+enum PostType {
+	PostType_Unspecified = 0;
+	PostType_Post = 1;
+	PostType_Page = 2;
+}
+
+message Post {
+	int64 name = 1;
+	google.protobuf.Timestamp date = 2;
+	google.protobuf.Timestamp modified = 3;
+	string title = 4;
+	string content = 5;
+	string slug = 6;
+	PostType type = 7;
+	int64 category = 8;
+	string status = 9;
+	int64 page_view = 10;
+	bool comment_status = 11;
+	string metas = 12;
+	string source = 13;
+	string source_type = 14;
+	repeated string tags = 15;
+}

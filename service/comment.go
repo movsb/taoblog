@@ -6,12 +6,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/movsb/taoblog/service/modules/comment_notify"
-
 	"github.com/movsb/taoblog/exception"
+	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taorm/taorm"
 )
 
@@ -26,17 +26,19 @@ func (s *Service) GetComment(name int64) *models.Comment {
 	return &comment
 }
 
-func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) []*protocols.Comment {
-	user := s.auth.AuthContext(ctx)
+// ListComments ...
+func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
+	user := s.auth.AuthGRPC(ctx)
 	adminEmail := s.GetStringOption("email")
 
 	var parentProtocolComments []*protocols.Comment
 	{
 		var parents models.Comments
 		// TODO ensure that fields must include root etc to be used later.
-		stmt := s.tdb.From("comments").Select(in.Fields)
-		stmt.WhereIf(in.Mode == protocols.ListCommentsModeTree, "root = 0")
-		stmt.WhereIf(in.PostID > 0, "post_id=?", in.PostID)
+		// TODO verify fields that are sanitized.
+		stmt := s.tdb.From("comments").Select(strings.Join(in.Fields, ","))
+		stmt.WhereIf(in.Mode == protocols.ListCommentsMode_ListCommentsModeTree, "root = 0")
+		stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
 		// limit & offset apply to parent comments only
 		stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
 		if user.IsGuest() {
@@ -46,17 +48,17 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		parentProtocolComments = parents.ToProtocols(adminEmail, user)
 	}
 
-	needChildren := in.Mode == protocols.ListCommentsModeTree && len(parentProtocolComments) > 0
+	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
 
 	if needChildren {
 		var childrenProtocolComments []*protocols.Comment
 		{
 			parentIDs := make([]int64, 0, len(parentProtocolComments))
 			for _, parent := range parentProtocolComments {
-				parentIDs = append(parentIDs, parent.ID)
+				parentIDs = append(parentIDs, parent.Id)
 			}
 			var children models.Comments
-			stmt := s.tdb.From("comments").Select(in.Fields)
+			stmt := s.tdb.From("comments").Select(strings.Join(in.Fields, ","))
 			stmt.Where("root IN (?)", parentIDs)
 			if user.IsGuest() {
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
@@ -70,12 +72,14 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				childrenMap[child.Root] = append(childrenMap[child.Root], child)
 			}
 			for _, parent := range parentProtocolComments {
-				parent.Children = childrenMap[parent.ID]
+				parent.Children = childrenMap[parent.Id]
 			}
 		}
 	}
 
-	return parentProtocolComments
+	return &protocols.ListCommentsResponse{
+		Comments: parentProtocolComments,
+	}, nil
 }
 
 func (s *Service) GetAllCommentsCount() int64 {
@@ -91,13 +95,13 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 	user := s.auth.AuthContext(ctx)
 
 	comment := models.Comment{
-		PostID:  c.PostID,
+		PostID:  c.PostId,
 		Parent:  c.Parent,
 		Author:  c.Author,
 		Email:   c.Email,
-		URL:     c.URL,
-		IP:      c.IP,
-		Date:    c.Date,
+		URL:     c.Url,
+		IP:      c.Ip,
+		Date:    datetime.Proto2My(*c.Date),
 		Content: c.Content,
 	}
 
@@ -113,7 +117,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		panic(exception.NewValidationError("邮箱不正确"))
 	}
 
-	if c.URL != "" && !utils.IsURL(c.URL) {
+	if c.Url != "" && !utils.IsURL(c.Url) {
 		panic(exception.NewValidationError("网址不正确"))
 	}
 

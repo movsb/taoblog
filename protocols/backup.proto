@@ -1,0 +1,12 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/protocols";
+
+message BackupRequest {
+
+}
+
+message BackupResponse {
+	// 数据库语句
+	string data = 1;
+}

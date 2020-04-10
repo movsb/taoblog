@@ -285,12 +285,16 @@ func (b *Blog) queryHome(c *gin.Context) {
 			Limit:   20,
 			OrderBy: "date DESC",
 		}), b.service)
-	home.LatestComments = newComments(b.service.ListComments(user.Context(nil),
+	comments, err := b.service.ListComments(user.Context(nil),
 		&protocols.ListCommentsRequest{
-			Mode:    protocols.ListCommentsModeFlat,
+			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
 			Limit:   10,
 			OrderBy: "date DESC",
-		}), b.service)
+		})
+	if err != nil {
+		panic(err)
+	}
+	home.LatestComments = newComments(comments.Comments, b.service)
 
 	b.render(c.Writer, "header", header)
 	b.render(c.Writer, "home", home)

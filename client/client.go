@@ -7,9 +7,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/movsb/taoblog/modules/stdinlinereader"
+	"github.com/movsb/taoblog/protocols"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -25,9 +28,10 @@ const (
 
 // Client ...
 type Client struct {
-	config HostConfig
-	client *http.Client
-	line   *stdinlinereader.StdinLineReader
+	config     HostConfig
+	client     *http.Client
+	line       *stdinlinereader.StdinLineReader
+	grpcClient protocols.TaoBlogClient
 }
 
 // NewClient ...
@@ -43,6 +47,14 @@ func NewClient(config HostConfig) *Client {
 		},
 	}
 	c.line = stdinlinereader.NewStdinLineReader()
+
+	u, _ := url.Parse(c.config.API)
+
+	conn, err := grpc.Dial(u.Hostname()+":2563", grpc.WithInsecure())
+	if err != nil {
+		panic(err)
+	}
+	c.grpcClient = protocols.NewTaoBlogClient(conn)
 	return c
 }
 
