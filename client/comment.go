@@ -11,8 +11,8 @@ import (
 // SetCommentPostID ...
 func (c *Client) SetCommentPostID(commentID int64, postID int64) {
 	cmt := protocols.Comment{
-		ID:     commentID,
-		PostID: postID,
+		Id:     commentID,
+		PostId: postID,
 	}
 	bys, err := json.Marshal(cmt)
 	if err != nil {

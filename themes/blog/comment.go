@@ -1,8 +1,6 @@
 package blog
 
 import (
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
@@ -14,13 +12,11 @@ import (
 type Comment struct {
 	*protocols.Comment
 	PostTitle string
-	IsAdmin   bool
 }
 
 func newComments(comments []*protocols.Comment, service *service.Service) []*Comment {
 	cmts := []*Comment{}
 	titles := make(map[int64]string)
-	adminEmail := strings.ToLower(service.GetDefaultStringOption("email", ""))
 	for _, c := range comments {
 		title := ""
 		if t, ok := titles[c.PostId]; ok {
@@ -32,7 +28,6 @@ func newComments(comments []*protocols.Comment, service *service.Service) []*Com
 		cmts = append(cmts, &Comment{
 			Comment:   c,
 			PostTitle: title,
-			IsAdmin:   strings.ToLower(c.Email) == adminEmail,
 		})
 	}
 	return cmts

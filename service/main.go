@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"io"
 	"net"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/auth"

@@ -27,5 +27,5 @@ func (g *Gateway) SetCommentPostID(c *gin.Context) {
 		c.String(400, `%s`, err)
 		return
 	}
-	g.service.SetCommentPostID(context.TODO(), cmt.ID, cmt.PostID)
+	g.service.SetCommentPostID(context.TODO(), cmt.Id, cmt.PostId)
 }

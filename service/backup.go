@@ -3,9 +3,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"errors"
-	"io"
-	"os"
 	"os/exec"
 
 	"github.com/movsb/taoblog/protocols"
