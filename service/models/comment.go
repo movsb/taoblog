@@ -32,10 +32,9 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 		URL:     c.URL,
 		Date:    c.Date,
 		Content: c.Content,
+		Avatar:  utils.Md5Str(c.Email),
+		IsAdmin: strings.EqualFold(c.Email, adminEmail),
 	}
-
-	comment.Avatar = utils.Md5Str(c.Email)
-	comment.IsAdmin = strings.EqualFold(c.Email, adminEmail)
 
 	if user.IsAdmin() {
 		comment.Email = c.Email
