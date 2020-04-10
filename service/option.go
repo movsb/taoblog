@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taorm/taorm"
 )
 
 func optionCacheKey(name string) string {
@@ -17,7 +18,7 @@ func (s *Service) GetStringOption(name string) string {
 		return val.(string)
 	}
 	var option models.Option
-	s.tdb.Model(models.Option{}, "options").Where("name=?", name).MustFind(&option)
+	s.tdb.Model(models.Option{}).Where("name=?", name).MustFind(&option)
 	s.cache.Set(optionCacheKey(name), option.Value)
 	return option.Value
 }
@@ -27,17 +28,15 @@ func (s *Service) GetDefaultStringOption(name string, def string) string {
 		return val.(string)
 	}
 	var option models.Option
-	err := s.tdb.Model(models.Option{}, "options").Where("name=?", name).Find(&option)
-	switch err {
-	case nil:
+	err := s.tdb.Where("name=?", name).Find(&option)
+	if err == nil {
 		s.cache.Set(optionCacheKey(name), option.Value)
 		return option.Value
-	case sql.ErrNoRows:
+	} else if taorm.IsNotFoundError(err) {
 		s.cache.Set(optionCacheKey(name), def)
 		return def
-	default:
-		panic(err)
 	}
+	panic(err)
 }
 
 /*
@@ -64,7 +63,7 @@ func (s *Service) GetDefaultIntegerOption(name string, def int64) (value int64) 
 		return parse(val.(string))
 	}
 	var option models.Option
-	err := s.tdb.Model(models.Option{}, "options").Where("name=?", name).Find(&option)
+	err := s.tdb.Model(models.Option{}).Where("name=?", name).Find(&option)
 	switch err {
 	case nil:
 		s.cache.Set(optionCacheKey(name), option.Value)
@@ -89,7 +88,7 @@ func (s *Service) HaveOption(name string) (have bool) {
 
 func (s *Service) SetOption(name string, value interface{}) {
 	if s.HaveOption(name) {
-		stmt := s.tdb.From("options").Where("name = ?", name)
+		stmt := s.tdb.From(models.Option{}).Where("name = ?", name)
 		stmt.MustUpdateMap(map[string]interface{}{
 			"value": value,
 		})
@@ -98,7 +97,7 @@ func (s *Service) SetOption(name string, value interface{}) {
 			Name:  name,
 			Value: fmt.Sprint(value),
 		}
-		s.tdb.Model(&option, "options").MustCreate()
+		s.tdb.Model(&option).MustCreate()
 	}
 	s.cache.Set(optionCacheKey(name), fmt.Sprint(value))
 
@@ -110,6 +109,6 @@ func (s *Service) SetOption(name string, value interface{}) {
 
 func (s *Service) GetOption(name string) (*models.Option, error) {
 	var option models.Option
-	err := s.tdb.Model(models.Option{}, "options").Where("name=?", name).Find(&option)
+	err := s.tdb.Model(models.Option{}).Where("name=?", name).Find(&option)
 	return &option, err
 }

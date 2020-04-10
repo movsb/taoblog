@@ -1,8 +1,9 @@
 package datetime
 
 import (
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"time"
+
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 const (

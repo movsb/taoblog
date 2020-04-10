@@ -15,8 +15,9 @@ import (
 	"github.com/movsb/taorm/taorm"
 )
 
+// Deprecated.
 func (s *Service) comments() *taorm.Stmt {
-	return s.tdb.Model(models.Comment{}, "comments")
+	return s.tdb.Model(models.Comment{})
 }
 
 // GetComment ...
@@ -24,6 +25,37 @@ func (s *Service) GetComment(name int64) *models.Comment {
 	var comment models.Comment
 	s.comments().Where("id=?", name).MustFind(&comment)
 	return &comment
+}
+
+// UpdateComment ...
+func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() {
+		panic(`not enough permission`)
+	}
+
+	var comment models.Comment
+
+	if req.Comment != nil && req.UpdateMask != nil && req.UpdateMask.Paths != nil {
+		data := map[string]interface{}{}
+		for _, mask := range req.UpdateMask.Paths {
+			switch mask {
+			default:
+				panic(`unknown update_mask field`)
+			case `content`:
+				data[mask] = req.Comment
+			}
+		}
+		s.TxCall(func(txs *Service) error {
+			txs.tdb.Model(models.Comment{}).MustUpdateMap(data)
+			txs.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
+			return nil
+		})
+	} else {
+		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
+	}
+
+	return comment.ToProtocols(s.GetStringOption(`email`), user), nil
 }
 
 // ListComments ...
@@ -36,7 +68,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		var parents models.Comments
 		// TODO ensure that fields must include root etc to be used later.
 		// TODO verify fields that are sanitized.
-		stmt := s.tdb.From("comments").Select(strings.Join(in.Fields, ","))
+		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
 		stmt.WhereIf(in.Mode == protocols.ListCommentsMode_ListCommentsModeTree, "root = 0")
 		stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
 		// limit & offset apply to parent comments only
@@ -58,7 +90,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				parentIDs = append(parentIDs, parent.Id)
 			}
 			var children models.Comments
-			stmt := s.tdb.From("comments").Select(strings.Join(in.Fields, ","))
+			stmt := s.tdb.Select(strings.Join(in.Fields, ","))
 			stmt.Where("root IN (?)", parentIDs)
 			if user.IsGuest() {
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
@@ -83,12 +115,9 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 }
 
 func (s *Service) GetAllCommentsCount() int64 {
-	type GetAllCommentsCount_Result struct {
-		Count int64
-	}
-	var result GetAllCommentsCount_Result
-	s.tdb.Model(models.Comment{}, "comments").Select("count(1) as count").Find(&result)
-	return result.Count
+	var count int64
+	s.tdb.Model(models.Comment{}).Select("count(1) as count").Find(&count)
+	return count
 }
 
 func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *protocols.Comment {
@@ -162,7 +191,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 	}
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(&comment, "comments").MustCreate()
+		txs.tdb.Model(&comment).MustCreate()
 		count := txs.GetAllCommentsCount()
 		txs.SetOption("comment_count", count)
 		txs.UpdatePostCommentCount(comment.PostID)
@@ -176,7 +205,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 
 func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
 	cmt := s.GetComment(commentName)
-	s.comments().Or("id=?", commentName).Or("root=?", commentName).Delete()
+	s.comments().Where("id=? OR root=?", commentName, commentName).Delete()
 	s.UpdatePostCommentCount(cmt.PostID)
 }
 
@@ -191,7 +220,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, commentID int64, postID 
 		if cmt.PostID == post.ID {
 			panic(`不能转移到相同的文章`)
 		}
-		txs.tdb.From(`comments`).
+		txs.tdb.From(cmt).
 			Where(`post_id=?`, cmt.PostID).
 			Where(`id=? OR root=?`, cmt.ID, cmt.ID).
 			MustUpdateMap(map[string]interface{}{
@@ -230,7 +259,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 
 	for parentID := c.Parent; parentID > 0; {
 		var parent models.Comment
-		s.tdb.From("comments").
+		s.tdb.From(parent).
 			Select("id,author,email,parent").
 			Where("id=?", parentID).
 			MustFind(&parent)

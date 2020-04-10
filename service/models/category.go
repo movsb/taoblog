@@ -9,3 +9,8 @@ type Category struct {
 	Path     string      `json:"path"`
 	Children []*Category `json:"children"`
 }
+
+// TableName ...
+func (Category) TableName() string {
+	return `categories`
+}

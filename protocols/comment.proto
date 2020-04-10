@@ -3,6 +3,7 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
 
 message Comment {
 	int64 id = 1;
@@ -18,6 +19,11 @@ message Comment {
 	repeated Comment children = 11;
 	string avatar = 12;
 	bool is_admin = 13;
+}
+
+message UpdateCommentRequest {
+	Comment comment = 1;
+	google.protobuf.FieldMask update_mask = 2;
 }
 
 enum ListCommentsMode {

@@ -79,7 +79,7 @@ func createDatabaseTables(db *taorm.DB, dbName string) {
 		Slug: "uncategorized",
 		Path: "/",
 	}
-	db.Model(&rootCategory, "categories").MustCreate()
+	db.Model(&rootCategory).MustCreate()
 }
 
 func createBlogUser(db *taorm.DB) {

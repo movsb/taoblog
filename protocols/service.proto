@@ -11,5 +11,6 @@ service TaoBlog {
 
 	// Comments
 
+	rpc UpdateComment(UpdateCommentRequest) returns (Comment);
 	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse);
 }

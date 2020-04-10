@@ -16,7 +16,7 @@ import (
 )
 
 func (s *Service) posts() *taorm.Stmt {
-	return s.tdb.Model(models.Post{}, "posts")
+	return s.tdb.Model(models.Post{})
 }
 
 // MustGetPost ...
@@ -84,7 +84,7 @@ func (s *Service) GetPostsByTags(tagName string) []*models.PostForArchive {
 	tag := s.GetTagByName(tagName)
 	tagIDs := s.getAliasTagsAll([]int64{tag.ID})
 	var posts []*models.PostForArchive
-	s.tdb.From("posts").From("post_tags").Select("posts.id,posts.title").
+	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
 		MustFind(&posts)
@@ -99,7 +99,7 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 		catID = s.getPageParentID(parents)
 	}
 	var p models.Post
-	stmt := s.tdb.Model(models.Post{}, "posts").
+	stmt := s.tdb.Model(models.Post{}).
 		Where("slug=? AND category=?", slug, catID).
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC")
@@ -133,7 +133,7 @@ func (s *Service) parseCategoryTree(tree string) (id int64) {
 	}
 	slug := matches[2]
 	var cat models.Category
-	if err := s.tdb.From("categories").Where("path=? AND slug=?", path, slug).Find(&cat); err != nil {
+	if err := s.tdb.Where("path=? AND slug=?", path, slug).Find(&cat); err != nil {
 		panic(&CategoryNotFoundError{})
 	}
 	return cat.ID
@@ -153,7 +153,7 @@ func (s *Service) getPageParentID(parents string) int64 {
 	}
 
 	var results []*getPageParentID_Result
-	s.tdb.Model(models.Post{}, "posts").
+	s.tdb.Model(models.Post{}).
 		Select("id,slug,category").
 		Where("slug IN (?)", slugs).
 		Where("type = 'page'").
@@ -182,7 +182,7 @@ func (s *Service) GetRelatedPosts(id int64) []*models.PostForRelated {
 		return make([]*models.PostForRelated, 0)
 	}
 	var relates []*models.PostForRelated
-	s.tdb.From("posts").From("post_tags").
+	s.tdb.From(models.Post{}).From(models.ObjectTag{}).
 		Select("posts.id,posts.title,COUNT(posts.id) relevance").
 		Where("post_tags.post_id != ?", id).
 		Where("posts.id = post_tags.post_id").
@@ -249,7 +249,7 @@ func (s *Service) CreatePost(in *protocols.Post) {
 	}
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(&p, "posts").MustCreate()
+		txs.tdb.Model(&p).MustCreate()
 		in.ID = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
 		txs.updateLastPostTime(p.Modified)
@@ -285,7 +285,7 @@ func (s *Service) UpdatePost(in *protocols.Post) {
 	modified := datetime.MyLocal()
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(p, "posts").MustUpdateMap(map[string]interface{}{
+		txs.tdb.Model(p).MustUpdateMap(map[string]interface{}{
 			"title":       in.Title,
 			"modified":    modified,
 			"source_type": in.SourceType,
@@ -311,8 +311,8 @@ func (s *Service) updateLastPostTime(ts string) {
 func (s *Service) SetPostStatus(id int64, status string) {
 	s.TxCall(func(txs *Service) error {
 		var post models.Post
-		txs.tdb.From("posts").Select("id").Where("id=?", id).MustFind(&post)
-		txs.tdb.Model(&post, "posts").MustUpdateMap(map[string]interface{}{
+		txs.tdb.Select("id").Where("id=?", id).MustFind(&post)
+		txs.tdb.Model(&post).MustUpdateMap(map[string]interface{}{
 			"status": status,
 		})
 		return nil

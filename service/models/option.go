@@ -5,3 +5,8 @@ type Option struct {
 	Name  string
 	Value string
 }
+
+// TableName ...
+func (Option) TableName() string {
+	return `options`
+}

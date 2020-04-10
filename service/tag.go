@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Service) tags() *taorm.Stmt {
-	return s.tdb.Model(models.Tag{}, "tags")
+	return s.tdb.Model(models.Tag{})
 }
 
 // GetTagByName gets a tag by Name.
@@ -200,7 +200,7 @@ func (s *Service) UpdateObjectTags(pid int64, tags []string) {
 
 func (s *Service) removeObjectTag(pid int64, tagName string) {
 	tagObj := s.GetTagByName(tagName)
-	s.tdb.From("post_tags").
+	s.tdb.From(models.ObjectTag{}).
 		Where("post_id=? AND tag_id=?", pid, tagObj.ID).
 		MustDelete()
 }
@@ -210,7 +210,7 @@ func (s *Service) addObjectTag(pid int64, tid int64) {
 		PostID: pid,
 		TagID:  tid,
 	}
-	err := s.tdb.Model(&objtag, "post_tags").Create()
+	err := s.tdb.Model(&objtag).Create()
 	if err == nil {
 		return
 	}
@@ -236,7 +236,7 @@ func (s *Service) addTag(tagName string) int64 {
 	tagObj := models.Tag{
 		Name: tagName,
 	}
-	s.tdb.Model(&tagObj, "tags").MustCreate()
+	s.tdb.Model(&tagObj).MustCreate()
 	return tagObj.ID
 }
 
@@ -248,7 +248,7 @@ func (s *Service) getRootTag(tagName string) models.Tag {
 	ID := tagObj.Alias
 	for {
 		var tagObj models.Tag
-		s.tdb.From("tags").Where("id=?", ID).MustFind(&tagObj)
+		s.tdb.Where("id=?", ID).MustFind(&tagObj)
 		if tagObj.Alias == 0 {
 			return tagObj
 		}

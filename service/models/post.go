@@ -24,6 +24,11 @@ type Post struct {
 	SourceType    string
 }
 
+// TableName ...
+func (Post) TableName() string {
+	return `posts`
+}
+
 func (p *Post) ToProtocols() *protocols.Post {
 	out := protocols.Post{
 		ID:            p.ID,

@@ -22,6 +22,11 @@ type Comment struct {
 	Content string `json:"content"`
 }
 
+// TableName ...
+func (Comment) TableName() string {
+	return `comments`
+}
+
 func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:      c.ID,
