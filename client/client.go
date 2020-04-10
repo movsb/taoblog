@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/modules/stdinlinereader"
 	"github.com/movsb/taoblog/protocols"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -56,6 +58,10 @@ func NewClient(config HostConfig) *Client {
 	}
 	c.grpcClient = protocols.NewTaoBlogClient(conn)
 	return c
+}
+
+func (c *Client) token() context.Context {
+	return metadata.NewOutgoingContext(context.TODO(), metadata.Pairs("token", c.config.Token))
 }
 
 func (c *Client) get(path string) *http.Response {

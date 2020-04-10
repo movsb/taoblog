@@ -2,16 +2,14 @@ package main
 
 import (
 	"bytes"
-	"context"
-	"github.com/movsb/taoblog/protocols"
-	"google.golang.org/grpc/metadata"
 	"io"
+
+	"github.com/movsb/taoblog/protocols"
 )
 
 // Backup backups all blog database.
 func (c *Client) Backup(w io.Writer) {
-	ctx := metadata.NewOutgoingContext(context.TODO(), metadata.Pairs("token", c.config.Token))
-	resp, err := c.grpcClient.Backup(ctx, &protocols.BackupRequest{})
+	resp, err := c.grpcClient.Backup(c.token(), &protocols.BackupRequest{})
 	if err != nil {
 		panic(err)
 	}

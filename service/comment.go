@@ -20,11 +20,20 @@ func (s *Service) comments() *taorm.Stmt {
 	return s.tdb.Model(models.Comment{})
 }
 
-// GetComment ...
-func (s *Service) GetComment(name int64) *models.Comment {
+// GetComment2 ...
+func (s *Service) GetComment2(name int64) *models.Comment {
 	var comment models.Comment
 	s.comments().Where("id=?", name).MustFind(&comment)
 	return &comment
+}
+
+// GetComment ...
+// TODO perm check
+// TODO remove email & user
+func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
+	user := s.auth.AuthGRPC(ctx)
+	adminEmail := s.GetStringOption("email")
+	return s.GetComment2(req.Id).ToProtocols(adminEmail, user), nil
 }
 
 // UpdateComment ...
@@ -43,11 +52,11 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			default:
 				panic(`unknown update_mask field`)
 			case `content`:
-				data[mask] = req.Comment
+				data[mask] = req.Comment.Content
 			}
 		}
 		s.TxCall(func(txs *Service) error {
-			txs.tdb.Model(models.Comment{}).MustUpdateMap(data)
+			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
 			txs.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 			return nil
 		})
@@ -159,7 +168,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 	}
 
 	if c.Parent > 0 {
-		pc := s.GetComment(c.Parent)
+		pc := s.GetComment2(c.Parent)
 		comment.Root = pc.Root
 		if pc.Root == 0 {
 			comment.Root = pc.ID
@@ -204,7 +213,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 }
 
 func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
-	cmt := s.GetComment(commentName)
+	cmt := s.GetComment2(commentName)
 	s.comments().Where("id=? OR root=?", commentName, commentName).Delete()
 	s.UpdatePostCommentCount(cmt.PostID)
 }
@@ -212,7 +221,7 @@ func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
 func (s *Service) SetCommentPostID(ctx context.Context, commentID int64, postID int64) {
 	s.TxCall(func(txs *Service) error {
-		cmt := s.GetComment(commentID)
+		cmt := s.GetComment2(commentID)
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}

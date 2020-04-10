@@ -10,7 +10,7 @@ import (
 
 func (g *Gateway) GetComment(c *gin.Context) {
 	name := utils.MustToInt64(c.Param("name"))
-	out := g.service.GetComment(name)
+	out := g.service.GetComment2(name)
 	c.JSON(200, out)
 }
 

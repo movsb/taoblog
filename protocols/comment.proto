@@ -21,6 +21,10 @@ message Comment {
 	bool is_admin = 13;
 }
 
+message GetCommentRequest {
+	int64 id = 1;
+}
+
 message UpdateCommentRequest {
 	Comment comment = 1;
 	google.protobuf.FieldMask update_mask = 2;

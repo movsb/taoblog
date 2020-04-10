@@ -7,6 +7,6 @@ _server:
 	go build -o taoblog ./server/
 
 _client:
-	go build -o ./client/client ./client/
+	go build -o ./client/taoblog ./client/
 
 .PHONY: _protos _server _client

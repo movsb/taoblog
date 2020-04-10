@@ -84,6 +84,12 @@ func main() {
 					panic(err)
 				}
 				client.SetCommentPostID(cmtID, postID)
+			case "edit":
+				cmtID, err := strconv.ParseInt(os.Args[3], 10, 0)
+				if err != nil {
+					panic(err)
+				}
+				client.UpdateComment(cmtID)
 			}
 		case "backup":
 			client.Backup(os.Stdout)
