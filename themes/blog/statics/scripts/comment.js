@@ -85,6 +85,7 @@ Comment.prototype.init = function() {
             '/v2/posts/' + $('#post-id').val() + '/comments',
             $('#comment-form').serialize(),
             function(cmt){
+				cmt = self.normalize_comment(cmt);
                 var parent = $('#comment-form input[name="parent"]').val();
                 if(parent == 0) {
                     $('#comment-list').prepend(self.gen_comment_item(cmt));
@@ -192,6 +193,16 @@ Comment.prototype.normalize_content = function(c) {
     return s;
 };
 
+Comment.prototype.normalize_comment = function(c) {
+	c.author = c.author || '';
+	c.email = c.email || '';
+	c.url = c.url || '';
+	c.ip = c.ip || '';
+	c.children = c.children || [];
+	c.is_admin = c.is_admin || false;
+	return c;
+}
+
 Comment.prototype.friendly_date = function(d) {
 	let date = new Date(d.seconds * 1000);
 	return date.toLocaleString();
@@ -235,11 +246,12 @@ Comment.prototype.gen_comment_item = function(cmt) {
     var info = '';
     if(loggedin) {
         // author, email, url, ip, date
-        info = '作者：' + this.h2a(cmt.author)
+		info = '编号：' + cmt.id
+			+ '\n作者：' + this.h2a(cmt.author)
             + '\n邮箱：' + this.h2a(cmt.email)
             + '\n网址：' + this.h2a(cmt.url)
             + '\n地址：' + cmt.ip
-            + '\n日期：' + cmt.date
+            + '\n日期：' + new Date(cmt.date.seconds*1000).toLocaleString()
             ;
     }
 
@@ -324,6 +336,7 @@ Comment.prototype.append_children = function(ch, p) {
 		if(!ch[i]) continue;
 
 		if(ch[i].parent == p) {
+			ch[i] = this.normalize_comment(ch[i]);
 			$('#comment-reply-'+p + ' ol:first').append(this.gen_comment_item(ch[i]));
 			$('#comment-'+ch[i].id).fadeIn();
             TaoBlog.events.dispatch('comment', 'post', $('#comment-'+ch[i].id));
@@ -368,6 +381,7 @@ Comment.prototype.load_comments = function() {
 			let cmts = resp.comments;
             var ch_count = 0;
             for(var i=0; i<cmts.length; i++){
+				cmts[i] = self.normalize_comment(cmts[i]);
                 $('#comment-list').append(self.gen_comment_item(cmts[i]));
                 $('#comment-'+cmts[i].id).fadeIn();
                 TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id));
