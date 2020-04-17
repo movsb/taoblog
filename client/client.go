@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/modules/stdinlinereader"
 	"github.com/movsb/taoblog/protocols"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -52,10 +54,41 @@ func NewClient(config HostConfig) *Client {
 
 	u, _ := url.Parse(c.config.API)
 
-	conn, err := grpc.Dial(u.Hostname()+":2563", grpc.WithInsecure())
-	if err != nil {
-		panic(err)
+	grpcAddress := u.Hostname()
+	grpcPort := u.Port()
+	secure := false
+	if u.Scheme == `http` {
+		secure = false
+		if grpcPort == `` {
+			grpcPort = `80`
+		}
+	} else {
+		secure = true
+		if grpcPort == `` {
+			grpcPort = `443`
+		}
 	}
+
+	grpcAddress = fmt.Sprintf(`%s:%s`, grpcAddress, grpcPort)
+
+	var conn *grpc.ClientConn
+	var err error
+	if secure {
+		if conn, err = grpc.Dial(
+			grpcAddress,
+			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+		); err != nil {
+			panic(err)
+		}
+	} else {
+		if conn, err = grpc.Dial(
+			grpcAddress,
+			grpc.WithInsecure(),
+		); err != nil {
+			panic(err)
+		}
+	}
+
 	c.grpcClient = protocols.NewTaoBlogClient(conn)
 	return c
 }
