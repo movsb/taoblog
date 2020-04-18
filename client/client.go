@@ -52,24 +52,26 @@ func NewClient(config HostConfig) *Client {
 	}
 	c.line = stdinlinereader.NewStdinLineReader()
 
-	u, _ := url.Parse(c.config.API)
-
-	grpcAddress := u.Hostname()
-	grpcPort := u.Port()
+	grpcAddress := c.config.GRPC
 	secure := false
-	if u.Scheme == `http` {
-		secure = false
-		if grpcPort == `` {
-			grpcPort = `80`
+	if grpcAddress == `` {
+		u, _ := url.Parse(grpcAddress)
+		grpcAddress = u.Hostname()
+		grpcPort := u.Port()
+		if u.Scheme == `http` {
+			secure = false
+			if grpcPort == `` {
+				grpcPort = `80`
+			}
+		} else {
+			secure = true
+			if grpcPort == `` {
+				grpcPort = `443`
+			}
 		}
-	} else {
-		secure = true
-		if grpcPort == `` {
-			grpcPort = `443`
-		}
-	}
 
-	grpcAddress = fmt.Sprintf(`%s:%s`, grpcAddress, grpcPort)
+		grpcAddress = fmt.Sprintf(`%s:%s`, grpcAddress, grpcPort)
+	}
 
 	var conn *grpc.ClientConn
 	var err error

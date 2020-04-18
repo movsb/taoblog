@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"io"
 	"net"
@@ -65,6 +66,13 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 	go server.Serve(listener)
 
 	return s
+}
+
+// Ping ...
+func (s *Service) Ping(ctx context.Context, in *protocols.PingRequest) (*protocols.PingResponse, error) {
+	return &protocols.PingResponse{
+		Pong: `pong`,
+	}, nil
 }
 
 // TxCall ...

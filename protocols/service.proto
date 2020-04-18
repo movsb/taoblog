@@ -6,12 +6,21 @@ import "protocols/backup.proto";
 import "protocols/comment.proto";
 
 service TaoBlog {
+	rpc Ping(PingRequest) returns (PingResponse);
+
 	// Backup
-	rpc Backup (BackupRequest) returns (BackupResponse);
+	rpc Backup(BackupRequest) returns (BackupResponse);
 
 	// Comments
-
 	rpc GetComment(GetCommentRequest) returns (Comment);
 	rpc UpdateComment(UpdateCommentRequest) returns (Comment);
 	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse);
+}
+
+message PingRequest {
+
+}
+
+message PingResponse {
+	string pong = 1;
 }

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 
+	"github.com/movsb/taoblog/protocols"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -47,11 +50,20 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use: `taoblog`,
 	}
-	getCmd := &cobra.Command{
-		Use: `get`,
-		Annotations: map[string]string{
-			`K`: `V`,
+	pingCmd := &cobra.Command{
+		Use:  `ping`,
+		Args: cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			resp, err := client.grpcClient.Ping(context.Background(), &protocols.PingRequest{})
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(resp.Pong)
 		},
+	}
+	rootCmd.AddCommand(pingCmd)
+	getCmd := &cobra.Command{
+		Use:  `get`,
 		Args: cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			client.CRUD(cmd.Use, args[0])
@@ -89,7 +101,7 @@ func main() {
 			client.InitPost()
 		},
 	}
-	postCmd.AddCommand(postsInitCmd)
+	postsCmd.AddCommand(postsInitCmd)
 	postsCreateCmd := &cobra.Command{
 		Use: `create`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -104,14 +116,14 @@ func main() {
 			client.UploadPostFiles(args)
 		},
 	}
-	postCmd.AddCommand(postsUploadCmd)
+	postsCmd.AddCommand(postsUploadCmd)
 	postsUpdateCmd := &cobra.Command{
 		Use: `update`,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.UpdatePost()
 		},
 	}
-	postCmd.AddCommand(postsUpdateCmd)
+	postsCmd.AddCommand(postsUpdateCmd)
 	postsPublishCmd := &cobra.Command{
 		Use:     `publish`,
 		Aliases: []string{`pub`},
@@ -119,21 +131,21 @@ func main() {
 			client.SetPostStatus(`public`)
 		},
 	}
-	postCmd.AddCommand(postsPublishCmd)
+	postsCmd.AddCommand(postsPublishCmd)
 	postsDraftCmd := &cobra.Command{
 		Use: `draft`,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.SetPostStatus(`draft`)
 		},
 	}
-	postCmd.AddCommand(postsDraftCmd)
+	postsCmd.AddCommand(postsDraftCmd)
 	postsGetCmd := &cobra.Command{
 		Use: `get`,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.GetPost()
 		},
 	}
-	postCmd.AddCommand(postsGetCmd)
+	postsCmd.AddCommand(postsGetCmd)
 	commentsCmd := &cobra.Command{
 		Use: `comments`,
 	}
