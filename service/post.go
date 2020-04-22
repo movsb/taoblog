@@ -253,6 +253,7 @@ func (s *Service) CreatePost(in *protocols.Post) {
 		in.ID = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
 		txs.updateLastPostTime(p.Modified)
+		txs.updatePostPageCount()
 		return nil
 	})
 }
@@ -305,6 +306,14 @@ func (s *Service) updateLastPostTime(ts string) {
 		ts = datetime.MyLocal()
 	}
 	s.SetOption("last_post_time", ts)
+}
+
+func (s *Service) updatePostPageCount() {
+	var postCount, pageCount int
+	s.tdb.Model(models.Post{}).Select(`count(1) as count`).Where(`type='post'`).MustFind(&postCount)
+	s.tdb.Model(models.Post{}).Select(`count(1) as count`).Where(`type='page'`).MustFind(&pageCount)
+	s.SetOption(`post_count`, postCount)
+	s.SetOption(`page_count`, pageCount)
 }
 
 // SetPostStatus sets post status.
