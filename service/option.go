@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -64,14 +63,13 @@ func (s *Service) GetDefaultIntegerOption(name string, def int64) (value int64) 
 	}
 	var option models.Option
 	err := s.tdb.Model(models.Option{}).Where("name=?", name).Find(&option)
-	switch err {
-	case nil:
+	if err == nil {
 		s.cache.Set(optionCacheKey(name), option.Value)
 		return parse(option.Value)
-	case sql.ErrNoRows:
+	} else if taorm.IsNotFoundError(err) {
 		s.cache.Set(optionCacheKey(name), fmt.Sprint(def))
 		return def
-	default:
+	} else {
 		panic(err)
 	}
 }

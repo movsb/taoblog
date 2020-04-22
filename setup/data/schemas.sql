@@ -53,17 +53,6 @@ CREATE TABLE IF NOT EXISTS categories (
     UNIQUE KEY `uix_path_slug` (`path`,`slug`)
 );
 
--- 创建表 /分类/文章样式和JavaScript/关键字表 post_metas
-CREATE TABLE IF NOT EXISTS post_metas (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `type` ENUM('post','page','tax'),
-    `tid` INT(20) UNSIGNED NOT NULL,
-    `header` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `footer` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `keywords` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    PRIMARY KEY(`id`)
-);
-
 -- 创建表 tag标签/post_tags
 CREATE TABLE IF NOT EXISTS tags (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,

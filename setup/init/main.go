@@ -37,7 +37,7 @@ func main() {
 	db := taorm.NewDB(rdb)
 	createDatabase(db, blogDatabaseName)
 	createDatabaseTables(db, blogDatabaseName)
-	createDatabaseUser(db, blogDatabaseUserName, blogDatabasePassword)
+	createDatabaseUser(db, blogDatabaseName, blogDatabaseUserName, blogDatabasePassword)
 	createBlogUser(db)
 	createBlogInfo(db)
 }
@@ -47,7 +47,7 @@ func createDatabase(db *taorm.DB, dbName string) {
 	db.MustExec(query)
 }
 
-func createDatabaseUser(db *taorm.DB, username string, password string) {
+func createDatabaseUser(db *taorm.DB, database string, username string, password string) {
 	query := fmt.Sprintf(
 		`CREATE USER "%s"@"%s" IDENTIFIED BY "%s"`,
 		username, "localhost", password,
@@ -55,7 +55,7 @@ func createDatabaseUser(db *taorm.DB, username string, password string) {
 	db.MustExec(query)
 	query = fmt.Sprintf(
 		`GRANT ALL ON %s.* TO "%s"@"%s";`,
-		username, password, "localhost",
+		database, username, "localhost",
 	)
 	db.MustExec(query)
 }
