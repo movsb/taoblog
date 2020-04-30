@@ -55,7 +55,7 @@ func NewClient(config HostConfig) *Client {
 	grpcAddress := c.config.GRPC
 	secure := false
 	if grpcAddress == `` {
-		u, _ := url.Parse(grpcAddress)
+		u, _ := url.Parse(c.config.API)
 		grpcAddress = u.Hostname()
 		grpcPort := u.Port()
 		if u.Scheme == `http` {
