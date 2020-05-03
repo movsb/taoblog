@@ -281,7 +281,7 @@ func (b *Blog) queryHome(c *gin.Context) {
 	}
 	home.LatestPosts = newPosts(b.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
-			Fields:  "id,title,type",
+			Fields:  "id,title,type,status",
 			Limit:   20,
 			OrderBy: "date DESC",
 		}), b.service)

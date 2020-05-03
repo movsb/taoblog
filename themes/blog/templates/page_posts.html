@@ -14,7 +14,7 @@
     {{range .Posts}}
     <tr>
     <td>{{.ID}}</td>
-    <td><a href="/{{.ID}}/" target="_blank" title="{{.Title}}">{{.Title}}</a></td>
+    <td><a href="/{{.ID}}/" target="_blank" title="{{.Title}}">{{.NonPublic}}{{.Title}}</a></td>
     <td>{{.Date}}</td>
     <td>{{.PageView}}</td>
     <td>{{.Comments}}</td>

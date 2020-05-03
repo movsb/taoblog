@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/utils"
-
 	"github.com/gin-gonic/gin"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 )
 
 // PagePostsData ...
 type PagePostsData struct {
-	Posts        []*protocols.Post
+	Posts        []*Post
 	PostCount    int64
 	PageCount    int64
 	CommentCount int64
@@ -49,11 +48,11 @@ func (b *Blog) getPagePosts(c *gin.Context) {
 		sort[1] = "desc"
 	}
 
-	pageData.Posts = b.service.MustListPosts(user.Context(nil),
+	pageData.Posts = newPosts(b.service.MustListPosts(user.Context(nil),
 		&protocols.ListPostsRequest{
-			Fields:  "id,title,date,page_view,comments",
+			Fields:  "id,title,date,page_view,comments,status",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
-		})
+		}), b.service)
 	for _, p := range pageData.Posts {
 		pageData.ViewCount += int64(p.PageView)
 	}

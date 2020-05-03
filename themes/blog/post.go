@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/protocols"
-
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
@@ -34,6 +33,20 @@ func newPosts(posts []*protocols.Post, service *service.Service) []*Post {
 		ps = append(ps, newPost(p, service))
 	}
 	return ps
+}
+
+// NonPublic ...
+func (p *Post) NonPublic() string {
+	switch p.Status {
+	case ``:
+		panic(`post.Status empty`)
+	case `public`:
+		return ``
+	case `draft`:
+		return `[未公开发表] `
+	default:
+		panic(`unknown post status`)
+	}
 }
 
 // Link ...

@@ -46,7 +46,7 @@ input {
 <h2>近期文章</h2>
 <ul>
 {{range .LatestPosts}}
-    <li><a href="{{.Link}}">{{.Title}}</a></li>
+    <li><a href="{{.Link}}">{{.NonPublic}}{{.Title}}</a></li>
 {{end}}
 </ul>
 
