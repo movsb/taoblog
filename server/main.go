@@ -21,6 +21,7 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
+	"github.com/movsb/taorm/taorm"
 )
 
 func main() {
@@ -54,7 +55,7 @@ func main() {
 					return
 				}
 				if err, ok := e.(error); ok {
-					if err == sql.ErrNoRows {
+					if taorm.IsNotFoundError(err) {
 						c.Status(404)
 						return
 					}

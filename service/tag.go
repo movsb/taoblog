@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -226,7 +225,7 @@ func (s *Service) hasTagName(tagName string) bool {
 	if err == nil {
 		return true
 	}
-	if err == sql.ErrNoRows {
+	if taorm.IsNotFoundError(err) {
 		return false
 	}
 	panic(err)

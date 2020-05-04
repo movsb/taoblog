@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"regexp"
 	"strings"
@@ -24,7 +23,7 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 	var p models.Post
 	stmt := s.posts().Where("id = ?", name)
 	if err := stmt.Find(&p); err != nil {
-		if err == sql.ErrNoRows {
+		if taorm.IsNotFoundError(err) {
 			panic(&PostNotFoundError{})
 		}
 		panic(err)
@@ -104,7 +103,7 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC")
 	if err := stmt.Find(&p); err != nil {
-		if err == sql.ErrNoRows {
+		if taorm.IsNotFoundError(err) {
 			panic(&PostNotFoundError{})
 		}
 		panic(err)

@@ -1,9 +1,8 @@
 package gateway
 
 import (
-	"database/sql"
-
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taorm/taorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,7 +10,7 @@ import (
 func (g *Gateway) GetOption(c *gin.Context) {
 	name := c.Param("name")
 	option, err := g.service.GetOption(name)
-	if err == sql.ErrNoRows {
+	if taorm.IsNotFoundError(err) {
 		c.Status(404)
 		return
 	}
