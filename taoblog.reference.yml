@@ -1,4 +1,5 @@
 database:
+  endpoint: localhost:3306
   database: taoblog
   username: taoblog
   password: taoblog

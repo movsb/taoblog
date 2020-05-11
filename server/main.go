@@ -29,9 +29,10 @@ func main() {
 
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	dataSource := fmt.Sprintf("%s:%s@/%s",
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/%s",
 		cfg.Database.Username,
 		cfg.Database.Password,
+		cfg.Database.Endpoint,
 		cfg.Database.Database,
 	)
 	db, err := sql.Open("mysql", dataSource)

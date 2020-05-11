@@ -50,18 +50,18 @@ func createDatabase(db *taorm.DB, dbName string) {
 func createDatabaseUser(db *taorm.DB, database string, username string, password string) {
 	query := fmt.Sprintf(
 		`CREATE USER "%s"@"%s" IDENTIFIED BY "%s"`,
-		username, "localhost", password,
+		username, "%", password,
 	)
 	db.MustExec(query)
 	query = fmt.Sprintf(
 		`GRANT ALL ON %s.* TO "%s"@"%s";`,
-		database, username, "localhost",
+		database, username, "%",
 	)
 	db.MustExec(query)
 }
 
 func createDatabaseTables(db *taorm.DB, dbName string) {
-	queryBytes, err := ioutil.ReadFile("../data/schemas.sql")
+	queryBytes, err := ioutil.ReadFile("data/schemas.sql")
 	if err != nil {
 		panic(err)
 	}

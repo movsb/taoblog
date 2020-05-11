@@ -140,7 +140,7 @@ func (c *Client) mustPost(path string, body io.Reader, ty string) *http.Response
 	if resp.StatusCode != 200 {
 		io.Copy(os.Stderr, resp.Body)
 		resp.Body.Close()
-		panic(ErrStatusCode)
+		panic(resp.Status)
 	}
 	return resp
 }
@@ -149,8 +149,9 @@ func (c *Client) mustPostJSON(path string, data interface{}) *http.Response {
 	bys, _ := json.Marshal(data)
 	resp := c.post(path, bytes.NewReader(bys), contentTypeJSON)
 	if resp.StatusCode != 200 {
+		io.Copy(os.Stderr, resp.Body)
 		resp.Body.Close()
-		panic(ErrStatusCode)
+		panic(resp.Status)
 	}
 	return resp
 }

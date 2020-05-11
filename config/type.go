@@ -24,6 +24,7 @@ func DefaultConfig() Config {
 
 // DatabaseConfig ...
 type DatabaseConfig struct {
+	Endpoint string `yaml:"endpoint"`
 	Database string `yaml:"database"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
@@ -32,6 +33,7 @@ type DatabaseConfig struct {
 // DefaultDatabaseConfig ...
 func DefaultDatabaseConfig() DatabaseConfig {
 	return DatabaseConfig{
+		Endpoint: `localhost:3306`,
 		Database: `taoblog`,
 		Username: `taoblog`,
 		Password: `taoblog`,
