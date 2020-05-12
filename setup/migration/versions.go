@@ -3,9 +3,6 @@ package migration
 import (
 	"database/sql"
 	"encoding/json"
-	"strings"
-
-	"github.com/movsb/taoblog/auth"
 
 	"github.com/movsb/taorm/taorm"
 )
@@ -119,15 +116,6 @@ func v7(tx *sql.Tx) {
 	if err := row.Scan(&login); err != nil {
 		panic(err)
 	}
-	parts := strings.Split(login, ",")
-	if len(parts) != 2 {
-		panic("invalid login value")
-	}
-	savedAuth := auth.SavedAuth{
-		Username: parts[0],
-		Password: parts[1],
-	}
-	login = savedAuth.Encode()
 	query = "UPDATE options SET value=? WHERE name=?"
 	if _, err := tx.Exec(query, login, "login"); err != nil {
 		panic(err)
@@ -205,4 +193,12 @@ func v10(tx *sql.Tx) {
 			panic(err)
 		}
 	}
+}
+
+func v11(tx *sql.Tx) {
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `home`)
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `blog_name`)
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `blog_desc`)
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `keywords`)
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `login`)
 }

@@ -137,6 +137,12 @@ func (b *Blog) loadTemplates() {
 			return template.HTML(s)
 		},
 		"get_config": func(name string) string {
+			switch name {
+			case `blog_name`:
+				return b.service.Name()
+			case `blog_desc`:
+				return b.service.Description()
+			}
 			return b.service.GetStringOption(name)
 		},
 	}

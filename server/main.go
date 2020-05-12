@@ -71,16 +71,8 @@ func main() {
 		c.String(200, "pong")
 	})
 
-	theAuth := &auth.Auth{}
+	theAuth := auth.New(cfg.Auth)
 	theService := service.NewService(cfg, db, theAuth)
-	theAuth.SetLogin(theService.GetDefaultStringOption("login", "x"))
-	theAuth.SetKey(cfg.Auth.Key)
-	theAuth.SetGitHub(
-		cfg.Auth.Github.ClientID,
-		cfg.Auth.Github.ClientSecret,
-		cfg.Auth.Github.UserID,
-	)
-
 	gateway.NewGateway(theAPI, theService, theAuth)
 
 	var adminRouter *gin.Engine

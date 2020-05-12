@@ -238,9 +238,9 @@ func (a *Admin) queryLogin(c *gin.Context) {
 		Redirect: redirect,
 	}
 	if a.canGoogle {
-		d.GoogleClientID = a.auth.GoogleClientID
+		d.GoogleClientID = a.auth.Config().Google.ClientID
 	}
-	d.GitHubClientID = a.auth.GitHubClientID
+	d.GitHubClientID = a.auth.Config().Github.ClientID
 
 	a.render(c.Writer, "login", &d)
 }

@@ -1,16 +1,16 @@
+blog:
+  # scheme is required
+  home: http://localhost
+  name: 陪她去流浪
+  description: 描述
 database:
   endpoint: localhost:3306
   database: taoblog
   username: taoblog
   password: taoblog
-
 server:
   listen: localhost:2564
-  mailer:
-    # server:
-    # account:
-    # password:
-
+  mailer: {}
 data:
   file:
     path: ./files
@@ -24,8 +24,13 @@ maintenance:
   disable_admin: false
 
 auth:
-  # key:
+  basic:
+    username: basic
+    password: basic
   github:
-    # user_id:
-    # client_id:
-    # client_secret:
+    user_id: github
+    client_id: github
+    client_secret: github
+  google:
+    client_id: google
+    user_id: google

@@ -7,13 +7,12 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/modules/stdinlinereader"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm/taorm"
 )
 
-const dbVer = 10
+const dbVer = 11
 
 var liner = stdinlinereader.NewStdinLineReader()
 
@@ -38,8 +37,6 @@ func main() {
 	createDatabase(db, blogDatabaseName)
 	createDatabaseTables(db, blogDatabaseName)
 	createDatabaseUser(db, blogDatabaseName, blogDatabaseUserName, blogDatabasePassword)
-	createBlogUser(db)
-	createBlogInfo(db)
 }
 
 func createDatabase(db *taorm.DB, dbName string) {
@@ -71,7 +68,6 @@ func createDatabaseTables(db *taorm.DB, dbName string) {
 
 	query = fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
 	db.MustExec(query, "db_ver", dbVer)
-	db.MustExec(query, "home", "localhost")
 
 	rootCategory := models.Category{
 		ID:   1,
@@ -80,28 +76,4 @@ func createDatabaseTables(db *taorm.DB, dbName string) {
 		Path: "/",
 	}
 	db.Model(&rootCategory).MustCreate()
-}
-
-func createBlogUser(db *taorm.DB) {
-	blogUsername := liner.MustReadLine("博客用户名：")
-	blogPassword := liner.MustReadLine("博客密码：")
-	googleClientID := liner.MustReadLine("谷歌ClientID：")
-	adminGoogleID := liner.MustReadLine("管理员谷歌ID：")
-	savedAuth := auth.SavedAuth{
-		Username:       blogUsername,
-		Password:       auth.HashPassword(blogPassword),
-		GoogleClientID: googleClientID,
-		AdminGoogleID:  adminGoogleID,
-	}
-	query := fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
-	db.MustExec(query, "login", savedAuth.Encode())
-}
-
-func createBlogInfo(db *taorm.DB) {
-	blogName := liner.MustReadLine("博客名字：")
-	blogDesc := liner.MustReadLine("博客描述：")
-	query := fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
-	db.MustExec(query, "blog_name", blogName)
-	query = fmt.Sprintf("INSERT INTO options (name,value) VALUES (?,?)")
-	db.MustExec(query, "blog_desc", blogDesc)
 }

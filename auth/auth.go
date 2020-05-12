@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
+	"github.com/movsb/taoblog/config"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -51,43 +52,27 @@ func HashPassword(password string) string {
 }
 
 type Auth struct {
-	key string
-	SavedAuth
+	cfg config.AuthConfig
 }
 
-type SavedAuth struct {
-	Username           string `json:"username,omitempty"`
-	Password           string `json:"password,omitempty"`
-	GoogleClientID     string `json:"google_client_id,omitempty"`
-	AdminGoogleID      string `json:"admin_google_id,omitempty"`
-	GitHubClientID     string `json:"github_client_id,omitempty"`
-	GitHubClientSecret string `json:"github_client_secret,omitempty"`
-	AdminGitHubID      int64  `json:"admin_github_id,omitempty"`
+// New ...
+func New(cfg config.AuthConfig) *Auth {
+	a := Auth{}
+	a.cfg = cfg
+	return &a
 }
 
-func (a SavedAuth) Encode() string {
-	bys, _ := json.Marshal(&a)
-	return string(bys)
-}
-
-func (o *Auth) SetKey(key string) {
-	o.key = key
-}
-
-func (o *Auth) SetLogin(login string) {
-	if err := json.Unmarshal([]byte(login), &o.SavedAuth); err != nil {
-		panic(err)
-	}
-}
-
-func (o *Auth) SetGitHub(clientID string, clientSecret string, adminID int64) {
-	o.GitHubClientID = clientID
-	o.GitHubClientSecret = clientSecret
-	o.AdminGitHubID = adminID
+// temporary
+func (a *Auth) Config() config.AuthConfig {
+	return a.cfg
 }
 
 func (o *Auth) Login() string {
-	return o.Username + "," + o.Password
+	return fmt.Sprintf(
+		`%s:%s`,
+		o.cfg.Basic.Username,
+		o.sha1(o.cfg.Basic.Password),
+	)
 }
 
 func (*Auth) sha1(in string) string {
@@ -96,8 +81,8 @@ func (*Auth) sha1(in string) string {
 }
 
 func (o *Auth) AuthLogin(username string, password string) bool {
-	if username == o.Username {
-		if o.sha1(password) == o.Password {
+	if username == o.cfg.Basic.Username {
+		if password == o.cfg.Basic.Password {
 			return true
 		}
 	}
@@ -124,7 +109,7 @@ func (o *Auth) AuthCookie(c *gin.Context) *User {
 
 func (o *Auth) AuthHeader(c *gin.Context) *User {
 	key := c.GetHeader("Authorization")
-	if key == o.key {
+	if key == o.cfg.Key {
 		return admin
 	}
 	return guest
@@ -133,7 +118,7 @@ func (o *Auth) AuthHeader(c *gin.Context) *User {
 func (o *Auth) AuthGRPC(ctx context.Context) *User {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if tokens, ok := md["token"]; ok && len(tokens) > 0 {
-			if tokens[0] == o.key {
+			if tokens[0] == o.cfg.Key {
 				return admin
 			}
 		}
@@ -142,12 +127,12 @@ func (o *Auth) AuthGRPC(ctx context.Context) *User {
 }
 
 func (o *Auth) AuthGoogle(token string) *User {
-	fullClientID := o.GoogleClientID + ".apps.googleusercontent.com"
+	fullClientID := o.cfg.Google.ClientID + ".apps.googleusercontent.com"
 	claims, err := googleidtokenverifier.Verify(token, fullClientID)
 	if err != nil {
 		return guest
 	}
-	if claims.Sub == o.AdminGoogleID {
+	if claims.Sub == o.cfg.Google.UserID {
 		return admin
 	}
 	return guest
@@ -156,8 +141,8 @@ func (o *Auth) AuthGoogle(token string) *User {
 func (o *Auth) AuthGitHub(code string) *User {
 	accessTokenURL, _ := url.Parse("https://github.com/login/oauth/access_token")
 	values := url.Values{}
-	values.Set("client_id", o.GitHubClientID)
-	values.Set("client_secret", o.GitHubClientSecret)
+	values.Set("client_id", o.cfg.Github.ClientID)
+	values.Set("client_secret", o.cfg.Github.ClientSecret)
 	values.Set("code", code)
 	accessTokenURL.RawQuery = values.Encode()
 	req, err := http.NewRequest("POST", accessTokenURL.String(), nil)
@@ -198,7 +183,7 @@ func (o *Auth) AuthGitHub(code string) *User {
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
 		return guest
 	}
-	if user.ID != 0 && user.ID == o.AdminGitHubID {
+	if user.ID != 0 && user.ID == o.cfg.Github.UserID {
 		return admin
 	}
 	return guest
