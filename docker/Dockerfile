@@ -7,6 +7,8 @@ ADD taoblog .
 ADD themes themes
 ADD setup setup
 ADD admin admin
+ADD service service
 
+ENV NODE_PATH=/usr/local/lib/node_modules
 
 CMD ["./taoblog"]
