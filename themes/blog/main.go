@@ -1,7 +1,9 @@
 package blog
 
 import (
+	"bytes"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"net/http"
@@ -130,7 +132,44 @@ func (b *Blog) render(w io.Writer, name string, data interface{}) {
 	}
 }
 
+func createMenus(items []config.MenuItem) string {
+	menus := bytes.NewBuffer(nil)
+	var genSubMenus func(buf *bytes.Buffer, items []config.MenuItem)
+	a := func(item config.MenuItem) string {
+		s := "<a"
+		if item.Blank {
+			s += " target=_blank"
+		}
+		if item.Link != "" {
+			// TODO maybe error
+			s += fmt.Sprintf(` href="%s"`, html.EscapeString(item.Link))
+		}
+		s += fmt.Sprintf(`>%s</a>`, html.EscapeString(item.Name))
+		return s
+	}
+	genSubMenus = func(buf *bytes.Buffer, items []config.MenuItem) {
+		if len(items) <= 0 {
+			return
+		}
+		buf.WriteString("<ol>\n")
+		for _, item := range items {
+			if len(item.Items) == 0 {
+				buf.WriteString(fmt.Sprintf("<li>%s</li>\n", a(item)))
+			} else {
+				buf.WriteString("<li>\n")
+				buf.WriteString(fmt.Sprintf("%s\n", a(item)))
+				genSubMenus(buf, item.Items)
+				buf.WriteString("</li>\n")
+			}
+		}
+		buf.WriteString("</ol>\n")
+	}
+	genSubMenus(menus, items)
+	return menus.String()
+}
+
 func (b *Blog) loadTemplates() {
+	menustr := createMenus(b.cfg.Menus)
 	funcs := template.FuncMap{
 		// https://github.com/golang/go/issues/14256
 		"raw": func(s string) template.HTML {
@@ -144,6 +183,9 @@ func (b *Blog) loadTemplates() {
 				return b.service.Description()
 			}
 			return b.service.GetStringOption(name)
+		},
+		"menus": func() template.HTML {
+			return template.HTML(menustr)
 		},
 	}
 

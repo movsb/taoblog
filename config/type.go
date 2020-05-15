@@ -9,6 +9,7 @@ type Config struct {
 	Theme       ThemeConfig       `yaml:"theme"`
 	Maintenance MaintenanceConfig `yaml:"maintenance"`
 	Auth        AuthConfig        `yaml:"auth"`
+	Menus       []MenuItem        `yaml:"menus"`
 }
 
 // DefaultConfig ...
@@ -21,6 +22,7 @@ func DefaultConfig() Config {
 		Theme:       DefaultThemeConfig(),
 		Maintenance: DefaultMainMaintenanceConfig(),
 		Auth:        DefaultAuthConfig(),
+		Menus:       DefaultMenuConfig(),
 	}
 }
 

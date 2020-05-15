@@ -34,3 +34,13 @@ auth:
   google:
     client_id: google
     user_id: google
+
+menus:
+- name: item1
+  link: /
+  items:
+  - name: subitem1
+    blank: true
+    link: /subitem1
+  - name: subitem2
+    link: /subitem2
