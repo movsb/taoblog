@@ -5,14 +5,20 @@ $max_width:       850px;
 $selection_fg:      white;
 $selection_bg:      #ff608d;
 
-$body_fg:           #292929;
-$body_bg:           white;
-$a_fg:              #005782;
-$tt_fg:             #ff0080;
-$a_visited_fg:      #924646;
-$a_active_fg:       #faa700;
+$body_fg_light:          #292929;
+$body_bg_light:          white;
+$body_fg_dark:           #a4a4a4;
+$body_bg_dark:           $body_fg_light;
 
-$border_color:      #f0f0f0;
+
+$tt_fg:                  #ff0080;
+$a_fg_light:             #005782;
+$a_visited_fg_light:     #924646;
+$a_fg_dark:              #999;
+$a_visited_fg_dark:      #666;
+$a_active_fg_light:      #faa700;
+
+$border_color:      #8e8e8e;
 $border_color_hover:#c0c0c0;
 
 $btn_fg:            white;
@@ -56,16 +62,21 @@ $toolbar_imgview_bg:            rgba(0,0,0,0.85);
 .bg-yellow   { background-color: yellow; }
 .bg-white    { background-color: white; }
 
-$post_title_fg:                 #333333;
+$post_title_fg_light:           #333333;
+$post_title_fg_dark:            #eeeeee;
 $post_meta_fg:                  #5a5a5a;
-$post_content_fg:               #292929;
+$post_content_fg_light:         #292929;
+$post_content_fg_dark:          #a4a4a4;
 $post_pre_quote_bg:             aliceblue;
 $post_line_code_border_color:   rgb(201,163,163);
-$post_code_bg:                  rgba(220,220,220,0.5);
+$post_code_bg_light:            rgba(220,220,220,0.5);
+$post_code_bg_dark:             rgb(72,72,72);
 
-$toc_fg:                        #141414;
-$toc_bg:                        rgba(255,255,255,0.9);
-$toc_border_color:              grey;
+$toc_fg_light:                  #141414;
+$toc_bg_light:                  rgba(255,255,255,0.9);
+$toc_fg_dark:                   $body_fg_dark;
+$toc_bg_dark:                   $body_bg_dark;
+$toc_border_color:              $border_color;
 
 /* comment */
 $comment_func_border:           #ccc;
@@ -75,11 +86,12 @@ $comment_submit_hover_bg:       rgba(200,30,30,0.8);
 $comment_submit_submitting_fg:  red;
 $comment_submit_succeeded_fg:   green;
 $comment_submit_failed_fg:      green;
-$comment_nickname_fg:           #003b87;
+$comment_nickname_fg_light:     #003b87;
+$comment_nickname_fg_dark:      inherit;
 $comment_author_fg:             #ff4040;
 $comment_date_fg:               #cfcfcf;
 $comment_needed_fg:             red;
 $comment_content_2_fg:          white;
 $comment_content_2_bg:          transparent;
 
-$mono_font: Monaco, Consolas, Courier;
+$mono_font: Monaco, Consolas, monospace, Courier;

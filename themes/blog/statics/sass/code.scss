@@ -33,5 +33,35 @@ pre > code {
     display: inline-block;
     line-height: 1.5em;
     white-space: normal;
-    background-color: $post_code_bg;
+	background-color: $post_code_bg_light;
+	@media (prefers-color-scheme: dark) {
+		background-color: $post_code_bg_dark;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	/* prism.css override */
+	:not(pre) > code[class*="language-"],
+	pre[class*="language-"] {
+		background-color: inherit !important;
+	}
+
+	pre[class*="language-"]>code, pre[class*="language-"]>code .line-numbers-rows {
+		background-color: transparent !important;
+	}
+
+	code[class*="language-"],
+	pre[class*="language-"] {
+		color: inherit !important;
+	}
+
+	pre[class*="language-"] {
+		border: 1px solid #999 !important;
+	}
+	.token.operator,
+	.token.entity,
+	.token.url,
+	.token.variable {
+		background: unset !important;
+	}
 }

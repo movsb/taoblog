@@ -14,7 +14,10 @@
 .post, .pages {
     /* 文章标题 */
     h1 {
-        color: $post_title_fg;
+        color: $post_title_fg_light;
+		@media (prefers-color-scheme: dark) {
+			color: $post_title_fg_dark;
+		}
         font-size: 1.5em;
     }
 
@@ -68,7 +71,10 @@
 
 .entry {
     display: block;
-    color: $post_content_fg;
+	color: $post_content_fg_light;
+	@media (prefers-color-scheme: dark) {
+		color: $post_content_fg_dark;
+	}
     text-align: justify;
     margin-bottom: 3em;
 
@@ -140,13 +146,19 @@
 
     /* 文章表格 */
     table {
-        border: 1px solid gray;
         border-collapse: collapse;
-        margin: 1em 0px;
+		margin: 1em 0px;
+		display: block;
+		overflow: auto;
 
         th {
             background-color: #eee;
-        }
+		}
+		@media (prefers-color-scheme: dark) {
+			th {
+				background-color: #3e3e3e;
+			}
+		}
 
         td, th {
             border: 1px solid gray;
@@ -164,10 +176,20 @@
     }
 
     blockquote {
-        background-color:rgba(0,0,0,.08);
+		background-color:rgba(0,0,0,.08);
+		@media (prefers-color-scheme: dark) {
+			& {
+				background-color:#393939;
+			}
+		}
         padding:1px 1.5em;
         margin:1em 0;
         border-left:#ddd 9px solid;
+		@media (prefers-color-scheme: dark) {
+			& {
+				border-left:#4a4a4a;
+			}
+		}
     }
 
     figure {
@@ -193,8 +215,13 @@
         overflow: auto;
         border: 1px solid $toc_border_color;
         line-height: 1.5em;
-        color: $toc_fg;
-        background-color: $toc_bg;
+		color: $toc_fg_light;
+		background-color: $toc_bg_light;
+		@media (prefers-color-scheme: dark) {
+			color: $toc_fg_dark;
+			background-color: $toc_bg_dark;
+		}
+		z-index: 1000;
     }
 }
 
