@@ -183,14 +183,6 @@ func main() {
 		},
 	}
 	rootCmd.AddCommand(backupCmd)
-	settingsCmd := &cobra.Command{
-		Use:  `settings`,
-		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			client.Settings(args)
-		},
-	}
-	rootCmd.AddCommand(settingsCmd)
 
 	rootCmd.Execute()
 }

@@ -45,7 +45,7 @@ func (b *Blog) GetRss(c *gin.Context) {
 	posts := b.service.GetLatestPosts(user.Context(nil), "id,title,date,content", 10)
 
 	data := RssData{
-		BlogName:    b.service.GetDefaultStringOption("blog_name", "TaoBlog"),
+		BlogName:    b.service.Name(),
 		Home:        b.service.HomeURL(),
 		Description: b.service.GetDefaultStringOption("desc", ""),
 	}

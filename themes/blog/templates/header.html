@@ -23,24 +23,14 @@
     <header id="header">
         <div class="content">
             <div class="padding">
-                <div class="sitename"><a href="/">{{get_config "blog_name"}}</a></div>
+                <div class="sitename"><a href="/">{{get_config "blog_name"}}<span class="dark-moon"></span></a></div>
                 <p class="motto">{{get_config "blog_desc"}}</p>
                 <form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
                     <img src="/images/search.svg" class="icon" /><!--
                     --><input name="q" placeholder="Google Search" />
                 </form>
                 <div class="nav">
-                    <ol>
-                        <li><a href="/">首页</a></li>
-                        <li><a href="/friends">朋友们</a></li>
-                        <li><a href="https://github.com/movsb" target="_blank">GitHub</a></li>
-                        <li><a href="/blog">博客程序</a></li>
-                        <li><a href="/echo">建议反馈</a></li>
-                        <li><a href="/rss">博客订阅</a></li>
-                        {{ if .IsAdmin }}
-                        <li><a href="/admin">管理后台</a></li>
-                        {{ end }}
-                    </ol>
+                    {{menus}}
                 </div>
             </div>
         </div>

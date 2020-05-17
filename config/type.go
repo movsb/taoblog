@@ -2,23 +2,27 @@ package config
 
 // Config ...
 type Config struct {
+	Blog        BlogConfig        `yaml:"blog"`
 	Database    DatabaseConfig    `yaml:"database"`
 	Server      ServerConfig      `yaml:"server"`
 	Data        DataConfig        `yaml:"data"`
 	Theme       ThemeConfig       `yaml:"theme"`
 	Maintenance MaintenanceConfig `yaml:"maintenance"`
 	Auth        AuthConfig        `yaml:"auth"`
+	Menus       []MenuItem        `yaml:"menus"`
 }
 
 // DefaultConfig ...
 func DefaultConfig() Config {
 	return Config{
+		Blog:        DefaultBlogConfig(),
 		Database:    DefaultDatabaseConfig(),
 		Server:      DefaultServerConfig(),
 		Data:        DefaultDataConfig(),
 		Theme:       DefaultThemeConfig(),
 		Maintenance: DefaultMainMaintenanceConfig(),
 		Auth:        DefaultAuthConfig(),
+		Menus:       DefaultMenuConfig(),
 	}
 }
 
@@ -117,27 +121,18 @@ func DefaultMainMaintenanceConfig() MaintenanceConfig {
 	}
 }
 
-// AuthConfig ...
-type AuthConfig struct {
-	Key    string           `yaml:"key"`
-	Github GithubAuthConfig `yaml:"github"`
+// BlogConfig ...
+type BlogConfig struct {
+	Home        string `yaml:"home"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
 }
 
-// DefaultAuthConfig ...
-func DefaultAuthConfig() AuthConfig {
-	return AuthConfig{
-		Github: DefaultGithubAuthConfig(),
+// DefaultBlogConfig ...
+func DefaultBlogConfig() BlogConfig {
+	return BlogConfig{
+		Home:        `localhost`,
+		Name:        `未命名博客`,
+		Description: `还没有写描述哦`,
 	}
-}
-
-// GithubAuthConfig ...
-type GithubAuthConfig struct {
-	ClientID     string `yaml:"client_id"`
-	ClientSecret string `yaml:"client_secret"`
-	UserID       int64  `yaml:"user_id"`
-}
-
-// DefaultGithubAuthConfig ...
-func DefaultGithubAuthConfig() GithubAuthConfig {
-	return GithubAuthConfig{}
 }

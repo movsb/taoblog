@@ -133,7 +133,10 @@
     }
 
     .nickname {
-        color: $comment_nickname_fg;
+		color: $comment_nickname_fg_light;
+		@media (prefers-color-scheme: dark) {
+			color: $comment_nickname_fg_dark;
+		}
 
         i.fa {
             margin-right: 3px;
@@ -269,7 +272,13 @@
                 background: transparent;
             }
         }
-    }
+	}
+	@media (prefers-color-scheme: dark) {
+		.comment-form-div-1 {
+			background-color: $body_bg_dark;
+			img {
+				filter: invert(80%);
+			}
+		}
+	}
 }
-
-

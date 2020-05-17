@@ -98,11 +98,6 @@ func (s *Service) SetOption(name string, value interface{}) {
 		s.tdb.Model(&option).MustCreate()
 	}
 	s.cache.Set(optionCacheKey(name), fmt.Sprint(value))
-
-	// TODO use hook
-	if name == "login" {
-		s.auth.SetLogin(fmt.Sprint(value))
-	}
 }
 
 func (s *Service) GetOption(name string) (*models.Option, error) {

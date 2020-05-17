@@ -9,13 +9,19 @@
 }
 
 body {
-    color: $body_fg;
-    background-color: $body_bg;
+    color: $body_fg_light;
+    background-color: $body_bg_light;
     margin: 0px auto;
     padding: 0px;
     font: $root_font_size "Microsoft YaHei", Georgia, 'Noto Sans', sans-serif {
 
     }
+}
+@media (prefers-color-scheme: dark) {
+	body {
+		color: $body_fg_dark;
+		background-color: $body_bg_dark;
+	}
 }
 
 @media screen and (max-width: $max_width) {
@@ -84,19 +90,27 @@ h6 { font-size: 1.0em; }
 
 a {
     text-decoration: none;
-    color: $a_fg;
+    color: $a_fg_light;
     &:hover {
         text-decoration: underline;
     }
     &:visited {
-        color: $a_visited_fg;
+        color: $a_visited_fg_light;
     }
     &:active {
-        color: $a_active_fg;
+        color: $a_active_fg_light;
     }
     &:focus {
         outline: none;
     }
+}
+@media (prefers-color-scheme: dark) {
+	a {
+		color: $a_fg_dark;
+		&:visited {
+			color: $a_visited_fg_dark;
+		}
+	}
 }
 
 button, input[type=submit] {
@@ -110,6 +124,12 @@ input[type=text], a, textarea {
     &:focus {
         outline: none;
     }
+}
+@media (prefers-color-scheme: dark) {
+	input[type=text], textarea {
+		color: $body_fg_dark;
+		background-color: $body_bg_dark;
+	}
 }
 
 input[type=text], textarea, button {
@@ -128,7 +148,10 @@ input[type=text]:hover, textarea:hover {
 pre {
     padding: 1em;
     margin: 1em 0;
-    background-color: $post_code_bg;
+	background-color: $post_code_bg_light;
+	@media (prefers-color-scheme: dark) {
+		background-color: $post_code_bg_dark;
+	}
     max-height: 600px;
     max-height: 80vh;
     border-radius: 0.3em;
