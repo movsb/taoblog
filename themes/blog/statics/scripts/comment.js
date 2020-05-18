@@ -240,7 +240,7 @@ Comment.prototype.h2a = function(h) {
 Comment.prototype.gen_comment_item = function(cmt) {
 	var s = '';
 
-    var loggedin = cmt.ip != undefined;
+    var loggedin = cmt.ip != '';
 
     // 登录后可以显示评论者的详细信息
     var info = '';
