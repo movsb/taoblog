@@ -200,6 +200,8 @@ Comment.prototype.normalize_comment = function(c) {
 	c.ip = c.ip || '';
 	c.children = c.children || [];
 	c.is_admin = c.is_admin || false;
+	c.source_type = c.source_type || 'plain';
+	c.source = c.source || (c.source_type == 'plain' ? c.content : c.source);
 	return c;
 }
 

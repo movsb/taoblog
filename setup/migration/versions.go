@@ -202,3 +202,9 @@ func v11(tx *sql.Tx) {
 	tx.Exec(`DELETE FROM options WHERE name = ?`, `keywords`)
 	tx.Exec(`DELETE FROM options WHERE name = ?`, `login`)
 }
+
+func v12(tx *sql.Tx) {
+	tx.Exec("ALTER TABLE comments ADD COLUMN `source_type` varchar(16) NOT NULL AFTER `date`")
+	tx.Exec("ALTER TABLE comments ADD COLUMN `source` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL AFTER `source_type`")
+	tx.Exec("UPDATE comments SET source_type='plain'")
+}
