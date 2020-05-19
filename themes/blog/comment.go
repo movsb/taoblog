@@ -12,6 +12,7 @@ import (
 type Comment struct {
 	*protocols.Comment
 	PostTitle string
+	Content   string
 }
 
 func newComments(comments []*protocols.Comment, service *service.Service) []*Comment {
@@ -25,9 +26,14 @@ func newComments(comments []*protocols.Comment, service *service.Service) []*Com
 			title = service.GetPostTitle(c.PostId)
 			titles[c.PostId] = title
 		}
+		content := c.Source
+		if content == "" {
+			content = c.Content
+		}
 		cmts = append(cmts, &Comment{
 			Comment:   c,
 			PostTitle: title,
+			Content:   content,
 		})
 	}
 	return cmts
@@ -56,14 +62,15 @@ func (b *Blog) listPostComments(c *gin.Context) {
 
 func (b *Blog) createPostComment(c *gin.Context) {
 	comment := &protocols.Comment{
-		PostId:  utils.MustToInt64(c.Param("name")),
-		Parent:  utils.MustToInt64(c.DefaultPostForm("parent", "0")),
-		Author:  c.DefaultPostForm("author", ""),
-		Email:   c.DefaultPostForm("email", ""),
-		Url:     c.DefaultPostForm("url", ""),
-		Ip:      c.ClientIP(),
-		Date:    datetime.ProtoLocal(),
-		Content: c.DefaultPostForm("content", ""),
+		PostId:     utils.MustToInt64(c.Param("name")),
+		Parent:     utils.MustToInt64(c.DefaultPostForm("parent", "0")),
+		Author:     c.DefaultPostForm("author", ""),
+		Email:      c.DefaultPostForm("email", ""),
+		Url:        c.DefaultPostForm("url", ""),
+		Ip:         c.ClientIP(),
+		Date:       datetime.ProtoLocal(),
+		SourceType: c.PostForm("source_type"),
+		Source:     c.PostForm("source"),
 	}
 	user := b.auth.AuthCookie(c)
 	comment = b.service.CreateComment(user.Context(nil), comment)

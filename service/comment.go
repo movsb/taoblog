@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taorm/taorm"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 )
 
 // Deprecated.
@@ -133,14 +136,15 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 	user := s.auth.AuthContext(ctx)
 
 	comment := models.Comment{
-		PostID:  c.PostId,
-		Parent:  c.Parent,
-		Author:  c.Author,
-		Email:   c.Email,
-		URL:     c.Url,
-		IP:      c.Ip,
-		Date:    datetime.Proto2My(*c.Date),
-		Content: c.Content,
+		PostID:     c.PostId,
+		Parent:     c.Parent,
+		Author:     c.Author,
+		Email:      c.Email,
+		URL:        c.Url,
+		IP:         c.Ip,
+		Date:       datetime.Proto2My(*c.Date),
+		SourceType: c.SourceType,
+		Source:     c.Source,
 	}
 
 	if c.Author == "" {
@@ -159,7 +163,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		panic(exception.NewValidationError("网址不正确"))
 	}
 
-	if c.Content == "" {
+	if c.Source == "" {
 		panic(exception.NewValidationError("评论内容不能为空"))
 	}
 
@@ -173,6 +177,20 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		if pc.Root == 0 {
 			comment.Root = pc.ID
 		}
+	}
+
+	if c.SourceType != "markdown" {
+		panic(exception.NewValidationError("仅支持 markdown"))
+	}
+
+	var buf bytes.Buffer
+	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
+	if err := md.Convert([]byte(c.Source), &buf); err != nil {
+		panic(exception.NewValidationError("不能转换 markdown"))
+	}
+	comment.Content = buf.String()
+	if strings.Contains(comment.Content, `<!-- raw HTML omitted -->`) {
+		panic(exception.NewValidationError(`不能包含 HTML 标签`))
 	}
 
 	adminEmail := s.GetDefaultStringOption("email", "")
@@ -253,15 +271,19 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 	commentEmail := strings.ToLower(c.Email)
 
 	if commentEmail != adminEmail {
-		s.cmtntf.NotifyAdmin(&comment_notify.AdminData{
+		data := &comment_notify.AdminData{
 			Title:    postTitle,
 			Link:     postLink,
 			Date:     c.Date,
 			Author:   c.Author,
-			Content:  c.Content,
+			Content:  c.Source,
 			Email:    c.Email,
 			HomePage: c.URL,
-		})
+		}
+		if data.Content == "" {
+			data.Content = c.Content
+		}
+		s.cmtntf.NotifyAdmin(data)
 	}
 
 	var parents []models.Comment
@@ -305,7 +327,10 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		Link:    postLink,
 		Date:    c.Date,
 		Author:  c.Author,
-		Content: c.Content,
+		Content: c.Source,
+	}
+	if guestData.Content == "" {
+		guestData.Content = c.Content
 	}
 
 	s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
