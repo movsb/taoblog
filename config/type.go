@@ -10,6 +10,7 @@ type Config struct {
 	Maintenance MaintenanceConfig `yaml:"maintenance"`
 	Auth        AuthConfig        `yaml:"auth"`
 	Menus       []MenuItem        `yaml:"menus"`
+	Metrics     MetricsConfig     `yaml:"metrics"`
 }
 
 // DefaultConfig ...
@@ -23,6 +24,7 @@ func DefaultConfig() Config {
 		Maintenance: DefaultMainMaintenanceConfig(),
 		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
+		Metrics:     DefaultMetricsConfig(),
 	}
 }
 
