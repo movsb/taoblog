@@ -29,7 +29,7 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 }
 
 func (g *Gateway) routeOthers() {
-	g.router.GET("/avatar", g.GetAvatar)
+	g.router.GET("/avatars/:hash", g.GetAvatar)
 }
 
 func (g *Gateway) routePosts() {

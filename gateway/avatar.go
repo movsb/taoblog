@@ -1,21 +1,16 @@
 package gateway
 
 import (
-	"net/url"
-
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/protocols"
 )
 
 func (g *Gateway) GetAvatar(c *gin.Context) {
 	query := c.Request.URL.RawQuery
-	query, _ = url.QueryUnescape(query)
-	ifModified := c.GetHeader("If-Modified-Since")
-	ifNoneMatch := c.GetHeader("If-None-Match")
 	in := &protocols.GetAvatarRequest{
-		Query:           query,
-		IfModifiedSince: ifModified,
-		IfNoneMatch:     ifNoneMatch,
+		Query:           c.Param(`hash`) + `?` + query,
+		IfModifiedSince: c.GetHeader("If-Modified-Since"),
+		IfNoneMatch:     c.GetHeader("If-None-Match"),
 		SetStatus: func(statusCode int) {
 			c.Status(statusCode)
 		},
