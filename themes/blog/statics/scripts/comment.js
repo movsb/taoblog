@@ -1,46 +1,36 @@
 document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
-        文章评论
-        <span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total">0</span></span>
-        <span class="post-comment">发表评论</span>
+		文章评论
+		<span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total">0</span></span>
+		<span class="post-comment">发表评论</span>
 	</h3>
-
 	<!-- 评论列表  -->
-	<ol id="comment-list">
-
-	</ol>
-
+	<ol id="comment-list"></ol>
 	<!-- 评论功能区  -->
 	<div class="comment-func">
-        <div>还没有用户发表评论，<span class="post-comment">发表评论</span></div>
+		<div>还没有用户发表评论，<span class="post-comment">发表评论</span></div>
 	</div>
-
 	<!-- 评论框 -->
 	<div id="comment-form-div" class="normal">
 		<div class="comment-form-div-1 no-sel">
 			<div class="no-sel" class="nc">
-                <div class="ncbtns">
-                    <img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
-                </div>
+				<div class="ncbtns">
+					<img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
+				</div>
 				<div class="comment-title">
 					<span>评论</span>
 				</div>
 			</div>
-
 			<form id="comment-form">
-				<input id="comment-form-parent"  type="hidden" name="parent" value="" />
-				<input type="hidden" name="source_type" value="markdown" />
-
-                <textarea id="comment-content" name="source" wrap="off"></textarea>
-
-                <div class="fields">
-                    <input type="text" name="author" placeholder="昵称" />
-                    <input type="text" name="email" placeholder="邮箱（不公开）"/>
-                    <input type="text" name="url" placeholder="个人站点" />
-					<input type="submit" id="comment-submit" class="no-sel" value="发表评论" />
+				<textarea id="comment-content" name="source" wrap="off"></textarea>
+				<div class="fields">
+					<input type="text" name="author" placeholder="昵称" />
+					<input type="text" name="email" placeholder="邮箱（不公开）"/>
+					<input type="text" name="url" placeholder="个人站点（可不填）" />
+					<input type="submit" id="comment-submit" value="发表评论" />
 					<div style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>
-                </div>
+				</div>
 			</form>
 		</div>
 	</div>
@@ -49,7 +39,9 @@ document.write(function(){/*
 function Comment() {
     this._count  =0;
     this._loaded = 0;       // 已加载评论数
-    this._loaded_ch = 0;
+	this._loaded_ch = 0;
+	this.post_id = 0;
+	this.parent = 0;
 }
 
 Comment.prototype.init = function() {
@@ -71,7 +63,7 @@ Comment.prototype.init = function() {
 			try {
 				var cmt = await self.postComment();
 				cmt = self.normalize_comment(cmt);
-				var parent = $('#comment-form input[name="parent"]').val();
+				var parent = self.parent;
 				if(parent == 0) {
 					$('#comment-list').prepend(self.gen_comment_item(cmt));
 					// 没有父评论，避免二次加载。
@@ -109,11 +101,11 @@ Comment.prototype.init = function() {
         }
     });
 
-    $(window).on('scroll', function() {
+    window.addEventListener('scroll', function() {
         self.load_essential_comments();
     });
 
-    $(window).on('load', function() {
+    window.addEventListener('load', function() {
         self.get_count(function() {
             self.load_essential_comments();
             self.toggle_post_comment_button(self._count == 0);
@@ -269,13 +261,11 @@ Comment.prototype.gen_comment_item = function(cmt) {
     s += '</div>';
 	s += '</li>';
 
-    // console.log(s);
-
 	return s;
 };
 
 Comment.prototype.reply_to = function(p){
-	$('#comment-form-parent').val(p);
+	this.parent = +p;
 
 	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
 	if(window.localStorage) {
@@ -338,9 +328,7 @@ Comment.prototype.save_info = function() {
 		};
 		localStorage.setItem('commenter', JSON.stringify(commenter));
 	} else {
-		if(typeof show_tips == 'function') {
-			show_tips('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
-		}
+		alert('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
 	}
 };
 
@@ -390,26 +378,16 @@ Comment.prototype.load_comments = function() {
 };
 
 Comment.prototype.formData = function() {
-	var obj = {
-		post_id: this.post_id
-	};
 	var form = document.getElementById('comment-form');
-	var elements = form.querySelectorAll( "input, select, textarea" );
-	for( var i = 0; i < elements.length; ++i ) {
-		var element = elements[i];
-		var name = element.name;
-		var value = element.value;
-		switch(name) {
-		case '':
-			break;
-		case 'parent':
-			obj[name] = +value;
-			break;
-		default:
-			obj[name] = value;
-			break;
-		}
-	}
+	var obj = {
+		post_id: this.post_id,
+		source_type: 'markdown',
+		parent: this.parent,
+		author: form['author'].value,
+		email: form['email'].value,
+		url: form['url'].value,
+		source: form['source'].value
+	};
 	return obj;
 };
 
@@ -444,6 +422,10 @@ Comment.prototype.convert_commenter = function() {
 		localStorage.removeItem('cmt_url');
 	}
 };
+
+if(!(typeof fetch == 'function')) {
+	alert('你的浏览器版本过低（不支持 fetch），页面不能正确显示。');
+}
 
 var comment = new Comment();
 comment.init();

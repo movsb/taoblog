@@ -5,9 +5,9 @@
 {{end}}
 
 {{define "content"}}
-<article class="post" itemscope itemtype="http://schema.org/Article">
+<article class="post">
     <h1 class="title clearfix">{{ .Title }}</h1>
-    <div class="entry clearfix" itemprop="articleBody">
+    <div class="entry clearfix">
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
