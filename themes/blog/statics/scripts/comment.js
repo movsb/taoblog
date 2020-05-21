@@ -2,7 +2,7 @@ document.write(function(){/*
 	<!--评论标题 -->
 	<h3 id="comment-title">
         文章评论
-        <span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total" itemprop="commentCount">0</span></span>
+        <span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total">0</span></span>
         <span class="post-comment">发表评论</span>
 	</h3>
 
@@ -13,7 +13,6 @@ document.write(function(){/*
 
 	<!-- 评论功能区  -->
 	<div class="comment-func">
-        <input type="hidden" id="post-id" name="post-id" value="" />
         <div>还没有用户发表评论，<span class="post-comment">发表评论</span></div>
 	</div>
 
@@ -23,18 +22,6 @@ document.write(function(){/*
 			<div class="no-sel" class="nc">
                 <div class="ncbtns">
                     <img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
-                    <img src="/images/question.svg" width="20" height="20" title="支持插入代码片段，请使用3个反引号括起来，如：
-
-    ```
-    #include <stdio.h>
-
-    int main()
-    {
-        printf(&quot;Hello, world!&quot;);
-        return 0;
-    }
-    ```
-"/>
                 </div>
 				<div class="comment-title">
 					<span>评论</span>
@@ -42,11 +29,8 @@ document.write(function(){/*
 			</div>
 
 			<form id="comment-form">
-                <div style="display: none;">
-                    <input id="comment-form-post-id" type="hidden" name="post_id" value="" />
-                    <input id="comment-form-parent"  type="hidden" name="parent" value="" />
-                    <input type="hidden" name="source_type" value="markdown" />
-                </div>
+				<input id="comment-form-parent"  type="hidden" name="parent" value="" />
+				<input type="hidden" name="source_type" value="markdown" />
 
                 <textarea id="comment-content" name="source" wrap="off"></textarea>
 
@@ -62,8 +46,6 @@ document.write(function(){/*
 	</div>
 */}.toString().slice(14,-3));
 
-$('#post-id').val(_post_id);
-
 function Comment() {
     this._count  =0;
     this._loaded = 0;       // 已加载评论数
@@ -73,6 +55,8 @@ function Comment() {
 Comment.prototype.init = function() {
 	var self = this;
 
+	self.post_id = +_post_id;
+
 	self.convert_commenter();
 
     $('.post-comment').click(function(){
@@ -81,44 +65,36 @@ Comment.prototype.init = function() {
 
     // Ajax评论提交
     $('#comment-submit').click(function() {
-        $(this).attr('disabled', 'disabled');
-        $('#comment-submit').val('提交中...');
-        $.post(
-            '/v2/posts/' + $('#post-id').val() + '/comments',
-            $('#comment-form').serialize(),
-            function(cmt){
+		async function work() {
+			$(this).attr('disabled', 'disabled');
+			$('#comment-submit').val('提交中...');
+			try {
+				var cmt = await self.postComment();
 				cmt = self.normalize_comment(cmt);
-                var parent = $('#comment-form input[name="parent"]').val();
-                if(parent == 0) {
-                    $('#comment-list').prepend(self.gen_comment_item(cmt));
-                    // 没有父评论，避免二次加载。
-                    self._loaded ++;
-                } else {
-                    self.add_reply_div(parent);
-                    $('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(cmt));
-                }
-                $('#comment-'+cmt.id).fadeIn();
-                TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id));
-                $('#comment-content').val('');
-                $('#comment-form-div').fadeOut();
-                self.save_info();
-                self._count++;
-                self.toggle_post_comment_button();
-            },
-            'json'
-        )
-        .fail(
-            function(xhr, sta, e){
-                alert(JSON.parse(xhr.responseText).message);
-            }
-        )
-        .always(
-            function(){
-                $('#comment-submit').val('发表评论');
-                $('#comment-submit').removeAttr('disabled');
-            }
-        );
-
+				var parent = $('#comment-form input[name="parent"]').val();
+				if(parent == 0) {
+					$('#comment-list').prepend(self.gen_comment_item(cmt));
+					// 没有父评论，避免二次加载。
+					self._loaded ++;
+				} else {
+					self.add_reply_div(parent);
+					$('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(cmt));
+				}
+				$('#comment-'+cmt.id).fadeIn();
+				TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id));
+				$('#comment-content').val('');
+				$('#comment-form-div').fadeOut();
+				self.save_info();
+				self._count++;
+				self.toggle_post_comment_button();
+			} catch(e) {
+				alert(e);
+			} finally {
+				$('#comment-submit').val('发表评论');
+				$('#comment-submit').removeAttr('disabled');
+			}
+		}
+		work();
         return false;
     });
 
@@ -174,8 +150,7 @@ Comment.prototype.load_essential_comments = function() {
 
 Comment.prototype.get_count = function(callback) {
     var self = this;
-    var pid = $('#post-id').val();
-    $.get('/v2/posts/' + pid + '/comments!count',
+    $.get('/v2/posts/' + self.post_id + '/comments!count',
         function(data) {
             self._count = data;
             $('#comment-title .total').text(self._count);
@@ -300,7 +275,6 @@ Comment.prototype.gen_comment_item = function(cmt) {
 };
 
 Comment.prototype.reply_to = function(p){
-	$('#comment-form-post-id').val($('#post-id').val());
 	$('#comment-form-parent').val(p);
 
 	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
@@ -317,9 +291,8 @@ Comment.prototype.reply_to = function(p){
 
 Comment.prototype.delete_me = function(p) {
     var self = this;
-    var pid = $('#post-id').val();
 	$.ajax({
-        url: '/v2/posts/' + pid + '/comments/' + p,
+        url: '/v2/posts/' + self.post_id + '/comments/' + p,
         type: 'DELETE',
         success: function() {
             $('#comment-'+p).remove();
@@ -378,9 +351,8 @@ Comment.prototype.load_comments = function() {
     this.loading = true;
 
     var self = this;
-    var pid = $('#post-id').val();
 
-    $.get('/v2/posts/' + pid + '/comments',
+    $.get('/v2/posts/' + self.post_id + '/comments',
         {
             limit: 10,
             offset: self._loaded,
@@ -415,6 +387,48 @@ Comment.prototype.load_comments = function() {
     }).always(function(){
         self.loading = false;
     });
+};
+
+Comment.prototype.formData = function() {
+	var obj = {
+		post_id: this.post_id
+	};
+	var form = document.getElementById('comment-form');
+	var elements = form.querySelectorAll( "input, select, textarea" );
+	for( var i = 0; i < elements.length; ++i ) {
+		var element = elements[i];
+		var name = element.name;
+		var value = element.value;
+		switch(name) {
+		case '':
+			break;
+		case 'parent':
+			obj[name] = +value;
+			break;
+		default:
+			obj[name] = value;
+			break;
+		}
+	}
+	return obj;
+};
+
+Comment.prototype.postComment = async function() {
+	var body = this.formData();
+	var resp = await fetch(
+		'/v2/posts/' + this.post_id + '/comments',
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(body)
+		}
+	);
+	if(!resp.ok) {
+		throw new Error('发表失败：' + (await resp.json()).message);
+	}
+	return resp.json();
 };
 
 Comment.prototype.convert_commenter = function() {

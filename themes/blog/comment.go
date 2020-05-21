@@ -61,18 +61,15 @@ func (b *Blog) listPostComments(c *gin.Context) {
 }
 
 func (b *Blog) createPostComment(c *gin.Context) {
-	comment := &protocols.Comment{
-		PostId:     utils.MustToInt64(c.Param("name")),
-		Parent:     utils.MustToInt64(c.DefaultPostForm("parent", "0")),
-		Author:     c.DefaultPostForm("author", ""),
-		Email:      c.DefaultPostForm("email", ""),
-		Url:        c.DefaultPostForm("url", ""),
-		Ip:         c.ClientIP(),
-		Date:       datetime.ProtoLocal(),
-		SourceType: c.PostForm("source_type"),
-		Source:     c.PostForm("source"),
+	var comment protocols.Comment
+	if err := c.ShouldBindJSON(&comment); err != nil {
+		c.Status(400)
+		return
 	}
+	// TODO remove unwanted field values
+	comment.Ip = c.ClientIP()
+	comment.Date = datetime.ProtoLocal()
 	user := b.auth.AuthCookie(c)
-	comment = b.service.CreateComment(user.Context(nil), comment)
-	c.JSON(200, comment)
+	cmt := b.service.CreateComment(user.Context(nil), &comment)
+	c.JSON(200, cmt)
 }
