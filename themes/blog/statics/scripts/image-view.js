@@ -22,7 +22,9 @@ ImageView.prototype._init = function() {
     this._initBindings();
 
     this._images = $('.entry img');
-    this._images.click(this._onPostImageClick.bind(this));
+	this._images.click(this._onPostImageClick.bind(this));
+
+	this._retina = false;
 };
 
 ImageView.prototype._onPostImageClick = function(e) {
@@ -130,21 +132,23 @@ ImageView.prototype.viewImage = function(img) {
 
         this._$img[0].onload = function() {
             this._rawWidth =  this._$img.prop('naturalWidth');
-            this._rawHeight = this._$img.prop('naturalHeight');
+			this._rawHeight = this._$img.prop('naturalHeight');
 
-            var initScale = 1;
-            var initWidth = 0, initHeight = 0;
+            var initScale = this._retina ? 0.5 : 1;
+			var initWidth = this._rawWidth * initScale;
+			var initHeight = this._rawHeight * initScale;
+
             {
-                var scaleWidth =  this._$imgView.width() / this._rawWidth,
-                    scaleHeight = this._$imgView.height() / this._rawHeight;
+                var scaleWidth =  this._$imgView.width() / initWidth,
+                    scaleHeight = this._$imgView.height() / initHeight;
 
                 // if smaller than container
                 if(scaleWidth >= 1 && scaleHeight >= 1) {
-                    initScale = 1;
+					initScale *= 1;
                 }
                 // if larger than container, scale to fit
                 else {
-                    initScale = Math.min(scaleWidth, scaleHeight);
+                    initScale *= Math.min(scaleWidth, scaleHeight);
                 }
 
                 initWidth = this._rawWidth * initScale;
@@ -164,8 +168,10 @@ ImageView.prototype.viewImage = function(img) {
         }.bind(this);
         this._$img[0].onerror = function() {
             this._showInfo(0, 0, 0);
-        }.bind(this);
-        this._$img.attr('src', img.src || img.getAttribute('data-src'));
+		}.bind(this);
+		var src = img.src || img.getAttribute('data-src');
+		this._retina = src.indexOf('@2x.') != -1;
+        this._$img.attr('src', src);
     } else {
         // 以下两行清除因拖动导致的设置
         this._$img.css('left', '0px');
