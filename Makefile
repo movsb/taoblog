@@ -1,17 +1,17 @@
-api: _protos _server _client _theme
+api: protos_ server_ client_ theme_
 
-_protos:
+protos_:
 	./scripts/build-protos.sh
 
-_server:
+server_:
 	go build -o taoblog ./server/
 
-_client:
+client_:
 	go build -o ./client/taoblog ./client/
-_theme:
+theme_:
 	@cd themes/blog/statics/sass && ./make_style.sh
 
-.PHONY: _protos _server _client _theme
+.PHONY: protos_ server_ client_ theme_
 
 .PHONY: build-image
 build-image: 

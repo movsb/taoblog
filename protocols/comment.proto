@@ -15,10 +15,12 @@ message Comment {
 	string url = 7;
 	string ip = 8;
 	google.protobuf.Timestamp date = 9;
-	string content = 10;
-	repeated Comment children = 11;
-	string avatar = 12;
-	bool is_admin = 13;
+	string source_type = 10;
+	string source = 11;
+	string content = 12;
+	repeated Comment children = 13;
+	string avatar = 14;
+	bool is_admin = 15;
 }
 
 message GetCommentRequest {

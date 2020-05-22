@@ -161,7 +161,8 @@ i, em {
     margin: 0 0.2em;
 }
 
-b, strong {
+b:not(:first-child) ,
+strong:not(:first-child) {
     margin: 0 0.2em;
 }
 

@@ -45,15 +45,17 @@ document.write(function(){/*
                 <div style="display: none;">
                     <input id="comment-form-post-id" type="hidden" name="post_id" value="" />
                     <input id="comment-form-parent"  type="hidden" name="parent" value="" />
+                    <input type="hidden" name="source_type" value="markdown" />
                 </div>
 
-                <textarea id="comment-content" name="content" wrap="off"></textarea>
+                <textarea id="comment-content" name="source" wrap="off"></textarea>
 
                 <div class="fields">
                     <input type="text" name="author" placeholder="昵称" />
                     <input type="text" name="email" placeholder="邮箱（不公开）"/>
                     <input type="text" name="url" placeholder="个人站点" />
 					<input type="submit" id="comment-submit" class="no-sel" value="发表评论" />
+					<div style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>
                 </div>
 			</form>
 		</div>
@@ -200,6 +202,8 @@ Comment.prototype.normalize_comment = function(c) {
 	c.ip = c.ip || '';
 	c.children = c.children || [];
 	c.is_admin = c.is_admin || false;
+	c.source_type = c.source_type || 'plain';
+	c.source = c.source || (c.source_type == 'plain' ? c.content : c.source);
 	return c;
 }
 
@@ -276,8 +280,12 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
-    s += '<time class="date" datetime="' + (new Date(cmt.date.seconds*1000)).toJSON() + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
-	s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
+	s += '<time class="date" datetime="' + (new Date(cmt.date.seconds*1000)).toJSON() + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
+	if(cmt.source_type === 'markdown') {
+		s += '<div class="comment-content html-content">' + cmt.content + '</div>\n';
+	} else {
+		s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
+	}
     s += '<div class="toolbar no-sel" style="margin-left: 54px;">';
 	s += '<a onclick="comment.reply_to('+cmt.id+');return false;">回复</a>';
 	if(loggedin) {
@@ -378,7 +386,7 @@ Comment.prototype.load_comments = function() {
             offset: self._loaded,
         },
         function(resp) {
-			let cmts = resp.comments;
+			let cmts = resp.comments || [];
             var ch_count = 0;
             for(var i=0; i<cmts.length; i++){
 				cmts[i] = self.normalize_comment(cmts[i]);

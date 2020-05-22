@@ -37,6 +37,7 @@ config/     | 配置模块
 docker/     | 容器镜像
 exception/  | 异常处理
 gateway/    | 网关接口层
+metrics     | 监控与统计
 modules/    | 公共模块
 protocols/  | 协议定义
 server/     | 博客后台
