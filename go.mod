@@ -19,3 +19,5 @@ require (
 )
 
 go 1.13
+
+replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.1.31-0.20200522174842-bc0b03f265ac

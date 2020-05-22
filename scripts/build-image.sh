@@ -14,9 +14,5 @@ rsync -aPvh --delete themes/blog/{statics,templates,tools} docker/themes/blog/
 mkdir -p docker/admin
 rsync -aPvh --delete admin/{statics,templates} docker/admin
 
-DIR=service/modules/post_translators
-mkdir -p docker/"$DIR"
-rsync -aPvh --delete "$DIR"/markdown.js docker/"$DIR"/
-
 IMAGE=taocker/taoblog:latest
 (cd docker && docker build -t $IMAGE .)
