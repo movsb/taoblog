@@ -211,10 +211,10 @@
         .ncbtns {
             z-index: 1000;
             position: absolute;
-            top: 3px;
+            top: 6px;
             cursor: pointer;
             height: 20px;
-            right: 3px;
+            right: 6px;
             img {
                 float: right;
                 opacity: 0.3;
@@ -229,7 +229,8 @@
             text-align: center;
             font-size: 1.5em;
             cursor: default;
-            top: -5px;
+			top: -5px;
+			margin-right: 150px;
         }
 
         #comment-form {
@@ -282,6 +283,7 @@
 	@media (prefers-color-scheme: dark) {
 		.comment-form-div-1 {
 			background-color: $body_bg_dark;
+			opacity: 0.9;
 			img {
 				filter: invert(80%);
 			}

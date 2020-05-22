@@ -94,13 +94,6 @@
             white-space: pre;
         }
 
-        &.quote {
-            padding: 1em;
-            border: 1px dashed #ccc;
-            background-color: $post_pre_quote_bg;
-            white-space: pre-wrap;
-        }
-
         &.mono {
             font-family: $mono_font;
         }
