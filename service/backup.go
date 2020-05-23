@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"net"
 	"os/exec"
 
 	"github.com/movsb/taoblog/protocols"
@@ -24,6 +25,10 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		"--compress",
 	}
 
+	host, port, _ := net.SplitHostPort(s.cfg.Database.Endpoint)
+
+	opts = append(opts, "--host="+host)
+	opts = append(opts, "--port="+port)
 	opts = append(opts, "--user="+s.cfg.Database.Username)
 	opts = append(opts, "--password="+s.cfg.Database.Password)
 	opts = append(opts, "--databases", s.cfg.Database.Database)

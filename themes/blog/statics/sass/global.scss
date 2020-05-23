@@ -97,9 +97,6 @@ a {
     &:visited {
         color: $a_visited_fg_light;
     }
-    &:active {
-        color: $a_active_fg_light;
-    }
     &:focus {
         outline: none;
     }
@@ -109,6 +106,9 @@ a {
 		color: $a_fg_dark;
 		&:visited {
 			color: $a_visited_fg_dark;
+		}
+		&:active {
+			color: $a_active_fg_light;
 		}
 	}
 }
