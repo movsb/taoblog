@@ -4,9 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"regexp"
 	"syscall"
@@ -27,30 +30,9 @@ import (
 )
 
 func main() {
-	var err error
-
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	var db *sql.DB
-
-	switch cfg.Database.Engine {
-	case `mysql`:
-		dataSource := fmt.Sprintf(`%s:%s@tcp(%s)/%s`,
-			cfg.Database.MySQL.Username,
-			cfg.Database.MySQL.Password,
-			cfg.Database.MySQL.Endpoint,
-			cfg.Database.MySQL.Database,
-		)
-		db, err = sql.Open(`mysql`, dataSource)
-	case `sqlite`:
-		db, err = sql.Open(`sqlite3`, cfg.Database.SQLite.Path)
-	default:
-		panic(`unknown database engine`)
-	}
-	if err != nil {
-		panic(err)
-	}
-
+	db := initDatabase(cfg)
 	db.SetMaxIdleConns(10)
 	defer db.Close()
 
@@ -184,4 +166,63 @@ func maybeSiteClosed(svc *service.Service, auther *auth.Auth) func(c *gin.Contex
 			c.Next()
 		}
 	}
+}
+
+func initDatabase(cfg *config.Config) *sql.DB {
+	var db *sql.DB
+	var err error
+
+	switch cfg.Database.Engine {
+	case `mysql`:
+		dataSource := fmt.Sprintf(`%s:%s@tcp(%s)/%s`,
+			cfg.Database.MySQL.Username,
+			cfg.Database.MySQL.Password,
+			cfg.Database.MySQL.Endpoint,
+			cfg.Database.MySQL.Database,
+		)
+		db, err = sql.Open(`mysql`, dataSource)
+	case `sqlite`:
+		db, err = sql.Open(`sqlite3`, cfg.Database.SQLite.Path)
+	default:
+		panic(`unknown database engine`)
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	var count int
+	row := db.QueryRow(`select count(1) from options`)
+	if err := row.Scan(&count); err != nil {
+		var cmd *exec.Cmd
+		var fp io.ReadCloser
+		switch cfg.Database.Engine {
+		case `mysql`:
+			host, port, _ := net.SplitHostPort(cfg.Database.MySQL.Endpoint)
+			cmd = exec.Command(`mysql`,
+				`-h`, host,
+				`-P`, port,
+				`-u`, cfg.Database.MySQL.Username,
+				`--password=`+cfg.Database.MySQL.Password,
+				`-D`, cfg.Database.MySQL.Database,
+			)
+			fp, err = os.Open(`setup/data/schemas.mysql.sql`)
+			if err != nil {
+				panic(err)
+			}
+		case `sqlite`:
+			cmd = exec.Command(`sqlite3`, cfg.Database.SQLite.Path)
+			fp, err = os.Open(`setup/data/schemas.sqlite.sql`)
+			if err != nil {
+				panic(err)
+			}
+		}
+		defer fp.Close()
+		cmd.Stdin = fp
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, string(out))
+			panic(err)
+		}
+	}
+	return db
 }
