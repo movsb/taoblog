@@ -3,11 +3,17 @@ blog:
   home: http://localhost
   name: 陪她去流浪
   description: 描述
+
 database:
-  endpoint: localhost:3306
-  database: taoblog
-  username: taoblog
-  password: taoblog
+  engine: sqlite
+  mysql:
+    endpoint: localhost:3306
+    database: taoblog
+    username: taoblog
+    password: taoblog
+  sqlite:
+    path: taoblog.db
+
 server:
   listen: localhost:2564
   mailer: {}
@@ -28,12 +34,12 @@ auth:
     username: basic
     password: basic
   github:
-    user_id: github
+    user_id: 1
     client_id: github
     client_secret: github
   google:
     client_id: google
-    user_id: google
+    user_id: 1
 
 menus:
 - name: item1

@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
-GOOS=linux GOARCH=amd64 go build -o ./docker/taoblog ./server/
+(cd "$GOPATH"/src/github.com/movsb/taoblog && xgo --targets=linux/amd64 -dest docker ./server)
+
 (cd themes/blog/statics/sass && ./make_style.sh)
 
-GOOS=linux GOARCH=amd64 go build -o ./docker/setup/init ./setup/init
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
 mkdir -p docker/themes/blog

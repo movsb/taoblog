@@ -17,6 +17,10 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		return nil, status.Error(codes.Unauthenticated, "bad credentials")
 	}
 
+	if s.cfg.Database.Engine != `mysql` {
+		panic(`mysql only`)
+	}
+
 	opts := []string{
 		"--add-drop-database",
 		"--add-drop-table",
@@ -25,13 +29,13 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		"--compress",
 	}
 
-	host, port, _ := net.SplitHostPort(s.cfg.Database.Endpoint)
+	host, port, _ := net.SplitHostPort(s.cfg.Database.MySQL.Endpoint)
 
 	opts = append(opts, "--host="+host)
 	opts = append(opts, "--port="+port)
-	opts = append(opts, "--user="+s.cfg.Database.Username)
-	opts = append(opts, "--password="+s.cfg.Database.Password)
-	opts = append(opts, "--databases", s.cfg.Database.Database)
+	opts = append(opts, "--user="+s.cfg.Database.MySQL.Username)
+	opts = append(opts, "--password="+s.cfg.Database.MySQL.Password)
+	opts = append(opts, "--databases", s.cfg.Database.MySQL.Database)
 
 	cmd := exec.Command(
 		"mysqldump",

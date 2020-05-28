@@ -28,24 +28,6 @@ func DefaultConfig() Config {
 	}
 }
 
-// DatabaseConfig ...
-type DatabaseConfig struct {
-	Endpoint string `yaml:"endpoint"`
-	Database string `yaml:"database"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-}
-
-// DefaultDatabaseConfig ...
-func DefaultDatabaseConfig() DatabaseConfig {
-	return DatabaseConfig{
-		Endpoint: `localhost:3306`,
-		Database: `taoblog`,
-		Username: `taoblog`,
-		Password: `taoblog`,
-	}
-}
-
 // ServerConfig ...
 type ServerConfig struct {
 	Listen string             `yaml:"listen"`
@@ -134,7 +116,7 @@ type BlogConfig struct {
 func DefaultBlogConfig() BlogConfig {
 	return BlogConfig{
 		Home:        `localhost`,
-		Name:        `未命名博客`,
+		Name:        `未命名`,
 		Description: `还没有写描述哦`,
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
@@ -29,10 +31,26 @@ func main() {
 
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	db, err := sql.Open("sqlite3", "taoblog.db")
+	var db *sql.DB
+
+	switch cfg.Database.Engine {
+	case `mysql`:
+		dataSource := fmt.Sprintf(`%s:%s@tcp(%s)/%s`,
+			cfg.Database.MySQL.Username,
+			cfg.Database.MySQL.Password,
+			cfg.Database.MySQL.Endpoint,
+			cfg.Database.MySQL.Database,
+		)
+		db, err = sql.Open(`mysql`, dataSource)
+	case `sqlite`:
+		db, err = sql.Open(`sqlite3`, cfg.Database.SQLite.Path)
+	default:
+		panic(`unknown database engine`)
+	}
 	if err != nil {
 		panic(err)
 	}
+
 	db.SetMaxIdleConns(10)
 	defer db.Close()
 

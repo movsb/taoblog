@@ -20,7 +20,9 @@ func LoadFile(path string) *Config {
 // Load ...
 func Load(r io.Reader) *Config {
 	c := DefaultConfig()
-	err := yaml.NewDecoder(r).Decode(&c)
+	dec := yaml.NewDecoder(r)
+	dec.SetStrict(true)
+	err := dec.Decode(&c)
 	if err != nil {
 		panic(err)
 	}
