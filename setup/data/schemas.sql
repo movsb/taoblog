@@ -1,72 +1,67 @@
 -- 创建表 options
 CREATE TABLE IF NOT EXISTS `options` (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `value` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`name`)
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `name` VARCHAR(64)  NOT NULL UNIQUE,
+    `value` TEXT  NOT NULL
 );
 
 -- 创建表 posts
 CREATE TABLE IF NOT EXISTS `posts` (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
     `modified` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-    `title` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `content` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `slug` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `type` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `category` INT(10) UNSIGNED NOT NULL DEFAULT 1,
-    `status` ENUM('public', 'draft'),
-    `page_view` INT(20) UNSIGNED NOT NULL DEFAULT 0,
-    `comment_status` INT(1) UNSIGNED DEFAULT 1,
-    `comments` INT(20) UNSIGNED NOT NULL DEFAULT 0,
-    `metas` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `source` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    `source_type` ENUM('html', 'markdown'),
-    PRIMARY KEY(`id`)
+    `title` TEXT  NOT NULL,
+    `content` LONGTEXT  NOT NULL,
+    `slug` VARCHAR(128)  NOT NULL,
+    `type` VARCHAR(16)  NOT NULL,
+    `category` INTEGER  NOT NULL DEFAULT 1,
+    `status` VARCHAR(16),
+    `page_view` INTEGER  NOT NULL DEFAULT 0,
+    `comment_status` INTEGER  DEFAULT 1,
+    `comments` INTEGER  NOT NULL DEFAULT 0,
+    `metas` TEXT  NOT NULL,
+    `source` LONGTEXT ,
+    `source_type` VARCHAR(16)
 );
 
 -- 创建表 comments
 CREATE TABLE IF NOT EXISTS `comments` (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `post_id` INT(20) UNSIGNED NOT NULL,
-    `author` TINYTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `email` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `url` VARCHAR(200) CHARACTER SET utf8 COLLATE utf8_general_ci,
-    `ip` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `post_id` INTEGER  NOT NULL,
+    `author` TINYTEXT  NOT NULL,
+    `email` VARCHAR(100)  NOT NULL,
+    `url` VARCHAR(200) ,
+    `ip` VARCHAR(16)  NOT NULL,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-    `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `parent` INT(20) UNSIGNED NOT NULL,
-    `root` INT(20) UNSIGNED NOT NULL,
-    PRIMARY KEY(`id`)
+    `source_type` varchar(16) NOT NULL,
+    `source` text NOT NULL,
+    `content` TEXT  NOT NULL,
+    `parent` INTEGER  NOT NULL,
+    `root` INTEGER  NOT NULL
 );
 
 -- 创建表 文章分类 categories
 CREATE TABLE IF NOT EXISTS categories (
-    `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `slug` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `parent_id` INT(10) UNSIGNED NOT NULL,
-    `path` VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    PRIMARY KEY(`id`),
-    UNIQUE KEY `uix_path_slug` (`path`,`slug`)
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `name` VARCHAR(32)  NOT NULL,
+    `slug` VARCHAR(32)  NOT NULL,
+    `parent_id` INTEGER  NOT NULL,
+    `path` VARCHAR(256)  NOT NULL,
+    UNIQUE (`path`,`slug`)
 );
 
 -- 创建表 tag标签/post_tags
 CREATE TABLE IF NOT EXISTS tags (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `alias` INT(20) UNSIGNED NOT NULL DEFAULT 0,
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`name`)
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `name` VARCHAR(32)  NOT NULL,
+    `alias` INTEGER  NOT NULL DEFAULT 0,
+    UNIQUE(`name`)
 );
 
 -- 创建表 文章标签表
 CREATE TABLE IF NOT EXISTS post_tags (
-    `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `post_id` INT(20) UNSIGNED NOT NULL,
-    `tag_id` INT(20) UNSIGNED NOT NULL,
-    PRIMARY KEY(`id`),
-    UNIQUE KEY `uix_post_id_and_tag_id` (`post_id`,`tag_id`)
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `post_id` INTEGER  NOT NULL,
+    `tag_id` INTEGER  NOT NULL,
+    UNIQUE (`post_id`,`tag_id`)
 );

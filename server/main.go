@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
@@ -30,13 +29,7 @@ func main() {
 
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/%s",
-		cfg.Database.Username,
-		cfg.Database.Password,
-		cfg.Database.Endpoint,
-		cfg.Database.Database,
-	)
-	db, err := sql.Open("mysql", dataSource)
+	db, err := sql.Open("sqlite3", "taoblog.db")
 	if err != nil {
 		panic(err)
 	}

@@ -66,7 +66,7 @@ func (s *Service) GetPostByID(id int64) *protocols.Post {
 }
 
 func (s *Service) IncrementPostPageView(id int64) {
-	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
+	query := "UPDATE posts SET page_view=page_view+1 WHERE id=?"
 	s.tdb.MustExec(query, id)
 }
 
