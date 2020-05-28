@@ -15,7 +15,7 @@ database:
     path: taoblog.db
 
 server:
-  listen: localhost:2564
+  listen: 0.0.0.0:2564
   mailer: {}
 data:
   file:

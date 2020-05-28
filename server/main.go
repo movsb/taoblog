@@ -4,12 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
 	"regexp"
 	"syscall"
@@ -24,6 +21,7 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/service"
+	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
 	"github.com/movsb/taorm/taorm"
@@ -193,36 +191,7 @@ func initDatabase(cfg *config.Config) *sql.DB {
 	var count int
 	row := db.QueryRow(`select count(1) from options`)
 	if err := row.Scan(&count); err != nil {
-		var cmd *exec.Cmd
-		var fp io.ReadCloser
-		switch cfg.Database.Engine {
-		case `mysql`:
-			host, port, _ := net.SplitHostPort(cfg.Database.MySQL.Endpoint)
-			cmd = exec.Command(`mysql`,
-				`-h`, host,
-				`-P`, port,
-				`-u`, cfg.Database.MySQL.Username,
-				`--password=`+cfg.Database.MySQL.Password,
-				`-D`, cfg.Database.MySQL.Database,
-			)
-			fp, err = os.Open(`setup/data/schemas.mysql.sql`)
-			if err != nil {
-				panic(err)
-			}
-		case `sqlite`:
-			cmd = exec.Command(`sqlite3`, cfg.Database.SQLite.Path)
-			fp, err = os.Open(`setup/data/schemas.sqlite.sql`)
-			if err != nil {
-				panic(err)
-			}
-		}
-		defer fp.Close()
-		cmd.Stdin = fp
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, string(out))
-			panic(err)
-		}
+		inits.Init(cfg, db)
 	}
 	return db
 }

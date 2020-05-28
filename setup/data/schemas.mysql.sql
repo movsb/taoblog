@@ -75,7 +75,4 @@ CREATE TABLE IF NOT EXISTS post_tags (
     UNIQUE KEY `uix_post_id_and_tag_id` (`post_id`,`tag_id`)
 );
 
-INSERT INTO options (name,value) VALUES ('db_ver', 12);
-INSERT INTO categories (name,slug,parent_id,path) VALUES ('未分类','uncategorized',0,'/');
-
 COMMIT;

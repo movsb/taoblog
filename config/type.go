@@ -37,7 +37,7 @@ type ServerConfig struct {
 // DefaultServerConfig ...
 func DefaultServerConfig() ServerConfig {
 	return ServerConfig{
-		Listen: `localhost:2564`,
+		Listen: `0.0.0.0:2564`,
 		Mailer: DefaultMaiMailerServerConfig(),
 	}
 }
