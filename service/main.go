@@ -75,6 +75,11 @@ func (s *Service) Ping(ctx context.Context, in *protocols.PingRequest) (*protoco
 	}, nil
 }
 
+// Config ...
+func (s *Service) Config() *config.Config {
+	return s.cfg
+}
+
 // TxCall ...
 func (s *Service) TxCall(callback func(txs *Service) error) {
 	err := s.tdb.TxCall(func(tx *taorm.DB) error {

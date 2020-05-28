@@ -26,6 +26,7 @@
 <p id=all-posts><a href="/posts">所有文章...</a></p>
 
 <h2>近期评论</h2>
+{{ if .LatestComments }}
 <ul>
 {{range .LatestComments}}
     <li style="margin-bottom: 8px; overflow: hidden;">
@@ -34,7 +35,10 @@
     </li>
 {{end}}
 </ul>
-
+{{ else }}
+<ul>没有评论。</ul>
+{{ end }}
+{{ if .Config.Site.ShowStatus }}
 <div class="status">
     <h2>服务状态</h2>
     <ul>
@@ -42,6 +46,7 @@
         <li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
     </ul>
 </div>
+{{ end }}
 {{end}}
 
 {{define "home_footer"}}

@@ -2,13 +2,18 @@ package config
 
 // SiteConfig ...
 type SiteConfig struct {
-	Search GoogleSearchConfig `yaml:"search"`
+	ShowStatus       bool               `yaml:"show_status"`
+	ShowRelatedPosts bool               `yaml:"show_related_posts"`
+	Search           GoogleSearchConfig `yaml:"search"`
+	Copyright        string             `yaml:"copyright"`
 }
 
 // DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
 	return SiteConfig{
-		Search: DefaultGoogleSearchConfig(),
+		ShowStatus:       false,
+		ShowRelatedPosts: false,
+		Search:           DefaultGoogleSearchConfig(),
 	}
 }
 
