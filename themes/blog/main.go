@@ -23,6 +23,7 @@ import (
 
 // ThemeHeaderData ...
 type ThemeHeaderData struct {
+	Config *config.Config
 	TemplateCommon
 	Title  string
 	Header func()
@@ -311,6 +312,7 @@ func (b *Blog) queryHome(c *gin.Context) {
 		User: user,
 	}
 	header := &ThemeHeaderData{
+		Config:         b.cfg,
 		TemplateCommon: tc,
 		Title:          "",
 		Header: func() {

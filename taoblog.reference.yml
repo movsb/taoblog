@@ -50,3 +50,7 @@ menus:
     link: /subitem1
   - name: subitem2
     link: /subitem2
+
+site:
+  search:
+    #engine_id: 'engine_id'

@@ -11,6 +11,7 @@ type Config struct {
 	Auth        AuthConfig        `yaml:"auth"`
 	Menus       []MenuItem        `yaml:"menus"`
 	Metrics     MetricsConfig     `yaml:"metrics"`
+	Site        SiteConfig        `yaml:"site"`
 }
 
 // DefaultConfig ...
@@ -25,6 +26,7 @@ func DefaultConfig() Config {
 		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
 		Metrics:     DefaultMetricsConfig(),
+		Site:        DefaultSiteConfig(),
 	}
 }
 

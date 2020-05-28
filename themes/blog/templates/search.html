@@ -1,3 +1,4 @@
+{{ define "search" }}
 <!doctype html>
 <html>
 <head>
@@ -15,7 +16,7 @@
 <div id="wrapper">
 <script>
   (function() {
-    var cx = '014332636556948810867:r1yplmmx68k';
+    var cx = '{{.EngineID }}';
     var gcse = document.createElement('script');
     gcse.type = 'text/javascript';
     gcse.async = true;
@@ -29,3 +30,4 @@
 </div>
 </body>
 </html>
+{{end}}
