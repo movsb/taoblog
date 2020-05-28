@@ -11,7 +11,8 @@ import (
 func LoadFile(path string) *Config {
 	fp, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		cfg := DefaultConfig()
+		return &cfg
 	}
 	defer fp.Close()
 	return Load(fp)

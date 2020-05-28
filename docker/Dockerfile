@@ -7,7 +7,7 @@ RUN apk add sqlite
 
 WORKDIR /workspace
 
-ADD server-linux-amd64 taoblog
+ADD taoblog taoblog
 ADD admin admin
 ADD themes themes
 ADD service service
