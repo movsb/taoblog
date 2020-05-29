@@ -12,6 +12,7 @@ type Config struct {
 	Menus       []MenuItem        `yaml:"menus"`
 	Metrics     MetricsConfig     `yaml:"metrics"`
 	Site        SiteConfig        `yaml:"site"`
+	Comment     CommentConfig     `yaml:"comment"`
 }
 
 // DefaultConfig ...
@@ -27,6 +28,7 @@ func DefaultConfig() Config {
 		Menus:       DefaultMenuConfig(),
 		Metrics:     DefaultMetricsConfig(),
 		Site:        DefaultSiteConfig(),
+		Comment:     DefaultCommentConfig(),
 	}
 }
 
@@ -121,4 +123,10 @@ func DefaultBlogConfig() BlogConfig {
 		Name:        `未命名`,
 		Description: `还没有写描述哦`,
 	}
+}
+
+// BlogEmailsConfig ...
+type BlogEmailsConfig struct {
+	Admin      string   `yaml:"admin"`
+	NotAllowed []string `yaml:"not_allowed"`
 }

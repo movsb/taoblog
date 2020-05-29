@@ -54,6 +54,7 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 		Password:   s.cfg.Server.Mailer.Password,
 		AdminName:  s.GetDefaultStringOption("author", ""),
 		AdminEmail: s.GetDefaultStringOption("email", ""),
+		Config:     s.cfg,
 	}
 
 	server := grpc.NewServer()

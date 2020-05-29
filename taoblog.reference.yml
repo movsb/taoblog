@@ -31,8 +31,8 @@ maintenance:
 
 auth:
   basic:
-    username: basic
-    password: basic
+    username: taoblog
+    password: taoblog
   github:
     user_id: 1
     client_id: github
@@ -57,3 +57,24 @@ site:
   search:
     #engine_id: 'engine_id'
   copyright: '版权声明：若非特别注明，本站所有文章均为作者原创，转载请务必注明原文地址。'
+
+comment:
+  templates:
+    admin: |
+      <b>您的博文“{{.Title}}”有新的评论啦！</b><br/><br/>
+
+      <b>链接：</b><a href="{{.Link}}">{{.Link}}</a><br/>
+      <b>作者：</b>{{.Author}}<br/>
+      <b>邮箱：</b>{{.Email}}<br/>
+      <b>网址：</b>{{.HomePage}}<br/>
+      <b>时间：</b>{{.Date}}<br/>
+      <b>内容：</b>{{.Content}}<br/>
+    guest: |
+      <b>您在博文“{{.Title}}”的评论有新的回复啦！</b><br/><br/>
+
+      <b>链接：</b><a href="{{.Link}}">{{.Link}}</a><br/>
+      <b>作者：</b>{{.Author}}<br/>
+      <b>时间：</b>{{.Date}}<br/>
+      <b>内容：</b>{{.Content}}<br/>
+
+      <br/>该邮件为系统自动发出，请勿直接回复该邮件。<br/>

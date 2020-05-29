@@ -186,8 +186,9 @@ func (b *Blog) loadTemplates() {
 				return b.service.Name()
 			case `blog_desc`:
 				return b.service.Description()
+			default:
+				panic(`cannot get this option`)
 			}
-			return b.service.GetStringOption(name)
 		},
 		"menus": func() template.HTML {
 			return template.HTML(menustr)

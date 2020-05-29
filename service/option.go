@@ -38,18 +38,6 @@ func (s *Service) GetDefaultStringOption(name string, def string) string {
 	panic(err)
 }
 
-/*
-func (s *Service) GetIntegerOption(name string) (value int64) {
-	var option models.Option
-	s.tdb.Model(models.Option{}, "options").Where("name=?", name).MustFind(&option)
-	if n, err := strconv.ParseInt(option.Value, 10, 64); err != nil {
-		panic(err)
-		value = n
-	}
-	return
-}
-*/
-
 func (s *Service) GetDefaultIntegerOption(name string, def int64) (value int64) {
 	parse := func(s string) int64 {
 		n, err := strconv.ParseInt(s, 10, 64)

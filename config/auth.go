@@ -25,7 +25,10 @@ type BasicAuthConfig struct {
 
 // DefaultBasicBasicAuthConfig ...
 func DefaultBasicBasicAuthConfig() BasicAuthConfig {
-	return BasicAuthConfig{}
+	return BasicAuthConfig{
+		Username: `taoblog`,
+		Password: `taoblog`,
+	}
 }
 
 // GithubAuthConfig ...
