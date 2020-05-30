@@ -10,7 +10,6 @@ WORKDIR /workspace
 ADD taoblog taoblog
 ADD admin admin
 ADD themes themes
-ADD service service
 ADD setup setup
 
 CMD ["./taoblog"]

@@ -126,9 +126,6 @@ func (b *Blog) route() {
 	posts := b.api.Group("/posts")
 	posts.GET("/:name/comments", b.listPostComments)
 	posts.POST("/:name/comments", b.createPostComment)
-
-	tools := b.api.Group("/tools")
-	tools.POST("/aes2htm", aes2htm)
 }
 
 func (b *Blog) render(w io.Writer, name string, data interface{}) {
