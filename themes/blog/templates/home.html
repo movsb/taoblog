@@ -1,4 +1,4 @@
-{{define "home_header"}}
+{{define "custom_header"}}
 <style>
 #content > ul, .status > ul, #all-posts {
     list-style: none;
@@ -15,10 +15,14 @@
 </style>
 {{end}}
 
-{{define "home"}}
+{{define "custom_footer"}}
+
+{{end}}
+
+{{ render "header" . }}
 <h2>近期文章</h2>
 <ul>
-{{range .LatestPosts}}
+{{range .Home.Posts}}
     <li><a href="{{.Link}}">{{.NonPublic}}{{.Title}}</a></li>
 {{end}}
 </ul>
@@ -26,9 +30,9 @@
 <p id=all-posts><a href="/posts">所有文章...</a></p>
 
 <h2>近期评论</h2>
-{{ if .LatestComments }}
+{{ if .Home.Comments }}
 <ul>
-{{range .LatestComments}}
+{{range .Home.Comments}}
     <li style="margin-bottom: 8px; overflow: hidden;">
         <b>{{.Author}}</b>：{{.Content}}
         <span style="float: right;">《<a href="/{{.PostId}}/#comments">{{.PostTitle}}</a>》</span>
@@ -38,17 +42,17 @@
 {{ else }}
 <ul>没有评论。</ul>
 {{ end }}
+
 {{ if .Config.Site.ShowStatus }}
 <div class="status">
     <h2>服务状态</h2>
     <ul>
-        <li>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</li>
-        <li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
+		<li>服务器开始运行于2014年12月24日，已运行 <span id="server-run-time">?</span> 天。</li>
+		{{ with .Home }}
+		<li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
+		{{ end }}
     </ul>
 </div>
 {{ end }}
-{{end}}
 
-{{define "home_footer"}}
-
-{{end}}
+{{ render "footer" . }}

@@ -38,6 +38,8 @@ func (g *Gateway) routePosts() {
 	c.POST("", g.auth, g.CreatePost)
 	c.POST("/:name", g.auth, g.UpdatePost)
 	c.GET("/:name", g.auth, g.GetPost)
+	c.GET("/:name/comments", g.listPostComments)
+	c.POST("/:name/comments", g.createPostComment)
 
 	// comments
 	c.GET("/:name/comments!count", g.GetPostCommentCount)

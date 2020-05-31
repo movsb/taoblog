@@ -1,11 +1,13 @@
-{{define "content_header"}}
-<base href="/{{.ID}}/" />
-<script>var _post_id = +"{{.ID}}";</script>
+{{define "custom_header"}}
+<base href="/{{.Post.Post.ID}}/" />
+<script>var _post_id = +"{{.Post.Post.ID}}";</script>
 <link rel="stylesheet" href="/plugins/highlight/prism.css" />
 {{end}}
 
-{{define "content"}}
+{{ $dot:=. }}
+{{ render "header" . }}
 <article class="post">
+	{{ with .Post.Post }}
     <h1 class="title clearfix">{{ .Title }}</h1>
     <div class="entry clearfix">
 {{raw `<!--article begins here-->`}}
@@ -20,19 +22,20 @@
                     ，标签：<span class="value">{{.TagsString}}</span>
                 {{end}}
 			</p>
-			{{ if .Config.Site.Copyright }}
-			<p class="copyright">{{ .Config.Site.Copyright }}</p>
+			{{ if $dot.Config.Site.Copyright }}
+			<p class="copyright">{{ $dot.Config.Site.Copyright }}</p>
 			{{ end }}
 </div>
     </div><!-- end entry -->
-	{{ if .Config.Site.ShowRelatedPosts }}
+	{{ end }}
+	{{ if $dot.Config.Site.ShowRelatedPosts }}
     <div class="related clearfix">
         <h3>相关文章</h3>
-        {{if .RelatedPosts}}
+        {{ if $dot.Post.Post.Related }}
         <ol>
-        {{range .RelatedPosts}}
+        {{ range $dot.Post.Post.Related }}
             <li><a href="/{{.ID}}/">{{.Title}}</a></li>
-        {{end}}
+        {{ end }}
         </ol>
         {{else}}
             <div class="no-related">没有相关文章。</div>
@@ -45,9 +48,9 @@
     </div>
     <!-- comments end -->
 </article>
-{{end}}
+{{ render "footer" . }}
 
-{{define "content_footer"}}
+{{define "custom_footer"}}
 <script type="text/javascript" src="/plugins/timeago/timeago.js"></script>
 <script type="text/javascript">
     $('.comment-meta .date').timeago();

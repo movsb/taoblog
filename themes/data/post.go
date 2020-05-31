@@ -1,4 +1,4 @@
-package blog
+package data
 
 import (
 	"fmt"
@@ -6,34 +6,29 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
 
 // Post ...
 type Post struct {
 	*protocols.Post
-	Config       *config.Config
-	Content      template.HTML
-	RelatedPosts []*models.PostForRelated
-	service      *service.Service
+	Content template.HTML
+	Related []*models.PostForRelated
+	Tags    []string
 }
 
-func newPost(post *protocols.Post, service *service.Service) *Post {
+func newPost(post *protocols.Post) *Post {
 	return &Post{
-		Config:  service.Config(),
 		Post:    post,
-		service: service,
 		Content: template.HTML(post.Content),
 	}
 }
 
-func newPosts(posts []*protocols.Post, service *service.Service) []*Post {
+func newPosts(posts []*protocols.Post) []*Post {
 	ps := []*Post{}
 	for _, p := range posts {
-		ps = append(ps, newPost(p, service))
+		ps = append(ps, newPost(p))
 	}
 	return ps
 }

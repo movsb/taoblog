@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"html"
 	"html/template"
-	"io"
 	"net/http"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,77 +19,43 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
-	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/themes/data"
 )
 
-// ThemeHeaderData ...
-type ThemeHeaderData struct {
-	Config *config.Config
-	TemplateCommon
-	Title  string
-	Header func()
-}
+var (
+	regexpHome   = regexp.MustCompile(`^/$`)
+	regexpByID   = regexp.MustCompile(`^/(\d+)/$`)
+	regexpFile   = regexp.MustCompile(`^/(\d+)/(.+)$`)
+	regexpBySlug = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
+	regexpByTags = regexp.MustCompile(`^/tags/(.*)$`)
+	regexpByPage = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
+)
 
-// HeaderHook ...
-func (d *ThemeHeaderData) HeaderHook() string {
-	if d.Header != nil {
-		d.Header()
-	}
-	return ""
-}
-
-// ThemeFooterData ...
-type ThemeFooterData struct {
-	TemplateCommon
-	Footer func()
-}
-
-// FooterHook ...
-func (d *ThemeFooterData) FooterHook() string {
-	if d.Footer != nil {
-		d.Footer()
-	}
-	return ""
-}
-
-// Home ...
-type Home struct {
-	Config         *config.Config
-	Title          string
-	PostCount      int64
-	PageCount      int64
-	CommentCount   int64
-	LatestPosts    []*Post
-	LatestComments []*Comment
-}
-
-// Archives ...
-type Archives struct {
-	Tags  []*models.TagWithCount
-	Dates []*models.PostForDate
-	Cats  template.HTML
-	Title string
-}
-
-// QueryTags ...
-type QueryTags struct {
-	Tag   string
-	Posts []*models.PostForArchive
+var nonCategoryNames = map[string]bool{
+	"/admin/":   true,
+	"/scripts/": true,
+	"/images/":  true,
+	"/sass/":    true,
+	"/tags/":    true,
+	"/plugins/": true,
+	"/files/":   true,
 }
 
 // Blog ...
 type Blog struct {
-	cfg       *config.Config
-	base      string // base directory
-	service   *service.Service
-	templates *template.Template
-	router    *gin.RouterGroup
-	auth      *auth.Auth
-	api       *gin.RouterGroup
-	metrics   metrics.Server
+	cfg     *config.Config
+	base    string // base directory
+	service *service.Service
+	router  *gin.RouterGroup
+	auth    *auth.Auth
+	api     *gin.RouterGroup
+	metrics metrics.Server
 	// dynamic files, rather than static files.
 	// Not thread safe. Don't write after initializing.
 	specialFiles map[string]func(c *gin.Context)
+
+	globalTemplates *template.Template
+	namedTemplates  map[string]*template.Template
 }
 
 // NewBlog ...
@@ -106,13 +73,13 @@ func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, rout
 	b.loadTemplates()
 	b.route()
 	b.specialFiles = map[string]func(c *gin.Context){
-		"/sitemap.xml": b.GetSitemap,
-		"/rss":         b.GetRss,
-		"/posts":       b.getPagePosts,
+		"/sitemap.xml": b.querySitemap,
+		"/rss":         b.queryRss,
+		"/search":      b.querySearch,
+		"/posts":       b.queryPosts,
 		"/all-posts.html": func(c *gin.Context) {
 			c.Redirect(301, "/posts")
 		},
-		"/search": b.getPageSearch,
 	}
 	return b
 }
@@ -122,16 +89,6 @@ func (b *Blog) route() {
 		path := c.Param("path")
 		b.Query(c, path)
 	})
-
-	posts := b.api.Group("/posts")
-	posts.GET("/:name/comments", b.listPostComments)
-	posts.POST("/:name/comments", b.createPostComment)
-}
-
-func (b *Blog) render(w io.Writer, name string, data interface{}) {
-	if err := b.templates.ExecuteTemplate(w, name, data); err != nil {
-		panic(err)
-	}
 }
 
 func createMenus(items []config.MenuItem) string {
@@ -190,31 +147,54 @@ func (b *Blog) loadTemplates() {
 		"menus": func() template.HTML {
 			return template.HTML(menustr)
 		},
+		"render": func(name string, data *data.Data) error {
+			if t := data.Template.Lookup(name); t != nil {
+				return t.Execute(data.Writer, data)
+			}
+			if t := b.globalTemplates.Lookup(name); t != nil {
+				return t.Execute(data.Writer, data)
+			}
+			return nil
+		},
 	}
 
-	var tmpl *template.Template
-	tmpl = template.New("blog").Funcs(funcs)
-	path := filepath.Join(b.base, "templates", "*.html")
-	tmpl, err := tmpl.ParseGlob(path)
+	b.globalTemplates = template.New(`global`).Funcs(funcs)
+	b.namedTemplates = make(map[string]*template.Template)
+
+	templateFiles, err := filepath.Glob(filepath.Join(b.base, `templates`, `*.html`))
 	if err != nil {
 		panic(err)
 	}
-	b.templates = tmpl
+
+	for _, path := range templateFiles {
+		name := filepath.Base(path)
+		if name[0] == '_' {
+			b.globalTemplates.ParseFiles(path)
+		} else {
+			tmpl := template.Must(template.New(name).Funcs(funcs).ParseFiles(path))
+			b.namedTemplates[tmpl.Name()] = tmpl
+		}
+	}
 }
 
 // Query ...
 func (b *Blog) Query(c *gin.Context, path string) {
 	defer func() {
 		if e := recover(); e != nil {
-			switch e.(type) {
+			switch te := e.(type) {
 			case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
 				c.Status(404)
-				b.render(c.Writer, "404", nil)
+				b.namedTemplates[`404.html`].Execute(c.Writer, nil)
 				return
-			case *PermDeniedError:
-				c.Status(403)
-				b.render(c.Writer, "403", nil)
-				return
+			case string: // hack hack
+				switch te {
+				case "403":
+					c.Status(403)
+					b.namedTemplates[`403.html`].Execute(c.Writer, nil)
+					return
+				default:
+					panic(te)
+				}
 			}
 			panic(e)
 		}
@@ -306,53 +286,94 @@ func (b *Blog) processHomeQueries(c *gin.Context) bool {
 }
 
 func (b *Blog) queryHome(c *gin.Context) {
-	user := b.auth.AuthCookie(c)
-	tc := TemplateCommon{
-		User: user,
-	}
-	header := &ThemeHeaderData{
-		Config:         b.cfg,
-		TemplateCommon: tc,
-		Title:          "",
-		Header: func() {
-			b.render(c.Writer, "home_header", nil)
-		},
-	}
-
-	footer := &ThemeFooterData{
-		TemplateCommon: tc,
-		Footer: func() {
-			b.render(c.Writer, "home_footer", nil)
-		},
-	}
-
-	home := &Home{
-		Config:       b.cfg,
-		PostCount:    b.service.GetDefaultIntegerOption("post_count", 0),
-		PageCount:    b.service.GetDefaultIntegerOption("page_count", 0),
-		CommentCount: b.service.GetDefaultIntegerOption("comment_count", 0),
-	}
-	home.LatestPosts = newPosts(b.service.MustListPosts(user.Context(nil),
-		&protocols.ListPostsRequest{
-			Fields:  "id,title,type,status",
-			Limit:   20,
-			OrderBy: "date DESC",
-		}), b.service)
-	comments, err := b.service.ListComments(user.Context(nil),
-		&protocols.ListCommentsRequest{
-			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
-			Limit:   10,
-			OrderBy: "date DESC",
-		})
-	if err != nil {
+	d := data.NewDataForHome(b.cfg, b.auth.AuthContext(c), b.service)
+	t := b.namedTemplates[`home.html`]
+	d.Template = t
+	d.Writer = c.Writer
+	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
-	home.LatestComments = newComments(comments.Comments, b.service)
-
-	b.render(c.Writer, "header", header)
-	b.render(c.Writer, "home", home)
-	b.render(c.Writer, "footer", footer)
 	b.metrics.CountPost(0, `首页`, c.ClientIP(), c.Request.UserAgent())
+}
+
+func (b *Blog) queryRss(c *gin.Context) {
+	d := data.NewDataForRss(b.cfg, b.auth.AuthContext(c), b.service)
+	t := b.namedTemplates[`rss.html`]
+	d.Template = t
+	d.Writer = c.Writer
+
+	c.Header("Content-Type", "application/xml")
+
+	// TODO turn on 304 or off from config.
+	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		c.Header("Last-Modified", datetime.My2Gmt(modified))
+	}
+
+	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+
+	if err := t.Execute(c.Writer, d); err != nil {
+		panic(err)
+	}
+
+	// TODO metricss for rss crawler.
+}
+
+func (b *Blog) querySitemap(c *gin.Context) {
+	d := data.NewDataForSitemap(b.cfg, b.auth.AuthContext(c), b.service)
+	t := b.namedTemplates[`sitemap.html`]
+	d.Template = t
+	d.Writer = c.Writer
+
+	c.Header("Content-Type", "application/xml")
+
+	// TODO turn on 304 or off from config.
+	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		c.Header("Last-Modified", datetime.My2Gmt(modified))
+	}
+
+	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+
+	if err := t.Execute(c.Writer, d); err != nil {
+		panic(err)
+	}
+
+	// TODO metricss for rss crawler.
+}
+
+func (b *Blog) querySearch(c *gin.Context) {
+	d := data.NewDataForSearch(b.cfg, b.auth.AuthContext(c), b.service)
+	t := b.namedTemplates[`search.html`]
+	d.Template = t
+	d.Writer = c.Writer
+
+	// TODO turn on 304 or off from config.
+	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		c.Header("Last-Modified", datetime.My2Gmt(modified))
+	}
+
+	if err := t.Execute(c.Writer, d); err != nil {
+		panic(err)
+	}
+
+	// TODO metricss.
+}
+
+func (b *Blog) queryPosts(c *gin.Context) {
+	d := data.NewDataForPosts(b.cfg, b.auth.AuthContext(c), b.service, c)
+	t := b.namedTemplates[`posts.html`]
+	d.Template = t
+	d.Writer = c.Writer
+
+	// TODO turn on 304 or off from config.
+	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
+		c.Header("Last-Modified", datetime.My2Gmt(modified))
+	}
+
+	if err := t.Execute(c.Writer, d); err != nil {
+		panic(err)
+	}
+
+	// TODO metricss.
 }
 
 func (b *Blog) queryByID(c *gin.Context, id int64) {
@@ -391,46 +412,63 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 }
 
 func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
-	post := newPost(p, b.service)
-	if b.cfg.Site.ShowRelatedPosts {
-		post.RelatedPosts = b.service.GetRelatedPosts(post.ID)
+	d := data.NewDataForPost(b.cfg, b.auth.AuthContext(c), b.service, p)
+	t := b.namedTemplates[`post.html`]
+	d.Template = t
+	d.Writer = c.Writer
+	c.Header("Last-Modified", datetime.My2Gmt(d.Post.Post.Modified))
+	if err := t.Execute(c.Writer, d); err != nil {
+		panic(err)
 	}
-	post.Tags = b.service.GetPostTags(post.ID)
-	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
-	w := c.Writer
-	tc := TemplateCommon{
-		User: b.auth.AuthCookie(c),
-	}
-	header := &ThemeHeaderData{
-		Config:         b.cfg,
-		TemplateCommon: tc,
-		Title:          post.Title,
-		Header: func() {
-			b.render(w, "content_header", post)
-			fmt.Fprint(w, post.CustomHeader())
-		},
-	}
-	footer := &ThemeFooterData{
-		TemplateCommon: tc,
-		Footer: func() {
-			b.render(w, "content_footer", post)
-			fmt.Fprint(w, post.CustomFooter())
-		},
-	}
-	b.render(w, "header", header)
-	b.render(w, "content", post)
-	b.render(w, "footer", footer)
 }
 
 func (b *Blog) queryByTags(c *gin.Context, tags string) {
-	posts := b.service.GetPostsByTags(tags)
-	in := QueryTags{Posts: posts, Tag: tags}
-	b.render(c.Writer, "tags", &in)
+	d := data.NewDataForTags(b.cfg, b.auth.AuthContext(c), b.service, tags)
+	t := b.namedTemplates[`tags.html`]
+	d.Template = t
+	d.Writer = c.Writer
+	c.Header("Last-Modified", datetime.My2Gmt(d.Post.Post.Modified))
+	if err := t.Execute(c.Writer, d); err != nil {
+		panic(err)
+	}
 }
 
+func (b *Blog) queryByFile(c *gin.Context, postID int64, file string) {
+	path := b.service.GetFile(postID, file)
+
+	redir := true
+
+	fileHost := b.cfg.Data.File.Mirror
+
+	// remote isn't enabled, use local only
+	if redir && fileHost == "" {
+		redir = false
+	}
+	// when logged in, see the newest-uploaded file
+	if redir && b.auth.AuthCookie(c).IsAdmin() {
+		redir = false
+	}
+	// if no referer, don't let them know we're using file host
+	if redir && c.GetHeader("Referer") == "" {
+		redir = false
+	}
+	// if file isn't in local, we should redirect
+	if !redir {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			redir = true
+		}
+	}
+
+	if redir {
+		remotePath := fileHost + "/" + path
+		c.Redirect(307, remotePath)
+	} else {
+		c.File(path)
+	}
+}
 func (b *Blog) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
 	user := b.auth.AuthCookie(c)
 	if user.IsGuest() && post.Status != "public" {
-		panic(&PermDeniedError{})
+		panic("403")
 	}
 }

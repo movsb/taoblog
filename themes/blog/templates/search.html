@@ -1,4 +1,3 @@
-{{ define "search" }}
 <!doctype html>
 <html>
 <head>
@@ -16,7 +15,7 @@
 <div id="wrapper">
 <script>
   (function() {
-    var cx = '{{.EngineID }}';
+    var cx = '{{.Search.EngineID }}';
     var gcse = document.createElement('script');
     gcse.type = 'text/javascript';
     gcse.async = true;
@@ -30,4 +29,3 @@
 </div>
 </body>
 </html>
-{{end}}

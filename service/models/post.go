@@ -82,8 +82,3 @@ type PostForManagement struct {
 	SourceType   string `json:"source_type"`
 	CommentCount uint   `json:"comment_count" taorm:"name:comments"`
 }
-
-type PostForArchive struct {
-	ID    int64  `json:"id"`
-	Title string `json:"title"`
-}

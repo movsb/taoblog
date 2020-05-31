@@ -5,8 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
     <title>
-        {{- if .Title -}}
-            {{- .Title -}}
+        {{- if .Meta.Title -}}
+            {{- .Meta.Title -}}
             {{- " - " -}}
         {{- end -}}
         {{- get_config "blog_name" -}}
@@ -15,7 +15,7 @@
     <script src="//blog-10005538.file.myqcloud.com/jquery.min.js"></script>
 	<script src="/scripts/header.js"></script>
 	<script data-ad-client="ca-pub-2998076734917510" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-    {{.HeaderHook}}
+    {{ render "custom_header" . }}
 </head>
 <body class="line-numbers">
 <div id="wrapper">

@@ -1,18 +1,16 @@
-{{define "tags"}}
 <!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
-<title>标签 “{{ .Tag }}” 下的归档</title>
+<title>标签 “{{ .Tags.Name }}” 下的归档</title>
 </head>
 <body>
-{{ if .Posts }}
+{{ if .Tags.Posts }}
 <ul>
-{{ range .Posts -}}
-  <li><a target="_blank" href="/{{ .ID }}/">{{ .Title }}</a></li>
+{{ range .Tags.Posts -}}
+	<li><a target="_blank" href="/{{ .ID }}/">{{ .Title }}</a></li>
 {{ end -}}
 </ul>
 {{ end }}
 </body>
 </html>
-{{end}}

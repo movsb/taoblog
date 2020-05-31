@@ -9,7 +9,7 @@ docker run -it -v "$(pwd)":/taoblog -w /taoblog -v "$GOPATH":/go -e GOPATH=/go -
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
 mkdir -p docker/themes/blog
-rsync -aPvh --delete themes/blog/{statics,templates,tools} docker/themes/blog/
+rsync -aPvh --delete themes/blog/{statics,templates} docker/themes/blog/
 
 mkdir -p docker/admin
 rsync -aPvh --delete admin/{statics,templates} docker/admin

@@ -79,10 +79,10 @@ func (s *Service) GetPostBySlug(categories string, slug string) *protocols.Post 
 }
 
 // GetPostsByTags gets tag posts.
-func (s *Service) GetPostsByTags(tagName string) []*models.PostForArchive {
+func (s *Service) GetPostsByTags(tagName string) *models.Posts {
 	tag := s.GetTagByName(tagName)
 	tagIDs := s.getAliasTagsAll([]int64{tag.ID})
-	var posts []*models.PostForArchive
+	var posts *models.Posts
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).

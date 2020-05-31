@@ -1,0 +1,62 @@
+package data
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service"
+)
+
+// PostsData ...
+type PostsData struct {
+	Posts        []*Post
+	PostCount    int64
+	PageCount    int64
+	CommentCount int64
+	ViewCount    int64
+}
+
+// NewDataForPosts ...
+func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Service, c *gin.Context) *Data {
+	d := &Data{
+		Config: cfg,
+		User:   user,
+		Meta:   &MetaData{},
+	}
+
+	postsData := &PostsData{
+		PostCount:    service.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    service.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: service.GetDefaultIntegerOption("comment_count", 0),
+	}
+
+	sort := strings.SplitN(c.DefaultQuery("sort", "date.desc"), ".", 2)
+	if len(sort) != 2 {
+		sort = []string{"date", "desc"}
+	}
+	if !utils.StrInSlice([]string{"id", "title", "date", "page_view", "comments"}, sort[0]) {
+		sort[0] = "date"
+	}
+	if !utils.StrInSlice([]string{"asc", "desc"}, sort[1]) {
+		sort[1] = "desc"
+	}
+
+	posts := service.MustListPosts(user.Context(nil),
+		&protocols.ListPostsRequest{
+			Fields:  "id,title,date,page_view,comments,status",
+			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
+		})
+
+	for _, p := range posts {
+		postsData.ViewCount += int64(p.PageView)
+	}
+
+	postsData.Posts = newPosts(posts)
+	d.Posts = postsData
+	return d
+}

@@ -1,4 +1,4 @@
-{{define "page_posts"}}
+{{ render "header" . }}
 <h1 style="text-align:center">全部文章列表</h1>
 <table>
 <thead>
@@ -11,7 +11,7 @@
 </tr>
 </thead>
 <tbody>
-    {{range .Posts}}
+    {{range .Posts.Posts}}
     <tr>
     <td>{{.ID}}</td>
     <td><a href="/{{.ID}}/" target="_blank" title="{{.Title}}">{{.NonPublic}}{{.Title}}</a></td>
@@ -23,11 +23,13 @@
 </tbody>
 </table>
 <div class="footer">
+{{ with .Posts }}
 文章：{{.PostCount}}<span class=sep></span>页面：{{.PageCount}}<span class=sep></span>评论：{{.CommentCount}}<span class=sep></span>浏览：{{.ViewCount}}
+{{ end }}
 </div>
-{{end}}
+{{ render "footer" . }}
 
-{{define "page_posts_header"}}
+{{define "custom_header"}}
 <style>
 table {
     width: 100%;
@@ -65,7 +67,7 @@ td:nth-child(2) {
 </style>
 {{end}}
 
-{{define "page_posts_footer"}}
+{{define "custom_footer"}}
 <script>
     if('URLSearchParams' in window) {
         var table = document.getElementsByTagName('table')[0];

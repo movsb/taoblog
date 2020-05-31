@@ -1,17 +1,17 @@
-{{define "rss"}}
 <rss version="2.0">
 	<channel>
-		<title>{{.BlogName}}</title>
-		<link>{{.Home}}</link>
-		<description>{{.Description}}</description>
-		{{range .Posts}}
+		{{- with .Config.Blog -}}
+		<title>{{ .Name }}</title>
+		<link>{{ .Home }}</link>
+		<description>{{ .Description }}</description>
+		{{ end }}
+		{{- range .Rss.Posts -}}
 		<item>
-			<title>{{.Title}}</title>
-			<link>{{.Link}}</link>
-			<pubDate>{{.Date}}</pubDate>
-			<description>{{.Content}}</description>
+			<title>{{ .Title }}</title>
+			<link>{{ .Link }}</link>
+			<pubDate>{{ .Date }}</pubDate>
+			<description>{{ .Content }}</description>
 		</item>
-		{{end}}
+		{{ end }}
 	</channel>
 </rss>
-{{end}}
