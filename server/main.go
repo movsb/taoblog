@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
@@ -20,26 +21,16 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/service"
+	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
 	"github.com/movsb/taorm/taorm"
 )
 
 func main() {
-	var err error
-
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/%s",
-		cfg.Database.Username,
-		cfg.Database.Password,
-		cfg.Database.Endpoint,
-		cfg.Database.Database,
-	)
-	db, err := sql.Open("mysql", dataSource)
-	if err != nil {
-		panic(err)
-	}
+	db := initDatabase(cfg)
 	db.SetMaxIdleConns(10)
 	defer db.Close()
 
@@ -173,4 +164,34 @@ func maybeSiteClosed(svc *service.Service, auther *auth.Auth) func(c *gin.Contex
 			c.Next()
 		}
 	}
+}
+
+func initDatabase(cfg *config.Config) *sql.DB {
+	var db *sql.DB
+	var err error
+
+	switch cfg.Database.Engine {
+	case `mysql`:
+		dataSource := fmt.Sprintf(`%s:%s@tcp(%s)/%s`,
+			cfg.Database.MySQL.Username,
+			cfg.Database.MySQL.Password,
+			cfg.Database.MySQL.Endpoint,
+			cfg.Database.MySQL.Database,
+		)
+		db, err = sql.Open(`mysql`, dataSource)
+	case `sqlite`:
+		db, err = sql.Open(`sqlite3`, cfg.Database.SQLite.Path)
+	default:
+		panic(`unknown database engine`)
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	var count int
+	row := db.QueryRow(`select count(1) from options`)
+	if err := row.Scan(&count); err != nil {
+		inits.Init(cfg, db)
+	}
+	return db
 }

@@ -66,7 +66,7 @@ func (s *Service) GetPostByID(id int64) *protocols.Post {
 }
 
 func (s *Service) IncrementPostPageView(id int64) {
-	query := "UPDATE posts SET page_view=page_view+1 WHERE id=? LIMIT 1"
+	query := "UPDATE posts SET page_view=page_view+1 WHERE id=?"
 	s.tdb.MustExec(query, id)
 }
 
@@ -204,8 +204,9 @@ func (s *Service) GetPostCommentCount(name int64) (count int64) {
 }
 
 func (s *Service) UpdatePostCommentCount(name int64) {
-	query := `UPDATE posts INNER JOIN (SELECT count(post_id) count FROM comments WHERE post_id=?) x ON posts.id=? SET posts.comments=x.count`
-	s.tdb.MustExec(query, name, name)
+	var count uint
+	s.tdb.Model(models.Comment{}).Where(`post_id=?`, name).MustCount(&count)
+	s.tdb.MustExec(`UPDATE posts SET comments=?`, count)
 }
 
 // CreatePost ...

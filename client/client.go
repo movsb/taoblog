@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/movsb/taoblog/modules/stdinlinereader"
 	"github.com/movsb/taoblog/protocols"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -34,7 +33,6 @@ const (
 type Client struct {
 	config     HostConfig
 	client     *http.Client
-	line       *stdinlinereader.StdinLineReader
 	grpcClient protocols.TaoBlogClient
 }
 
@@ -50,7 +48,6 @@ func NewClient(config HostConfig) *Client {
 			},
 		},
 	}
-	c.line = stdinlinereader.NewStdinLineReader()
 
 	grpcAddress := c.config.GRPC
 	secure := false

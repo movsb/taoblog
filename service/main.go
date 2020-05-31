@@ -54,6 +54,7 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 		Password:   s.cfg.Server.Mailer.Password,
 		AdminName:  s.GetDefaultStringOption("author", ""),
 		AdminEmail: s.GetDefaultStringOption("email", ""),
+		Config:     s.cfg,
 	}
 
 	server := grpc.NewServer()
@@ -73,6 +74,11 @@ func (s *Service) Ping(ctx context.Context, in *protocols.PingRequest) (*protoco
 	return &protocols.PingResponse{
 		Pong: `pong`,
 	}, nil
+}
+
+// Config ...
+func (s *Service) Config() *config.Config {
+	return s.cfg
 }
 
 // TxCall ...

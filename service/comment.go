@@ -35,8 +35,7 @@ func (s *Service) GetComment2(name int64) *models.Comment {
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	adminEmail := s.GetStringOption("email")
-	return s.GetComment2(req.Id).ToProtocols(adminEmail, user), nil
+	return s.GetComment2(req.Id).ToProtocols(s.cfg.Comment.Email, user), nil
 }
 
 // UpdateComment ...
@@ -67,13 +66,13 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.GetStringOption(`email`), user), nil
+	return comment.ToProtocols(s.cfg.Comment.Email, user), nil
 }
 
 // ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
-	adminEmail := s.GetStringOption("email")
+	adminEmail := s.cfg.Comment.Email
 
 	var parentProtocolComments []*protocols.Comment
 	{
@@ -193,10 +192,10 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		panic(exception.NewValidationError(`不能包含 HTML 标签`))
 	}
 
-	adminEmail := s.GetDefaultStringOption("email", "")
+	adminEmail := s.cfg.Comment.Email
 
 	if user.IsGuest() {
-		notAllowedEmails := strings.Split(s.GetDefaultStringOption("not_allowed_emails", ""), ",")
+		notAllowedEmails := s.cfg.Comment.NotAllowedEmails
 		if adminEmail != "" {
 			notAllowedEmails = append(notAllowedEmails, adminEmail)
 		}
@@ -206,8 +205,8 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 				panic(exception.NewValidationError("不能使用此邮箱地址"))
 			}
 		}
-		notAllowedAuthors := strings.Split(s.GetDefaultStringOption("not_allowed_authors", ""), ",")
-		if adminName := s.GetDefaultStringOption("author", ""); adminName != "" {
+		notAllowedAuthors := s.cfg.Comment.NotAllowedAuthors
+		if adminName := s.cfg.Comment.Author; adminName != "" {
 			notAllowedAuthors = append(notAllowedAuthors, adminName)
 		}
 		for _, author := range notAllowedAuthors {
@@ -262,7 +261,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, commentID int64, postID 
 func (s *Service) doCommentNotification(c *models.Comment) {
 	postTitle := s.GetPostTitle(c.PostID)
 	postLink := fmt.Sprintf("%s/%d/", s.HomeURL(), c.PostID)
-	adminEmail := s.GetDefaultStringOption("email", "")
+	adminEmail := s.cfg.Comment.Email
 	if adminEmail == "" {
 		return
 	}

@@ -11,6 +11,8 @@ type Config struct {
 	Auth        AuthConfig        `yaml:"auth"`
 	Menus       []MenuItem        `yaml:"menus"`
 	Metrics     MetricsConfig     `yaml:"metrics"`
+	Site        SiteConfig        `yaml:"site"`
+	Comment     CommentConfig     `yaml:"comment"`
 }
 
 // DefaultConfig ...
@@ -25,24 +27,8 @@ func DefaultConfig() Config {
 		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
 		Metrics:     DefaultMetricsConfig(),
-	}
-}
-
-// DatabaseConfig ...
-type DatabaseConfig struct {
-	Endpoint string `yaml:"endpoint"`
-	Database string `yaml:"database"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-}
-
-// DefaultDatabaseConfig ...
-func DefaultDatabaseConfig() DatabaseConfig {
-	return DatabaseConfig{
-		Endpoint: `localhost:3306`,
-		Database: `taoblog`,
-		Username: `taoblog`,
-		Password: `taoblog`,
+		Site:        DefaultSiteConfig(),
+		Comment:     DefaultCommentConfig(),
 	}
 }
 
@@ -55,7 +41,7 @@ type ServerConfig struct {
 // DefaultServerConfig ...
 func DefaultServerConfig() ServerConfig {
 	return ServerConfig{
-		Listen: `localhost:2564`,
+		Listen: `0.0.0.0:2564`,
 		Mailer: DefaultMaiMailerServerConfig(),
 	}
 }
@@ -105,7 +91,7 @@ type ThemeConfig struct {
 // DefaultThemeConfig ...
 func DefaultThemeConfig() ThemeConfig {
 	return ThemeConfig{
-		Name: `blog`,
+		Name: `BLOG`,
 	}
 }
 
@@ -134,7 +120,13 @@ type BlogConfig struct {
 func DefaultBlogConfig() BlogConfig {
 	return BlogConfig{
 		Home:        `localhost`,
-		Name:        `未命名博客`,
+		Name:        `未命名`,
 		Description: `还没有写描述哦`,
 	}
+}
+
+// BlogEmailsConfig ...
+type BlogEmailsConfig struct {
+	Admin      string   `yaml:"admin"`
+	NotAllowed []string `yaml:"not_allowed"`
 }

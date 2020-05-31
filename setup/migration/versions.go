@@ -208,3 +208,9 @@ func v12(tx *sql.Tx) {
 	tx.Exec("ALTER TABLE comments ADD COLUMN `source` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL AFTER `source_type`")
 	tx.Exec("UPDATE comments SET source_type='plain'")
 }
+
+func v13(tx *sql.Tx) {
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `email`)
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `not_allowed_emails`)
+	tx.Exec(`DELETE FROM options WHERE name = ?`, `not_allowed_authors`)
+}

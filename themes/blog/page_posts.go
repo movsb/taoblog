@@ -21,7 +21,8 @@ type PagePostsData struct {
 func (b *Blog) getPagePosts(c *gin.Context) {
 	user := b.auth.AuthCookie(c)
 	header := &ThemeHeaderData{
-		Title: "全部文章",
+		Config: b.cfg,
+		Title:  "全部文章",
 		Header: func() {
 			b.render(c.Writer, "page_posts_header", nil)
 		},

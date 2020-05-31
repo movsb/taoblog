@@ -11,7 +11,8 @@ import (
 func LoadFile(path string) *Config {
 	fp, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		cfg := DefaultConfig()
+		return &cfg
 	}
 	defer fp.Close()
 	return Load(fp)
@@ -20,7 +21,9 @@ func LoadFile(path string) *Config {
 // Load ...
 func Load(r io.Reader) *Config {
 	c := DefaultConfig()
-	err := yaml.NewDecoder(r).Decode(&c)
+	dec := yaml.NewDecoder(r)
+	dec.SetStrict(true)
+	err := dec.Decode(&c)
 	if err != nil {
 		panic(err)
 	}

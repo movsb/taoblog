@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"strings"
 
+	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
@@ -14,6 +15,7 @@ import (
 // Post ...
 type Post struct {
 	*protocols.Post
+	Config       *config.Config
 	Content      template.HTML
 	RelatedPosts []*models.PostForRelated
 	service      *service.Service
@@ -21,6 +23,7 @@ type Post struct {
 
 func newPost(post *protocols.Post, service *service.Service) *Post {
 	return &Post{
+		Config:  service.Config(),
 		Post:    post,
 		service: service,
 		Content: template.HTML(post.Content),

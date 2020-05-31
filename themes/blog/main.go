@@ -23,6 +23,7 @@ import (
 
 // ThemeHeaderData ...
 type ThemeHeaderData struct {
+	Config *config.Config
 	TemplateCommon
 	Title  string
 	Header func()
@@ -52,6 +53,7 @@ func (d *ThemeFooterData) FooterHook() string {
 
 // Home ...
 type Home struct {
+	Config         *config.Config
 	Title          string
 	PostCount      int64
 	PageCount      int64
@@ -184,8 +186,9 @@ func (b *Blog) loadTemplates() {
 				return b.service.Name()
 			case `blog_desc`:
 				return b.service.Description()
+			default:
+				panic(`cannot get this option`)
 			}
-			return b.service.GetStringOption(name)
 		},
 		"menus": func() template.HTML {
 			return template.HTML(menustr)
@@ -311,6 +314,7 @@ func (b *Blog) queryHome(c *gin.Context) {
 		User: user,
 	}
 	header := &ThemeHeaderData{
+		Config:         b.cfg,
 		TemplateCommon: tc,
 		Title:          "",
 		Header: func() {
@@ -326,6 +330,7 @@ func (b *Blog) queryHome(c *gin.Context) {
 	}
 
 	home := &Home{
+		Config:       b.cfg,
 		PostCount:    b.service.GetDefaultIntegerOption("post_count", 0),
 		PageCount:    b.service.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: b.service.GetDefaultIntegerOption("comment_count", 0),
@@ -390,7 +395,9 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 
 func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
 	post := newPost(p, b.service)
-	post.RelatedPosts = b.service.GetRelatedPosts(post.ID)
+	if b.cfg.Site.ShowRelatedPosts {
+		post.RelatedPosts = b.service.GetRelatedPosts(post.ID)
+	}
 	post.Tags = b.service.GetPostTags(post.ID)
 	c.Header("Last-Modified", datetime.My2Gmt(post.Modified))
 	w := c.Writer
@@ -398,6 +405,7 @@ func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
 		User: b.auth.AuthCookie(c),
 	}
 	header := &ThemeHeaderData{
+		Config:         b.cfg,
 		TemplateCommon: tc,
 		Title:          post.Title,
 		Header: func() {

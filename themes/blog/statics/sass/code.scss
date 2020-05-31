@@ -38,6 +38,9 @@ pre > code {
 		background-color: $post_code_bg_dark;
 	}
 }
+:not(pre) > code:first-child {
+    margin: 2px 3px 2px 0px;
+}
 
 @media (prefers-color-scheme: dark) {
 	/* prism.css override */

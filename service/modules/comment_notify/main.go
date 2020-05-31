@@ -5,16 +5,12 @@ import (
 	"html/template"
 	"log"
 
+	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/mailer"
 )
 
 var adminTmpl *template.Template
 var guestTmpl *template.Template
-
-func init() {
-	adminTmpl = template.Must(template.New("admin").Parse(adminTemplate))
-	guestTmpl = template.Must(template.New("guest").Parse(guestTemplate))
-}
 
 type AdminData struct {
 	Title   string
@@ -41,6 +37,12 @@ type CommentNotifier struct {
 	MailServer string
 	Username   string
 	Password   string
+	Config     *config.Config
+}
+
+func (cn *CommentNotifier) Init() {
+	adminTmpl = template.Must(template.New("admin").Parse(cn.Config.Comment.Templates.Admin))
+	guestTmpl = template.Must(template.New("guest").Parse(cn.Config.Comment.Templates.Guest))
 }
 
 func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {

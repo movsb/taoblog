@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
-GOOS=linux GOARCH=amd64 go build -o ./docker/taoblog ./server/
+docker run -it -v "$(pwd)":/taoblog -w /taoblog -v "$GOPATH":/go -e GOPATH=/go --entrypoint bash karalabe/xgo-latest -c 'CGO_ENABLED=1 go build -v -o docker/taoblog ./server/'
+
 (cd themes/blog/statics/sass && ./make_style.sh)
 
-GOOS=linux GOARCH=amd64 go build -o ./docker/setup/init ./setup/init
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
 mkdir -p docker/themes/blog

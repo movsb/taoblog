@@ -19,11 +19,13 @@
                 {{if .Tags}}
                     ，标签：<span class="value">{{.TagsString}}</span>
                 {{end}}
-            </p>
-            <p>版权声明：若非特别注明，本站所有文章均为作者原创，转载请务必注明原文地址。</p>
+			</p>
+			{{ if .Config.Site.Copyright }}
+			<p class="copyright">{{ .Config.Site.Copyright }}</p>
+			{{ end }}
 </div>
     </div><!-- end entry -->
-
+	{{ if .Config.Site.ShowRelatedPosts }}
     <div class="related clearfix">
         <h3>相关文章</h3>
         {{if .RelatedPosts}}
@@ -36,7 +38,7 @@
             <div class="no-related">没有相关文章。</div>
         {{end}}
     </div><!-- end related -->
-
+	{{ end }}
     <!-- comments begin -->
     <div id="comments" class="clearfix">
         <script src="/scripts/comment.js"></script>

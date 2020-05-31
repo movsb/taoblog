@@ -1,3 +1,5 @@
+BEGIN;
+
 -- 创建表 options
 CREATE TABLE IF NOT EXISTS `options` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -36,6 +38,8 @@ CREATE TABLE IF NOT EXISTS `comments` (
     `url` VARCHAR(200) CHARACTER SET utf8 COLLATE utf8_general_ci,
     `ip` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
+    `source_type` varchar(16) NOT NULL,
+    `source` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `parent` INT(20) UNSIGNED NOT NULL,
     `root` INT(20) UNSIGNED NOT NULL,
@@ -70,3 +74,5 @@ CREATE TABLE IF NOT EXISTS post_tags (
     PRIMARY KEY(`id`),
     UNIQUE KEY `uix_post_id_and_tag_id` (`post_id`,`tag_id`)
 );
+
+COMMIT;

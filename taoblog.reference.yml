@@ -3,13 +3,19 @@ blog:
   home: http://localhost
   name: 陪她去流浪
   description: 描述
+
 database:
-  endpoint: localhost:3306
-  database: taoblog
-  username: taoblog
-  password: taoblog
+  engine: sqlite
+  mysql:
+    endpoint: localhost:3306
+    database: taoblog
+    username: taoblog
+    password: taoblog
+  sqlite:
+    path: taoblog.db
+
 server:
-  listen: localhost:2564
+  listen: 0.0.0.0:2564
   mailer: {}
 data:
   file:
@@ -25,15 +31,15 @@ maintenance:
 
 auth:
   basic:
-    username: basic
-    password: basic
+    username: taoblog
+    password: taoblog
   github:
-    user_id: github
+    user_id: 1
     client_id: github
     client_secret: github
   google:
     client_id: google
-    user_id: google
+    user_id: 1
 
 menus:
 - name: item1
@@ -44,3 +50,31 @@ menus:
     link: /subitem1
   - name: subitem2
     link: /subitem2
+
+site:
+  show_status: false
+  show_related_posts: false
+  search:
+    #engine_id: 'engine_id'
+  copyright: '版权声明：若非特别注明，本站所有文章均为作者原创，转载请务必注明原文地址。'
+
+comment:
+  templates:
+    admin: |
+      <b>您的博文“{{.Title}}”有新的评论啦！</b><br/><br/>
+
+      <b>链接：</b><a href="{{.Link}}">{{.Link}}</a><br/>
+      <b>作者：</b>{{.Author}}<br/>
+      <b>邮箱：</b>{{.Email}}<br/>
+      <b>网址：</b>{{.HomePage}}<br/>
+      <b>时间：</b>{{.Date}}<br/>
+      <b>内容：</b>{{.Content}}<br/>
+    guest: |
+      <b>您在博文“{{.Title}}”的评论有新的回复啦！</b><br/><br/>
+
+      <b>链接：</b><a href="{{.Link}}">{{.Link}}</a><br/>
+      <b>作者：</b>{{.Author}}<br/>
+      <b>时间：</b>{{.Date}}<br/>
+      <b>内容：</b>{{.Content}}<br/>
+
+      <br/>该邮件为系统自动发出，请勿直接回复该邮件。<br/>
