@@ -14,7 +14,7 @@ import (
 	"github.com/movsb/taorm/taorm"
 )
 
-const dbVer = 13
+const dbVer = 14
 
 // Init ...
 func Init(cfg *config.Config, db *sql.DB) {

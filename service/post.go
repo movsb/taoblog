@@ -79,10 +79,10 @@ func (s *Service) GetPostBySlug(categories string, slug string) *protocols.Post 
 }
 
 // GetPostsByTags gets tag posts.
-func (s *Service) GetPostsByTags(tagName string) *models.Posts {
+func (s *Service) GetPostsByTags(tagName string) models.Posts {
 	tag := s.GetTagByName(tagName)
 	tagIDs := s.getAliasTagsAll([]int64{tag.ID})
-	var posts *models.Posts
+	var posts models.Posts
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
@@ -206,7 +206,7 @@ func (s *Service) GetPostCommentCount(name int64) (count int64) {
 func (s *Service) UpdatePostCommentCount(name int64) {
 	var count uint
 	s.tdb.Model(models.Comment{}).Where(`post_id=?`, name).MustCount(&count)
-	s.tdb.MustExec(`UPDATE posts SET comments=?`, count)
+	s.tdb.MustExec(`UPDATE posts SET comments=? WHERE id=?`, count, name)
 }
 
 // CreatePost ...

@@ -214,3 +214,8 @@ func v13(tx *sql.Tx) {
 	tx.Exec(`DELETE FROM options WHERE name = ?`, `not_allowed_emails`)
 	tx.Exec(`DELETE FROM options WHERE name = ?`, `not_allowed_authors`)
 }
+
+func v14(tx *sql.Tx) {
+	tx.Exec(`UPDATE posts SET comments = 0`)
+	tx.Exec(`UPDATE posts INNER JOIN (SELECT post_id,count(id) AS comments FROM comments GROUP BY post_id) AS counts ON posts.id = counts.post_id SET posts.comments = counts.comments`)
+}

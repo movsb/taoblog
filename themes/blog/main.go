@@ -427,7 +427,6 @@ func (b *Blog) queryByTags(c *gin.Context, tags string) {
 	t := b.namedTemplates[`tags.html`]
 	d.Template = t
 	d.Writer = c.Writer
-	c.Header("Last-Modified", datetime.My2Gmt(d.Post.Post.Modified))
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}

@@ -52,10 +52,11 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 		MailServer: s.cfg.Server.Mailer.Server,
 		Username:   s.cfg.Server.Mailer.Account,
 		Password:   s.cfg.Server.Mailer.Password,
-		AdminName:  s.GetDefaultStringOption("author", ""),
-		AdminEmail: s.GetDefaultStringOption("email", ""),
+		AdminName:  s.cfg.Comment.Author,
+		AdminEmail: s.cfg.Comment.Email,
 		Config:     s.cfg,
 	}
+	s.cmtntf.Init()
 
 	server := grpc.NewServer()
 	protocols.RegisterTaoBlogServer(server, s)

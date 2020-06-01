@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-docker run -it -v "$(pwd)":/taoblog -w /taoblog -v "$GOPATH":/go -e GOPATH=/go --entrypoint bash karalabe/xgo-latest -c 'CGO_ENABLED=1 go build -v -o docker/taoblog ./server/'
+docker run -it -v "$(pwd)":/taoblog -w /taoblog -v "$(go env GOPATH)":/go -e GOPATH=/go --entrypoint bash karalabe/xgo-latest -c 'CGO_ENABLED=1 go build -v -o docker/taoblog ./server/'
 
 (cd themes/blog/statics/sass && ./make_style.sh)
 

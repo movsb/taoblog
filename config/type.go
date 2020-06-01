@@ -124,9 +124,3 @@ func DefaultBlogConfig() BlogConfig {
 		Description: `还没有写描述哦`,
 	}
 }
-
-// BlogEmailsConfig ...
-type BlogEmailsConfig struct {
-	Admin      string   `yaml:"admin"`
-	NotAllowed []string `yaml:"not_allowed"`
-}
