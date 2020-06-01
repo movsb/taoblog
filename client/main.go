@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -43,16 +43,21 @@ func initHostConfigs() HostConfig {
 	return hostConfig
 }
 
-func main() {
-	config := initHostConfigs()
-	client := NewClient(config)
+var config HostConfig
+var client *Client
 
-	rootCmd := &cobra.Command{
-		Use: `taoblog`,
+// AddCommands ...
+func AddCommands(rootCmd *cobra.Command) {
+	preRun := func(cmd *cobra.Command, args []string) {
+		config = initHostConfigs()
+		client = NewClient(config)
 	}
+
 	pingCmd := &cobra.Command{
-		Use:  `ping`,
-		Args: cobra.NoArgs,
+		Use:    `ping`,
+		Short:  `Ping server`,
+		Args:   cobra.NoArgs,
+		PreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
 			resp, err := client.grpcClient.Ping(context.Background(), &protocols.PingRequest{})
 			if err != nil {
@@ -62,63 +67,43 @@ func main() {
 		},
 	}
 	rootCmd.AddCommand(pingCmd)
-	getCmd := &cobra.Command{
-		Use:  `get`,
-		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			client.CRUD(cmd.Use, args[0])
-		},
-	}
-	postCmd := &cobra.Command{
-		Use:  `post`,
-		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			client.CRUD(cmd.Use, args[0])
-		},
-	}
-	deleteCmd := &cobra.Command{
-		Use:  `delete`,
-		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			client.CRUD(cmd.Use, args[0])
-		},
-	}
-	patchCmd := &cobra.Command{
-		Use:  `patch`,
-		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			client.CRUD(cmd.Use, args[0])
-		},
-	}
-	rootCmd.AddCommand(getCmd, postCmd, deleteCmd, patchCmd)
 	postsCmd := &cobra.Command{
-		Use: `posts`,
+		Use:              `posts`,
+		Short:            `Commands for managing posts`,
+		PersistentPreRun: preRun,
 	}
 	rootCmd.AddCommand(postsCmd)
 	postsInitCmd := &cobra.Command{
-		Use: `init`,
+		Use:   `init`,
+		Short: `Initialize an empty post structure in this directory`,
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.InitPost()
 		},
 	}
 	postsCmd.AddCommand(postsInitCmd)
 	postsCreateCmd := &cobra.Command{
-		Use: `create`,
+		Use:   `create`,
+		Short: `Create the post in this directory`,
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.CreatePost()
 		},
 	}
 	postsCmd.AddCommand(postsCreateCmd)
 	postsUploadCmd := &cobra.Command{
-		Use:  `upload`,
-		Args: cobra.MinimumNArgs(1),
+		Use:   `upload`,
+		Short: `Upload post assets, like images`,
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			client.UploadPostFiles(args)
 		},
 	}
 	postsCmd.AddCommand(postsUploadCmd)
 	postsUpdateCmd := &cobra.Command{
-		Use: `update`,
+		Use:   `update`,
+		Short: `Update post in this directory`,
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.UpdatePost()
 		},
@@ -126,33 +111,41 @@ func main() {
 	postsCmd.AddCommand(postsUpdateCmd)
 	postsPublishCmd := &cobra.Command{
 		Use:     `publish`,
+		Short:   `Publish this post`,
 		Aliases: []string{`pub`},
+		Args:    cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.SetPostStatus(`public`)
 		},
 	}
 	postsCmd.AddCommand(postsPublishCmd)
 	postsDraftCmd := &cobra.Command{
-		Use: `draft`,
+		Use:   `draft`,
+		Short: `Unpublish this post (make it a draft)`,
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.SetPostStatus(`draft`)
 		},
 	}
 	postsCmd.AddCommand(postsDraftCmd)
 	postsGetCmd := &cobra.Command{
-		Use: `get`,
+		Use:   `get`,
+		Short: `(Don't use)`,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.GetPost()
 		},
 	}
 	postsCmd.AddCommand(postsGetCmd)
 	commentsCmd := &cobra.Command{
-		Use: `comments`,
+		Use:              `comments`,
+		Short:            `Commands for managing comments`,
+		PersistentPreRun: preRun,
 	}
 	rootCmd.AddCommand(commentsCmd)
 	commentsCmd.AddCommand(&cobra.Command{
-		Use:  `set-post-id`,
-		Args: cobra.ExactArgs(2),
+		Use:   `set-post-id`,
+		Short: `Transfer comment to another post`,
+		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmtID, err := strconv.ParseInt(os.Args[0], 10, 0)
 			if err != nil {
@@ -166,8 +159,9 @@ func main() {
 		},
 	})
 	commentsCmd.AddCommand(&cobra.Command{
-		Use:  `edit`,
-		Args: cobra.ExactArgs(1),
+		Use:   `edit`,
+		Short: `Edit some comment`,
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmtID, err := strconv.ParseInt(os.Args[3], 10, 0)
 			if err != nil {
@@ -177,12 +171,12 @@ func main() {
 		},
 	})
 	backupCmd := &cobra.Command{
-		Use: `backup`,
+		Use:              `backup`,
+		Short:            `Dump database`,
+		PersistentPreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
 			client.Backup(os.Stdout)
 		},
 	}
 	rootCmd.AddCommand(backupCmd)
-
-	rootCmd.Execute()
 }

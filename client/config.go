@@ -1,4 +1,4 @@
-package main
+package client
 
 // HostConfig is a per host config.
 type HostConfig struct {

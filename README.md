@@ -44,6 +44,7 @@ server/     | 博客后台
 service/    | 服务实现
 setup/      | 安装管理
 themes/     | 主题目录
+main.go     | 入口程序
 
 ## 联系我
 

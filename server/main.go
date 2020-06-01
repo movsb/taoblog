@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql" // shut up
+	_ "github.com/mattn/go-sqlite3"    // shut up
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
@@ -25,9 +25,24 @@ import (
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
 	"github.com/movsb/taorm/taorm"
+	"github.com/spf13/cobra"
 )
 
-func main() {
+// AddCommands ...
+func AddCommands(rootCmd *cobra.Command) {
+	serveCommand := &cobra.Command{
+		Use:   `server`,
+		Short: `Run the server`,
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			serve()
+		},
+	}
+
+	rootCmd.AddCommand(serveCommand)
+}
+
+func serve() {
 	cfg := config.LoadFile(`taoblog.yml`)
 
 	db := initDatabase(cfg)

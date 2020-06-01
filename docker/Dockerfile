@@ -12,4 +12,4 @@ ADD admin admin
 ADD themes themes
 ADD setup setup
 
-CMD ["./taoblog"]
+CMD ["./taoblog", "server"]
