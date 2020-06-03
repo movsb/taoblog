@@ -12,4 +12,5 @@ ADD admin admin
 ADD themes themes
 ADD setup setup
 
-CMD ["./taoblog", "server"]
+ENTRYPOINT ["./taoblog"]
+CMD ["server"]

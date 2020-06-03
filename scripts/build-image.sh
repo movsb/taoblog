@@ -2,7 +2,21 @@
 
 set -euo pipefail
 
-docker run -it -v "$(pwd)":/taoblog -w /taoblog -v "$(go env GOPATH)":/go -e GOPATH=/go --entrypoint bash karalabe/xgo-latest -c 'CGO_ENABLED=1 go build -v -o docker/taoblog'
+_run_in_xgo() {
+	docker run -it --rm \
+		-v "$(pwd)":/taoblog \
+		-v "$(go env GOPATH)":/go \
+		-e GOPATH=/go \
+		-e USER="$USER" \
+		-e HOSTNAME="$(hostname)" \
+		-e DATE="$(date +'%F %T %z')" \
+		-w /taoblog \
+		--entrypoint bash \
+		karalabe/xgo-latest \
+		"$@"
+}
+
+_run_in_xgo ./scripts/cross-build.sh
 
 (cd themes/blog/statics/sass && ./make_style.sh)
 
