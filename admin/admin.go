@@ -81,9 +81,9 @@ type AdminPostEditData struct {
 
 func (d *AdminPostEditData) Link() string {
 	if d.New {
-		return fmt.Sprint(d.ID)
+		return fmt.Sprint(d.Id)
 	}
-	return fmt.Sprintf("/%d/", d.ID)
+	return fmt.Sprintf("/%d/", d.Id)
 }
 
 func (d *AdminPostEditData) TagStr() string {

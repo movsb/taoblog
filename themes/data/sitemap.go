@@ -38,7 +38,7 @@ func NewDataForSitemap(cfg *config.Config, user *auth.User, service *service.Ser
 	for _, post := range rawPosts {
 		sitemapPosts = append(sitemapPosts, &SitemapPostData{
 			Post: post,
-			Link: fmt.Sprintf("%s/%d/", service.HomeURL(), post.ID),
+			Link: fmt.Sprintf("%s/%d/", service.HomeURL(), post.Id),
 		})
 	}
 

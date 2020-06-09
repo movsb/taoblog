@@ -3,6 +3,7 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
 import "protocols/backup.proto";
+import "protocols/post.proto";
 import "protocols/comment.proto";
 
 service TaoBlog {
@@ -10,6 +11,10 @@ service TaoBlog {
 
 	// Backup
 	rpc Backup(BackupRequest) returns (BackupResponse);
+
+	// POSTS
+	rpc CreatePost(Post) returns (Post);
+	rpc UpdatePost(UpdatePostRequest) returns (Post);
 
 	// Comments
 	rpc GetComment(GetCommentRequest) returns (Comment);

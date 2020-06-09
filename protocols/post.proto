@@ -3,6 +3,7 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
 
 enum PostType {
 	PostType_Unspecified = 0;
@@ -11,7 +12,7 @@ enum PostType {
 }
 
 message Post {
-	int64 name = 1;
+	int64 id = 1;
 	google.protobuf.Timestamp date = 2;
 	google.protobuf.Timestamp modified = 3;
 	string title = 4;
@@ -22,8 +23,14 @@ message Post {
 	string status = 9;
 	int64 page_view = 10;
 	bool comment_status = 11;
-	string metas = 12;
-	string source = 13;
-	string source_type = 14;
-	repeated string tags = 15;
+	int64 comments = 12;
+	string metas = 13;
+	string source = 14;
+	string source_type = 15;
+	repeated string tags = 16;
+}
+
+message UpdatePostRequest {
+	Post post = 1;
+	google.protobuf.FieldMask update_mask = 2;
 }

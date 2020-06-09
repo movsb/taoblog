@@ -256,7 +256,7 @@ func (b *Blog) Query(c *gin.Context, path string) {
 
 func (b *Blog) handle304(c *gin.Context, p *protocols.Post) bool {
 	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
-		if datetime.My2Gmt(p.Modified) == modified {
+		if datetime.My2Gmt(datetime.Proto2My(*p.Modified)) == modified {
 			c.Status(304)
 			return true
 		}
@@ -286,7 +286,7 @@ func (b *Blog) processHomeQueries(c *gin.Context) bool {
 }
 
 func (b *Blog) queryHome(c *gin.Context) {
-	d := data.NewDataForHome(b.cfg, b.auth.AuthContext(c), b.service)
+	d := data.NewDataForHome(b.cfg, b.auth.AuthCookie(c), b.service)
 	t := b.namedTemplates[`home.html`]
 	d.Template = t
 	d.Writer = c.Writer
@@ -319,7 +319,7 @@ func (b *Blog) queryRss(c *gin.Context) {
 }
 
 func (b *Blog) querySitemap(c *gin.Context) {
-	d := data.NewDataForSitemap(b.cfg, b.auth.AuthContext(c), b.service)
+	d := data.NewDataForSitemap(b.cfg, b.auth.AuthCookie(c), b.service)
 	t := b.namedTemplates[`sitemap.html`]
 	d.Template = t
 	d.Writer = c.Writer
@@ -341,7 +341,7 @@ func (b *Blog) querySitemap(c *gin.Context) {
 }
 
 func (b *Blog) querySearch(c *gin.Context) {
-	d := data.NewDataForSearch(b.cfg, b.auth.AuthContext(c), b.service)
+	d := data.NewDataForSearch(b.cfg, b.auth.AuthCookie(c), b.service)
 	t := b.namedTemplates[`search.html`]
 	d.Template = t
 	d.Writer = c.Writer
@@ -359,7 +359,7 @@ func (b *Blog) querySearch(c *gin.Context) {
 }
 
 func (b *Blog) queryPosts(c *gin.Context) {
-	d := data.NewDataForPosts(b.cfg, b.auth.AuthContext(c), b.service, c)
+	d := data.NewDataForPosts(b.cfg, b.auth.AuthCookie(c), b.service, c)
 	t := b.namedTemplates[`posts.html`]
 	d.Template = t
 	d.Writer = c.Writer
@@ -379,7 +379,7 @@ func (b *Blog) queryPosts(c *gin.Context) {
 func (b *Blog) queryByID(c *gin.Context, id int64) {
 	post := b.service.GetPostByID(id)
 	b.userMustCanSeePost(c, post)
-	b.incView(post.ID)
+	b.incView(post.Id)
 	b.metrics.CountPost(id, post.Title, c.ClientIP(), c.Request.UserAgent())
 	if b.handle304(c, post) {
 		return
@@ -394,7 +394,7 @@ func (b *Blog) incView(id int64) {
 func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 	post := b.service.GetPostBySlug(tree, slug)
 	b.userMustCanSeePost(c, post)
-	b.incView(post.ID)
+	b.incView(post.Id)
 	if b.handle304(c, post) {
 		return
 	}
@@ -404,7 +404,7 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 	post := b.service.GetPostByPage(parents, slug)
 	b.userMustCanSeePost(c, post)
-	b.incView(post.ID)
+	b.incView(post.Id)
 	if b.handle304(c, post) {
 		return
 	}
@@ -412,18 +412,18 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 }
 
 func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
-	d := data.NewDataForPost(b.cfg, b.auth.AuthContext(c), b.service, p)
+	d := data.NewDataForPost(b.cfg, b.auth.AuthCookie(c), b.service, p)
 	t := b.namedTemplates[`post.html`]
 	d.Template = t
 	d.Writer = c.Writer
-	c.Header("Last-Modified", datetime.My2Gmt(d.Post.Post.Modified))
+	c.Header("Last-Modified", datetime.My2Gmt(datetime.Proto2My(*d.Post.Post.Modified)))
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
 }
 
 func (b *Blog) queryByTags(c *gin.Context, tags string) {
-	d := data.NewDataForTags(b.cfg, b.auth.AuthContext(c), b.service, tags)
+	d := data.NewDataForTags(b.cfg, b.auth.AuthCookie(c), b.service, tags)
 	t := b.namedTemplates[`tags.html`]
 	d.Template = t
 	d.Writer = c.Writer

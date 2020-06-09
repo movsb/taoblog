@@ -12,6 +12,8 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/post_translators"
 	"github.com/movsb/taorm/taorm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *Service) posts() *taorm.Stmt {
@@ -210,8 +212,13 @@ func (s *Service) UpdatePostCommentCount(name int64) {
 }
 
 // CreatePost ...
-func (s *Service) CreatePost(in *protocols.Post) {
+func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocols.Post, error) {
 	var err error
+
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() {
+		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
+	}
 
 	createdAt := datetime.MyLocal()
 
@@ -220,7 +227,7 @@ func (s *Service) CreatePost(in *protocols.Post) {
 		Modified:   createdAt,
 		Title:      strings.TrimSpace(in.Title),
 		Slug:       in.Slug,
-		Type:       protocols.PostTypePost,
+		Type:       `post`,
 		Category:   1,
 		Status:     "draft",
 		Metas:      "{}",
@@ -250,54 +257,92 @@ func (s *Service) CreatePost(in *protocols.Post) {
 
 	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(&p).MustCreate()
-		in.ID = p.ID
+		in.Id = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
 		txs.updateLastPostTime(p.Modified)
 		txs.updatePostPageCount()
 		return nil
 	})
+
+	return p.ToProtocols(), nil
 }
 
-func (s *Service) UpdatePost(in *protocols.Post) {
-	var err error
-
-	if in.ID == 0 {
-		panic(exception.NewValidationError("无效文章编号"))
+// UpdatePost ...
+func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostRequest) (*protocols.Post, error) {
+	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
+		panic(exception.NewValidationError("无效文章"))
 	}
 
 	p := models.Post{
-		ID: in.ID,
+		ID: in.Post.Id,
 	}
 
-	var tr post_translators.PostTranslator
-	switch in.SourceType {
-	case "html":
-		tr = &post_translators.HTMLTranslator{}
-	case "markdown":
-		tr = &post_translators.MarkdownTranslator{}
-	default:
-		panic("no translator found")
+	m := map[string]interface{}{
+		`modified`: datetime.MyLocal(),
 	}
-	content, err := tr.Translate(in.Source, fmt.Sprintf("./files/%d", in.ID))
-	if err != nil {
-		panic(err)
+
+	var hasSourceType, hasSource bool
+	var hasTags bool
+
+	for _, path := range in.UpdateMask.Paths {
+		switch path {
+		case `title`:
+			m[path] = in.Post.Title
+		case `source_type`:
+			m[path] = in.Post.SourceType
+			hasSourceType = true
+		case `source`:
+			m[path] = in.Post.Source
+			hasSource = true
+		case `content`:
+			m[path] = in.Post.Content
+		case `slug`:
+			m[path] = in.Post.Slug
+		case `tags`:
+			hasTags = true
+		default:
+			panic(`unknown update mask`)
+		}
+	}
+
+	if hasSourceType != hasSource {
+		panic(`source type and source must be specifed`)
+	}
+
+	if hasSource && hasSourceType {
+		var tr post_translators.PostTranslator
+		switch in.Post.SourceType {
+		case "html":
+			tr = &post_translators.HTMLTranslator{}
+		case "markdown":
+			tr = &post_translators.MarkdownTranslator{}
+		default:
+			panic("no translator found")
+		}
+		content, err := tr.Translate(in.Post.Source, fmt.Sprintf("./files/%d", in.Post.Id))
+		if err != nil {
+			panic(err)
+		}
+		m[`content`] = content
 	}
 
 	modified := datetime.MyLocal()
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(p).MustUpdateMap(map[string]interface{}{
-			"title":       in.Title,
-			"modified":    modified,
-			"source_type": in.SourceType,
-			"source":      in.Source,
-			"content":     content,
-			"slug":        in.Slug,
-		})
-		txs.UpdateObjectTags(p.ID, in.Tags)
+		txs.tdb.Model(p).MustUpdateMap(m)
+		if hasTags {
+			txs.UpdateObjectTags(p.ID, in.Post.Tags)
+		}
 		txs.updateLastPostTime(modified)
 		return nil
 	})
+
+	np := s.GetPostByID(p.ID)
+	if hasTags {
+		np.Tags = s.GetPostTags(p.ID)
+	}
+
+	return np, nil
 }
 
 // updateLastPostTime updates last_post_time in options.

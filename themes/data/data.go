@@ -81,8 +81,8 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Servic
 	}
 	d.Post = p
 	if cfg.Site.ShowRelatedPosts {
-		p.Post.Related = service.GetRelatedPosts(post.ID)
+		p.Post.Related = service.GetRelatedPosts(post.Id)
 	}
-	p.Post.Tags = service.GetPostTags(p.Post.ID)
+	p.Post.Tags = service.GetPostTags(p.Post.Id)
 	return d
 }

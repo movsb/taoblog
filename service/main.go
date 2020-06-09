@@ -3,10 +3,13 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"net"
 	"time"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/memory_cache"
@@ -15,6 +18,8 @@ import (
 	"github.com/movsb/taoblog/service/modules/file_managers"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -58,7 +63,14 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 	}
 	s.cmtntf.Init()
 
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		grpc_middleware.WithUnaryServerChain(
+			grpc_recovery.UnaryServerInterceptor(
+				grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler),
+			),
+		),
+	)
+
 	protocols.RegisterTaoBlogServer(server, s)
 
 	listener, err := net.Listen("tcp", grpcAddress)
@@ -68,6 +80,21 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 	go server.Serve(listener)
 
 	return s
+}
+
+func exceptionRecoveryHandler(e interface{}) error {
+	switch te := e.(type) {
+	case *taorm.Error:
+		switch typed := te.Err.(type) {
+		case *taorm.NotFoundError:
+			return status.New(codes.NotFound, typed.Error()).Err()
+		case *taorm.DupKeyError:
+			return status.New(codes.AlreadyExists, typed.Error()).Err()
+		}
+	case *status.Status:
+		return te.Err()
+	}
+	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }
 
 // Ping ...

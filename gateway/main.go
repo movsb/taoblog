@@ -35,8 +35,6 @@ func (g *Gateway) routePosts() {
 	c := g.router.Group("/posts")
 
 	// posts
-	c.POST("", g.auth, g.CreatePost)
-	c.POST("/:name", g.auth, g.UpdatePost)
 	c.GET("/:name", g.auth, g.GetPost)
 	c.GET("/:name/comments", g.listPostComments)
 	c.POST("/:name/comments", g.createPostComment)

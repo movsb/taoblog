@@ -243,17 +243,17 @@ func (s *Service) SetCommentPostID(ctx context.Context, commentID int64, postID 
 			panic(`不能转移子评论`)
 		}
 		post := s.GetPostByID(postID)
-		if cmt.PostID == post.ID {
+		if cmt.PostID == post.Id {
 			panic(`不能转移到相同的文章`)
 		}
 		txs.tdb.From(cmt).
 			Where(`post_id=?`, cmt.PostID).
 			Where(`id=? OR root=?`, cmt.ID, cmt.ID).
 			MustUpdateMap(map[string]interface{}{
-				`post_id`: post.ID,
+				`post_id`: post.Id,
 			})
 		txs.UpdatePostCommentCount(cmt.PostID)
-		txs.UpdatePostCommentCount(post.ID)
+		txs.UpdatePostCommentCount(post.Id)
 		return nil
 	})
 }

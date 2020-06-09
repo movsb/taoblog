@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/movsb/taoblog/protocols"
+	"google.golang.org/genproto/protobuf/field_mask"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -57,27 +59,25 @@ func (c *Client) InitPost() {
 
 // CreatePost ...
 func (c *Client) CreatePost() {
-	p := &Post{}
-	p.PostConfig = *c.readPostConfig()
-	if p.ID > 0 {
+	p := protocols.Post{}
+	cfg := *c.readPostConfig()
+	if cfg.ID > 0 {
 		panic("post already posted, use update instead")
 	}
-	sourceType, source := readSource(".")
-	p.SourceType = sourceType
-	p.Source = source
-	bys, err := json.Marshal(p)
+
+	p.Title = cfg.Title
+	p.Tags = cfg.Tags
+	p.Slug = cfg.Slug
+
+	p.SourceType, p.Source = readSource(".")
+
+	rp, err := c.grpcClient.CreatePost(c.token(), &p)
 	if err != nil {
 		panic(err)
 	}
-	resp := c.mustPost("/posts", bytes.NewReader(bys), contentTypeJSON)
-	defer resp.Body.Close()
-	dec := json.NewDecoder(resp.Body)
-	rp := Post{}
-	if err := dec.Decode(&rp); err != nil {
-		panic(err)
-	}
-	p.PostConfig.ID = rp.ID
-	c.savePostConfig(&p.PostConfig)
+
+	cfg.ID = rp.Id
+	c.savePostConfig(&cfg)
 }
 
 // GetPost ...
@@ -135,25 +135,38 @@ func (c *Client) SetPostStatus(status string) {
 }
 
 func (c *Client) UpdatePost() {
-	p := &Post{}
-	p.PostConfig = *c.readPostConfig()
-	if p.ID == 0 {
+	p := protocols.Post{}
+	cfg := *c.readPostConfig()
+	if cfg.ID == 0 {
 		panic("post not created, use create instead")
 	}
-	sourceType, source := readSource(".")
-	p.SourceType = sourceType
-	p.Source = source
-	bys, err := json.Marshal(p)
+
+	p.Id = cfg.ID
+	p.Title = cfg.Title
+	p.Tags = cfg.Tags
+	p.Slug = cfg.Slug
+
+	p.SourceType, p.Source = readSource(".")
+
+	rp, err := c.grpcClient.UpdatePost(c.token(), &protocols.UpdatePostRequest{
+		Post: &p,
+		UpdateMask: &field_mask.FieldMask{
+			Paths: []string{
+				`title`,
+				`source_type`,
+				`source`,
+				`slug`,
+				`tags`,
+			},
+		},
+	})
 	if err != nil {
 		panic(err)
 	}
-	resp := c.mustPost(fmt.Sprintf("/posts/%d", p.ID), bytes.NewReader(bys), contentTypeJSON)
-	defer resp.Body.Close()
-	dec := json.NewDecoder(resp.Body)
-	rp := Post{}
-	if err := dec.Decode(&rp); err != nil {
-		panic(err)
-	}
+	cfg.Title = rp.Title
+	cfg.Tags = rp.Tags
+	cfg.Slug = rp.Slug
+	c.savePostConfig(&cfg)
 }
 
 // UploadPostFiles ...

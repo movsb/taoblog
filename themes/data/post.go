@@ -1,10 +1,12 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
@@ -13,16 +15,20 @@ import (
 // Post ...
 type Post struct {
 	*protocols.Post
+	ID      int64
 	Content template.HTML
 	Related []*models.PostForRelated
-	Tags    []string
+	Metas   map[string]interface{}
 }
 
 func newPost(post *protocols.Post) *Post {
-	return &Post{
+	p := &Post{
 		Post:    post,
+		ID:      post.Id,
 		Content: template.HTML(post.Content),
 	}
+	json.Unmarshal([]byte(post.Metas), &p.Metas)
+	return p
 }
 
 func newPosts(posts []*protocols.Post) []*Post {
@@ -49,19 +55,21 @@ func (p *Post) NonPublic() string {
 
 // Link ...
 func (p *Post) Link() string {
-	return fmt.Sprintf("/%d/", p.ID)
+	return fmt.Sprintf("/%d/", p.Id)
 }
 
 // DateString ...
 func (p *Post) DateString() string {
-	d := strings.Split(strings.Split(p.Date, " ")[0], "-")
-	return fmt.Sprintf("%v年%v月%v日", d[0], d[1], d[2])
+	t := time.Unix(p.Date.Seconds, 0).Local()
+	y, m, d := t.Date()
+	return fmt.Sprintf("%d年%d月%d日", y, m, d)
 }
 
 // ModifiedString ...
 func (p *Post) ModifiedString() string {
-	d := strings.Split(strings.Split(p.Modified, " ")[0], "-")
-	return fmt.Sprintf("%v年%v月%v日", d[0], d[1], d[2])
+	t := time.Unix(p.Modified.Seconds, 0).Local()
+	y, m, d := t.Date()
+	return fmt.Sprintf("%d年%d月%d日", y, m, d)
 }
 
 // TagsString ...

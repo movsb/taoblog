@@ -39,10 +39,10 @@ func NewDataForRss(cfg *config.Config, user *auth.User, service *service.Service
 	rssPosts := make([]*RssPostData, 0, len(posts))
 	for _, post := range posts {
 		content := template.HTML("<![CDATA[" + strings.Replace(string(post.Content), "]]>", "]]]]><!CDATA[>", -1) + "]]>")
-		link := fmt.Sprintf("%s/%d/", service.HomeURL(), post.ID)
+		link := fmt.Sprintf("%s/%d/", service.HomeURL(), post.Id)
 		rssPosts = append(rssPosts, &RssPostData{
 			Post:    post,
-			Date:    datetime.My2Feed(post.Date),
+			Date:    datetime.My2Feed(datetime.Proto2My(*post.Date)),
 			Content: content,
 			Link:    link,
 		})

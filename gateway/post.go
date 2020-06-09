@@ -12,32 +12,11 @@ func (g *Gateway) GetPostCommentCount(c *gin.Context) {
 	c.JSON(200, count)
 }
 
-func (g *Gateway) CreatePost(c *gin.Context) {
-	p := protocols.Post{}
-	if err := c.ShouldBindJSON(&p); err != nil {
-		c.String(400, "%s", err)
-		return
-	}
-	g.service.CreatePost(&p)
-	c.JSON(200, &p)
-}
-
 // GetPost gets a post by its ID.
 func (g *Gateway) GetPost(c *gin.Context) {
 	id := utils.MustToInt64(c.Param("name"))
 	p := g.service.GetPostByID(id)
 	c.JSON(200, p)
-}
-
-func (g *Gateway) UpdatePost(c *gin.Context) {
-	p := protocols.Post{}
-	if err := c.ShouldBindJSON(&p); err != nil {
-		c.String(400, "%s", err)
-		return
-	}
-	p.ID = utils.MustToInt64(c.Param("name"))
-	g.service.UpdatePost(&p)
-	c.JSON(200, &p)
 }
 
 func (g *Gateway) SetPostStatus(c *gin.Context) {
