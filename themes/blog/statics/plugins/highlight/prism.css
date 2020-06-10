@@ -34,7 +34,12 @@ pre[class*="language-"] {
 	margin: .5em 0;
 	overflow: hidden;
 	padding: 0;
-	border: 1px solid #dfdfdf;
+	border: 1px solid #ddd;
+}
+@media (prefers-color-scheme: dark) {
+	pre[class*="language-"] {
+		border: 1px solid #666;
+	}
 }
 
 pre[class*="language-"]>code, pre[class*="language-"]>code .line-numbers-rows {
@@ -121,7 +126,6 @@ pre[class*="language-"] > code > div.line-numbers-wrapper {
 .token.url,
 .token.variable {
 	color: #a67f59;
-	background: rgba(255, 255, 255, 0.5);
 }
 
 .token.atrule,
@@ -223,13 +227,17 @@ pre[class*="language-"].line-numbers > code {
 	left: -3.8em;
 	width: 3em; /* works for line-numbers below 1000 lines */
 	letter-spacing: -1px;
-	border-right: 1px solid #999;
-
+	border-right: 1px solid #ddd;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
 
+}
+@media (prefers-color-scheme: dark) {
+	.line-numbers .line-numbers-rows {
+		border-right: 1px solid #666;
+	}
 }
 
 	.line-numbers-rows > span {
@@ -240,7 +248,7 @@ pre[class*="language-"].line-numbers > code {
 
 		.line-numbers-rows > span:before {
 			content: counter(linenumber);
-			color: #999;
+			color: #666;
 			display: block;
 			padding-right: 0.8em;
 			text-align: right;

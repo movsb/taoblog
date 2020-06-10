@@ -9,11 +9,11 @@ gitAuthor=$(git show -s --format='format:%aN <%ae>' HEAD)
 gitCommit=$(git rev-parse HEAD)
 
 ldflags="\
--X 'main.builtOn=$builtOn' \
--X 'main.builtAt=$builtAt' \
--X 'main.goVersion=$goVersion' \
--X 'main.gitAuthor=$gitAuthor' \
--X 'main.gitCommit=$gitCommit' \
+-X 'github.com/movsb/taoblog/modules/version.BuiltOn=$builtOn' \
+-X 'github.com/movsb/taoblog/modules/version.BuiltAt=$builtAt' \
+-X 'github.com/movsb/taoblog/modules/version.GoVersion=$goVersion' \
+-X 'github.com/movsb/taoblog/modules/version.GitAuthor=$gitAuthor' \
+-X 'github.com/movsb/taoblog/modules/version.GitCommit=$gitCommit' \
 "
 
 CGO_ENABLED=1 go build -ldflags "$ldflags" -v -o docker/taoblog

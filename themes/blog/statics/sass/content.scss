@@ -256,7 +256,10 @@
 .post .related {
     margin-bottom: 3em;
     h3 {
-        border-bottom: 1px solid $border_color;
+        border-bottom: 1px solid $border_color_light;
+		@media (prefers-color-scheme: dark) {
+			border-bottom: 1px solid $border_color_dark;
+		}
     }
 
     ol {

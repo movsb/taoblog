@@ -28,7 +28,7 @@ pre > code {
 /* 行内代码 */
 :not(pre) > code {
     margin: 2px 3px;
-    padding: 1px 4px;
+    padding: 1px 6px;
     border-radius: .3em;
     display: inline-block;
     line-height: 1.5em;
@@ -37,9 +37,6 @@ pre > code {
 	@media (prefers-color-scheme: dark) {
 		background-color: $post_code_bg_dark;
 	}
-}
-:not(pre) > code:first-child {
-    margin: 2px 3px 2px 0px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,7 +56,7 @@ pre > code {
 	}
 
 	pre[class*="language-"] {
-		border: 1px solid #999 !important;
+		border: 1px solid #666 !important;
 	}
 	.token.operator,
 	.token.entity,

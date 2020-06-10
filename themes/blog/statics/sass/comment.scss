@@ -15,7 +15,10 @@
 /* 评论标题 */
 #comment-title {
     font-size: 1.5em;
-    border-bottom: 1px solid $border_color;
+	border-bottom: 1px solid $border_color_light;
+	@media (prefers-color-scheme: dark) {
+		border-bottom: 1px solid $border_color_dark;
+	}
 
     .count-wrap {
         color: #cfcfcf;
@@ -93,7 +96,10 @@
 
 		.comment-replies li {
 				padding: 1em 0px 0em 1em;
-				border-top: 1px dashed $comment_func_border;
+				border-top: 1px dashed $border_color_light;
+				@media (prefers-color-scheme: dark) {
+					border-top: 1px dashed $border_color_dark;
+				}
         }
 		.comment-replies .html-content li {
 				padding: unset;
@@ -102,7 +108,8 @@
 
         .toolbar {
             margin-bottom: 0.5em;
-            opacity: 0.3;
+			opacity: 0.3;
+			transition: opacity 0.2s;
             &:hover {
                 opacity: 1;
             }

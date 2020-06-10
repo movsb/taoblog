@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/themes/data"
@@ -255,12 +256,23 @@ func (b *Blog) Query(c *gin.Context, path string) {
 }
 
 func (b *Blog) handle304(c *gin.Context, p *protocols.Post) bool {
+	var notModified bool
+	var commitMatched bool
+
 	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
 		if datetime.My2Gmt(datetime.Proto2My(*p.Modified)) == modified {
-			c.Status(304)
-			return true
+			notModified = true
 		}
 	}
+	if b.checkVersionCookie(c) {
+		commitMatched = true
+	}
+
+	if notModified && commitMatched {
+		c.Status(http.StatusNotModified)
+		return true
+	}
+
 	return false
 }
 
@@ -307,6 +319,7 @@ func (b *Blog) queryRss(c *gin.Context) {
 	// TODO turn on 304 or off from config.
 	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.My2Gmt(modified))
+		b.addVersionCookie(c)
 	}
 
 	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
@@ -329,6 +342,7 @@ func (b *Blog) querySitemap(c *gin.Context) {
 	// TODO turn on 304 or off from config.
 	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.My2Gmt(modified))
+		b.addVersionCookie(c)
 	}
 
 	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
@@ -349,6 +363,7 @@ func (b *Blog) querySearch(c *gin.Context) {
 	// TODO turn on 304 or off from config.
 	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.My2Gmt(modified))
+		b.addVersionCookie(c)
 	}
 
 	if err := t.Execute(c.Writer, d); err != nil {
@@ -367,6 +382,7 @@ func (b *Blog) queryPosts(c *gin.Context) {
 	// TODO turn on 304 or off from config.
 	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
 		c.Header("Last-Modified", datetime.My2Gmt(modified))
+		b.addVersionCookie(c)
 	}
 
 	if err := t.Execute(c.Writer, d); err != nil {
@@ -417,6 +433,7 @@ func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
 	d.Template = t
 	d.Writer = c.Writer
 	c.Header("Last-Modified", datetime.My2Gmt(datetime.Proto2My(*d.Post.Post.Modified)))
+	b.addVersionCookie(c)
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
@@ -470,4 +487,20 @@ func (b *Blog) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
 	if user.IsGuest() && post.Status != "public" {
 		panic("403")
 	}
+}
+
+func (b *Blog) addVersionCookie(c *gin.Context) {
+	v := version.GitCommit
+	if v == `` {
+		v = `HEAD`
+	}
+	c.SetCookie(`commit`, v, 0, `/`, ``, false, true)
+}
+
+func (b *Blog) checkVersionCookie(c *gin.Context) bool {
+	commit, err := c.Cookie(`commit`)
+	if err != nil {
+		return false
+	}
+	return commit == version.GitCommit
 }

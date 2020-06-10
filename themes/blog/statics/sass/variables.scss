@@ -18,7 +18,8 @@ $a_fg_dark:              #999;
 $a_visited_fg_dark:      #777;
 $a_active_fg_light:      #faa700;
 
-$border_color:      #8e8e8e;
+$border_color_light:     #ddd;
+$border_color_dark:      #666;
 $border_color_hover:#c0c0c0;
 
 $btn_fg:            white;
@@ -76,13 +77,12 @@ $toc_fg_light:                  #141414;
 $toc_bg_light:                  rgba(255,255,255,0.9);
 $toc_fg_dark:                   $body_fg_dark;
 $toc_bg_dark:                   $body_bg_dark;
-$toc_border_color:              $border_color;
+$toc_border_color:              $border_color_light;
 
 /* comment */
-$comment_func_border:           #ccc;
 $comment_submit_bg:             rgba(113,113,113,0.7);
 $comment_submit_fg:             white;
-$comment_submit_hover_bg:       rgba(200,30,30,0.8);
+$comment_submit_hover_bg:       rgb(113,113,113);
 $comment_submit_submitting_fg:  red;
 $comment_submit_succeeded_fg:   green;
 $comment_submit_failed_fg:      green;
