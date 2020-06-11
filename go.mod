@@ -6,7 +6,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
-	github.com/grpc-ecosystem/grpc-gateway v1.9.0
+	github.com/grpc-ecosystem/grpc-gateway v1.14.6
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
@@ -15,7 +15,6 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/yuin/goldmark v1.1.30
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
-	golang.org/x/net v0.0.0-20191002035440-2ec189313ef0 // indirect
 	google.golang.org/genproto v0.0.0-20200513103714-09dca8ec2884
 	google.golang.org/grpc v1.29.1
 	gopkg.in/yaml.v2 v2.2.5

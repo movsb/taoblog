@@ -28,5 +28,8 @@ rsync -aPvh --delete themes/blog/{statics,templates} docker/themes/blog/
 mkdir -p docker/admin
 rsync -aPvh --delete admin/{statics,templates} docker/admin
 
+mkdir -p docker/protocols/docs
+rsync -aPvh --delete protocols/docs docker/protocols
+
 IMAGE=taocker/taoblog:latest
 (cd docker && docker build -t $IMAGE .)

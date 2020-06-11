@@ -1,7 +1,12 @@
 package gateway
 
 import (
+	"context"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/service"
 )
@@ -12,7 +17,7 @@ type Gateway struct {
 	auther  *auth.Auth
 }
 
-func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.Auth) *Gateway {
+func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.Auth, rootRouter gin.IRouter) *Gateway {
 	g := &Gateway{
 		router:  router,
 		service: service,
@@ -21,6 +26,15 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 
 	g.routePosts()
 	g.routeOthers()
+
+	mux := runtime.NewServeMux()
+	rootRouter.GET(`/v3/*path`, func(c *gin.Context) {
+		mux.ServeHTTP(c.Writer, c.Request)
+	})
+
+	if err := runHTTPService(context.TODO(), mux, service); err != nil {
+		panic(err)
+	}
 
 	return g
 }
@@ -52,4 +66,39 @@ func (g *Gateway) routePosts() {
 	// for mirror host
 	files := g.router.Group("/files")
 	files.GET("/:name/*file", g.GetFile)
+}
+
+// runHTTPService ...
+// TODO auth
+func runHTTPService(ctx context.Context, mux *runtime.ServeMux, service *service.Service) error {
+	compile := func(rule string) httprule.Template {
+		if compiler, err := httprule.Parse(rule); err != nil {
+			panic(err)
+		} else {
+			return compiler.Compile()
+		}
+	}
+
+	handle := func(method string, rule string, handler runtime.HandlerFunc) {
+		t := compile(rule)
+		pattern, err := runtime.NewPattern(1, t.OpCodes, t.Pool, t.Verb)
+		if err != nil {
+			panic(err)
+		}
+
+		mux.Handle(method, pattern, handler)
+	}
+
+	handle("GET", `/v3/api`, getAPI)
+	handle("GET", `/v3/api/swagger`, getSwagger)
+
+	return nil
+}
+
+func getAPI(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	http.ServeFile(w, req, `protocols/docs/index.html`)
+}
+
+func getSwagger(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	http.ServeFile(w, req, `protocols/docs/taoblog.swagger.json`)
 }

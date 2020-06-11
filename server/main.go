@@ -82,7 +82,7 @@ func serve() {
 
 	theAuth := auth.New(cfg.Auth)
 	theService := service.NewService(cfg, db, theAuth)
-	gateway.NewGateway(theAPI, theService, theAuth)
+	gateway.NewGateway(theAPI, theService, theAuth, apiRouter)
 
 	var adminRouter *gin.Engine
 
