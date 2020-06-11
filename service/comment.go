@@ -236,13 +236,18 @@ func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
 }
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
-func (s *Service) SetCommentPostID(ctx context.Context, commentID int64, postID int64) {
+func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetCommentPostIDRequest) (*protocols.SetCommentPostIDResponse, error) {
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() {
+		panic(403)
+	}
+
 	s.TxCall(func(txs *Service) error {
-		cmt := s.GetComment2(commentID)
+		cmt := s.GetComment2(in.Id)
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}
-		post := s.GetPostByID(postID)
+		post := s.GetPostByID(in.PostId)
 		if cmt.PostID == post.Id {
 			panic(`不能转移到相同的文章`)
 		}
@@ -256,6 +261,8 @@ func (s *Service) SetCommentPostID(ctx context.Context, commentID int64, postID 
 		txs.UpdatePostCommentCount(post.Id)
 		return nil
 	})
+
+	return &protocols.SetCommentPostIDResponse{}, nil
 }
 
 func (s *Service) doCommentNotification(c *models.Comment) {

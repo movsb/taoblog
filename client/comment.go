@@ -1,8 +1,6 @@
 package client
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,16 +12,15 @@ import (
 
 // SetCommentPostID ...
 func (c *Client) SetCommentPostID(commentID int64, postID int64) {
-	cmt := protocols.Comment{
+	req := protocols.SetCommentPostIDRequest{
 		Id:     commentID,
 		PostId: postID,
 	}
-	bys, err := json.Marshal(cmt)
+	resp, err := c.grpcClient.SetCommentPostID(c.token(), &req)
 	if err != nil {
 		panic(err)
 	}
-	resp := c.mustPost(fmt.Sprintf(`/comments!setPostID`), bytes.NewReader(bys), contentTypeJSON)
-	defer resp.Body.Close()
+	_ = resp
 }
 
 func (c *Client) GetComment(cmdID int64) *protocols.Comment {

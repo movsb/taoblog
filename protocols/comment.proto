@@ -50,3 +50,12 @@ message ListCommentsRequest {
 message ListCommentsResponse {
 	repeated Comment comments = 1;
 }
+
+message SetCommentPostIDRequest {
+	int64 id = 1;
+	int64 post_id = 2;
+}
+
+message SetCommentPostIDResponse {
+
+}

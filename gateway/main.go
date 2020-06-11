@@ -19,8 +19,6 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 		auther:  auther,
 	}
 
-	router.POST("/comments!setPostID", g.auth, g.SetCommentPostID)
-
 	g.routePosts()
 	g.routeOthers()
 

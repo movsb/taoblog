@@ -143,15 +143,15 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	rootCmd.AddCommand(commentsCmd)
 	commentsCmd.AddCommand(&cobra.Command{
-		Use:   `set-post-id`,
+		Use:   `set-post-id <comment-id> <post-id>`,
 		Short: `Transfer comment to another post`,
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			cmtID, err := strconv.ParseInt(os.Args[0], 10, 0)
+			cmtID, err := strconv.ParseInt(args[0], 10, 0)
 			if err != nil {
 				panic(err)
 			}
-			postID, err := strconv.ParseInt(os.Args[1], 10, 0)
+			postID, err := strconv.ParseInt(args[1], 10, 0)
 			if err != nil {
 				panic(err)
 			}

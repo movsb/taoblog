@@ -5,6 +5,8 @@ option go_package = "github.com/movsb/taoblog/protocols";
 import "protocols/backup.proto";
 import "protocols/post.proto";
 import "protocols/comment.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
 
 service TaoBlog {
 	rpc Ping(PingRequest) returns (PingResponse);
@@ -20,6 +22,15 @@ service TaoBlog {
 	rpc GetComment(GetCommentRequest) returns (Comment);
 	rpc UpdateComment(UpdateCommentRequest) returns (Comment);
 	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse);
+	rpc SetCommentPostID (SetCommentPostIDRequest) returns (SetCommentPostIDResponse) {
+		option (google.api.http) = {
+			post: "/v3/comments/{id=*}:setPostID";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "转移某顶级评论（连同子评论）到另一篇文章。";
+		};
+	}
 }
 
 message PingRequest {
