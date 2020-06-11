@@ -49,13 +49,24 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 
 	if req.Comment != nil && req.UpdateMask != nil && req.UpdateMask.Paths != nil {
 		data := map[string]interface{}{}
+		var hasSourceType, hasSource bool
 		for _, mask := range req.UpdateMask.Paths {
 			switch mask {
 			default:
 				panic(`unknown update_mask field`)
-			case `content`:
-				data[mask] = req.Comment.Content
+			case `source_type`:
+				hasSourceType = true
+			case `source`:
+				hasSource = true
 			}
+		}
+		if hasSourceType != hasSource {
+			panic(`source_type and source must be both specified`)
+		}
+		if hasSourceType {
+			data[`source_type`] = req.Comment.SourceType
+			data[`source`] = req.Comment.Source
+			data[`content`] = s.convertCommentMarkdown(req.Comment)
 		}
 		s.TxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
@@ -178,19 +189,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		}
 	}
 
-	if c.SourceType != "markdown" {
-		panic(exception.NewValidationError("仅支持 markdown"))
-	}
-
-	var buf bytes.Buffer
-	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
-	if err := md.Convert([]byte(c.Source), &buf); err != nil {
-		panic(exception.NewValidationError("不能转换 markdown"))
-	}
-	comment.Content = buf.String()
-	if strings.Contains(comment.Content, `<!-- raw HTML omitted -->`) {
-		panic(exception.NewValidationError(`不能包含 HTML 标签`))
-	}
+	comment.Content = s.convertCommentMarkdown(c)
 
 	adminEmail := s.cfg.Comment.Email
 
@@ -227,6 +226,23 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 	s.doCommentNotification(&comment)
 
 	return comment.ToProtocols(adminEmail, user)
+}
+
+func (s *Service) convertCommentMarkdown(c *protocols.Comment) string {
+	if c.SourceType != "markdown" {
+		panic(exception.NewValidationError("仅支持 markdown"))
+	}
+
+	var buf bytes.Buffer
+	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
+	if err := md.Convert([]byte(c.Source), &buf); err != nil {
+		panic(exception.NewValidationError("不能转换 markdown"))
+	}
+	bs := buf.String()
+	if strings.Contains(bs, `<!-- raw HTML omitted -->`) {
+		panic(exception.NewValidationError(`不能包含 HTML 标签`))
+	}
+	return bs
 }
 
 func (s *Service) DeleteComment(ctx context.Context, commentName int64) {

@@ -48,7 +48,12 @@ func (c *Client) UpdateComment(cmdID int64) {
 	defer os.Remove(tmpFile.Name())
 	defer tmpFile.Close()
 
-	if _, err := tmpFile.WriteString(cmt.Content); err != nil {
+	source := cmt.Source
+	if source == `` || cmt.SourceType != `markdown` {
+		source = cmt.Content
+	}
+
+	if _, err := tmpFile.WriteString(source); err != nil {
 		panic(err)
 	}
 
@@ -58,6 +63,8 @@ func (c *Client) UpdateComment(cmdID int64) {
 	}
 
 	tmpFile.Close()
+
+	fmt.Printf("Editing comment: %d, post: %d\n", cmt.Id, cmt.PostId)
 
 	exec.Exec(editor, tmpFile.Name())
 
@@ -75,12 +82,16 @@ func (c *Client) UpdateComment(cmdID int64) {
 	if err != nil {
 		panic(err)
 	}
-	cmt.Content = string(bys)
+
+	cmt.SourceType = `markdown`
+	cmt.Source = string(bys)
+
 	_, err = c.grpcClient.UpdateComment(c.token(), &protocols.UpdateCommentRequest{
 		Comment: cmt,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: []string{
-				`content`,
+				`source_type`,
+				`source`,
 			},
 		},
 	})
