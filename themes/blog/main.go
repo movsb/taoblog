@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/rss"
+	"github.com/movsb/taoblog/service/modules/sitemap"
 	"github.com/movsb/taoblog/themes/data"
 )
 
@@ -54,7 +55,8 @@ type Blog struct {
 	// Not thread safe. Don't write after initializing.
 	specialFiles map[string]func(c *gin.Context)
 
-	rss *rss.RSS
+	rss     *rss.RSS
+	sitemap *sitemap.Sitemap
 
 	globalTemplates *template.Template
 	namedTemplates  map[string]*template.Template
@@ -75,12 +77,14 @@ func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, rout
 	if cfg.Site.RSS.Enabled {
 		b.rss = rss.New(cfg, service, auth)
 	}
+	if cfg.Site.Sitemap.Enabled {
+		b.sitemap = sitemap.New(cfg, service, auth)
+	}
 	b.loadTemplates()
 	b.route()
 	b.specialFiles = map[string]func(c *gin.Context){
-		"/sitemap.xml": b.querySitemap,
-		"/search":      b.querySearch,
-		"/posts":       b.queryPosts,
+		"/search": b.querySearch,
+		"/posts":  b.queryPosts,
 		"/all-posts.html": func(c *gin.Context) {
 			c.Redirect(301, "/posts")
 		},
@@ -238,6 +242,10 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		b.rss.ServeHTTP(c.Writer, c.Request)
 		return
 	}
+	if path == `/sitemap.xml` && b.cfg.Site.Sitemap.Enabled {
+		b.sitemap.ServeHTTP(c.Writer, c.Request)
+		return
+	}
 	if regexpBySlug.MatchString(path) && b.isCategoryPath(path) {
 		matches := regexpBySlug.FindStringSubmatch(path)
 		tree := matches[1]
@@ -292,23 +300,6 @@ func (b *Blog) queryHome(c *gin.Context) {
 		panic(err)
 	}
 	b.metrics.CountPost(0, `首页`, c.ClientIP(), c.Request.UserAgent())
-}
-
-func (b *Blog) querySitemap(c *gin.Context) {
-	d := data.NewDataForSitemap(b.cfg, b.auth.AuthCookie(c), b.service)
-	t := b.namedTemplates[`sitemap.html`]
-	d.Template = t
-	d.Writer = c.Writer
-
-	c.Header("Content-Type", "application/xml")
-
-	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
-
-	if err := t.Execute(c.Writer, d); err != nil {
-		panic(err)
-	}
-
-	// TODO metricss for rss crawler.
 }
 
 func (b *Blog) querySearch(c *gin.Context) {

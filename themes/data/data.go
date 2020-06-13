@@ -33,9 +33,6 @@ type Data struct {
 	// If it is a post.
 	Post *PostData
 
-	// If it is the Sitemap.
-	Sitemap *SitemapData
-
 	// If it is the Search.
 	Search *SearchData
 
