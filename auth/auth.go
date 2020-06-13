@@ -90,12 +90,18 @@ func (o *Auth) AuthLogin(username string, password string) bool {
 }
 
 func (o *Auth) AuthCookie(c *gin.Context) *User {
-	login, err := c.Cookie("login")
+	return o.AuthCookie2(c.Request)
+}
+
+func (o *Auth) AuthCookie2(req *http.Request) *User {
+	loginCookie, err := req.Cookie(`login`)
 	if err != nil {
 		return guest
 	}
 
-	agent := c.GetHeader("User-Agent")
+	login := loginCookie.Value
+
+	agent := req.Header.Get(`User-Agent`)
 	if agent == "" {
 		return guest
 	}

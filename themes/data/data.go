@@ -33,9 +33,6 @@ type Data struct {
 	// If it is a post.
 	Post *PostData
 
-	// If it is the RSS.
-	Rss *RssData
-
 	// If it is the Sitemap.
 	Sitemap *SitemapData
 

@@ -6,6 +6,7 @@ type SiteConfig struct {
 	ShowRelatedPosts bool               `yaml:"show_related_posts"`
 	Search           GoogleSearchConfig `yaml:"search"`
 	Copyright        string             `yaml:"copyright"`
+	RSS              RSSConfig          `yaml:"rss"`
 }
 
 // DefaultSiteConfig ...
@@ -14,6 +15,7 @@ func DefaultSiteConfig() SiteConfig {
 		ShowStatus:       false,
 		ShowRelatedPosts: false,
 		Search:           DefaultGoogleSearchConfig(),
+		RSS:              DefaultRSSConfig(),
 	}
 }
 
@@ -25,4 +27,18 @@ type GoogleSearchConfig struct {
 // DefaultGoogleSearchConfig ...
 func DefaultGoogleSearchConfig() GoogleSearchConfig {
 	return GoogleSearchConfig{}
+}
+
+// RSSConfig ...
+type RSSConfig struct {
+	Enabled      bool `yaml:"enabled"`
+	ArticleCount int  `yaml:"article_count"`
+}
+
+// DefaultRSSConfig ...
+func DefaultRSSConfig() RSSConfig {
+	return RSSConfig{
+		Enabled:      true,
+		ArticleCount: 10,
+	}
 }

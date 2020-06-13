@@ -15,11 +15,10 @@ import (
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/metrics"
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/modules/rss"
 	"github.com/movsb/taoblog/themes/data"
 )
 
@@ -55,6 +54,8 @@ type Blog struct {
 	// Not thread safe. Don't write after initializing.
 	specialFiles map[string]func(c *gin.Context)
 
+	rss *rss.RSS
+
 	globalTemplates *template.Template
 	namedTemplates  map[string]*template.Template
 }
@@ -71,11 +72,13 @@ func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, rout
 		metrics:      metrics,
 		specialFiles: make(map[string]func(c *gin.Context)),
 	}
+	if cfg.Site.RSS.Enabled {
+		b.rss = rss.New(cfg, service, auth)
+	}
 	b.loadTemplates()
 	b.route()
 	b.specialFiles = map[string]func(c *gin.Context){
 		"/sitemap.xml": b.querySitemap,
-		"/rss":         b.queryRss,
 		"/search":      b.querySearch,
 		"/posts":       b.queryPosts,
 		"/all-posts.html": func(c *gin.Context) {
@@ -231,6 +234,10 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		handler(c)
 		return
 	}
+	if path == `/rss` && b.cfg.Site.RSS.Enabled {
+		b.rss.ServeHTTP(c.Writer, c.Request)
+		return
+	}
 	if regexpBySlug.MatchString(path) && b.isCategoryPath(path) {
 		matches := regexpBySlug.FindStringSubmatch(path)
 		tree := matches[1]
@@ -253,27 +260,6 @@ func (b *Blog) Query(c *gin.Context, path string) {
 		return
 	}
 	c.File(filepath.Join(b.base, "statics", path))
-}
-
-func (b *Blog) handle304(c *gin.Context, p *protocols.Post) bool {
-	var notModified bool
-	var commitMatched bool
-
-	if modified := c.GetHeader(`If-Modified-Since`); modified != "" {
-		if datetime.My2Gmt(datetime.Proto2My(*p.Modified)) == modified {
-			notModified = true
-		}
-	}
-	if b.checkVersionCookie(c) {
-		commitMatched = true
-	}
-
-	if notModified && commitMatched {
-		c.Status(http.StatusNotModified)
-		return true
-	}
-
-	return false
 }
 
 func (b *Blog) isCategoryPath(path string) bool {
@@ -308,29 +294,6 @@ func (b *Blog) queryHome(c *gin.Context) {
 	b.metrics.CountPost(0, `首页`, c.ClientIP(), c.Request.UserAgent())
 }
 
-func (b *Blog) queryRss(c *gin.Context) {
-	d := data.NewDataForRss(b.cfg, b.auth.AuthContext(c), b.service)
-	t := b.namedTemplates[`rss.html`]
-	d.Template = t
-	d.Writer = c.Writer
-
-	c.Header("Content-Type", "application/xml")
-
-	// TODO turn on 304 or off from config.
-	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
-		c.Header("Last-Modified", datetime.My2Gmt(modified))
-		b.addVersionCookie(c)
-	}
-
-	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
-
-	if err := t.Execute(c.Writer, d); err != nil {
-		panic(err)
-	}
-
-	// TODO metricss for rss crawler.
-}
-
 func (b *Blog) querySitemap(c *gin.Context) {
 	d := data.NewDataForSitemap(b.cfg, b.auth.AuthCookie(c), b.service)
 	t := b.namedTemplates[`sitemap.html`]
@@ -338,12 +301,6 @@ func (b *Blog) querySitemap(c *gin.Context) {
 	d.Writer = c.Writer
 
 	c.Header("Content-Type", "application/xml")
-
-	// TODO turn on 304 or off from config.
-	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
-		c.Header("Last-Modified", datetime.My2Gmt(modified))
-		b.addVersionCookie(c)
-	}
 
 	c.Writer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
 
@@ -360,12 +317,6 @@ func (b *Blog) querySearch(c *gin.Context) {
 	d.Template = t
 	d.Writer = c.Writer
 
-	// TODO turn on 304 or off from config.
-	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
-		c.Header("Last-Modified", datetime.My2Gmt(modified))
-		b.addVersionCookie(c)
-	}
-
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
@@ -379,12 +330,6 @@ func (b *Blog) queryPosts(c *gin.Context) {
 	d.Template = t
 	d.Writer = c.Writer
 
-	// TODO turn on 304 or off from config.
-	if modified := b.service.GetDefaultStringOption("last_post_time", ""); modified != "" {
-		c.Header("Last-Modified", datetime.My2Gmt(modified))
-		b.addVersionCookie(c)
-	}
-
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
@@ -397,9 +342,6 @@ func (b *Blog) queryByID(c *gin.Context, id int64) {
 	b.userMustCanSeePost(c, post)
 	b.incView(post.Id)
 	b.metrics.CountPost(id, post.Title, c.ClientIP(), c.Request.UserAgent())
-	if b.handle304(c, post) {
-		return
-	}
 	b.tempRenderPost(c, post)
 }
 
@@ -411,9 +353,6 @@ func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
 	post := b.service.GetPostBySlug(tree, slug)
 	b.userMustCanSeePost(c, post)
 	b.incView(post.Id)
-	if b.handle304(c, post) {
-		return
-	}
 	b.tempRenderPost(c, post)
 }
 
@@ -421,9 +360,6 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 	post := b.service.GetPostByPage(parents, slug)
 	b.userMustCanSeePost(c, post)
 	b.incView(post.Id)
-	if b.handle304(c, post) {
-		return
-	}
 	b.tempRenderPost(c, post)
 }
 
@@ -432,8 +368,6 @@ func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
 	t := b.namedTemplates[`post.html`]
 	d.Template = t
 	d.Writer = c.Writer
-	c.Header("Last-Modified", datetime.My2Gmt(datetime.Proto2My(*d.Post.Post.Modified)))
-	b.addVersionCookie(c)
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
@@ -487,20 +421,4 @@ func (b *Blog) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
 	if user.IsGuest() && post.Status != "public" {
 		panic("403")
 	}
-}
-
-func (b *Blog) addVersionCookie(c *gin.Context) {
-	v := version.GitCommit
-	if v == `` {
-		v = `HEAD`
-	}
-	c.SetCookie(`commit`, v, 0, `/`, ``, false, true)
-}
-
-func (b *Blog) checkVersionCookie(c *gin.Context) bool {
-	commit, err := c.Cookie(`commit`)
-	if err != nil {
-		return false
-	}
-	return commit == version.GitCommit
 }
