@@ -11,6 +11,7 @@ import (
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/themes/modules/handle304"
 )
 
 const tmpl = `
@@ -70,6 +71,10 @@ func New(cfg *config.Config, svc *service.Service, auth *auth.Auth) *RSS {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if handle304.ArticleRequest(w, req, r.svc.LastArticleUpdateTime()) {
+		return
+	}
+
 	user := r.auth.AuthCookie2(req)
 
 	articles := r.svc.GetLatestPosts(
@@ -91,6 +96,8 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	cr := *r
 	cr.Articles = rssArticles
+
+	handle304.ArticleResponse(w, r.svc.LastArticleUpdateTime())
 
 	w.Header().Set("Content-Type", "application/xml")
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`))

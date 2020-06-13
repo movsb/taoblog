@@ -4,7 +4,8 @@ protos_:
 	./scripts/build-protos.sh
 
 main_:
-	go build
+	./scripts/cross-build.sh
+	cp docker/taoblog .
 
 theme_:
 	@cd themes/blog/statics/sass && ./make_style.sh

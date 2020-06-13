@@ -15,12 +15,14 @@ import (
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/metrics"
+	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/rss"
 	"github.com/movsb/taoblog/service/modules/sitemap"
 	"github.com/movsb/taoblog/themes/data"
+	"github.com/movsb/taoblog/themes/modules/handle304"
 )
 
 var (
@@ -316,10 +318,16 @@ func (b *Blog) querySearch(c *gin.Context) {
 }
 
 func (b *Blog) queryPosts(c *gin.Context) {
+	if handle304.ArticleRequest(c.Writer, c.Request, b.service.LastArticleUpdateTime()) {
+		return
+	}
+
 	d := data.NewDataForPosts(b.cfg, b.auth.AuthCookie(c), b.service, c)
 	t := b.namedTemplates[`posts.html`]
 	d.Template = t
 	d.Writer = c.Writer
+
+	handle304.ArticleResponse(c.Writer, b.service.LastArticleUpdateTime())
 
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
@@ -355,10 +363,17 @@ func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
 }
 
 func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
+	if handle304.ArticleRequest(c.Writer, c.Request, datetime.Proto2Time(p.Modified)) {
+		return
+	}
+
 	d := data.NewDataForPost(b.cfg, b.auth.AuthCookie(c), b.service, p)
 	t := b.namedTemplates[`post.html`]
 	d.Template = t
 	d.Writer = c.Writer
+
+	handle304.ArticleResponse(c.Writer, datetime.Proto2Time(p.Modified))
+
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}

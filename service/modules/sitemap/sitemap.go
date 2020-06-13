@@ -9,6 +9,7 @@ import (
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/themes/modules/handle304"
 )
 
 const tmpl = `
@@ -51,6 +52,10 @@ func New(cfg *config.Config, svc *service.Service, auth *auth.Auth) *Sitemap {
 
 // ServeHTTP ...
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if handle304.ArticleRequest(w, req, s.svc.LastArticleUpdateTime()) {
+		return
+	}
+
 	user := s.auth.AuthCookie2(req)
 
 	articles := s.svc.MustListPosts(
@@ -72,6 +77,8 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	cs := *s
 	cs.Articles = rssArticles
+
+	handle304.ArticleResponse(w, s.svc.LastArticleUpdateTime())
 
 	w.Header().Set("Content-Type", "application/xml")
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`))

@@ -122,14 +122,7 @@ func (s *Service) TxCall(callback func(txs *Service) error) {
 }
 
 func (s *Service) IsSiteClosed() bool {
-	closed := s.GetDefaultStringOption("site_closed", "false")
-	if closed == "1" || closed == "true" {
-		return true
-	}
-	if s.cfg.Maintenance.SiteClosed {
-		return true
-	}
-	return false
+	return s.cfg.Maintenance.SiteClosed
 }
 
 // HomeURL returns the home URL of format https://localhost.
@@ -145,68 +138,12 @@ func (s *Service) Description() string {
 	return s.cfg.Blog.Description
 }
 
-/*
-// temporary
-func (s *Service) Add304(w http.ResponseWriter, req *http.Request) {
-	// TODO turn on 304 or off from config.
-	if modified := s.GetDefaultStringOption("last_post_time", ""); modified != "" {
-		w.Header().Add("Last-Modified", datetime.My2Gmt(modified))
-	}
-	s.addVersionCookie(w)
-}
-
-func (s *Service) Handle304(w http.ResponseWriter, req *http.Request, date time.Time) bool {
-	var notModified bool
-	var commitMatched bool
-
-	// TODO simplify
-	if modified := req.Header.Get(`If-Modified-Since`); modified != "" {
-		if datetime.My2Gmt(date.Format(`2006-01-02 15:04:05`)) == modified {
-			notModified = true
-		}
-	}
-
-	if s.checkVersionCookie(req) {
-		commitMatched = true
-	}
-
-	if notModified && commitMatched {
-		w.WriteHeader(http.StatusNotModified)
-		return true
-	}
-
-	return false
-}
-
-func (s *Service) addVersionCookie(w http.ResponseWriter) {
-	v := version.GitCommit
-	if v == `` {
-		v = `HEAD`
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     `commit`,
-		Value:    v,
-		Path:     `/`,
-		MaxAge:   0,
-		Secure:   false,
-		HttpOnly: true,
-	})
-}
-
-func (s *Service) checkVersionCookie(req *http.Request) bool {
-	commit, err := req.Cookie(`commit`)
-	if err != nil {
-		return false
-	}
-	return commit.Value == version.GitCommit
-}
-
-func (s *Service) LastUpdate() time.Time {
+// LastArticleUpdateTime ...
+func (s *Service) LastArticleUpdateTime() time.Time {
 	modified := s.GetDefaultStringOption("last_post_time", "")
-	t, err := time.Parse(`2006-01-02 15:04:05`, modified)
+	t, err := time.ParseInLocation(`2006-01-02 15:04:05`, modified, time.Local)
 	if err != nil {
 		return time.Now()
 	}
 	return t
 }
-*/
