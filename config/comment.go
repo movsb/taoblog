@@ -4,6 +4,7 @@ package config
 type CommentConfig struct {
 	Author            string                 `yaml:"author"`
 	Email             string                 `yaml:"email"`
+	Notify            bool                   `yaml:"notify"`
 	NotAllowedEmails  []string               `yaml:"not_allowed_emails"`
 	NotAllowedAuthors []string               `yaml:"not_allowed_authors"`
 	Templates         CommentTemplatesConfig `yaml:"templates"`

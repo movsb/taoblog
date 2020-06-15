@@ -64,8 +64,6 @@ h6 { font-size: 1.0em; }
 
 /* 不可选 */
 .no-sel {
-    -webkit-user-select: none;
-    -moz-user-select: none;
     user-select: none;
     cursor: default;
 }
@@ -74,8 +72,6 @@ h6 { font-size: 1.0em; }
 .btn {
     border: none;
     box-sizing: border-box;
-    -webkit-user-select: none;
-    -moz-user-select: none;
     user-select: none;
     padding: 6px;
     cursor: pointer;

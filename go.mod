@@ -14,6 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.6.0
 	github.com/spf13/cobra v1.0.0
 	github.com/yuin/goldmark v1.1.30
+	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	google.golang.org/genproto v0.0.0-20200513103714-09dca8ec2884
 	google.golang.org/grpc v1.29.1

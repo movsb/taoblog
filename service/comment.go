@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
@@ -15,7 +16,10 @@ import (
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taorm/taorm"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/text"
+	"go.uber.org/zap"
 )
 
 // Deprecated.
@@ -66,7 +70,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		if hasSourceType {
 			data[`source_type`] = req.Comment.SourceType
 			data[`source`] = req.Comment.Source
-			data[`content`] = s.convertCommentMarkdown(req.Comment)
+			data[`content`] = s.convertCommentMarkdown(user, req.Comment)
 		}
 		s.TxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
@@ -189,7 +193,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		}
 	}
 
-	comment.Content = s.convertCommentMarkdown(c)
+	comment.Content = s.convertCommentMarkdown(user, c)
 
 	adminEmail := s.cfg.Comment.Email
 
@@ -228,21 +232,36 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 	return comment.ToProtocols(adminEmail, user)
 }
 
-func (s *Service) convertCommentMarkdown(c *protocols.Comment) string {
+func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) string {
 	if c.SourceType != "markdown" {
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
-	var buf bytes.Buffer
 	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
-	if err := md.Convert([]byte(c.Source), &buf); err != nil {
+	doc := md.Parser().Parse(text.NewReader([]byte(c.Source)))
+
+	if !user.IsAdmin() {
+		if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+			if entering {
+				switch n.Kind() {
+				case ast.KindHeading:
+					panic(exception.NewValidationError(`Markdown 不能包含标题`))
+				case ast.KindHTMLBlock, ast.KindRawHTML:
+					panic(exception.NewValidationError(`Markdown 不能包含 HTML 元素`))
+				}
+			}
+			return ast.WalkContinue, nil
+		}); err != nil {
+			panic(err)
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := md.Renderer().Render(&buf, []byte(c.Source), doc); err != nil {
 		panic(exception.NewValidationError("不能转换 markdown"))
 	}
-	bs := buf.String()
-	if strings.Contains(bs, `<!-- raw HTML omitted -->`) {
-		panic(exception.NewValidationError(`不能包含 HTML 标签`))
-	}
-	return bs
+
+	return buf.String()
 }
 
 func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
@@ -282,6 +301,15 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 }
 
 func (s *Service) doCommentNotification(c *models.Comment) {
+	if !s.cfg.Comment.Notify {
+		zap.S().Infow(
+			`comment notification is disabled`,
+			`comment_id`, c.ID,
+			`post_id`, c.PostID,
+		)
+		return
+	}
+
 	postTitle := s.GetPostTitle(c.PostID)
 	postLink := fmt.Sprintf("%s/%d/", s.HomeURL(), c.PostID)
 	adminEmail := s.cfg.Comment.Email

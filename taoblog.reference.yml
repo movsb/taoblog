@@ -59,6 +59,7 @@ site:
   copyright: '版权声明：若非特别注明，本站所有文章均为作者原创，转载请务必注明原文地址。'
 
 comment:
+  notify: false
   templates:
     admin: |
       <b>您的博文“{{.Title}}”有新的评论啦！</b><br/><br/>

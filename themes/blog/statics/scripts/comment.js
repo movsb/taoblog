@@ -253,10 +253,10 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	} else {
 		s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
 	}
-    s += '<div class="toolbar no-sel" style="margin-left: 54px;">';
-	s += '<a onclick="comment.reply_to('+cmt.id+');return false;">回复</a>';
+    s += '<div class="toolbar" style="margin-left: 54px;">';
+	s += '<a class="no-sel" onclick="comment.reply_to('+cmt.id+');return false;">回复</a>';
 	if(loggedin) {
-		s += '<a onclick="confirm(\'确定要删除？\') && comment.delete_me('+cmt.id+');return false;">删除</a>';
+		s += '<a class="no-sel" onclick="confirm(\'确定要删除？\') && comment.delete_me('+cmt.id+');return false;">删除</a>';
 	}
     s += '</div>';
 	s += '</li>';
