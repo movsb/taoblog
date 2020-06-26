@@ -27,12 +27,12 @@ pre > code {
 
 /* 行内代码 */
 :not(pre) > code {
-    margin: 2px 3px;
-    padding: 1px 6px;
-    border-radius: .3em;
-    display: inline-block;
-    line-height: 1.5em;
-    white-space: normal;
+	margin: 0px 4px;
+	padding: 4px 6px;
+	border-radius: .3em;
+	line-height: 1.5em;
+	white-space: normal;
+	word-break: break-all;
 	background-color: $post_code_bg_light;
 	@media (prefers-color-scheme: dark) {
 		background-color: $post_code_bg_dark;

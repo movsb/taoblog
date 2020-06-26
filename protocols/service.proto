@@ -9,19 +9,71 @@ import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 
 service TaoBlog {
-	rpc Ping(PingRequest) returns (PingResponse);
+	rpc Ping(PingRequest) returns (PingResponse) {
+		option (google.api.http) = {
+			get: "/v3/ping";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "Ping 服务器。";
+		};
+	}
 
 	// Backup
-	rpc Backup(BackupRequest) returns (BackupResponse);
+	rpc Backup(BackupRequest) returns (BackupResponse) {
+		option (google.api.http) = {
+			get: "/v3/backup";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "导出数据库（拖库）。";
+		};
+	}
 
 	// POSTS
-	rpc CreatePost(Post) returns (Post);
-	rpc UpdatePost(UpdatePostRequest) returns (Post);
+	rpc CreatePost(Post) returns (Post) {
+		option (google.api.http) = {
+			post: "/v3/posts";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "创建新文章。";
+		};
+	}
+	rpc UpdatePost(UpdatePostRequest) returns (Post) {
+		option (google.api.http) = {
+			patch: "/v3/posts/{post.id=*}";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "更新文章。";
+		};
+	}
 
 	// Comments
-	rpc GetComment(GetCommentRequest) returns (Comment);
-	rpc UpdateComment(UpdateCommentRequest) returns (Comment);
-	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse);
+	rpc GetComment(GetCommentRequest) returns (Comment) {
+		option (google.api.http) = {
+			get: "/v3/comments/{id=*}";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取指定编号的评论。";
+		};
+	}
+	rpc UpdateComment(UpdateCommentRequest) returns (Comment) {
+		option (google.api.http) = {
+			patch: "/v3/comments/{comment.id=*}";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "更新指定编号的评论。";
+		};
+	}
+	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse) {
+		option (google.api.http) = {
+			get: "/v3/comments";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取（某篇文章的）评论列表。";
+		};
+	}
 	rpc SetCommentPostID (SetCommentPostIDRequest) returns (SetCommentPostIDResponse) {
 		option (google.api.http) = {
 			post: "/v3/comments/{id=*}:setPostID";

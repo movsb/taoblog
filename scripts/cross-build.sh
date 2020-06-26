@@ -16,4 +16,4 @@ ldflags="\
 -X 'github.com/movsb/taoblog/modules/version.GitCommit=$gitCommit' \
 "
 
-CGO_ENABLED=1 go build -ldflags "$ldflags" -v -o docker/taoblog
+GOOS=linux GOARCH=amd64 go build -ldflags "$ldflags" -v -o docker/taoblog
