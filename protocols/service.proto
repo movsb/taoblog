@@ -19,6 +19,7 @@ service TaoBlog {
 	}
 
 	// Backup
+
 	rpc Backup(BackupRequest) returns (BackupResponse) {
 		option (google.api.http) = {
 			get: "/v3/backup";
@@ -29,6 +30,7 @@ service TaoBlog {
 	}
 
 	// POSTS
+
 	rpc CreatePost(Post) returns (Post) {
 		option (google.api.http) = {
 			post: "/v3/posts";
@@ -49,6 +51,7 @@ service TaoBlog {
 	}
 
 	// Comments
+
 	rpc GetComment(GetCommentRequest) returns (Comment) {
 		option (google.api.http) = {
 			get: "/v3/comments/{id=*}";

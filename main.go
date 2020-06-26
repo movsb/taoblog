@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/client"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/server"
+	_ "github.com/movsb/taoblog/setup/tool-deps"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

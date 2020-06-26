@@ -164,12 +164,9 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TaoBlogClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	// Backup
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (*BackupResponse, error)
-	// POSTS
 	CreatePost(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*Post, error)
-	// Comments
 	GetComment(ctx context.Context, in *GetCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 	UpdateComment(ctx context.Context, in *UpdateCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 	ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsResponse, error)
@@ -259,12 +256,9 @@ func (c *taoBlogClient) SetCommentPostID(ctx context.Context, in *SetCommentPost
 // TaoBlogServer is the server API for TaoBlog service.
 type TaoBlogServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	// Backup
 	Backup(context.Context, *BackupRequest) (*BackupResponse, error)
-	// POSTS
 	CreatePost(context.Context, *Post) (*Post, error)
 	UpdatePost(context.Context, *UpdatePostRequest) (*Post, error)
-	// Comments
 	GetComment(context.Context, *GetCommentRequest) (*Comment, error)
 	UpdateComment(context.Context, *UpdateCommentRequest) (*Comment, error)
 	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsResponse, error)

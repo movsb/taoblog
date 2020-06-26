@@ -17,7 +17,7 @@ _run_in_xgo() {
 }
 
 #_run_in_xgo ./scripts/cross-build.sh
-./scripts/cross-build.sh
+GOOS=linux GOARCH=amd64 ./scripts/cross-build.sh
 
 (cd themes/blog/statics/sass && ./make_style.sh)
 
