@@ -199,12 +199,6 @@ func (s *Service) GetPostTags(ID int64) []string {
 	return s.GetObjectTagNames(ID)
 }
 
-func (s *Service) GetPostCommentCount(name int64) (count int64) {
-	var post models.Post
-	s.posts().Select("comments").Where("id=?", name).MustFind(&post)
-	return int64(post.Comments)
-}
-
 func (s *Service) UpdatePostCommentCount(name int64) {
 	var count uint
 	s.tdb.Model(models.Comment{}).Where(`post_id=?`, name).MustCount(&count)
@@ -371,4 +365,13 @@ func (s *Service) SetPostStatus(id int64, status string) {
 		})
 		return nil
 	})
+}
+
+// GetPostCommentsCount ...
+func (s *Service) GetPostCommentsCount(ctx context.Context, in *protocols.GetPostCommentsCountRequest) (*protocols.GetPostCommentsCountResponse, error) {
+	var post models.Post
+	s.posts().Select("comments").Where("id=?", in.PostId).MustFind(&post)
+	return &protocols.GetPostCommentsCountResponse{
+		Count: int64(post.Comments),
+	}, nil
 }

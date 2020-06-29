@@ -142,9 +142,9 @@ Comment.prototype.load_essential_comments = function() {
 
 Comment.prototype.get_count = function(callback) {
     var self = this;
-    $.get('/v2/posts/' + self.post_id + '/comments!count',
+    $.get('/v3/posts/' + self.post_id + '/comments:count',
         function(data) {
-            self._count = data;
+            self._count = data.count;
             $('#comment-title .total').text(self._count);
             callback();
         },

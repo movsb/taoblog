@@ -49,6 +49,14 @@ service TaoBlog {
 			description: "更新文章。";
 		};
 	}
+	rpc GetPostCommentsCount (GetPostCommentsCountRequest) returns (GetPostCommentsCountResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts/{post_id=*}/comments:count";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取文章评论数。";
+		};
+	}
 
 	// Comments
 

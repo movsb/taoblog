@@ -100,13 +100,16 @@ func (o *Auth) AuthCookie2(req *http.Request) *User {
 	}
 
 	login := loginCookie.Value
+	userAgent := req.Header.Get(`User-Agent`)
+	return o.AuthCookie3(login, userAgent)
+}
 
-	agent := req.Header.Get(`User-Agent`)
-	if agent == "" {
+func (o *Auth) AuthCookie3(login string, userAgent string) *User {
+	if userAgent == "" {
 		return guest
 	}
 
-	if o.sha1(agent+o.Login()) == login {
+	if o.sha1(userAgent+o.Login()) == login {
 		return admin
 	}
 
@@ -202,26 +205,35 @@ func (a *Auth) AuthContext(ctx context.Context) *User {
 	return guest
 }
 
-func (o *Auth) MakeCookie(c *gin.Context) {
+func (a *Auth) MakeCookie(c *gin.Context) {
 	agent := c.GetHeader("User-Agent")
-	cookie := o.sha1(agent + o.Login())
+	cookie := a.sha1(agent + a.Login())
 	c.SetCookie("login", cookie, 0, "/", "", true, true)
 }
 
-func (o *Auth) DeleteCookie(c *gin.Context) {
+func (a *Auth) DeleteCookie(c *gin.Context) {
 	c.SetCookie("login", "", -1, "/", "", true, true)
 }
 
-func (o *Auth) Middle(c *gin.Context) {
-	cookieUser := o.AuthCookie(c)
+func (a *Auth) Middle(c *gin.Context) {
+	cookieUser := a.AuthCookie(c)
 	if !cookieUser.IsGuest() {
 		c.Next()
 		return
 	}
-	headerUser := o.AuthHeader(c)
+	headerUser := a.AuthHeader(c)
 	if !headerUser.IsGuest() {
 		c.Next()
 		return
 	}
 	c.AbortWithStatus(401)
 }
+
+// AuthFunc does interception with grpc.
+/*
+func (a *Auth) AuthFunc(ctx context.Context) (context.Context, error) {
+	if sid, ok := GetCookie(ctx, `login`); ok {
+		return a.AuthCookie2()
+	}
+}
+*/

@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	grpcAddress = "127.0.0.1:2563"
+	GrpcAddress = "127.0.0.1:2563"
 )
 
 // IFileManager exposes interfaces to manage upload files.
@@ -44,11 +44,11 @@ type Service struct {
 }
 
 // NewService ...
-func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
+func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	s := &Service{
 		cfg:   cfg,
 		tdb:   taorm.NewDB(db),
-		auth:  auth,
+		auth:  auther,
 		fmgr:  file_managers.NewLocalFileManager(cfg.Data.File.Path),
 		cache: memory_cache.NewMemoryCache(time.Minute * 10),
 	}
@@ -65,15 +65,13 @@ func NewService(cfg *config.Config, db *sql.DB, auth *auth.Auth) *Service {
 
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
-			grpc_recovery.UnaryServerInterceptor(
-				grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler),
-			),
+			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
 		),
 	)
 
 	protocols.RegisterTaoBlogServer(server, s)
 
-	listener, err := net.Listen("tcp", grpcAddress)
+	listener, err := net.Listen("tcp", GrpcAddress)
 	if err != nil {
 		panic(err)
 	}

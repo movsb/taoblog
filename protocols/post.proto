@@ -34,3 +34,11 @@ message UpdatePostRequest {
 	Post post = 1;
 	google.protobuf.FieldMask update_mask = 2;
 }
+
+message GetPostCommentsCountRequest {
+	int64 post_id = 1;
+}
+
+message GetPostCommentsCountResponse {
+	int64 count = 1;
+}

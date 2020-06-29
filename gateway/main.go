@@ -8,7 +8,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/auth"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"google.golang.org/grpc"
 )
 
 type Gateway struct {
@@ -28,7 +30,7 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 	g.routeOthers()
 
 	mux := runtime.NewServeMux()
-	rootRouter.GET(`/v3/*path`, func(c *gin.Context) {
+	rootRouter.Any(`/v3/*path`, func(c *gin.Context) {
 		mux.ServeHTTP(c.Writer, c.Request)
 	})
 
@@ -52,7 +54,6 @@ func (g *Gateway) routePosts() {
 	c.POST("/:name/comments", g.createPostComment)
 
 	// comments
-	c.GET("/:name/comments!count", g.GetPostCommentCount)
 	c.DELETE("/:name/comments/:comment_name", g.auth, g.DeleteComment)
 
 	// files
@@ -70,7 +71,10 @@ func (g *Gateway) routePosts() {
 
 // runHTTPService ...
 // TODO auth
-func runHTTPService(ctx context.Context, mux *runtime.ServeMux, service *service.Service) error {
+func runHTTPService(ctx context.Context, mux *runtime.ServeMux, svc *service.Service) error {
+	opts := []grpc.DialOption{grpc.WithInsecure()}
+	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux, service.GrpcAddress, opts)
+
 	compile := func(rule string) httprule.Template {
 		if compiler, err := httprule.Parse(rule); err != nil {
 			panic(err)
