@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
-	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
@@ -52,7 +51,7 @@ type Blog struct {
 	router  *gin.RouterGroup
 	auth    *auth.Auth
 	api     *gin.RouterGroup
-	metrics metrics.Server
+
 	// dynamic files, rather than static files.
 	// Not thread safe. Don't write after initializing.
 	specialFiles map[string]func(c *gin.Context)
@@ -65,7 +64,7 @@ type Blog struct {
 }
 
 // NewBlog ...
-func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, metrics metrics.Server, base string) *Blog {
+func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Blog {
 	b := &Blog{
 		cfg:          cfg,
 		base:         base,
@@ -73,7 +72,6 @@ func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, rout
 		router:       router,
 		auth:         auth,
 		api:          api,
-		metrics:      metrics,
 		specialFiles: make(map[string]func(c *gin.Context)),
 	}
 	if cfg.Site.RSS.Enabled {
@@ -301,7 +299,6 @@ func (b *Blog) queryHome(c *gin.Context) {
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
-	b.metrics.CountPost(0, `首页`, c.ClientIP(), c.Request.UserAgent())
 }
 
 func (b *Blog) querySearch(c *gin.Context) {
@@ -313,8 +310,6 @@ func (b *Blog) querySearch(c *gin.Context) {
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
-
-	// TODO metricss.
 }
 
 func (b *Blog) queryPosts(c *gin.Context) {
@@ -332,15 +327,12 @@ func (b *Blog) queryPosts(c *gin.Context) {
 	if err := t.Execute(c.Writer, d); err != nil {
 		panic(err)
 	}
-
-	// TODO metricss.
 }
 
 func (b *Blog) queryByID(c *gin.Context, id int64) {
 	post := b.service.GetPostByID(id)
 	b.userMustCanSeePost(c, post)
 	b.incView(post.Id)
-	b.metrics.CountPost(id, post.Title, c.ClientIP(), c.Request.UserAgent())
 	b.tempRenderPost(c, post)
 }
 

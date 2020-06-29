@@ -19,7 +19,6 @@ import (
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/exception"
 	"github.com/movsb/taoblog/gateway"
-	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/service"
 	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
@@ -50,8 +49,6 @@ func serve() {
 	defer db.Close()
 
 	migration.Migrate(db)
-
-	theMetrics := metrics.New()
 
 	apiRouter := gin.Default()
 	theAPI := apiRouter.Group("/v2")
@@ -96,7 +93,7 @@ func serve() {
 
 	switch cfg.Theme.Name {
 	case "", "BLOG":
-		blog.NewBlog(cfg, theService, theAuth, indexGroup, theAPI, theMetrics, "themes/blog")
+		blog.NewBlog(cfg, theService, theAuth, indexGroup, theAPI, "themes/blog")
 	default:
 		panic("unknown theme: " + cfg.Theme.Name)
 	}
@@ -105,15 +102,6 @@ func serve() {
 	adminPrefix := regexp.MustCompile(`^/admin/`)
 
 	handler := func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == `/metrics` {
-			username, password, ok := req.BasicAuth()
-			if !(ok && username == cfg.Metrics.Username && password == cfg.Metrics.Password) {
-				w.WriteHeader(403)
-				return
-			}
-			theMetrics.ServeHTTP(w, req)
-			return
-		}
 		if apiPrefix.MatchString(req.URL.Path) {
 			apiRouter.ServeHTTP(w, req)
 			return
