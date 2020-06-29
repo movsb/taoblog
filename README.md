@@ -46,6 +46,14 @@ setup/      | 安装管理
 themes/     | 主题目录
 main.go     | 入口程序
 
+## RoadMap
+
+抄几个主题：
+
+- <http://www.templex.xyz/> 同王垠的博客
+- <https://www.tbfeng.com/> 天边风
+- <https://www.v2ex.com/t/561257> 你见过最简约美观的技术博客
+
 ## 联系我
 
 QQ: 191035066
