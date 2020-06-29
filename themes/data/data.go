@@ -68,7 +68,9 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Servic
 	d := &Data{
 		Config: cfg,
 		User:   user,
-		Meta:   &MetaData{},
+		Meta: &MetaData{
+			Title: post.Title,
+		},
 	}
 	p := &PostData{
 		Post: newPost(post),
