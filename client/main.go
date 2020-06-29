@@ -110,21 +110,37 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	postsCmd.AddCommand(postsUpdateCmd)
 	postsPublishCmd := &cobra.Command{
-		Use:     `publish`,
+		Use:     `publish [post-id]`,
 		Short:   `Publish this post`,
 		Aliases: []string{`pub`},
-		Args:    cobra.NoArgs,
+		Args:    cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			client.SetPostStatus(`public`)
+			var postID int64
+			var err error
+			if len(args) == 1 {
+				postID, err = strconv.ParseInt(args[0], 10, 0)
+				if err != nil {
+					panic(err)
+				}
+			}
+			client.SetPostStatus(postID, true)
 		},
 	}
 	postsCmd.AddCommand(postsPublishCmd)
 	postsDraftCmd := &cobra.Command{
-		Use:   `draft`,
+		Use:   `draft [post-id]`,
 		Short: `Unpublish this post (make it a draft)`,
-		Args:  cobra.NoArgs,
+		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			client.SetPostStatus(`draft`)
+			var postID int64
+			var err error
+			if len(args) == 1 {
+				postID, err = strconv.ParseInt(args[0], 10, 0)
+				if err != nil {
+					panic(err)
+				}
+			}
+			client.SetPostStatus(postID, false)
 		},
 	}
 	postsCmd.AddCommand(postsDraftCmd)

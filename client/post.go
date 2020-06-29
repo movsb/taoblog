@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -33,11 +32,6 @@ type Post struct {
 	SourceType string `json:"source_type"`
 	Source     string `json:"source"`
 	Content    string `json:"content"`
-}
-
-type PostStatus struct {
-	ID     int64  `json:"id"`
-	Status string `json:"status"`
 }
 
 // InitPost ...
@@ -117,21 +111,21 @@ func (c *Client) GetPost() {
 	}
 }
 
-func (c *Client) SetPostStatus(status string) {
-	config := c.readPostConfig()
-	if config.ID == 0 {
-		panic("post not yet been created")
+func (c *Client) SetPostStatus(id int64, public bool) {
+	if id <= 0 {
+		config := c.readPostConfig()
+		if config.ID == 0 {
+			panic("post not yet been created")
+		}
+		id = config.ID
 	}
-	postStatus := &PostStatus{
-		ID:     config.ID,
-		Status: status,
-	}
-	bys, err := json.Marshal(postStatus)
+	_, err := c.grpcClient.SetPostStatus(c.token(), &protocols.SetPostStatusRequest{
+		Id:     id,
+		Public: public,
+	})
 	if err != nil {
 		panic(err)
 	}
-	resp := c.mustPost(fmt.Sprintf("/posts/%d/status", config.ID), bytes.NewReader(bys), contentTypeJSON)
-	defer resp.Body.Close()
 }
 
 func (c *Client) UpdatePost() {

@@ -356,15 +356,26 @@ func (s *Service) updatePostPageCount() {
 }
 
 // SetPostStatus sets post status.
-func (s *Service) SetPostStatus(id int64, status string) {
+func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatusRequest) (*protocols.SetPostStatusResponse, error) {
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() {
+		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
+	}
+
 	s.TxCall(func(txs *Service) error {
 		var post models.Post
-		txs.tdb.Select("id").Where("id=?", id).MustFind(&post)
+		txs.tdb.Select("id").Where("id=?", in.Id).MustFind(&post)
+
+		status := `public`
+		if !in.Public {
+			status = `draft`
+		}
 		txs.tdb.Model(&post).MustUpdateMap(map[string]interface{}{
 			"status": status,
 		})
 		return nil
 	})
+	return &protocols.SetPostStatusResponse{}, nil
 }
 
 // GetPostCommentsCount ...

@@ -42,3 +42,12 @@ message GetPostCommentsCountRequest {
 message GetPostCommentsCountResponse {
 	int64 count = 1;
 }
+
+message SetPostStatusRequest {
+	int64 id = 1;
+	bool public = 2;
+}
+
+message SetPostStatusResponse {
+
+}

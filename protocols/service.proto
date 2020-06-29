@@ -57,6 +57,14 @@ service TaoBlog {
 			description: "获取文章评论数。";
 		};
 	}
+	rpc SetPostStatus (SetPostStatusRequest) returns (SetPostStatusResponse) {
+		option (google.api.http) = {
+			post: "/v3/posts/{id=*}:setStatus";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "是否公开文章。";
+		};
+	}
 
 	// Comments
 
