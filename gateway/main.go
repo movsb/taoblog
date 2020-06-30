@@ -57,9 +57,6 @@ func (g *Gateway) routePosts() {
 	c.GET("/:name/comments", g.listPostComments)
 	c.POST("/:name/comments", g.createPostComment)
 
-	// comments
-	c.DELETE("/:name/comments/:comment_name", g.auth, g.DeleteComment)
-
 	// files
 	c.GET("/:name/files/*file", g.GetFile)
 	c.GET("/:name/files", g.auth, g.ListFiles)

@@ -7,18 +7,6 @@ import (
 	"github.com/movsb/taoblog/protocols"
 )
 
-func (g *Gateway) GetComment(c *gin.Context) {
-	name := utils.MustToInt64(c.Param("name"))
-	out := g.service.GetComment2(name)
-	c.JSON(200, out)
-}
-
-func (g *Gateway) DeleteComment(c *gin.Context) {
-	_ = utils.MustToInt64(c.Param("name"))
-	commentName := utils.MustToInt64(c.Param("comment_name"))
-	g.service.DeleteComment(nil, commentName)
-}
-
 // Comment ...
 func (g *Gateway) listPostComments(c *gin.Context) {
 	userCtx := g.auther.AuthCookie(c).Context(nil)

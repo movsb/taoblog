@@ -11,7 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/config"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 type ctxAuthKey struct{}
@@ -38,6 +40,12 @@ func (u *User) IsGuest() bool {
 
 func (u *User) IsAdmin() bool {
 	return u.ID != 0
+}
+
+func (u *User) MustBeAdmin() {
+	if !u.IsAdmin() {
+		panic(status.Error(codes.PermissionDenied, `not enough permission`))
+	}
 }
 
 func (u *User) Context(parent context.Context) context.Context {

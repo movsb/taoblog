@@ -66,6 +66,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
+			auth.GatewayAuthInterceptor(s.auth),
 		),
 	)
 
@@ -91,6 +92,10 @@ func exceptionRecoveryHandler(e interface{}) error {
 		}
 	case *status.Status:
 		return te.Err()
+	case error:
+		if st, ok := status.FromError(te); ok {
+			return st.Err()
+		}
 	}
 	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }

@@ -282,7 +282,7 @@ Comment.prototype.reply_to = function(p){
 Comment.prototype.delete_me = function(p) {
     var self = this;
 	$.ajax({
-        url: '/v2/posts/' + self.post_id + '/comments/' + p,
+        url: '/v3/comments/' + p,
         type: 'DELETE',
         success: function() {
             $('#comment-'+p).remove();

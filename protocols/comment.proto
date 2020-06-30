@@ -32,6 +32,14 @@ message UpdateCommentRequest {
 	google.protobuf.FieldMask update_mask = 2;
 }
 
+message DeleteCommentRequest {
+	int32 id = 1;
+}
+
+message DeleteCommentResponse {
+
+}
+
 enum ListCommentsMode {
 	ListCommentsModeUnspecified = 0;
 	ListCommentsModeTree = 1;

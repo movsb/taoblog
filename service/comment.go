@@ -84,6 +84,15 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 	return comment.ToProtocols(s.cfg.Comment.Email, user), nil
 }
 
+// DeleteComment ...
+func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteCommentRequest) (*protocols.DeleteCommentResponse, error) {
+	s.auth.AuthGRPC(ctx).MustBeAdmin()
+	cmt := s.GetComment2(int64(in.Id))
+	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
+	s.UpdatePostCommentCount(cmt.PostID)
+	return &protocols.DeleteCommentResponse{}, nil
+}
+
 // ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
@@ -262,12 +271,6 @@ func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) 
 	}
 
 	return buf.String()
-}
-
-func (s *Service) DeleteComment(ctx context.Context, commentName int64) {
-	cmt := s.GetComment2(commentName)
-	s.comments().Where("id=? OR root=?", commentName, commentName).Delete()
-	s.UpdatePostCommentCount(cmt.PostID)
 }
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
