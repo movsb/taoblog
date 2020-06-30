@@ -29,7 +29,11 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 	g.routePosts()
 	g.routeOthers()
 
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			EmitDefaults: true,
+		}),
+	)
 	rootRouter.Any(`/v3/*path`, func(c *gin.Context) {
 		mux.ServeHTTP(c.Writer, c.Request)
 	})
