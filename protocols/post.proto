@@ -30,6 +30,13 @@ message Post {
 	repeated string tags = 16;
 }
 
+message GetPostRequest {
+	int32 id = 1;
+	bool with_source = 2;
+	bool with_content = 3;
+	bool with_tags = 4;
+}
+
 message UpdatePostRequest {
 	Post post = 1;
 	google.protobuf.FieldMask update_mask = 2;

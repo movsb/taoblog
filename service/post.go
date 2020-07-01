@@ -57,6 +57,39 @@ func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64
 	return s.MustListPosts(ctx, &in)
 }
 
+// GetPost ...
+func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*protocols.Post, error) {
+	user := s.auth.AuthGRPC(ctx)
+
+	var p models.Post
+	if err := s.tdb.Where("id = ?", in.Id).Find(&p); err != nil {
+		if taorm.IsNotFoundError(err) {
+			panic(status.Error(codes.NotFound, `post not found`))
+		}
+		panic(err)
+	}
+
+	if p.Status != `public` && !user.IsAdmin() {
+		panic(status.Error(codes.NotFound, `post not found`))
+	}
+
+	out := p.ToProtocols()
+
+	// TODO don't get these fields
+	if !in.WithContent {
+		out.Content = ``
+	}
+	if !in.WithSource {
+		out.SourceType = ``
+		out.Source = ``
+	}
+	if in.WithTags {
+		out.Tags = s.GetPostTags(out.Id)
+	}
+
+	return out, nil
+}
+
 func (s *Service) GetPostTitle(ID int64) string {
 	var p models.Post
 	s.posts().Select("title").Where("id = ?", ID).MustFind(&p)

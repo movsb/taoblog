@@ -40,6 +40,14 @@ service TaoBlog {
 			description: "创建新文章。";
 		};
 	}
+	rpc GetPost (GetPostRequest) returns (Post) {
+		option (google.api.http) = {
+			get: "/v3/posts/{id=*}";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取某篇文章。";
+		};
+	}
 	rpc UpdatePost(UpdatePostRequest) returns (Post) {
 		option (google.api.http) = {
 			patch: "/v3/posts/{post.id=*}";

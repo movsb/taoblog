@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,13 +24,6 @@ type PostConfig struct {
 	Title string   `json:"title" yaml:"title"`
 	Tags  []string `json:"tags" yaml:"tags"`
 	Slug  string   `json:"slug" yaml:"slug,omitempty"`
-}
-
-type Post struct {
-	PostConfig
-	SourceType string `json:"source_type"`
-	Source     string `json:"source"`
-	Content    string `json:"content"`
 }
 
 // InitPost ...
@@ -76,27 +68,34 @@ func (c *Client) CreatePost() {
 
 // GetPost ...
 func (c *Client) GetPost() {
-	p := &Post{}
-	p.PostConfig = *c.readPostConfig()
-	if p.ID == 0 {
+	cfg := *c.readPostConfig()
+	if cfg.ID == 0 {
 		panic("ID cannot be zero")
 	}
-	if p.Title != "" {
+	if cfg.Title != "" {
 		panic("must not be created")
 	}
-	resp := c.mustGet("/posts/" + fmt.Sprint(p.ID))
-	dec := json.NewDecoder(resp.Body)
-	rp := Post{}
-	if err := dec.Decode(&rp); err != nil {
+	post, err := c.grpcClient.GetPost(c.token(), &protocols.GetPostRequest{
+		Id:          int32(cfg.ID),
+		WithSource:  true,
+		WithContent: true,
+		WithTags:    true,
+	})
+	if err != nil {
 		panic(err)
 	}
-	c.savePostConfig(&rp.PostConfig)
+
+	cfg.Slug = post.Slug
+	cfg.Tags = post.Tags
+	cfg.Title = post.Title
+	c.savePostConfig(&cfg)
+
 	filename := "README.md"
-	switch rp.SourceType {
+	switch post.SourceType {
 	case "html":
 		filename = "README.html"
-		if rp.Source == "" {
-			rp.Source = rp.Content
+		if post.Source == "" {
+			post.Source = post.Content
 		}
 	case "markdown":
 		filename = "README.md"
@@ -106,7 +105,7 @@ func (c *Client) GetPost() {
 		panic(err)
 	}
 	defer fp.Close()
-	if _, err := fp.WriteString(rp.Source); err != nil {
+	if _, err := fp.WriteString(post.Source); err != nil {
 		panic(err)
 	}
 }
