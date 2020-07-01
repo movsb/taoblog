@@ -55,10 +55,6 @@ func (u *User) Context(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
-func HashPassword(password string) string {
-	return fmt.Sprintf("%x", sha1.Sum([]byte(password)))
-}
-
 type Auth struct {
 	cfg config.AuthConfig
 }
@@ -218,30 +214,3 @@ func (a *Auth) MakeCookie(c *gin.Context) {
 	cookie := a.sha1(agent + a.Login())
 	c.SetCookie("login", cookie, 0, "/", "", true, true)
 }
-
-func (a *Auth) DeleteCookie(c *gin.Context) {
-	c.SetCookie("login", "", -1, "/", "", true, true)
-}
-
-func (a *Auth) Middle(c *gin.Context) {
-	cookieUser := a.AuthCookie(c)
-	if !cookieUser.IsGuest() {
-		c.Next()
-		return
-	}
-	headerUser := a.AuthHeader(c)
-	if !headerUser.IsGuest() {
-		c.Next()
-		return
-	}
-	c.AbortWithStatus(401)
-}
-
-// AuthFunc does interception with grpc.
-/*
-func (a *Auth) AuthFunc(ctx context.Context) (context.Context, error) {
-	if sid, ok := GetCookie(ctx, `login`); ok {
-		return a.AuthCookie2()
-	}
-}
-*/

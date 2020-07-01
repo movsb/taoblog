@@ -35,7 +35,6 @@ auth/       | 授权管理
 client/     | 博客客户端
 config/     | 配置模块
 docker/     | 容器镜像
-exception/  | 异常处理
 gateway/    | 网关接口层
 modules/    | 公共模块
 protocols/  | 协议定义

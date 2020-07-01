@@ -3,7 +3,7 @@ all: protos_ theme_ main_
 
 .PHONY: protos_
 protos_:
-	./scripts/build-protos.sh
+	./setup/scripts/build-protos.sh
 
 .PHONY: theme_
 theme_:
@@ -11,12 +11,12 @@ theme_:
 
 .PHONY: main_
 main_:
-	./scripts/cross-build.sh
+	./setup/scripts/cross-build.sh
 	cp docker/taoblog .
 
 .PHONY: build-image
 build-image: 
-	./scripts/build-image.sh
+	./setup/scripts/build-image.sh
 
 .PHONY: push-image
 push-image:
