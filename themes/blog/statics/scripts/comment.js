@@ -394,7 +394,7 @@ Comment.prototype.formData = function() {
 Comment.prototype.postComment = async function() {
 	var body = this.formData();
 	var resp = await fetch(
-		'/v2/posts/' + this.post_id + '/comments',
+		'/v3/posts/' + this.post_id + '/comments',
 		{
 			method: 'POST',
 			headers: {

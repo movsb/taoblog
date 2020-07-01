@@ -53,8 +53,6 @@ func (g *Gateway) routeOthers() {
 func (g *Gateway) routePosts() {
 	c := g.router.Group("/posts")
 
-	c.POST("/:name/comments", g.createPostComment)
-
 	// files
 	c.GET("/:name/files/*file", g.GetFile)
 	c.GET("/:name/files", g.auth, g.ListFiles)

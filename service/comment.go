@@ -21,6 +21,7 @@ import (
 	"github.com/yuin/goldmark/text"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -165,54 +166,78 @@ func (s *Service) GetAllCommentsCount() int64 {
 	return count
 }
 
-func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *protocols.Comment {
+// CreateComment ...
+func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
 	user := s.auth.AuthContext(ctx)
 
-	comment := models.Comment{
-		PostID:     c.PostId,
-		Parent:     c.Parent,
-		Author:     c.Author,
-		Email:      c.Email,
-		URL:        c.Url,
-		IP:         c.Ip,
-		Date:       datetime.Proto2My(*c.Date),
-		SourceType: c.SourceType,
-		Source:     c.Source,
+	// TODO this is temp
+	// TODO not http only
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		panic(`no md`)
+	}
+	var forward string
+
+	if forwards, ok := md["x-forwarded-for"]; ok && len(forwards) > 0 {
+		forward = forwards[0]
+	}
+	if forward == "" {
+		panic("invalid request") // TODO HTTP 400
 	}
 
-	if c.Author == "" {
+	// since IP field has no room for proxies, strip them all.
+	// https://en.wikipedia.org/wiki/X-Forwarded-For#Format
+	// https://github.com/grpc-ecosystem/grpc-gateway/blob/20f268a412e5b342ebfb1a0eef7c3b7bd6c260ea/runtime/context.go#L103
+	if p := strings.IndexByte(forward, ','); p != -1 {
+		forward = forward[:p]
+	}
+
+	comment := models.Comment{
+		PostID:     in.PostId,
+		Parent:     in.Parent,
+		Author:     in.Author,
+		Email:      in.Email,
+		URL:        in.Url,
+		IP:         forward,
+		Date:       datetime.MyLocal(),
+		SourceType: in.SourceType,
+		Source:     in.Source,
+	}
+
+	if in.Author == "" {
 		panic(exception.NewValidationError("昵称不能为空"))
 	}
 
-	if utf8.RuneCountInString(c.Author) >= 32 {
+	if utf8.RuneCountInString(in.Author) >= 32 {
 		panic(exception.NewValidationError("昵称太长"))
 	}
 
-	if !utils.IsEmail(c.Email) {
+	if !utils.IsEmail(in.Email) {
 		panic(exception.NewValidationError("邮箱不正确"))
 	}
 
-	if c.Url != "" && !utils.IsURL(c.Url) {
+	if in.Url != "" && !utils.IsURL(in.Url) {
 		panic(exception.NewValidationError("网址不正确"))
 	}
 
-	if c.Source == "" {
+	if in.Source == "" {
 		panic(exception.NewValidationError("评论内容不能为空"))
 	}
 
-	if utf8.RuneCountInString(c.Content) >= 4096 {
+	if utf8.RuneCountInString(in.Content) >= 4096 {
 		panic(exception.NewValidationError("评论内容太长"))
 	}
 
-	if c.Parent > 0 {
-		pc := s.GetComment2(c.Parent)
+	if in.Parent > 0 {
+		pc := s.GetComment2(in.Parent)
 		comment.Root = pc.Root
 		if pc.Root == 0 {
 			comment.Root = pc.ID
 		}
 	}
 
-	comment.Content = s.convertCommentMarkdown(user, c)
+	comment.Content = s.convertCommentMarkdown(user, in)
 
 	adminEmail := s.cfg.Comment.Email
 
@@ -223,7 +248,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 		}
 		// TODO use regexp to detect equality.
 		for _, email := range notAllowedEmails {
-			if email != "" && c.Email != "" && strings.EqualFold(email, c.Email) {
+			if email != "" && in.Email != "" && strings.EqualFold(email, in.Email) {
 				panic(exception.NewValidationError("不能使用此邮箱地址"))
 			}
 		}
@@ -232,7 +257,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 			notAllowedAuthors = append(notAllowedAuthors, adminName)
 		}
 		for _, author := range notAllowedAuthors {
-			if author != "" && c.Author != "" && strings.EqualFold(author, string(c.Author)) {
+			if author != "" && in.Author != "" && strings.EqualFold(author, string(in.Author)) {
 				panic(exception.NewValidationError("不能使用此昵称"))
 			}
 		}
@@ -248,7 +273,7 @@ func (s *Service) CreateComment(ctx context.Context, c *protocols.Comment) *prot
 
 	s.doCommentNotification(&comment)
 
-	return comment.ToProtocols(adminEmail, user)
+	return comment.ToProtocols(adminEmail, user), nil
 }
 
 func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) string {

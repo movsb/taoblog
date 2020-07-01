@@ -69,6 +69,15 @@ service TaoBlog {
 
 	// Comments
 
+	rpc CreateComment (Comment) returns (Comment) {
+		option (google.api.http) = {
+			post: "/v3/posts/{post_id=*}/comments";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "创建一条评论。";
+		};
+	}
 	rpc GetComment(GetCommentRequest) returns (Comment) {
 		option (google.api.http) = {
 			get: "/v3/comments/{id=*}";
