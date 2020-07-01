@@ -3,31 +3,8 @@ package gateway
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 )
-
-// Comment ...
-func (g *Gateway) listPostComments(c *gin.Context) {
-	userCtx := g.auther.AuthCookie(c).Context(nil)
-
-	name := utils.MustToInt64(c.Param("name"))
-	limit := utils.MustToInt64(c.DefaultQuery("limit", "10"))
-	offset := utils.MustToInt64(c.DefaultQuery("offset", "0"))
-
-	comments, err := g.service.ListComments(userCtx, &protocols.ListCommentsRequest{
-		Mode:    protocols.ListCommentsMode_ListCommentsModeTree,
-		PostId:  name,
-		Limit:   limit,
-		Offset:  offset,
-		OrderBy: "id DESC",
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	c.JSON(200, comments)
-}
 
 func (g *Gateway) createPostComment(c *gin.Context) {
 	var comment protocols.Comment

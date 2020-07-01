@@ -358,15 +358,18 @@ func (m *DeleteCommentResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_DeleteCommentResponse proto.InternalMessageInfo
 
 type ListCommentsRequest struct {
-	Mode                 ListCommentsMode `protobuf:"varint,1,opt,name=mode,proto3,enum=protocols.ListCommentsMode" json:"mode,omitempty"`
-	PostId               int64            `protobuf:"varint,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	Fields               []string         `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty"`
-	Limit                int64            `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset               int64            `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`
-	OrderBy              string           `protobuf:"bytes,6,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Mode ListCommentsMode `protobuf:"varint,1,opt,name=mode,proto3,enum=protocols.ListCommentsMode" json:"mode,omitempty"`
+	// 0 for all posts.
+	PostId int64 `protobuf:"varint,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	// defaults to "*".
+	Fields []string `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty"`
+	// must be > 0.
+	Limit                int64    `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset               int64    `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`
+	OrderBy              string   `protobuf:"bytes,6,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *ListCommentsRequest) Reset()         { *m = ListCommentsRequest{} }

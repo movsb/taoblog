@@ -31,6 +31,7 @@ func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.
 
 	mux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			OrigName:     true,
 			EmitDefaults: true,
 		}),
 	)
@@ -54,7 +55,6 @@ func (g *Gateway) routePosts() {
 
 	// posts
 	c.GET("/:name", g.auth, g.GetPost)
-	c.GET("/:name/comments", g.listPostComments)
 	c.POST("/:name/comments", g.createPostComment)
 
 	// files

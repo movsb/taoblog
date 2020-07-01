@@ -48,8 +48,11 @@ enum ListCommentsMode {
 
 message ListCommentsRequest {
 	ListCommentsMode mode = 1;
+	// 0 for all posts.
 	int64 post_id = 2;
+	// defaults to "*".
 	repeated string fields = 3;
+	// must be > 0.
 	int64 limit = 4;
 	int64 offset = 5;
 	string order_by = 6;

@@ -88,7 +88,7 @@ service TaoBlog {
 	}
 	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse) {
 		option (google.api.http) = {
-			get: "/v3/comments";
+			get: "/v3/posts/{post_id=*}/comments";
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "获取（某篇文章的）评论列表。";

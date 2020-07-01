@@ -20,6 +20,8 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/text"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Deprecated.
@@ -97,6 +99,14 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
 	adminEmail := s.cfg.Comment.Email
+
+	if in.Limit <= 0 || in.Limit > 100 {
+		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
+	}
+
+	if in.Mode == protocols.ListCommentsMode_ListCommentsModeUnspecified {
+		in.Mode = protocols.ListCommentsMode_ListCommentsModeTree
+	}
 
 	var parentProtocolComments []*protocols.Comment
 	{
