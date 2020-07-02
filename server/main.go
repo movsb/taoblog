@@ -90,6 +90,7 @@ func serve() {
 	signal.Notify(quit, syscall.SIGKILL)
 	signal.Notify(quit, syscall.SIGTERM)
 	<-quit
+	close(quit)
 
 	log.Println("server shutting down")
 	server.Shutdown(context.Background())

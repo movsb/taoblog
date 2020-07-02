@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	GrpcAddress = "127.0.0.1:2563"
+	grpcAddress = "127.0.0.1:2563"
 )
 
 // IFileManager exposes interfaces to manage upload files.
@@ -72,7 +72,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 
 	protocols.RegisterTaoBlogServer(server, s)
 
-	listener, err := net.Listen("tcp", GrpcAddress)
+	listener, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		panic(err)
 	}
