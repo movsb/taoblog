@@ -26,7 +26,7 @@ import (
 
 var (
 	regexpHome   = regexp.MustCompile(`^/$`)
-	regexpByID   = regexp.MustCompile(`^/(\d+)/$`)
+	regexpByID   = regexp.MustCompile(`^/(\d+)(/?)$`)
 	regexpFile   = regexp.MustCompile(`^/(\d+)/(.+)$`)
 	regexpBySlug = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
 	regexpByTags = regexp.MustCompile(`^/tags/(.*)$`)
@@ -217,6 +217,10 @@ func (b *Blog) Query(c *gin.Context, path string) {
 	}
 	if regexpByID.MatchString(path) {
 		matches := regexpByID.FindStringSubmatch(path)
+		if slash := matches[2]; slash == `` {
+			c.Redirect(301, matches[1]+`/`)
+			return
+		}
 		id := utils.MustToInt64(matches[1])
 		b.queryByID(c, id)
 		return
