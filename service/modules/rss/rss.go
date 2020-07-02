@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"

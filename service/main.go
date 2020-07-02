@@ -10,8 +10,8 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/comment_notify"

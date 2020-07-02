@@ -4,8 +4,8 @@ import (
 	"html/template"
 	"io"
 
-	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )

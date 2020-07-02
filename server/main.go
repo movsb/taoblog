@@ -16,9 +16,9 @@ import (
 
 	//_ "github.com/mattn/go-sqlite3"    // shut up
 	"github.com/movsb/taoblog/admin"
-	"github.com/movsb/taoblog/auth"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/gateway"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/service"
 	inits "github.com/movsb/taoblog/setup/init"
