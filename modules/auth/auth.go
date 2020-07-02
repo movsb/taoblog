@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gin-gonic/gin"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/config"
 	"google.golang.org/grpc/codes"
@@ -93,10 +92,6 @@ func (o *Auth) AuthLogin(username string, password string) bool {
 	return false
 }
 
-func (o *Auth) AuthCookie(c *gin.Context) *User {
-	return o.AuthCookie2(c.Request)
-}
-
 func (o *Auth) AuthCookie2(req *http.Request) *User {
 	loginCookie, err := req.Cookie(`login`)
 	if err != nil {
@@ -117,14 +112,6 @@ func (o *Auth) AuthCookie3(login string, userAgent string) *User {
 		return admin
 	}
 
-	return guest
-}
-
-func (o *Auth) AuthHeader(c *gin.Context) *User {
-	key := c.GetHeader("Authorization")
-	if key == o.cfg.Key {
-		return admin
-	}
 	return guest
 }
 
@@ -209,8 +196,16 @@ func (a *Auth) AuthContext(ctx context.Context) *User {
 	return guest
 }
 
-func (a *Auth) MakeCookie(c *gin.Context) {
-	agent := c.GetHeader("User-Agent")
+func (a *Auth) MakeCookie(w http.ResponseWriter, r *http.Request) {
+	agent := r.Header.Get("User-Agent")
 	cookie := a.sha1(agent + a.Login())
-	c.SetCookie("login", cookie, 0, "/", "", true, true)
+	http.SetCookie(w, &http.Cookie{
+		Name:     `login`,
+		Value:    cookie,
+		MaxAge:   0,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   true,
+		HttpOnly: true,
+	})
 }

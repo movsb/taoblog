@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
+	"strings"
 	"syscall"
 
-	"github.com/gin-gonic/gin"
+	"github.com/movsb/taoblog/modules/canonical"
+
 	_ "github.com/go-sql-driver/mysql" // shut up
 
 	//_ "github.com/mattn/go-sqlite3"    // shut up
@@ -19,12 +20,10 @@ import (
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/service"
 	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/themes/blog"
-	"github.com/movsb/taorm/taorm"
 	"github.com/spf13/cobra"
 )
 
@@ -51,72 +50,31 @@ func serve() {
 
 	migration.Migrate(db)
 
-	apiRouter := gin.Default()
-	theAPI := apiRouter.Group("/v2")
-
-	theAPI.Use(func(c *gin.Context) {
-		defer func() {
-			if e := recover(); e != nil {
-				if iHTTPError, ok := e.(exception.IHTTPError); ok {
-					err := iHTTPError.ToHTTPError()
-					c.JSON(err.Code, err)
-					return
-				}
-				if err, ok := e.(error); ok {
-					if taorm.IsNotFoundError(err) {
-						c.Status(404)
-						return
-					}
-				}
-				panic(e)
-			}
-		}()
-		c.Next()
-	})
-
-	theAPI.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
-	})
-
 	theAuth := auth.New(cfg.Auth)
 	theService := service.NewService(cfg, db, theAuth)
-	gateway.NewGateway(theAPI, theService, theAuth, apiRouter)
 
-	var adminRouter *gin.Engine
+	var mux = http.NewServeMux()
+
+	gateway.NewGateway(theService, theAuth, mux)
 
 	if !cfg.Maintenance.DisableAdmin {
-		adminRouter = gin.Default()
-		admin.NewAdmin(theService, theAuth, adminRouter.Group("/admin"))
+		admin.NewAdmin(theService, theAuth, mux)
 	}
 
-	themeRouter := gin.Default()
-	indexGroup := themeRouter.Group("/", maybeSiteClosed(theService, theAuth))
-
-	switch cfg.Theme.Name {
-	case "", "BLOG":
-		blog.NewBlog(cfg, theService, theAuth, indexGroup, theAPI, "themes/blog")
+	var renderer canonical.Renderer
+	switch strings.ToLower(cfg.Theme.Name) {
+	case "", "blog":
+		renderer = blog.NewBlog(cfg, theService, theAuth, "themes/blog")
 	default:
 		panic("unknown theme: " + cfg.Theme.Name)
 	}
 
-	apiPrefix := regexp.MustCompile(`^/v\d+/`)
-	adminPrefix := regexp.MustCompile(`^/admin/`)
-
-	handler := func(w http.ResponseWriter, req *http.Request) {
-		if apiPrefix.MatchString(req.URL.Path) {
-			apiRouter.ServeHTTP(w, req)
-			return
-		}
-		if adminRouter != nil && adminPrefix.MatchString(req.URL.Path) {
-			adminRouter.ServeHTTP(w, req)
-			return
-		}
-		themeRouter.ServeHTTP(w, req)
-	}
+	canon := canonical.New(renderer)
+	mux.Handle(`/`, canon)
 
 	server := &http.Server{
 		Addr:    cfg.Server.Listen,
-		Handler: http.HandlerFunc(handler),
+		Handler: mux,
 	}
 
 	go func() {
@@ -146,29 +104,6 @@ const siteClosedTemplate = `<!doctype html>
 </body>
 </html>
 `
-
-func maybeSiteClosed(svc *service.Service, auther *auth.Auth) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		shouldAbort := false
-		if svc.IsSiteClosed() {
-			user := auther.AuthHeader(c)
-			if user.IsGuest() {
-				user = auther.AuthCookie(c)
-			}
-			if user.IsGuest() {
-				shouldAbort = true
-			}
-		}
-		if shouldAbort {
-			c.Status(503)
-			c.Header("Retry-After", "86400")
-			c.Writer.WriteString(siteClosedTemplate)
-			c.Abort()
-		} else {
-			c.Next()
-		}
-	}
-}
 
 func initDatabase(cfg *config.Config) *sql.DB {
 	var db *sql.DB

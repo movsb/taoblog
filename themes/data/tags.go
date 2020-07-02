@@ -8,20 +8,20 @@ import (
 
 // TagsData ...
 type TagsData struct {
-	Name  string
+	Names []string
 	Posts []*Post
 }
 
 // NewDataForTags ...
-func NewDataForTags(cfg *config.Config, user *auth.User, service *service.Service, tag string) *Data {
+func NewDataForTags(cfg *config.Config, user *auth.User, service *service.Service, tags []string) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
 		Meta:   &MetaData{},
 	}
-	posts := newPosts(service.GetPostsByTags(tag).ToProtocols())
+	posts := newPosts(service.GetPostsByTags(tags).ToProtocols())
 	td := &TagsData{
-		Name:  tag,
+		Names: tags,
 		Posts: posts,
 	}
 	d.Tags = td

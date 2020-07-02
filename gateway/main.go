@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/modules/auth"
@@ -14,61 +13,39 @@ import (
 )
 
 type Gateway struct {
-	router  *gin.RouterGroup
+	mux     *http.ServeMux
 	service *service.Service
 	auther  *auth.Auth
 }
 
-func NewGateway(router *gin.RouterGroup, service *service.Service, auther *auth.Auth, rootRouter gin.IRouter) *Gateway {
+func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux) *Gateway {
 	g := &Gateway{
-		router:  router,
+		mux:     mux,
 		service: service,
 		auther:  auther,
 	}
 
-	g.routePosts()
-	g.routeOthers()
-
-	mux := runtime.NewServeMux(
+	mux2 := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 			OrigName:     true,
 			EmitDefaults: true,
 		}),
 	)
-	rootRouter.Any(`/v3/*path`, func(c *gin.Context) {
-		mux.ServeHTTP(c.Writer, c.Request)
-	})
 
-	if err := runHTTPService(context.TODO(), mux, service); err != nil {
+	mux.Handle(`/v3/`, mux2)
+
+	if err := g.runHTTPService(context.TODO(), mux, mux2, service); err != nil {
 		panic(err)
 	}
 
 	return g
 }
 
-func (g *Gateway) routeOthers() {
-	g.router.GET("/avatars/:hash", g.GetAvatar)
-}
-
-func (g *Gateway) routePosts() {
-	c := g.router.Group("/posts")
-
-	// files
-	c.GET("/:name/files/*file", g.GetFile)
-	c.GET("/:name/files", g.auth, g.ListFiles)
-	c.POST("/:name/files/*file", g.auth, g.CreateFile)
-	c.DELETE("/:name/files/*file", g.auth, g.DeleteFile)
-
-	// for mirror host
-	files := g.router.Group("/files")
-	files.GET("/:name/*file", g.GetFile)
-}
-
 // runHTTPService ...
 // TODO auth
-func runHTTPService(ctx context.Context, mux *runtime.ServeMux, svc *service.Service) error {
+func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux, svc *service.Service) error {
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux, service.GrpcAddress, opts)
+	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, service.GrpcAddress, opts)
 
 	compile := func(rule string) httprule.Template {
 		if compiler, err := httprule.Parse(rule); err != nil {
@@ -85,13 +62,36 @@ func runHTTPService(ctx context.Context, mux *runtime.ServeMux, svc *service.Ser
 			panic(err)
 		}
 
-		mux.Handle(method, pattern, handler)
+		mux2.Handle(method, pattern, handler)
 	}
 
 	handle("GET", `/v3/api`, getAPI)
 	handle("GET", `/v3/api/swagger`, getSwagger)
 
+	handle(`GET`, `/v3/avatars/{hash=*}`, g.GetAvatar)
+
+	handle(`GET`, `/files/{post_id}/{file=**}`, g.GetFile)
+	handle(`POST`, `/v3/posts/{post_id}/{file=**}`, g.CreateFile)
+	handle(`DELETE`, `/v3/posts/{post_id}/files/{file=**}`, g.DeleteFile)
+
 	return nil
+}
+
+func (g *Gateway) GetAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	query := req.URL.RawQuery
+	in := &protocols.GetAvatarRequest{
+		Query:           params[`hash`] + `?` + query,
+		IfModifiedSince: req.Header.Get("If-Modified-Since"),
+		IfNoneMatch:     req.Header.Get("If-None-Match"),
+		SetStatus: func(statusCode int) {
+			w.WriteHeader(statusCode)
+		},
+		SetHeader: func(name string, value string) {
+			w.Header().Add(name, value)
+		},
+		W: w,
+	}
+	g.service.GetAvatar(in)
 }
 
 func getAPI(w http.ResponseWriter, req *http.Request, params map[string]string) {

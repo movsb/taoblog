@@ -153,7 +153,7 @@ Comment.prototype.get_count = function(callback) {
 };
 
 Comment.prototype.gen_avatar = function(eh, sz) {
-	return '/v2/avatars/' + eh + '?d=mm&s=' + sz;
+	return '/v3/avatars/' + eh + '?d=mm&s=' + sz;
 };
 
 Comment.prototype.normalize_content = function(c) {

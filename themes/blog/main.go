@@ -6,55 +6,28 @@ import (
 	"html"
 	"html/template"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/datetime"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/rss"
 	"github.com/movsb/taoblog/service/modules/sitemap"
 	"github.com/movsb/taoblog/themes/data"
 	"github.com/movsb/taoblog/themes/modules/handle304"
+	"go.uber.org/zap"
 )
-
-var (
-	regexpHome   = regexp.MustCompile(`^/$`)
-	regexpByID   = regexp.MustCompile(`^/(\d+)(/?)$`)
-	regexpFile   = regexp.MustCompile(`^/(\d+)/(.+)$`)
-	regexpBySlug = regexp.MustCompile(`^/(.+)/([^/]+)\.html$`)
-	regexpByTags = regexp.MustCompile(`^/tags/(.*)$`)
-	regexpByPage = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
-)
-
-var nonCategoryNames = map[string]bool{
-	"/admin/":   true,
-	"/scripts/": true,
-	"/images/":  true,
-	"/sass/":    true,
-	"/tags/":    true,
-	"/plugins/": true,
-	"/files/":   true,
-}
 
 // Blog ...
 type Blog struct {
 	cfg     *config.Config
 	base    string // base directory
 	service *service.Service
-	router  *gin.RouterGroup
 	auth    *auth.Auth
-	api     *gin.RouterGroup
-
-	// dynamic files, rather than static files.
-	// Not thread safe. Don't write after initializing.
-	specialFiles map[string]func(c *gin.Context)
 
 	rss     *rss.RSS
 	sitemap *sitemap.Sitemap
@@ -64,15 +37,12 @@ type Blog struct {
 }
 
 // NewBlog ...
-func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, router *gin.RouterGroup, api *gin.RouterGroup, base string) *Blog {
+func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, base string) *Blog {
 	b := &Blog{
-		cfg:          cfg,
-		base:         base,
-		service:      service,
-		router:       router,
-		auth:         auth,
-		api:          api,
-		specialFiles: make(map[string]func(c *gin.Context)),
+		cfg:     cfg,
+		base:    base,
+		service: service,
+		auth:    auth,
 	}
 	if cfg.Site.RSS.Enabled {
 		b.rss = rss.New(cfg, service, auth)
@@ -81,22 +51,7 @@ func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, rout
 		b.sitemap = sitemap.New(cfg, service, auth)
 	}
 	b.loadTemplates()
-	b.route()
-	b.specialFiles = map[string]func(c *gin.Context){
-		"/search": b.querySearch,
-		"/posts":  b.queryPosts,
-		"/all-posts.html": func(c *gin.Context) {
-			c.Redirect(301, "/posts")
-		},
-	}
 	return b
-}
-
-func (b *Blog) route() {
-	b.router.GET("/*path", func(c *gin.Context) {
-		path := c.Param("path")
-		b.Query(c, path)
-	})
 }
 
 func createMenus(items []config.MenuItem) string {
@@ -185,207 +140,123 @@ func (b *Blog) loadTemplates() {
 	}
 }
 
-// Query ...
-func (b *Blog) Query(c *gin.Context, path string) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch te := e.(type) {
-			case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
-				c.Status(404)
-				b.namedTemplates[`404.html`].Execute(c.Writer, nil)
-				return
-			case string: // hack hack
-				switch te {
-				case "403":
-					c.Status(403)
-					b.namedTemplates[`403.html`].Execute(c.Writer, nil)
-					return
-				default:
-					panic(te)
-				}
-			}
-			panic(e)
-		}
-	}()
-
-	if regexpHome.MatchString(path) {
-		if b.processHomeQueries(c) {
-			return
-		}
-		b.queryHome(c)
-		return
-	}
-	if regexpByID.MatchString(path) {
-		matches := regexpByID.FindStringSubmatch(path)
-		if slash := matches[2]; slash == `` {
-			c.Redirect(301, matches[1]+`/`)
-			return
-		}
-		id := utils.MustToInt64(matches[1])
-		b.queryByID(c, id)
-		return
-	}
-	if regexpFile.MatchString(path) {
-		matches := regexpFile.FindStringSubmatch(path)
-		postID := utils.MustToInt64(matches[1])
-		file := matches[2]
-		b.queryByFile(c, postID, file)
-		return
-	}
-	if regexpByTags.MatchString(path) {
-		matches := regexpByTags.FindStringSubmatch(path)
-		tags := matches[1]
-		b.queryByTags(c, tags)
-		return
-	}
-	if handler, ok := b.specialFiles[path]; ok {
-		handler(c)
-		return
-	}
-	if path == `/rss` && b.cfg.Site.RSS.Enabled {
-		b.rss.ServeHTTP(c.Writer, c.Request)
-		return
-	}
-	if path == `/sitemap.xml` && b.cfg.Site.Sitemap.Enabled {
-		b.sitemap.ServeHTTP(c.Writer, c.Request)
-		return
-	}
-	if regexpBySlug.MatchString(path) && b.isCategoryPath(path) {
-		matches := regexpBySlug.FindStringSubmatch(path)
-		tree := matches[1]
-		slug := matches[2]
-		b.queryBySlug(c, tree, slug)
-		return
-	}
-	if regexpByPage.MatchString(path) && b.isCategoryPath(path) {
-		matches := regexpByPage.FindStringSubmatch(path)
-		parents := matches[1]
-		if parents != "" {
-			parents = parents[1:]
-		}
-		slug := matches[3]
-		b.queryByPage(c, parents, slug)
-		return
-	}
-	if strings.HasSuffix(path, "/") {
-		c.String(http.StatusForbidden, "403 Forbidden")
-		return
-	}
-	c.File(filepath.Join(b.base, "statics", path))
-}
-
-func (b *Blog) isCategoryPath(path string) bool {
-	p := strings.IndexByte(path[1:], '/')
-	if p == -1 {
+func (b *Blog) Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool {
+	switch te := e.(type) {
+	case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
+		w.WriteHeader(404)
+		b.namedTemplates[`404.html`].Execute(w, nil)
 		return true
+	case string: // hack hack
+		switch te {
+		case "403":
+			w.WriteHeader(403)
+			b.namedTemplates[`403.html`].Execute(w, nil)
+			return true
+		}
 	}
-	p++
-	first := path[0 : p+1]
-	if _, ok := nonCategoryNames[first]; ok {
-		return false
-	}
-	return true
+	return false
 }
 
-func (b *Blog) processHomeQueries(c *gin.Context) bool {
-	if p, ok := c.GetQuery("p"); ok && p != "" {
-		c.Redirect(301, fmt.Sprintf("/%s/", p))
+func (b *Blog) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool {
+	if p := query.Get("p"); p != "" {
+		w.Header().Set(`Location`, fmt.Sprintf("/%s/", p))
+		w.WriteHeader(301)
 		return true
 	}
 	return false
 }
 
-func (b *Blog) queryHome(c *gin.Context) {
-	d := data.NewDataForHome(b.cfg, b.auth.AuthCookie(c), b.service)
+func (b *Blog) QueryHome(w http.ResponseWriter, req *http.Request) {
+	d := data.NewDataForHome(b.cfg, b.auth.AuthCookie2(req), b.service)
 	t := b.namedTemplates[`home.html`]
 	d.Template = t
-	d.Writer = c.Writer
-	if err := t.Execute(c.Writer, d); err != nil {
+	d.Writer = w
+	if err := t.Execute(w, d); err != nil {
 		panic(err)
 	}
 }
 
-func (b *Blog) querySearch(c *gin.Context) {
-	d := data.NewDataForSearch(b.cfg, b.auth.AuthCookie(c), b.service)
+func (b *Blog) querySearch(w http.ResponseWriter, r *http.Request) {
+	d := data.NewDataForSearch(b.cfg, b.auth.AuthCookie2(r), b.service)
 	t := b.namedTemplates[`search.html`]
 	d.Template = t
-	d.Writer = c.Writer
+	d.Writer = w
 
-	if err := t.Execute(c.Writer, d); err != nil {
+	if err := t.Execute(w, d); err != nil {
 		panic(err)
 	}
 }
 
-func (b *Blog) queryPosts(c *gin.Context) {
-	if handle304.ArticleRequest(c.Writer, c.Request, b.service.LastArticleUpdateTime()) {
+func (b *Blog) queryPosts(w http.ResponseWriter, r *http.Request) {
+	if handle304.ArticleRequest(w, r, b.service.LastArticleUpdateTime()) {
 		return
 	}
 
-	d := data.NewDataForPosts(b.cfg, b.auth.AuthCookie(c), b.service, c)
+	d := data.NewDataForPosts(b.cfg, b.auth.AuthCookie2(r), b.service, r)
 	t := b.namedTemplates[`posts.html`]
 	d.Template = t
-	d.Writer = c.Writer
+	d.Writer = w
 
-	handle304.ArticleResponse(c.Writer, b.service.LastArticleUpdateTime())
+	handle304.ArticleResponse(w, b.service.LastArticleUpdateTime())
 
-	if err := t.Execute(c.Writer, d); err != nil {
+	if err := t.Execute(w, d); err != nil {
 		panic(err)
 	}
 }
 
-func (b *Blog) queryByID(c *gin.Context, id int64) {
+func (b *Blog) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 	post := b.service.GetPostByID(id)
-	b.userMustCanSeePost(c, post)
+	b.userMustCanSeePost(req, post)
 	b.incView(post.Id)
-	b.tempRenderPost(c, post)
+	b.tempRenderPost(w, req, post)
 }
 
 func (b *Blog) incView(id int64) {
 	b.service.IncrementPostPageView(id)
 }
 
-func (b *Blog) queryBySlug(c *gin.Context, tree string, slug string) {
+func (b *Blog) QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) {
 	post := b.service.GetPostBySlug(tree, slug)
-	b.userMustCanSeePost(c, post)
+	b.userMustCanSeePost(req, post)
 	b.incView(post.Id)
-	b.tempRenderPost(c, post)
+	b.tempRenderPost(w, req, post)
 }
 
-func (b *Blog) queryByPage(c *gin.Context, parents string, slug string) {
+func (b *Blog) QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) {
 	post := b.service.GetPostByPage(parents, slug)
-	b.userMustCanSeePost(c, post)
+	b.userMustCanSeePost(req, post)
 	b.incView(post.Id)
-	b.tempRenderPost(c, post)
+	b.tempRenderPost(w, req, post)
 }
 
-func (b *Blog) tempRenderPost(c *gin.Context, p *protocols.Post) {
-	if handle304.ArticleRequest(c.Writer, c.Request, datetime.Proto2Time(p.Modified)) {
+func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *protocols.Post) {
+	if handle304.ArticleRequest(w, req, datetime.Proto2Time(p.Modified)) {
 		return
 	}
 
-	d := data.NewDataForPost(b.cfg, b.auth.AuthCookie(c), b.service, p)
+	d := data.NewDataForPost(b.cfg, b.auth.AuthCookie2(req), b.service, p)
 	t := b.namedTemplates[`post.html`]
 	d.Template = t
-	d.Writer = c.Writer
+	d.Writer = w
 
-	handle304.ArticleResponse(c.Writer, datetime.Proto2Time(p.Modified))
+	handle304.ArticleResponse(w, datetime.Proto2Time(p.Modified))
 
-	if err := t.Execute(c.Writer, d); err != nil {
+	if err := t.Execute(w, d); err != nil {
 		panic(err)
 	}
 }
 
-func (b *Blog) queryByTags(c *gin.Context, tags string) {
-	d := data.NewDataForTags(b.cfg, b.auth.AuthCookie(c), b.service, tags)
+func (b *Blog) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
+	d := data.NewDataForTags(b.cfg, b.auth.AuthCookie2(req), b.service, tags)
 	t := b.namedTemplates[`tags.html`]
 	d.Template = t
-	d.Writer = c.Writer
-	if err := t.Execute(c.Writer, d); err != nil {
+	d.Writer = w
+	if err := t.Execute(w, d); err != nil {
 		panic(err)
 	}
 }
 
-func (b *Blog) queryByFile(c *gin.Context, postID int64, file string) {
+func (b *Blog) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
 	path := b.service.GetFile(postID, file)
 
 	redir := true
@@ -397,11 +268,11 @@ func (b *Blog) queryByFile(c *gin.Context, postID int64, file string) {
 		redir = false
 	}
 	// when logged in, see the newest-uploaded file
-	if redir && b.auth.AuthCookie(c).IsAdmin() {
+	if redir && b.auth.AuthCookie2(req).IsAdmin() {
 		redir = false
 	}
 	// if no referer, don't let them know we're using file host
-	if redir && c.GetHeader("Referer") == "" {
+	if redir && req.Header.Get("Referer") == "" {
 		redir = false
 	}
 	// if file isn't in local, we should redirect
@@ -413,14 +284,45 @@ func (b *Blog) queryByFile(c *gin.Context, postID int64, file string) {
 
 	if redir {
 		remotePath := fileHost + "/" + path
-		c.Redirect(307, remotePath)
+		w.Header().Set(`Location`, remotePath)
+		w.WriteHeader(307)
 	} else {
-		c.File(path)
+		http.ServeFile(w, req, path)
 	}
 }
-func (b *Blog) userMustCanSeePost(c *gin.Context, post *protocols.Post) {
-	user := b.auth.AuthCookie(c)
+func (b *Blog) userMustCanSeePost(req *http.Request, post *protocols.Post) {
+	user := b.auth.AuthCookie2(req)
 	if user.IsGuest() && post.Status != "public" {
 		panic("403")
 	}
+}
+
+func (b *Blog) QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool {
+	if req.Method == http.MethodGet {
+		switch file {
+		case `/rss`:
+			if b.cfg.Site.RSS.Enabled {
+				b.rss.ServeHTTP(w, req)
+				return true
+			}
+		case `/sitemap.xml`:
+			if b.cfg.Site.Sitemap.Enabled {
+				b.sitemap.ServeHTTP(w, req)
+				return true
+			}
+		case `/search`:
+			b.querySearch(w, req)
+			return true
+		case `/posts`:
+			b.queryPosts(w, req)
+			return true
+		}
+	}
+	return false
+}
+
+func (b *Blog) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
+	path := filepath.Join(b.base, `statics`, file)
+	zap.L().Info(path)
+	http.ServeFile(w, req, path)
 }

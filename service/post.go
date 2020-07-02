@@ -114,9 +114,13 @@ func (s *Service) GetPostBySlug(categories string, slug string) *protocols.Post 
 }
 
 // GetPostsByTags gets tag posts.
-func (s *Service) GetPostsByTags(tagName string) models.Posts {
-	tag := s.GetTagByName(tagName)
-	tagIDs := s.getAliasTagsAll([]int64{tag.ID})
+func (s *Service) GetPostsByTags(tags []string) models.Posts {
+	var ids []int64
+	for _, tag := range tags {
+		t := s.GetTagByName(tag)
+		ids = append(ids, t.ID)
+	}
+	tagIDs := s.getAliasTagsAll(ids)
 	var posts models.Posts
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").

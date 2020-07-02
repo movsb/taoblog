@@ -2,9 +2,9 @@ package data
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
@@ -22,7 +22,7 @@ type PostsData struct {
 }
 
 // NewDataForPosts ...
-func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Service, c *gin.Context) *Data {
+func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Service, r *http.Request) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
@@ -35,7 +35,12 @@ func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Servi
 		CommentCount: service.GetDefaultIntegerOption("comment_count", 0),
 	}
 
-	sort := strings.SplitN(c.DefaultQuery("sort", "date.desc"), ".", 2)
+	s := r.URL.Query().Get(`sort`)
+	if s == `` {
+		s = `date.desc`
+	}
+
+	sort := strings.SplitN(s, ".", 2)
 	if len(sort) != 2 {
 		sort = []string{"date", "desc"}
 	}

@@ -2,12 +2,10 @@ module github.com/movsb/taoblog
 
 require (
 	github.com/creack/pty v1.1.9
-	github.com/gin-gonic/gin v1.4.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.6
-	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
 	github.com/movsb/taorm v0.0.0-20200410180644-b357f5988367

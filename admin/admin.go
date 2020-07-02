@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -10,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
@@ -96,19 +96,19 @@ func (d *AdminPostEditData) TagStr() string {
 type Admin struct {
 	service   *service.Service
 	templates *template.Template
-	router    *gin.RouterGroup
+	mux       *http.ServeMux
 	auth      *auth.Auth
 	canGoogle bool
 }
 
-func NewAdmin(service *service.Service, auth *auth.Auth, router *gin.RouterGroup) *Admin {
+func NewAdmin(service *service.Service, auth *auth.Auth, mux *http.ServeMux) *Admin {
 	a := &Admin{
 		service: service,
-		router:  router,
+		mux:     mux,
 		auth:    auth,
 	}
 	a.loadTemplates()
-	a.route()
+	mux.Handle(`/admin/`, a)
 	go a.detectNetwork()
 	return a
 }
@@ -122,29 +122,29 @@ func (a *Admin) detectNetwork() {
 	a.canGoogle = true
 }
 
-func (a *Admin) route() {
-	a.router.GET("/*path", func(c *gin.Context) {
-		path := c.Param("path")
+func (a *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		path := strings.TrimPrefix(r.URL.Path, `/admin`)
 		switch path {
 		case "", "/":
-			c.Redirect(302, "/admin/login")
+			w.Header().Set(`Location`, `/admin/login`)
+			w.WriteHeader(302)
 			return
 		}
-		a.Query(c, path)
-	})
-	a.router.POST("/*path", func(c *gin.Context) {
-		path := c.Param("path")
-		a.Post(c, path)
-	})
+		a.Query(w, r, path)
+	} else if r.Method == http.MethodPost {
+		path := strings.TrimPrefix(r.URL.Path, `/admin`)
+		a.Post(w, r, path)
+	}
 }
 
-func (a *Admin) _auth(c *gin.Context) bool {
-	user := a.auth.AuthCookie(c)
+func (a *Admin) _auth(r *http.Request) bool {
+	user := a.auth.AuthCookie2(r)
 	return !user.IsGuest()
 }
 
-func (a *Admin) noCache(c *gin.Context) {
-	c.Header("Cache-Control", "no-cache")
+func (a *Admin) noCache(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Cache-Control", "no-cache")
 }
 
 func (a *Admin) render(w io.Writer, name string, data interface{}) {
@@ -170,66 +170,67 @@ func (a *Admin) loadTemplates() {
 	a.templates = tmpl
 }
 
-func (a *Admin) Query(c *gin.Context, path string) {
+func (a *Admin) Query(w http.ResponseWriter, r *http.Request, path string) {
 	if regexpAdminLogin.MatchString(path) {
-		a.queryLogin(c)
+		a.queryLogin(w, r)
 		return
 	}
 	if regexpAdminLogout.MatchString(path) {
-		a.queryLogout(c)
+		a.queryLogout(w, r)
 		return
 	}
-	if !a._auth(c) {
-		c.Redirect(302, "/admin/login?redirect="+url.QueryEscape("/admin"+path))
+	if !a._auth(r) {
+		w.Header().Set(`Location`, "/admin/login?redirect="+url.QueryEscape("/admin"+path))
 		return
 	}
-	a.noCache(c)
+	a.noCache(w, r)
 	if regexpAdminIndex.MatchString(path) {
-		a.queryIndex(c)
+		a.queryIndex(w, r)
 		return
 	}
 	if regexpAdminPostEdit.MatchString(path) {
-		a.queryPostEdit(c)
+		a.queryPostEdit(w, r)
 		return
 	}
 	if regexpAdminTagManage.MatchString(path) {
-		a.queryTagManage(c)
+		a.queryTagManage(w, r)
 		return
 	}
 	if regexpAdminPostManage.MatchString(path) {
-		a.queryPostManage(c)
+		a.queryPostManage(w, r)
 		return
 	}
 	if regexpAdminCategoryManage.MatchString(path) {
-		a.queryCategoryManage(c)
+		a.queryCategoryManage(w, r)
 		return
 	}
-	c.File(filepath.Join("admin/statics", path))
+	http.ServeFile(w, r, filepath.Join("admin/statics", path))
 }
 
-func (a *Admin) Post(c *gin.Context, path string) {
+func (a *Admin) Post(w http.ResponseWriter, r *http.Request, path string) {
 	if regexpAdminLogin.MatchString(path) {
-		a.postLogin(c)
+		a.postLogin(w, r)
 		return
 	}
-	if !a._auth(c) {
-		c.String(403, "")
+	if !a._auth(r) {
+		w.WriteHeader(403)
 		return
 	}
 }
 
-func (a *Admin) queryLogin(c *gin.Context) {
+func (a *Admin) queryLogin(w http.ResponseWriter, r *http.Request) {
 	// TODO this is a hack
-	if c.Query("type") == "github" {
-		a.postLogin(c)
+	if r.URL.Query().Get("type") == "github" {
+		a.postLogin(w, r)
 		return
 	}
 
-	if a._auth(c) {
-		c.Redirect(302, "/admin/index")
+	if a._auth(r) {
+		w.Header().Set(`Location`, `/admin/index`)
+		w.WriteHeader(302)
 		return
 	}
-	redirect := c.Query("redirect")
+	redirect := r.URL.Query().Get("redirect")
 	if redirect == "" || !strings.HasPrefix(redirect, "/") {
 		redirect = "/admin/index"
 	}
@@ -242,123 +243,139 @@ func (a *Admin) queryLogin(c *gin.Context) {
 	}
 	d.GitHubClientID = a.auth.Config().Github.ClientID
 
-	a.render(c.Writer, "login", &d)
+	a.render(w, "login", &d)
 }
 
-func (a *Admin) queryLogout(c *gin.Context) {
-	c.SetCookie("login", "", -1, "/", "", true, true)
-	c.Redirect(302, "/admin/login")
+func (a *Admin) queryLogout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     `login`,
+		Value:    ``,
+		MaxAge:   -1,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   true,
+		HttpOnly: true,
+	})
+	w.Header().Set(`Location`, `/admin/login`)
+	w.WriteHeader(302)
 }
 
-func (a *Admin) postLogin(c *gin.Context) {
+func (a *Admin) postLogin(w http.ResponseWriter, r *http.Request) {
 	redirect := ""
 	success := false
 
-	typ := c.DefaultQuery("type", "basic")
+	typ := r.URL.Query().Get(`type`)
+	if typ == `` {
+		typ = `baic`
+	}
+
 	switch typ {
 	case "basic":
-		username := c.PostForm("user")
-		password := c.PostForm("passwd")
+		username := r.FormValue("user")
+		password := r.FormValue("passwd")
 		success = a.auth.AuthLogin(username, password)
-		redirect = c.PostForm("redirect")
+		redirect = r.FormValue("redirect")
 	case "google":
-		token := c.PostForm("token")
+		token := r.FormValue("token")
 		success = !a.auth.AuthGoogle(token).IsGuest()
-		redirect = c.PostForm("redirect")
+		redirect = r.FormValue("redirect")
 	case "github":
-		code := c.Query("code")
+		code := r.URL.Query().Get("code")
 		success = !a.auth.AuthGitHub(code).IsGuest()
 	}
 
 	if success {
-		a.auth.MakeCookie(c)
+		a.auth.MakeCookie(w, r)
 		if typ == "google" {
-			c.JSON(200, gin.H{
+			d, _ := json.Marshal(map[string]interface{}{
 				"redirect": redirect,
 			})
+			w.Write(d)
 		} else {
-			c.Redirect(302, redirect)
+			w.Header().Set(`Location`, redirect)
+			w.WriteHeader(302)
 		}
 	} else {
-		c.Redirect(302, "/admin/login")
+		w.Header().Set(`Location`, `/admin/login`)
+		w.WriteHeader(302)
 	}
 }
 
-func (a *Admin) queryIndex(c *gin.Context) {
+func (a *Admin) queryIndex(w http.ResponseWriter, r *http.Request) {
 	d := &AdminIndexData{}
 	header := &AdminHeaderData{
 		Title: "首页",
 		Header: func() {
-			a.render(c.Writer, "index_header", nil)
+			a.render(w, "index_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			a.render(c.Writer, "index_footer", nil)
+			a.render(w, "index_footer", nil)
 		},
 	}
-	a.render(c.Writer, "header", header)
-	a.render(c.Writer, "index", d)
-	a.render(c.Writer, "footer", footer)
+	a.render(w, "header", header)
+	a.render(w, "index", d)
+	a.render(w, "footer", footer)
 }
 
-func (a *Admin) queryTagManage(c *gin.Context) {
+func (a *Admin) queryTagManage(w http.ResponseWriter, r *http.Request) {
 	d := &AdminTagManageData{
 		//Tags: a.server.ListTagsWithCount(0, false),
 	}
 	header := &AdminHeaderData{
 		Title: "标签管理",
 		Header: func() {
-			a.render(c.Writer, "tag_manage_header", nil)
+			a.render(w, "tag_manage_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			a.render(c.Writer, "tag_manage_footer", nil)
+			a.render(w, "tag_manage_footer", nil)
 		},
 	}
-	a.render(c.Writer, "header", header)
-	a.render(c.Writer, "tag_manage", d)
-	a.render(c.Writer, "footer", footer)
+	a.render(w, "header", header)
+	a.render(w, "tag_manage", d)
+	a.render(w, "footer", footer)
 }
 
-func (a *Admin) queryPostManage(c *gin.Context) {
+func (a *Admin) queryPostManage(w http.ResponseWriter, r *http.Request) {
 	d := &AdminPostManageData{}
 	header := &AdminHeaderData{
 		Title: "文章管理",
 		Header: func() {
-			a.render(c.Writer, "post_manage_header", nil)
+			a.render(w, "post_manage_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			a.render(c.Writer, "post_manage_footer", nil)
+			a.render(w, "post_manage_footer", nil)
 		},
 	}
-	a.render(c.Writer, "header", header)
-	a.render(c.Writer, "post_manage", d)
-	a.render(c.Writer, "footer", footer)
+	a.render(w, "header", header)
+	a.render(w, "post_manage", d)
+	a.render(w, "footer", footer)
 }
 
-func (a *Admin) queryCategoryManage(c *gin.Context) {
+func (a *Admin) queryCategoryManage(w http.ResponseWriter, r *http.Request) {
 	d := &AdminCategoryManageData{}
 	header := &AdminHeaderData{
 		Title: "分类管理",
 		Header: func() {
-			a.render(c.Writer, "category_manage_header", nil)
+			a.render(w, "category_manage_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			a.render(c.Writer, "category_manage_footer", nil)
+			a.render(w, "category_manage_footer", nil)
 		},
 	}
-	a.render(c.Writer, "header", header)
-	a.render(c.Writer, "category_manage", d)
-	a.render(c.Writer, "footer", footer)
+	a.render(w, "header", header)
+	a.render(w, "category_manage", d)
+	a.render(w, "footer", footer)
 }
 
-func (a *Admin) queryPostEdit(c *gin.Context) {
+func (a *Admin) queryPostEdit(w http.ResponseWriter, r *http.Request) {
 	p := &protocols.Post{}
 	d := AdminPostEditData{
 		New:  true,
@@ -367,15 +384,15 @@ func (a *Admin) queryPostEdit(c *gin.Context) {
 	header := &AdminHeaderData{
 		Title: "文章编辑",
 		Header: func() {
-			a.render(c.Writer, "post_edit_header", nil)
+			a.render(w, "post_edit_header", nil)
 		},
 	}
 	footer := &AdminFooterData{
 		Footer: func() {
-			a.render(c.Writer, "post_edit_footer", nil)
+			a.render(w, "post_edit_footer", nil)
 		},
 	}
-	a.render(c.Writer, "header", header)
-	a.render(c.Writer, "post_edit", &d)
-	a.render(c.Writer, "footer", footer)
+	a.render(w, "header", header)
+	a.render(w, "post_edit", &d)
+	a.render(w, "footer", footer)
 }
