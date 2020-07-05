@@ -125,6 +125,8 @@ func (s *Service) GetPostsByTags(tags []string) models.Posts {
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
+		GroupBy(`posts.id`).
+		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
 	return posts
 }
