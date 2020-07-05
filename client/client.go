@@ -1,10 +1,8 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,8 +23,6 @@ var (
 
 const (
 	contentTypeBinary = "application/octet-stream"
-	contentTypeJSON   = "application/json"
-	contentTypeForm   = "application/x-www-form-urlencoded"
 )
 
 // Client ...
@@ -96,28 +92,6 @@ func (c *Client) token() context.Context {
 	return metadata.NewOutgoingContext(context.TODO(), metadata.Pairs("token", c.config.Token))
 }
 
-func (c *Client) get(path string) *http.Response {
-	req, err := http.NewRequest("GET", c.config.API+path, nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Authorization", c.config.Token)
-	resp, err := c.client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	return resp
-}
-
-func (c *Client) mustGet(path string) *http.Response {
-	resp := c.get(path)
-	if resp.StatusCode != 200 {
-		resp.Body.Close()
-		panic(ErrStatusCode)
-	}
-	return resp
-}
-
 func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
 	req, err := http.NewRequest("POST", c.config.API+path, body)
 	if err != nil {
@@ -134,17 +108,6 @@ func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
 
 func (c *Client) mustPost(path string, body io.Reader, ty string) *http.Response {
 	resp := c.post(path, body, ty)
-	if resp.StatusCode != 200 {
-		io.Copy(os.Stderr, resp.Body)
-		resp.Body.Close()
-		panic(resp.Status)
-	}
-	return resp
-}
-
-func (c *Client) mustPostJSON(path string, data interface{}) *http.Response {
-	bys, _ := json.Marshal(data)
-	resp := c.post(path, bytes.NewReader(bys), contentTypeJSON)
 	if resp.StatusCode != 200 {
 		io.Copy(os.Stderr, resp.Body)
 		resp.Body.Close()

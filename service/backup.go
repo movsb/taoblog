@@ -2,11 +2,13 @@ package service
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
 	"net"
 	"os/exec"
 
 	"github.com/movsb/taoblog/protocols"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,9 +24,9 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 	}
 
 	opts := []string{
+		"--single-transaction",
 		"--add-drop-database",
 		"--add-drop-table",
-		"--add-locks",
 		"--comments",
 		"--compress",
 	}
@@ -51,7 +53,27 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		return nil, status.Errorf(codes.Internal, `%v:%s`, err, eb.String())
 	}
 
+	before := ob.Bytes()
+
+	if req.Compress {
+		buf := bytes.NewBuffer(nil)
+		w, err := zlib.NewWriterLevel(buf, zlib.BestCompression)
+		if err != nil {
+			panic(err)
+		}
+		if n, err := w.Write(before); n != len(before) || err != nil {
+			zap.S().Errorw(`compress failed`, `n`, n, `len`, len(before), `err`, err)
+			panic(`compress failed`)
+		}
+		if err := w.Close(); err != nil {
+			zap.S().Errorw(`close failed`, `err`, err)
+			panic(`close failed`)
+		}
+		zap.S().Infow(`compress completed`, `before`, len(before), `after`, buf.Len())
+		before = buf.Bytes()
+	}
+
 	return &protocols.BackupResponse{
-		Data: ob.String(),
+		Data: before,
 	}, nil
 }

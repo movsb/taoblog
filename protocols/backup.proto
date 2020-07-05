@@ -3,10 +3,11 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
 message BackupRequest {
-
+	// 是否需要压缩数据（zlib）
+	bool compress = 1;
 }
 
 message BackupResponse {
 	// 数据库语句
-	string data = 1;
+	bytes data = 1;
 }
