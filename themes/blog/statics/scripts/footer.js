@@ -272,3 +272,80 @@
 		});
 	});
 })();
+
+// 数学公式
+(function(){
+function hasMath() {
+	var math = document.querySelector('.math');
+	if (math !== null) {
+		return true;
+	}
+
+    var has = false;
+
+	// old-style, to-be-removed
+    $('code:not([class*="lang"])').each(function(_, e){
+        var t = $(e).html();
+        if(t.startsWith('$') && t.endsWith('$')) {
+            has = true;
+            // break;
+        }
+    })
+    return has;
+}
+
+if(hasMath()) {
+    var s = document.createElement('script');
+    s.src = '/plugins/mathjax/mathjax.js';
+    s.async = true;
+    document.body.appendChild(s);
+}
+})();
+
+// 代码高亮
+(function(){
+var s = document.createElement('script');
+s.src = '/plugins/highlight/prism.js';
+s.async = false;
+s.setAttribute('data-manual', '');
+s.onload = function() {
+	$('pre').each(function(_, re, _){
+	    var e = $(re);
+	    var lang = e.attr('lang');
+	    // https://stackoverflow.com/a/1318091/3628322
+	    var hasLang = typeof lang !== typeof undefined && lang !== false;
+	    var hasCode = e.find('>code').length > 0;
+	    // console.log(re, hasLang, hasCode);
+	    if(hasLang && !hasCode) {
+	        var code = $('<code/>').html(e.html());
+	        code.addClass("language-" + lang);
+	        e.removeAttr('lang');
+	        e.html('');
+	        e.append(code);
+	        hasCode = true;
+	    }
+	    if(hasCode) {
+	        e.removeClass('code');
+	        // TODO
+	        // e.addClass('line-numbers');
+	        Prism.highlightAllUnder(re);
+	    }
+	});
+};
+document.body.appendChild(s);
+})();
+
+
+// 评论时间
+(function(){
+var s = document.createElement('script');
+s.src = '/plugins/timeago/timeago.js';
+s.async = false;
+s.onload = function() {
+	$('.comment-meta .date').timeago();
+	TaoBlog.events.add('comment', 'post', function(item) {
+		$(item).find('.date').timeago();
+	});
+};
+document.body.appendChild(s);
+})();
