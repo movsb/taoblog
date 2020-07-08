@@ -61,23 +61,29 @@
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
-    jax: ["input/TeX", "output/CommonHTML"],
+    jax: ["input/TeX", "output/HTML-CSS"],
     extensions: ["tex2jax.js"],
     tex2jax: {
         skipTags: [],
-        inlineMath: [['$', '$']],
-        displayMath: [['$$', '$$']],
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
     },
     skipStartupTypeset: true,
-    //showMathMenu: false,
     menuSettings: {
-        zoom: 'Click',
+        zoom: 'Double-Click',
     }
 });
 </script>
+
 <script>
 function hasMath() {
+	var math = document.querySelector('.math');
+	if (math !== null) {
+		return true;
+	}
+
     var has = false;
+
     $('code:not([class*="lang"])').each(function(_, e){
         var t = $(e).html();
         if(t.startsWith('$') && t.endsWith('$')) {
@@ -93,7 +99,6 @@ if(hasMath()) {
     // jQuery adds _ parameter to skip cache
     var s = document.createElement('script');
     s.src= 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js';
-    // s.src = '/plugins/mathjax/MathJax-2.7.4/unpacked/MathJax.js';
     s.async = true;
     $body[0].appendChild(s);
 

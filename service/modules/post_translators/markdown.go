@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
@@ -35,6 +36,7 @@ func (me *MarkdownTranslator) Translate(source string, base string) (string, err
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithExtensions(extension.DefinitionList),
 		goldmark.WithExtensions(extension.Footnote),
+		goldmark.WithExtensions(mathjax.MathJax),
 	)
 	buf := bytes.NewBuffer(nil)
 	err := md.Convert([]byte(source), buf)

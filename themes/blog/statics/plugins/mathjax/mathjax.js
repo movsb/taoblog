@@ -7,7 +7,9 @@
         console.log('mathjax loaded');
 
         MathJax.Hub.Typeset($('<p>$a$</p>').get(0), function(){
-            console.log('typeset warming-up');
+			console.log('typeset warming-up');
+
+			// for old-styled maths
             $('code:not([class*="lang"])').each(function(_, e) {
                 var html = $(e).html();
                 if(html.startsWith('$') && html.endsWith('$')) {
@@ -18,7 +20,13 @@
                     // console.log('Typeset: ', e);
                     $(e).replaceWith(wrap);
                 }
-            });
+			});
+
+			// for new markdown-generated maths.
+			var maths = document.querySelectorAll('.math.inline,.math.display');
+			maths.forEach(function(elem) {
+				MathJax.Hub.Typeset(elem);
+			});
         });
     }, 1000);
 })();
