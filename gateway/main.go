@@ -9,6 +9,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"google.golang.org/grpc"
 )
 
 type Gateway struct {
@@ -33,7 +34,7 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 
 	mux.Handle(`/v3/`, mux2)
 
-	if err := g.runHTTPService(context.TODO(), mux, mux2, service); err != nil {
+	if err := g.runHTTPService(context.TODO(), mux, mux2); err != nil {
 		panic(err)
 	}
 
@@ -42,8 +43,8 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 
 // runHTTPService ...
 // TODO auth
-func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux, svr protocols.TaoBlogServer) error {
-	protocols.RegisterTaoBlogHandlerServer(ctx, mux2, svr)
+func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
+	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, service.GrpcAddress, []grpc.DialOption{grpc.WithInsecure()})
 
 	compile := func(rule string) httprule.Template {
 		if compiler, err := httprule.Parse(rule); err != nil {
