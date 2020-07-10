@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/datetime"
@@ -153,29 +152,28 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 }
 
 // ParseTree parses category tree from URL to get last sub-category ID.
-// e.g. /folder/post.html, then tree is folder
-// e.g. /path/to/folder/post.html, then tree is path/to/folder
-// It will get the ID of folder
-var reSplitPathAndSlug = regexp.MustCompile(`^(.*)/([^/]+)$`)
-
+// e.g. /folder/post.html, then tree is /folder
+// e.g. /path/to/folder/post.html, then tree is /path/to/folder
+// It will get the ID of folder.
 func (s *Service) parseCategoryTree(tree string) (id int64) {
 	if tree == "" {
-		return 1
+		return 0
 	}
-	tree = "/" + tree
-	matches := reSplitPathAndSlug.FindStringSubmatch(tree)
-	if matches == nil {
-		panic(&CategoryNotFoundError{})
+
+	p := strings.LastIndexByte(tree, '/')
+	if p == -1 {
+		panic(`invalid tree`)
 	}
-	path := matches[1]
-	if path == "" {
-		path = "/"
+	path, slug := tree[:p], tree[p+1:]
+	if path == `` {
+		path = `/`
 	}
-	slug := matches[2]
+
 	var cat models.Category
 	if err := s.tdb.Where("path=? AND slug=?", path, slug).Find(&cat); err != nil {
 		panic(&CategoryNotFoundError{})
 	}
+
 	return cat.ID
 }
 
@@ -261,7 +259,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		Title:      strings.TrimSpace(in.Title),
 		Slug:       in.Slug,
 		Type:       `post`,
-		Category:   1,
+		Category:   0,
 		Status:     "draft",
 		Metas:      "{}",
 		Source:     in.Source,

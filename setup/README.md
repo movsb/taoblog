@@ -18,7 +18,3 @@ GRANT ALL ON taoblog.* TO "用户名"@"%";
 ```bash
 $ mysql -u taoblog -p --database=taoblog < data/schemas.sql
 ```
-
-```sql
-INSERT INTO options (name,value) VALUES ('db_ver', 12);
-```

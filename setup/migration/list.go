@@ -26,4 +26,5 @@ var gVersions = []VersionUpdater{
 	{12, v12},
 	{13, v13},
 	{14, v14},
+	{15, v15},
 }

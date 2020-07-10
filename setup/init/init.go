@@ -14,7 +14,7 @@ import (
 	"github.com/movsb/taorm/taorm"
 )
 
-const dbVer = 14
+const dbVer = 15
 
 // Init ...
 func Init(cfg *config.Config, db *sql.DB) {
@@ -59,19 +59,13 @@ func Init(cfg *config.Config, db *sql.DB) {
 			Name:  `db_ver`,
 			Value: fmt.Sprint(dbVer),
 		}).MustCreate()
-		tdb.Model(&models.Category{
-			Name:     `未分类`,
-			Slug:     `uncategorized`,
-			ParentID: 0,
-			Path:     `/`,
-		}).MustCreate()
 		tdb.Model(&models.Post{
 			Date:       now,
 			Modified:   now,
 			Title:      `你好，世界`,
 			Content:    `你好，世界！这是您的第一篇文章。`,
 			Type:       `post`,
-			Category:   1,
+			Category:   0,
 			Status:     `public`,
 			SourceType: `markdown`,
 			Source:     `你好，世界！这是您的第一篇文章。`,

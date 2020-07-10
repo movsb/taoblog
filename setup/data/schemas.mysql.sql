@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
     `content` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `slug` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `type` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `category` INT(10) UNSIGNED NOT NULL DEFAULT 1,
+    `category` INT(10) UNSIGNED NOT NULL DEFAULT 0,
     `status` ENUM('public', 'draft'),
     `page_view` INT(20) UNSIGNED NOT NULL DEFAULT 0,
     `comment_status` INT(1) UNSIGNED DEFAULT 1,

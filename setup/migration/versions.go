@@ -219,3 +219,12 @@ func v14(tx *sql.Tx) {
 	tx.Exec(`UPDATE posts SET comments = 0`)
 	tx.Exec(`UPDATE posts INNER JOIN (SELECT post_id,count(id) AS comments FROM comments GROUP BY post_id) AS counts ON posts.id = counts.post_id SET posts.comments = counts.comments`)
 }
+
+func v15(tx *sql.Tx) {
+	if _, err := tx.Exec(`DELETE FROM categories WHERE slug=? AND parent_id=?`, `uncategorized`, 0); err != nil {
+		panic(err)
+	}
+	if _, err := tx.Exec(`UPDATE posts SET category=? WHERE category=?`, 0, 1); err != nil {
+		panic(err)
+	}
+}
