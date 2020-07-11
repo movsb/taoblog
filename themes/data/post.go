@@ -60,14 +60,14 @@ func (p *Post) Link() string {
 
 // DateString ...
 func (p *Post) DateString() string {
-	t := time.Unix(p.Date.Seconds, 0).Local()
+	t := time.Unix(int64(p.Date), 0).Local()
 	y, m, d := t.Date()
 	return fmt.Sprintf("%d年%d月%d日", y, m, d)
 }
 
 // ModifiedString ...
 func (p *Post) ModifiedString() string {
-	t := time.Unix(p.Modified.Seconds, 0).Local()
+	t := time.Unix(int64(p.Modified), 0).Local()
 	y, m, d := t.Date()
 	return fmt.Sprintf("%d年%d月%d日", y, m, d)
 }

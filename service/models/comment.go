@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 )
 
+// Comment in database.
 type Comment struct {
 	ID         int64  `json:"id"`
 	Parent     int64  `json:"parent"`
@@ -18,7 +18,7 @@ type Comment struct {
 	Email      string `json:"email"`
 	URL        string `json:"url"`
 	IP         string `json:"ip"`
-	Date       string `json:"date"`
+	Date       int32  `json:"date"`
 	SourceType string `json:"source_type"`
 	Source     string `json:"source"`
 	Content    string `json:"content"`
@@ -29,6 +29,7 @@ func (Comment) TableName() string {
 	return `comments`
 }
 
+// ToProtocols ...
 func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:         c.ID,
@@ -37,7 +38,7 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 		PostId:     c.PostID,
 		Author:     c.Author,
 		Url:        c.URL,
-		Date:       datetime.My2Proto(c.Date),
+		Date:       c.Date,
 		SourceType: c.SourceType,
 		Source:     c.Source,
 		Content:    c.Content,
@@ -53,8 +54,10 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 	return &comment
 }
 
+// Comments ...
 type Comments []*Comment
 
+// ToProtocols ...
 func (cs Comments) ToProtocols(adminEmail string, user *auth.User) []*protocols.Comment {
 	comments := make([]*protocols.Comment, 0, len(cs))
 	for _, comment := range cs {

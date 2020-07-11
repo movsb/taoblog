@@ -27,4 +27,10 @@ var gVersions = []VersionUpdater{
 	{13, v13},
 	{14, v14},
 	{15, v15},
+	{16, v16},
+}
+
+// MaxVersionNumber ...
+func MaxVersionNumber() int {
+	return gVersions[len(gVersions)-1].version
 }

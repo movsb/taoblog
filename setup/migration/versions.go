@@ -228,3 +228,20 @@ func v15(tx *sql.Tx) {
 		panic(err)
 	}
 }
+
+func v16(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE comments ADD COLUMN `date_int` INT NOT NULL AFTER `date`")
+	mustExec(tx, "UPDATE comments SET `date_int` = UNIX_TIMESTAMP(`date`)")
+	mustExec(tx, "ALTER TABLE comments DROP COLUMN `date`")
+	mustExec(tx, "ALTER TABLE comments CHANGE `date_int` `date` INT NOT NULL")
+
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN `date_int` INT NOT NULL AFTER `date`")
+	mustExec(tx, "UPDATE posts SET `date_int` = UNIX_TIMESTAMP(`date`)")
+	mustExec(tx, "ALTER TABLE posts DROP COLUMN `date`")
+	mustExec(tx, "ALTER TABLE posts CHANGE `date_int` `date` INT NOT NULL")
+
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN `modified_int` INT NOT NULL AFTER `modified`")
+	mustExec(tx, "UPDATE posts SET `modified_int` = UNIX_TIMESTAMP(`modified`)")
+	mustExec(tx, "ALTER TABLE posts DROP COLUMN `modified`")
+	mustExec(tx, "ALTER TABLE posts CHANGE `modified_int` `modified` INT NOT NULL")
+}

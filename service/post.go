@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
@@ -251,7 +251,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
 	}
 
-	createdAt := datetime.MyLocal()
+	createdAt := int32(time.Now().Unix())
 
 	p := models.Post{
 		Date:       createdAt,
@@ -290,7 +290,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		txs.tdb.Model(&p).MustCreate()
 		in.Id = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
-		txs.updateLastPostTime(p.Modified)
+		txs.updateLastPostTime(time.Unix(int64(p.Modified), 0))
 		txs.updatePostPageCount()
 		return nil
 	})
@@ -309,7 +309,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	m := map[string]interface{}{
-		`modified`: datetime.MyLocal(),
+		`modified`: time.Now().Unix(),
 	}
 
 	var hasSourceType, hasSource bool
@@ -357,14 +357,12 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		m[`content`] = content
 	}
 
-	modified := datetime.MyLocal()
-
 	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(p).MustUpdateMap(m)
 		if hasTags {
 			txs.UpdateObjectTags(p.ID, in.Post.Tags)
 		}
-		txs.updateLastPostTime(modified)
+		txs.updateLastPostTime(time.Now())
 		return nil
 	})
 
@@ -377,11 +375,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 }
 
 // updateLastPostTime updates last_post_time in options.
-func (s *Service) updateLastPostTime(ts string) {
-	if ts == "" {
-		ts = datetime.MyLocal()
-	}
-	s.SetOption("last_post_time", ts)
+func (s *Service) updateLastPostTime(t time.Time) {
+	s.SetOption("last_post_time", t.Unix())
 }
 
 func (s *Service) updatePostPageCount() {

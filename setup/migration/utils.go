@@ -22,3 +22,9 @@ func txCall(db *sql.DB, callback func(tx *sql.Tx)) {
 		tx.Rollback()
 	}
 }
+
+func mustExec(tx *sql.Tx, query string, args ...interface{}) {
+	if _, err := tx.Exec(query, args...); err != nil {
+		panic(err)
+	}
+}

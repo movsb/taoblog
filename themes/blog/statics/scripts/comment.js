@@ -175,7 +175,7 @@ Comment.prototype.normalize_comment = function(c) {
 }
 
 Comment.prototype.friendly_date = function(d) {
-	let date = new Date(d);
+	let date = new Date(d*1000);
 	return date.toLocaleString();
 };
 
@@ -222,7 +222,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
             + '\n邮箱：' + this.h2a(cmt.email)
             + '\n网址：' + this.h2a(cmt.url)
             + '\n地址：' + cmt.ip
-            + '\n日期：' + new Date(cmt.date).toLocaleString()
+            + '\n日期：' + new Date(cmt.date*1000).toLocaleString()
             ;
     }
 
@@ -247,7 +247,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
-	s += '<time class="date" datetime="' + (new Date(cmt.date)).toJSON() + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
+	s += '<time class="date" datetime="' + (new Date(cmt.date*1000)).toJSON() + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
 	if(cmt.source_type === 'markdown') {
 		s += '<div class="comment-content html-content">' + cmt.content + '</div>\n';
 	} else {

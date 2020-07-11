@@ -1,15 +1,14 @@
 package models
 
 import (
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/protocols"
 )
 
 // Post ...
 type Post struct {
 	ID            int64
-	Date          string
-	Modified      string
+	Date          int32
+	Modified      int32
 	Title         string
 	Content       string
 	Slug          string
@@ -33,8 +32,8 @@ func (Post) TableName() string {
 func (p *Post) ToProtocols() *protocols.Post {
 	out := protocols.Post{
 		Id:            p.ID,
-		Date:          datetime.My2Proto(p.Date),
-		Modified:      datetime.My2Proto(p.Modified),
+		Date:          p.Date,
+		Modified:      p.Modified,
 		Title:         p.Title,
 		Content:       p.Content,
 		Slug:          p.Slug,
@@ -73,21 +72,4 @@ type PostForRelated struct {
 	ID        int64  `json:"id"`
 	Title     string `json:"title"`
 	Relevance uint   `json:"relevance"`
-}
-
-type PostForDate struct {
-	Year  int `json:"year"`
-	Month int `json:"month"`
-	Count int `json:"count"`
-}
-
-// PostForManagement for post management.
-type PostForManagement struct {
-	ID           int64  `json:"id"`
-	Date         string `json:"date"`
-	Modified     string `json:"modified"`
-	Title        string `json:"title"`
-	PageView     uint   `json:"page_view"`
-	SourceType   string `json:"source_type"`
-	CommentCount uint   `json:"comment_count" taorm:"name:comments"`
 }

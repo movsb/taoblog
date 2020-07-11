@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/rss"
@@ -230,7 +230,7 @@ func (b *Blog) QueryByPage(w http.ResponseWriter, req *http.Request, parents str
 }
 
 func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *protocols.Post) {
-	if handle304.ArticleRequest(w, req, datetime.Proto2Time(p.Modified)) {
+	if handle304.ArticleRequest(w, req, time.Unix(int64(p.Modified), 0)) {
 		return
 	}
 
@@ -239,7 +239,7 @@ func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto
 	d.Template = t
 	d.Writer = w
 
-	handle304.ArticleResponse(w, datetime.Proto2Time(p.Modified))
+	handle304.ArticleResponse(w, time.Unix(int64(p.Modified), 0))
 
 	if err := t.Execute(w, d); err != nil {
 		panic(err)

@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
@@ -200,7 +200,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		Email:      in.Email,
 		URL:        in.Url,
 		IP:         forward,
-		Date:       datetime.MyLocal(),
+		Date:       int32(time.Now().Unix()),
 		SourceType: in.SourceType,
 		Source:     in.Source,
 	}
@@ -362,7 +362,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		data := &comment_notify.AdminData{
 			Title:    postTitle,
 			Link:     postLink,
-			Date:     c.Date,
+			Date:     time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 			Author:   c.Author,
 			Content:  c.Source,
 			Email:    c.Email,
@@ -413,7 +413,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 	guestData := comment_notify.GuestData{
 		Title:   postTitle,
 		Link:    postLink,
-		Date:    c.Date,
+		Date:    time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 		Author:  c.Author,
 		Content: c.Source,
 	}

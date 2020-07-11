@@ -2,7 +2,6 @@ syntax = "proto3";
 package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/field_mask.proto";
 
 message Comment {
@@ -14,7 +13,7 @@ message Comment {
 	string email = 6;
 	string url = 7;
 	string ip = 8;
-	google.protobuf.Timestamp date = 9;
+	int32 date = 9;
 	string source_type = 10;
 	string source = 11;
 	string content = 12;

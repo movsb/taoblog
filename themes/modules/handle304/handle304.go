@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/modules/version"
 )
+
+const httpgmtFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 
 // Requester ...
 type Requester interface {
@@ -52,15 +53,13 @@ type NotModified struct {
 // Request ...
 func (nm NotModified) Request(req *http.Request) bool {
 	h := req.Header.Get(`If-Modified-Since`)
-	if h == `` {
-		return false
-	}
-	return datetime.Gmt2Time(h).Equal(nm.Modified)
+	t, _ := time.ParseInLocation(httpgmtFormat, h, time.UTC)
+	return t.Equal(nm.Modified)
 }
 
 // Response ...
 func (nm NotModified) Response(w http.ResponseWriter) {
-	w.Header().Add(`Last-Modified`, datetime.Time2Gmt(nm.Modified))
+	w.Header().Add(`Last-Modified`, nm.Modified.UTC().Format(httpgmtFormat))
 }
 
 // CommitMatch ...

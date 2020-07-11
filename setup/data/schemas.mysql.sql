@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS `options` (
 -- 创建表 posts
 CREATE TABLE IF NOT EXISTS `posts` (
     `id` INT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
-    `modified` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
+    `date` INT NOT NULL,
+    `modified` INT NOT NULL,
     `title` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `content` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `slug` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `comments` (
     `email` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `url` VARCHAR(200) CHARACTER SET utf8 COLLATE utf8_general_ci,
     `ip` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-    `date` DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
+    `date` INT NOT NULL,
     `source_type` varchar(16) NOT NULL,
     `source` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `content` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,

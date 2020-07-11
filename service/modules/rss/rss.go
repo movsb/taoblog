@@ -5,14 +5,16 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/themes/modules/handle304"
 )
+
+const feedTimeFormat = "Mon, 02 Jan 2006 15:04:05"
 
 const tmpl = `
 <rss version="2.0">
@@ -87,7 +89,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for _, article := range articles {
 		rssArticle := Article{
 			Post:    article,
-			Date:    datetime.My2Feed(datetime.Proto2My(*article.Date)),
+			Date:    time.Unix(int64(article.Date), 0).Local().Format(feedTimeFormat),
 			Content: template.HTML("<![CDATA[" + strings.Replace(string(article.Content), "]]>", "]]]]><!CDATA[>", -1) + "]]>"),
 			Link:    fmt.Sprintf("%s/%d/", r.svc.HomeURL(), article.Id),
 		}

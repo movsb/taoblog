@@ -2,7 +2,6 @@ syntax = "proto3";
 package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/field_mask.proto";
 
 enum PostType {
@@ -13,8 +12,8 @@ enum PostType {
 
 message Post {
 	int64 id = 1;
-	google.protobuf.Timestamp date = 2;
-	google.protobuf.Timestamp modified = 3;
+	int32 date = 2;
+	int32 modified = 3;
 	string title = 4;
 	string content = 5;
 	string slug = 6;

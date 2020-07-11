@@ -7,14 +7,13 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/movsb/taoblog/config"
-	"github.com/movsb/taoblog/modules/datetime"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taorm/taorm"
 )
-
-const dbVer = 15
 
 // Init ...
 func Init(cfg *config.Config, db *sql.DB) {
@@ -54,10 +53,10 @@ func Init(cfg *config.Config, db *sql.DB) {
 
 	tdb := taorm.NewDB(db)
 	tdb.MustTxCall(func(tx *taorm.DB) {
-		now := datetime.MyLocal()
+		now := int32(time.Now().Unix())
 		tdb.Model(&models.Option{
 			Name:  `db_ver`,
-			Value: fmt.Sprint(dbVer),
+			Value: fmt.Sprint(migration.MaxVersionNumber()),
 		}).MustCreate()
 		tdb.Model(&models.Post{
 			Date:       now,
