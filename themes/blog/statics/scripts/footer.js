@@ -156,27 +156,7 @@
     $('#server-run-time').text(days);
 })();
 
-(function(){
-    var $raws = $('i[data-aes2htm]');
-    $raws.each(function(_, e){
-        file = $(e).attr('data-aes2htm');
-        $code = $(e).parent().prev().find('code');
-        $.get(file, function(data){
-            $.post('/v1/tools/aes2htm',
-                {
-                    source: data,
-                },
-                function(data) {
-                    $code.html(data);
-                }
-            ).fail(function(x) {
-                console.error(x);
-            });
-        });
-    });
-})();
-
-// 图片加来源
+// 图片来源
 (function() {
     function replace(img) {
         var figure = document.createElement('figure');

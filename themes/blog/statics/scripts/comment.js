@@ -26,7 +26,7 @@ document.write(function(){/*
 				<textarea id="comment-content" name="source" wrap="off"></textarea>
 				<div class="fields">
 					<input type="text" name="author" placeholder="昵称" />
-					<input type="text" name="email" placeholder="邮箱（不公开）"/>
+					<input type="text" name="email" placeholder="邮箱（接收评论，不公开）"/>
 					<input type="text" name="url" placeholder="个人站点（可不填）" />
 					<input type="submit" id="comment-submit" value="发表评论" />
 					<div style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>

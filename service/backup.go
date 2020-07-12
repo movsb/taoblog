@@ -27,6 +27,7 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		"--single-transaction",
 		"--add-drop-database",
 		"--add-drop-table",
+		"--default-character-set=utf8mb4",
 		"--comments",
 		"--compress",
 	}
