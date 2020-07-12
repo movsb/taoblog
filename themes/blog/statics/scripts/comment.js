@@ -343,7 +343,8 @@ Comment.prototype.load_comments = function() {
     $.get('/v3/posts/' + self.post_id + '/comments',
         {
             limit: 10,
-            offset: self._loaded,
+			offset: self._loaded,
+			order_by: 'id desc'
         },
         function(resp) {
 			let cmts = resp.comments || [];
