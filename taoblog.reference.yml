@@ -6,11 +6,6 @@ blog:
 
 database:
   engine: sqlite
-  mysql:
-    endpoint: localhost:3306
-    database: taoblog
-    username: taoblog
-    password: taoblog
   sqlite:
     path: taoblog.db
 

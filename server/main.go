@@ -13,9 +13,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/canonical"
 
-	_ "github.com/go-sql-driver/mysql" // shut up
-
-	//_ "github.com/mattn/go-sqlite3"    // shut up
+	_ "github.com/mattn/go-sqlite3" // shut up
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/gateway"
