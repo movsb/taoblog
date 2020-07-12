@@ -45,11 +45,15 @@ main.go     | 入口程序
 
 ## RoadMap
 
-抄几个主题：
+- 抄几个主题：
 
-- <http://www.templex.xyz/> 同王垠的博客
-- <https://www.tbfeng.com/> 天边风
-- <https://www.v2ex.com/t/561257> 你见过最简约美观的技术博客
+  - <http://www.templex.xyz/> 同王垠的博客
+  - <https://www.tbfeng.com/> 天边风
+  - <https://www.v2ex.com/t/561257> 你见过最简约美观的技术博客
+
+- 更改数据库引擎
+
+  想把 MySQL 干掉，只使用 SQLite3。妥不妥？
 
 ## 联系我
 
