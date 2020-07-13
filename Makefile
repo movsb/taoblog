@@ -21,6 +21,9 @@ build-image:
 .PHONY: push-image
 push-image:
 	docker push taocker/taoblog:latest
+.PHONY: run-image
+run-image:
+	docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:latest
 
 .PHONY: tools
 tools:

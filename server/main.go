@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -109,14 +108,6 @@ func initDatabase(cfg *config.Config) *sql.DB {
 	var err error
 
 	switch cfg.Database.Engine {
-	case `mysql`:
-		dataSource := fmt.Sprintf(`%s:%s@tcp(%s)/%s`,
-			cfg.Database.MySQL.Username,
-			cfg.Database.MySQL.Password,
-			cfg.Database.MySQL.Endpoint,
-			cfg.Database.MySQL.Database,
-		)
-		db, err = sql.Open(`mysql`, dataSource)
 	case `sqlite`:
 		db, err = sql.Open(`sqlite3`, cfg.Database.SQLite.Path)
 	default:

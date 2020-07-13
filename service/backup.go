@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"net"
-	"os/exec"
 
 	"github.com/movsb/taoblog/protocols"
 	"go.uber.org/zap"
@@ -19,40 +17,13 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		return nil, status.Error(codes.Unauthenticated, "bad credentials")
 	}
 
-	if s.cfg.Database.Engine != `mysql` {
-		panic(`mysql only`)
+	if s.cfg.Database.Engine != `sqlite` {
+		panic(`sqlite only`)
 	}
 
-	opts := []string{
-		"--single-transaction",
-		"--add-drop-database",
-		"--add-drop-table",
-		"--default-character-set=utf8mb4",
-		"--comments",
-		"--compress",
-	}
-
-	host, port, _ := net.SplitHostPort(s.cfg.Database.MySQL.Endpoint)
-
-	opts = append(opts, "--host="+host)
-	opts = append(opts, "--port="+port)
-	opts = append(opts, "--user="+s.cfg.Database.MySQL.Username)
-	opts = append(opts, "--password="+s.cfg.Database.MySQL.Password)
-	opts = append(opts, "--databases", s.cfg.Database.MySQL.Database)
-
-	cmd := exec.Command(
-		"mysqldump",
-		opts...,
-	)
+	panic(`not supported`)
 
 	ob := bytes.NewBuffer(nil)
-	cmd.Stdout = ob
-	eb := bytes.NewBuffer(nil)
-	cmd.Stderr = eb
-
-	if err := cmd.Run(); err != nil {
-		return nil, status.Errorf(codes.Internal, `%v:%s`, err, eb.String())
-	}
 
 	before := ob.Bytes()
 

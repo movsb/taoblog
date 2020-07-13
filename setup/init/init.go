@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"os/exec"
 	"time"
@@ -21,19 +20,6 @@ func Init(cfg *config.Config, db *sql.DB) {
 	var cmd *exec.Cmd
 	var fp io.ReadCloser
 	switch cfg.Database.Engine {
-	case `mysql`:
-		host, port, _ := net.SplitHostPort(cfg.Database.MySQL.Endpoint)
-		cmd = exec.Command(`mysql`,
-			`-h`, host,
-			`-P`, port,
-			`-u`, cfg.Database.MySQL.Username,
-			`--password=`+cfg.Database.MySQL.Password,
-			`-D`, cfg.Database.MySQL.Database,
-		)
-		fp, err = os.Open(`setup/data/schemas.mysql.sql`)
-		if err != nil {
-			panic(err)
-		}
 	case `sqlite`:
 		cmd = exec.Command(`sqlite3`, cfg.Database.SQLite.Path)
 		fp, err = os.Open(`setup/data/schemas.sqlite.sql`)
