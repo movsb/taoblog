@@ -189,10 +189,12 @@ func AddCommands(rootCmd *cobra.Command) {
 	backupCmd := &cobra.Command{
 		Use:              `backup`,
 		Short:            `Dump database`,
+		Args:             cobra.NoArgs,
 		PersistentPreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.Backup(os.Stdout)
+			client.Backup(cmd)
 		},
 	}
+	backupCmd.Flags().BoolP(`date`, `d`, false, `Write to date file instead of stdout.`)
 	rootCmd.AddCommand(backupCmd)
 }
