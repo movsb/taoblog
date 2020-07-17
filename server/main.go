@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/canonical"
 
-	_ "github.com/mattn/go-sqlite3" // shut up
+	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/gateway"
@@ -42,7 +43,6 @@ func serve() {
 	cfg := config.LoadFile(`taoblog.yml`)
 
 	db := initDatabase(cfg)
-	db.SetMaxIdleConns(10)
 	defer db.Close()
 
 	migration.Migrate(db)
@@ -109,7 +109,18 @@ func initDatabase(cfg *config.Config) *sql.DB {
 
 	switch cfg.Database.Engine {
 	case `sqlite`:
-		db, err = sql.Open(`sqlite3`, cfg.Database.SQLite.Path)
+		v := url.Values{}
+		v.Set(`cache`, `shared`)
+		v.Set(`mode`, `rwc`)
+		u := url.URL{
+			Scheme:   `file`,
+			Opaque:   url.PathEscape(cfg.Database.SQLite.Path),
+			RawQuery: v.Encode(),
+		}
+		db, err = sql.Open(`sqlite3`, u.String())
+		if err == nil {
+			db.SetMaxOpenConns(1)
+		}
 	default:
 		panic(`unknown database engine`)
 	}
@@ -120,7 +131,13 @@ func initDatabase(cfg *config.Config) *sql.DB {
 	var count int
 	row := db.QueryRow(`select count(1) from options`)
 	if err := row.Scan(&count); err != nil {
-		inits.Init(cfg, db)
+		if se, ok := err.(sqlite3.Error); ok {
+			if strings.Contains(se.Error(), `no such table`) {
+				inits.Init(cfg, db)
+				return db
+			}
+		}
+		panic(err)
 	}
 	return db
 }
