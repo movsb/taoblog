@@ -36,6 +36,7 @@ type IFileManager interface {
 // Service implements IServer.
 type Service struct {
 	cfg    *config.Config
+	db     *sql.DB
 	tdb    *taorm.DB
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
@@ -47,6 +48,7 @@ type Service struct {
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	s := &Service{
 		cfg:   cfg,
+		db:    db,
 		tdb:   taorm.NewDB(db),
 		auth:  auther,
 		fmgr:  file_managers.NewLocalFileManager(cfg.Data.File.Path),
