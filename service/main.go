@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"time"
 
@@ -140,7 +141,13 @@ func (s *Service) Name() string {
 }
 
 func (s *Service) Description() string {
-	return s.cfg.Blog.Description
+	if d := s.cfg.Blog.Description; d != `` {
+		return d
+	}
+	if n := len(s.cfg.Blog.Mottoes); n > 0 {
+		return s.cfg.Blog.Mottoes[rand.Intn(n)]
+	}
+	return ``
 }
 
 // LastArticleUpdateTime ...

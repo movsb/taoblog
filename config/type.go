@@ -109,9 +109,10 @@ func DefaultMainMaintenanceConfig() MaintenanceConfig {
 
 // BlogConfig ...
 type BlogConfig struct {
-	Home        string `yaml:"home"`
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
+	Home        string   `yaml:"home"`
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Mottoes     []string `yaml:"mottoes"`
 }
 
 // DefaultBlogConfig ...
@@ -119,6 +120,6 @@ func DefaultBlogConfig() BlogConfig {
 	return BlogConfig{
 		Home:        `localhost`,
 		Name:        `未命名`,
-		Description: `还没有写描述哦`,
+		Description: ``,
 	}
 }
