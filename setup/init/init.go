@@ -40,11 +40,11 @@ func Init(cfg *config.Config, db *sql.DB) {
 	tdb := taorm.NewDB(db)
 	tdb.MustTxCall(func(tx *taorm.DB) {
 		now := int32(time.Now().Unix())
-		tdb.Model(&models.Option{
+		tx.Model(&models.Option{
 			Name:  `db_ver`,
 			Value: fmt.Sprint(migration.MaxVersionNumber()),
 		}).MustCreate()
-		tdb.Model(&models.Post{
+		tx.Model(&models.Post{
 			Date:       now,
 			Modified:   now,
 			Title:      `你好，世界`,
