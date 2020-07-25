@@ -37,11 +37,11 @@ func (c *Client) Backup(cmd *cobra.Command) {
 
 	var w io.Writer
 
-	date, err := cmd.Flags().GetBool(`date`)
+	bStdout, err := cmd.Flags().GetBool(`stdout`)
 	if err != nil {
 		panic(err)
 	}
-	if date {
+	if !bStdout {
 		name := time.Now().Format(`taoblog-2006-01-02.db`)
 		fp, err := os.Create(name)
 		if err != nil {

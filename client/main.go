@@ -195,6 +195,6 @@ func AddCommands(rootCmd *cobra.Command) {
 			client.Backup(cmd)
 		},
 	}
-	backupCmd.Flags().BoolP(`date`, `d`, false, `Write to date file instead of stdout.`)
+	backupCmd.Flags().Bool(`stdout`, false, `Output to stdout`)
 	rootCmd.AddCommand(backupCmd)
 }

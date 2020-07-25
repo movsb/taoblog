@@ -156,17 +156,12 @@
         td, th {
             border: 1px solid gray;
             padding: 0.5em;
-            text-align: center;
         }
 
         &.no-border, &.no-border td {
             border: none;
         }
-
-        &.enlarge-first-td td:first-child {
-            padding-right: 1em;
-        }
-    }
+	}
 
     blockquote {
 		background-color:rgba(0,0,0,.08);

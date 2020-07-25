@@ -6,27 +6,6 @@
     box-sizing: border-box;
 }
 
-#tips {
-    position: fixed;
-    right: 10px;
-    top: 10px;
-    max-width: 200px;
-    padding: 1em;
-    box-shadow: 0px 0px 1px;
-    border-radius: 4px;
-    background-color: $toolbar_tips_bg;
-    color: $toolbar_tips_fg;
-    z-index: 1000;
-    display: none;
-}
-
-/* 阅读模式 */
-.reading-mode {
-    font-size: 30px;
-    height: 30px;
-    cursor: pointer;
-}
-
 /* 回到顶部 */
 .back-to-top {
     display: none;
