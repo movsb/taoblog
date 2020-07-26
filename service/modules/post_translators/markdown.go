@@ -14,17 +14,18 @@ import (
 
 	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
 )
 
 // MarkdownTranslator ...
 type MarkdownTranslator struct {
-	PostTranslator
 }
 
 // Translate ...
-func (me *MarkdownTranslator) Translate(source string, base string) (string, error) {
+func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string) (string, error) {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
@@ -38,8 +39,32 @@ func (me *MarkdownTranslator) Translate(source string, base string) (string, err
 		goldmark.WithExtensions(extension.Footnote),
 		goldmark.WithExtensions(mathjax.MathJax),
 	)
+
+	sourceBytes := []byte(source)
+	doc := md.Parser().Parse(text.NewReader(sourceBytes))
+
+	if cb == nil {
+		cb = &Callback{}
+	}
+
+	if cb.SetTitle != nil {
+		for p := doc.FirstChild(); p != nil; p = p.NextSibling() {
+			if p.Kind() == ast.KindHeading {
+				heading := p.(*ast.Heading)
+				switch heading.Level {
+				case 1:
+					title := string(heading.Text(sourceBytes))
+					cb.SetTitle(title)
+
+					parent := heading.Parent()
+					parent.RemoveChild(parent, heading)
+				}
+			}
+		}
+	}
+
 	buf := bytes.NewBuffer(nil)
-	err := md.Convert([]byte(source), buf)
+	err := md.Renderer().Render(buf, []byte(source), doc)
 	return buf.String(), err
 }
 

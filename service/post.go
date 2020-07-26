@@ -280,8 +280,14 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		panic("no translator found")
 	}
 
+	cb := post_translators.Callback{
+		SetTitle: func(title string) {
+			p.Title = title
+		},
+	}
+
 	// TODO doesn't exist
-	p.Content, err = tr.Translate(in.Source, "./files/0")
+	p.Content, err = tr.Translate(&cb, in.Source, "./files/0")
 	if err != nil {
 		panic(err)
 	}
@@ -350,10 +356,17 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		default:
 			panic("no translator found")
 		}
-		content, err := tr.Translate(in.Post.Source, fmt.Sprintf("./files/%d", in.Post.Id))
+		cb := post_translators.Callback{
+			SetTitle: func(title string) {
+				m[`title`] = title
+			},
+		}
+
+		content, err := tr.Translate(&cb, in.Post.Source, fmt.Sprintf("./files/%d", in.Post.Id))
 		if err != nil {
 			panic(err)
 		}
+
 		m[`content`] = content
 	}
 
