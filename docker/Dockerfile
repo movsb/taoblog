@@ -5,11 +5,11 @@ RUN apk add sqlite
 
 WORKDIR /workspace
 
-ADD taoblog taoblog
 ADD admin admin
-ADD themes themes
 ADD setup setup
+ADD themes themes
 ADD protocols protocols
+ADD taoblog taoblog
 
 ENTRYPOINT ["./taoblog"]
 CMD ["server"]
