@@ -28,6 +28,7 @@ var gVersions = []VersionUpdater{
 	{14, v14},
 	{15, v15},
 	{16, v16},
+	{17, v17},
 }
 
 // MaxVersionNumber ...

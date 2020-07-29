@@ -3,7 +3,7 @@ BEGIN;
 -- 创建表 options
 CREATE TABLE IF NOT EXISTS `options` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
-    `name` VARCHAR(64)  NOT NULL UNIQUE,
+    `name` VARCHAR(64)  NOT NULL UNIQUE COLLATE NOCASE,
     `value` TEXT  NOT NULL
 );
 
@@ -55,9 +55,8 @@ CREATE TABLE IF NOT EXISTS categories (
 -- 创建表 tag标签/post_tags
 CREATE TABLE IF NOT EXISTS tags (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-    `name` TEXT NOT NULL,
-    `alias` INTEGER NOT NULL,
-    UNIQUE(`name`)
+    `name` TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    `alias` INTEGER NOT NULL
 );
 
 -- 创建表 文章标签表

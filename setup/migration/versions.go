@@ -245,3 +245,29 @@ func v16(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE posts DROP COLUMN `modified`")
 	mustExec(tx, "ALTER TABLE posts CHANGE `modified_int` `modified` INT NOT NULL")
 }
+
+// SQLite3 only
+
+func v17(tx *sql.Tx) {
+	mustExec(tx, `
+	CREATE TABLE options2 (
+		id INTEGER  PRIMARY KEY AUTOINCREMENT,
+		name VARCHAR(64)  NOT NULL UNIQUE COLLATE NOCASE,
+		value TEXT  NOT NULL
+	)
+	`)
+	mustExec(tx, `INSERT INTO options2 SELECT * FROM options`)
+	mustExec(tx, `DROP TABLE options`)
+	mustExec(tx, `ALTER TABLE options2 RENAME TO options`)
+
+	mustExec(tx, `
+	CREATE TABLE tags2 (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+		alias INTEGER NOT NULL
+	)
+	`)
+	mustExec(tx, `INSERT INTO tags2 SELECT * FROM tags`)
+	mustExec(tx, `DROP TABLE tags`)
+	mustExec(tx, `ALTER TABLE tags2 RENAME TO tags`)
+}
