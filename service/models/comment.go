@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 )
 
@@ -42,7 +41,6 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 		SourceType: c.SourceType,
 		Source:     c.Source,
 		Content:    c.Content,
-		Avatar:     utils.Md5Str(c.Email),
 		IsAdmin:    strings.EqualFold(c.Email, adminEmail),
 	}
 

@@ -1,42 +1,45 @@
 package service
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/avatar"
 )
 
-const (
-	gGrAvatarHost = "https://www.gravatar.com/avatar/"
-)
-
+// GetAvatar ...
 func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
-	u := gGrAvatarHost + in.Query
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		panic(err)
+	p := avatar.Params{
+		Headers: make(http.Header),
 	}
 
 	if in.IfModifiedSince != "" {
-		req.Header.Set("If-Modified-Since", in.IfModifiedSince)
+		p.Headers.Add("If-Modified-Since", in.IfModifiedSince)
 	}
 	if in.IfNoneMatch != "" {
-		req.Header.Set("If-None-Match", in.IfNoneMatch)
+		p.Headers.Add("If-None-Match", in.IfNoneMatch)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	var comment models.Comment
+	s.tdb.Select(`email`).Where(`id = ?`, in.CommentID).MustFind(&comment)
+
+	resp, err := avatar.Get(comment.Email, &p)
 	if err != nil {
-		panic(err)
+		in.SetStatus(500)
+		fmt.Fprint(in.W, err)
+		return
 	}
 
 	defer resp.Body.Close()
 
-	in.SetStatus(resp.StatusCode)
-
 	for name, value := range resp.Header {
 		in.SetHeader(name, value[0])
 	}
+
+	in.SetStatus(resp.StatusCode)
 
 	io.Copy(in.W, resp.Body)
 }

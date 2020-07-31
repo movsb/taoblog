@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -67,7 +68,7 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle("GET", `/v3/api`, getAPI)
 	handle("GET", `/v3/api/swagger`, getSwagger)
 
-	handle(`GET`, `/v3/avatars/{hash=*}`, g.GetAvatar)
+	handle(`GET`, `/v3/comments/{id}/avatar`, g.GetAvatar)
 
 	handle(`GET`, `/files/{post_id}/{file=**}`, g.GetFile)
 	handle(`POST`, `/v3/posts/{post_id}/{file=**}`, g.CreateFile)
@@ -77,9 +78,13 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 }
 
 func (g *Gateway) GetAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	query := req.URL.RawQuery
+	commentID, err := strconv.Atoi(params[`id`])
+	if err != nil {
+		panic(err)
+	}
+
 	in := &protocols.GetAvatarRequest{
-		Query:           params[`hash`] + `?` + query,
+		CommentID:       int64(commentID),
 		IfModifiedSince: req.Header.Get("If-Modified-Since"),
 		IfNoneMatch:     req.Header.Get("If-None-Match"),
 		SetStatus: func(statusCode int) {

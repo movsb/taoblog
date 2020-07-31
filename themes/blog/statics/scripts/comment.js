@@ -152,8 +152,8 @@ Comment.prototype.get_count = function(callback) {
     );
 };
 
-Comment.prototype.gen_avatar = function(eh, sz) {
-	return '/v3/avatars/' + eh + '?d=mm&s=' + sz;
+Comment.prototype.gen_avatar = function(id) {
+	return '/v3/comments/' + id + '/avatar';
 };
 
 Comment.prototype.normalize_content = function(c) {
@@ -228,7 +228,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 
 	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '" itemprop="comment">\n';
 	s += '<div class="comment-avatar">'
-		+ '<img src="' + this.gen_avatar(cmt.avatar, 48) + '" width="48px" height="48px" title="'+info+'"/>'
+		+ '<img src="' + this.gen_avatar(cmt.id) + '" width="48px" height="48px" title="'+info+'"/>'
 		+ '</div>\n';
 	s += '<div class="comment-meta">\n';
 

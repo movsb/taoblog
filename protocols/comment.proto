@@ -18,8 +18,7 @@ message Comment {
 	string source = 11;
 	string content = 12;
 	repeated Comment children = 13;
-	string avatar = 14;
-	bool is_admin = 15;
+	bool is_admin = 14;
 }
 
 message GetCommentRequest {
