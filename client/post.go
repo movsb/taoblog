@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,12 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"google.golang.org/genproto/protobuf/field_mask"
 	yaml "gopkg.in/yaml.v2"
+)
+
+var (
+	errPostInited     = errors.New(`post already initialized, abort`)
+	errPostCreated    = errors.New(`post already posted, use update instead`)
+	errPostNotCreated = errors.New(`post not created, use create instead`)
 )
 
 var sourceNames = []string{
@@ -27,11 +34,11 @@ type PostConfig struct {
 }
 
 // InitPost ...
-func (c *Client) InitPost() {
+func (c *Client) InitPost() error {
 	fp, err := os.Open("config.yml")
 	if err == nil {
 		fp.Close()
-		panic("post already initialized, abort")
+		return errPostInited
 	}
 	fp.Close()
 	config := PostConfig{}
@@ -41,14 +48,15 @@ func (c *Client) InitPost() {
 	if fp != nil {
 		fp.Close()
 	}
+	return nil
 }
 
 // CreatePost ...
-func (c *Client) CreatePost() {
+func (c *Client) CreatePost() error {
 	p := protocols.Post{}
 	cfg := *c.readPostConfig()
 	if cfg.ID > 0 {
-		panic("post already posted, use update instead")
+		return errPostCreated
 	}
 
 	p.Title = cfg.Title
@@ -59,11 +67,13 @@ func (c *Client) CreatePost() {
 
 	rp, err := c.grpcClient.CreatePost(c.token(), &p)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	cfg.ID = rp.Id
 	c.savePostConfig(&cfg)
+
+	return nil
 }
 
 // GetPost ...
@@ -128,11 +138,11 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 	}
 }
 
-func (c *Client) UpdatePost() {
+func (c *Client) UpdatePost() error {
 	p := protocols.Post{}
 	cfg := *c.readPostConfig()
 	if cfg.ID == 0 {
-		panic("post not created, use create instead")
+		return errPostNotCreated
 	}
 
 	p.Id = cfg.ID
@@ -161,6 +171,8 @@ func (c *Client) UpdatePost() {
 	cfg.Tags = rp.Tags
 	cfg.Slug = rp.Slug
 	c.savePostConfig(&cfg)
+
+	return nil
 }
 
 // UploadPostFiles ...

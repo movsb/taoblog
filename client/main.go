@@ -78,7 +78,9 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `Initialize an empty post structure in this directory`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.InitPost()
+			if err := client.InitPost(); err != nil {
+				panic(err)
+			}
 		},
 	}
 	postsCmd.AddCommand(postsInitCmd)
@@ -87,7 +89,9 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `Create the post in this directory`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.CreatePost()
+			if err := client.CreatePost(); err != nil {
+				panic(err)
+			}
 		},
 	}
 	postsCmd.AddCommand(postsCreateCmd)
@@ -105,10 +109,41 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `Update post in this directory`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.UpdatePost()
+			if err := client.UpdatePost(); err != nil {
+				panic(err)
+			}
 		},
 	}
 	postsCmd.AddCommand(postsUpdateCmd)
+	postApplyCmd := &cobra.Command{
+		Use:   `apply`,
+		Short: `Init, Create and Update a post`,
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			switch err := client.InitPost(); err {
+			case nil:
+				return
+			case errPostInited:
+				break
+			default:
+				panic(err)
+			}
+
+			switch err := client.CreatePost(); err {
+			case nil:
+				return
+			case errPostCreated:
+				break
+			default:
+				panic(err)
+			}
+
+			if err := client.UpdatePost(); err != nil {
+				panic(err)
+			}
+		},
+	}
+	postsCmd.AddCommand(postApplyCmd)
 	postsPublishCmd := &cobra.Command{
 		Use:     `publish [post-id]`,
 		Short:   `Publish this post`,

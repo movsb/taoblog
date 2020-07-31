@@ -15,6 +15,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	postUntitled = `Untitled`
+)
+
 func (s *Service) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{})
 }
@@ -266,10 +270,6 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		SourceType: in.SourceType,
 	}
 
-	if p.Title == "" {
-		p.Title = "Untitled"
-	}
-
 	var tr post_translators.PostTranslator
 	switch p.SourceType {
 	case "html":
@@ -290,6 +290,10 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 	p.Content, err = tr.Translate(&cb, in.Source, "./files/0")
 	if err != nil {
 		panic(err)
+	}
+
+	if p.Title == "" {
+		p.Title = postUntitled
 	}
 
 	s.TxCall(func(txs *Service) error {
@@ -325,6 +329,9 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		switch path {
 		case `title`:
 			m[path] = in.Post.Title
+			if in.Post.Title == `` {
+				m[path] = postUntitled
+			}
 		case `source_type`:
 			m[path] = in.Post.SourceType
 			hasSourceType = true
@@ -358,6 +365,9 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		}
 		cb := post_translators.Callback{
 			SetTitle: func(title string) {
+				if title == `` {
+					title = postUntitled
+				}
 				m[`title`] = title
 			},
 		}
