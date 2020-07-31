@@ -123,9 +123,14 @@ func AddCommands(rootCmd *cobra.Command) {
 					panic(err)
 				}
 			}
-			client.SetPostStatus(postID, true)
+			touch, err := cmd.Flags().GetBool(`touch`)
+			if err != nil {
+				panic(err)
+			}
+			client.SetPostStatus(postID, true, touch)
 		},
 	}
+	postsPublishCmd.Flags().BoolP(`touch`, `t`, false, `Touch create_time and update_time`)
 	postsCmd.AddCommand(postsPublishCmd)
 	postsDraftCmd := &cobra.Command{
 		Use:   `draft [post-id]`,
@@ -140,7 +145,7 @@ func AddCommands(rootCmd *cobra.Command) {
 					panic(err)
 				}
 			}
-			client.SetPostStatus(postID, false)
+			client.SetPostStatus(postID, false, false)
 		},
 	}
 	postsCmd.AddCommand(postsDraftCmd)

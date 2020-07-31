@@ -415,9 +415,18 @@ func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatus
 		if !in.Public {
 			status = `draft`
 		}
-		txs.tdb.Model(&post).MustUpdateMap(map[string]interface{}{
+
+		m := map[string]interface{}{
 			"status": status,
-		})
+		}
+
+		if in.Touch {
+			now := time.Now().Unix()
+			m[`date`] = now
+			m[`modified`] = now
+		}
+
+		txs.tdb.Model(&post).MustUpdateMap(m)
 		return nil
 	})
 	return &protocols.SetPostStatusResponse{}, nil

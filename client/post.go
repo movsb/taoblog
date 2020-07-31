@@ -110,7 +110,7 @@ func (c *Client) GetPost() {
 	}
 }
 
-func (c *Client) SetPostStatus(id int64, public bool) {
+func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 	if id <= 0 {
 		config := c.readPostConfig()
 		if config.ID == 0 {
@@ -121,6 +121,7 @@ func (c *Client) SetPostStatus(id int64, public bool) {
 	_, err := c.grpcClient.SetPostStatus(c.token(), &protocols.SetPostStatusRequest{
 		Id:     id,
 		Public: public,
+		Touch:  touch,
 	})
 	if err != nil {
 		panic(err)

@@ -52,6 +52,9 @@ message GetPostCommentsCountResponse {
 message SetPostStatusRequest {
 	int64 id = 1;
 	bool public = 2;
+
+	// Whether to create_time and update_time
+	bool touch = 3;
 }
 
 message SetPostStatusResponse {
