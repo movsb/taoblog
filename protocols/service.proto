@@ -5,6 +5,7 @@ option go_package = "github.com/movsb/taoblog/protocols";
 import "protocols/backup.proto";
 import "protocols/post.proto";
 import "protocols/comment.proto";
+import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 
@@ -55,6 +56,14 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "更新文章。";
+		};
+	}
+	rpc DeletePost (DeletePostRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			delete: "/v3/posts/{id}";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "删除文章及其所有相关资源（评论、标签等）。";
 		};
 	}
 	rpc SetPostStatus (SetPostStatusRequest) returns (SetPostStatusResponse) {

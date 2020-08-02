@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
@@ -395,6 +396,21 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	return np, nil
+}
+
+// DeletePost ...
+func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostRequest) (*empty.Empty, error) {
+	s.TxCall(func(txs *Service) error {
+		var p models.Post
+		txs.tdb.Select(`id`).Where(`id=?`, in.Id).MustFind(&p)
+		txs.tdb.Model(&p).MustDelete()
+		txs.deletePostComments(ctx, int64(in.Id))
+		txs.deletePostTags(ctx, int64(in.Id))
+		txs.updatePostPageCount()
+		txs.updateCommentsCount()
+		return nil
+	})
+	return &empty.Empty{}, nil
 }
 
 // updateLastPostTime updates last_post_time in options.
