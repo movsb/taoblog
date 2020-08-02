@@ -58,7 +58,7 @@ main.go     | 入口程序
 可以一句话就启动起来我的博客系统（需要 Docker 哦！）：
 
 ```bash
-$ make run-image
+$ make try
 ```
 
 然后打开：<http://localhost:2564>。

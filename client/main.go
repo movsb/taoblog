@@ -192,6 +192,22 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	postsCmd.AddCommand(postsGetCmd)
+	postsDeleteCmd := &cobra.Command{
+		Use:   `delete <post-id>`,
+		Short: `Delete a post`,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			postID, err := strconv.ParseInt(args[0], 10, 0)
+			if err != nil {
+				panic(err)
+			}
+			if err := client.DeletePost(postID); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		},
+	}
+	postsCmd.AddCommand(postsDeleteCmd)
 	commentsCmd := &cobra.Command{
 		Use:              `comments`,
 		Short:            `Commands for managing comments`,

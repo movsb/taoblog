@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
@@ -310,6 +311,11 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 
 // UpdatePost ...
 func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostRequest) (*protocols.Post, error) {
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() {
+		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
+	}
+
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
 		panic(exception.NewValidationError("无效文章"))
 	}
@@ -395,6 +401,26 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	return np, nil
+}
+
+// DeletePost ...
+func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostRequest) (*empty.Empty, error) {
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() {
+		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
+	}
+
+	s.TxCall(func(txs *Service) error {
+		var p models.Post
+		txs.tdb.Select(`id`).Where(`id=?`, in.Id).MustFind(&p)
+		txs.tdb.Model(&p).MustDelete()
+		txs.deletePostComments(ctx, int64(in.Id))
+		txs.deletePostTags(ctx, int64(in.Id))
+		txs.updatePostPageCount()
+		txs.updateCommentsCount()
+		return nil
+	})
+	return &empty.Empty{}, nil
 }
 
 // updateLastPostTime updates last_post_time in options.

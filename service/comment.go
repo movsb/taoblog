@@ -265,8 +265,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.TxCall(func(txs *Service) error {
 		txs.tdb.Model(&comment).MustCreate()
-		count := txs.GetAllCommentsCount()
-		txs.SetOption("comment_count", count)
+		txs.updateCommentsCount()
 		txs.UpdatePostCommentCount(comment.PostID)
 		return nil
 	})
@@ -274,6 +273,11 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	s.doCommentNotification(&comment)
 
 	return comment.ToProtocols(adminEmail, user), nil
+}
+
+func (s *Service) updateCommentsCount() {
+	count := s.GetAllCommentsCount()
+	s.SetOption("comment_count", count)
 }
 
 func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) string {
@@ -422,4 +426,8 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 	}
 
 	s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
+}
+
+func (s *Service) deletePostComments(ctx context.Context, postID int64) {
+	s.tdb.From(models.Comment{}).Where(`post_id=?`, postID).MustDelete()
 }

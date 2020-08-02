@@ -175,6 +175,14 @@ func (c *Client) UpdatePost() error {
 	return nil
 }
 
+// DeletePost ...
+func (c *Client) DeletePost(id int64) error {
+	_, err := c.grpcClient.DeletePost(c.token(), &protocols.DeletePostRequest{
+		Id: int32(id),
+	})
+	return err
+}
+
 // UploadPostFiles ...
 func (c *Client) UploadPostFiles(files []string) {
 	config := c.readPostConfig()

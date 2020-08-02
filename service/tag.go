@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -202,6 +203,10 @@ func (s *Service) removeObjectTag(pid int64, tagName string) {
 	s.tdb.From(models.ObjectTag{}).
 		Where("post_id=? AND tag_id=?", pid, tagObj.ID).
 		MustDelete()
+}
+
+func (s *Service) deletePostTags(ctx context.Context, postID int64) {
+	s.tdb.From(models.ObjectTag{}).Where(`post_id=?`, postID).MustDelete()
 }
 
 func (s *Service) addObjectTag(pid int64, tid int64) {
