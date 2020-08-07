@@ -204,6 +204,24 @@ func (b *Blog) queryPosts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (b *Blog) queryTags(w http.ResponseWriter, r *http.Request) {
+	if handle304.ArticleRequest(w, r, b.service.LastArticleUpdateTime()) {
+		return
+	}
+
+	d := data.NewDataForTags(b.cfg, b.auth.AuthCookie2(r), b.service)
+	t := b.namedTemplates[`tags.html`]
+	d.Template = t
+	d.Writer = w
+
+	handle304.ArticleResponse(w, b.service.LastArticleUpdateTime())
+
+	if err := t.Execute(w, d); err != nil {
+		panic(err)
+	}
+
+}
+
 func (b *Blog) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 	post := b.service.GetPostByID(id)
 	b.userMustCanSeePost(req, post)
@@ -247,8 +265,8 @@ func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto
 }
 
 func (b *Blog) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTags(b.cfg, b.auth.AuthCookie2(req), b.service, tags)
-	t := b.namedTemplates[`tags.html`]
+	d := data.NewDataForTag(b.cfg, b.auth.AuthCookie2(req), b.service, tags)
+	t := b.namedTemplates[`tag.html`]
 	d.Template = t
 	d.Writer = w
 	if err := t.Execute(w, d); err != nil {
@@ -315,6 +333,9 @@ func (b *Blog) QuerySpecial(w http.ResponseWriter, req *http.Request, file strin
 			return true
 		case `/posts`:
 			b.queryPosts(w, req)
+			return true
+		case `/tags`:
+			b.queryTags(w, req)
 			return true
 		}
 	}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>标签 “{{ .Tag.Names }}” 下的归档</title>
+</head>
+<body>
+{{ if .Tag.Posts }}
+<ul>
+{{ range .Tag.Posts -}}
+	<li><a target="_blank" href="/{{ .ID }}/">{{ .Title }}</a></li>
+{{ end -}}
+</ul>
+{{ end }}
+</body>
+</html>

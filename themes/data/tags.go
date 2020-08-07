@@ -4,25 +4,24 @@ import (
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/models"
 )
 
 // TagsData ...
 type TagsData struct {
-	Names []string
-	Posts []*Post
+	Tags []*models.TagWithCount
 }
 
 // NewDataForTags ...
-func NewDataForTags(cfg *config.Config, user *auth.User, service *service.Service, tags []string) *Data {
+func NewDataForTags(cfg *config.Config, user *auth.User, service *service.Service) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
 		Meta:   &MetaData{},
 	}
-	posts := newPosts(service.GetPostsByTags(tags).ToProtocols())
+	tags := service.ListTagsWithCount()
 	td := &TagsData{
-		Names: tags,
-		Posts: posts,
+		Tags: tags,
 	}
 	d.Tags = td
 	return d

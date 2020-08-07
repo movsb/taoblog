@@ -1,16 +1,37 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>标签 “{{ .Tags.Names }}” 下的归档</title>
-</head>
-<body>
-{{ if .Tags.Posts }}
-<ul>
-{{ range .Tags.Posts -}}
-	<li><a target="_blank" href="/{{ .ID }}/">{{ .Title }}</a></li>
-{{ end -}}
-</ul>
-{{ end }}
-</body>
-</html>
+{{ render "header" .}}
+
+<h1 style="text-align:center">全部标签列表</h1>
+
+<div class=wrap>
+{{ range .Tags.Tags }}
+<span class="tag"><a target="_blank" href="/tags/{{.Name}}">{{.Name}} · {{.Count}}</a></span>
+{{- end }}
+</div>
+
+{{ render "footer" . }}
+
+{{define "custom_header"}}
+<style>
+#content .wrap {
+	margin: 1em 0;
+}
+#content a {
+	color: inherit;
+}
+#content a:visited {
+	color: inherit;
+}
+#content .wrap .tag {
+	display: inline-block;
+	margin: 0.2em;
+	background-color: rgba(220,220,220,0.5);
+	padding: 0.3em;
+	border-radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+	#content .wrap .tag {
+		background-color: rgb(72,72,72);
+	}
+}
+</style>
+{{end}}

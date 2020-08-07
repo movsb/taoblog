@@ -41,6 +41,9 @@ type Data struct {
 
 	// If it is the Tags.
 	Tags *TagsData
+
+	// If it is the tag.
+	Tag *TagData
 }
 
 // MetaData ...

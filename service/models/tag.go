@@ -26,6 +26,7 @@ func (ObjectTag) TableName() string {
 
 // TagWithCount is a tag with associated post count.
 type TagWithCount struct {
-	Tag
+	// taorm yet doesn't support embedded field scanning.
+	Name  string
 	Count int64
 }

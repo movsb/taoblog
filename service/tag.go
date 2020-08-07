@@ -20,55 +20,16 @@ func (s *Service) GetTagByName(name string) *models.Tag {
 	return &tag
 }
 
-/*
-func (s *Service) ListTagsWithCount(limit int64, mergeAlias bool) []*models.TagWithCount {
-	query, args := sql_helpers.NewSelect().
-		From("post_tags", "pt").From("tags", "t").
-		Select("t.*,COUNT(pt.id) size").
-		Where("pt.tag_id=t.id").
-		GroupBy("t.id").
-		OrderBy("size DESC").
-		Limit(limit).
-		SQL()
-	rows, err := s.db.Query(query, args...)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	rootTags := make([]*models.TagWithCount, 0)
-	aliasTags := make([]*models.TagWithCount, 0)
-	rootMap := make(map[int64]*models.TagWithCount, 0)
-
-	for rows.Next() {
-		var tag models.TagWithCount
-		err = rows.Scan(&tag.ID, &tag.Name, &tag.Alias, &tag.Count)
-		if err != nil {
-			panic(err)
-		}
-		if !mergeAlias {
-			rootTags = append(rootTags, &tag)
-		} else {
-			if tag.Alias == 0 {
-				rootTags = append(rootTags, &tag)
-				rootMap[tag.ID] = &tag
-			} else {
-				aliasTags = append(aliasTags, &tag)
-			}
-		}
-	}
-
-	if mergeAlias {
-		for _, tag := range aliasTags {
-			if root, ok := rootMap[tag.Alias]; ok {
-				root.Count += tag.Count
-			}
-		}
-	}
-
-	return rootTags
+func (s *Service) ListTagsWithCount() []*models.TagWithCount {
+	var tags []*models.TagWithCount
+	s.tdb.Raw(`
+		SELECT tags.name AS name, count(tags.id) AS count
+		FROM tags INNER JOIN post_tags ON tags.id = post_tags.tag_id
+		GROUP BY tags.id
+		ORDER BY count desc
+	`).MustFind(&tags)
+	return tags
 }
-*/
 
 func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
