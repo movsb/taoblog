@@ -12,6 +12,7 @@ type Config struct {
 	Menus       []MenuItem        `yaml:"menus"`
 	Site        SiteConfig        `yaml:"site"`
 	Comment     CommentConfig     `yaml:"comment"`
+	Widgets     WidgetsConfig     `yaml:"widgets"`
 }
 
 // DefaultConfig ...
@@ -27,6 +28,7 @@ func DefaultConfig() Config {
 		Menus:       DefaultMenuConfig(),
 		Site:        DefaultSiteConfig(),
 		Comment:     DefaultCommentConfig(),
+		Widgets:     DefaultWidgetsConfig(),
 	}
 }
 
