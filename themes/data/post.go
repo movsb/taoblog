@@ -101,3 +101,13 @@ func (p *Post) CustomFooter() (footer string) {
 	}
 	return
 }
+
+// IsPost ...
+func (p *Post) IsPost() bool {
+	return p.Type == protocols.PostType_PostType_Post
+}
+
+// IsPage ...
+func (p *Post) IsPage() bool {
+	return p.Type == protocols.PostType_PostType_Page
+}

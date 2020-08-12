@@ -13,6 +13,7 @@
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
+		{{ if $dot.Post.Post.IsPost }}
 		{{ $reward := $dot.Config.Widgets.Reward }}
 		{{ if or $reward.WeChat $reward.AliPay }}
 		<div class="widgets reward" style="text-align: center;">
@@ -44,6 +45,7 @@
 				})();
 			</script>
 		</div>
+		{{ end }}
 		{{ end }}
         <div class="meta clearfix">
             <p>
