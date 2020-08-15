@@ -2,6 +2,8 @@ package post_translators
 
 import (
 	"bytes"
+	"encoding/xml"
+	"fmt"
 	"image"
 	_ "image/gif" // shut up
 	_ "image/jpeg"
@@ -88,6 +90,25 @@ func size(base string, path string) (int, int) {
 	defer fp.Close()
 	imgConfig, _, err := image.DecodeConfig(fp)
 	if err != nil {
+		if sfp, ok := fp.(io.ReadSeeker); ok {
+			if _, err := sfp.Seek(0, io.SeekStart); err != nil {
+				panic(err)
+			}
+			if strings.EqualFold(filepath.Ext(path), `.svg`) {
+				type _SvgSize struct {
+					Width  string `xml:"width,attr"`
+					Height string `xml:"height,attr"`
+				}
+				ss := _SvgSize{}
+				if err := xml.NewDecoder(sfp).Decode(&ss); err != nil {
+					panic(err)
+				}
+				var w, h int
+				fmt.Sscanf(ss.Width, `%d`, &w)
+				fmt.Sscanf(ss.Height, `%d`, &h)
+				return w, h
+			}
+		}
 		panic(err)
 	}
 	width, height := imgConfig.Width, imgConfig.Height
