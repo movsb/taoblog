@@ -33,6 +33,8 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 		}),
 	)
 
+	mux.HandleFunc(`/v1/`, deprecated)
+	mux.HandleFunc(`/v2/`, deprecated)
 	mux.Handle(`/v3/`, mux2)
 
 	if err := g.runHTTPService(context.TODO(), mux, mux2); err != nil {
@@ -71,7 +73,7 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle(`GET`, `/v3/comments/{id}/avatar`, g.GetAvatar)
 
 	handle(`GET`, `/files/{post_id}/{file=**}`, g.GetFile)
-	handle(`POST`, `/v3/posts/{post_id}/{file=**}`, g.CreateFile)
+	handle(`POST`, `/v3/posts/{post_id}/files/{file=**}`, g.CreateFile)
 	handle(`DELETE`, `/v3/posts/{post_id}/files/{file=**}`, g.DeleteFile)
 
 	return nil
@@ -104,4 +106,8 @@ func getAPI(w http.ResponseWriter, req *http.Request, params map[string]string) 
 
 func getSwagger(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	http.ServeFile(w, req, `protocols/docs/taoblog.swagger.json`)
+}
+
+func deprecated(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 }

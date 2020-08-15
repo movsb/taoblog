@@ -114,7 +114,10 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		c.renderer.QueryStatic(w, req, path)
+		return
 	}
+
+	http.NotFound(w, req)
 }
 
 func isCategoryPath(path string) bool {
