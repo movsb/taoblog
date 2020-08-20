@@ -13,7 +13,16 @@ ImageView.prototype._init = function() {
     this._$img = $('#img-view > img');
     this._$info = $('#img-view .info');
     this._$tip = $('#img-view .tip');
-    this._imageIndex = -1;
+	this._imageIndex = -1;
+	this._scale = 1;
+	this._transform = {};
+
+	this._countDown = 3;
+	setInterval(function() {
+		if(--this._countDown == 0) {
+			this._$info.hide();
+		}
+	}.bind(this), 1000);
 
     this._keyHandlerAdded = false;
 
@@ -75,16 +84,8 @@ ImageView.prototype._showInfo = function(rawWidth, rawHeight, scale) {
     s += '，缩放比例：' +  Math.round(scale*100) + '%';
 
     this._$info.text(s);
-    this._$info.show();
-
-    if (this._timerInfo != null) {
-        clearTimeout(this._timerInfo);
-    }
-
-    this._timerInfo = setTimeout(function() {
-        this._$info.hide();
-        this._timerInfo = null;
-    }.bind(this), 3000);
+	this._$info.show();
+	this._countDown = 3;
 };
 
 ImageView.prototype.nextImage = function(dir) {
@@ -101,15 +102,26 @@ ImageView.prototype.nextImage = function(dir) {
     }
 };
 
+ImageView.prototype.transforms = function() {
+	var s = '';
+	for (var p in this._transform) {
+		s += p + '(' + this._transform[p] + ') ';
+	}
+	return s;
+};
+
 ImageView.prototype.rotateImage = function(fwd) {
     if (fwd == undefined) {
-        this._$img.css('transform', '');
-        this._degree = 0;
+		this._transform = {};
+        this._$img.css('transform', this.transforms());
+		this._degree = 0;
+		this._scale = 1;
     } else {
         this._degree += !!fwd ? +90 : -90;
         this._$img.attr('data-busy', '1');
-        this._$img.css('transition', 'transform 0.3s linear');
-        this._$img.css('transform', 'rotateZ(' + this._degree + 'deg)');
+		this._$img.css('transition', 'transform 0.3s linear');
+		this._transform.rotateZ = this._degree + 'deg';
+        this._$img.css('transform', this.transforms());
     }
 };
 
@@ -177,11 +189,14 @@ ImageView.prototype.viewImage = function(img) {
         this._$img.css('left', '0px');
         this._$img.css('top', '0px');
         $('body').css('max-height', 'none');
-        $('body').css('overflow', 'auto');
-        // 清除旋转
-        this._$img.css('transform','');
+		$('body').css('overflow', 'auto');
 
-        this._dragging = false;
+		// 清除旋转
+		this._transform = {};
+        this._$img.css('transform',this.transforms());
+
+		this._dragging = false;
+		this._scale = 1;
         this._degree = 0;
         this._$imgView.hide();
     }
@@ -315,39 +330,17 @@ ImageView.prototype._onTransitionEnd = function(e) {
 
 ImageView.prototype._onDivMouseWheel = function(e) {
     if(this._$img.attr('data-busy') == '1') {
-        e.preventDefault();
+		e.preventDefault();
         return false;
     }
 
-    var x = e.originalEvent.clientX;
-    var y = e.originalEvent.clientY;
-    var left = parseInt(this._$img.css('left'));
-    var top = parseInt(this._$img.css('top'));
-    var width = parseInt(this._$img.css('width'));
-    var height = parseInt(this._$img.css('height'));
-    var zoomIn = e.originalEvent.deltaY < 0;
+	// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
+	this._scale += e.originalEvent.deltaY * -0.01;
+	this._scale = Math.min(Math.max(.125, this._scale), 4);
+	this._transform.scale = this._scale;
+	this._$img.css('transform', this.transforms());
 
-    var scale = 1.5;
-
-    var newWidth = zoomIn ? width * scale : width / scale;
-    var newHeight = zoomIn ? height * scale : height / scale;
-    var newLeft = x >= left && x < left + width
-        ? left + (width - newWidth) * ((x-left)/width)
-        : left + (width - newWidth) / 2;
-    var newTop = y >= top && y <= top + height
-        ? top + (height - newHeight) * ((y-top)/height)
-        : top + (height - newHeight) / 2;
-
-    if(newWidth >= 1 && newHeight >= 1) {
-        this._$img.attr('data-busy', '1');
-        this._$img.css('transition', 'all 0.3s linear 0s');
-        this._$img.css('left', newLeft + 'px');
-        this._$img.css('top', newTop + 'px');
-        this._$img.css('width', newWidth + 'px');
-        this._$img.css('height', newHeight + 'px');
-
-        this._showInfo(this._rawWidth, this._rawHeight, newWidth / this._rawWidth);
-    }
+	this._showInfo(this._rawWidth, this._rawHeight, this._scale);
 
     e.preventDefault();
     return false;
