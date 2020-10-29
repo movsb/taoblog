@@ -1,9 +1,11 @@
 {{define "custom_header"}}
 <style>
-#content > ul, .status > ul, #all-posts {
-    list-style: none;
-    padding-left: 2em;
-    margin-left: 0;
+
+#latest-comment-list > li > div {
+    overflow: hidden;
+}
+#latest-comment-list > li > div > span {
+    float: right; 
 }
 
 /* TODO 这个最大宽度应该是变量 */
@@ -31,12 +33,12 @@
 
 <h2>近期评论</h2>
 {{ if .Home.Comments }}
-<ul>
+<ul id=latest-comment-list>
 {{range .Home.Comments}}
-    <li style="margin-bottom: 8px; overflow: hidden;">
-        <b>{{.Author}}</b>：{{.Content}}
-        <span style="float: right;">《<a href="/{{.PostId}}/#comments">{{.PostTitle}}</a>》</span>
-    </li>
+	<li><div>
+		<b>{{.Author}}</b>：{{.Content}}
+		<span>《<a href="/{{.PostId}}/#comments">{{.PostTitle}}</a>》</span>
+	</div></li>
 {{end}}
 </ul>
 {{ else }}

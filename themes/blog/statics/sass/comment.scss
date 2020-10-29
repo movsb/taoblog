@@ -39,7 +39,7 @@
     padding: 0;
     list-style: none;
 
-    .comment-replies ol {
+    .comment-replies > ol {
         padding: 0;
         list-style: none;
     }
@@ -84,6 +84,7 @@
             margin-bottom: 0.5em;
             margin-top: 0;
             padding-left: 0.4em;
+            list-style-type: reset;
             &:not(.html-content) {
 				white-space: pre-wrap;
 			}
@@ -94,16 +95,12 @@
 			}
         }
 
-		.comment-replies li {
+		.comment-replies > ol > li {
 				padding: 1em 0px 0em 1em;
 				border-top: 1px dashed $border_color_light;
 				@media (prefers-color-scheme: dark) {
 					border-top: 1px dashed $border_color_dark;
 				}
-        }
-		.comment-replies .html-content li {
-				padding: unset;
-				border-top: unset;
         }
 
         .toolbar {

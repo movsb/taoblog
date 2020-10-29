@@ -11,13 +11,12 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/movsb/taoblog/modules/canonical"
-
 	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/canonical"
 	"github.com/movsb/taoblog/service"
 	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
