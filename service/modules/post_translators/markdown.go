@@ -13,21 +13,33 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"text/template"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 )
 
 // MarkdownTranslator ...
 type MarkdownTranslator struct {
+	once sync.Once
 }
+
+var referencesKind ast.NodeKind
 
 // Translate ...
 func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string) (string, error) {
+	me.once.Do(func() {
+		referencesKind = ast.NewNodeKind(`references`)
+	})
+
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
@@ -42,32 +54,110 @@ func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string
 		goldmark.WithExtensions(mathjax.MathJax),
 	)
 
+	pCtx := parser.NewContext()
 	sourceBytes := []byte(source)
-	doc := md.Parser().Parse(text.NewReader(sourceBytes))
+	doc := md.Parser().Parse(
+		text.NewReader(sourceBytes),
+		parser.WithContext(pCtx),
+	)
 
 	if cb == nil {
 		cb = &Callback{}
 	}
 
-	if cb.SetTitle != nil {
-		for p := doc.FirstChild(); p != nil; p = p.NextSibling() {
-			if p.Kind() == ast.KindHeading {
-				heading := p.(*ast.Heading)
-				switch heading.Level {
-				case 1:
-					title := string(heading.Text(sourceBytes))
+	maxDepth := 10000 // this is to avoid unwanted infinite loop.
+	n := 0
+	for p := doc.FirstChild(); p != nil && n < maxDepth; n++ {
+		switch {
+		case p.Kind() == ast.KindHeading:
+			heading := p.(*ast.Heading)
+			switch heading.Level {
+			case 1:
+				title := string(heading.Text(sourceBytes))
+				if cb.SetTitle != nil {
 					cb.SetTitle(title)
+				}
 
-					parent := heading.Parent()
-					parent.RemoveChild(parent, heading)
+				p = p.NextSibling()
+				parent := heading.Parent()
+				parent.RemoveChild(parent, heading)
+				continue
+			}
+		case p.Kind() == ast.KindHTMLBlock:
+			block := p.(*ast.HTMLBlock)
+			if block.HTMLBlockType == 7 { // https://spec.commonmark.org/0.29/#html-blocks
+				if block.Lines().Len() == 1 {
+					line := block.Lines().At(0)
+					raw := string(sourceBytes[line.Start:line.Stop])
+					raw = strings.ReplaceAll(raw, " ", "")
+					if strings.Contains(raw, `<references/>`) {
+						n := &_Ref{
+							raw: genRefs(pCtx.References()),
+						}
+						p.Parent().ReplaceChild(p.Parent(), p, n)
+						p = n
+						continue
+					}
 				}
 			}
 		}
+		p = p.NextSibling()
+	}
+	if n == maxDepth {
+		panic(`max depth`)
+	}
+
+	rdr := md.Renderer()
+	if reg, ok := rdr.(renderer.NodeRendererFuncRegisterer); ok {
+		reg.Register(referencesKind, renderRefs)
 	}
 
 	buf := bytes.NewBuffer(nil)
-	err := md.Renderer().Render(buf, []byte(source), doc)
+	err := rdr.Render(buf, []byte(source), doc)
 	return buf.String(), err
+}
+
+func genRefs(refs []parser.Reference) string {
+	t := template.Must(template.New(`gen-refs`).Parse(`<li><a title="{{printf "%s" .Title}}" href="{{printf "%s" .Destination}}">{{or .Title .Destination | printf "%s"}}</a></li>`))
+	w := bytes.NewBufferString("<ol class=references>\n")
+	for _, ref := range refs {
+		err := t.Execute(w, ref)
+		if err != nil {
+			panic(err)
+		}
+		w.WriteByte('\n')
+	}
+	w.WriteString(`</ol>`)
+	return w.String()
+}
+
+type _Ref struct {
+	ast.BaseBlock
+	raw string
+}
+
+// Dump implements Node.Dump .
+func (n *_Ref) Dump(source []byte, level int) {
+	ast.DumpHelper(n, source, level, nil, nil)
+}
+
+// Type implements Node.Type .
+func (n *_Ref) Type() ast.NodeType {
+	return ast.TypeBlock
+}
+
+// Kind implements Node.Kind.
+func (n *_Ref) Kind() ast.NodeKind {
+	return referencesKind
+}
+
+func renderRefs(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
+	if !entering {
+		return ast.WalkContinue, nil
+	}
+	r := n.(*_Ref)
+	_, err := writer.WriteString(r.raw)
+	return ast.WalkContinue, err
 }
 
 func size(base string, path string) (int, int) {
