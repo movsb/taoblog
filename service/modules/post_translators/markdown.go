@@ -83,22 +83,20 @@ func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string
 				parent.RemoveChild(parent, heading)
 				continue
 			}
-		case p.Kind() == ast.KindHTMLBlock:
-			block := p.(*ast.HTMLBlock)
-			if block.HTMLBlockType == 7 { // https://spec.commonmark.org/0.29/#html-blocks
-				if block.Lines().Len() == 1 {
-					line := block.Lines().At(0)
-					raw := string(sourceBytes[line.Start:line.Stop])
-					raw = strings.ReplaceAll(raw, " ", "")
-					if strings.Contains(raw, `<references/>`) {
-						n := &_Ref{
-							raw: genRefs(pCtx.References()),
-						}
-						p.Parent().ReplaceChild(p.Parent(), p, n)
-						p = n
-						continue
-					}
+		case p.Kind() == ast.KindParagraph:
+			para := p.(*ast.Paragraph)
+			if para.Lines().Len() != 1 {
+				break
+			}
+			line := para.Lines().At(0)
+			raw := string(sourceBytes[line.Start:line.Stop])
+			if raw == `[REFERENCES]` {
+				n := &_Ref{
+					raw: genRefs(pCtx.References()),
 				}
+				p.Parent().ReplaceChild(p.Parent(), p, n)
+				p = n
+				continue
 			}
 		}
 		p = p.NextSibling()
