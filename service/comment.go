@@ -168,7 +168,7 @@ func (s *Service) GetAllCommentsCount() int64 {
 
 // CreateComment ...
 func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
-	user := s.auth.AuthContext(ctx)
+	user := s.auth.User(ctx)
 
 	// TODO this is temp
 	// TODO not http only

@@ -19,7 +19,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/sitemap"
 	"github.com/movsb/taoblog/themes/data"
 	"github.com/movsb/taoblog/themes/modules/handle304"
-	"go.uber.org/zap"
 )
 
 // Blog ...
@@ -342,8 +341,8 @@ func (b *Blog) QuerySpecial(w http.ResponseWriter, req *http.Request, file strin
 	return false
 }
 
+// QueryStatic ...
 func (b *Blog) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	path := filepath.Join(b.base, `statics`, file)
-	zap.L().Info(path)
 	http.ServeFile(w, req, path)
 }

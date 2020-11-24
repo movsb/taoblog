@@ -42,7 +42,7 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 
 // MustListPosts ...
 func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
-	user := s.auth.AuthContext(ctx)
+	user := s.auth.User(ctx)
 	var posts models.Posts
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
 	stmt.WhereIf(user.IsGuest(), "status = 'public'")

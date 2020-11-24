@@ -21,32 +21,34 @@ type AuthContext struct {
 	User *User
 }
 
+// User entity.
 type User struct {
 	ID int64
 }
 
-var guest = &User{
-	ID: 0,
-}
+var (
+	guest = &User{ID: 0}
+	admin = &User{ID: 1}
+)
 
-var admin = &User{
-	ID: 1,
-}
-
+// IsGuest ...
 func (u *User) IsGuest() bool {
 	return u.ID == 0
 }
 
+// IsAdmin ...
 func (u *User) IsAdmin() bool {
 	return u.ID != 0
 }
 
+// MustBeAdmin will panic if not admin.
 func (u *User) MustBeAdmin() {
 	if !u.IsAdmin() {
 		panic(status.Error(codes.PermissionDenied, `not enough permission`))
 	}
 }
 
+// Context creates a new context containing the user.
 func (u *User) Context(parent context.Context) context.Context {
 	if parent == nil {
 		parent = context.TODO()
@@ -123,7 +125,7 @@ func (o *Auth) AuthGRPC(ctx context.Context) *User {
 			}
 		}
 	}
-	return o.AuthContext(ctx)
+	return o.User(ctx)
 }
 
 func (o *Auth) AuthGoogle(token string) *User {
@@ -189,13 +191,15 @@ func (o *Auth) AuthGitHub(code string) *User {
 	return guest
 }
 
-func (a *Auth) AuthContext(ctx context.Context) *User {
+// User ...
+func (a *Auth) User(ctx context.Context) *User {
 	if value, ok := ctx.Value(ctxAuthKey{}).(AuthContext); ok {
 		return value.User
 	}
 	return guest
 }
 
+// MakeCookie ...
 func (a *Auth) MakeCookie(w http.ResponseWriter, r *http.Request) {
 	agent := r.Header.Get("User-Agent")
 	cookie := a.sha1(agent + a.Login())

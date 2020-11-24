@@ -1,6 +1,7 @@
 package canonical
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -48,6 +49,10 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}()
 
 	path := req.URL.Path
+	if !isValidPath(path) {
+		c.renderer.Exception(w, req, errors.New(`invalid request path`))
+		return
+	}
 
 	if req.Method == http.MethodGet || req.Method == http.MethodOptions {
 		if regexpHome.MatchString(path) {
@@ -130,5 +135,23 @@ func isCategoryPath(path string) bool {
 	if _, ok := nonCategoryNames[first]; ok {
 		return false
 	}
+	return true
+}
+
+func isValidPath(path string) bool {
+	if len(path) == 0 || path[0] != '/' {
+		return false
+	}
+
+	// We reject all requests with path containing `.` or `..` components.
+	if p := strings.Index(path, `/.`); p != -1 { // fast path
+		if strings.Index(path, `/./`) != -1 || strings.Index(path, `/../`) != -1 {
+			return false
+		}
+		if strings.HasSuffix(path, `/.`) || strings.HasSuffix(path, `/..`) {
+			return false
+		}
+	}
+
 	return true
 }
