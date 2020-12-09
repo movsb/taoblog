@@ -26,11 +26,13 @@ var sourceNames = []string{
 	"index.html",
 }
 
+// PostConfig ...
 type PostConfig struct {
-	ID    int64    `json:"id" yaml:"id"`
-	Title string   `json:"title" yaml:"title"`
-	Tags  []string `json:"tags" yaml:"tags"`
-	Slug  string   `json:"slug" yaml:"slug,omitempty"`
+	ID       int64    `json:"id" yaml:"id"`
+	Title    string   `json:"title" yaml:"title"`
+	Modified int32    `json:"modified" yaml:"modified"`
+	Tags     []string `json:"tags" yaml:"tags"`
+	Slug     string   `json:"slug" yaml:"slug,omitempty"`
 }
 
 // InitPost ...
@@ -71,6 +73,7 @@ func (c *Client) CreatePost() error {
 	}
 
 	cfg.ID = rp.Id
+	cfg.Modified = rp.Modified
 	c.savePostConfig(&cfg)
 
 	return nil
@@ -98,6 +101,7 @@ func (c *Client) GetPost() {
 	cfg.Slug = post.Slug
 	cfg.Tags = post.Tags
 	cfg.Title = post.Title
+	cfg.Modified = post.Modified
 	c.savePostConfig(&cfg)
 
 	filename := "README.md"
@@ -120,6 +124,7 @@ func (c *Client) GetPost() {
 	}
 }
 
+// SetPostStatus ...
 func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 	if id <= 0 {
 		config := c.readPostConfig()
@@ -138,6 +143,7 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 	}
 }
 
+// UpdatePost ...
 func (c *Client) UpdatePost() error {
 	p := protocols.Post{}
 	cfg := *c.readPostConfig()
@@ -149,6 +155,7 @@ func (c *Client) UpdatePost() error {
 	p.Title = cfg.Title
 	p.Tags = cfg.Tags
 	p.Slug = cfg.Slug
+	p.Modified = cfg.Modified
 
 	p.SourceType, p.Source = readSource(".")
 
@@ -165,11 +172,12 @@ func (c *Client) UpdatePost() error {
 		},
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	cfg.Title = rp.Title
 	cfg.Tags = rp.Tags
 	cfg.Slug = rp.Slug
+	cfg.Modified = rp.Modified
 	c.savePostConfig(&cfg)
 
 	return nil

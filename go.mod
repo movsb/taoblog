@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.0
 	github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
-	github.com/movsb/taorm v0.0.0-20200705123332-5667be3d9d3c
+	github.com/movsb/taorm v0.0.0-20201209183410-91bafb0b22a6
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/yuin/goldmark v1.1.30
@@ -25,3 +25,5 @@ require (
 go 1.13
 
 replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.1.31-0.20200522174842-bc0b03f265ac
+
+// replace github.com/movsb/taorm => /Users/tao/code/taorm

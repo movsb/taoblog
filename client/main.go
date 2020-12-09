@@ -110,7 +110,8 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := client.UpdatePost(); err != nil {
-				panic(err)
+				fmt.Fprintf(os.Stderr, "%v\n", err.Error())
+				os.Exit(1)
 			}
 		},
 	}
@@ -139,7 +140,8 @@ func AddCommands(rootCmd *cobra.Command) {
 			}
 
 			if err := client.UpdatePost(); err != nil {
-				panic(err)
+				fmt.Fprintf(os.Stderr, "%v\n", err.Error())
+				os.Exit(1)
 			}
 		},
 	}

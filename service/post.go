@@ -324,8 +324,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		ID: in.Post.Id,
 	}
 
+	modified := time.Now().Unix()
+
 	m := map[string]interface{}{
-		`modified`: time.Now().Unix(),
+		`modified`: modified,
 	}
 
 	var hasSourceType, hasSource bool
@@ -356,7 +358,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	if hasSourceType != hasSource {
-		panic(`source type and source must be specifed`)
+		panic(`source type and source must be specified`)
 	}
 
 	if hasSource && hasSourceType {
@@ -387,7 +389,13 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	s.TxCall(func(txs *Service) error {
-		txs.tdb.Model(p).MustUpdateMap(m)
+		res := txs.tdb.Model(p).Where(`modified=?`, in.Post.Modified).MustUpdateMap(m)
+		rowsAffected, err := res.RowsAffected()
+		if err != nil || rowsAffected != 1 {
+			op := models.Post{ID: in.Post.Id}
+			txs.tdb.Model(&op).MustFind(&op)
+			return fmt.Errorf("update failed, modified conflict: %v (modified: %v)", err, op.Modified)
+		}
 		if hasTags {
 			txs.UpdateObjectTags(p.ID, in.Post.Tags)
 		}
