@@ -1,7 +1,7 @@
 /* 内容 */
 
 #content {
-    max-width: $max_width;
+    max-width: var(--max-width);
 }
 
 #content {
@@ -14,10 +14,7 @@
 .post, .pages {
     /* 文章标题 */
     h1 {
-        color: $post_title_fg_light;
-		@media (prefers-color-scheme: dark) {
-			color: $post_title_fg_dark;
-		}
+        color: var(--title-fg);
         font-size: 1.5em;
     }
 
@@ -39,7 +36,7 @@
         }
 
         .value {
-            color: $post_meta_fg;
+            color: var(--post-meta-fg);
         }
 
         .author {
@@ -71,10 +68,7 @@
 
 .entry {
     display: block;
-	color: $post_content_fg_light;
-	@media (prefers-color-scheme: dark) {
-		color: $post_content_fg_dark;
-	}
+	color: var(--post-fg);
     text-align: justify;
     margin-bottom: 3em;
 
@@ -95,7 +89,7 @@
         }
 
         &.mono {
-            font-family: $mono_font;
+			font-family: var(--mono-font);
         }
     }
 
@@ -145,16 +139,11 @@
 		overflow: auto;
 
         th {
-            background-color: #eee;
-		}
-		@media (prefers-color-scheme: dark) {
-			th {
-				background-color: #3e3e3e;
-			}
+            background-color: var(--table-head-color);
 		}
 
         td, th {
-            border: 1px solid gray;
+            border: var(--table-border);
             padding: 0.5em;
         }
 
@@ -164,20 +153,10 @@
 	}
 
     blockquote {
-		background-color:rgba(0,0,0,.08);
-		@media (prefers-color-scheme: dark) {
-			& {
-				background-color:#393939;
-			}
-		}
+		background-color: var(--blockquote-color-bg);
         padding:1px 1.5em;
         margin:1em 0;
-        border-left:#ddd 9px solid;
-		@media (prefers-color-scheme: dark) {
-			& {
-				border-left-color:#4a4a4a;
-			}
-		}
+		border-left: var(--blockquote-border-left);
     }
 
     figure {
@@ -186,7 +165,7 @@
     p > img:only-child {
         display: block;
         margin: auto;
-        box-shadow: 0 0 3px gray;
+        box-shadow: var(--box-shadow);
     }
 }
 
@@ -195,27 +174,24 @@
     .entry div.toc {
         position: fixed;
         box-sizing: border-box;
-        padding: 10px;
-        top: 3%;
-        right: 20px;
-        max-height: 94%;
-        max-width: 300px;
+        padding: 1rem;
+        top: 1rem;
+        right: 1rem;
+        max-height: 45%;
+        max-width: 320px;
         overflow: auto;
-        border: 1px solid $toc_border_color;
+        border: 1px solid var(--border-color);
         line-height: 1.5em;
-		color: $toc_fg_light;
-		background-color: $toc_bg_light;
-		@media (prefers-color-scheme: dark) {
-			color: $toc_fg_dark;
-			background-color: $toc_bg_dark;
-		}
+		color: var(--color-fg);
+		background-color: var(--color-bg);
 		z-index: 1000;
+		opacity: 0.88;
     }
 }
 
 .entry {
     div.toc {
-        h2, h3 {
+        .h2 {
             margin: 0px;
             font-size: 20px;
         }
@@ -230,7 +206,7 @@
         }
 
         ul:first-of-type {
-            padding-left: 2em;
+            padding-left: 1em;
             margin-bottom: 0px;
         }
     }
@@ -251,10 +227,7 @@
 .post .related {
     margin-bottom: 3em;
     h3 {
-        border-bottom: 1px solid $border_color_light;
-		@media (prefers-color-scheme: dark) {
-			border-bottom: 1px solid $border_color_dark;
-		}
+        border-bottom: 1px solid var(--border-color);
     }
 
     .no-related {

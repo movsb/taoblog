@@ -1,50 +1,55 @@
-$root_font_size:  15px;
+:root {
+--font-size:                15px;
+--mono-font:                Monaco, Consolas, monospace, Courier;
+--max-width:                850px;
+--color-code-span:          #ff0080;
+--border-color-hover:       #c0c0c0;
+--border-radius:            3px;
+--button-color-fg:          white;
+--button-color-bg:          rgba(60,60,60,0.6);
+--button-color-hover:       rgba(20,20,20,0.7);
+--toolbar-imgview-bg:       rgba(0,0,0,0.85);
+--post-meta-fg:             #5a5a5a;
+--a-fg:                     #3470ccc4;
+--a-fg-visited:             inherit;
+--table-border:             1px solid gray;
+--box-shadow:               0 0 3px gray;
+}
+
+@media (prefers-color-scheme: light) {
+:root {
+--color-bg:                 white;
+--color-fg:                 #292929;
+--border-color:             #ddd;
+--title-fg:                 #333;
+--post-fg:                  #292929;
+--code-bg:                  rgba(220,220,220,0.5);
+--toc-fg:                   #141414;
+--toc-bg:                   rgba(255,255,255,0.9);
+--table-head-color:         #eee;
+--blockquote-color-bg:      rgba(0,0,0,0.08);
+--blockquote-border-left:   #ddd 9px solid;
+}
+}
+
+@media (prefers-color-scheme: dark) {
+:root {
+--color-bg:                 #292929;
+--color-fg:                 #a4a4a4;
+--border-color:             #666;
+--title-fg:                 #eee;
+--post-fg:                  #a4a4a4;
+--code-bg:                  rgb(72,72,72);
+--toc-fg:                   #141414;
+--toc-bg:                   rgba(255,255,255,0.9);
+--table-head-color:         #3e3e3e;
+--blockquote-color-bg:      #393939;
+--blockquote-border-left:   #4a4a4a 9px solid;
+}
+}
+
 $max_width:       850px;
 
-/* global */
-$selection_fg:      white;
-$selection_bg:      #ff608d;
-
-$body_fg_light:          #292929;
-$body_bg_light:          white;
-$body_fg_dark:           #a4a4a4;
-$body_bg_dark:           $body_fg_light;
-
-
-$tt_fg:                  #ff0080;
-$a_fg_light:             #005782;
-$a_visited_fg_light:     #924646;
-$a_fg_dark:              #999;
-$a_visited_fg_dark:      #777;
-$a_active_fg_light:      #faa700;
-
-$border_color_light:     #ddd;
-$border_color_dark:      #666;
-$border_color_hover:#c0c0c0;
-
-$btn_fg:            white;
-$btn_bg:            rgba(60,60,60,0.6);
-$btn_hover_bg:      rgba(20,20,20,0.7);
-
-
-/* header */
-$header_wrapper_desktop_bg:             none;
-$header_wrapper_desktop_border_right:   #f66;
-
-$header_wrapper_mobile_bg:              white;
-
-
-/* footer */
-$footer_column_ul_a_fg:                 inherit;
-
-
-/* toolbar */
-$toolbar_tips_bg:               rgba(255,100,100,0.93);
-$toolbar_tips_fg:               white;
-$toolbar_imgview_bg:            rgba(0,0,0,0.85);
-
-/* content */
-/* 色彩 */
 .fg-black    { color: black; }
 .fg-blue     { color: blue; }
 .fg-green    { color: green; }
@@ -62,36 +67,3 @@ $toolbar_imgview_bg:            rgba(0,0,0,0.85);
 .bg-magenta  { background-color: magenta; }
 .bg-yellow   { background-color: yellow; }
 .bg-white    { background-color: white; }
-
-$post_title_fg_light:           #333333;
-$post_title_fg_dark:            #eeeeee;
-$post_meta_fg:                  #5a5a5a;
-$post_content_fg_light:         #292929;
-$post_content_fg_dark:          #a4a4a4;
-$post_pre_quote_bg:             aliceblue;
-$post_line_code_border_color:   rgb(201,163,163);
-$post_code_bg_light:            rgba(220,220,220,0.5);
-$post_code_bg_dark:             rgb(72,72,72);
-
-$toc_fg_light:                  #141414;
-$toc_bg_light:                  rgba(255,255,255,0.9);
-$toc_fg_dark:                   $body_fg_dark;
-$toc_bg_dark:                   $body_bg_dark;
-$toc_border_color:              $border_color_light;
-
-/* comment */
-$comment_submit_bg:             rgba(113,113,113,0.7);
-$comment_submit_fg:             white;
-$comment_submit_hover_bg:       rgb(113,113,113);
-$comment_submit_submitting_fg:  red;
-$comment_submit_succeeded_fg:   green;
-$comment_submit_failed_fg:      green;
-$comment_nickname_fg_light:     #003b87;
-$comment_nickname_fg_dark:      inherit;
-$comment_author_fg:             #ff4040;
-$comment_date_fg:               #cfcfcf;
-$comment_needed_fg:             red;
-$comment_content_2_fg:          white;
-$comment_content_2_bg:          transparent;
-
-$mono_font: Monaco, Consolas, monospace, Courier;

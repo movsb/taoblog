@@ -1,7 +1,7 @@
 /* 头部 */
 
 #header .content {
-    max-width: $max_width;
+    max-width: var(--max-width);
 }
 
 #header {
@@ -73,23 +73,13 @@
         }
 
         .search {
-            height: 1.8em;
-            margin: 0.5em;
-            .icon {
-                user-select: none;
-                -moz-user-select: none;
-                height: 1em;
-                vertical-align: middle;
-            }
-
             input {
                 color: #fff6;
                 border: 1px solid #a9a9a933;
                 background-color: transparent;
-                margin-left: -1.8em;
-                padding: 0px 3px 0px 2em;
+                padding:  4px 6px;
                 width: 100px;
-                height: 100%;
+				height: 2em;
             }
         }
     }
@@ -116,7 +106,10 @@
             .search {
                 position: absolute;
                 right: 10px;
-                top: 10px;
+				top: 10px;
+				input {
+					position: relative;
+				}
             }
         }
     }

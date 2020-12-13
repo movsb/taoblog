@@ -15,11 +15,7 @@
 /* 评论标题 */
 #comment-title {
     font-size: 1.5em;
-	border-bottom: 1px solid $border_color_light;
-	@media (prefers-color-scheme: dark) {
-		border-bottom: 1px solid $border_color_dark;
-	}
-
+	border-bottom: 1px solid var(--border-color);
     .count-wrap {
         color: #cfcfcf;
         font-weight: normal;
@@ -97,10 +93,7 @@
 
 		.comment-replies > ol > li {
 				padding: 1em 0px 0em 1em;
-				border-top: 1px dashed $border_color_light;
-				@media (prefers-color-scheme: dark) {
-					border-top: 1px dashed $border_color_dark;
-				}
+				border-top: 1px dashed var(--border-color);
         }
 
         .toolbar {
@@ -113,20 +106,9 @@
             a {
                 cursor: pointer;
                 margin-right: 0.5em;
+                color: inherit;
             }
         }
-    }
-}
-
-/* 评论提交 */
-#comment-submit {
-    padding: 5px;
-    background-color: $comment_submit_bg;
-    color: $comment_submit_fg;
-    cursor: pointer;
-
-    &:hover {
-        background-color: $comment_submit_hover_bg;
     }
 }
 
@@ -143,11 +125,6 @@
     }
 
     .nickname {
-		color: $comment_nickname_fg_light;
-		@media (prefers-color-scheme: dark) {
-			color: $comment_nickname_fg_dark;
-		}
-
         i.fa {
             margin-right: 3px;
         }
@@ -157,7 +134,6 @@
     }
 
     .author {
-        color: $comment_author_fg;
     }
 
     .date {
@@ -165,7 +141,6 @@
         font-size: 0.9em;
         position: relative;
         top: -4px;
-        color: $comment_date_fg;
     }
 }
 
@@ -183,12 +158,12 @@
         background-color: rgba(255,255,255,0.95);
         padding: 10px;
         border: 1px solid grey;
-        box-shadow: 0px 0px 2px;
+        border-radius: var(--border-radius);
         display: block;
 
         @media screen and (min-width: 501px) {
-            width: 560px;
-            height: 370px;
+            width: 475px;
+            height: 300px;
             min-width: 400px;
             min-height: 200px;
             max-width: 90%;
@@ -286,7 +261,7 @@
 	}
 	@media (prefers-color-scheme: dark) {
 		.comment-form-div-1 {
-			background-color: $body_bg_dark;
+			background-color: var(--color-bg);
 			opacity: 0.9;
 			img {
 				filter: invert(80%);

@@ -23,7 +23,7 @@
     position: fixed;
     z-index: 1000000;
     display: none;
-    background-color: $toolbar_imgview_bg;
+    background-color: var(--toolbar-imgview-bg);
     left: 0px;
     top: 0px;
     right: 0px;

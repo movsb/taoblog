@@ -1,27 +1,16 @@
-::-moz-selection {
-    color: $selection_fg;
-    background-color: $selection_bg;
-}
-
 .clearfix {
     clear: both;
     display: block;
 }
 
 body {
-    color: $body_fg_light;
-    background-color: $body_bg_light;
+    color: var(--color-fg);
+    background-color: var(--color-bg);
     margin: 0px auto;
     padding: 0px;
-    font: $root_font_size "Microsoft YaHei", Georgia, 'Noto Sans', sans-serif {
+    font: var(--font-size) "Microsoft YaHei", Georgia, 'Noto Sans', sans-serif {
 
     }
-}
-@media (prefers-color-scheme: dark) {
-	body {
-		color: $body_fg_dark;
-		background-color: $body_bg_dark;
-	}
 }
 
 @media screen and (max-width: $max_width) {
@@ -30,20 +19,12 @@ body {
     }
 }
 
-a {
-    text-decoration: none;
-    &:hover {
-        text-decoration: underline;
-    }
-}
-
-
 .mono, tt, code {
-    font-family: $mono_font;
+	font-family: var(--mono-font);
 }
 
 tt {
-    color: $tt_fg;
+    color: var(--color-code-span);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -75,37 +56,26 @@ h6 { font-size: 1.0em; }
     user-select: none;
     padding: 6px;
     cursor: pointer;
-    color: $btn_fg;
+    color: var(--button-color-fg);
     transition: all 0s;
-    background-color: $btn_bg;
+    background-color: var(--button-color-bg);
 
     &:hover {
-        background-color: $btn_hover_bg;
+        background-color: var(--button-color-hover);
     }
 }
 
 a {
     text-decoration: none;
-    color: $a_fg_light;
-    &:hover {
-        text-decoration: underline;
-    }
-    &:visited {
-        color: $a_visited_fg_light;
-    }
-    &:focus {
-        outline: none;
-    }
-}
-@media (prefers-color-scheme: dark) {
-	a {
-		color: $a_fg_dark;
-		&:visited {
-			color: $a_visited_fg_dark;
-		}
-		&:active {
-			color: $a_active_fg_light;
-		}
+    color: var(--a-fg);
+	&:hover {
+		text-decoration: underline;
+	}
+	&:visited {
+		color: var(--a-fg-visited);
+	}
+	&:focus {
+		outline: none;
 	}
 }
 
@@ -116,27 +86,6 @@ button, input[type=submit] {
     }
 }
 
-button {
-	cursor: pointer;
-	padding: 5px 7px;
-	border-radius: 5px;
-	font-size: 100%;
-	border-style: none;
-	color: $body_fg_light;
-	background-color: $border_color_light;
-	transition: all 0.2s;
-	@media (prefers-color-scheme: dark) {
-		color: $body_fg_dark;
-		background-color: $border_color_dark;
-	}
-	&:hover {
-		opacity: 0.8;
-	}
-	&:active {
-		opacity: 0.6;
-	}
-}
-
 input[type=text], a, textarea {
     &:focus {
         outline: none;
@@ -144,34 +93,34 @@ input[type=text], a, textarea {
 }
 @media (prefers-color-scheme: dark) {
 	input[type=text], textarea {
-		color: $body_fg_dark;
-		background-color: $body_bg_dark;
+		color: var(--color-fg);
+		background-color: var(--color-bg);
 	}
 }
 
-input[type=text], textarea {
-    border: 1px solid $border_color_light;
-	@media (prefers-color-scheme: dark) {
-		border: 1px solid $border_color_dark;
-	}
+input[type=text], input[type=submit], textarea, button {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
     padding: 5px 7px;
+}
+
+button, input[type=submit] {
+	color: inherit;
+	background-color: transparent;
+}
+
+input[type=text]:hover, input[type=submit]:hover, textarea:hover, button:hover {
+    border: 1px solid var(--border-color-hover);
 }
 
 a, input, textarea {
 	transition: all 0.2s ease-out;
 }
 
-input[type=text]:hover, textarea:hover {
-    border: 1px solid $border_color_hover;
-}
-
 pre {
     padding: 1em;
     margin: 1em 0;
-	background-color: $post_code_bg_light;
-	@media (prefers-color-scheme: dark) {
-		background-color: $post_code_bg_dark;
-	}
+	background-color: var(--code-bg);
     max-height: 600px;
     max-height: 80vh;
     border-radius: 0.3em;

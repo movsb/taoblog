@@ -45,7 +45,7 @@
         }
     }
 
-    $('.entry .toc h2, .entry .toc h3').replaceWith('<div style="margin-bottom: -10px;"><h2 style="float: left; margin-right: 20px;">目录</h2><span id="hide-toc" class="no-sel" style="float: right; cursor: pointer;"></span><div style="clear: both;"></div></div>');
+    $('.entry .toc h2, .entry .toc h3').replaceWith('<div style="margin-bottom: -10px;"><div class=h2 style="float: left; margin-right: 20px;">目录</div><span id="hide-toc" class="no-sel" style="float: right; cursor: pointer;"></span><div style="clear: both;"></div></div>');
 
     hide_toc(true);
 

@@ -66,11 +66,11 @@
     <div class="related clearfix">
         <h3>相关文章</h3>
         {{ if $dot.Post.Post.Related }}
-        <ol>
+        <ul>
         {{ range $dot.Post.Post.Related }}
             <li><a href="/{{.ID}}/">{{.Title}}</a></li>
         {{ end }}
-        </ol>
+        </ul>
         {{else}}
             <div class="no-related">没有相关文章。</div>
         {{end}}
