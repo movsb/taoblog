@@ -274,7 +274,17 @@ func (b *Blog) QueryByTags(w http.ResponseWriter, req *http.Request, tags []stri
 }
 
 func (b *Blog) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
-	path := b.service.GetFile(postID, file)
+	file = filepath.Clean(file)
+	fp, err := b.service.Store().Open(postID, file)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	if fp != nil {
+		defer fp.Close()
+	}
 
 	redir := true
 
@@ -294,19 +304,29 @@ func (b *Blog) QueryFile(w http.ResponseWriter, req *http.Request, postID int64,
 	}
 	// if file isn't in local, we should redirect
 	if !redir {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
+		if fp == nil {
 			redir = true
 		}
 	}
 
 	if redir {
-		remotePath := fileHost + "/" + path
-		w.Header().Set(`Location`, remotePath)
+		u, err := url.Parse(fileHost) // TODO(movsb): init once
+		if err != nil {
+			panic(err)
+		}
+		u.Path = filepath.Join(u.Path, `files`, fmt.Sprint(postID), file) // TODO(movsb): hardcoded
+		w.Header().Set(`Location`, u.String())
 		w.WriteHeader(307)
 	} else {
-		http.ServeFile(w, req, path)
+		stat, err := fp.Stat()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.ServeContent(w, req, stat.Name(), stat.ModTime(), fp)
 	}
 }
+
 func (b *Blog) userMustCanSeePost(req *http.Request, post *protocols.Post) {
 	user := b.auth.AuthCookie2(req)
 	if user.IsGuest() && post.Status != "public" {

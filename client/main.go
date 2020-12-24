@@ -96,7 +96,7 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	postsCmd.AddCommand(postsCreateCmd)
 	postsUploadCmd := &cobra.Command{
-		Use:   `upload`,
+		Use:   `upload <files...>`,
 		Short: `Upload post assets, like images`,
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

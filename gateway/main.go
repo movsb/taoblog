@@ -74,9 +74,10 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 
 	handle(`GET`, `/v3/files/{post_id}/{file=**}`, g.GetFile) // for mirrors
 
+	handle(`GET`, `/v3/posts/{post_id}/files`, g.ListFiles)
 	handle(`GET`, `/v3/posts/{post_id}/files/{file=**}`, g.GetFile)
 	handle(`POST`, `/v3/posts/{post_id}/files/{file=**}`, g.CreateFile)
-	handle(`DELETE`, `/v3/posts/{post_id}/files/{file=**}`, g.DeleteFile)
+	// handle(`DELETE`, `/v3/posts/{post_id}/files/{file=**}`, g.DeleteFile)
 
 	return nil
 }

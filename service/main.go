@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
 	"math/rand"
 	"net"
 	"time"
@@ -16,7 +15,8 @@ import (
 	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
-	"github.com/movsb/taoblog/service/modules/file_managers"
+	"github.com/movsb/taoblog/service/modules/storage"
+	"github.com/movsb/taoblog/service/modules/storage/local"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,13 +27,6 @@ const (
 	GrpcAddress = "127.0.0.1:2563"
 )
 
-// IFileManager exposes interfaces to manage upload files.
-type IFileManager interface {
-	Put(pid int64, name string, r io.Reader) error
-	Delete(pid int64, name string) error
-	List(pid int64) ([]string, error)
-}
-
 // Service implements IServer.
 type Service struct {
 	cfg    *config.Config
@@ -41,18 +34,23 @@ type Service struct {
 	tdb    *taorm.DB
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
-	fmgr   IFileManager
+	store  storage.Store
 	cache  *memory_cache.MemoryCache
 }
 
 // NewService ...
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
+	localStorage, err := local.NewLocal(cfg.Data.File.Path)
+	if err != nil {
+		panic(err)
+	}
+
 	s := &Service{
 		cfg:   cfg,
 		db:    db,
 		tdb:   taorm.NewDB(db),
 		auth:  auther,
-		fmgr:  file_managers.NewLocalFileManager(cfg.Data.File.Path),
+		store: localStorage,
 		cache: memory_cache.NewMemoryCache(time.Minute * 10),
 	}
 
@@ -113,6 +111,11 @@ func (s *Service) Ping(ctx context.Context, in *protocols.PingRequest) (*protoco
 // Config ...
 func (s *Service) Config() *config.Config {
 	return s.cfg
+}
+
+// Store ...
+func (s *Service) Store() storage.Store {
+	return s.store
 }
 
 // TxCall ...
