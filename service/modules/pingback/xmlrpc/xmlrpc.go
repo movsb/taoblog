@@ -136,8 +136,11 @@ func isContentTypeXML(ct string) bool {
 	return mt == contentType
 }
 
-func newIntValue(i int) Value       { return Value{Int: &i} }
-func newStringValue(s string) Value { return Value{String: &s} }
+// NewIntValue ...
+func NewIntValue(i int) Value { return Value{Int: &i} }
+
+// NewStringValue ...
+func NewStringValue(s string) Value { return Value{String: &s} }
 
 // WriteFault ...
 func WriteFault(w http.ResponseWriter, code int, msg string) {
@@ -146,11 +149,11 @@ func WriteFault(w http.ResponseWriter, code int, msg string) {
 			Members: &[]Member{
 				{
 					Name:  `faultCode`,
-					Value: newIntValue(code),
+					Value: NewIntValue(code),
 				},
 				{
 					Name:  `faultString`,
-					Value: newStringValue(msg),
+					Value: NewStringValue(msg),
 				},
 			},
 		},
