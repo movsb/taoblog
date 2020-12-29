@@ -111,3 +111,32 @@ func ping(ctx context.Context, source string, target string) error {
 	zap.L().Info(`pingback: succeeded`, zap.String(`source`, source), zap.String(`target`, target))
 	return nil
 }
+
+// Handler ...
+func Handler(fn func(w xmlrpc.ResponseWriter, source, target string)) http.HandlerFunc {
+	return xmlrpc.Handler(func(w xmlrpc.ResponseWriter, method string, args []xmlrpc.Param) {
+		if method != pingbackMethod {
+			zap.L().Info(`pingback: unknown method`, zap.String(`method`, method))
+			w.WriteFault(0, `unknown method`)
+			return
+		}
+		if len(args) != 2 {
+			zap.L().Info(`pingback: two args required`)
+			w.WriteFault(0, `two args required`)
+			return
+		}
+		var source, target *string
+		if p := args[0].Value.String; p != nil {
+			source = p
+		}
+		if p := args[1].Value.String; p != nil {
+			target = p
+		}
+		if source == nil || target == nil {
+			zap.L().Info(`pingback: two string args required`)
+			w.WriteFault(0, `both source and target must be of type string`)
+			return
+		}
+		fn(w, *source, *target)
+	})
+}

@@ -107,7 +107,7 @@ func TestSend(t *testing.T) {
 
 func TestServe(t *testing.T) {
 	t.SkipNow()
-	http.HandleFunc(`/xmlrpc`, Handler(func(method string, args []Param) {
+	http.HandleFunc(`/xmlrpc`, Handler(func(w ResponseWriter, method string, args []Param) {
 		fmt.Println(method, args)
 	}))
 	http.ListenAndServe(`:8080`, nil)

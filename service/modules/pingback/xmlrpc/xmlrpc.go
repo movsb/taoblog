@@ -142,8 +142,29 @@ func NewIntValue(i int) Value { return Value{Int: &i} }
 // NewStringValue ...
 func NewStringValue(s string) Value { return Value{String: &s} }
 
-// WriteFault ...
-func WriteFault(w http.ResponseWriter, code int, msg string) {
+// ResponseWriter ...
+type ResponseWriter interface {
+	WriteString(msg string)
+	WriteFault(code int, msg string)
+}
+
+type _ResponseWriter struct {
+	wrote bool
+	w     http.ResponseWriter
+}
+
+func (r *_ResponseWriter) WriteString(msg string) {
+	resp := MethodResponse{
+		Params: &[]Param{
+			{
+				Value: NewStringValue(msg),
+			},
+		},
+	}
+	r.write(&resp)
+}
+
+func (r *_ResponseWriter) WriteFault(code int, msg string) {
 	faultResp := MethodResponse{
 		Fault: &Value{
 			Members: &[]Member{
@@ -158,43 +179,52 @@ func WriteFault(w http.ResponseWriter, code int, msg string) {
 			},
 		},
 	}
-	b, _ := xml.MarshalIndent(faultResp, ``, `  `)
-	w.Header().Set(`Content-Type`, contentType)
-	w.Header().Set(`Content-Length`, strconv.Itoa(len(b)))
-	w.Write(b)
+	r.write(&faultResp)
+}
+
+func (r *_ResponseWriter) write(v interface{}) {
+	if r.wrote {
+		return
+	}
+	b, _ := xml.MarshalIndent(v, ``, `  `)
+	r.w.Header().Set(`Content-Type`, contentType)
+	r.w.Header().Set(`Content-Length`, strconv.Itoa(len(b)))
+	r.w.Write(b)
+	r.wrote = true
 }
 
 // Handler ...
-func Handler(callback func(method string, args []Param)) http.HandlerFunc {
-	fn := func(w http.ResponseWriter, r *http.Request) {
+func Handler(fn func(w ResponseWriter, method string, args []Param)) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			zap.L().Info(`xmlrpc: invalid method`, zap.String("method", r.Method))
 			http.Error(w, `XML-RPC server accepts POST requests only.`, http.StatusMethodNotAllowed)
 			return
 		}
 
+		rw := &_ResponseWriter{w: w}
+
 		// The Content-Type is text/xml.
 		ct := r.Header.Get("Content-Type")
 		if !isContentTypeXML(ct) {
 			zap.L().Info(`xmlrpc: invalid content type`, zap.String("Content-Type", ct))
-			WriteFault(w, -1, `invalid content type`)
+			rw.WriteFault(-1, `invalid content type`)
 			return
 		}
 
 		call := MethodCall{}
 		if err := xml.NewDecoder(r.Body).Decode(&call); err != nil {
 			zap.L().Info(`xmlrpc: malformed request`, zap.Error(err))
-			WriteFault(w, -1, `malformed request`)
+			rw.WriteFault(-1, `malformed request`)
 			return
 		}
 
 		if call.MethodName == `` {
 			zap.L().Info(`xmlrpc: method name required`)
-			WriteFault(w, -1, `method name required`)
+			rw.WriteFault(-1, `method name required`)
 			return
 		}
 
-		callback(call.MethodName, call.Params)
-	}
-	return http.HandlerFunc(fn)
+		fn(rw, call.MethodName, call.Params)
+	})
 }
