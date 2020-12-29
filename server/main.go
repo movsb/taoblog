@@ -66,6 +66,7 @@ func serve() {
 	}
 
 	canon := canonical.New(renderer)
+	canon.PingbackURL = theService.HomeURL() + `/v3/xmlrpc`
 	mux.Handle(`/`, canon)
 
 	server := &http.Server{

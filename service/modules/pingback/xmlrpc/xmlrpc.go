@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"mime"
 	"net/http"
 	"net/url"
@@ -142,6 +143,13 @@ func NewIntValue(i int) Value { return Value{Int: &i} }
 // NewStringValue ...
 func NewStringValue(s string) Value { return Value{String: &s} }
 
+// Request ...
+type Request struct {
+	MethodName string
+	Args       []Param
+	Req        *http.Request
+}
+
 // ResponseWriter ...
 type ResponseWriter interface {
 	WriteString(msg string)
@@ -194,7 +202,7 @@ func (r *_ResponseWriter) write(v interface{}) {
 }
 
 // Handler ...
-func Handler(fn func(w ResponseWriter, method string, args []Param)) http.HandlerFunc {
+func Handler(fn func(w ResponseWriter, r *Request)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			zap.L().Info(`xmlrpc: invalid method`, zap.String("method", r.Method))
@@ -212,8 +220,9 @@ func Handler(fn func(w ResponseWriter, method string, args []Param)) http.Handle
 			return
 		}
 
+		const maxBodySize = 1 << 20
 		call := MethodCall{}
-		if err := xml.NewDecoder(r.Body).Decode(&call); err != nil {
+		if err := xml.NewDecoder(io.LimitReader(r.Body, maxBodySize)).Decode(&call); err != nil {
 			zap.L().Info(`xmlrpc: malformed request`, zap.Error(err))
 			rw.WriteFault(-1, `malformed request`)
 			return
@@ -225,6 +234,12 @@ func Handler(fn func(w ResponseWriter, method string, args []Param)) http.Handle
 			return
 		}
 
-		fn(rw, call.MethodName, call.Params)
+		rr := &Request{
+			Req:        r,
+			MethodName: call.MethodName,
+			Args:       call.Params,
+		}
+
+		fn(rw, rr)
 	})
 }

@@ -4,7 +4,13 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/movsb/taoblog/modules/utils"
 )
+
+func init() {
+	utils.InitTestLogger()
+}
 
 func TestFindServer(t *testing.T) {
 	t.SkipNow()
@@ -14,5 +20,5 @@ func TestFindServer(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	t.SkipNow()
-	Ping(context.TODO(), `https://www.google.com`, `https://coolshell.cn/articles/21263.html`)
+	Ping(context.TODO(), `http://localhost:2564/849/`, `http://localhost:2564/849/`)
 }

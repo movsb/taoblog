@@ -120,7 +120,7 @@ type BlogConfig struct {
 // DefaultBlogConfig ...
 func DefaultBlogConfig() BlogConfig {
 	return BlogConfig{
-		Home:        `localhost`,
+		Home:        `http://localhost`,
 		Name:        `未命名`,
 		Description: ``,
 	}

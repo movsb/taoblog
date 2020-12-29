@@ -4,10 +4,17 @@ import (
 	"context"
 	"fmt"
 	"html"
+	"io"
+	"io/ioutil"
+	"net"
 	"net/http"
+	"net/url"
 	"regexp"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/service/modules/pingback/xmlrpc"
 	"go.uber.org/zap"
 )
@@ -46,8 +53,8 @@ func findServer(ctx context.Context, targetURI string) (server string, err error
 	// 2. Otherwise, search the entity body for the first match of the following regular expression.
 	// <link rel="pingback" href="([^"]+)" ?/?>
 	const bufSize = 16 << 10
-	buf := make([]byte, bufSize)
-	if _, err = resp.Body.Read(buf); err != nil {
+	buf, err := ioutil.ReadAll(io.LimitReader(resp.Body, bufSize))
+	if err != nil {
 		zap.L().Info(`pingback: read body failed`, zap.Error(err))
 		return ``, err
 	}
@@ -114,22 +121,23 @@ func ping(ctx context.Context, source string, target string) error {
 
 // Handler ...
 func Handler(fn func(w xmlrpc.ResponseWriter, source, target string)) http.HandlerFunc {
-	return xmlrpc.Handler(func(w xmlrpc.ResponseWriter, method string, args []xmlrpc.Param) {
-		if method != pingbackMethod {
-			zap.L().Info(`pingback: unknown method`, zap.String(`method`, method))
+	return xmlrpc.Handler(func(w xmlrpc.ResponseWriter, r *xmlrpc.Request) {
+		if r.MethodName != pingbackMethod {
+			zap.L().Info(`pingback: unknown method`, zap.String(`method`, r.MethodName))
 			w.WriteFault(0, `unknown method`)
 			return
 		}
-		if len(args) != 2 {
+		if len(r.Args) != 2 {
 			zap.L().Info(`pingback: two args required`)
 			w.WriteFault(0, `two args required`)
 			return
 		}
+
 		var source, target *string
-		if p := args[0].Value.String; p != nil {
+		if p := r.Args[0].Value.String; p != nil {
 			source = p
 		}
-		if p := args[1].Value.String; p != nil {
+		if p := r.Args[1].Value.String; p != nil {
 			target = p
 		}
 		if source == nil || target == nil {
@@ -137,6 +145,113 @@ func Handler(fn func(w xmlrpc.ResponseWriter, source, target string)) http.Handl
 			w.WriteFault(0, `both source and target must be of type string`)
 			return
 		}
+
+		if !checkURLs(w, r, *source, *target) {
+			return
+		}
+
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if err := verifySource(ctxTimeout, *source, *target); err != nil {
+			zap.L().Info(`pingback: no reference found`)
+			w.WriteFault(0, `no reference found`)
+			return
+		}
+
 		fn(w, *source, *target)
 	})
+}
+
+func checkURLs(w xmlrpc.ResponseWriter, r *xmlrpc.Request, source string, target string) bool {
+	sourceURL, err := url.Parse(source)
+	if err != nil {
+		zap.L().Info(`pingback: invalid source`, zap.String(`source`, source))
+		w.WriteFault(0, `invalid source`)
+		return false
+	}
+	switch sourceURL.Scheme {
+	case `http`, `https`:
+		break
+	default:
+		zap.L().Info(`pingback: invalid source scheme`, zap.String(`source`, source))
+		w.WriteFault(0, `invalid source scheme`)
+		return false
+	}
+
+	remoteIP, _, _ := net.SplitHostPort(r.Req.RemoteAddr)
+	ips, _ := net.LookupHost(sourceURL.Hostname())
+	ipFound := false
+	for _, ip := range ips {
+		if ip == remoteIP {
+			ipFound = true
+			break
+		}
+	}
+	if !ipFound {
+		zap.L().Info(`pingback: invalid source url`, zap.String(`source`, source))
+		w.WriteFault(0, `invalid source url`)
+		return false
+	}
+
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		zap.L().Info(`pingback: invalid target`, zap.String(`target`, target))
+		w.WriteFault(0, `invalid target`)
+		return false
+	}
+	switch targetURL.Scheme {
+	case `http`, `https`:
+		break
+	default:
+		zap.L().Info(`pingback: invalid target scheme`, zap.String(`target`, target))
+		w.WriteFault(0, `invalid target scheme`)
+		return false
+	}
+
+	if strings.EqualFold(sourceURL.Host, targetURL.Host) {
+		zap.L().Info(`pingback: source host == target host, ignored.`, zap.String(`target`, target))
+		w.WriteFault(0, `source host == target host`)
+		return false
+	}
+
+	return true
+}
+
+func verifySource(ctx context.Context, source string, target string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, source, nil)
+	if err != nil {
+		zap.L().Info(`pingback: verifySource: failed`, zap.Error(err))
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		zap.L().Info(`pingback: verifySource: failed`, zap.Error(err))
+		return err
+	}
+	defer resp.Body.Close()
+
+	const maxBodySize = 1 << 20
+	doc, err := goquery.NewDocumentFromReader(io.LimitReader(resp.Body, maxBodySize))
+	if err != nil {
+		zap.L().Info(`pingback: verifySource: parse html failed`, zap.Error(err))
+		return err
+	}
+
+	found := false
+
+	doc.Find(`a`).Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Attr(`href`)
+		// simple compare
+		if href == target {
+			found = true
+			return
+		}
+	})
+
+	if !found {
+		zap.L().Info(`pingback: verifySource: no reference found`, zap.String(`source`, source))
+		return fmt.Errorf(`no reference found`)
+	}
+
+	return nil
 }
