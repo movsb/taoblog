@@ -120,7 +120,7 @@ func ping(ctx context.Context, source string, target string) error {
 }
 
 // Handler ...
-func Handler(fn func(w xmlrpc.ResponseWriter, source, target string)) http.HandlerFunc {
+func Handler(fn func(w xmlrpc.ResponseWriter, source, target string, title string)) http.HandlerFunc {
 	return xmlrpc.Handler(func(w xmlrpc.ResponseWriter, r *xmlrpc.Request) {
 		if r.MethodName != pingbackMethod {
 			zap.L().Info(`pingback: unknown method`, zap.String(`method`, r.MethodName))
@@ -152,13 +152,14 @@ func Handler(fn func(w xmlrpc.ResponseWriter, source, target string)) http.Handl
 
 		ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
-		if err := verifySource(ctxTimeout, *source, *target); err != nil {
+		var title string
+		if err := verifySource(ctxTimeout, *source, *target, &title); err != nil {
 			zap.L().Info(`pingback: no reference found`)
 			w.WriteFault(0, `no reference found`)
 			return
 		}
 
-		fn(w, *source, *target)
+		fn(w, *source, *target, title)
 	})
 }
 
@@ -217,7 +218,7 @@ func checkURLs(w xmlrpc.ResponseWriter, r *xmlrpc.Request, source string, target
 	return true
 }
 
-func verifySource(ctx context.Context, source string, target string) error {
+func verifySource(ctx context.Context, source string, target string, title *string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, source, nil)
 	if err != nil {
 		zap.L().Info(`pingback: verifySource: failed`, zap.Error(err))
@@ -235,6 +236,14 @@ func verifySource(ctx context.Context, source string, target string) error {
 	if err != nil {
 		zap.L().Info(`pingback: verifySource: parse html failed`, zap.Error(err))
 		return err
+	}
+
+	doc.Find(`title`).Each(func(i int, s *goquery.Selection) {
+		*title = strings.TrimSpace(s.Text())
+	})
+	if *title == `` {
+		zap.L().Info(`pingback: verifySource: empty title`, zap.String(`source`, source))
+		return fmt.Errorf(`empty title`)
 	}
 
 	found := false

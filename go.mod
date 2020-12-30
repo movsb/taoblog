@@ -1,6 +1,7 @@
 module github.com/movsb/taoblog
 
 require (
+	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/creack/pty v1.1.9
 	github.com/golang/protobuf v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0

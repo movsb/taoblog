@@ -130,6 +130,16 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	http.NotFound(w, req)
 }
 
+// PostFromPath ...
+func PostFromPath(path string) (int64, bool) {
+	if regexpByID.MatchString(path) {
+		matches := regexpByID.FindStringSubmatch(path)
+		id := utils.MustToInt64(matches[1])
+		return id, true
+	}
+	return 0, false
+}
+
 func isCategoryPath(path string) bool {
 	p := strings.IndexByte(path[1:], '/')
 	if p == -1 {

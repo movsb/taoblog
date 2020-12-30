@@ -271,3 +271,13 @@ func v17(tx *sql.Tx) {
 	mustExec(tx, `DROP TABLE tags`)
 	mustExec(tx, `ALTER TABLE tags2 RENAME TO tags`)
 }
+
+func v18(tx *sql.Tx) {
+	mustExec(tx, `CREATE TABLE IF NOT EXISTS pingbacks (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		created_at INTEGER  NOT NULL,
+		post_id INTEGER  NOT NULL,
+		source_url TEXT NOT NULL,
+		UNIQUE (post_id, source_url)
+	)`)
+}
