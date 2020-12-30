@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/models"
 )
 
 // Data holds all data for rendering the site.
@@ -63,7 +64,8 @@ type HomeData struct {
 
 // PostData ...
 type PostData struct {
-	Post *Post
+	Post      *Post
+	Pingbacks []*models.Pingback
 }
 
 // NewDataForPost ...
@@ -81,6 +83,9 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Servic
 	d.Post = p
 	if cfg.Site.ShowRelatedPosts {
 		p.Post.Related = service.GetRelatedPosts(post.Id)
+	}
+	if cfg.Site.ShowPingbacks {
+		p.Pingbacks = service.GetPingbacks(post.Id)
 	}
 	p.Post.Tags = service.GetPostTags(p.Post.Id)
 	return d

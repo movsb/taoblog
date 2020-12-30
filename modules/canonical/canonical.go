@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/pingback"
 )
 
 // Renderer ...
@@ -25,8 +26,10 @@ type Renderer interface {
 
 // Canonical ...
 type Canonical struct {
-	mux      *http.ServeMux
-	renderer Renderer
+	// TODO(movsb): hack!
+	PingbackURL string
+	mux         *http.ServeMux
+	renderer    Renderer
 }
 
 // New ...
@@ -71,6 +74,8 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			id := utils.MustToInt64(matches[1])
+			// TODO(movsb): hack! hack!
+			w.Header().Set(pingback.Header, c.PingbackURL)
 			c.renderer.QueryByID(w, req, id)
 			return
 		}
@@ -123,6 +128,16 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	http.NotFound(w, req)
+}
+
+// PostFromPath ...
+func PostFromPath(path string) (int64, bool) {
+	if regexpByID.MatchString(path) {
+		matches := regexpByID.FindStringSubmatch(path)
+		id := utils.MustToInt64(matches[1])
+		return id, true
+	}
+	return 0, false
 }
 
 func isCategoryPath(path string) bool {
