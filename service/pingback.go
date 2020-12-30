@@ -36,6 +36,7 @@ func (s *Service) Pingback(w xmlrpc.ResponseWriter, source string, target string
 	pb := models.Pingback{
 		CreatedAt: time.Now().Unix(),
 		PostID:    id,
+		Title:     title,
 		SourceURL: source,
 	}
 	err = s.tdb.Model(&pb).Create()
@@ -48,4 +49,10 @@ func (s *Service) Pingback(w xmlrpc.ResponseWriter, source string, target string
 		}
 	}
 	zap.L().Info(`pingback: created`, zap.String(`target`, target), zap.String(`source`, source))
+}
+
+// GetPingbacks ...
+func (s *Service) GetPingbacks(id int64) (pingbacks []*models.Pingback) {
+	s.tdb.Where(`post_id=?`, id).MustFind(&pingbacks)
+	return
 }

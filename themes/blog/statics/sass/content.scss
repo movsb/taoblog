@@ -224,7 +224,7 @@
 }
 
 /* 相关文章推荐 */
-.post .related {
+.post .related, .post .pingbacks {
     margin-bottom: 3em;
     h3 {
         border-bottom: 1px solid var(--border-color);

@@ -4,6 +4,7 @@ package config
 type SiteConfig struct {
 	ShowStatus       bool               `yaml:"show_status"`
 	ShowRelatedPosts bool               `yaml:"show_related_posts"`
+	ShowPingbacks    bool               `yaml:"show_pingbacks"`
 	Search           GoogleSearchConfig `yaml:"search"`
 	Copyright        string             `yaml:"copyright"`
 	RSS              RSSConfig          `yaml:"rss"`
@@ -15,6 +16,7 @@ func DefaultSiteConfig() SiteConfig {
 	return SiteConfig{
 		ShowStatus:       false,
 		ShowRelatedPosts: false,
+		ShowPingbacks:    false,
 		Search:           DefaultGoogleSearchConfig(),
 		RSS:              DefaultRSSConfig(),
 		Sitemap:          DefaultSitemapConfig(),

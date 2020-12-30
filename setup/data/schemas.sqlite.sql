@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS pingbacks (
 	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
 	`created_at` INTEGER  NOT NULL,
 	`post_id` INTEGER  NOT NULL,
+	`title` TEXT NOT NULL,
 	`source_url` TEXT NOT NULL,
 	UNIQUE (`post_id`, `source_url`)
 );
