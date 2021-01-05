@@ -223,16 +223,9 @@
     allDataSrcImgs.forEach(img => { observer.observe(img); })
 })();
 
-// Add anchors to outer links and open in new tab instead
 (function() {
-	let hostname = location.hostname;
 	let anchors = document.querySelectorAll('article a');
-	anchors.forEach(a => {
-		if (a.hostname !== hostname) {
-			a.setAttribute('target', '_blank');
-			a.classList.add('external');
-		}
-	});
+	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
 })();
 
 // 数学公式
@@ -322,6 +315,9 @@ s.onload = function() {
 	$('.comment-meta .date').timeago();
 	TaoBlog.events.add('comment', 'post', function(item) {
 		$(item).find('.date').timeago();
+		item[0].querySelectorAll('a').forEach(function(a) {
+			TaoBlog.fn.externAnchor(a);
+		});
 	});
 };
 document.body.appendChild(s);

@@ -13,32 +13,43 @@ function __TaoBlog()
     };
 
     EventDispatcher.prototype.add = function(module, name, callback) {
-        var listners = this._get_map(module, name);
-        listners.push(callback);
+        var listeners = this._get_map(module, name);
+        listeners.push(callback);
     };
 
     EventDispatcher.prototype.remove = function(module, name, callback) {
-        var listners = this._get_map(module, name);
-        var index = listners.indexOf(callback);
+        var listeners = this._get_map(module, name);
+        var index = listeners.indexOf(callback);
         if(index != -1) {
-            listners.splice(index, 1);
+            listeners.splice(index, 1);
         }
     };
 
     EventDispatcher.prototype.dispatch = function(module, name)
     {
-        var listners = this._get_map(module, name);
+        var listeners = this._get_map(module, name);
         Array.prototype.splice.call(arguments, 0, 2);
         var args = Array.from(arguments);
-        listners.forEach(function(callback) {
+        listeners.forEach(function(callback) {
             callback.apply(null, args);
         });
     };
 
     return {
         events: new EventDispatcher(),
+        fn: {}
     };
 }
 
 var TaoBlog = window.TaoBlog = new __TaoBlog();
 
+// Add anchors to external links and open it in new tab instead
+TaoBlog.fn.externAnchor = function() {
+	let hostname = location.hostname;
+	return function(a) {
+		if (a.href != "" && a.hostname !== hostname) {
+			a.setAttribute('target', '_blank');
+			a.classList.add('external');
+		}
+	};
+}();
