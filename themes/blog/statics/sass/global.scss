@@ -23,10 +23,6 @@ body {
 	font-family: var(--mono-font);
 }
 
-tt {
-    color: var(--color-code-span);
-}
-
 h1, h2, h3, h4, h5, h6 {
     margin: 1.8rem 0px 1rem;
     padding-bottom: 0.3em;
@@ -61,7 +57,7 @@ h6 { font-size: 1.0em; }
     background-color: var(--button-color-bg);
 
     &:hover {
-        background-color: var(--button-color-hover);
+        background-color: var(--border-color-hover);
     }
 }
 
@@ -70,9 +66,6 @@ a {
     color: var(--a-fg);
 	&:hover {
 		text-decoration: underline;
-	}
-	&:visited {
-		color: var(--a-fg-visited);
 	}
 	&:focus {
 		outline: none;
@@ -120,7 +113,8 @@ a, input, textarea {
 pre {
     padding: 1em;
     margin: 1em 0;
-	background-color: var(--code-bg);
+    /*background-color: var(--code-bg);*/
+	border: 1px solid var(--code-border-color);
     max-height: 600px;
     max-height: 80vh;
     border-radius: 0.3em;
@@ -142,5 +136,24 @@ li {
 img {
 	@media (prefers-color-scheme: dark) {
 		filter: brightness(0.7);
+	}
+}
+
+table {
+	border-collapse: collapse;
+	margin: 1em 0px;
+	overflow: auto;
+
+	th {
+		background-color: var(--table-head-color);
+	}
+
+	td, th {
+		border: var(--table-border);
+		padding: 0.5em;
+	}
+
+	&.no-border, &.no-border td {
+		border: none;
 	}
 }

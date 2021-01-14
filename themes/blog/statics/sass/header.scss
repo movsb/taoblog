@@ -24,6 +24,7 @@
                 color: inherit;
                 &:hover {
                     text-decoration: none;
+                    color: var(--a-fg);
                 }
                 &:focus {
                     outline: 0;
@@ -54,7 +55,7 @@
                 }
 
                 &:hover {
-                    color: white;
+                    color: var(--a-fg);
                 }
             }
 

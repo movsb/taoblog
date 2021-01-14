@@ -33,10 +33,10 @@
             &:visited {
                 color: inherit;
             }
-        }
 
-        .value {
-            color: var(--post-meta-fg);
+            &:hover {
+                color: var(--a-fg);
+            }
         }
 
         .author {
@@ -131,32 +131,12 @@
         }
     }
 
-    /* 文章表格 */
-    table {
-        border-collapse: collapse;
-		margin: 1em 0px;
-		display: block;
-		overflow: auto;
-
-        th {
-            background-color: var(--table-head-color);
-		}
-
-        td, th {
-            border: var(--table-border);
-            padding: 0.5em;
-        }
-
-        &.no-border, &.no-border td {
-            border: none;
-        }
-	}
-
     blockquote {
 		background-color: var(--blockquote-color-bg);
         padding:1px 1.5em;
         margin:1em 0;
-		border-left: var(--blockquote-border-left);
+        border-left: var(--blockquote-border-left);
+        border-radius: var(--border-radius);
     }
 
     figure {

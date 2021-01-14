@@ -2,49 +2,46 @@
 --font-size:                15px;
 --mono-font:                Monaco, Consolas, monospace, Courier;
 --max-width:                850px;
---color-code-span:          #ff0080;
---border-color-hover:       #c0c0c0;
+--border-color-hover:       #4da032;
 --border-radius:            3px;
 --button-color-fg:          white;
 --button-color-bg:          rgba(60,60,60,0.6);
---button-color-hover:       rgba(20,20,20,0.7);
 --toolbar-imgview-bg:       rgba(0,0,0,0.85);
---post-meta-fg:             #5a5a5a;
---a-fg:                     #3470ccc4;
---a-fg-visited:             inherit;
---table-border:             1px solid gray;
+--a-fg:                     #4da032;
+--code-border-color:        #388838;
+--table-border:             1px solid #388838;
 --box-shadow:               0 0 3px gray;
 }
 
 @media (prefers-color-scheme: light) {
 :root {
+--code-bg:                  #d8ffd8;
 --color-bg:                 white;
 --color-fg:                 #292929;
 --border-color:             #ddd;
 --title-fg:                 #333;
 --post-fg:                  #292929;
---code-bg:                  rgba(220,220,220,0.5);
 --toc-fg:                   #141414;
 --toc-bg:                   rgba(255,255,255,0.9);
 --table-head-color:         #eee;
---blockquote-color-bg:      rgba(0,0,0,0.08);
---blockquote-border-left:   #ddd 9px solid;
+--blockquote-color-bg:      var(--code-bg);
+--blockquote-border-left:   var(--code-border-color) 9px solid;
 }
 }
 
 @media (prefers-color-scheme: dark) {
 :root {
+--code-bg:                  #385838;
 --color-bg:                 #292929;
 --color-fg:                 #a4a4a4;
 --border-color:             #666;
 --title-fg:                 #eee;
 --post-fg:                  #a4a4a4;
---code-bg:                  rgb(72,72,72);
 --toc-fg:                   #141414;
 --toc-bg:                   rgba(255,255,255,0.9);
 --table-head-color:         #3e3e3e;
---blockquote-color-bg:      #393939;
---blockquote-border-left:   #4a4a4a 9px solid;
+--blockquote-color-bg:      var(--code-bg);
+--blockquote-border-left:   var(--code-border-color) 9px solid;
 }
 }
 

@@ -26,7 +26,7 @@ pre > code {
 }
 
 /* 行内代码 */
-:not(pre) > code {
+:not(pre) > code, tt {
 	margin: 0px 4px;
 	padding: 2px 6px;
 	border-radius: var(--border-radius);
@@ -34,6 +34,7 @@ pre > code {
 	white-space: normal;
 	word-break: break-all;
 	background-color: var(--code-bg);
+	border: 1px solid var(--code-border-color);
 }
 
 @media (prefers-color-scheme: dark) {

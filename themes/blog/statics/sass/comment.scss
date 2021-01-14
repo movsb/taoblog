@@ -4,11 +4,12 @@
     overflow: hidden;
 }
 
-.post-comment {
+span.post-comment {
     font-weight: bold;
     cursor: pointer;
     &:hover {
         text-decoration: underline;
+        color: var(--a-fg);
     }
 }
 
@@ -22,7 +23,7 @@
         font-size: 0.7em;
     }
 
-    .post-comment {
+    span.post-comment {
         margin-left: 1em;
         font-weight: normal;
         font-size: 0.7em;
