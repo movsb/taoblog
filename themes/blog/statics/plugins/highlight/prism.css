@@ -15,28 +15,9 @@
    word-break: normal;
    word-wrap: normal;
    line-height: 1.5;
-   -moz-tab-size: 4;
-   -o-tab-size: 4;
    tab-size: 4;
-   -webkit-hyphens: none;
-   -moz-hyphens: none;
-   -ms-hyphens: none;
    hyphens: none;
  }
- 
- /*
- pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
- code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
-   text-shadow: none;
-   background: #383e49;
- }
- 
- pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
- code[class*="language-"]::selection, code[class*="language-"] ::selection {
-   text-shadow: none;
-   background: #9aa2b1;
- }
- */
  
  @media print {
    code[class*="language-"],
@@ -47,10 +28,23 @@
 
  /* Code blocks */
  pre[class*="language-"] {
-   padding: 1em;
+   padding: 0;
    margin: .5em 0;
+   overflow: hidden;
+ }
+ pre[class*="language-"] > code {
+   display: block;
+   padding: 1em;
    overflow: auto;
  }
+ pre[class*="language-"] > code > div.line-numbers-wrapper {
+	position: absolute;
+	left: 0;
+	top: 0;
+	overflow: visible;
+	width: 3em;
+	height: 100%;
+}
  
  :not(pre) > code[class*="language-"],
  pre[class*="language-"] {
@@ -133,45 +127,47 @@
  .token.entity {
    cursor: help;
  }
- 
- pre.line-numbers {
-	 position: relative;
-	 padding-left: 3.8em;
-	 counter-reset: linenumber;
- }
- 
- pre.line-numbers > code {
-	 position: relative;
- }
- 
- .line-numbers .line-numbers-rows {
-	 position: absolute;
-	 pointer-events: none;
-	 top: 0;
-	 font-size: 100%;
-	 left: -3.8em;
-	 width: 3em; /* works for line-numbers below 1000 lines */
-	 letter-spacing: -1px;
-	 border-right: 0;
- 
-	 -webkit-user-select: none;
-	 -moz-user-select: none;
-	 -ms-user-select: none;
-	 user-select: none;
- 
- }
- 
- .line-numbers-rows > span {
-	 pointer-events: none;
-	 display: block;
-	 counter-increment: linenumber;
- }
- 
- .line-numbers-rows > span:before {
-	 content: counter(linenumber);
-	 color: #5C6370;
-	 display: block;
-	 padding-right: 0.8em;
-	 text-align: right;
- }
+
+
+ pre[class*="language-"].line-numbers {
+	position: relative;
+	padding-left: 3.8em;
+	counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+	white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+	position: absolute;
+	pointer-events: none;
+  top: 0;
+  padding: 1em 0;
+	font-size: 100%;
+	width: 3em; /* works for line-numbers below 1000 lines */
+	letter-spacing: -1px;
+	border-right: 1px solid #ddd;
+	user-select: none;
+}
+@media (prefers-color-scheme: dark) {
+	.line-numbers .line-numbers-rows {
+		border-right: 1px solid #666;
+	}
+}
+
+	.line-numbers-rows > span {
+		pointer-events: none;
+		display: block;
+		counter-increment: linenumber;
+	}
+
+		.line-numbers-rows > span:before {
+			content: counter(linenumber);
+			color: #666;
+			display: block;
+			padding-right: 0.8em;
+			text-align: right;
+		}
+
  
