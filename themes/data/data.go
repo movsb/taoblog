@@ -13,6 +13,8 @@ import (
 
 // Data holds all data for rendering the site.
 type Data struct {
+	svc *service.Service
+
 	// all configuration.
 	Config *config.Config
 
@@ -50,16 +52,6 @@ type Data struct {
 // MetaData ...
 type MetaData struct {
 	Title string
-}
-
-// HomeData ...
-type HomeData struct {
-	Posts    []*Post
-	Comments []*Comment
-
-	PostCount    int64
-	PageCount    int64
-	CommentCount int64
 }
 
 // PostData ...

@@ -7,6 +7,15 @@ import (
 	"github.com/movsb/taoblog/service"
 )
 
+// HomeData ...
+type HomeData struct {
+	Posts []*Post
+
+	PostCount    int64
+	PageCount    int64
+	CommentCount int64
+}
+
 // NewDataForHome ...
 func NewDataForHome(cfg *config.Config, user *auth.User, service *service.Service) *Data {
 	d := &Data{
@@ -25,16 +34,7 @@ func NewDataForHome(cfg *config.Config, user *auth.User, service *service.Servic
 			Limit:   20,
 			OrderBy: "date DESC",
 		}))
-	comments, err := service.ListComments(user.Context(nil),
-		&protocols.ListCommentsRequest{
-			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
-			Limit:   10,
-			OrderBy: "date DESC",
-		})
-	if err != nil {
-		panic(err)
-	}
-	home.Comments = newComments(comments.Comments, service)
 	d.Home = home
+	d.svc = service
 	return d
 }

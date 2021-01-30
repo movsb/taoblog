@@ -1,11 +1,11 @@
 {{define "custom_header"}}
 <style>
-
-#latest-comment-list > li > div {
-    overflow: hidden;
+#latest-comment-list .post-comment-list {
+	padding-left: 0;
+	list-style: none;
 }
-#latest-comment-list > li > div > span {
-    float: right; 
+#all-posts {
+	padding-left: 40px; /* https://stackoverflow.com/a/30424422/3628322 */
 }
 </style>
 {{end}}
@@ -25,17 +25,22 @@
 <p id=all-posts><a href="/posts">所有文章...</a></p>
 
 <h2>近期评论</h2>
-{{ if .Home.Comments }}
-<ul id=latest-comment-list>
-{{range .Home.Comments}}
-	<li><div>
-		<b>{{.Author}}</b>：{{.Content}}
-		<span>《<a href="/{{.PostId}}/#comments">{{.PostTitle}}</a>》</span>
-	</div></li>
-{{end}}
-</ul>
+{{ $comments := .ListLatestComments}}
+{{ if $comments }}
+	<ul id=latest-comment-list>
+	{{range $comments}}
+		<li>
+			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
+			<ul class=post-comment-list>
+			{{ range .Comments}}
+				<li><b>{{.Author}}</b>：{{.Text}}</li>
+			{{ end }}
+			</ul>
+		</li>
+	{{end}}
+	</ul>
 {{ else }}
-<ul>没有评论。</ul>
+	<ul>没有评论。</ul>
 {{ end }}
 
 {{ if .Config.Site.ShowStatus }}
