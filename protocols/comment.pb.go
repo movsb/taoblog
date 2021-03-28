@@ -6,7 +6,7 @@ package protocols
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	math "math"
 )
 
@@ -232,11 +232,11 @@ func (m *GetCommentRequest) GetId() int64 {
 }
 
 type UpdateCommentRequest struct {
-	Comment              *Comment              `protobuf:"bytes,1,opt,name=comment,proto3" json:"comment,omitempty"`
-	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Comment              *Comment               `protobuf:"bytes,1,opt,name=comment,proto3" json:"comment,omitempty"`
+	UpdateMask           *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *UpdateCommentRequest) Reset()         { *m = UpdateCommentRequest{} }
@@ -271,7 +271,7 @@ func (m *UpdateCommentRequest) GetComment() *Comment {
 	return nil
 }
 
-func (m *UpdateCommentRequest) GetUpdateMask() *field_mask.FieldMask {
+func (m *UpdateCommentRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	if m != nil {
 		return m.UpdateMask
 	}

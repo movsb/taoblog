@@ -12,7 +12,7 @@ type Post struct {
 	Title         string
 	Content       string
 	Slug          string
-	Type          string // TODO use integer
+	Type          string
 	Category      uint
 	Status        string
 	PageView      uint
@@ -37,6 +37,7 @@ func (p *Post) ToProtocols() *protocols.Post {
 		Title:         p.Title,
 		Content:       p.Content,
 		Slug:          p.Slug,
+		Type:          p.Type,
 		Category:      int64(p.Category),
 		Status:        p.Status,
 		PageView:      int64(p.PageView),
@@ -45,13 +46,6 @@ func (p *Post) ToProtocols() *protocols.Post {
 		Metas:         p.Metas,
 		Source:        p.Source,
 		SourceType:    p.SourceType,
-	}
-
-	switch p.Type {
-	case `post`:
-		out.Type = protocols.PostType_PostType_Post
-	case `page`:
-		out.Type = protocols.PostType_PostType_Page
 	}
 
 	return &out

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/protocols"
-	"google.golang.org/genproto/protobuf/field_mask"
+	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -33,6 +33,7 @@ type PostConfig struct {
 	Modified int32    `json:"modified" yaml:"modified"`
 	Tags     []string `json:"tags" yaml:"tags"`
 	Slug     string   `json:"slug" yaml:"slug,omitempty"`
+	Type     string   `json:"type" yaml:"type"`
 }
 
 // InitPost ...
@@ -64,6 +65,7 @@ func (c *Client) CreatePost() error {
 	p.Title = cfg.Title
 	p.Tags = cfg.Tags
 	p.Slug = cfg.Slug
+	p.Type = cfg.Type
 
 	p.SourceType, p.Source = readSource(".")
 
@@ -102,6 +104,7 @@ func (c *Client) GetPost() {
 	cfg.Tags = post.Tags
 	cfg.Title = post.Title
 	cfg.Modified = post.Modified
+	cfg.Type = post.Type
 	c.savePostConfig(&cfg)
 
 	filename := "README.md"
@@ -156,6 +159,7 @@ func (c *Client) UpdatePost() error {
 	p.Tags = cfg.Tags
 	p.Slug = cfg.Slug
 	p.Modified = cfg.Modified
+	p.Type = cfg.Type
 
 	p.SourceType, p.Source = readSource(".")
 
@@ -178,6 +182,7 @@ func (c *Client) UpdatePost() error {
 	cfg.Tags = rp.Tags
 	cfg.Slug = rp.Slug
 	cfg.Modified = rp.Modified
+	cfg.Type = rp.Type
 	c.savePostConfig(&cfg)
 
 	return nil

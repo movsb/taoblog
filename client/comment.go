@@ -7,7 +7,7 @@ import (
 
 	"github.com/movsb/taoblog/client/exec"
 	"github.com/movsb/taoblog/protocols"
-	"google.golang.org/genproto/protobuf/field_mask"
+	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // SetCommentPostID ...

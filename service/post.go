@@ -263,12 +263,16 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		Modified:   createdAt,
 		Title:      strings.TrimSpace(in.Title),
 		Slug:       in.Slug,
-		Type:       `post`,
+		Type:       in.Type,
 		Category:   0,
 		Status:     "draft",
 		Metas:      "{}",
 		Source:     in.Source,
 		SourceType: in.SourceType,
+	}
+
+	if p.Type == `` {
+		p.Type = `post`
 	}
 
 	var tr post_translators.PostTranslator

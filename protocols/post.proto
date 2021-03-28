@@ -4,12 +4,6 @@ option go_package = "github.com/movsb/taoblog/protocols";
 
 import "google/protobuf/field_mask.proto";
 
-enum PostType {
-	PostType_Unspecified = 0;
-	PostType_Post = 1;
-	PostType_Page = 2;
-}
-
 message Post {
 	int64 id = 1;
 	int32 date = 2;
@@ -17,7 +11,7 @@ message Post {
 	string title = 4;
 	string content = 5;
 	string slug = 6;
-	PostType type = 7;
+	string type = 7;
 	int64 category = 8;
 	string status = 9;
 	int64 page_view = 10;

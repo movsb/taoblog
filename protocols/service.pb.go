@@ -7,12 +7,12 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	math "math"
 )
 
@@ -188,7 +188,7 @@ type TaoBlogClient interface {
 	CreatePost(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*Post, error)
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*Post, error)
-	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SetPostStatus(ctx context.Context, in *SetPostStatusRequest, opts ...grpc.CallOption) (*SetPostStatusResponse, error)
 	CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error)
 	GetComment(ctx context.Context, in *GetCommentRequest, opts ...grpc.CallOption) (*Comment, error)
@@ -252,8 +252,8 @@ func (c *taoBlogClient) UpdatePost(ctx context.Context, in *UpdatePostRequest, o
 	return out, nil
 }
 
-func (c *taoBlogClient) DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *taoBlogClient) DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/DeletePost", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -340,7 +340,7 @@ type TaoBlogServer interface {
 	CreatePost(context.Context, *Post) (*Post, error)
 	GetPost(context.Context, *GetPostRequest) (*Post, error)
 	UpdatePost(context.Context, *UpdatePostRequest) (*Post, error)
-	DeletePost(context.Context, *DeletePostRequest) (*empty.Empty, error)
+	DeletePost(context.Context, *DeletePostRequest) (*emptypb.Empty, error)
 	SetPostStatus(context.Context, *SetPostStatusRequest) (*SetPostStatusResponse, error)
 	CreateComment(context.Context, *Comment) (*Comment, error)
 	GetComment(context.Context, *GetCommentRequest) (*Comment, error)
@@ -370,7 +370,7 @@ func (*UnimplementedTaoBlogServer) GetPost(ctx context.Context, req *GetPostRequ
 func (*UnimplementedTaoBlogServer) UpdatePost(ctx context.Context, req *UpdatePostRequest) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePost not implemented")
 }
-func (*UnimplementedTaoBlogServer) DeletePost(ctx context.Context, req *DeletePostRequest) (*empty.Empty, error) {
+func (*UnimplementedTaoBlogServer) DeletePost(ctx context.Context, req *DeletePostRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePost not implemented")
 }
 func (*UnimplementedTaoBlogServer) SetPostStatus(ctx context.Context, req *SetPostStatusRequest) (*SetPostStatusResponse, error) {
