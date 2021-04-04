@@ -12,27 +12,25 @@ document.write(function(){/*
 		<div>还没有用户发表评论，<span class="post-comment">发表评论</span></div>
 	</div>
 	<!-- 评论框 -->
-	<div id="comment-form-div" class="normal">
-		<div class="comment-form-div-1 no-sel">
-			<div class="no-sel" class="nc">
-				<div class="ncbtns">
-					<img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
-				</div>
-				<div class="comment-title">
-					<span>评论</span>
-				</div>
+	<div id="comment-form-div">
+		<div class="no-sel nc drag-header">
+			<div class="ncbtns">
+				<img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
 			</div>
-			<form id="comment-form">
-				<textarea id="comment-content" name="source" wrap="off"></textarea>
-				<div class="fields">
-					<input type="text" name="author" placeholder="昵称" />
-					<input type="text" name="email" placeholder="邮箱（接收评论，不公开）"/>
-					<input type="text" name="url" placeholder="个人站点（可不填）" />
-					<input type="submit" id="comment-submit" value="发表评论" />
-					<div style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>
-				</div>
-			</form>
+			<div class="comment-title">
+				<span>评论</span>
+			</div>
 		</div>
+		<form id="comment-form">
+			<textarea id="comment-content" name="source" wrap="off"></textarea>
+			<div class="fields">
+				<input type="text" name="author" placeholder="昵称" />
+				<input type="text" name="email" placeholder="邮箱（接收评论，不公开）"/>
+				<input type="text" name="url" placeholder="个人站点（可不填）" />
+				<input type="submit" id="comment-submit" value="发表评论" />
+				<div class=prompt style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>
+			</div>
+		</form>
 	</div>
 */}.toString().slice(14,-3));
 
@@ -111,6 +109,8 @@ Comment.prototype.init = function() {
             self.toggle_post_comment_button(self._count == 0);
         });
     });
+
+	self.init_drag(document.getElementById('comment-form-div'));
 };
 
 Comment.prototype.toggle_post_comment_button = function(show) {
@@ -275,8 +275,60 @@ Comment.prototype.reply_to = function(p){
 		$('#comment-form input[name=url]').val(commenter.url || '');
 	}
 
+	this.move_to_center();
 	$('#comment-form-div').fadeIn();
     $('#comment-content').focus();
+};
+
+Comment.prototype.move_to_center = function() {
+	var e = $('#comment-form-div');
+	var ww = window.innerWidth, wh = window.innerHeight;
+	var ew = e.outerWidth(), eh = e.outerHeight();
+	var left = (ww-ew)/2, top = (wh-eh)/2;
+	e.css('left', left+'px');
+	e.css('top', top+'px');
+	console.log(ww,wh,ew,eh,left,top)
+};
+
+// https://www.w3schools.com/howto/howto_js_draggable.asp
+Comment.prototype.init_drag = function(elmnt) {
+	console.log('init_drag');
+  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  var dragElem = elmnt.getElementsByClassName("drag-header");
+  if(!dragElem) { dragElem = elmnt; }
+  else {dragElem = dragElem[0];}
+  dragElem.onmousedown = dragMouseDown;
+  console.log(dragElem);
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // get the mouse cursor position at startup:
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // call a function whenever the cursor moves:
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // set the element's new position:
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+  }
+
+  function closeDragElement() {
+    // stop moving when mouse button is released:
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
 };
 
 Comment.prototype.delete_me = function(p) {

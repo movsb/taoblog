@@ -88,7 +88,7 @@ span.post-comment {
 
             pre {
                 overflow: auto;
-                max-height: 300px;
+                max-height: 350px;
 			}
         }
 
@@ -134,9 +134,6 @@ span.post-comment {
         }
     }
 
-    .author {
-    }
-
     .date {
         margin: 0px;
         font-size: 0.9em;
@@ -146,127 +143,119 @@ span.post-comment {
 }
 
 #comment-form-div {
-    position: fixed;
-    left: 0px;
-    top: 0px;
-    right: 0px;
-    bottom: 0px;
-    height: 100%;/* 不加这个Chrome无法工作，why? */
-    z-index: 1000;
-    display: none;
+	position: fixed;
+	left: 0px;
+	top: 0px;
+	background-color: rgba(255,255,255,0.95);
+	padding: 10px;
+	border: 1px solid grey;
+	border-radius: var(--border-radius);
+	box-sizing: border-box;
+	display: none;
+	resize: both;
+	overflow: auto; /* this is to enable resize area */
 
-    .comment-form-div-1 {
-        background-color: rgba(255,255,255,0.95);
-        padding: 10px;
-        border: 1px solid grey;
-        border-radius: var(--border-radius);
-        display: block;
-
-        @media screen and (min-width: 501px) {
-            width: 475px;
-            height: 300px;
-            min-width: 400px;
-            min-height: 200px;
-            max-width: 90%;
-            max-height: 90%;
-        }
-
-        @media screen and (max-width: 500px) {
-            width: unset !important;
-            height: unset !important;
-            min-height: 300px;
-        }
-
-        position: relative;
-        top: 50%;
-        margin: auto;
-        transform: translateY(-50%);
-        resize: both;
-        overflow: auto;
-
-        .nc {
-            height: 28px;
-        }
-
-        .ncbtns {
-            z-index: 1000;
-            position: absolute;
-            top: 6px;
-            cursor: pointer;
-            height: 20px;
-            right: 6px;
-            img {
-                float: right;
-                opacity: 0.3;
-                &:hover {
-                    opacity: 0.6;
-                }
-            }
-        }
-
-        .comment-title {
-            position: relative;
-            text-align: center;
-            font-size: 1.5em;
-            cursor: default;
-			top: -5px;
-			margin-right: 150px;
-        }
-
-        #comment-form {
-            overflow: hidden;
-            display: flex;
-            position: absolute;
-            left: 10px;
-            top: 38px;
-            right: 10px;
-            bottom: 10px;
-
-            @media screen and (max-width: 500px) {
-                flex-direction: column;
-            }
-
-            .fields {
-                flex: 1;
-
-                @media screen and (min-width: 501px) {
-                    width: 150px;
-                    max-width: 150px;
-                    padding: 0px 0px 0px 1em;
-                }
-
-                @media screen and (max-width: 500px) {
-                    margin-top: 1em;
-                }
-
-                > input[type="text"] {
-                    margin-bottom: 8px;
-                    display: block;
-                    box-sizing: border-box;
-                    width: 100%;
-                    max-width: 100%;
-                }
-            }
-
-
-            textarea {
-                margin: 0px;
-                min-width: 50px;
-                resize: none;
-                font-family: inherit;
-                font-size: inherit;
-                flex: 1;
-                background: transparent;
-            }
-        }
+	@media screen and (min-width: 501px) {
+		width: 475px;
+		height: 300px;
+		min-width: 400px;
+		min-height: 200px;
+		max-width: 90%;
+		max-height: 90%;
 	}
-	@media (prefers-color-scheme: dark) {
-		.comment-form-div-1 {
-			background-color: var(--color-bg);
-			opacity: 0.9;
-			img {
-				filter: invert(80%);
+
+	@media screen and (max-width: 500px) {
+		width: 90%;
+		height: unset !important;
+		min-height: 300px;
+	}
+
+	.nc {
+		height: 28px;
+		cursor: move;
+	}
+
+	.ncbtns {
+		z-index: 1000;
+		position: absolute;
+		top: 6px;
+		cursor: pointer;
+		height: 20px;
+		right: 6px;
+		img {
+			float: right;
+			opacity: 0.3;
+			&:hover {
+				opacity: 0.6;
 			}
+		}
+	}
+
+	.comment-title {
+		position: relative;
+		text-align: center;
+		font-size: 1.5em;
+		top: -5px;
+		@media screen and (min-width: 501px) {
+			margin-right: 150px;
+		}
+	}
+
+	#comment-form {
+		overflow: hidden;
+		display: flex;
+		position: absolute;
+		left: 10px;
+		top: 38px;
+		right: 10px;
+		bottom: 10px;
+
+		@media screen and (max-width: 500px) {
+			flex-direction: column;
+		}
+
+		.fields {
+			flex: 1;
+
+			@media screen and (min-width: 501px) {
+				width: 150px;
+				max-width: 150px;
+				padding: 0px 0px 0px 1em;
+			}
+
+			@media screen and (max-width: 500px) {
+				margin-top: 1em;
+				.prompt {
+					display: none;
+				}
+			}
+
+			> input[type="text"] {
+				margin-bottom: 8px;
+				display: block;
+				box-sizing: border-box;
+				width: 100%;
+				max-width: 100%;
+			}
+		}
+
+		textarea {
+			margin: 0px;
+			min-width: 50px;
+			resize: none;
+			font-family: inherit;
+			font-size: inherit;
+			flex: 1;
+			background: transparent;
+		}
+	}
+}
+@media (prefers-color-scheme: dark) {
+	#comment-form-div {
+		background-color: var(--color-bg);
+		opacity: 0.9;
+		img {
+			filter: invert(80%);
 		}
 	}
 }

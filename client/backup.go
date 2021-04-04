@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"compress/zlib"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -47,6 +48,7 @@ func (c *Client) Backup(cmd *cobra.Command) {
 		if err != nil {
 			panic(err)
 		}
+		defer fmt.Printf("Filename: %s\n", name)
 		defer fp.Close()
 		w = fp
 	} else {
