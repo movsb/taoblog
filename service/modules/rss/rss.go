@@ -1,5 +1,7 @@
 package rss
 
+// https://validator.w3.org/feed/check.cgi?url=https%3A%2F%2Fblog.twofei.com%2Frss#l9
+
 import (
 	"fmt"
 	"html/template"
@@ -13,8 +15,6 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/themes/modules/handle304"
 )
-
-const feedTimeFormat = "Mon, 02 Jan 2006 15:04:05"
 
 const tmpl = `
 <rss version="2.0">
@@ -40,6 +40,7 @@ type Article struct {
 	Date    string
 	Content template.HTML
 	Link    string
+	GUID    string
 }
 
 // RSS ...
@@ -89,7 +90,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for _, article := range articles {
 		rssArticle := Article{
 			Post:    article,
-			Date:    time.Unix(int64(article.Date), 0).Local().Format(feedTimeFormat),
+			Date:    time.Unix(int64(article.Date), 0).Local().Format(time.RFC1123),
 			Content: template.HTML("<![CDATA[" + strings.Replace(string(article.Content), "]]>", "]]]]><!CDATA[>", -1) + "]]>"),
 			Link:    fmt.Sprintf("%s/%d/", r.svc.HomeURL(), article.Id),
 		}
