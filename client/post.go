@@ -69,7 +69,7 @@ func (c *Client) CreatePost() error {
 
 	p.SourceType, p.Source = readSource(".")
 
-	rp, err := c.grpcClient.CreatePost(c.token(), &p)
+	rp, err := c.blog.CreatePost(c.token(), &p)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (c *Client) GetPost() {
 	if cfg.Title != "" {
 		panic("must not be created")
 	}
-	post, err := c.grpcClient.GetPost(c.token(), &protocols.GetPostRequest{
+	post, err := c.blog.GetPost(c.token(), &protocols.GetPostRequest{
 		Id:          int32(cfg.ID),
 		WithSource:  true,
 		WithContent: true,
@@ -136,7 +136,7 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 		}
 		id = config.ID
 	}
-	_, err := c.grpcClient.SetPostStatus(c.token(), &protocols.SetPostStatusRequest{
+	_, err := c.blog.SetPostStatus(c.token(), &protocols.SetPostStatusRequest{
 		Id:     id,
 		Public: public,
 		Touch:  touch,
@@ -163,7 +163,7 @@ func (c *Client) UpdatePost() error {
 
 	p.SourceType, p.Source = readSource(".")
 
-	rp, err := c.grpcClient.UpdatePost(c.token(), &protocols.UpdatePostRequest{
+	rp, err := c.blog.UpdatePost(c.token(), &protocols.UpdatePostRequest{
 		Post: &p,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: []string{
@@ -190,7 +190,7 @@ func (c *Client) UpdatePost() error {
 
 // DeletePost ...
 func (c *Client) DeletePost(id int64) error {
-	_, err := c.grpcClient.DeletePost(c.token(), &protocols.DeletePostRequest{
+	_, err := c.blog.DeletePost(c.token(), &protocols.DeletePostRequest{
 		Id: int32(id),
 	})
 	return err

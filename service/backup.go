@@ -16,31 +16,50 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type _ReadCloseSizer struct {
+	io.ReadCloser
+	Size func() int
+}
+
 // Backup ...
-func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*protocols.BackupResponse, error) {
-	if !s.auth.AuthGRPC(ctx).IsAdmin() {
-		return nil, status.Error(codes.Unauthenticated, "bad credentials")
+func (s *Service) Backup(req *protocols.BackupRequest, srv protocols.Management_BackupServer) error {
+	if !s.auth.AuthGRPC(srv.Context()).IsAdmin() {
+		return status.Error(codes.Unauthenticated, "bad credentials")
 	}
 
-	var r io.ReadCloser
+	sendPreparingProgress := func(progress float32) error {
+		return srv.Send(&protocols.BackupResponse{
+			BackupResponseMessage: &protocols.BackupResponse_Preparing_{
+				Preparing: &protocols.BackupResponse_Preparing{
+					Progress: progress,
+				},
+			},
+		})
+	}
+
+	var rcs _ReadCloseSizer
 
 	switch s.cfg.Database.Engine {
 	default:
 		panic(`engine not supported`)
 	case `sqlite`:
-		path, err := s.backupSQLite3(ctx)
+		path, err := s.backupSQLite3(srv.Context(), sendPreparingProgress)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		defer os.Remove(path)
 		fp, err := os.Open(path)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		r = fp
+		rcs.ReadCloser = fp
+		rcs.Size = func() int {
+			stat, _ := fp.Stat()
+			return int(stat.Size())
+		}
 	}
 
-	defer r.Close()
+	defer rcs.Close()
 
 	if req.Compress {
 		buf := bytes.NewBuffer(nil)
@@ -48,7 +67,7 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 		if err != nil {
 			panic(err)
 		}
-		n, err := io.Copy(w, r)
+		n, err := io.Copy(w, rcs)
 		if err != nil {
 			zap.S().Errorw(`compress failed`, `err`, err)
 			panic(`compress failed`)
@@ -58,20 +77,57 @@ func (s *Service) Backup(ctx context.Context, req *protocols.BackupRequest) (*pr
 			panic(`close failed`)
 		}
 		zap.S().Infow(`compress completed`, `before`, n, `after`, buf.Len())
-		r = ioutil.NopCloser(buf)
+		rcs.ReadCloser = ioutil.NopCloser(buf)
+		rcs.Size = func() int {
+			return buf.Len()
+		}
 	}
 
-	all, err := ioutil.ReadAll(r)
-	if err != nil {
-		panic(err)
+	const (
+		minSize = 16 << 10
+		maxSize = 1 << 20
+	)
+	totalSize := rcs.Size()
+	stepSize := totalSize / 100
+	switch {
+	case stepSize < minSize:
+		stepSize = minSize
+	case stepSize > maxSize:
+		stepSize = maxSize
 	}
 
-	return &protocols.BackupResponse{
-		Data: all,
-	}, nil
+	sendTransfer := func(data []byte, progress float32) error {
+		return srv.Send(&protocols.BackupResponse{
+			BackupResponseMessage: &protocols.BackupResponse_Transfering_{
+				Transfering: &protocols.BackupResponse_Transfering{
+					Progress: progress,
+					Data:     data,
+				},
+			},
+		})
+	}
+
+	buf := make([]byte, stepSize)
+	sent := 0
+	for {
+		n, err := rcs.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		sent += n
+		if err = sendTransfer(buf[:n], float32(sent)/float32(totalSize)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (s *Service) backupSQLite3(ctx context.Context) (string, error) {
+// https://www.sqlite.org/c3ref/backup_finish.html
+func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage float32) error) (string, error) {
 	tmpFile, err := ioutil.TempFile(``, `taoblog-*`)
 	if err != nil {
 		return ``, err
@@ -99,26 +155,54 @@ func (s *Service) backupSQLite3(ctx context.Context) (string, error) {
 		}
 		defer srcConn.Close()
 
-		if err := srcConn.Raw(func(srcDC interface{}) error {
+		return srcConn.Raw(func(srcDC interface{}) error {
 			rawSrcConn := srcDC.(*sqlite3.SQLiteConn)
 			backup, err := rawDstConn.Backup(`main`, rawSrcConn, `main`)
 			if err != nil {
 				return err
 			}
+			defer backup.Close() // close twice
 
-			// errors can be safely ignored.
-			_, _ = backup.Step(-1)
-
-			if err := backup.Close(); err != nil {
-				return err
+			if progress == nil {
+				progress = func(p float32) error {
+					// fmt.Println(p)
+					return nil
+				}
 			}
 
-			return nil
-		}); err != nil {
-			return err
-		}
+			var (
+				remaining int
+				total     int
+				step      int
+			)
 
-		return nil
+			for {
+				done, err := backup.Step(step)
+				if err != nil {
+					return err
+				}
+
+				// will keep update by sqlite3_backup_step()
+				remaining = backup.Remaining()
+				total = backup.PageCount()
+				if step == 0 {
+					step = total / 10
+					if step < 1 {
+						step = 10
+					}
+				}
+
+				if err := progress(1 - float32(remaining)/float32(total)); err != nil {
+					return err
+				}
+
+				if done {
+					break
+				}
+			}
+
+			return backup.Close()
+		})
 	}); err != nil {
 		return ``, err
 	}

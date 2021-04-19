@@ -8,6 +8,15 @@ message BackupRequest {
 }
 
 message BackupResponse {
-	// 数据库语句
-	bytes data = 1;
+	message Preparing {
+		float progress = 1;
+	}
+	message Transfering {
+		float progress = 1;
+		bytes data = 2;
+	}
+	oneof BackupResponseMessage {
+		Preparing preparing = 1;
+		Transfering transfering = 2;
+	}
 }

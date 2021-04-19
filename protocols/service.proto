@@ -9,6 +9,19 @@ import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 
+service Management {
+	// Backup
+
+	rpc Backup(BackupRequest) returns (stream BackupResponse) {
+		option (google.api.http) = {
+			get: "/v3/backup";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "导出数据库（拖库）。";
+		};
+	}
+}
+
 service TaoBlog {
 	rpc Ping(PingRequest) returns (PingResponse) {
 		option (google.api.http) = {
@@ -16,17 +29,6 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "Ping 服务器。";
-		};
-	}
-
-	// Backup
-
-	rpc Backup(BackupRequest) returns (BackupResponse) {
-		option (google.api.http) = {
-			get: "/v3/backup";
-		};
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "导出数据库（拖库）。";
 		};
 	}
 

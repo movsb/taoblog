@@ -59,7 +59,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:   cobra.NoArgs,
 		PreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			resp, err := client.grpcClient.Ping(context.Background(), &protocols.PingRequest{})
+			resp, err := client.blog.Ping(context.Background(), &protocols.PingRequest{})
 			if err != nil {
 				panic(err)
 			}

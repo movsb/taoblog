@@ -61,11 +61,13 @@ func (m *BackupRequest) GetCompress() bool {
 }
 
 type BackupResponse struct {
-	// 数据库语句
-	Data                 []byte   `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Types that are valid to be assigned to BackupResponseMessage:
+	//	*BackupResponse_Preparing_
+	//	*BackupResponse_Transfering_
+	BackupResponseMessage isBackupResponse_BackupResponseMessage `protobuf_oneof:"BackupResponseMessage"`
+	XXX_NoUnkeyedLiteral  struct{}                               `json:"-"`
+	XXX_unrecognized      []byte                                 `json:"-"`
+	XXX_sizecache         int32                                  `json:"-"`
 }
 
 func (m *BackupResponse) Reset()         { *m = BackupResponse{} }
@@ -93,7 +95,131 @@ func (m *BackupResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BackupResponse proto.InternalMessageInfo
 
-func (m *BackupResponse) GetData() []byte {
+type isBackupResponse_BackupResponseMessage interface {
+	isBackupResponse_BackupResponseMessage()
+}
+
+type BackupResponse_Preparing_ struct {
+	Preparing *BackupResponse_Preparing `protobuf:"bytes,1,opt,name=preparing,proto3,oneof"`
+}
+
+type BackupResponse_Transfering_ struct {
+	Transfering *BackupResponse_Transfering `protobuf:"bytes,2,opt,name=transfering,proto3,oneof"`
+}
+
+func (*BackupResponse_Preparing_) isBackupResponse_BackupResponseMessage() {}
+
+func (*BackupResponse_Transfering_) isBackupResponse_BackupResponseMessage() {}
+
+func (m *BackupResponse) GetBackupResponseMessage() isBackupResponse_BackupResponseMessage {
+	if m != nil {
+		return m.BackupResponseMessage
+	}
+	return nil
+}
+
+func (m *BackupResponse) GetPreparing() *BackupResponse_Preparing {
+	if x, ok := m.GetBackupResponseMessage().(*BackupResponse_Preparing_); ok {
+		return x.Preparing
+	}
+	return nil
+}
+
+func (m *BackupResponse) GetTransfering() *BackupResponse_Transfering {
+	if x, ok := m.GetBackupResponseMessage().(*BackupResponse_Transfering_); ok {
+		return x.Transfering
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*BackupResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*BackupResponse_Preparing_)(nil),
+		(*BackupResponse_Transfering_)(nil),
+	}
+}
+
+type BackupResponse_Preparing struct {
+	Progress             float32  `protobuf:"fixed32,1,opt,name=progress,proto3" json:"progress,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BackupResponse_Preparing) Reset()         { *m = BackupResponse_Preparing{} }
+func (m *BackupResponse_Preparing) String() string { return proto.CompactTextString(m) }
+func (*BackupResponse_Preparing) ProtoMessage()    {}
+func (*BackupResponse_Preparing) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b079f803aa0e9563, []int{1, 0}
+}
+
+func (m *BackupResponse_Preparing) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BackupResponse_Preparing.Unmarshal(m, b)
+}
+func (m *BackupResponse_Preparing) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BackupResponse_Preparing.Marshal(b, m, deterministic)
+}
+func (m *BackupResponse_Preparing) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BackupResponse_Preparing.Merge(m, src)
+}
+func (m *BackupResponse_Preparing) XXX_Size() int {
+	return xxx_messageInfo_BackupResponse_Preparing.Size(m)
+}
+func (m *BackupResponse_Preparing) XXX_DiscardUnknown() {
+	xxx_messageInfo_BackupResponse_Preparing.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BackupResponse_Preparing proto.InternalMessageInfo
+
+func (m *BackupResponse_Preparing) GetProgress() float32 {
+	if m != nil {
+		return m.Progress
+	}
+	return 0
+}
+
+type BackupResponse_Transfering struct {
+	Progress             float32  `protobuf:"fixed32,1,opt,name=progress,proto3" json:"progress,omitempty"`
+	Data                 []byte   `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BackupResponse_Transfering) Reset()         { *m = BackupResponse_Transfering{} }
+func (m *BackupResponse_Transfering) String() string { return proto.CompactTextString(m) }
+func (*BackupResponse_Transfering) ProtoMessage()    {}
+func (*BackupResponse_Transfering) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b079f803aa0e9563, []int{1, 1}
+}
+
+func (m *BackupResponse_Transfering) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BackupResponse_Transfering.Unmarshal(m, b)
+}
+func (m *BackupResponse_Transfering) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BackupResponse_Transfering.Marshal(b, m, deterministic)
+}
+func (m *BackupResponse_Transfering) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BackupResponse_Transfering.Merge(m, src)
+}
+func (m *BackupResponse_Transfering) XXX_Size() int {
+	return xxx_messageInfo_BackupResponse_Transfering.Size(m)
+}
+func (m *BackupResponse_Transfering) XXX_DiscardUnknown() {
+	xxx_messageInfo_BackupResponse_Transfering.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BackupResponse_Transfering proto.InternalMessageInfo
+
+func (m *BackupResponse_Transfering) GetProgress() float32 {
+	if m != nil {
+		return m.Progress
+	}
+	return 0
+}
+
+func (m *BackupResponse_Transfering) GetData() []byte {
 	if m != nil {
 		return m.Data
 	}
@@ -103,20 +229,28 @@ func (m *BackupResponse) GetData() []byte {
 func init() {
 	proto.RegisterType((*BackupRequest)(nil), "protocols.BackupRequest")
 	proto.RegisterType((*BackupResponse)(nil), "protocols.BackupResponse")
+	proto.RegisterType((*BackupResponse_Preparing)(nil), "protocols.BackupResponse.Preparing")
+	proto.RegisterType((*BackupResponse_Transfering)(nil), "protocols.BackupResponse.Transfering")
 }
 
 func init() { proto.RegisterFile("protocols/backup.proto", fileDescriptor_b079f803aa0e9563) }
 
 var fileDescriptor_b079f803aa0e9563 = []byte{
-	// 145 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2b, 0x28, 0xca, 0x2f,
-	0xc9, 0x4f, 0xce, 0xcf, 0x29, 0xd6, 0x4f, 0x4a, 0x4c, 0xce, 0x2e, 0x2d, 0xd0, 0x03, 0x0b, 0x08,
-	0x71, 0xc2, 0xc5, 0x95, 0xb4, 0xb9, 0x78, 0x9d, 0xc0, 0x52, 0x41, 0xa9, 0x85, 0xa5, 0xa9, 0xc5,
-	0x25, 0x42, 0x52, 0x5c, 0x1c, 0xc9, 0xf9, 0xb9, 0x05, 0x45, 0xa9, 0xc5, 0xc5, 0x12, 0x8c, 0x0a,
-	0x8c, 0x1a, 0x1c, 0x41, 0x70, 0xbe, 0x92, 0x0a, 0x17, 0x1f, 0x4c, 0x71, 0x71, 0x41, 0x7e, 0x5e,
-	0x71, 0xaa, 0x90, 0x10, 0x17, 0x4b, 0x4a, 0x62, 0x49, 0x22, 0x58, 0x25, 0x4f, 0x10, 0x98, 0xed,
-	0xa4, 0x12, 0xa5, 0x94, 0x9e, 0x59, 0x92, 0x51, 0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab, 0x9f, 0x9b,
-	0x5f, 0x56, 0x9c, 0xa4, 0x5f, 0x92, 0x98, 0x9f, 0x94, 0x93, 0x9f, 0xae, 0x0f, 0xb7, 0x38, 0x89,
-	0x0d, 0xcc, 0x34, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x4c, 0xf2, 0x18, 0x60, 0xa4, 0x00, 0x00,
-	0x00,
+	// 244 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x8f, 0xbf, 0x4a, 0x04, 0x31,
+	0x10, 0x87, 0xef, 0x16, 0x91, 0xdb, 0x59, 0xb5, 0x08, 0xf8, 0x87, 0xad, 0x64, 0x55, 0x14, 0x84,
+	0x2c, 0x68, 0x6d, 0xb3, 0x36, 0x67, 0x21, 0x48, 0xb0, 0xb2, 0x4b, 0x62, 0x8c, 0x87, 0xb7, 0x3b,
+	0x31, 0x93, 0xf5, 0x7d, 0x7c, 0x53, 0x71, 0xe0, 0x72, 0x77, 0x85, 0x76, 0x33, 0x93, 0x6f, 0xbe,
+	0xcc, 0x0f, 0x8e, 0x42, 0xc4, 0x84, 0x16, 0x97, 0xd4, 0x1a, 0x6d, 0x3f, 0xc6, 0x20, 0x79, 0x20,
+	0xca, 0x3c, 0x6f, 0xae, 0x61, 0xbf, 0xe3, 0x27, 0xe5, 0x3e, 0x47, 0x47, 0x49, 0xd4, 0x30, 0xb3,
+	0xd8, 0x87, 0xe8, 0x88, 0x4e, 0xa6, 0xa7, 0xd3, 0xab, 0x99, 0xca, 0x7d, 0xf3, 0x5d, 0xc0, 0xc1,
+	0x8a, 0xa6, 0x80, 0x03, 0x39, 0x71, 0x0f, 0x65, 0x88, 0x2e, 0xe8, 0xb8, 0x18, 0x3c, 0xf3, 0xd5,
+	0xcd, 0x99, 0xcc, 0x7a, 0xb9, 0x4d, 0xcb, 0xa7, 0x15, 0x3a, 0x9f, 0xa8, 0xf5, 0x9e, 0x78, 0x80,
+	0x2a, 0x45, 0x3d, 0xd0, 0x9b, 0x63, 0x4d, 0xc1, 0x9a, 0x8b, 0xbf, 0x35, 0xcf, 0x6b, 0x78, 0x3e,
+	0x51, 0x9b, 0xbb, 0xf5, 0x25, 0x94, 0xf9, 0x93, 0xdf, 0x2c, 0x21, 0xa2, 0xcf, 0x59, 0x0a, 0x95,
+	0xfb, 0xfa, 0x0e, 0xaa, 0x0d, 0xcd, 0x7f, 0xa8, 0x10, 0xb0, 0xf3, 0xaa, 0x93, 0xe6, 0xbb, 0xf6,
+	0x14, 0xd7, 0xdd, 0x31, 0x1c, 0x6e, 0x1f, 0xf5, 0xe8, 0x88, 0xb4, 0x77, 0xdd, 0xf9, 0x4b, 0xe3,
+	0x17, 0xe9, 0x7d, 0x34, 0xd2, 0x62, 0xdf, 0xf6, 0xf8, 0x45, 0xa6, 0x4d, 0x1a, 0xcd, 0x12, 0x7d,
+	0x9b, 0x03, 0x99, 0x5d, 0x2e, 0x6f, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x78, 0x9e, 0x6b, 0x2c,
+	0xa2, 0x01, 0x00, 0x00,
 }

@@ -11,7 +11,6 @@ require (
 	github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
 	github.com/movsb/taorm v0.0.0-20201209183410-91bafb0b22a6
-	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/yuin/goldmark v1.2.1
 	go.uber.org/zap v1.10.0

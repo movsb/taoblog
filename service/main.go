@@ -72,6 +72,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	)
 
 	protocols.RegisterTaoBlogServer(server, s)
+	protocols.RegisterManagementServer(server, s)
 
 	listener, err := net.Listen("tcp", GrpcAddress)
 	if err != nil {

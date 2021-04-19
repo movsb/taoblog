@@ -26,13 +26,18 @@ const (
 )
 
 // Client ...
+// TODO: close client connection.
 type Client struct {
-	config     HostConfig
-	client     *http.Client
-	grpcClient protocols.TaoBlogClient
+	config HostConfig
+
+	client *http.Client
+	cc     *grpc.ClientConn
+
+	blog       protocols.TaoBlogClient
+	management protocols.ManagementClient
 }
 
-// NewClient ...
+// NewClient creates a new client that interacts with server.
 func NewClient(config HostConfig) *Client {
 	c := &Client{
 		config: config,
@@ -84,7 +89,11 @@ func NewClient(config HostConfig) *Client {
 		}
 	}
 
-	c.grpcClient = protocols.NewTaoBlogClient(conn)
+	c.cc = conn
+
+	c.blog = protocols.NewTaoBlogClient(c.cc)
+	c.management = protocols.NewManagementClient(c.cc)
+
 	return c
 }
 

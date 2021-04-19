@@ -16,7 +16,7 @@ func (c *Client) SetCommentPostID(commentID int64, postID int64) {
 		Id:     commentID,
 		PostId: postID,
 	}
-	resp, err := c.grpcClient.SetCommentPostID(c.token(), &req)
+	resp, err := c.blog.SetCommentPostID(c.token(), &req)
 	if err != nil {
 		panic(err)
 	}
@@ -24,7 +24,7 @@ func (c *Client) SetCommentPostID(commentID int64, postID int64) {
 }
 
 func (c *Client) GetComment(cmdID int64) *protocols.Comment {
-	cmt, err := c.grpcClient.GetComment(c.token(), &protocols.GetCommentRequest{
+	cmt, err := c.blog.GetComment(c.token(), &protocols.GetCommentRequest{
 		Id: cmdID,
 	})
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *Client) UpdateComment(cmdID int64) {
 	cmt.SourceType = `markdown`
 	cmt.Source = string(bys)
 
-	_, err = c.grpcClient.UpdateComment(c.token(), &protocols.UpdateCommentRequest{
+	_, err = c.blog.UpdateComment(c.token(), &protocols.UpdateCommentRequest{
 		Comment: cmt,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: []string{

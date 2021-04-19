@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"compress/zlib"
 	"fmt"
 	"io"
@@ -17,27 +16,27 @@ import (
 func (c *Client) Backup(cmd *cobra.Command) {
 	compress := true
 
-	resp, err := c.grpcClient.Backup(c.token(), &protocols.BackupRequest{Compress: compress})
+	backupClient, err := c.management.Backup(c.token(), &protocols.BackupRequest{Compress: compress})
 	if err != nil {
 		panic(err)
 	}
 
-	var reader io.ReadCloser
+	bpr := &_BackupProgressReader{c: backupClient}
+	defer backupClient.CloseSend()
 
+	var r io.ReadCloser
 	if compress {
-		r, err := zlib.NewReader(bytes.NewReader(resp.Data))
+		zr, err := zlib.NewReader(bpr)
 		if err != nil {
 			panic(err)
 		}
-		reader = r
+		r = zr
 	} else {
-		reader = ioutil.NopCloser(bytes.NewReader(resp.Data))
+		r = ioutil.NopCloser(bpr)
 	}
-
-	defer reader.Close()
+	defer r.Close()
 
 	var w io.Writer
-
 	bStdout, err := cmd.Flags().GetBool(`stdout`)
 	if err != nil {
 		panic(err)
@@ -55,7 +54,44 @@ func (c *Client) Backup(cmd *cobra.Command) {
 		w = os.Stdout
 	}
 
-	if _, err := io.Copy(w, reader); err != nil {
+	if _, err := io.Copy(w, r); err != nil {
 		panic(err)
 	}
+
+	fmt.Println()
+}
+
+type _BackupProgressReader struct {
+	c         protocols.Management_BackupClient
+	d         []byte
+	preparing bool
+}
+
+// Read ...
+func (r *_BackupProgressReader) Read(p []byte) (int, error) {
+	if len(r.d) == 0 {
+		rsp, err := r.c.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return 0, err
+			}
+			panic(err)
+		}
+		switch typed := rsp.BackupResponseMessage.(type) {
+		case *protocols.BackupResponse_Preparing_:
+			fmt.Printf("\r\033[KPreparing... %.2f%%", typed.Preparing.Progress*100)
+			r.preparing = true
+		case *protocols.BackupResponse_Transfering_:
+			if r.preparing {
+				fmt.Println()
+				r.preparing = false
+			}
+			fmt.Printf("\r\033[KTransfering... %.2f%%", typed.Transfering.Progress*100)
+			r.d = typed.Transfering.Data
+		}
+	}
+
+	n := copy(p, r.d)
+	r.d = r.d[n:]
+	return n, nil
 }
