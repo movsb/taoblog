@@ -118,8 +118,6 @@ github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0j
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
-github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460 h1:tbHbJHFHHsfOHiWHTTQyq0d1bSubUWFgRNF84zRv/mE=
-github.com/movsb/alioss v0.0.0-20180411084708-ae700d1e4460/go.mod h1:1uvxVt9wTuHYsiwYurvgRoq4rTtRwzojc03U1agxL5o=
 github.com/movsb/goldmark v1.1.31-0.20200522174842-bc0b03f265ac h1:IQnLkd7PtUPU+YmX5jKHhZeXFVbkjgdUzrMHOwawTNY=
 github.com/movsb/goldmark v1.1.31-0.20200522174842-bc0b03f265ac/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:eeMZo/pDQ2Vdmq7jFlb3JMYDLHtQWELZIw+oeEevh4A=
