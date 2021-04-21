@@ -20,10 +20,11 @@ build-image:
 
 .PHONY: push-image
 push-image:
-	docker push taocker/taoblog:latest
+	docker push taocker/taoblog:amd64-latest
+	docker push taocker/taoblog:arm-latest
 .PHONY: try
 try:
-	docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:latest
+	docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:amd64-latest
 
 .PHONY: tools
 tools:

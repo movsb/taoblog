@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eu
 
 _run_in_xgo() {
 	docker run -it --rm \
@@ -16,14 +16,15 @@ _run_in_xgo() {
 		"$@"
 }
 
-CGO_ENABLED=1 GOOS=linux GOARCH=amd64 _run_in_xgo ./setup/scripts/cross-build.sh
-
 (cd themes/blog/statics/sass && ./make_style.sh)
+(cd themes/timeline/statics/sass && ./make_style.sh)
 
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
 mkdir -p docker/themes/blog
 rsync -aPvh --delete themes/blog/{statics,templates} docker/themes/blog/
+mkdir -p docker/themes/timeline
+rsync -aPvh --delete themes/timeline/{statics,templates} docker/themes/timeline/
 
 mkdir -p docker/admin
 rsync -aPvh --delete admin/{statics,templates} docker/admin
@@ -31,5 +32,10 @@ rsync -aPvh --delete admin/{statics,templates} docker/admin
 mkdir -p docker/protocols/docs
 rsync -aPvh --delete protocols/docs docker/protocols
 
-IMAGE=taocker/taoblog:latest
-(cd docker && docker build -t $IMAGE .)
+_run_in_xgo -c 'CGO_ENABLED=1 GOOS=linux GOARCH=amd64 ./setup/scripts/cross-build.sh'
+IMAGE=taocker/taoblog:amd64-latest
+(cd docker && docker build -t $IMAGE -f Dockerfile-amd64 .)
+
+_run_in_xgo -c 'CC=arm-linux-gnueabi-gcc-5 CGO_ENABLED=1 GOOS=linux GOARCH=arm ./setup/scripts/cross-build.sh'
+IMAGE=taocker/taoblog:arm-latest
+(cd docker && docker build -t $IMAGE -f Dockerfile-arm .)

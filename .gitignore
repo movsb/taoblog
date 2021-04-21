@@ -2,6 +2,7 @@
 *.swp
 .DS_Store
 
+/tmp/
 /.vscode/
 /files/
 /taoblog.yml
