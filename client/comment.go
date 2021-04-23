@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 
-	"github.com/movsb/taoblog/client/exec"
 	"github.com/movsb/taoblog/protocols"
 	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
@@ -66,7 +66,13 @@ func (c *Client) UpdateComment(cmdID int64) {
 
 	fmt.Printf("Editing comment: %d, post: %d\n", cmt.Id, cmt.PostId)
 
-	exec.Exec(editor, tmpFile.Name())
+	cmd := exec.Command(editor, tmpFile.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		panic(err)
+	}
 
 	newInfo, err := os.Stat(tmpFile.Name())
 	if err != nil {
