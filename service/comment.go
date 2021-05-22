@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"gopkg.in/yaml.v2"
 )
 
 // Deprecated.
@@ -362,6 +363,9 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 	adminEmail = strings.ToLower(adminEmail)
 	commentEmail := strings.ToLower(c.Email)
 
+	var distinctNames []string
+	var distinctEmails []string
+
 	if commentEmail != adminEmail {
 		data := &comment_notify.AdminData{
 			Title:    postTitle,
@@ -376,6 +380,28 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 			data.Content = c.Content
 		}
 		s.cmtntf.NotifyAdmin(data)
+
+		defer func() {
+			if s.cmtntf.Config.Comment.Push.Chanify != nil {
+				var users []string
+				for i := 0; i < len(distinctNames); i++ {
+					users = append(users, fmt.Sprintf(`%s <%s>`, distinctNames[i], distinctEmails[i]))
+				}
+				body := struct {
+					*comment_notify.AdminData
+					Recipients []string `yaml:"recipients"`
+				}{
+					AdminData:  data,
+					Recipients: users,
+				}
+				b, _ := yaml.Marshal(body)
+				comment_notify.Chanify(
+					s.cmtntf.Config.Comment.Push.Chanify.Endpoint,
+					s.cmtntf.Config.Comment.Push.Chanify.Token,
+					postTitle, string(b),
+				)
+			}
+		}()
 	}
 
 	var parents []models.Comment
@@ -395,8 +421,6 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		return
 	}
 
-	var distinctNames []string
-	var distinctEmails []string
 	distinct := map[string]bool{}
 	for _, parent := range parents {
 		email := strings.ToLower(parent.Email)

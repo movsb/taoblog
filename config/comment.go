@@ -8,12 +8,14 @@ type CommentConfig struct {
 	NotAllowedEmails  []string               `yaml:"not_allowed_emails"`
 	NotAllowedAuthors []string               `yaml:"not_allowed_authors"`
 	Templates         CommentTemplatesConfig `yaml:"templates"`
+	Push              CommentPushConfig      `yaml:"push"`
 }
 
 // DefaultCommentConfig ...
 func DefaultCommentConfig() CommentConfig {
 	return CommentConfig{
 		Templates: DefaultCommentTemplatesConfig(),
+		Push:      DefaultCommentPushConfig(),
 	}
 }
 
@@ -50,4 +52,27 @@ func DefaultCommentTemplatesConfig() CommentTemplatesConfig {
 		Admin: adminTemplate,
 		Guest: guestTemplate,
 	}
+}
+
+// CommentPushConfig ...
+type CommentPushConfig struct {
+	Chanify *CommentChanifyPushConfig `yaml:"chanify"`
+}
+
+// DefaultCommentPushConfig ...
+func DefaultCommentPushConfig() CommentPushConfig {
+	return CommentPushConfig{
+		Chanify: nil,
+	}
+}
+
+// CommentChanifyPushConfig ...
+type CommentChanifyPushConfig struct {
+	Endpoint string `yaml:"endpoint"`
+	Token    string `yaml:"token"`
+}
+
+// DefaultCommentChanifyPushConfig ...
+func DefaultCommentChanifyPushConfig() CommentChanifyPushConfig {
+	return CommentChanifyPushConfig{}
 }

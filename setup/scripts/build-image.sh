@@ -17,14 +17,11 @@ _run_in_xgo() {
 }
 
 (cd themes/blog/statics/sass && ./make_style.sh)
-(cd themes/timeline/statics/sass && ./make_style.sh)
 
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
 mkdir -p docker/themes/blog
 rsync -aPvh --delete themes/blog/{statics,templates} docker/themes/blog/
-mkdir -p docker/themes/timeline
-rsync -aPvh --delete themes/timeline/{statics,templates} docker/themes/timeline/
 
 mkdir -p docker/admin
 rsync -aPvh --delete admin/{statics,templates} docker/admin

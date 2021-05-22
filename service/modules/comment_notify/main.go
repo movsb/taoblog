@@ -13,14 +13,14 @@ var adminTmpl *template.Template
 var guestTmpl *template.Template
 
 type AdminData struct {
-	Title   string
-	Link    string
-	Date    string
-	Author  string
-	Content string
+	Title   string `yaml:"title"`
+	Link    string `yaml:"link"`
+	Date    string `yaml:"date"`
+	Author  string `yaml:"author"`
+	Content string `yaml:"content"`
 
-	Email    string
-	HomePage string
+	Email    string `yaml:"email"`
+	HomePage string `yaml:"home_page"`
 }
 
 type GuestData struct {
