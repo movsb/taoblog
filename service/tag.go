@@ -16,7 +16,10 @@ func (s *Service) tags() *taorm.Stmt {
 // GetTagByName gets a tag by Name.
 func (s *Service) GetTagByName(name string) *models.Tag {
 	var tag models.Tag
-	s.tags().Where("name=?", name).MustFind(&tag)
+	err := s.tags().Where("name=?", name).Find(&tag)
+	if err != nil {
+		panic(&TagNotFoundError{})
+	}
 	return &tag
 }
 
