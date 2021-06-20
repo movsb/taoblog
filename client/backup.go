@@ -20,9 +20,9 @@ func (c *Client) Backup(cmd *cobra.Command) {
 	if err != nil {
 		panic(err)
 	}
+	defer backupClient.CloseSend()
 
 	bpr := &_BackupProgressReader{c: backupClient}
-	defer backupClient.CloseSend()
 
 	var r io.ReadCloser
 	if compress {
@@ -42,7 +42,7 @@ func (c *Client) Backup(cmd *cobra.Command) {
 		panic(err)
 	}
 	if !bStdout {
-		name := time.Now().Format(`taoblog-2006-01-02.db`)
+		name := time.Now().Format(`taoblog.2006-01-02.db`)
 		fp, err := os.Create(name)
 		if err != nil {
 			panic(err)
@@ -50,6 +50,25 @@ func (c *Client) Backup(cmd *cobra.Command) {
 		defer fmt.Printf("Filename: %s\n", name)
 		defer fp.Close()
 		w = fp
+
+		bNoLink, err := cmd.Flags().GetBool((`no-link`))
+		if err != nil {
+			panic(err)
+		}
+		if !bNoLink {
+			defer func() {
+				link := `taoblog.db`
+				if _, err := os.Stat(link); err == nil {
+					os.Remove(link)
+				}
+				err := os.Symlink(name, link)
+				if err != nil {
+					fmt.Println(err.Error())
+					return
+				}
+				fmt.Printf("Symlinked to %s\n", link)
+			}()
+		}
 	} else {
 		w = os.Stdout
 	}

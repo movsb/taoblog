@@ -254,5 +254,6 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	backupCmd.Flags().Bool(`stdout`, false, `Output to stdout`)
+	backupCmd.Flags().Bool(`no-link`, false, `Don't link to taoblog.db`)
 	rootCmd.AddCommand(backupCmd)
 }
