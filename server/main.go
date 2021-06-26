@@ -66,7 +66,6 @@ func serve() {
 	}
 
 	canon := canonical.New(renderer)
-	canon.PingbackURL = theService.HomeURL() + `/v3/xmlrpc`
 	mux.Handle(`/`, canon)
 
 	server := &http.Server{
@@ -82,7 +81,7 @@ func serve() {
 		}
 	}()
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
 	signal.Notify(quit, syscall.SIGKILL)
 	signal.Notify(quit, syscall.SIGTERM)

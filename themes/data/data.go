@@ -56,8 +56,9 @@ type MetaData struct {
 
 // PostData ...
 type PostData struct {
-	Post      *Post
-	Pingbacks []*models.Pingback
+	Post        *Post
+	Pingbacks   []*models.Pingback
+	PingbackURL string
 }
 
 // NewDataForPost ...
@@ -70,7 +71,8 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Servic
 		},
 	}
 	p := &PostData{
-		Post: newPost(post),
+		Post:        newPost(post),
+		PingbackURL: service.HomeURL() + `/v3/xmlrpc`,
 	}
 	d.Post = p
 	if cfg.Site.ShowRelatedPosts {

@@ -2,6 +2,7 @@
 <base href="/{{.Post.Post.ID}}/" />
 <script>var _post_id = +"{{.Post.Post.ID}}";</script>
 <link rel="stylesheet" href="/plugins/highlight/prism.css" />
+<link rel="pingback" href="{{.Post.PingbackURL}}" />
 {{end}}
 
 {{ $dot:=. }}
