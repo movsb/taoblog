@@ -480,6 +480,26 @@ func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatus
 	return &protocols.SetPostStatusResponse{}, nil
 }
 
+// GetPostSource ...
+func (s *Service) GetPostSource(ctx context.Context, in *protocols.GetPostSourceRequest) (*protocols.GetPostSourceResponse, error) {
+	var p models.Post
+	s.tdb.Select(`status,source,source_type,content`).Where(`id=?`, in.Id).MustFind(&p)
+	user := s.auth.AuthGRPC(ctx)
+	if !user.IsAdmin() && p.Status != `public` {
+		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
+	}
+	rsp := &protocols.GetPostSourceResponse{
+		Type: p.SourceType,
+	}
+	switch {
+	case p.Source != ``:
+		rsp.Content = p.Source
+	default:
+		rsp.Content = p.Content
+	}
+	return rsp, nil
+}
+
 // GetPostCommentsCount ...
 func (s *Service) GetPostCommentsCount(ctx context.Context, in *protocols.GetPostCommentsCountRequest) (*protocols.GetPostCommentsCountResponse, error) {
 	var post models.Post

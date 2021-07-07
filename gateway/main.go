@@ -2,8 +2,10 @@ package gateway
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -12,6 +14,8 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/pingback"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Gateway struct {
@@ -83,6 +87,8 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle(`POST`, `/v3/posts/{post_id}/files/{file=**}`, g.CreateFile)
 	// handle(`DELETE`, `/v3/posts/{post_id}/files/{file=**}`, g.DeleteFile)
 
+	handle(`GET`, `/v3/posts/{post_id=*}/source`, g.getSource)
+
 	pingbackHandler := pingback.Handler(g.service.Pingback)
 	gatewayPingbackHandler := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		pingbackHandler(w, r)
@@ -124,4 +130,38 @@ func getSwagger(w http.ResponseWriter, req *http.Request, params map[string]stri
 
 func deprecated(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+}
+
+func (g *Gateway) getSource(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	postID, err := strconv.Atoi(params[`post_id`])
+	if err != nil {
+		panic(err)
+	}
+	user := g.auther.AuthCookie2(req)
+	rsp, err := g.service.GetPostSource(
+		user.Context(nil),
+		&protocols.GetPostSourceRequest{
+			Id: int64(postID),
+		},
+	)
+	if err != nil {
+		code := 500
+		if st, ok := status.FromError(err); ok {
+			code = runtime.HTTPStatusFromCode(codes.Code(st.Proto().Code))
+		}
+		http.Error(w, err.Error(), code)
+		return
+	}
+
+	var contentType string
+	switch rsp.Type {
+	case ``, `html`:
+		contentType = "text/plain"
+	case `markdown`:
+		contentType = "text/plain"
+	}
+	contentType += "; charset=utf-8"
+
+	w.Header().Add(`Content-Type`, contentType)
+	io.Copy(w, strings.NewReader(rsp.Content))
 }

@@ -56,6 +56,7 @@
                 {{if .Tags}}
                     ，标签：<span class="value">{{.TagsString}}</span>
                 {{end}}
+				，<span class="value"><a href="/v3/posts/{{.Id}}/source">查看源内容</a></span>
 			</p>
 			{{ if $dot.Config.Site.Copyright }}
 			<p class="copyright">{{ $dot.Config.Site.Copyright }}</p>

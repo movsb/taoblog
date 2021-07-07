@@ -58,3 +58,12 @@ message SetPostStatusRequest {
 message SetPostStatusResponse {
 
 }
+
+message GetPostSourceRequest {
+	int64 id = 1;
+}
+
+message GetPostSourceResponse {
+	string type = 1;
+	string content = 2;
+}
