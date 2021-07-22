@@ -15,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/gateway"
+	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/canonical"
 	"github.com/movsb/taoblog/service"
@@ -39,6 +40,8 @@ func AddCommands(rootCmd *cobra.Command) {
 }
 
 func serve() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	cfg := config.LoadFile(`taoblog.yml`)
 
 	db := initDatabase(cfg)
@@ -80,6 +83,11 @@ func serve() {
 			}
 		}
 	}()
+
+	r := metrics.NewRegistry(context.TODO())
+	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
+
+	log.Println("Server started")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
