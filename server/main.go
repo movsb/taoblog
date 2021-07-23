@@ -49,10 +49,12 @@ func serve() {
 
 	migration.Migrate(db)
 
+	var mux = http.NewServeMux()
+	r := metrics.NewRegistry(context.TODO())
+	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
+
 	theAuth := auth.New(cfg.Auth)
 	theService := service.NewService(cfg, db, theAuth)
-
-	var mux = http.NewServeMux()
 
 	gateway.NewGateway(theService, theAuth, mux)
 
@@ -68,7 +70,7 @@ func serve() {
 		panic("unknown theme: " + cfg.Theme.Name)
 	}
 
-	canon := canonical.New(renderer)
+	canon := canonical.New(renderer, r)
 	mux.Handle(`/`, canon)
 
 	server := &http.Server{
@@ -83,9 +85,6 @@ func serve() {
 			}
 		}
 	}()
-
-	r := metrics.NewRegistry(context.TODO())
-	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
 
 	log.Println("Server started")
 

@@ -33,6 +33,6 @@ _run_in_xgo -c 'CGO_ENABLED=1 GOOS=linux GOARCH=amd64 ./setup/scripts/cross-buil
 IMAGE=taocker/taoblog:amd64-latest
 (cd docker && docker build -t $IMAGE -f Dockerfile-amd64 .)
 
-_run_in_xgo -c 'CC=arm-linux-gnueabi-gcc-5 CGO_ENABLED=1 GOOS=linux GOARCH=arm ./setup/scripts/cross-build.sh'
-IMAGE=taocker/taoblog:arm-latest
-(cd docker && docker build -t $IMAGE -f Dockerfile-arm .)
+#_run_in_xgo -c 'CC=arm-linux-gnueabi-gcc-5 CGO_ENABLED=1 GOOS=linux GOARCH=arm ./setup/scripts/cross-build.sh'
+#IMAGE=taocker/taoblog:arm-latest
+#(cd docker && docker build -t $IMAGE -f Dockerfile-arm .)

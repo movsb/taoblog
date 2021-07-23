@@ -1,0 +1,28 @@
+version: '2'
+services:
+  taoblog:
+    image: taocker/taoblog:amd64-latest
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./taoblog.yml:/workspace/taoblog.yml:ro
+      - ./taoblog.db:/workspace/taoblog.db
+      - ./files:/workspace/files
+    ports:
+      - 2563:2563
+      - 2564:2564
+  prometheus:
+    image: prom/prometheus:latest
+    user: '0'
+    volumes:
+      - ./prometheus/config/:/etc/prometheus
+      - ./prometheus/data/:/prometheus
+  grafana:
+    image: grafana/grafana:latest
+    user: '0'
+    volumes:
+      - ./grafana/config/:/etc/grafana
+      - ./grafana/data/:/var/lib/grafana
+      - ./grafana/logs/:/var/log/grafana
+    ports:
+      - 3000:3000

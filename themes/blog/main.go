@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -165,14 +166,15 @@ func (b *Blog) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, quer
 	return false
 }
 
-func (b *Blog) QueryHome(w http.ResponseWriter, req *http.Request) {
+func (b *Blog) QueryHome(w http.ResponseWriter, req *http.Request) error {
 	d := data.NewDataForHome(b.cfg, b.auth.AuthCookie2(req), b.service)
 	t := b.namedTemplates[`home.html`]
 	d.Template = t
 	d.Writer = w
 	if err := t.Execute(w, d); err != nil {
-		panic(err)
+		log.Println(err)
 	}
+	return nil
 }
 
 func (b *Blog) querySearch(w http.ResponseWriter, r *http.Request) {
@@ -221,29 +223,32 @@ func (b *Blog) queryTags(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (b *Blog) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
+func (b *Blog) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
 	post := b.service.GetPostByID(id)
 	b.userMustCanSeePost(req, post)
 	b.incView(post.Id)
 	b.tempRenderPost(w, req, post)
+	return nil
 }
 
 func (b *Blog) incView(id int64) {
 	b.service.IncrementPostPageView(id)
 }
 
-func (b *Blog) QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) {
+func (b *Blog) QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) (int64, error) {
 	post := b.service.GetPostBySlug(tree, slug)
 	b.userMustCanSeePost(req, post)
 	b.incView(post.Id)
 	b.tempRenderPost(w, req, post)
+	return post.Id, nil
 }
 
-func (b *Blog) QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) {
+func (b *Blog) QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) (int64, error) {
 	post := b.service.GetPostByPage(parents, slug)
 	b.userMustCanSeePost(req, post)
 	b.incView(post.Id)
 	b.tempRenderPost(w, req, post)
+	return post.Id, nil
 }
 
 func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *protocols.Post) {
@@ -259,7 +264,7 @@ func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto
 	handle304.ArticleResponse(w, time.Unix(int64(p.Modified), 0))
 
 	if err := t.Execute(w, d); err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
 

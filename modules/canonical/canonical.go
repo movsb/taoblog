@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/utils"
 )
 
@@ -13,12 +14,12 @@ import (
 type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool
 	ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool
-	QueryHome(w http.ResponseWriter, req *http.Request)
-	QueryByID(w http.ResponseWriter, req *http.Request, id int64)
+	QueryHome(w http.ResponseWriter, req *http.Request) error
+	QueryByID(w http.ResponseWriter, req *http.Request, id int64) error
 	QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
 	QueryByTags(w http.ResponseWriter, req *http.Request, tags []string)
-	QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string)
-	QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string)
+	QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) (int64, error)
+	QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) (int64, error)
 	QueryStatic(w http.ResponseWriter, req *http.Request, file string)
 	QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool
 }
@@ -27,13 +28,15 @@ type Renderer interface {
 type Canonical struct {
 	mux      *http.ServeMux
 	renderer Renderer
+	mr       *metrics.Registry
 }
 
 // New ...
-func New(renderer Renderer) *Canonical {
+func New(renderer Renderer, mr *metrics.Registry) *Canonical {
 	c := &Canonical{
 		mux:      http.NewServeMux(),
 		renderer: renderer,
+		mr:       mr,
 	}
 	return c
 }
@@ -60,6 +63,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			c.renderer.QueryHome(w, req)
+			c.mr.CountHome()
 			return
 		}
 
@@ -72,6 +76,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			id := utils.MustToInt64(matches[1])
 			c.renderer.QueryByID(w, req, id)
+			c.mr.CountPageView(id)
 			return
 		}
 
@@ -98,7 +103,10 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpBySlug.FindStringSubmatch(path)
 			tree := matches[1]
 			slug := matches[2]
-			c.renderer.QueryBySlug(w, req, tree, slug)
+			id, err := c.renderer.QueryBySlug(w, req, tree, slug)
+			if err == nil {
+				c.mr.CountPageView(id)
+			}
 			return
 		}
 
@@ -109,7 +117,10 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				parents = parents[1:]
 			}
 			slug := matches[3]
-			c.renderer.QueryByPage(w, req, parents, slug)
+			id, err := c.renderer.QueryByPage(w, req, parents, slug)
+			if err == nil {
+				c.mr.CountPageView(id)
+			}
 			return
 		}
 
