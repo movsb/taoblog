@@ -15,12 +15,24 @@ services:
     image: prom/prometheus:latest
     user: '0'
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - ./prometheus/config/:/etc/prometheus
       - ./prometheus/data/:/prometheus
+    command: # strings /proc/1/cmdline
+      - /bin/prometheus
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --storage.tsdb.retention.time=100y
+      - --web.enable-admin-api
   grafana:
     image: grafana/grafana:latest
     user: '0'
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - ./grafana/config/:/etc/grafana
       - ./grafana/data/:/var/lib/grafana
       - ./grafana/logs/:/var/log/grafana

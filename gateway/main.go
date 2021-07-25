@@ -2,10 +2,12 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -96,7 +98,17 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle(`GET`, `/v3/xmlrpc`, gatewayPingbackHandler)
 	handle(`POST`, `/v3/xmlrpc`, gatewayPingbackHandler)
 
+	handle(`GET`, `/v3/redirect-to-grafana`, redirectToGrafana)
+
 	return nil
+}
+
+func redirectToGrafana(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	t := time.Now()
+	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local).Unix() * 1000
+	end := time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.Local).Unix()*1000 - 1
+	u := fmt.Sprintf(`/grafana/d/_2g5VpWnz/pei-ta-qu-liu-lang?orgId=1&from=%d&to=%d&refresh=5s&kiosk`, start, end)
+	http.Redirect(w, req, u, 302)
 }
 
 func (g *Gateway) GetAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {

@@ -189,7 +189,11 @@ func checkURLs(w xmlrpc.ResponseWriter, r *xmlrpc.Request, source string, target
 		}
 	}
 	if !ipFound {
-		zap.L().Info(`pingback: invalid source url`, zap.String(`source`, source))
+		zap.L().Info(`pingback: invalid source url`,
+			zap.String(`source`, source),
+			zap.String(`remote_addr`, r.Req.RemoteAddr),
+			zap.Strings(`ips`, ips),
+		)
 		w.WriteFault(0, `invalid source url`)
 		return false
 	}
