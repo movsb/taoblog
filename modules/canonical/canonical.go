@@ -64,6 +64,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			c.renderer.QueryHome(w, req)
 			c.mr.CountHome()
+			c.mr.UserAgent(req.UserAgent())
 			return
 		}
 
@@ -77,6 +78,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			id := utils.MustToInt64(matches[1])
 			c.renderer.QueryByID(w, req, id)
 			c.mr.CountPageView(id)
+			c.mr.UserAgent(req.UserAgent())
 			return
 		}
 
@@ -106,6 +108,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			id, err := c.renderer.QueryBySlug(w, req, tree, slug)
 			if err == nil {
 				c.mr.CountPageView(id)
+				c.mr.UserAgent(req.UserAgent())
 			}
 			return
 		}
@@ -120,6 +123,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			id, err := c.renderer.QueryByPage(w, req, parents, slug)
 			if err == nil {
 				c.mr.CountPageView(id)
+				c.mr.UserAgent(req.UserAgent())
 			}
 			return
 		}
