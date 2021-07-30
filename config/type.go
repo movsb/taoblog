@@ -72,8 +72,7 @@ func DefaultDataConfig() DataConfig {
 
 // FileDataConfig ...
 type FileDataConfig struct {
-	Path   string `yaml:"path"`
-	Mirror string `yaml:"mirror"`
+	Path string `yaml:"path"`
 }
 
 // DefaultFileDataConfig ...

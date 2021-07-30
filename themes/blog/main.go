@@ -282,54 +282,20 @@ func (b *Blog) QueryFile(w http.ResponseWriter, req *http.Request, postID int64,
 	file = filepath.Clean(file)
 	fp, err := b.service.Store().Open(postID, file)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if os.IsNotExist(err) {
+			http.NotFound(w, req)
 			return
 		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	if fp != nil {
-		defer fp.Close()
+	defer fp.Close()
+	stat, err := fp.Stat()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	redir := true
-
-	fileHost := b.cfg.Data.File.Mirror
-
-	// remote isn't enabled, use local only
-	if redir && fileHost == "" {
-		redir = false
-	}
-	// when logged in, see the newest-uploaded file
-	if redir && b.auth.AuthCookie2(req).IsAdmin() {
-		redir = false
-	}
-	// if no referer, don't let them know we're using file host
-	if redir && req.Header.Get("Referer") == "" {
-		redir = false
-	}
-	// if file isn't in local, we should redirect
-	if !redir {
-		if fp == nil {
-			redir = true
-		}
-	}
-
-	if redir {
-		u, err := url.Parse(fileHost) // TODO(movsb): init once
-		if err != nil {
-			panic(err)
-		}
-		u.Path = filepath.Join(u.Path, `files`, fmt.Sprint(postID), file) // TODO(movsb): hardcoded
-		w.Header().Set(`Location`, u.String())
-		w.WriteHeader(307)
-	} else {
-		stat, err := fp.Stat()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.ServeContent(w, req, stat.Name(), stat.ModTime(), fp)
-	}
+	http.ServeContent(w, req, stat.Name(), stat.ModTime(), fp)
 }
 
 func (b *Blog) userMustCanSeePost(req *http.Request, post *protocols.Post) {
