@@ -207,7 +207,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 		return ``, err
 	}
 
-	zap.L().Info(`backuped to file`, zap.String(`path`, tmpFile.Name()))
+	zap.L().Info(`backed up to file`, zap.String(`path`, tmpFile.Name()))
 
 	return tmpFile.Name(), nil
 }

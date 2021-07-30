@@ -426,25 +426,6 @@
             </div>
         </div><!-- sidebar right -->
         <script>
-            // TODO 临时代码，在切换源的类型时切换编辑器语法
-            $('select[name="source_type"]').change(function() {
-                console.log('源类型切换为：', this.value);
-                if(typeof codemirror == 'object') {
-                    var mode = '';
-                    var value = this.value;
-
-                    if(value == 'markdown')
-                        mode = 'markdown';
-                    else if(value == 'html')
-                        mode = 'htmlmixed';
-
-                    codemirror.setOption('mode', mode);
-                }
-                else {
-                    console.warn('codemirror != object, cannot apply syntax.');
-                }
-            });
-
             setTimeout(function(){
                 $('select[name="source_type"]').change();
             },0);
