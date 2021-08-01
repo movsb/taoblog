@@ -34,15 +34,17 @@ func DefaultConfig() Config {
 
 // ServerConfig ...
 type ServerConfig struct {
-	Listen string             `yaml:"listen"`
-	Mailer MailerServerConfig `yaml:"mailer"`
+	HTTPListen string             `yaml:"http_listen"`
+	GRPCListen string             `yaml:"grpc_listen"`
+	Mailer     MailerServerConfig `yaml:"mailer"`
 }
 
 // DefaultServerConfig ...
 func DefaultServerConfig() ServerConfig {
 	return ServerConfig{
-		Listen: `0.0.0.0:2564`,
-		Mailer: DefaultMaiMailerServerConfig(),
+		HTTPListen: `0.0.0.0:2564`,
+		GRPCListen: `0.0.0.0:2563`,
+		Mailer:     DefaultMaiMailerServerConfig(),
 	}
 }
 

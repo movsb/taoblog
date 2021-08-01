@@ -74,7 +74,7 @@ func serve() {
 	mux.Handle(`/`, canon)
 
 	server := &http.Server{
-		Addr:    cfg.Server.Listen,
+		Addr:    cfg.Server.HTTPListen,
 		Handler: mux,
 	}
 

@@ -5,9 +5,12 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./taoblog.yml:/workspace/taoblog.yml:ro
-      - ./taoblog.db:/workspace/taoblog.db
-      - ./files:/workspace/files
+      - ./taoblog/taoblog.yml:/workspace/taoblog.yml:ro
+      - ./taoblog/taoblog.db:/workspace/taoblog.db
+      - ./taoblog/files:/workspace/files
+      - ./taoblog/root/ads.txt:/workspace/themes/blog/statics/ads.txt:ro
+      - ./taoblog/root/wechat.jpg:/workspace/themes/blog/statics/wechat.jpg
+      - ./taoblog/root/alipay.jpg:/workspace/themes/blog/statics/alipay.jpg
     ports:
       - 2563:2563
       - 2564:2564
@@ -19,7 +22,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./prometheus/config/:/etc/prometheus
       - ./prometheus/data/:/prometheus
-    command: # strings /proc/1/cmdline
+    entrypoint: # strings /proc/1/cmdline
       - /bin/prometheus
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus

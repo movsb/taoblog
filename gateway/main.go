@@ -57,7 +57,7 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 // runHTTPService ...
 // TODO auth
 func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
-	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, service.GrpcAddress, []grpc.DialOption{grpc.WithInsecure()})
+	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
 
 	compile := func(rule string) httprule.Template {
 		if compiler, err := httprule.Parse(rule); err != nil {

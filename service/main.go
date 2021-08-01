@@ -23,10 +23,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	GrpcAddress = "127.0.0.1:2563"
-)
-
 // Service implements IServer.
 type Service struct {
 	cfg    *config.Config
@@ -74,13 +70,18 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	protocols.RegisterTaoBlogServer(server, s)
 	protocols.RegisterManagementServer(server, s)
 
-	listener, err := net.Listen("tcp", GrpcAddress)
+	listener, err := net.Listen("tcp", cfg.Server.GRPCListen)
 	if err != nil {
 		panic(err)
 	}
 	go server.Serve(listener)
 
 	return s
+}
+
+// GrpcAddress ...
+func (s *Service) GrpcAddress() string {
+	return s.cfg.Server.GRPCListen
 }
 
 func exceptionRecoveryHandler(e interface{}) error {
