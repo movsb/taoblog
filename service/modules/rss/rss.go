@@ -3,8 +3,10 @@ package rss
 // https://validator.w3.org/feed/check.cgi?url=https%3A%2F%2Fblog.twofei.com%2Frss#l9
 
 import (
+	"context"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -81,7 +83,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	user := r.auth.AuthCookie2(req)
 
 	articles := r.svc.GetLatestPosts(
-		user.Context(nil),
+		user.Context(context.TODO()),
 		"id,title,date,content",
 		int64(r.Config.Site.RSS.ArticleCount),
 	)
@@ -91,7 +93,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		rssArticle := Article{
 			Post:    article,
 			Date:    time.Unix(int64(article.Date), 0).Local().Format(time.RFC1123),
-			Content: template.HTML("<![CDATA[" + strings.Replace(string(article.Content), "]]>", "]]]]><!CDATA[>", -1) + "]]>"),
+			Content: template.HTML(cdata(article.Content)),
 			Link:    fmt.Sprintf("%s/%d/", r.svc.HomeURL(), article.Id),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
@@ -106,6 +108,11 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`))
 
 	if err := cr.tmpl.Execute(w, cr); err != nil {
-		panic(err)
+		log.Println("failed to write rss", err)
 	}
+}
+
+func cdata(s string) string {
+	s = strings.Replace(s, "]]>", "]]]]><!CDATA[>", -1)
+	return "<![CDATA[" + s + "]]>"
 }

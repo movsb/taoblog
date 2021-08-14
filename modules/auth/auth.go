@@ -213,3 +213,16 @@ func (a *Auth) MakeCookie(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 }
+
+// RemoveCookie ...
+func (a *Auth) RemoveCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     `login`,
+		Value:    ``,
+		MaxAge:   -1,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   true,
+		HttpOnly: true,
+	})
+}

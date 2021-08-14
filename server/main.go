@@ -59,7 +59,9 @@ func serve() {
 	gateway.NewGateway(theService, theAuth, mux)
 
 	if !cfg.Maintenance.DisableAdmin {
-		admin.NewAdmin(theService, theAuth, mux)
+		a := admin.NewAdmin(theService, theAuth, `/admin/`)
+		log.Println(`admin on`, a.Prefix())
+		mux.Handle(a.Prefix(), a.Handler())
 	}
 
 	var renderer canonical.Renderer

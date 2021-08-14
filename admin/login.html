@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>登录 - TaoBlog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+    <style>
+body {
+    padding: 0px;
+    margin: 1em;
+}
+
+#wrapper {
+    max-width: 300px;
+}
+
+#title {
+    font-size: 1.5em;
+    border-bottom: 1px solid gray;
+}
+
+#input-wrapper {
+    display: flex;
+}
+
+input, button {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5em;
+    line-height: 1em;
+    margin-bottom: 0.5em;
+}
+
+</style>
+<script>
+window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+    alert("Error occured: " + errorMsg);//or any message
+    return false;
+};
+</script>
+</head>
+<body>
+<div id="wrapper">
+<h2>用户名登录</h2>
+<form method="post" id="login-form">
+	<div id="input-wrapper">
+		<div class=left>
+			<div>
+				<input type="text" name="user" placeholder="用户名" />
+				<input type="password" name="passwd" placeholder="密码" />
+			</div>	
+			<div class="submit" style="text-align: right;">
+				<input type="submit" value="登录" />
+				<input type="button" value="取消" onclick="location.href='/';" />
+			</div>
+			<script>
+				(function(){
+					let form = document.getElementById('login-form');
+					form.addEventListener('submit', async function(ev){
+						ev.stopPropagation();
+						ev.preventDefault();
+
+						let resp = await fetch(location.pathname + '/basic', {
+							method: 'POST',
+							credentials: "include",
+							body: JSON.stringify({
+								username: form.elements['user'].value,
+								password: form.elements['passwd'].value,
+							}),
+						});
+						if (resp.status == 200) {
+							location.href = '/';
+						} else {
+							alert('Error: ' + resp.statusText);
+						}
+
+						return true;
+					});
+				})();
+			</script>
+		</div>
+	</div>
+</form>
+<h2>社交帐号登录</h2>
+<div>
+	{{ if .GoogleClientID }}
+	<div>
+	<button id="google-signin-button">
+		Google
+	</button>
+	<button style="display: none;" id="google-signin-button-hidden">hidden sign-in button</button>
+	<script src="https://apis.google.com/js/api:client.js"></script>
+	<script>
+		(function() {
+			let btn = document.getElementById('google-signin-button');
+			let btnHidden = document.getElementById('google-signin-button-hidden');
+			btn.addEventListener('click', function(e) {
+				e.stopPropagation();
+				e.preventDefault();
+				btnHidden.click();
+			});
+
+			let googleUser = {};
+			gapi.load('auth2', function(){
+				// Retrieve the singleton for the GoogleAuth library and set up the client.
+				auth2 = gapi.auth2.init({
+					client_id: '{{.GoogleClientID}}.apps.googleusercontent.com',
+					cookiepolicy: 'single_host_origin',
+				});
+				auth2.attachClickHandler(btnHidden, {},
+					async function(googleUser) {
+						var id_token = googleUser.getAuthResponse().id_token;
+						console.log("ID Token: " + id_token);
+						let resp = await fetch(location.pathname + "/google", {
+							method: 'POST',
+							credentials: 'include',
+							body: JSON.stringify({
+								token: id_token,
+							}),
+						});
+						if (resp.status == 200) {
+							var auth2 = gapi.auth2.getAuthInstance();
+							auth2.disconnect().then(function () {
+								location.href = '/';
+							});
+						} else {
+							alert('Error: ' + resp.statusText);
+						}
+					},
+					function(error) {
+						alert(JSON.stringify(error, undefined, 2));
+					}
+				);
+			});
+		})();
+	</script>
+	</div>
+	{{end}}
+	{{ if .GitHubClientID }}
+	<div>
+	<button id="github-signin-button">
+		GitHub
+	</button>
+	<script>
+		var github = document.getElementById('github-signin-button');
+		github.addEventListener('click', function() {
+			location.href = "https://github.com/login/oauth/authorize?client_id={{ .GitHubClientID }}";
+		});
+	</script>
+	</div>
+	{{ end }}
+	</div>
+</div>
+</body>
+</html>
