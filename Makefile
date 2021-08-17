@@ -1,16 +1,16 @@
 .PHONY: all
-all: protos_ theme_ main_
+all: protos theme main
 
-.PHONY: protos_
-protos_:
+.PHONY: protos
+protos:
 	./setup/scripts/build-protos.sh
 
-.PHONY: theme_
-theme_:
+.PHONY: theme
+theme:
 	@cd themes/blog/statics/sass && ./make_style.sh
 
-.PHONY: main_
-main_:
+.PHONY: main
+main:
 	./setup/scripts/cross-build.sh
 	cp docker/taoblog .
 

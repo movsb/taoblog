@@ -24,7 +24,7 @@ mkdir -p docker/themes/blog
 rsync -aPvh --delete themes/blog/{statics,templates} docker/themes/blog/
 
 mkdir -p docker/admin
-rsync -aPvh --delete admin/{statics,templates} docker/admin
+rsync -aPvh --delete admin/login.html docker/admin
 
 mkdir -p docker/protocols/docs
 rsync -aPvh --delete protocols/docs docker/protocols

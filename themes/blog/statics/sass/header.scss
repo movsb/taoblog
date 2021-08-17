@@ -5,6 +5,7 @@
 }
 
 #header {
+	background-color: rgba(0,0,0,0.8);
     .content {
         min-width: 200px;
         margin: auto;
@@ -78,6 +79,7 @@
                 color: #fff6;
                 border: 1px solid #a9a9a933;
                 background-color: transparent;
+				border-radius: var(--border-radius);
                 padding:  4px 6px;
                 width: 100px;
 				height: 2em;
@@ -88,14 +90,12 @@
 
 @media screen and (max-width: $max_width) {
     #header .content {
-        background-color: rgba(0,0,0,0.6);
         text-align: center;
     }
 }
 
 @media screen and (min-width: $max_width+1) {
     #header {
-        background-color: rgba(0,0,0,0.6);
         .content {
             .motto {
                 padding-left: 2em;

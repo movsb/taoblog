@@ -19,7 +19,8 @@
 </head>
 <body class="line-numbers">
 <div id="wrapper">
-    <!-- 头部 -->
+    <!-- 头部开始 -->
+	{{ if not .Post }}
     <header id="header">
         <div class="content">
             <div class="padding">
@@ -35,9 +36,10 @@
                 </div>
             </div>
         </div>
+	</header>
+	{{ end }}
 
-    </header>
-
+	<!-- 头部结束 -->
     <section id="main">
         <div id="content">
 {{end}}
