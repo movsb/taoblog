@@ -21,8 +21,8 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-go 1.13
+go 1.16
 
-replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.1.31-0.20200522174842-bc0b03f265ac
+replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20210827190033-0f221783bf61
 
 // replace github.com/movsb/taorm => /Users/tao/code/taorm

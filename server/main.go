@@ -88,28 +88,18 @@ func serve() {
 		}
 	}()
 
-	log.Println("Server started")
+	log.Println("Server started on", server.Addr)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
-	signal.Notify(quit, syscall.SIGKILL)
 	signal.Notify(quit, syscall.SIGTERM)
 	<-quit
 	close(quit)
 
 	log.Println("server shutting down")
 	server.Shutdown(context.Background())
-	log.Println("server shutted down")
+	log.Println("server shut down")
 }
-
-const siteClosedTemplate = `<!doctype html>
-<html>
-<body>
-<center><h1>503 Site Closed</h1></center>
-<hr/>
-</body>
-</html>
-`
 
 func initDatabase(cfg *config.Config) *sql.DB {
 	var db *sql.DB
