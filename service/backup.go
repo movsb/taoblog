@@ -5,11 +5,15 @@ import (
 	"compress/zlib"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -210,4 +214,80 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 	zap.L().Info(`backed up to file`, zap.String(`path`, tmpFile.Name()))
 
 	return tmpFile.Name(), nil
+}
+
+func (s *Service) BackupFiles(srv protocols.Management_BackupFilesServer) error {
+	if !s.auth.AuthGRPC(srv.Context()).IsAdmin() {
+		return status.Error(codes.Unauthenticated, "bad credentials")
+	}
+
+	listFiles := func(req *protocols.BackupFilesRequest_ListFilesRequest) error {
+		files, err := utils.ListBackupFiles(s.cfg.Data.File.Path)
+		if err != nil {
+			log.Printf(`BackupFiles failed to list files: %v`, err)
+			return err
+		}
+		rsp := &protocols.BackupFilesResponse{
+			BackupFilesMessage: &protocols.BackupFilesResponse_ListFiles{
+				ListFiles: &protocols.BackupFilesResponse_ListFilesResponse{
+					Files: files,
+				},
+			},
+		}
+		if err := srv.Send(rsp); err != nil {
+			log.Printf(`BackupFiles failed to send file list: %v`, err)
+			return err
+		}
+		return nil
+	}
+
+	sendFile := func(req *protocols.BackupFilesRequest_SendFileRequest) error {
+		log.Printf("send file: %s", req.Path)
+		localPath := filepath.Join(s.cfg.Data.File.Path, filepath.Clean(req.Path))
+		data, err := ioutil.ReadFile(localPath)
+		if err != nil {
+			return err
+		}
+		rsp := &protocols.BackupFilesResponse{
+			BackupFilesMessage: &protocols.BackupFilesResponse_SendFile{
+				SendFile: &protocols.BackupFilesResponse_SendFileResponse{
+					Data: data,
+				},
+			},
+		}
+		if err := srv.Send(rsp); err != nil {
+			log.Printf(`BackupFiles failed to send file: %v`, err)
+			return err
+		}
+		return nil
+	}
+
+	for {
+		req, err := srv.Recv()
+		if err != nil {
+			if err == io.EOF {
+				log.Printf(`BackupFiles finished`)
+				return nil
+			}
+			if st, ok := status.FromError(err); ok && st.Code() == codes.Canceled {
+				log.Printf(`BackupFiles finished`)
+				return nil
+			}
+			log.Printf(`BackupFiles failed: %v`, err)
+			return err
+		}
+		if req := req.GetListFiles(); req != nil {
+			if err := listFiles(req); err != nil {
+				return err
+			}
+			continue
+		}
+		if req := req.GetSendFile(); req != nil {
+			if err := sendFile(req); err != nil {
+				return err
+			}
+			continue
+		}
+		return fmt.Errorf(`unknown message`)
+	}
 }

@@ -20,3 +20,34 @@ message BackupResponse {
 		Transfering transfering = 2;
 	}
 }
+
+message BackupFileSpec {
+	string path = 1;
+	uint32 mode = 2;
+	uint32 size = 3;
+	uint32 time = 4;
+}
+
+message BackupFilesRequest {
+	message ListFilesRequest {}
+	message SendFileRequest {
+		string path = 1;
+	}
+	oneof BackupFilesMessage {
+		ListFilesRequest list_files = 1;
+		SendFileRequest send_file = 2;
+	}
+}
+
+message BackupFilesResponse {
+	message ListFilesResponse {
+		repeated BackupFileSpec files = 1;
+	}
+	message SendFileResponse {
+		bytes data = 1;
+	}
+	oneof BackupFilesMessage {
+		ListFilesResponse list_files = 1;
+		SendFileResponse send_file = 2;
+	}
+}

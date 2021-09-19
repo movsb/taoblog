@@ -77,6 +77,7 @@ func NewClient(config HostConfig) *Client {
 		if conn, err = grpc.Dial(
 			grpcAddress,
 			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(100<<20)),
 		); err != nil {
 			panic(err)
 		}
@@ -84,6 +85,7 @@ func NewClient(config HostConfig) *Client {
 		if conn, err = grpc.Dial(
 			grpcAddress,
 			grpc.WithInsecure(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(100<<20)),
 		); err != nil {
 			panic(err)
 		}

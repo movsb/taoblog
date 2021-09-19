@@ -246,14 +246,29 @@ func AddCommands(rootCmd *cobra.Command) {
 	})
 	backupCmd := &cobra.Command{
 		Use:              `backup`,
-		Short:            `Dump database`,
+		Short:            `Backup ...`,
 		Args:             cobra.NoArgs,
 		PersistentPreRun: preRun,
+	}
+	rootCmd.AddCommand(backupCmd)
+	backupPostsCmd := &cobra.Command{
+		Use:   `posts`,
+		Short: `backup posts and comments`,
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.Backup(cmd)
+			client.BackupPosts(cmd)
 		},
 	}
-	backupCmd.Flags().Bool(`stdout`, false, `Output to stdout`)
-	backupCmd.Flags().Bool(`no-link`, false, `Don't link to taoblog.db`)
-	rootCmd.AddCommand(backupCmd)
+	backupPostsCmd.Flags().Bool(`stdout`, false, `Output to stdout`)
+	backupPostsCmd.Flags().Bool(`no-link`, false, `Don't link to taoblog.db`)
+	backupCmd.AddCommand(backupPostsCmd)
+	backupFilesCmd := &cobra.Command{
+		Use:   `files`,
+		Short: `backup files`,
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			client.BackupFiles(cmd)
+		},
+	}
+	backupCmd.AddCommand(backupFilesCmd)
 }

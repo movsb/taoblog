@@ -63,3 +63,15 @@ $ make try
 ```
 
 然后打开：<http://localhost:2564>。
+
+## 安装
+
+### 依赖
+
+#### protoc
+
+<https://github.com/protocolbuffers/protobuf/releases/latest>
+
+#### sass
+
+<https://github.com/sass/dart-sass/releases/latest>

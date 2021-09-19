@@ -20,6 +20,12 @@ service Management {
 			description: "导出数据库（拖库）。";
 		};
 	}
+
+	rpc BackupFiles (stream BackupFilesRequest) returns (stream BackupFilesResponse) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "导出文件。";
+		};
+	};
 }
 
 service TaoBlog {
