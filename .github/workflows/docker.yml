@@ -1,0 +1,28 @@
+name: Build and Push Image
+on: [push]
+jobs:
+  all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+          stable: true
+      - uses: arduino/setup-protoc@v1
+        with:
+          version: '3.9.1'
+      - name: Install Sass
+        run: |
+          set -eu
+          wget https://github.com/sass/dart-sass/releases/download/1.43.4/dart-sass-1.43.4-linux-x64.tar.gz
+          tar xzvf dart-sass-1.43.4-linux-x64.tar.gz
+          mv dart-sass/sass /usr/local/bin
+      - run: make tools && make all
+      - run: make build-image
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - run: make push-image

@@ -3,7 +3,7 @@
 set -eu
 
 _run_in_xgo() {
-	docker run -it --rm \
+	docker run -i --rm \
 		-v "$(pwd)":/taoblog \
 		-v "$(go env GOPATH)":/go \
 		-e GOPATH=/go \
@@ -18,6 +18,7 @@ _run_in_xgo() {
 
 (cd themes/blog/statics/sass && ./make_style.sh)
 
+mkdir -p docker/setup/data
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
 mkdir -p docker/themes/blog

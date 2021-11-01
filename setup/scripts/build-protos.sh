@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+GOPATH=${GOPATH:-$(go env GOPATH)}
+
 protoc \
 	-I. \
 	-I/usr/local/include \
