@@ -3,6 +3,10 @@
     display: block;
 }
 
+::selection {
+    background-color: var(--selection-color);
+}
+
 body {
     color: var(--color-fg);
     background-color: var(--color-bg);

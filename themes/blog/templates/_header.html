@@ -24,9 +24,11 @@
     <header id="header">
         <div class="content">
             <div class="padding">
-                <div class="sitename"><a href="/">{{get_config "blog_name"}}<span class="dark-moon"></span></a></div>
-				<p class="motto">{{get_config "blog_desc"}}</p>
-				{{ if .Config.Site.Search.EngineID }}
+                <div class="sitename"><a href="/">{{get_config "blog_name"}}</a></div>
+				{{ with (get_config "blog_desc")}}
+				<p class="motto">{{ . }}</p>
+				{{ end }}
+				{{ if and .Config.Site.Search.Show .Config.Site.Search.EngineID }}
 				<form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
 					<input name="q" placeholder="Google Search" />
 				</form>

@@ -2,17 +2,18 @@
 --font-size:                15px;
 --mono-font:                Monaco, Consolas, monospace, Courier;
 --max-width:                850px;
---border-color-hover:       #4da032;
+--border-color-hover:       #933131;
 --border-radius:            4px;
 --button-color-fg:          white;
 --button-color-bg:          rgba(60,60,60,0.6);
 --toolbar-imgview-bg:       rgba(0,0,0,0.85);
---a-fg:                     #4da032;
+--a-fg:                     #a03232;
 --box-shadow:               0 0 3px gray;
 }
 
 @media (prefers-color-scheme: light) {
 :root {
+--selection-color:          #fac8cb;
 --color-bg:                 white;
 --color-fg:                 #292929;
 --code-bg:                  #f7f7f7;
@@ -31,6 +32,7 @@
 
 @media (prefers-color-scheme: dark) {
 :root {
+--selection-color:          #a64b51;
 --color-bg:                 rgb(13,17,23); // from github dark
 --color-fg:                 #a4a4a4;
 --code-bg:                  #222;

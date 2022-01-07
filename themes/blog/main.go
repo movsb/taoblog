@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/config"
@@ -18,6 +20,7 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/rss"
 	"github.com/movsb/taoblog/service/modules/sitemap"
+	"github.com/movsb/taoblog/themes/blog/pkg/watcher"
 	"github.com/movsb/taoblog/themes/data"
 	"github.com/movsb/taoblog/themes/modules/handle304"
 )
@@ -32,8 +35,9 @@ type Blog struct {
 	rss     *rss.RSS
 	sitemap *sitemap.Sitemap
 
-	globalTemplates *template.Template
-	namedTemplates  map[string]*template.Template
+	tmplLock         sync.RWMutex
+	partialTemplates *template.Template
+	namedTemplates   map[string]*template.Template
 }
 
 // NewBlog ...
@@ -51,6 +55,7 @@ func NewBlog(cfg *config.Config, service *service.Service, auth *auth.Auth, base
 		b.sitemap = sitemap.New(cfg, service, auth)
 	}
 	b.loadTemplates()
+	b.watchTheme()
 	return b
 }
 
@@ -90,7 +95,56 @@ func createMenus(items []config.MenuItem) string {
 	return menus.String()
 }
 
+func (b *Blog) getPartial() *template.Template {
+	b.tmplLock.RLock()
+	defer b.tmplLock.RUnlock()
+	return b.partialTemplates
+}
+
+func (b *Blog) getNamed() map[string]*template.Template {
+	b.tmplLock.RLock()
+	defer b.tmplLock.RUnlock()
+	return b.namedTemplates
+}
+
+func (b *Blog) watchTheme() {
+	go func() {
+		root, exts := filepath.Join(b.base, "templates"), []string{`.html`}
+		w := watcher.NewFolderChangedWatcher(root, exts)
+		for range w.Watch() {
+			log.Println(`reload templates`)
+			b.loadTemplates()
+		}
+	}()
+	go func() {
+		root, exts := filepath.Join(b.base, "statics", "sass"), []string{`.scss`}
+		w := watcher.NewFolderChangedWatcher(root, exts)
+		for range w.Watch() {
+			cmd := exec.Command(`make`, `theme`)
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				log.Println(err)
+			} else {
+				log.Println(`rebuild styles`)
+			}
+		}
+	}()
+}
+
 func (b *Blog) loadTemplates() {
+	b.tmplLock.Lock()
+	defer b.tmplLock.Unlock()
+
+	defer func() {
+		if err := recover(); err != nil {
+			b.partialTemplates = template.Must(template.New(`empty`).Parse(``))
+			b.namedTemplates = nil
+			log.Println(err)
+		}
+	}()
+
 	menustr := createMenus(b.cfg.Menus)
 	funcs := template.FuncMap{
 		// https://github.com/golang/go/issues/14256
@@ -114,14 +168,14 @@ func (b *Blog) loadTemplates() {
 			if t := data.Template.Lookup(name); t != nil {
 				return t.Execute(data.Writer, data)
 			}
-			if t := b.globalTemplates.Lookup(name); t != nil {
+			if t := b.getPartial().Lookup(name); t != nil {
 				return t.Execute(data.Writer, data)
 			}
 			return nil
 		},
 	}
 
-	b.globalTemplates = template.New(`global`).Funcs(funcs)
+	b.partialTemplates = template.New(`partial`).Funcs(funcs)
 	b.namedTemplates = make(map[string]*template.Template)
 
 	templateFiles, err := filepath.Glob(filepath.Join(b.base, `templates`, `*.html`))
@@ -132,7 +186,7 @@ func (b *Blog) loadTemplates() {
 	for _, path := range templateFiles {
 		name := filepath.Base(path)
 		if name[0] == '_' {
-			b.globalTemplates.ParseFiles(path)
+			template.Must(b.partialTemplates.ParseFiles(path))
 		} else {
 			tmpl := template.Must(template.New(name).Funcs(funcs).ParseFiles(path))
 			b.namedTemplates[tmpl.Name()] = tmpl
@@ -144,13 +198,13 @@ func (b *Blog) Exception(w http.ResponseWriter, req *http.Request, e interface{}
 	switch te := e.(type) {
 	case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
 		w.WriteHeader(404)
-		b.namedTemplates[`404.html`].Execute(w, nil)
+		b.getNamed()[`404.html`].Execute(w, nil)
 		return true
 	case string: // hack hack
 		switch te {
 		case "403":
 			w.WriteHeader(403)
-			b.namedTemplates[`403.html`].Execute(w, nil)
+			b.getNamed()[`403.html`].Execute(w, nil)
 			return true
 		}
 	}
@@ -168,7 +222,7 @@ func (b *Blog) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, quer
 
 func (b *Blog) QueryHome(w http.ResponseWriter, req *http.Request) error {
 	d := data.NewDataForHome(b.cfg, b.auth.AuthCookie2(req), b.service)
-	t := b.namedTemplates[`home.html`]
+	t := b.getNamed()[`home.html`]
 	d.Template = t
 	d.Writer = w
 	if err := t.Execute(w, d); err != nil {
@@ -179,7 +233,7 @@ func (b *Blog) QueryHome(w http.ResponseWriter, req *http.Request) error {
 
 func (b *Blog) querySearch(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForSearch(b.cfg, b.auth.AuthCookie2(r), b.service)
-	t := b.namedTemplates[`search.html`]
+	t := b.getNamed()[`search.html`]
 	d.Template = t
 	d.Writer = w
 
@@ -194,7 +248,7 @@ func (b *Blog) queryPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := data.NewDataForPosts(b.cfg, b.auth.AuthCookie2(r), b.service, r)
-	t := b.namedTemplates[`posts.html`]
+	t := b.getNamed()[`posts.html`]
 	d.Template = t
 	d.Writer = w
 
@@ -211,7 +265,7 @@ func (b *Blog) queryTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := data.NewDataForTags(b.cfg, b.auth.AuthCookie2(r), b.service)
-	t := b.namedTemplates[`tags.html`]
+	t := b.getNamed()[`tags.html`]
 	d.Template = t
 	d.Writer = w
 
@@ -257,7 +311,7 @@ func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto
 	}
 
 	d := data.NewDataForPost(b.cfg, b.auth.AuthCookie2(req), b.service, p)
-	t := b.namedTemplates[`post.html`]
+	t := b.getNamed()[`post.html`]
 	d.Template = t
 	d.Writer = w
 
@@ -270,7 +324,7 @@ func (b *Blog) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto
 
 func (b *Blog) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
 	d := data.NewDataForTag(b.cfg, b.auth.AuthCookie2(req), b.service, tags)
-	t := b.namedTemplates[`tag.html`]
+	t := b.getNamed()[`tag.html`]
 	d.Template = t
 	d.Writer = w
 	if err := t.Execute(w, d); err != nil {

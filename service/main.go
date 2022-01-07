@@ -146,6 +146,9 @@ func (s *Service) Name() string {
 }
 
 func (s *Service) Description() string {
+	if b := s.cfg.Site.ShowDescription; !b {
+		return ""
+	}
 	if d := s.cfg.Blog.Description; d != `` {
 		return d
 	}

@@ -2,6 +2,7 @@ package config
 
 // SiteConfig ...
 type SiteConfig struct {
+	ShowDescription  bool               `yaml:"show_description"`
 	ShowStatus       bool               `yaml:"show_status"`
 	ShowRelatedPosts bool               `yaml:"show_related_posts"`
 	ShowPingbacks    bool               `yaml:"show_pingbacks"`
@@ -14,6 +15,7 @@ type SiteConfig struct {
 // DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
 	return SiteConfig{
+		ShowDescription:  false,
 		ShowStatus:       false,
 		ShowRelatedPosts: false,
 		ShowPingbacks:    false,
@@ -25,6 +27,7 @@ func DefaultSiteConfig() SiteConfig {
 
 // GoogleSearchConfig ...
 type GoogleSearchConfig struct {
+	Show     bool   `yaml:"show"`
 	EngineID string `yaml:"engine_id"`
 }
 
