@@ -1,31 +1,12 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>谷歌站内搜索</title>
-<style>
-    #wrapper {
-        /* TODO 这个最大宽度应该是变量 */
-        max-width: 850px;
-        margin: auto;
-    }
-</style>
-</head>
-<body>
-<div id="wrapper">
-<script>
-  (function() {
-    var cx = '{{.Search.EngineID }}';
-    var gcse = document.createElement('script');
-    gcse.type = 'text/javascript';
-    gcse.async = true;
-    gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
-        '//cse.google.com/cse.js?cx=' + cx;
-    var s = document.getElementsByTagName('script')[0];
-    s.parentNode.insertBefore(gcse, s);
-  })();
-</script>
-<gcse:searchresults-only></gcse:searchresults-only>
+{{ render "header" $ }}
+<div class="search-results">
+<ul>
+{{ range $p := .Search.Posts }}
+<li>
+<a style="font-weight: bold;" href="/{{ $p.Id }}/" target="_blank">{{ $p.Title }}</a>
+<p style="font-size: 0.8em;">{{ $p.Content }}</p>
+</li>
+{{ end }}
+</ul>
 </div>
-</body>
-</html>
+{{ render "footer" $ }}

@@ -2,14 +2,14 @@ package config
 
 // SiteConfig ...
 type SiteConfig struct {
-	ShowDescription  bool               `yaml:"show_description"`
-	ShowStatus       bool               `yaml:"show_status"`
-	ShowRelatedPosts bool               `yaml:"show_related_posts"`
-	ShowPingbacks    bool               `yaml:"show_pingbacks"`
-	Search           GoogleSearchConfig `yaml:"search"`
-	Copyright        string             `yaml:"copyright"`
-	RSS              RSSConfig          `yaml:"rss"`
-	Sitemap          SitemapConfig      `yaml:"sitemap"`
+	ShowDescription  bool          `yaml:"show_description"`
+	ShowStatus       bool          `yaml:"show_status"`
+	ShowRelatedPosts bool          `yaml:"show_related_posts"`
+	ShowPingbacks    bool          `yaml:"show_pingbacks"`
+	Search           SearchConfig  `yaml:"search"`
+	Copyright        string        `yaml:"copyright"`
+	RSS              RSSConfig     `yaml:"rss"`
+	Sitemap          SitemapConfig `yaml:"sitemap"`
 }
 
 // DefaultSiteConfig ...
@@ -19,21 +19,21 @@ func DefaultSiteConfig() SiteConfig {
 		ShowStatus:       false,
 		ShowRelatedPosts: false,
 		ShowPingbacks:    false,
-		Search:           DefaultGoogleSearchConfig(),
+		Search:           DefaultSearchConfig(),
 		RSS:              DefaultRSSConfig(),
 		Sitemap:          DefaultSitemapConfig(),
 	}
 }
 
-// GoogleSearchConfig ...
-type GoogleSearchConfig struct {
+// SearchConfig ...
+type SearchConfig struct {
 	Show     bool   `yaml:"show"`
 	EngineID string `yaml:"engine_id"`
 }
 
-// DefaultGoogleSearchConfig ...
-func DefaultGoogleSearchConfig() GoogleSearchConfig {
-	return GoogleSearchConfig{}
+// DefaultSearchConfig ...
+func DefaultSearchConfig() SearchConfig {
+	return SearchConfig{}
 }
 
 // RSSConfig ...

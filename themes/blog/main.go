@@ -232,7 +232,7 @@ func (b *Blog) QueryHome(w http.ResponseWriter, req *http.Request) error {
 }
 
 func (b *Blog) querySearch(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForSearch(b.cfg, b.auth.AuthCookie2(r), b.service)
+	d := data.NewDataForSearch(b.cfg, b.auth.AuthCookie2(r), b.service, r)
 	t := b.getNamed()[`search.html`]
 	d.Template = t
 	d.Writer = w

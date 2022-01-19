@@ -15,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
+	"github.com/movsb/taoblog/service/modules/search"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/service/modules/storage/local"
 	"github.com/movsb/taorm/taorm"
@@ -25,13 +26,14 @@ import (
 
 // Service implements IServer.
 type Service struct {
-	cfg    *config.Config
-	db     *sql.DB
-	tdb    *taorm.DB
-	auth   *auth.Auth
-	cmtntf *comment_notify.CommentNotifier
-	store  storage.Store
-	cache  *memory_cache.MemoryCache
+	cfg      *config.Config
+	db       *sql.DB
+	tdb      *taorm.DB
+	auth     *auth.Auth
+	cmtntf   *comment_notify.CommentNotifier
+	store    storage.Store
+	cache    *memory_cache.MemoryCache
+	searcher *search.Engine
 }
 
 // NewService ...
@@ -69,12 +71,15 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 
 	protocols.RegisterTaoBlogServer(server, s)
 	protocols.RegisterManagementServer(server, s)
+	protocols.RegisterSearchServer(server, s)
 
 	listener, err := net.Listen("tcp", cfg.Server.GRPCListen)
 	if err != nil {
 		panic(err)
 	}
 	go server.Serve(listener)
+
+	go s.RunSearchEngine(context.TODO())
 
 	return s
 }

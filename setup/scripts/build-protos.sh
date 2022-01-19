@@ -16,4 +16,5 @@ protoc \
 	protocols/backup.proto \
 	protocols/service.proto \
 	protocols/comment.proto \
-	protocols/post.proto
+	protocols/post.proto \
+	protocols/search.proto

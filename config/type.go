@@ -1,5 +1,7 @@
 package config
 
+import "github.com/movsb/taoblog/service/modules/search"
+
 // Config ...
 type Config struct {
 	Blog        BlogConfig        `yaml:"blog"`
@@ -13,6 +15,7 @@ type Config struct {
 	Site        SiteConfig        `yaml:"site"`
 	Comment     CommentConfig     `yaml:"comment"`
 	Widgets     WidgetsConfig     `yaml:"widgets"`
+	Search      search.Config     `yaml:"search"`
 }
 
 // DefaultConfig ...
@@ -29,6 +32,7 @@ func DefaultConfig() Config {
 		Site:        DefaultSiteConfig(),
 		Comment:     DefaultCommentConfig(),
 		Widgets:     DefaultWidgetsConfig(),
+		Search:      search.DefaultConfig(),
 	}
 }
 

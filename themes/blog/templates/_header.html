@@ -14,7 +14,6 @@
     <link rel="stylesheet" type="text/css" href="/style.css" />
     <script src="//blog-10005538.cos.ap-shanghai.myqcloud.com/jquery.min.js"></script>
 	<script src="/scripts/header.js"></script>
-	<script data-ad-client="ca-pub-2998076734917510" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     {{ render "custom_header" . }}
 </head>
 <body class="line-numbers">
@@ -28,9 +27,21 @@
 				{{ with (get_config "blog_desc")}}
 				<p class="motto">{{ . }}</p>
 				{{ end }}
-				{{ if and .Config.Site.Search.Show .Config.Site.Search.EngineID }}
-				<form name="search_box" class="search" action="/search" onload="document.search_box.reset()">
-					<input name="q" placeholder="Google Search" />
+				{{ if and .Config.Site.Search.Show }}
+				<form name="search_box" class="search" action="/search">
+					<input name="q" placeholder="Search"/>
+                    <script>
+                        function getSearch() {
+                            try {
+                                return new URLSearchParams(location.search).get('q');
+                            } catch (e) {
+                                return '';
+                            }
+                        }
+                        var input = document.querySelector('input[name=q]');
+                        input.value = getSearch();
+                        input.focus();
+                    </script>
 				</form>
 				{{ end }}
                 <div class="nav">

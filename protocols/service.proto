@@ -5,6 +5,7 @@ option go_package = "github.com/movsb/taoblog/protocols";
 import "protocols/backup.proto";
 import "protocols/post.proto";
 import "protocols/comment.proto";
+import "protocols/search.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
@@ -26,6 +27,17 @@ service Management {
 			description: "导出文件。";
 		};
 	};
+}
+
+service Search {
+	rpc SearchPosts(SearchPostsRequest) returns (SearchPostsResponse) {
+		option (google.api.http) = {
+			get: "/v3/search/posts";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "文章搜索。";
+		};
+	}
 }
 
 service TaoBlog {
