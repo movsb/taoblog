@@ -27,23 +27,26 @@
 				{{ with (get_config "blog_desc")}}
 				<p class="motto">{{ . }}</p>
 				{{ end }}
-				{{ if and .Config.Site.Search.Show }}
-				<form name="search_box" class="search" action="/search">
-					<input name="q" placeholder="Search"/>
-                    <script>
-                        function getSearch() {
-                            try {
-                                return new URLSearchParams(location.search).get('q');
-                            } catch (e) {
-                                return '';
-                            }
-                        }
-                        var input = document.querySelector('input[name=q]');
-                        input.value = getSearch();
-                        input.focus();
-                    </script>
-				</form>
-				{{ end }}
+{{ if and .Config.Site.Search.Show }}
+<form name="search_box" class="search" action="/search">
+<input name="q" placeholder="Search"/>
+<script>
+function getSearch() {
+	try {
+		return new URLSearchParams(location.search).get('q');
+	} catch (e) {
+		return '';
+	}
+}
+var input = document.querySelector('input[name=q]');
+var search = getSearch();
+if (search) {
+	input.value = getSearch();
+	input.focus();
+}
+</script>
+</form>
+{{ end }}
                 <div class="nav">
                     {{menus}}
                 </div>
