@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <title>登录 - TaoBlog</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-    <style>
+<meta charset="UTF-8" />
+<title>登录 - TaoBlog</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<style>
 body {
     padding: 0px;
     margin: 1em;
@@ -81,6 +81,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 		</div>
 	</div>
 </form>
+{{ if .HasSocialLogins }}
 <h2>社交帐号登录</h2>
 <div>
 	{{ if .GoogleClientID }}
@@ -151,5 +152,6 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 	{{ end }}
 	</div>
 </div>
+{{ end }}
 </body>
 </html>

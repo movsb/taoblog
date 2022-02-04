@@ -17,13 +17,17 @@ type LoginData struct {
 	GitHubClientID string
 }
 
+func (d *LoginData) HasSocialLogins() bool {
+	return d.GoogleClientID != `` || d.GitHubClientID != ``
+}
+
 type Admin struct {
 	prefix    string // not including last /
 	service   *service.Service
 	templates *template.Template
 	mux       *utils.ServeMuxWithMethod
 	auth      *auth.Auth
-	canGoogle bool // not thread safe, but it doesn't matter.
+	canGoogle bool // not thread safe and has race, but it doesn't matter.
 }
 
 func NewAdmin(service *service.Service, auth *auth.Auth, prefix string) *Admin {
