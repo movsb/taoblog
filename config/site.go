@@ -1,7 +1,39 @@
 package config
 
+import "time"
+
+type _Since time.Time
+
+// func (s _Since) MarshalYAML() (interface{}, error) {
+// 	t := (time.Time)(s)
+// 	return t.Format(time.RFC3339), nil
+// }
+
+func (s *_Since) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var str string
+	if err := unmarshal(&str); err != nil {
+		return err
+	}
+	t := (*time.Time)(s)
+	r, err := time.Parse(time.RFC3339, str)
+	if err != nil {
+		return err
+	}
+	*t = r
+	return nil
+}
+
+func (s _Since) String() string {
+	return time.Time(s).Format(`2006年01月02日`)
+}
+
+func (s _Since) Days() int {
+	return int(time.Since(time.Time(s)).Hours()) / 24
+}
+
 // SiteConfig ...
 type SiteConfig struct {
+	Since            _Since        `yaml:"since,omitempty"`
 	ShowDescription  bool          `yaml:"show_description"`
 	ShowStatus       bool          `yaml:"show_status"`
 	ShowRelatedPosts bool          `yaml:"show_related_posts"`
@@ -14,7 +46,9 @@ type SiteConfig struct {
 
 // DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
+	since := _Since(time.Date(2014, time.December, 24, 0, 0, 0, 0, time.Local))
 	return SiteConfig{
+		Since:            since,
 		ShowDescription:  false,
 		ShowStatus:       false,
 		ShowRelatedPosts: false,

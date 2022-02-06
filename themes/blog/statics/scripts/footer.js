@@ -131,31 +131,6 @@
     });
 })();
 
-/* 服务器运行时间 */
-// http://www.htmlgoodies.com/html5/javascript/calculating-the-difference-between-two-dates-in-javascript.html
-(function() {
-    function date_between(date1, date2) {
-        // get one day in millisecond
-        var one_day = 24*60*60*1000;
-
-        // convert to millisecond
-        var date1_ms = date1.getTime();
-        var date2_ms = date2.getTime();
-
-        // calc diff
-        var diff_ms = date2_ms - date1_ms;
-
-        return Math.round(diff_ms / one_day);
-    }
-
-    var start = new Date(2014, 12-1, 24);
-    var now = new Date();
-
-    var days = date_between(start, now);
-
-    $('#server-run-time').text(days);
-})();
-
 // 图片来源
 (function() {
     function replace(img) {
