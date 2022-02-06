@@ -20,9 +20,9 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/rss"
 	"github.com/movsb/taoblog/service/modules/sitemap"
-	"github.com/movsb/taoblog/themes/blog/pkg/watcher"
 	"github.com/movsb/taoblog/themes/data"
 	"github.com/movsb/taoblog/themes/modules/handle304"
+	"github.com/movsb/taoblog/themes/modules/watcher"
 )
 
 // Blog ...
@@ -117,7 +117,7 @@ func (b *Blog) watchTheme() {
 		}
 	}()
 	go func() {
-		root, exts := filepath.Join(b.base, "statics", "sass"), []string{`.scss`}
+		root, exts := filepath.Join(b.base, "styles"), []string{`.scss`}
 		w := watcher.NewFolderChangedWatcher(root, exts)
 		for range w.Watch() {
 			cmd := exec.Command(`make`, `theme`)
