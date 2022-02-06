@@ -17,7 +17,7 @@ func (s *Service) SearchPosts(ctx context.Context, in *protocols.SearchPostsRequ
 	if err != nil {
 		return nil, err
 	}
-	highlighter := highlight.NewHTMLHighlighterTags(`<b style="background-color: var(--a-fg); color: var(--post-fg);">`, `</b>`)
+	highlighter := highlight.NewHTMLHighlighterTags(`<b class="highlight">`, `</b>`)
 	rspPosts := []*protocols.SearchPostsResponse_Post{}
 	for _, post := range posts {
 		rspPosts = append(rspPosts, &protocols.SearchPostsResponse_Post{

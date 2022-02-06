@@ -1,3 +1,13 @@
+{{ define "custom_header" }}
+<style>
+.search-results b {
+	margin: unset;
+}
+.search-results b.highlight {
+	color: #fd5b5b;
+}
+</style>
+{{ end }}
 {{ render "header" $ }}
 <div class="search-results">
 <ul>
