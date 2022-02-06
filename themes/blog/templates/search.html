@@ -10,6 +10,7 @@
 {{ end }}
 {{ render "header" $ }}
 <div class="search-results">
+{{ if .Search.Posts }}
 <ul>
 {{ range $p := .Search.Posts }}
 <li>
@@ -19,4 +20,9 @@
 {{ end }}
 </ul>
 </div>
+{{ else }}
+<div>
+<p>没有搜索结果。</p>
+</div>
+{{ end }}
 {{ render "footer" $ }}

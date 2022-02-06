@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -34,13 +35,16 @@ func (p *SearchPost) Content() template.HTML {
 
 // NewDataForSearch ...
 func NewDataForSearch(cfg *config.Config, user *auth.User, service *service.Service, r *http.Request) *Data {
+	q := r.URL.Query().Get(`q`)
 	d := &Data{
 		Config: cfg,
 		User:   user,
-		Meta:   &MetaData{},
+		Meta: &MetaData{
+			Title: fmt.Sprintf("%s - 搜索结果", q),
+		},
 	}
 
-	rsp, err := service.SearchPosts(context.TODO(), &protocols.SearchPostsRequest{Search: r.URL.Query().Get(`q`)})
+	rsp, err := service.SearchPosts(context.TODO(), &protocols.SearchPostsRequest{Search: q})
 	if err != nil {
 		panic(err)
 	}
