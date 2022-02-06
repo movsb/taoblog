@@ -12,7 +12,6 @@ theme:
 .PHONY: main
 main:
 	./setup/scripts/cross-build.sh
-	cp docker/taoblog .
 
 .PHONY: build-image
 build-image: 

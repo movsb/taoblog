@@ -2,7 +2,7 @@
 
 set -eu
 
-OUTPUT='docker/taoblog'
+OUTPUT='taoblog'
 
 builtOn="${USER:-root}@${HOSTNAME:-$(hostname)}"
 builtAt="${DATE:-$(date +'%F %T %z')}"

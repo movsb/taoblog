@@ -2,7 +2,7 @@ module github.com/movsb/taoblog
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.1
-	github.com/blugelabs/bluge v0.1.9 // indirect
+	github.com/blugelabs/bluge v0.1.9
 	github.com/golang/protobuf v1.5.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
