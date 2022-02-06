@@ -49,6 +49,10 @@ main.go     | 入口程序
   - <https://www.tbfeng.com/> 天边风
   - <https://www.v2ex.com/t/561257> 你见过最简约美观的技术博客
 
+## TODO
+
+- 移除 jQuery
+
 ## 联系我
 
 - QQ: 191035066
@@ -63,15 +67,3 @@ $ docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:a
 ```
 
 然后打开：<http://localhost:2564>。
-
-## 安装
-
-### 依赖
-
-#### protoc
-
-<https://github.com/protocolbuffers/protobuf/releases/latest>
-
-#### sass
-
-<https://github.com/sass/dart-sass/releases/latest>

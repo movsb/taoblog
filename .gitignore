@@ -3,6 +3,7 @@
 .DS_Store
 
 /tmp/
+/.tmp/
 /.vscode/
 /files/
 /taoblog.yml

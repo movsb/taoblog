@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eu
 
 GOPATH=${GOPATH:-$(go env GOPATH)}
 
