@@ -38,7 +38,7 @@ server/     | 博客后台
 service/    | 服务实现
 setup/      | 安装管理
 run/        | 临时目录
-themes/     | 主题目录
+theme/      | 主题目录
 main.go     | 入口程序
 
 ## RoadMap

@@ -1,9 +1,3 @@
-blog:
-  # scheme is required
-  home: http://localhost
-  name: 陪她去流浪
-  description: 描述
-
 database:
   engine: sqlite
   sqlite:
@@ -46,6 +40,10 @@ menus:
     link: /subitem2
 
 site:
+  # scheme is required
+  home: http://localhost
+  name: 陪她去流浪
+  description: 描述
   show_status: false
   show_related_posts: false
   search:

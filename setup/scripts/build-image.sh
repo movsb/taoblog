@@ -5,8 +5,8 @@ set -eu
 mkdir -p docker/setup/data
 rsync -aPvh --delete setup/data/ docker/setup/data/
 
-mkdir -p docker/themes/blog
-rsync -aPvh --delete themes/blog/{statics,templates} docker/themes/blog/
+mkdir -p docker/theme/blog
+rsync -aPvh --delete theme/blog/{statics,templates} docker/theme/blog/
 
 mkdir -p docker/admin
 rsync -aPvh --delete admin/login.html docker/admin

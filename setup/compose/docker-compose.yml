@@ -8,9 +8,9 @@ services:
       - ./taoblog/taoblog.yml:/workspace/taoblog.yml:ro
       - ./taoblog/taoblog.db:/workspace/taoblog.db
       - ./taoblog/files:/workspace/files
-      - ./taoblog/root/ads.txt:/workspace/themes/blog/statics/ads.txt:ro
-      - ./taoblog/root/wechat.jpg:/workspace/themes/blog/statics/wechat.jpg
-      - ./taoblog/root/alipay.jpg:/workspace/themes/blog/statics/alipay.jpg
+      - ./taoblog/root/ads.txt:/workspace/theme/blog/statics/ads.txt:ro
+      - ./taoblog/root/wechat.jpg:/workspace/theme/blog/statics/wechat.jpg
+      - ./taoblog/root/alipay.jpg:/workspace/theme/blog/statics/alipay.jpg
     ports:
       - 2563:2563
       - 2564:2564

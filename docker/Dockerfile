@@ -7,7 +7,7 @@ WORKDIR /workspace
 
 ADD admin admin
 ADD setup setup
-ADD themes themes
+ADD theme theme
 ADD protocols protocols
 ADD taoblog taoblog
 

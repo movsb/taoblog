@@ -7,7 +7,7 @@ protos:
 
 .PHONY: theme
 theme:
-	@cd themes/blog/styles && ./make_style.sh
+	@cd theme/blog/styles && ./make_style.sh
 
 .PHONY: main
 main:

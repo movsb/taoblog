@@ -4,7 +4,6 @@ import "github.com/movsb/taoblog/service/modules/search"
 
 // Config ...
 type Config struct {
-	Blog        BlogConfig        `yaml:"blog"`
 	Database    DatabaseConfig    `yaml:"database"`
 	Server      ServerConfig      `yaml:"server"`
 	Data        DataConfig        `yaml:"data"`
@@ -21,7 +20,6 @@ type Config struct {
 // DefaultConfig ...
 func DefaultConfig() Config {
 	return Config{
-		Blog:        DefaultBlogConfig(),
 		Database:    DefaultDatabaseConfig(),
 		Server:      DefaultServerConfig(),
 		Data:        DefaultDataConfig(),
@@ -111,22 +109,5 @@ func DefaultMainMaintenanceConfig() MaintenanceConfig {
 	return MaintenanceConfig{
 		SiteClosed:   false,
 		DisableAdmin: false,
-	}
-}
-
-// BlogConfig ...
-type BlogConfig struct {
-	Home        string   `yaml:"home"`
-	Name        string   `yaml:"name"`
-	Description string   `yaml:"description"`
-	Mottoes     []string `yaml:"mottoes"`
-}
-
-// DefaultBlogConfig ...
-func DefaultBlogConfig() BlogConfig {
-	return BlogConfig{
-		Home:        `http://localhost`,
-		Name:        `未命名`,
-		Description: ``,
 	}
 }

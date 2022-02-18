@@ -9,7 +9,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
-	"github.com/movsb/taoblog/themes/modules/handle304"
+	"github.com/movsb/taoblog/theme/modules/handle304"
 )
 
 const tmpl = `

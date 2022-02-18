@@ -21,7 +21,7 @@ import (
 	"github.com/movsb/taoblog/service"
 	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
-	"github.com/movsb/taoblog/themes/blog"
+	"github.com/movsb/taoblog/theme"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +67,7 @@ func serve() {
 	var renderer canonical.Renderer
 	switch strings.ToLower(cfg.Theme.Name) {
 	case "", "blog":
-		renderer = blog.NewBlog(cfg, theService, theAuth, "themes/blog")
+		renderer = theme.NewTheme(cfg, theService, theAuth, "theme/blog")
 	default:
 		panic("unknown theme: " + cfg.Theme.Name)
 	}

@@ -1,3 +1,4 @@
+//go:build tools
 // +build tools
 
 // https://github.com/grpc-ecosystem/grpc-gateway#installation

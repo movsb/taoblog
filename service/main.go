@@ -143,22 +143,22 @@ func (s *Service) IsSiteClosed() bool {
 
 // HomeURL returns the home URL of format https://localhost.
 func (s *Service) HomeURL() string {
-	return s.cfg.Blog.Home
+	return s.cfg.Site.Home
 }
 
 func (s *Service) Name() string {
-	return s.cfg.Blog.Name
+	return s.cfg.Theme.Name
 }
 
 func (s *Service) Description() string {
 	if b := s.cfg.Site.ShowDescription; !b {
 		return ""
 	}
-	if d := s.cfg.Blog.Description; d != `` {
+	if d := s.cfg.Site.Description; d != `` {
 		return d
 	}
-	if n := len(s.cfg.Blog.Mottoes); n > 0 {
-		return s.cfg.Blog.Mottoes[rand.Intn(n)]
+	if n := len(s.cfg.Site.Mottoes); n > 0 {
+		return s.cfg.Site.Mottoes[rand.Intn(n)]
 	}
 	return ``
 }

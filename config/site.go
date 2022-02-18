@@ -33,6 +33,10 @@ func (s _Since) Days() int {
 
 // SiteConfig ...
 type SiteConfig struct {
+	Home             string        `yaml:"home"`
+	Name             string        `yaml:"name"`
+	Description      string        `yaml:"description"`
+	Mottoes          []string      `yaml:"mottoes"`
 	Since            _Since        `yaml:"since,omitempty"`
 	ShowDescription  bool          `yaml:"show_description"`
 	ShowStatus       bool          `yaml:"show_status"`
@@ -48,6 +52,9 @@ type SiteConfig struct {
 func DefaultSiteConfig() SiteConfig {
 	since := _Since(time.Date(2014, time.December, 24, 0, 0, 0, 0, time.Local))
 	return SiteConfig{
+		Home:             `http://localhost`,
+		Name:             `未命名`,
+		Description:      ``,
 		Since:            since,
 		ShowDescription:  false,
 		ShowStatus:       false,
