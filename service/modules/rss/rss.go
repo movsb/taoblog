@@ -80,7 +80,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user := r.auth.AuthCookie2(req)
+	user := r.auth.AuthRequest(req)
 
 	articles := r.svc.GetLatestPosts(
 		user.Context(context.TODO()),

@@ -36,7 +36,7 @@ func GatewayAuthInterceptor(a *Auth) grpc.UnaryServerInterceptor {
 			if userAgents := md.Get(gatewayUserAgent); len(userAgents) > 0 {
 				userAgent = userAgents[0]
 			}
-			ctx = a.AuthCookie3(login, userAgent).Context(ctx)
+			ctx = a.AuthCookie(login, userAgent).Context(ctx)
 		}
 
 		return handler(ctx, req)

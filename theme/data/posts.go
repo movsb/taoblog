@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -51,7 +52,7 @@ func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Servi
 		sort[1] = "desc"
 	}
 
-	posts := service.MustListPosts(user.Context(nil),
+	posts := service.MustListPosts(user.Context(context.TODO()),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,date,page_view,comments,status",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),

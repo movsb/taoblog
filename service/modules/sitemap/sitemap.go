@@ -56,7 +56,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user := s.auth.AuthCookie2(req)
+	user := s.auth.AuthRequest(req)
 
 	articles := s.svc.MustListPosts(
 		user.Context(nil),

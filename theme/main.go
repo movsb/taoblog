@@ -221,7 +221,7 @@ func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, que
 }
 
 func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
-	d := data.NewDataForHome(t.cfg, t.auth.AuthCookie2(req), t.service)
+	d := data.NewDataForHome(t.cfg, t.auth.AuthRequest(req), t.service)
 	tmpl := t.getNamed()[`home.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -232,7 +232,7 @@ func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
 }
 
 func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForSearch(t.cfg, t.auth.AuthCookie2(r), t.service, r)
+	d := data.NewDataForSearch(t.cfg, t.auth.AuthRequest(r), t.service, r)
 	tmpl := t.getNamed()[`search.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -247,7 +247,7 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d := data.NewDataForPosts(t.cfg, t.auth.AuthCookie2(r), t.service, r)
+	d := data.NewDataForPosts(t.cfg, t.auth.AuthRequest(r), t.service, r)
 	tmpl := t.getNamed()[`posts.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -264,7 +264,7 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d := data.NewDataForTags(t.cfg, t.auth.AuthCookie2(r), t.service)
+	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service)
 	tmpl := t.getNamed()[`tags.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -310,7 +310,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		return
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthCookie2(req), t.service, p)
+	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p)
 	tmpl := t.getNamed()[`post.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -323,7 +323,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTag(t.cfg, t.auth.AuthCookie2(req), t.service, tags)
+	d := data.NewDataForTag(t.cfg, t.auth.AuthRequest(req), t.service, tags)
 	tmpl := t.getNamed()[`tag.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -353,7 +353,7 @@ func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64
 }
 
 func (t *Theme) userMustCanSeePost(req *http.Request, post *protocols.Post) {
-	user := t.auth.AuthCookie2(req)
+	user := t.auth.AuthRequest(req)
 	if user.IsGuest() && post.Status != "public" {
 		panic("403")
 	}

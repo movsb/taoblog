@@ -148,9 +148,9 @@ func (g *Gateway) getSource(w http.ResponseWriter, req *http.Request, params map
 	if err != nil {
 		panic(err)
 	}
-	user := g.auther.AuthCookie2(req)
+	user := g.auther.AuthRequest(req)
 	rsp, err := g.service.GetPostSource(
-		user.Context(nil),
+		user.Context(context.TODO()),
 		&protocols.GetPostSourceRequest{
 			Id: int64(postID),
 		},

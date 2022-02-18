@@ -50,9 +50,6 @@ func (u *User) MustBeAdmin() {
 
 // Context creates a new context containing the user.
 func (u *User) Context(parent context.Context) context.Context {
-	if parent == nil {
-		parent = context.TODO()
-	}
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
@@ -86,15 +83,17 @@ func (*Auth) sha1(in string) string {
 }
 
 func (o *Auth) AuthLogin(username string, password string) bool {
-	if username == o.cfg.Basic.Username {
-		if password == o.cfg.Basic.Password {
-			return true
+	if username != `` {
+		if username == o.cfg.Basic.Username {
+			if password == o.cfg.Basic.Password {
+				return true
+			}
 		}
 	}
 	return false
 }
 
-func (o *Auth) AuthCookie2(req *http.Request) *User {
+func (o *Auth) AuthRequest(req *http.Request) *User {
 	loginCookie, err := req.Cookie(`login`)
 	if err != nil {
 		return guest
@@ -102,10 +101,10 @@ func (o *Auth) AuthCookie2(req *http.Request) *User {
 
 	login := loginCookie.Value
 	userAgent := req.Header.Get(`User-Agent`)
-	return o.AuthCookie3(login, userAgent)
+	return o.AuthCookie(login, userAgent)
 }
 
-func (o *Auth) AuthCookie3(login string, userAgent string) *User {
+func (o *Auth) AuthCookie(login string, userAgent string) *User {
 	if userAgent == "" {
 		return guest
 	}

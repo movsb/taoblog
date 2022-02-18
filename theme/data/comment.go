@@ -1,6 +1,8 @@
 package data
 
 import (
+	"context"
+
 	"github.com/movsb/taoblog/protocols"
 )
 
@@ -26,7 +28,7 @@ type LatestCommentsByPost struct {
 
 // ListLatestComments ...
 func (d *Data) ListLatestComments() (posts []*LatestCommentsByPost) {
-	comments, err := d.svc.ListComments(d.User.Context(nil),
+	comments, err := d.svc.ListComments(d.User.Context(context.TODO()),
 		&protocols.ListCommentsRequest{
 			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
 			Limit:   10,

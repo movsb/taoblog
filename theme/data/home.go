@@ -1,6 +1,8 @@
 package data
 
 import (
+	"context"
+
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
@@ -28,7 +30,7 @@ func NewDataForHome(cfg *config.Config, user *auth.User, service *service.Servic
 		PageCount:    service.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: service.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.Posts = newPosts(service.MustListPosts(user.Context(nil),
+	home.Posts = newPosts(service.MustListPosts(user.Context(context.TODO()),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,type,status",
 			Limit:   20,

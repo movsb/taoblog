@@ -103,7 +103,7 @@ func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) authorized(r *http.Request) bool {
-	user := a.auth.AuthCookie2(r)
+	user := a.auth.AuthRequest(r)
 	return user.IsAdmin()
 }
 
