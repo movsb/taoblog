@@ -18,10 +18,10 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
-	"github.com/movsb/taoblog/service/modules/rss"
-	"github.com/movsb/taoblog/service/modules/sitemap"
 	"github.com/movsb/taoblog/theme/data"
 	"github.com/movsb/taoblog/theme/modules/handle304"
+	"github.com/movsb/taoblog/theme/modules/rss"
+	"github.com/movsb/taoblog/theme/modules/sitemap"
 	"github.com/movsb/taoblog/theme/modules/watcher"
 )
 
