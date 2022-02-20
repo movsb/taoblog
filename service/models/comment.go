@@ -2,9 +2,11 @@ package models
 
 import (
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
+	"github.com/xeonx/timeago"
 )
 
 // Comment in database.
@@ -42,6 +44,7 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 		Source:     c.Source,
 		Content:    c.Content,
 		IsAdmin:    strings.EqualFold(c.Email, adminEmail),
+		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
 	}
 
 	if user.IsAdmin() {

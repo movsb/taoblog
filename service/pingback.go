@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/canonical"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/pingback/xmlrpc"
+	"github.com/movsb/taoblog/theme/modules/canonical"
 	"go.uber.org/zap"
 )
 

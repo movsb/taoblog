@@ -13,9 +13,9 @@ require (
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/cobra v1.0.0
+	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/goldmark v1.2.1
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	google.golang.org/genproto v0.0.0-20210325224202-eed09b1b5210
 	google.golang.org/grpc v1.36.1
 	google.golang.org/protobuf v1.26.0

@@ -1,6 +1,7 @@
 package sitemap
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -59,7 +60,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	user := s.auth.AuthRequest(req)
 
 	articles := s.svc.MustListPosts(
-		user.Context(nil),
+		user.Context(context.TODO()),
 		&protocols.ListPostsRequest{
 			Fields:  `id`,
 			OrderBy: `date DESC`,

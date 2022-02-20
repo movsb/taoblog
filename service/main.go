@@ -147,7 +147,7 @@ func (s *Service) HomeURL() string {
 }
 
 func (s *Service) Name() string {
-	return s.cfg.Theme.Name
+	return s.cfg.Site.Name
 }
 
 func (s *Service) Description() string {

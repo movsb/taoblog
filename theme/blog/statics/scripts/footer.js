@@ -279,21 +279,3 @@ s.onload = function() {
 };
 document.body.appendChild(s);
 })();
-
-
-// 评论时间
-(function(){
-var s = document.createElement('script');
-s.src = '/plugins/timeago/timeago.js';
-s.async = false;
-s.onload = function() {
-	$('.comment-meta .date').timeago();
-	TaoBlog.events.add('comment', 'post', function(item) {
-		$(item).find('.date').timeago();
-		item[0].querySelectorAll('a').forEach(function(a) {
-			TaoBlog.fn.externAnchor(a);
-		});
-	});
-};
-document.body.appendChild(s);
-})();

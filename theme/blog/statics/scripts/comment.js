@@ -247,7 +247,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		s += '<span class="nickname">' + nickname + '</span>\n';
 	}
 
-	s += '<time class="date" datetime="' + (new Date(cmt.date*1000)).toJSON() + '">' + this.friendly_date(cmt.date) + '</time>\n</div>\n';
+	s += '<time class="date" datetime="' + (new Date(cmt.date*1000)).toJSON() + '">' + cmt.date_fuzzy + '</time>\n</div>\n';
 	if(cmt.source_type === 'markdown') {
 		s += '<div class="comment-content html-content">' + cmt.content + '</div>\n';
 	} else {
@@ -412,9 +412,6 @@ Comment.prototype.load_comments = function() {
                     ch_count += cmts[i].children.length;
                 }
             }
-
-            if(typeof(jQuery)=='function' && typeof(jQuery.timeago)=='function')
-                jQuery('.comment-meta .date').timeago();
 
             if(cmts.length != 0) {
                 self._loaded += cmts.length;
