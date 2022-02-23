@@ -32,7 +32,7 @@ func NewDataForHome(cfg *config.Config, user *auth.User, service *service.Servic
 	}
 	home.Posts = newPosts(service.MustListPosts(user.Context(context.TODO()),
 		&protocols.ListPostsRequest{
-			Fields:  "id,title,type,status",
+			Fields:  "id,title,type,status,date",
 			Limit:   20,
 			OrderBy: "date DESC",
 		}))

@@ -59,7 +59,7 @@ func NewTheme(cfg *config.Config, service *service.Service, auth *auth.Auth, bas
 	return t
 }
 
-func createMenus(items []config.MenuItem) string {
+func createMenus(items []config.MenuItem, outer bool) string {
 	menus := bytes.NewBuffer(nil)
 	var genSubMenus func(buf *bytes.Buffer, items []config.MenuItem)
 	a := func(item config.MenuItem) string {
@@ -78,7 +78,9 @@ func createMenus(items []config.MenuItem) string {
 		if len(items) <= 0 {
 			return
 		}
-		buf.WriteString("<ol>\n")
+		if outer {
+			buf.WriteString("<ol>\n")
+		}
 		for _, item := range items {
 			if len(item.Items) == 0 {
 				buf.WriteString(fmt.Sprintf("<li>%s</li>\n", a(item)))
@@ -89,7 +91,9 @@ func createMenus(items []config.MenuItem) string {
 				buf.WriteString("</li>\n")
 			}
 		}
-		buf.WriteString("</ol>\n")
+		if outer {
+			buf.WriteString("</ol>\n")
+		}
 	}
 	genSubMenus(menus, items)
 	return menus.String()
@@ -145,7 +149,7 @@ func (t *Theme) loadTemplates() {
 		}
 	}()
 
-	menustr := createMenus(t.cfg.Menus)
+	menustr := createMenus(t.cfg.Menus, false)
 	funcs := template.FuncMap{
 		// https://githut.com/golang/go/issues/14256
 		"raw": func(s string) template.HTML {

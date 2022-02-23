@@ -1,0 +1,11 @@
+{{ $dot:=. }}
+{{ render "header" . }}
+<div class="inner">
+<article>
+	{{ with .Post.Post }}
+	<h2>{{ .Title }}</h2>
+	{{ .Content }}
+	{{ end }}
+</article>
+</div>
+{{ render "footer" . }}

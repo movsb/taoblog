@@ -1,0 +1,28 @@
+{{define "header" -}}
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    {{ if .Home }}
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/bootstrap-theme.min.css">
+    <link href="/home.css" rel="stylesheet" type="text/css">
+    {{ else if .Post }}
+    <link href="/main.css" rel="stylesheet" type="text/css">
+    {{ end }}
+    <title>
+        {{- if .Meta.Title -}}
+            {{- .Meta.Title -}}
+            {{- " - " -}}
+        {{- end -}}
+        {{- get_config "blog_name" -}}
+    </title>
+</head>
+<body>
+<script>
+    if (/mobile/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent))
+    {
+        document.body.classList.add('mobile');
+    }
+</script>
+{{ end }}

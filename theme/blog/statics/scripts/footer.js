@@ -213,14 +213,14 @@ function hasMath() {
 
     var has = false;
 
-	// old-style, to-be-removed
-    $('code:not([class*="lang"])').each(function(_, e){
-        var t = $(e).html();
-        if(t.startsWith('$') && t.endsWith('$')) {
-            has = true;
-            // break;
-        }
-    })
+    // old-style, to-be-removed
+	let codes = document.querySelectorAll('code:not([class*="lang"])');
+	codes.forEach(function(e) {
+		var t = e.innerHTML;
+		if(t.startsWith('$') && t.endsWith('$')) {
+			has = true;
+		}
+	});
     return has;
 }
 

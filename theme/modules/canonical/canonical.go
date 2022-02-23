@@ -2,6 +2,7 @@ package canonical
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -24,28 +25,58 @@ type Renderer interface {
 	QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool
 }
 
+type Renderers struct {
+	themes  map[string]Renderer
+	Default string
+}
+
+func (r *Renderers) Get(name string) Renderer {
+	if name == `` {
+		name = r.Default
+	}
+	return r.themes[name]
+}
+
+func (r *Renderers) Add(name string, renderer Renderer) {
+	if r.themes == nil {
+		r.themes = make(map[string]Renderer)
+	}
+	r.themes[name] = renderer
+}
+
 // Canonical ...
 type Canonical struct {
-	mux      *http.ServeMux
-	renderer Renderer
-	mr       *metrics.Registry
+	mux *http.ServeMux
+	rs  *Renderers
+	mr  *metrics.Registry
 }
 
 // New ...
-func New(renderer Renderer, mr *metrics.Registry) *Canonical {
+func New(rs *Renderers, mr *metrics.Registry) *Canonical {
 	c := &Canonical{
-		mux:      http.NewServeMux(),
-		renderer: renderer,
-		mr:       mr,
+		mux: http.NewServeMux(),
+		rs:  rs,
+		mr:  mr,
 	}
 	return c
 }
 
+func (c *Canonical) r(req *http.Request) Renderer {
+	theme := req.URL.Query().Get(`_theme`)
+	return c.rs.Get(theme)
+}
+
 // ServeHTTP implements htt.Handler.
 func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	renderer := c.r(req)
+	if renderer == nil {
+		log.Println(`unknown theme to use`)
+		return
+	}
+
 	defer func() {
 		if e := recover(); e != nil {
-			if !c.renderer.Exception(w, req, e) {
+			if !renderer.Exception(w, req, e) {
 				panic(e)
 			}
 		}
@@ -53,16 +84,16 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	path := req.URL.Path
 	if !isValidPath(path) {
-		c.renderer.Exception(w, req, errors.New(`invalid request path`))
+		renderer.Exception(w, req, errors.New(`invalid request path`))
 		return
 	}
 
 	if req.Method == http.MethodGet || req.Method == http.MethodOptions {
 		if regexpHome.MatchString(path) {
-			if c.renderer.ProcessHomeQueries(w, req, req.URL.Query()) {
+			if renderer.ProcessHomeQueries(w, req, req.URL.Query()) {
 				return
 			}
-			c.renderer.QueryHome(w, req)
+			renderer.QueryHome(w, req)
 			c.mr.CountHome()
 			c.mr.UserAgent(req.UserAgent())
 			return
@@ -76,7 +107,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			id := utils.MustToInt64(matches[1])
-			c.renderer.QueryByID(w, req, id)
+			renderer.QueryByID(w, req, id)
 			c.mr.CountPageView(id)
 			c.mr.UserAgent(req.UserAgent())
 			return
@@ -86,18 +117,18 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpFile.FindStringSubmatch(path)
 			postID := utils.MustToInt64(matches[1])
 			file := matches[2]
-			c.renderer.QueryFile(w, req, postID, file)
+			renderer.QueryFile(w, req, postID, file)
 			return
 		}
 
 		if regexpByTags.MatchString(path) {
 			matches := regexpByTags.FindStringSubmatch(path)
 			tags := strings.Split(matches[1], `+`)
-			c.renderer.QueryByTags(w, req, tags)
+			renderer.QueryByTags(w, req, tags)
 			return
 		}
 
-		if c.renderer.QuerySpecial(w, req, path) {
+		if renderer.QuerySpecial(w, req, path) {
 			return
 		}
 
@@ -105,7 +136,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpBySlug.FindStringSubmatch(path)
 			tree := matches[1]
 			slug := matches[2]
-			id, err := c.renderer.QueryBySlug(w, req, tree, slug)
+			id, err := renderer.QueryBySlug(w, req, tree, slug)
 			if err == nil {
 				c.mr.CountPageView(id)
 				c.mr.UserAgent(req.UserAgent())
@@ -120,7 +151,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				parents = parents[1:]
 			}
 			slug := matches[3]
-			id, err := c.renderer.QueryByPage(w, req, parents, slug)
+			id, err := renderer.QueryByPage(w, req, parents, slug)
 			if err == nil {
 				c.mr.CountPageView(id)
 				c.mr.UserAgent(req.UserAgent())
@@ -133,7 +164,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		c.renderer.QueryStatic(w, req, path)
+		renderer.QueryStatic(w, req, path)
 		return
 	}
 
@@ -170,7 +201,7 @@ func isValidPath(path string) bool {
 
 	// We reject all requests with path containing `.` or `..` components.
 	if p := strings.Index(path, `/.`); p != -1 { // fast path
-		if strings.Index(path, `/./`) != -1 || strings.Index(path, `/../`) != -1 {
+		if strings.Contains(path, `/./`) || strings.Contains(path, `/../`) {
 			return false
 		}
 		if strings.HasSuffix(path, `/.`) || strings.HasSuffix(path, `/..`) {

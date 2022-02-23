@@ -64,15 +64,11 @@ func serve() {
 		mux.Handle(a.Prefix(), a.Handler())
 	}
 
-	var renderer canonical.Renderer
-	switch strings.ToLower(cfg.Theme.Name) {
-	case "", "blog":
-		renderer = theme.NewTheme(cfg, theService, theAuth, "theme/blog")
-	default:
-		panic("unknown theme: " + cfg.Theme.Name)
-	}
-
-	canon := canonical.New(renderer, r)
+	var themes canonical.Renderers
+	themes.Add(`blog`, theme.NewTheme(cfg, theService, theAuth, "theme/blog"))
+	themes.Add(`yinwang`, theme.NewTheme(cfg, theService, theAuth, "theme/themes/yinwang"))
+	themes.Default = strings.ToLower(cfg.Theme.Name)
+	canon := canonical.New(&themes, r)
 	mux.Handle(`/`, canon)
 
 	server := &http.Server{
