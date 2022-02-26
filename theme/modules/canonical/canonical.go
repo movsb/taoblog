@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/utils"
@@ -61,14 +62,33 @@ func New(rs *Renderers, mr *metrics.Registry) *Canonical {
 	return c
 }
 
-func (c *Canonical) r(req *http.Request) Renderer {
-	theme := req.URL.Query().Get(`_theme`)
+func (c *Canonical) r(w http.ResponseWriter, r *http.Request) Renderer {
+	theme := r.URL.Query().Get(`_theme`)
+	themeCookie, _ := r.Cookie(`theme`)
+
+	// We prefer theme from query, and save it in cookie if it differs.
+	if theme != `` {
+		if themeCookie == nil || themeCookie.Value != theme {
+			http.SetCookie(w, &http.Cookie{
+				Name:     `theme`,
+				Value:    theme,
+				Path:     `/`,
+				MaxAge:   int((time.Hour * 24).Seconds()),
+				HttpOnly: true,
+			})
+		}
+	} else {
+		if themeCookie != nil && themeCookie.Value != `` {
+			theme = themeCookie.Value
+		}
+	}
+
 	return c.rs.Get(theme)
 }
 
 // ServeHTTP implements htt.Handler.
 func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	renderer := c.r(req)
+	renderer := c.r(w, req)
 	if renderer == nil {
 		log.Println(`unknown theme to use`)
 		return

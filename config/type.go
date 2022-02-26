@@ -94,7 +94,7 @@ type ThemeConfig struct {
 // DefaultThemeConfig ...
 func DefaultThemeConfig() ThemeConfig {
 	return ThemeConfig{
-		Name: `BLOG`,
+		Name: `blog`,
 	}
 }
 
