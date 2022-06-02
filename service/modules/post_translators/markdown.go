@@ -204,5 +204,6 @@ func size(base string, path string) (int, int) {
 		width /= 2
 		height /= 2
 	}
+	height = 0
 	return width, height
 }

@@ -16,23 +16,12 @@
     h1 {
         color: var(--title-fg);
         font-size: 2em;
-
-        > svg {
-			display: inline-block;
-			height: 100%;
-			position: relative;
-			top: 2px;
-
+        a {
+            color: inherit;
 			&:hover {
-				cursor: pointer;
+				text-decoration: unset;
 			}
         }
-
-		@media (prefers-color-scheme: dark) {
-			> svg {
-				filter: invert(100%);
-			}
-		}
     }
 
     /* toolbar */
@@ -231,17 +220,3 @@
         margin: 2em 1em;
     }
 }
-
-.content_only {
-    header {
-        display: none;
-    }
-    .post {
-        .meta,
-        .related,
-        #comments {
-            display: none;
-        }
-    }
-}
-

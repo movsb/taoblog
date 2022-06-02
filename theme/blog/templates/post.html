@@ -9,7 +9,7 @@
 {{ render "header" . }}
 <article class="post">
 	{{ with .Post.Post }}
-	<h1 class="title clearfix">{{ .Title }}</h1>
+	<h1 class="title clearfix"><a href="{{ .Link }}">{{ .Title }}</a></h1>
 	<div class="entry clearfix">
 {{raw `<!--article begins here-->`}}
 {{ .Content }}

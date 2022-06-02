@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/yuin/goldmark v1.2.1
+	github.com/yuin/goldmark v1.4.12
 	go.uber.org/zap v1.10.0
 	google.golang.org/genproto v0.0.0-20210325224202-eed09b1b5210
 	google.golang.org/grpc v1.36.1
@@ -24,6 +24,6 @@ require (
 
 go 1.16
 
-replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20210827190033-0f221783bf61
+replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20220602165024-93490e9bd2b7
 
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
