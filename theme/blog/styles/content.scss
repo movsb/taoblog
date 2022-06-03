@@ -30,9 +30,7 @@
     }
 
     /* 文章元数据 */
-    .meta { 
-        margin: 2em 0px 0px;
-
+    .meta1, .meta2 { 
         a {
             color: inherit;
 
@@ -44,11 +42,14 @@
                 color: var(--a-fg);
             }
         }
-
-        .author {
-            display: none;
-        }
     }
+	.meta1 {
+		margin-top: -1.8em;
+		opacity: 0.5;
+	}
+	.meta2 {
+		margin: 2em 0px 0px;
+	}
 }
 
 /* 文章内容 */

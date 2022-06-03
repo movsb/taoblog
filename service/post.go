@@ -90,6 +90,9 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	if in.WithTags {
 		out.Tags = s.GetPostTags(out.Id)
 	}
+	if !in.WithMetas {
+		out.Metas = nil
+	}
 
 	return out, nil
 }
@@ -266,7 +269,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		Type:       in.Type,
 		Category:   0,
 		Status:     "draft",
-		Metas:      "{}",
+		Metas:      map[string]string{},
 		Source:     in.Source,
 		SourceType: in.SourceType,
 	}
@@ -335,7 +338,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	var hasSourceType, hasSource bool
-	var hasTags bool
+	var hasTags, hasMetas bool
 
 	for _, path := range in.UpdateMask.Paths {
 		switch path {
@@ -356,6 +359,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			m[path] = in.Post.Slug
 		case `tags`:
 			hasTags = true
+		case `metas`:
+			hasMetas = true
 		default:
 			panic(`unknown update mask`)
 		}
@@ -390,6 +395,9 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		}
 
 		m[`content`] = content
+	}
+	if hasMetas {
+		m[`metas`] = models.PostMeta(in.Post.Metas)
 	}
 
 	s.TxCall(func(txs *Service) error {

@@ -17,7 +17,7 @@ message Post {
 	int64 page_view = 10;
 	bool comment_status = 11;
 	int64 comments = 12;
-	string metas = 13;
+	map<string,string> metas = 13;
 	string source = 14;
 	string source_type = 15;
 	repeated string tags = 16;
@@ -28,6 +28,7 @@ message GetPostRequest {
 	bool with_source = 2;
 	bool with_content = 3;
 	bool with_tags = 4;
+	bool with_metas = 5;
 }
 
 message UpdatePostRequest {

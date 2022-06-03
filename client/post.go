@@ -28,12 +28,13 @@ var sourceNames = []string{
 
 // PostConfig ...
 type PostConfig struct {
-	ID       int64    `json:"id" yaml:"id"`
-	Title    string   `json:"title" yaml:"title"`
-	Modified int32    `json:"modified" yaml:"modified"`
-	Tags     []string `json:"tags" yaml:"tags"`
-	Slug     string   `json:"slug" yaml:"slug,omitempty"`
-	Type     string   `json:"type" yaml:"type"`
+	ID       int64             `json:"id" yaml:"id"`
+	Title    string            `json:"title" yaml:"title"`
+	Modified int32             `json:"modified" yaml:"modified"`
+	Tags     []string          `json:"tags" yaml:"tags"`
+	Metas    map[string]string `json:"metas" yaml:"metas"`
+	Slug     string            `json:"slug" yaml:"slug,omitempty"`
+	Type     string            `json:"type" yaml:"type"`
 }
 
 // InitPost ...
@@ -66,6 +67,7 @@ func (c *Client) CreatePost() error {
 	p.Tags = cfg.Tags
 	p.Slug = cfg.Slug
 	p.Type = cfg.Type
+	p.Metas = cfg.Metas
 
 	p.SourceType, p.Source = readSource(".")
 
@@ -95,6 +97,7 @@ func (c *Client) GetPost() {
 		WithSource:  true,
 		WithContent: true,
 		WithTags:    true,
+		WithMetas:   true,
 	})
 	if err != nil {
 		panic(err)
@@ -105,6 +108,7 @@ func (c *Client) GetPost() {
 	cfg.Title = post.Title
 	cfg.Modified = post.Modified
 	cfg.Type = post.Type
+	cfg.Metas = post.Metas
 	c.savePostConfig(&cfg)
 
 	filename := "README.md"
@@ -160,6 +164,7 @@ func (c *Client) UpdatePost() error {
 	p.Slug = cfg.Slug
 	p.Modified = cfg.Modified
 	p.Type = cfg.Type
+	p.Metas = cfg.Metas
 
 	p.SourceType, p.Source = readSource(".")
 
@@ -172,6 +177,7 @@ func (c *Client) UpdatePost() error {
 				`source`,
 				`slug`,
 				`tags`,
+				`metas`,
 			},
 		},
 	})
@@ -183,6 +189,7 @@ func (c *Client) UpdatePost() error {
 	cfg.Slug = rp.Slug
 	cfg.Modified = rp.Modified
 	cfg.Type = rp.Type
+	cfg.Metas = rp.Metas
 	c.savePostConfig(&cfg)
 
 	return nil

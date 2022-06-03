@@ -9,3 +9,5 @@
 /taoblog.yml
 /taoblog
 /*.db
+/article/
+

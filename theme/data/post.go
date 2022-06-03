@@ -1,7 +1,6 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -18,7 +17,7 @@ type Post struct {
 	ID      int64
 	Content template.HTML
 	Related []*models.PostForRelated
-	Metas   map[string]interface{}
+	Metas   map[string]string
 }
 
 func newPost(post *protocols.Post) *Post {
@@ -26,8 +25,8 @@ func newPost(post *protocols.Post) *Post {
 		Post:    post,
 		ID:      post.Id,
 		Content: template.HTML(post.Content),
+		Metas:   post.Metas,
 	}
-	json.Unmarshal([]byte(post.Metas), &p.Metas)
 	return p
 }
 
@@ -85,9 +84,7 @@ func (p *Post) TagsString() template.HTML {
 // CustomHeader ...
 func (p *Post) CustomHeader() (header string) {
 	if i, ok := p.Metas["header"]; ok {
-		if s, ok := i.(string); ok {
-			header = s
-		}
+		header = i
 	}
 	return
 }
@@ -95,9 +92,7 @@ func (p *Post) CustomHeader() (header string) {
 // CustomFooter ...
 func (p *Post) CustomFooter() (footer string) {
 	if i, ok := p.Metas["footer"]; ok {
-		if s, ok := i.(string); ok {
-			footer = s
-		}
+		footer = i
 	}
 	return
 }

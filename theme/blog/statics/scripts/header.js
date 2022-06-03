@@ -47,7 +47,7 @@ var TaoBlog = window.TaoBlog = new __TaoBlog();
 TaoBlog.fn.externAnchor = function() {
 	let hostname = location.hostname;
 	return function(a) {
-		if (a.href != "" && a.hostname !== hostname) {
+		if (a.href != "" && a.hostname !== hostname && !a.classList.contains('no-external')) {
 			a.setAttribute('target', '_blank');
 			a.classList.add('external');
 		}

@@ -11,6 +11,15 @@
 	{{ with .Post.Post }}
 	<h1 class="title clearfix"><a href="{{ .Link }}">{{ .Title }}</a></h1>
 	<div class="entry clearfix">
+	<div class="meta1 clearfix">
+		{{ if $.Author }}
+		<span class="author">{{ $.Author }}</span>
+		{{ end }}
+		<span class="date">{{ .DateString }}</span>
+		{{ with (index .Metas "weixin") }}
+			在<span class="weixin"><a class="no-external" href="https://mp.weixin.qq.com/s/{{.}}" target="_blank">微信</a></span>上查看
+		{{ end }}
+	</div>
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
@@ -48,7 +57,7 @@
 		</div>
 		{{ end }}
 		{{ end }}
-        <div class="meta clearfix">
+        <div class="meta2 clearfix">
             <p>
                 发表于：<span class="value" title="发表时间：{{.DateString}}
 修改时间：{{.ModifiedString}}">{{.DateString}}</span>

@@ -1,6 +1,11 @@
 package models
 
 import (
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+
 	"github.com/movsb/taoblog/protocols"
 )
 
@@ -18,9 +23,30 @@ type Post struct {
 	PageView      uint
 	CommentStatus uint
 	Comments      uint
-	Metas         string
+	Metas         PostMeta
 	Source        string
 	SourceType    string
+}
+
+type PostMeta map[string]string
+
+var (
+	_ sql.Scanner   = (*PostMeta)(nil)
+	_ driver.Valuer = (*PostMeta)(nil)
+)
+
+func (m PostMeta) Value() (driver.Value, error) {
+	return json.Marshal(m)
+}
+
+func (m *PostMeta) Scan(value interface{}) error {
+	switch v := value.(type) {
+	case string:
+		return json.Unmarshal([]byte(v), m)
+	case []byte:
+		return json.Unmarshal(v, m)
+	}
+	return errors.New(`unsupported type`)
 }
 
 // TableName ...

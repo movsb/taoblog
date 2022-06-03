@@ -49,6 +49,13 @@ type Data struct {
 	Tag *TagData
 }
 
+func (d *Data) Author() string {
+	if d.Config.Comment.Author != `` {
+		return d.Config.Comment.Author
+	}
+	return ``
+}
+
 // MetaData ...
 type MetaData struct {
 	Title string
