@@ -13,7 +13,6 @@
 
 @media (prefers-color-scheme: light) {
 :root {
---selection-color:          #fac8cb;
 --color-bg:                 white;
 --color-fg:                 #292929;
 --code-bg:                  #f7f7f7;
@@ -32,7 +31,6 @@
 
 @media (prefers-color-scheme: dark) {
 :root {
---selection-color:          #a64b51;
 --color-bg:                 rgb(13,17,23); // from github dark
 --color-fg:                 #a4a4a4;
 --code-bg:                  #222;
