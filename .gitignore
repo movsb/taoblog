@@ -6,6 +6,7 @@
 /.tmp/
 /.vscode/
 /files/
+/posts/
 /taoblog.yml
 /taoblog
 /*.db

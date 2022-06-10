@@ -47,12 +47,17 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 		panic(err)
 	}
 	if !bStdout {
+		localDir := `./posts`
+		if err := os.MkdirAll(localDir, 0755); err != nil {
+			panic(err)
+		}
 		name := time.Now().Format(`taoblog.2006-01-02.db`)
-		fp, err := os.Create(name)
+		localPath := filepath.Join(localDir, name)
+		fp, err := os.Create(localPath)
 		if err != nil {
 			panic(err)
 		}
-		defer fmt.Printf("Filename: %s\n", name)
+		defer fmt.Printf("Filename: %s\n", localPath)
 		defer fp.Close()
 		w = fp
 
@@ -66,7 +71,7 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 				if _, err := os.Stat(link); err == nil {
 					os.Remove(link)
 				}
-				err := os.Symlink(name, link)
+				err := os.Symlink(localPath, link)
 				if err != nil {
 					fmt.Println(err.Error())
 					return
