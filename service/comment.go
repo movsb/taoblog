@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/modules/utils"
@@ -18,6 +19,7 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -286,7 +288,15 @@ func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) 
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
-	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
+	md := goldmark.New(
+		goldmark.WithRendererOptions(
+			html.WithUnsafe(),
+		),
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithExtensions(extension.DefinitionList),
+		goldmark.WithExtensions(extension.Footnote),
+		goldmark.WithExtensions(mathjax.MathJax),
+	)
 	doc := md.Parser().Parse(text.NewReader([]byte(c.Source)))
 
 	if !user.IsAdmin() {

@@ -235,19 +235,24 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	if(cmt.is_admin) {
 		s += '<span class="author">【作者】' + this.h2t(cmt.author) + '</span>\n';
 	} else {
-		var nickname;
-		if(typeof cmt.url == 'string' && cmt.url.length) {
-			if(!cmt.url.match(/^https?:\/\//i))
-				cmt.url = 'http://' + cmt.url;
-			nickname = '<a rel="nofollow" target="_blank" href="' + this.h2a(cmt.url) + '">' + this.h2t(cmt.author) + '</a>';
-		} else {
-			nickname = this.h2t(cmt.author);
-		}
-
-		s += '<span class="nickname">' + nickname + '</span>\n';
+		s += '<span class="nickname">' + this.h2t(cmt.author) + '</span>\n';
 	}
 
-	s += '<time class="date" datetime="' + (new Date(cmt.date*1000)).toJSON() + '">' + cmt.date_fuzzy + '</time>\n</div>\n';
+	if(typeof cmt.url == 'string' && cmt.url.length) {
+		if(!cmt.url.match(/^https?:\/\//i))
+			cmt.url = 'http://' + cmt.url;
+		try {
+			let url = new URL(cmt.url);
+			s += '<span class="home"><a rel="nofollow" target="_blank" href="' + this.h2a(cmt.url) + '">' + this.h2t(url.origin) + '</a></span>\n';
+		} catch(e) {
+			console.log(e);
+		}
+	} 
+
+	s += '<time class="date" datetime="' + (new Date(cmt.date*1000)).toJSON() + '">' + cmt.date_fuzzy + '</time>\n';
+
+	s += '</div>\n';
+
 	if(cmt.source_type === 'markdown') {
 		s += '<div class="comment-content html-content">' + cmt.content + '</div>\n';
 	} else {
