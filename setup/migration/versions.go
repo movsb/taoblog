@@ -282,3 +282,14 @@ func v18(tx *sql.Tx) {
 		UNIQUE (post_id, source_url)
 	)`)
 }
+
+func v19(tx *sql.Tx) {
+	mustExec(tx, `CREATE TABLE IF NOT EXISTS redirects (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		created_at INTEGER  NOT NULL,
+		source_path TEXT NOT NULL,
+		target_path TEXT NOT NULL,
+		status_code INTEGER NOT NULL,
+		UNIQUE (source_path)
+	)`)
+}

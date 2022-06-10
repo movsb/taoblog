@@ -93,3 +93,15 @@ type PostForRelated struct {
 	Title     string `json:"title"`
 	Relevance uint   `json:"relevance"`
 }
+
+type Redirect struct {
+	ID         int64
+	CreatedAt  int32
+	SourcePath string
+	TargetPath string
+	StatusCode int
+}
+
+func (Redirect) TableName() string {
+	return `redirects`
+}

@@ -76,7 +76,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			data[`source`] = req.Comment.Source
 			data[`content`] = s.convertCommentMarkdown(user, req.Comment)
 		}
-		s.TxCall(func(txs *Service) error {
+		s.MustTxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
 			txs.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 			return nil
@@ -264,7 +264,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	s.TxCall(func(txs *Service) error {
+	s.MustTxCall(func(txs *Service) error {
 		txs.tdb.Model(&comment).MustCreate()
 		txs.updateCommentsCount()
 		txs.UpdatePostCommentCount(comment.PostID)
@@ -320,7 +320,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 		panic(403)
 	}
 
-	s.TxCall(func(txs *Service) error {
+	s.MustTxCall(func(txs *Service) error {
 		cmt := s.GetComment2(in.Id)
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)

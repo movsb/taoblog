@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -304,7 +306,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		p.Title = postUntitled
 	}
 
-	s.TxCall(func(txs *Service) error {
+	s.MustTxCall(func(txs *Service) error {
 		txs.tdb.Model(&p).MustCreate()
 		in.Id = p.ID
 		txs.UpdateObjectTags(p.ID, in.Tags)
@@ -400,7 +402,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		m[`metas`] = models.PostMeta(in.Post.Metas)
 	}
 
-	s.TxCall(func(txs *Service) error {
+	s.MustTxCall(func(txs *Service) error {
 		res := txs.tdb.Model(p).Where(`modified=?`, in.Post.Modified).MustUpdateMap(m)
 		rowsAffected, err := res.RowsAffected()
 		if err != nil || rowsAffected != 1 {
@@ -430,7 +432,7 @@ func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostReques
 		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
 	}
 
-	s.TxCall(func(txs *Service) error {
+	s.MustTxCall(func(txs *Service) error {
 		var p models.Post
 		txs.tdb.Select(`id`).Where(`id=?`, in.Id).MustFind(&p)
 		txs.tdb.Model(&p).MustDelete()
@@ -463,7 +465,7 @@ func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatus
 		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
 	}
 
-	s.TxCall(func(txs *Service) error {
+	s.MustTxCall(func(txs *Service) error {
 		var post models.Post
 		txs.tdb.Select("id").Where("id=?", in.Id).MustFind(&post)
 
@@ -515,4 +517,62 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *protocols.GetPos
 	return &protocols.GetPostCommentsCountResponse{
 		Count: int64(post.Comments),
 	}, nil
+}
+
+func (s *Service) FindRedirect(sourcePath string) (string, error) {
+	r, err := s.findRedirect(context.TODO(), s, sourcePath)
+	if err != nil {
+		return "", err
+	}
+	return r.TargetPath, nil
+}
+
+func (s *Service) findRedirect(ctx context.Context, txs *Service, sourcePath string) (*models.Redirect, error) {
+	var r models.Redirect
+	if err := txs.tdb.Where(`source_path=?`, sourcePath).Find(&r); err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+// 重定向并不止是只对文章链接有效，任何链接都可以。这里暂时先写在这里了。
+func (s *Service) SetRedirect(ctx context.Context, in *protocols.SetRedirectRequest) (*empty.Empty, error) {
+	return &empty.Empty{}, s.TxCall(func(txs *Service) error {
+		r, err := s.findRedirect(ctx, txs, in.SourcePath)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				var te *taorm.Error
+				if errors.As(err, &te) {
+					if !errors.Is(te.Raw, sql.ErrNoRows) {
+						return err
+					}
+				}
+			}
+		}
+		if r != nil {
+			if r.TargetPath == in.TargetPath {
+				return nil
+			}
+			res, err := txs.tdb.Model(r).UpdateMap(taorm.M{
+				`target_path`: in.TargetPath,
+			})
+			if err != nil {
+				return err
+			}
+			n, err := res.RowsAffected()
+			if err != nil {
+				return err
+			}
+			if n != 1 {
+				return fmt.Errorf(`SetRedirect: affected rows not equal to 1, was %d`, n)
+			}
+			return nil
+		}
+		r = &models.Redirect{
+			CreatedAt:  int32(time.Now().Unix()),
+			SourcePath: in.SourcePath,
+			TargetPath: in.TargetPath,
+		}
+		return txs.tdb.Model(r).Create()
+	})
 }

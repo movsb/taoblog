@@ -284,3 +284,13 @@ func readSource(dir string) (string, string) {
 
 	return typ, source
 }
+
+func (c *Client) SetRedirect(sourcePath, targetPath string) {
+	_, err := c.management.SetRedirect(c.token(), &protocols.SetRedirectRequest{
+		SourcePath: sourcePath,
+		TargetPath: targetPath,
+	})
+	if err != nil {
+		panic(err)
+	}
+}

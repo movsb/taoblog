@@ -7,7 +7,7 @@ import (
 // VersionUpdater is
 type VersionUpdater struct {
 	version int
-	updater func(tx *sql.Tx)
+	update  func(tx *sql.Tx)
 }
 
 var gVersions = []VersionUpdater{
@@ -30,6 +30,7 @@ var gVersions = []VersionUpdater{
 	{16, v16},
 	{17, v17},
 	{18, v18},
+	{19, v19},
 }
 
 // MaxVersionNumber ...

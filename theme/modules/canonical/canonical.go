@@ -12,6 +12,10 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
+type RedirectFinder interface {
+	FindRedirect(sourcePath string) (targetPath string, err error)
+}
+
 // Renderer ...
 type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool

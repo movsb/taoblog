@@ -27,6 +27,12 @@ service Management {
 			description: "导出文件。";
 		};
 	};
+
+	rpc SetRedirect (SetRedirectRequest) returns (google.protobuf.Empty) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "设置重定向。";
+		};
+	};
 }
 
 service Search {

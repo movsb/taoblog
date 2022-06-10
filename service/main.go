@@ -125,16 +125,20 @@ func (s *Service) Store() storage.Store {
 	return s.store
 }
 
+// MustTxCall ...
+func (s *Service) MustTxCall(callback func(txs *Service) error) {
+	if err := s.TxCall(callback); err != nil {
+		panic(err)
+	}
+}
+
 // TxCall ...
-func (s *Service) TxCall(callback func(txs *Service) error) {
-	err := s.tdb.TxCall(func(tx *taorm.DB) error {
+func (s *Service) TxCall(callback func(txs *Service) error) error {
+	return s.tdb.TxCall(func(tx *taorm.DB) error {
 		txs := *s
 		txs.tdb = tx
 		return callback(&txs)
 	})
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (s *Service) IsSiteClosed() bool {

@@ -43,9 +43,9 @@ func Migrate(gdb *sql.DB) {
 	txCall(gdb, func(tx *sql.Tx) {
 		for ; begin < len(gVersions); begin++ {
 			v := gVersions[begin]
-			if v.updater != nil {
+			if v.update != nil {
 				fmt.Printf("updating to DB version %d ...\n", v.version)
-				v.updater(tx)
+				v.update(tx)
 			}
 		}
 		lastVer := gVersions[len(gVersions)-1]

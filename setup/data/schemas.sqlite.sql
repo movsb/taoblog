@@ -77,4 +77,14 @@ CREATE TABLE IF NOT EXISTS pingbacks (
 	UNIQUE (`post_id`, `source_url`)
 );
 
+-- 失效的链接处理表
+CREATE TABLE IF NOT EXISTS redirects (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `created_at` INTEGER  NOT NULL,
+    `source_path` TEXT NOT NULL,
+    `target_path` TEXT NOT NULL,
+    `status_code` INTEGER NOT NULL,
+    UNIQUE (`source_path`)
+);
+
 COMMIT;

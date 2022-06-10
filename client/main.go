@@ -210,6 +210,16 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	postsCmd.AddCommand(postsDeleteCmd)
+	postsRedirectCmd := &cobra.Command{
+		Use:   `redirect <source> <target>`,
+		Short: `Redirect dead link.`,
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			client.SetRedirect(args[0], args[1])
+		},
+	}
+	postsCmd.AddCommand(postsRedirectCmd)
+
 	commentsCmd := &cobra.Command{
 		Use:              `comments`,
 		Short:            `Commands for managing comments`,

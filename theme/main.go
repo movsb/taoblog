@@ -19,10 +19,12 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/data"
+	"github.com/movsb/taoblog/theme/modules/canonical"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
 	"github.com/movsb/taoblog/theme/modules/watcher"
+	"go.uber.org/zap"
 )
 
 // Theme ...
@@ -31,6 +33,8 @@ type Theme struct {
 	base    string // base directory
 	service *service.Service
 	auth    *auth.Auth
+
+	redir canonical.RedirectFinder
 
 	rss     *rss.RSS
 	sitemap *sitemap.Sitemap
@@ -47,6 +51,7 @@ func NewTheme(cfg *config.Config, service *service.Service, auth *auth.Auth, bas
 		base:    base,
 		service: service,
 		auth:    auth,
+		redir:   service,
 	}
 	if cfg.Site.RSS.Enabled {
 		t.rss = rss.New(cfg, service, auth)
@@ -201,6 +206,17 @@ func (t *Theme) loadTemplates() {
 func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool {
 	switch te := e.(type) {
 	case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
+		if t.redir != nil {
+			target, err := t.redir.FindRedirect(req.URL.Path)
+			if err != nil {
+				zap.L().Error(`FindRedirect failed`, zap.Error(err))
+				// fallthrough
+			}
+			if target != `` {
+				http.Redirect(w, req, target, http.StatusPermanentRedirect)
+				return true
+			}
+		}
 		w.WriteHeader(404)
 		t.getNamed()[`404.html`].Execute(w, nil)
 		return true
