@@ -29,8 +29,8 @@ pre > code {
 :not(pre) > code, tt {
 	margin: 0px 4px;
 	padding: 2px 6px;
+	line-height: 1.8em; /* 防止上下两行都有内联代码导致边框重叠，所以设高一些 */
 	border-radius: var(--border-radius);
-	line-height: 1.5em;
 	white-space: normal;
 	word-break: break-all;
 	background-color: var(--code-bg);
