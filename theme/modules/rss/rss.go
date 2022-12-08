@@ -84,7 +84,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	articles := r.svc.GetLatestPosts(
 		user.Context(context.TODO()),
-		"id,title,date,content",
+		"id,title,date",
 		int64(r.Config.Site.RSS.ArticleCount),
 	)
 

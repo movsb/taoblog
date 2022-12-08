@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS `posts` (
     `date` INTEGER NOT NULL,
     `modified` INTEGER NOT NULL,
     `title` TEXT  NOT NULL,
-    `content` TEXT  NOT NULL,
     `slug` TEXT NOT NULL,
     `type` TEXT NOT NULL,
     `category` INTEGER  NOT NULL,

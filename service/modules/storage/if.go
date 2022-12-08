@@ -23,4 +23,7 @@ type Store interface {
 	Create(id int64, path string) (File, error)
 	// path is cleaned.
 	Remove(id int64, path string) error
+
+	// tmp
+	PathOf(id int64, path string) (string, error)
 }

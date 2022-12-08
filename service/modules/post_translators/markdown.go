@@ -9,12 +9,11 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
-	"text/template"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/yuin/goldmark"
@@ -29,24 +28,26 @@ import (
 
 // MarkdownTranslator ...
 type MarkdownTranslator struct {
-	once sync.Once
+	pathResolver PathResolver
 }
 
-var referencesKind ast.NodeKind
+var (
+	imageKind ast.NodeKind
+)
+
+func init() {
+	imageKind = ast.NewNodeKind(`image`)
+}
+
+func (me *MarkdownTranslator) SetPathResolver(pathResolver PathResolver) {
+	me.pathResolver = pathResolver
+}
 
 // Translate ...
-func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string) (string, error) {
-	me.once.Do(func() {
-		referencesKind = ast.NewNodeKind(`references`)
-	})
-
+func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
-			html.WithImageDataSrc(),
-			html.WithImageSizeFunc(func(path string) (int, int) {
-				return size(base, path)
-			}),
 		),
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithExtensions(extension.DefinitionList),
@@ -61,10 +62,7 @@ func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string
 		parser.WithContext(pCtx),
 	)
 
-	if cb == nil {
-		cb = &Callback{}
-	}
-
+	var title string
 	maxDepth := 10000 // this is to avoid unwanted infinite loop.
 	n := 0
 	for p := doc.FirstChild(); p != nil && n < maxDepth; n++ {
@@ -73,11 +71,7 @@ func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string
 			heading := p.(*ast.Heading)
 			switch heading.Level {
 			case 1:
-				title := string(heading.Text(sourceBytes))
-				if cb.SetTitle != nil {
-					cb.SetTitle(title)
-				}
-
+				title = string(heading.Text(sourceBytes))
 				p = p.NextSibling()
 				parent := heading.Parent()
 				parent.RemoveChild(parent, heading)
@@ -85,18 +79,14 @@ func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string
 			}
 		case p.Kind() == ast.KindParagraph:
 			para := p.(*ast.Paragraph)
-			if para.Lines().Len() != 1 {
-				break
-			}
-			line := para.Lines().At(0)
-			raw := string(sourceBytes[line.Start:line.Stop])
-			if raw == `[REFERENCES]` {
-				n := &_Ref{
-					raw: genRefs(pCtx.References()),
+			for c := para.FirstChild(); c != nil; c = c.NextSibling() {
+				if c.Kind() == ast.KindImage {
+					oldImage := c.(*ast.Image)
+					newImage := &_Image{
+						image: oldImage,
+					}
+					para.ReplaceChild(para, oldImage, newImage)
 				}
-				p.Parent().ReplaceChild(p.Parent(), p, n)
-				p = n
-				continue
 			}
 		}
 		p = p.NextSibling()
@@ -107,67 +97,77 @@ func (me *MarkdownTranslator) Translate(cb *Callback, source string, base string
 
 	rdr := md.Renderer()
 	if reg, ok := rdr.(renderer.NodeRendererFuncRegisterer); ok {
-		reg.Register(referencesKind, renderRefs)
+		reg.Register(imageKind, me.renderImage)
 	}
 
 	buf := bytes.NewBuffer(nil)
 	err := rdr.Render(buf, []byte(source), doc)
-	return buf.String(), err
+	return title, buf.String(), err
 }
 
-func genRefs(refs []parser.Reference) string {
-	t := template.Must(template.New(`gen-refs`).Parse(`<li><a title="{{printf "%s" .Title}}" href="{{printf "%s" .Destination}}">{{or .Title .Destination | printf "%s"}}</a></li>`))
-	w := bytes.NewBufferString("<ol class=references>\n")
-	for _, ref := range refs {
-		err := t.Execute(w, ref)
-		if err != nil {
-			panic(err)
-		}
-		w.WriteByte('\n')
-	}
-	w.WriteString(`</ol>`)
-	return w.String()
-}
-
-type _Ref struct {
+type _Image struct {
 	ast.BaseBlock
-	raw string
+	image *ast.Image
 }
 
-// Dump implements Node.Dump .
-func (n *_Ref) Dump(source []byte, level int) {
-	ast.DumpHelper(n, source, level, nil, nil)
-}
+func (n *_Image) Dump(source []byte, level int) { ast.DumpHelper(n, source, level, nil, nil) }
+func (n *_Image) Type() ast.NodeType            { return ast.TypeBlock }
+func (n *_Image) Kind() ast.NodeKind            { return imageKind }
 
-// Type implements Node.Type .
-func (n *_Ref) Type() ast.NodeType {
-	return ast.TypeBlock
-}
-
-// Kind implements Node.Kind.
-func (n *_Ref) Kind() ast.NodeKind {
-	return referencesKind
-}
-
-func renderRefs(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
+func (me *MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
 		return ast.WalkContinue, nil
 	}
-	r := n.(*_Ref)
-	_, err := writer.WriteString(r.raw)
-	return ast.WalkContinue, err
+	n := node.(*_Image)
+	_, _ = w.WriteString("<img src=\"")
+	_, _ = w.Write(util.EscapeHTML(util.URLEscape(n.image.Destination, true)))
+	_, _ = w.WriteString(`" alt="`)
+	_, _ = w.Write(nodeToHTMLText(n.image, source))
+	_ = w.WriteByte('"')
+	if n.Attributes() != nil {
+		html.RenderAttributes(w, n, html.ImageAttributeFilter)
+	}
+	_, _ = w.WriteString(` loading="lazy"`)
+
+	path := string(n.image.Destination)
+	if me.pathResolver != nil && !strings.Contains(path, `://`) {
+		path2, err := me.pathResolver.Resolve(path)
+		if err == nil {
+			path = path2
+		}
+	}
+	width, height := size(path)
+	if width > 0 && height > 0 {
+		w.WriteString(fmt.Sprintf(` width=%d height=%d`, width, height))
+	}
+
+	_, _ = w.WriteString(" />")
+	return ast.WalkSkipChildren, nil
 }
 
-func size(base string, path string) (int, int) {
+func nodeToHTMLText(n ast.Node, source []byte) []byte {
+	var buf bytes.Buffer
+	for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+		if s, ok := c.(*ast.String); ok && s.IsCode() {
+			buf.Write(s.Text(source))
+		} else if !c.HasChildren() {
+			buf.Write(util.EscapeHTML(c.Text(source)))
+		} else {
+			buf.Write(nodeToHTMLText(c, source))
+		}
+	}
+	return buf.Bytes()
+}
+
+func size(path string) (int, int) {
 	var fp io.ReadCloser
-	if strings.Contains(path, `:`) {
+	if strings.Contains(path, `://`) {
 		resp, err := http.Get(path)
 		if err != nil {
 			panic(err)
 		}
 		fp = resp.Body
 	} else {
-		path = filepath.Join(base, path)
 		f, err := os.Open(path)
 		if err != nil {
 			// panic(err)
@@ -197,13 +197,13 @@ func size(base string, path string) (int, int) {
 				return w, h
 			}
 		}
-		panic(err)
+		log.Println(err)
+		return 0, 0
 	}
 	width, height := imgConfig.Width, imgConfig.Height
 	if strings.Contains(filepath.Base(path), `@2x.`) {
 		width /= 2
 		height /= 2
 	}
-	height = 0
 	return width, height
 }

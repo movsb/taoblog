@@ -38,6 +38,11 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 	}
 
 	out := p.ToProtocols()
+	content, err := s.getPostContent(name)
+	if err != nil {
+		panic(err)
+	}
+	out.Content = content
 
 	return out
 }
@@ -51,7 +56,15 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
-	return posts.ToProtocols()
+	outs := posts.ToProtocols()
+	for _, out := range outs {
+		content, err := s.getPostContent(out.Id)
+		if err != nil {
+			panic(err)
+		}
+		out.Content = content
+	}
+	return outs
 }
 
 func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64) []*protocols.Post {
@@ -82,8 +95,12 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	out := p.ToProtocols()
 
 	// TODO don't get these fields
-	if !in.WithContent {
-		out.Content = ``
+	if in.WithContent {
+		content, err := s.getPostContent(int64(in.Id))
+		if err != nil {
+			return nil, err
+		}
+		out.Content = content
 	}
 	if !in.WithSource {
 		out.SourceType = ``
@@ -97,6 +114,52 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	}
 
 	return out, nil
+}
+
+func (s *Service) PathResolver(id int64) post_translators.PathResolver {
+	return &PathResolver{s: s, id: id}
+}
+
+type PathResolver struct {
+	s  *Service
+	id int64
+}
+
+func (r *PathResolver) Resolve(path string) (string, error) {
+	if strings.Contains(path, `://`) {
+		return path, nil
+	}
+	return r.s.store.PathOf(r.id, path)
+}
+
+// TODO 使用磁盘缓存，而不是内存缓存。
+func (s *Service) getPostContent(id int64) (string, error) {
+	content, err := s.cache.Get(fmt.Sprintf(`post:%d`, id), func(key string) (interface{}, error) {
+		_ = key
+		var p models.Post
+		s.posts().Select("source_type,source").Where("id = ?", id).MustFind(&p)
+		var content string
+		var tr post_translators.PostTranslator
+		switch p.SourceType {
+		case `markdown`:
+			mt := &post_translators.MarkdownTranslator{}
+			mt.SetPathResolver(s.PathResolver(id))
+			tr = mt
+		case `html`:
+			tr = &post_translators.HTMLTranslator{}
+		default:
+			return ``, fmt.Errorf(`unknown source type`)
+		}
+		_, content, err := tr.Translate(p.Source)
+		if err != nil {
+			return ``, err
+		}
+		return content, nil
+	})
+	if err != nil {
+		return ``, err
+	}
+	return content.(string), nil
 }
 
 func (s *Service) GetPostTitle(ID int64) string {
@@ -254,8 +317,6 @@ func (s *Service) UpdatePostCommentCount(name int64) {
 
 // CreatePost ...
 func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocols.Post, error) {
-	var err error
-
 	user := s.auth.AuthGRPC(ctx)
 	if !user.IsAdmin() {
 		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
@@ -278,28 +339,6 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 
 	if p.Type == `` {
 		p.Type = `post`
-	}
-
-	var tr post_translators.PostTranslator
-	switch p.SourceType {
-	case "html":
-		tr = &post_translators.HTMLTranslator{}
-	case "markdown":
-		tr = &post_translators.MarkdownTranslator{}
-	default:
-		panic("no translator found")
-	}
-
-	cb := post_translators.Callback{
-		SetTitle: func(title string) {
-			p.Title = title
-		},
-	}
-
-	// TODO doesn't exist
-	p.Content, err = tr.Translate(&cb, in.Source, "./files/0")
-	if err != nil {
-		panic(err)
 	}
 
 	if p.Title == "" {
@@ -355,8 +394,6 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		case `source`:
 			m[path] = in.Post.Source
 			hasSource = true
-		case `content`:
-			m[path] = in.Post.Content
 		case `slug`:
 			m[path] = in.Post.Slug
 		case `tags`:
@@ -382,21 +419,13 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		default:
 			panic("no translator found")
 		}
-		cb := post_translators.Callback{
-			SetTitle: func(title string) {
-				if title == `` {
-					title = postUntitled
-				}
-				m[`title`] = title
-			},
-		}
 
-		content, err := tr.Translate(&cb, in.Post.Source, fmt.Sprintf("./files/%d", in.Post.Id))
+		title, _, err := tr.Translate(in.Post.Source)
 		if err != nil {
 			panic(err)
 		}
 
-		m[`content`] = content
+		m[`title`] = title
 	}
 	if hasMetas {
 		m[`metas`] = models.PostMeta(in.Post.Metas)
@@ -493,7 +522,7 @@ func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatus
 // GetPostSource ...
 func (s *Service) GetPostSource(ctx context.Context, in *protocols.GetPostSourceRequest) (*protocols.GetPostSourceResponse, error) {
 	var p models.Post
-	s.tdb.Select(`status,source,source_type,content`).Where(`id=?`, in.Id).MustFind(&p)
+	s.tdb.Select(`status,source,source_type`).Where(`id=?`, in.Id).MustFind(&p)
 	user := s.auth.AuthGRPC(ctx)
 	if !user.IsAdmin() && p.Status != `public` {
 		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
@@ -505,7 +534,7 @@ func (s *Service) GetPostSource(ctx context.Context, in *protocols.GetPostSource
 	case p.Source != ``:
 		rsp.Content = p.Source
 	default:
-		rsp.Content = p.Content
+		// TODO 历史文章是没有内容的
 	}
 	return rsp, nil
 }

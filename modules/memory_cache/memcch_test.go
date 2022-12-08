@@ -8,8 +8,9 @@ import (
 
 func Test_Memcch(t *testing.T) {
 	m := NewMemoryCache(time.Second * 3)
-	m.Set("1", "str")
-	fmt.Println(m.Get("1"))
+	fmt.Println(m.Get("1", func(key string) (interface{}, error) {
+		return "str", nil
+	}))
 	m.Stop()
 	time.Sleep(time.Second)
 }

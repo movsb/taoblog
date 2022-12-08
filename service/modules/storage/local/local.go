@@ -78,3 +78,7 @@ func (l *Local) Remove(id int64, path string) error {
 	}
 	return os.Remove(path)
 }
+
+func (l *Local) PathOf(id int64, path string) (string, error) {
+	return l.path(id, path, false)
+}

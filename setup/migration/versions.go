@@ -293,3 +293,8 @@ func v19(tx *sql.Tx) {
 		UNIQUE (source_path)
 	)`)
 }
+
+func v20(tx *sql.Tx) {
+	mustExec(tx, "UPDATE posts SET source=content WHERE source='' AND source_type='html'")
+	mustExec(tx, "ALTER TABLE posts DROP COLUMN `content`")
+}

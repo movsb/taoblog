@@ -13,53 +13,51 @@ func optionCacheKey(name string) string {
 }
 
 func (s *Service) GetStringOption(name string) string {
-	if val, ok := s.cache.Get(optionCacheKey(name)); ok {
-		return val.(string)
+	val, err := s.cache.Get(optionCacheKey(name), func(key string) (interface{}, error) {
+		var option models.Option
+		s.tdb.Model(models.Option{}).Where("name=?", name).MustFind(&option)
+		return option.Value, nil
+	})
+	if err != nil {
+		panic(err)
 	}
-	var option models.Option
-	s.tdb.Model(models.Option{}).Where("name=?", name).MustFind(&option)
-	s.cache.Set(optionCacheKey(name), option.Value)
-	return option.Value
+	return val.(string)
 }
 
 func (s *Service) GetDefaultStringOption(name string, def string) string {
-	if val, ok := s.cache.Get(optionCacheKey(name)); ok {
-		return val.(string)
+	val, err := s.cache.Get(optionCacheKey(name), func(key string) (interface{}, error) {
+		var option models.Option
+		err := s.tdb.Where("name=?", name).Find(&option)
+		if err != nil {
+			if taorm.IsNotFoundError(err) {
+				return def, nil
+			}
+			return nil, err
+		}
+		return option.Value, nil
+	})
+	if err != nil {
+		panic(err)
 	}
-	var option models.Option
-	err := s.tdb.Where("name=?", name).Find(&option)
-	if err == nil {
-		s.cache.Set(optionCacheKey(name), option.Value)
-		return option.Value
-	} else if taorm.IsNotFoundError(err) {
-		s.cache.Set(optionCacheKey(name), def)
-		return def
-	}
-	panic(err)
+	return val.(string)
 }
 
 func (s *Service) GetDefaultIntegerOption(name string, def int64) (value int64) {
-	parse := func(s string) int64 {
-		n, err := strconv.ParseInt(s, 10, 64)
+	val, err := s.cache.Get(optionCacheKey(name), func(key string) (interface{}, error) {
+		var option models.Option
+		err := s.tdb.Model(models.Option{}).Where("name=?", name).Find(&option)
 		if err != nil {
-			panic(err)
+			if taorm.IsNotFoundError(err) {
+				return def, nil
+			}
+			return nil, err
 		}
-		return n
-	}
-	if val, ok := s.cache.Get(optionCacheKey(name)); ok {
-		return parse(val.(string))
-	}
-	var option models.Option
-	err := s.tdb.Model(models.Option{}).Where("name=?", name).Find(&option)
-	if err == nil {
-		s.cache.Set(optionCacheKey(name), option.Value)
-		return parse(option.Value)
-	} else if taorm.IsNotFoundError(err) {
-		s.cache.Set(optionCacheKey(name), fmt.Sprint(def))
-		return def
-	} else {
+		return strconv.ParseInt(option.Value, 10, 64)
+	})
+	if err != nil {
 		panic(err)
 	}
+	return val.(int64)
 }
 
 func (s *Service) HaveOption(name string) (have bool) {

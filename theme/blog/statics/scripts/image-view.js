@@ -181,7 +181,7 @@ ImageView.prototype.viewImage = function(img) {
         this._$img[0].onerror = function() {
             this._showInfo(0, 0, 0);
 		}.bind(this);
-		var src = img.src || img.getAttribute('data-src');
+		var src = img.src;
 		this._retina = src.indexOf('@2x.') != -1;
         this._$img.attr('src', src);
     } else {

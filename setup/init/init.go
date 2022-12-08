@@ -48,7 +48,6 @@ func Init(cfg *config.Config, db *sql.DB) {
 			Date:       now,
 			Modified:   now,
 			Title:      `你好，世界`,
-			Content:    `你好，世界！这是您的第一篇文章。`,
 			Type:       `post`,
 			Category:   0,
 			Status:     `public`,

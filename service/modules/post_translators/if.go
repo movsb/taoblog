@@ -1,10 +1,9 @@
 package post_translators
 
 type PostTranslator interface {
-	Translate(cb *Callback, source string, base string) (string, error)
+	Translate(source string) (string, string, error)
 }
 
-// Callback ...
-type Callback struct {
-	SetTitle func(title string)
+type PathResolver interface {
+	Resolve(path string) (string, error)
 }

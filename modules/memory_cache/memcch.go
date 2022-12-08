@@ -2,18 +2,20 @@ package memory_cache
 
 import (
 	"container/list"
+	"fmt"
+	"log"
 	"sync"
 	"time"
 )
 
 func debug(f string, a ...interface{}) {
-	// s := fmt.Sprintf(f, a...)
-	// log.Println("memory_cache:", s)
+	s := fmt.Sprintf(f, a...)
+	log.Println("memory_cache:", s)
 }
 
 type _Item struct {
 	tim time.Time
-	key string
+	key interface{}
 	val interface{}
 }
 
@@ -21,7 +23,7 @@ type _Item struct {
 type MemoryCache struct {
 	ttl  time.Duration
 	lock sync.RWMutex
-	keys map[string]*list.Element
+	keys map[interface{}]*list.Element
 	vals *list.List
 	c    chan struct{}
 }
@@ -30,7 +32,7 @@ type MemoryCache struct {
 func NewMemoryCache(ttl time.Duration) *MemoryCache {
 	m := &MemoryCache{
 		ttl:  ttl,
-		keys: make(map[string]*list.Element),
+		keys: make(map[interface{}]*list.Element),
 		vals: list.New(),
 		c:    make(chan struct{}),
 	}
@@ -58,7 +60,7 @@ func (m *MemoryCache) collect() {
 	for m.vals.Len() > 0 {
 		elem := m.vals.Back()
 		item := elem.Value.(_Item)
-		elapsed := time.Now().Sub(item.tim)
+		elapsed := time.Since(item.tim)
 		if elapsed.Seconds() > m.ttl.Seconds() {
 			m.vals.Remove(elem)
 			delete(m.keys, item.key)
@@ -106,28 +108,32 @@ func (m *MemoryCache) SetIf(cond bool, key string, val interface{}) {
 }
 
 // Get gets
-func (m *MemoryCache) Get(key string) (interface{}, bool) {
+func (m *MemoryCache) Get(key string, loader func(key string) (interface{}, error)) (interface{}, error) {
 	m.lock.RLock()
-	defer m.lock.RUnlock()
 	if elem, ok := m.keys[key]; ok {
 		debug("hit cache: %s", key)
-		return elem.Value.(_Item).val, true
+		m.lock.RUnlock()
+		return elem.Value.(_Item).val, nil
 	}
-	return nil, false
-}
-
-// Pop gets and pops
-func (m *MemoryCache) Pop(key string) (interface{}, bool) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
+	m.lock.RUnlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if elem, ok := m.keys[key]; ok {
 		debug("hit cache: %s", key)
-		val := elem.Value.(_Item).val
-		m.vals.Remove(elem)
-		delete(m.keys, key)
-		return val, true
+		return elem.Value.(_Item).val, nil
 	}
-	return nil, false
+	val, err := loader(key)
+	if err != nil {
+		return nil, err
+	}
+	elem := m.vals.PushFront(_Item{
+		tim: time.Now(),
+		key: key,
+		val: val,
+	})
+	m.keys[key] = elem
+	debug("new key: %s", key)
+	return val, nil
 }
 
 // Delete deletes

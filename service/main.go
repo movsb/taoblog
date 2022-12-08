@@ -34,6 +34,10 @@ type Service struct {
 	store    storage.Store
 	cache    *memory_cache.MemoryCache
 	searcher *search.Engine
+
+	protocols.TaoBlogServer
+	protocols.ManagementServer
+	protocols.SearchServer
 }
 
 // NewService ...

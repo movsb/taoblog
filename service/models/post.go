@@ -15,7 +15,6 @@ type Post struct {
 	Date          int32
 	Modified      int32
 	Title         string
-	Content       string
 	Slug          string
 	Type          string
 	Category      uint
@@ -61,7 +60,6 @@ func (p *Post) ToProtocols() *protocols.Post {
 		Date:          p.Date,
 		Modified:      p.Modified,
 		Title:         p.Title,
-		Content:       p.Content,
 		Slug:          p.Slug,
 		Type:          p.Type,
 		Category:      int64(p.Category),
