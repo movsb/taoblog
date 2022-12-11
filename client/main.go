@@ -140,7 +140,7 @@ func AddCommands(rootCmd *cobra.Command) {
 			}
 
 			if err := client.UpdatePost(); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err.Error())
+				fmt.Fprintf(os.Stderr, "update failed: %v\n", err.Error())
 				os.Exit(1)
 			}
 		},

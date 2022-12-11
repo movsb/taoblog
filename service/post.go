@@ -221,7 +221,13 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 		}
 		panic(err)
 	}
-	return p.ToProtocols()
+	content, err := s.getPostContent(p.ID)
+	if err != nil {
+		panic(err)
+	}
+	out := p.ToProtocols()
+	out.Content = content
+	return out
 }
 
 // ParseTree parses category tree from URL to get last sub-category ID.
@@ -443,6 +449,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			txs.UpdateObjectTags(p.ID, in.Post.Tags)
 		}
 		txs.updateLastPostTime(time.Now())
+		txs.cache.Delete(fmt.Sprintf(`post:%d`, p.ID))
 		return nil
 	})
 
