@@ -273,6 +273,9 @@ func readSource(dir string) (string, string) {
 	if strings.IndexByte(source, '\x08') != -1 {
 		panic("source cannot have '\\x08' characters")
 	}
+	if strings.Contains(source, "\xe2\x80\x8b") {
+		panic("source cannot contain zero width characters")
+	}
 
 	typ := ""
 	switch filepath.Ext(theName) {
