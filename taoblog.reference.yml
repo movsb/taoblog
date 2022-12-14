@@ -48,7 +48,6 @@ site:
   show_related_posts: false
   search:
     show: true
-  copyright: '版权声明：若非特别注明，本站所有文章均为作者原创，转载请务必注明原文地址。'
 
 comment:
   notify: false

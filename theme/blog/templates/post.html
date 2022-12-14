@@ -23,56 +23,57 @@
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
-		{{ if eq $dot.Post.Post.Type `post` }}
-		{{ $reward := $dot.Config.Widgets.Reward }}
-		{{ if or $reward.WeChat $reward.AliPay }}
-		<div class="widgets reward" style="text-align: center;">
-			<div style="margin-bottom: 1em;">
-				<p>如果文章有帮助到你，请我喝杯冰可乐吧～</p>
-				<button class="button">打赏作者</button>
-			</div>
-			<div class="images" style="display: none;">
-				{{ if $reward.WeChat }}
-				<figure style="display: inline-block;">
-					<img style="width: 200px; height: 200px;" src="/{{$reward.WeChat}}" />
-					<figcaption>微信 / WeChat</figcaption>
-				</figure>
-				{{ end }}
-				{{ if $reward.AliPay }}
-				<figure style="display: inline-block;">
-					<img style="width: 200px; height: 200px;" src="/{{$reward.AliPay}}" />
-					<figcaption>支付宝 / AliPay</figcaption>
-				</figure>
-				{{ end }}
-			</div>
-			<script>
-				(function() {
-					var btn = document.querySelector('.widgets.reward .button');
-					var images = document.querySelector('.widgets.reward .images');
-					btn.addEventListener('click', function() {
-						images.style.display = images.style.display == 'none' ? 'block' : 'none';
-					});
-				})();
-			</script>
-		</div>
-		{{ end }}
-		{{ end }}
-        <div class="meta2 clearfix">
-            <p>
-                发表于：<span class="value" title="发表时间：{{.DateString}}
-修改时间：{{.ModifiedString}}">{{.DateString}}</span>
-                ，阅读量：<span class="value">{{.PageView}}</span>
-                {{if .Tags}}
-                    ，标签：<span class="value">{{.TagsString}}</span>
-                {{end}}
-				，<span class="value"><a href="/v3/posts/{{.Id}}/source">查看源内容</a></span>
-			</p>
-			{{ if $dot.Config.Site.Copyright }}
-			<p class="copyright">{{ $dot.Config.Site.Copyright }}</p>
-			{{ end }}
-</div>
     </div><!-- end entry -->
+	<div class="meta2 clearfix">
+		<p>
+			发表于：<span class="value" title="发表时间：{{.DateString}}
+修改时间：{{.ModifiedString}}">{{.DateString}}</span>
+			，阅读量：<span class="value">{{.PageView}}</span>
+			{{if .Tags}}
+				，标签：<span class="value">{{.TagsString}}</span>
+			{{end}}
+		</p>
+		{{ if $dot.Config.Site.Copyright }}
+		<p class="copyright">{{ $dot.Config.Site.Copyright }}</p>
+		{{ end }}
+	</div>
 	{{ end }}
+
+	{{ if eq $dot.Post.Post.Type `post` }}
+	{{ $reward := $dot.Config.Widgets.Reward }}
+	{{ if or $reward.WeChat $reward.AliPay }}
+	<div class="widgets reward" style="text-align: center;">
+		<div style="margin-bottom: 1em;">
+			<button class="button">打赏作者</button>
+			<p>如果文章有帮助到你，请我喝杯冰可乐吧～</p>
+		</div>
+		<div class="images" style="display: none;">
+			{{ if $reward.WeChat }}
+			<figure style="display: inline-block;">
+				<img style="width: 200px; height: 200px;" src="/{{$reward.WeChat}}" />
+				<figcaption>微信 / WeChat</figcaption>
+			</figure>
+			{{ end }}
+			{{ if $reward.AliPay }}
+			<figure style="display: inline-block;">
+				<img style="width: 200px; height: 200px;" src="/{{$reward.AliPay}}" />
+				<figcaption>支付宝 / AliPay</figcaption>
+			</figure>
+			{{ end }}
+		</div>
+		<script>
+			(function() {
+				var btn = document.querySelector('.widgets.reward .button');
+				var images = document.querySelector('.widgets.reward .images');
+				btn.addEventListener('click', function() {
+					images.style.display = images.style.display == 'none' ? 'block' : 'none';
+				});
+			})();
+		</script>
+	</div>
+	{{ end }}
+	{{ end }}
+
 	{{ if $dot.Config.Site.ShowRelatedPosts }}
     <div class="related clearfix">
         <h3>相关文章</h3>

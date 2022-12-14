@@ -565,108 +565,6 @@ func (*SetPostStatusResponse) Descriptor() ([]byte, []int) {
 	return file_protocols_post_proto_rawDescGZIP(), []int{7}
 }
 
-type GetPostSourceRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-}
-
-func (x *GetPostSourceRequest) Reset() {
-	*x = GetPostSourceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_protocols_post_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetPostSourceRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetPostSourceRequest) ProtoMessage() {}
-
-func (x *GetPostSourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protocols_post_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetPostSourceRequest.ProtoReflect.Descriptor instead.
-func (*GetPostSourceRequest) Descriptor() ([]byte, []int) {
-	return file_protocols_post_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *GetPostSourceRequest) GetId() int64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-type GetPostSourceResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Type    string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Content string `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-}
-
-func (x *GetPostSourceResponse) Reset() {
-	*x = GetPostSourceResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_protocols_post_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetPostSourceResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetPostSourceResponse) ProtoMessage() {}
-
-func (x *GetPostSourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_protocols_post_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetPostSourceResponse.ProtoReflect.Descriptor instead.
-func (*GetPostSourceResponse) Descriptor() ([]byte, []int) {
-	return file_protocols_post_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *GetPostSourceResponse) GetType() string {
-	if x != nil {
-		return x.Type
-	}
-	return ""
-}
-
-func (x *GetPostSourceResponse) GetContent() string {
-	if x != nil {
-		return x.Content
-	}
-	return ""
-}
-
 type SetRedirectRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -680,7 +578,7 @@ type SetRedirectRequest struct {
 func (x *SetRedirectRequest) Reset() {
 	*x = SetRedirectRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_protocols_post_proto_msgTypes[10]
+		mi := &file_protocols_post_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -693,7 +591,7 @@ func (x *SetRedirectRequest) String() string {
 func (*SetRedirectRequest) ProtoMessage() {}
 
 func (x *SetRedirectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_protocols_post_proto_msgTypes[10]
+	mi := &file_protocols_post_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +604,7 @@ func (x *SetRedirectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetRedirectRequest.ProtoReflect.Descriptor instead.
 func (*SetRedirectRequest) Descriptor() ([]byte, []int) {
-	return file_protocols_post_proto_rawDescGZIP(), []int{10}
+	return file_protocols_post_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SetRedirectRequest) GetSourcePath() string {
@@ -801,25 +699,18 @@ var file_protocols_post_proto_rawDesc = []byte{
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x12, 0x14,
 	0x0a, 0x05, 0x74, 0x6f, 0x75, 0x63, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x74,
 	0x6f, 0x75, 0x63, 0x68, 0x22, 0x17, 0x0a, 0x15, 0x53, 0x65, 0x74, 0x50, 0x6f, 0x73, 0x74, 0x53,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x26, 0x0a,
-	0x14, 0x47, 0x65, 0x74, 0x50, 0x6f, 0x73, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x03, 0x52, 0x02, 0x69, 0x64, 0x22, 0x45, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x50, 0x6f, 0x73, 0x74,
-	0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12,
-	0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x79,
-	0x70, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0x77, 0x0a, 0x12,
-	0x53, 0x65, 0x74, 0x52, 0x65, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x70, 0x61, 0x74,
-	0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x50,
-	0x61, 0x74, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x70, 0x61,
-	0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74,
-	0x50, 0x61, 0x74, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x5f, 0x63,
-	0x6f, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x43, 0x6f, 0x64, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x6f, 0x76, 0x73, 0x62, 0x2f, 0x74, 0x61, 0x6f, 0x62, 0x6c, 0x6f,
-	0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x77, 0x0a,
+	0x12, 0x53, 0x65, 0x74, 0x52, 0x65, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x70, 0x61,
+	0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x50, 0x61, 0x74, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x70,
+	0x61, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65,
+	0x74, 0x50, 0x61, 0x74, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x5f,
+	0x63, 0x6f, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x73, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x43, 0x6f, 0x64, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x6f, 0x76, 0x73, 0x62, 0x2f, 0x74, 0x61, 0x6f, 0x62, 0x6c,
+	0x6f, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -834,7 +725,7 @@ func file_protocols_post_proto_rawDescGZIP() []byte {
 	return file_protocols_post_proto_rawDescData
 }
 
-var file_protocols_post_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_protocols_post_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_protocols_post_proto_goTypes = []interface{}{
 	(*Post)(nil),                         // 0: protocols.Post
 	(*GetPostRequest)(nil),               // 1: protocols.GetPostRequest
@@ -844,16 +735,14 @@ var file_protocols_post_proto_goTypes = []interface{}{
 	(*GetPostCommentsCountResponse)(nil), // 5: protocols.GetPostCommentsCountResponse
 	(*SetPostStatusRequest)(nil),         // 6: protocols.SetPostStatusRequest
 	(*SetPostStatusResponse)(nil),        // 7: protocols.SetPostStatusResponse
-	(*GetPostSourceRequest)(nil),         // 8: protocols.GetPostSourceRequest
-	(*GetPostSourceResponse)(nil),        // 9: protocols.GetPostSourceResponse
-	(*SetRedirectRequest)(nil),           // 10: protocols.SetRedirectRequest
-	nil,                                  // 11: protocols.Post.MetasEntry
-	(*fieldmaskpb.FieldMask)(nil),        // 12: google.protobuf.FieldMask
+	(*SetRedirectRequest)(nil),           // 8: protocols.SetRedirectRequest
+	nil,                                  // 9: protocols.Post.MetasEntry
+	(*fieldmaskpb.FieldMask)(nil),        // 10: google.protobuf.FieldMask
 }
 var file_protocols_post_proto_depIdxs = []int32{
-	11, // 0: protocols.Post.metas:type_name -> protocols.Post.MetasEntry
+	9,  // 0: protocols.Post.metas:type_name -> protocols.Post.MetasEntry
 	0,  // 1: protocols.UpdatePostRequest.post:type_name -> protocols.Post
-	12, // 2: protocols.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
+	10, // 2: protocols.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
 	3,  // [3:3] is the sub-list for method output_type
 	3,  // [3:3] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
@@ -964,30 +853,6 @@ func file_protocols_post_proto_init() {
 			}
 		}
 		file_protocols_post_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetPostSourceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_protocols_post_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetPostSourceResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_protocols_post_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SetRedirectRequest); i {
 			case 0:
 				return &v.state
@@ -1006,7 +871,7 @@ func file_protocols_post_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_protocols_post_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

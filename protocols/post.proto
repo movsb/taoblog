@@ -60,15 +60,6 @@ message SetPostStatusResponse {
 
 }
 
-message GetPostSourceRequest {
-	int64 id = 1;
-}
-
-message GetPostSourceResponse {
-	string type = 1;
-	string content = 2;
-}
-
 message SetRedirectRequest {
 	string source_path = 1;
 	string target_path = 2;

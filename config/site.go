@@ -61,6 +61,7 @@ func DefaultSiteConfig() SiteConfig {
 		ShowRelatedPosts: false,
 		ShowPingbacks:    false,
 		Search:           DefaultSearchConfig(),
+		Copyright:        ``,
 		RSS:              DefaultRSSConfig(),
 		Sitemap:          DefaultSitemapConfig(),
 	}
