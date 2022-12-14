@@ -46,10 +46,15 @@
 	height: 100%;
 }
  
- :not(pre) > code[class*="language-"],
- pre[class*="language-"] {
+:not(pre) > code[class*="language-"], pre[class*="language-"] {
    background: #282c34;
- }
+}
+
+@media (prefers-color-scheme: light) {
+  :not(pre) > code[class*="language-"], pre[class*="language-"] {
+    background: #f9f9f9;
+  }
+}
  
  /* Inline code */
  :not(pre) > code[class*="language-"] {

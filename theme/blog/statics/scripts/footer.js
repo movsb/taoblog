@@ -203,42 +203,15 @@ s.async = false;
 s.setAttribute('data-manual', '');
 s.onload = function() {
 	$('pre').each(function(_, re, _){
-	    var e = $(re);
-	    var lang = e.attr('lang');
-	    // https://stackoverflow.com/a/1318091/3628322
-	    var hasLang = typeof lang !== typeof undefined && lang !== false;
-	    var hasCode = e.find('>code').length > 0;
-	    // console.log(re, hasLang, hasCode);
-	    if(hasLang && !hasCode) {
-	        var code = $('<code/>').html(e.html());
-	        code.addClass("language-" + lang);
-	        e.removeAttr('lang');
-	        e.html('');
-	        e.append(code);
-	        hasCode = true;
-	    }
-	    if(hasCode) {
-	        e.removeClass('code');
-	        // TODO
-	        // e.addClass('line-numbers');
-	        Prism.highlightAllUnder(re);
-	    }
-	});
-
-	let pres = document.querySelectorAll('pre.line-numbers');
-	pres.forEach(function(pre) {
-		let lines = pre.querySelector('span.line-numbers-rows');
-		if(lines === null) { return; }
-		let div = document.createElement('div');
-		div.classList.add('line-numbers-wrapper');
-		let code = lines.parentElement;
-		code.appendChild(div);
-		lines.remove();
-		div.appendChild(lines);
-		code.addEventListener('scroll', function() {
-			lines.style.top = '-' + code.scrollTop + 'px';
-		});
+		TaoBlog.fn.highlight(re);
 	});
 };
 document.body.appendChild(s);
+
+TaoBlog.events.add('comment', 'post', function(jItem) {
+	let pres = jItem[0].querySelectorAll(':scope > .comment-content pre');
+	pres.forEach(function(pre) {
+		TaoBlog.fn.highlight(pre);
+	});
+});
 })();
