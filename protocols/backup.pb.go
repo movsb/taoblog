@@ -74,6 +74,7 @@ type BackupResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to BackupResponseMessage:
+	//
 	//	*BackupResponse_Preparing_
 	//	*BackupResponse_Transfering_
 	BackupResponseMessage isBackupResponse_BackupResponseMessage `protobuf_oneof:"BackupResponseMessage"`
@@ -225,6 +226,7 @@ type BackupFilesRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to BackupFilesMessage:
+	//
 	//	*BackupFilesRequest_ListFiles
 	//	*BackupFilesRequest_SendFile
 	BackupFilesMessage isBackupFilesRequest_BackupFilesMessage `protobuf_oneof:"BackupFilesMessage"`
@@ -305,6 +307,7 @@ type BackupFilesResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to BackupFilesMessage:
+	//
 	//	*BackupFilesResponse_ListFiles
 	//	*BackupFilesResponse_SendFile
 	BackupFilesMessage isBackupFilesResponse_BackupFilesMessage `protobuf_oneof:"BackupFilesMessage"`
