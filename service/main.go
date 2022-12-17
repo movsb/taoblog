@@ -173,10 +173,9 @@ func (s *Service) Description() string {
 
 // LastArticleUpdateTime ...
 func (s *Service) LastArticleUpdateTime() time.Time {
-	modified := s.GetDefaultStringOption("last_post_time", "")
-	t, err := time.ParseInLocation(`2006-01-02 15:04:05`, modified, time.Local)
-	if err != nil {
-		return time.Now()
+	t := time.Now()
+	if modified := s.GetDefaultIntegerOption("last_post_time", 0); modified > 0 {
+		t = time.Unix(modified, 0)
 	}
 	return t
 }
