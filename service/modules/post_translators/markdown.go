@@ -86,6 +86,7 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 						image: oldImage,
 					}
 					para.ReplaceChild(para, oldImage, newImage)
+					c = newImage
 				}
 			}
 		}
