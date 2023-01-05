@@ -2,7 +2,6 @@
 <base href="/{{.Post.Post.ID}}/" />
 <script>var _post_id = +"{{.Post.Post.ID}}";</script>
 <link rel="stylesheet" href="/plugins/highlight/prism.css" />
-<link rel="pingback" href="{{.Post.PingbackURL}}" />
 {{end}}
 
 {{ $dot:=. }}
@@ -87,18 +86,6 @@
             <div class="no-related">没有相关文章。</div>
         {{end}}
     </div><!-- end related -->
-	{{ end }}
-	{{ if $dot.Config.Site.ShowPingbacks }}
-	{{ if $dot.Post.Pingbacks }}
-    <div class="pingbacks clearfix">
-        <h3>外部引用</h3>
-        <ul>
-        {{ range $dot.Post.Pingbacks }}
-            <li><a target=_blank rel=nofollow href="{{.SourceURL}}">{{.Title}}</a></li>
-        {{ end }}
-        </ul>
-    </div><!-- end related -->
-	{{ end }}
 	{{ end }}
     <!-- comments begin -->
     <div id="comments" class="clearfix">

@@ -41,7 +41,6 @@ type SiteConfig struct {
 	ShowDescription  bool          `yaml:"show_description"`
 	ShowStatus       bool          `yaml:"show_status"`
 	ShowRelatedPosts bool          `yaml:"show_related_posts"`
-	ShowPingbacks    bool          `yaml:"show_pingbacks"`
 	Search           SearchConfig  `yaml:"search"`
 	Copyright        string        `yaml:"copyright"`
 	RSS              RSSConfig     `yaml:"rss"`
@@ -59,7 +58,6 @@ func DefaultSiteConfig() SiteConfig {
 		ShowDescription:  false,
 		ShowStatus:       false,
 		ShowRelatedPosts: false,
-		ShowPingbacks:    false,
 		Search:           DefaultSearchConfig(),
 		Copyright:        ``,
 		RSS:              DefaultRSSConfig(),

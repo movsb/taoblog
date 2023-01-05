@@ -298,3 +298,7 @@ func v20(tx *sql.Tx) {
 	mustExec(tx, "UPDATE posts SET source=content WHERE source='' AND source_type='html'")
 	mustExec(tx, "ALTER TABLE posts DROP COLUMN `content`")
 }
+
+func v21(tx *sql.Tx) {
+	mustExec(tx, `DROP TABLE pingbacks`)
+}

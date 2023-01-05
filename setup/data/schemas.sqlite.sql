@@ -66,16 +66,6 @@ CREATE TABLE IF NOT EXISTS post_tags (
     UNIQUE (`post_id`,`tag_id`)
 );
 
--- pingbacks
-CREATE TABLE IF NOT EXISTS pingbacks (
-	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
-	`created_at` INTEGER  NOT NULL,
-	`post_id` INTEGER  NOT NULL,
-	`title` TEXT NOT NULL,
-	`source_url` TEXT NOT NULL,
-	UNIQUE (`post_id`, `source_url`)
-);
-
 -- 失效的链接处理表
 CREATE TABLE IF NOT EXISTS redirects (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,

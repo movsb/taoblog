@@ -12,7 +12,6 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
-	"github.com/movsb/taoblog/service/modules/pingback"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -86,13 +85,6 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle(`GET`, `/v3/posts/{post_id}/files/{file=**}`, g.GetFile)
 	handle(`POST`, `/v3/posts/{post_id}/files/{file=**}`, g.CreateFile)
 	// handle(`DELETE`, `/v3/posts/{post_id}/files/{file=**}`, g.DeleteFile)
-
-	pingbackHandler := pingback.Handler(g.service.Pingback)
-	gatewayPingbackHandler := func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-		pingbackHandler(w, r)
-	}
-	handle(`GET`, `/v3/xmlrpc`, gatewayPingbackHandler)
-	handle(`POST`, `/v3/xmlrpc`, gatewayPingbackHandler)
 
 	handle(`GET`, `/v3/redirect-to-grafana`, redirectToGrafana)
 
