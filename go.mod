@@ -1,7 +1,6 @@
 module github.com/movsb/taoblog
 
 require (
-	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/blugelabs/bluge v0.1.9
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
@@ -26,7 +25,6 @@ require (
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.1 // indirect
-	github.com/andybalholm/cascadia v1.1.0 // indirect
 	github.com/axiomhq/hyperloglog v0.0.0-20191112132149-a4c4c47bc57f // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect

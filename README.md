@@ -28,13 +28,12 @@
 文件名|文件描述
 ------|--------
 admin/      | 后台目录（仅登录）
-client/     | 博客客户端
+cmd/        | 客户端/服务端命令
 config/     | 配置模块
 docker/     | 容器镜像
 gateway/    | 网关接口层
 modules/    | 公共模块
 protocols/  | 协议定义
-server/     | 博客后台
 service/    | 服务实现
 setup/      | 安装管理
 run/        | 临时目录
