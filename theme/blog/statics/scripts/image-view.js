@@ -182,6 +182,11 @@ ImageView.prototype.viewImage = function(img) {
             this._showInfo(0, 0, 0);
 		}.bind(this);
 		var src = img.src;
+		if(img.classList.contains('transparent')) {
+			this._$img[0].classList.add('transparent');
+		} else {
+			this._$img[0].classList.remove('transparent');
+		}
 		this._retina = src.indexOf('@2x.') != -1;
         this._$img.attr('src', src);
     } else {
@@ -199,6 +204,9 @@ ImageView.prototype.viewImage = function(img) {
 		this._scale = 1;
         this._degree = 0;
         this._$imgView.hide();
+        
+        // 清除透明
+        this._$img[0].classList.remove('transparent');
     }
 
     if(img != null) {

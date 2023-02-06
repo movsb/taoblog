@@ -135,6 +135,10 @@ li {
 img {
 	@media (prefers-color-scheme: dark) {
 		filter: brightness(0.7);
+		&.transparent {
+			/* 从 Firefox 打开一张透明的 PNG 时抄过来的 */
+			background: hsl(0,0%,90%);
+		}
 	}
 }
 
