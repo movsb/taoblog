@@ -11,7 +11,7 @@ require (
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
 	github.com/movsb/taorm v0.0.0-20201209183410-91bafb0b22a6
 	github.com/mssola/user_agent v0.5.3
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/goldmark v1.5.3
