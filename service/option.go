@@ -81,6 +81,7 @@ func (s *Service) SetOption(name string, value interface{}) {
 		toSave = v
 	case int:
 		toSave = strconv.Itoa(v)
+		value = int64(v)
 	case int64:
 		toSave = strconv.FormatInt(v, 10)
 	default:

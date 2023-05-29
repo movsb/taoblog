@@ -38,12 +38,6 @@ pre > code {
 }
 
 @media (prefers-color-scheme: dark) {
-	/* prism.css override */
-	:not(pre) > code[class*="language-"],
-	pre[class*="language-"] {
-		background-color: inherit !important;
-	}
-
 	pre[class*="language-"]>code, pre[class*="language-"]>code .line-numbers-rows {
 		background-color: transparent !important;
 	}
