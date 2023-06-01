@@ -3,6 +3,7 @@ package utils
 import (
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 // hand write regex, not tested well.
@@ -12,7 +13,10 @@ func IsEmail(email string) bool {
 	return regexpValidEmail.MatchString(email)
 }
 
-func IsURL(Url string) bool {
+func IsURL(Url string, addScheme bool) bool {
+	if !strings.Contains(Url, `://`) && addScheme {
+		Url = "http://" + Url
+	}
 	u, err := url.Parse(Url)
 	if err != nil {
 		return false

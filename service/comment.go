@@ -220,7 +220,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		panic(exception.NewValidationError("邮箱不正确"))
 	}
 
-	if in.Url != "" && !utils.IsURL(in.Url) {
+	if in.Url != "" && !utils.IsURL(in.Url, true) {
 		panic(exception.NewValidationError("网址不正确"))
 	}
 
