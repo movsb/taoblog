@@ -37,12 +37,12 @@ type CommentNotifier struct {
 	MailServer string
 	Username   string
 	Password   string
-	Config     *config.Config
+	Config     *config.CommentConfig
 }
 
 func (cn *CommentNotifier) Init() {
-	adminTmpl = template.Must(template.New("admin").Parse(cn.Config.Comment.Templates.Admin))
-	guestTmpl = template.Must(template.New("guest").Parse(cn.Config.Comment.Templates.Guest))
+	adminTmpl = template.Must(template.New("admin").Parse(cn.Config.Templates.Admin))
+	guestTmpl = template.Must(template.New("guest").Parse(cn.Config.Templates.Guest))
 }
 
 func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {

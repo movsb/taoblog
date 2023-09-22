@@ -392,7 +392,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		s.cmtntf.NotifyAdmin(data)
 
 		defer func() {
-			if s.cmtntf.Config.Comment.Push.Chanify != nil {
+			if s.cmtntf.Config.Push.Chanify != nil {
 				var users []string
 				for i := 0; i < len(distinctNames); i++ {
 					users = append(users, fmt.Sprintf(`%s <%s>`, distinctNames[i], distinctEmails[i]))
@@ -406,8 +406,8 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 				}
 				b, _ := yaml.Marshal(body)
 				comment_notify.Chanify(
-					s.cmtntf.Config.Comment.Push.Chanify.Endpoint,
-					s.cmtntf.Config.Comment.Push.Chanify.Token,
+					s.cmtntf.Config.Push.Chanify.Endpoint,
+					s.cmtntf.Config.Push.Chanify.Token,
 					postTitle, string(b),
 				)
 			}

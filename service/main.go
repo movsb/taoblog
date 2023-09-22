@@ -62,7 +62,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		Password:   s.cfg.Server.Mailer.Password,
 		AdminName:  s.cfg.Comment.Author,
 		AdminEmail: s.cfg.Comment.Email,
-		Config:     s.cfg,
+		Config:     &s.cfg.Comment,
 	}
 	s.cmtntf.Init()
 
