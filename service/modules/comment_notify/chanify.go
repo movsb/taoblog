@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -21,8 +21,27 @@ type _ChanifyBody struct {
 	Text  string `json:"text"`
 }
 
+var _chanifyTemplate = template.Must(template.New(`chanify`).Parse(`
+{{- .Content }}
+
+文章链接：{{ .Link }}
+评论作者：{{ .Author }}
+评论日期：{{ .Date }}
+作者邮箱：{{ .Email }}
+作者主页：{{ .HomePage }}
+`))
+
+func executeChanifyTemplate(data *AdminData) string {
+	b := bytes.NewBuffer(nil)
+	if err := _chanifyTemplate.Execute(b, data); err != nil {
+		log.Println(err)
+		return ""
+	}
+	return b.String()
+}
+
 // Chanify ...
-func Chanify(endpoint, token string, subject string, body string) {
+func Chanify(endpoint, token string, data *AdminData) {
 	if p := strings.Index(endpoint, "://"); p == -1 {
 		endpoint = `http://` + endpoint
 	}
@@ -37,8 +56,8 @@ func Chanify(endpoint, token string, subject string, body string) {
 	defer cancel()
 
 	cb := _ChanifyBody{
-		Title: subject,
-		Text:  body,
+		Title: data.Title,
+		Text:  executeChanifyTemplate(data),
 	}
 	b, _ := json.Marshal(cb)
 
@@ -54,7 +73,7 @@ func Chanify(endpoint, token string, subject string, body string) {
 		return
 	}
 	defer rsp.Body.Close()
-	str, _ := ioutil.ReadAll(io.LimitReader(rsp.Body, 1<<10))
+	str, _ := io.ReadAll(io.LimitReader(rsp.Body, 1<<10))
 	if rsp.StatusCode != 200 {
 		log.Printf(`chanify error: %v, %s`, rsp.StatusCode, string(str))
 		return
