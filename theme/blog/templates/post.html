@@ -11,6 +11,7 @@
 	<h1 class="title clearfix"><a href="{{ .Link }}">{{ .Title }}</a></h1>
 	<div class="entry clearfix">
 	<div class="meta1 clearfix">
+		<a class="sitename" href="/">{{ $.Config.Site.Name }}</a>
 		{{ if $.Author }}
 		<span class="author">{{ $.Author }}</span>
 		{{ end }}

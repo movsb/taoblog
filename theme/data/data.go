@@ -15,6 +15,7 @@ type Data struct {
 	svc *service.Service
 
 	// all configuration.
+	// It's not safe to export all configs outside.
 	Config *config.Config
 
 	// current login user, non-nil.
@@ -32,7 +33,7 @@ type Data struct {
 	// If it is home page.
 	Home *HomeData
 
-	// If it is a post.
+	// If it is a post (or page).
 	Post *PostData
 
 	// If it is the Search.
@@ -57,7 +58,7 @@ func (d *Data) Author() string {
 
 // MetaData ...
 type MetaData struct {
-	Title string
+	Title string // 实际上应该为站点标题，但是好像成了文章标题？
 }
 
 // PostData ...
