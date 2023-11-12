@@ -3,7 +3,6 @@ package client
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -258,7 +257,7 @@ func readSource(dir string) (string, string) {
 
 	for _, name := range sourceNames {
 		path := filepath.Join(dir, name)
-		bys, err := ioutil.ReadFile(path)
+		bys, err := os.ReadFile(path)
 		if err != nil {
 			continue
 		}

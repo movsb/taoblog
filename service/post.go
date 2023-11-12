@@ -431,7 +431,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			panic(err)
 		}
 
-		m[`title`] = title
+		// 有些旧文章 MD 没有标题，标题在 config 里面，此处不能强制替换。
+		if title != `` {
+			m[`title`] = title
+		}
 	}
 	if hasMetas {
 		m[`metas`] = models.PostMeta(in.Post.Metas)
