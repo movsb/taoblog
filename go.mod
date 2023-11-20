@@ -14,13 +14,13 @@ require (
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/yuin/goldmark v1.5.3
+	github.com/yuin/goldmark v1.6.0
 	go.uber.org/zap v1.10.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.56.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.30.0
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -44,6 +44,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect

@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
+	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -53,6 +54,7 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 		goldmark.WithExtensions(extension.DefinitionList),
 		goldmark.WithExtensions(extension.Footnote),
 		goldmark.WithExtensions(mathjax.MathJax),
+		goldmark.WithExtensions(wikitable.New()),
 	)
 
 	pCtx := parser.NewContext()
