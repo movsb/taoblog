@@ -213,5 +213,7 @@ TaoBlog.events.add('comment', 'post', function(jItem) {
 	pres.forEach(function(pre) {
 		TaoBlog.fn.highlight(pre);
 	});
+	let anchors = jItem[0].querySelectorAll(':scope a');
+	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
 });
 })();

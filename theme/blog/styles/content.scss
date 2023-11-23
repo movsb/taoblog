@@ -105,15 +105,6 @@
     }
 
     a {
-        &.external::after {
-            content: "";
-            margin-left: 5px;
-            padding-left: 13px;
-            background-image: url(/images/external-anchor.png);
-            background-repeat: no-repeat;
-            background-position: left center;
-        }
-
         &:not([href]) {
             color: inherit;
 
@@ -155,6 +146,19 @@
         margin: auto;
         box-shadow: var(--box-shadow);
     }
+}
+
+.entry, .comment-content {
+	a {
+		&.external::after {
+			content: "";
+			margin-left: 5px;
+			padding-left: 13px;
+			background-image: url(/images/external-anchor.png);
+			background-repeat: no-repeat;
+			background-position: left center;
+		}
+	}
 }
 
 /* 目录 */

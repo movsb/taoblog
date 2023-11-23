@@ -140,7 +140,7 @@ Comment.prototype.toggle_post_comment_button = function(show) {
 
 Comment.prototype.load_essential_comments = function() {
     if(this._loaded + this._loaded_ch < this._count
-        && window.scrollY + window.innerHeight + 100 >= document.body.scrollHeight) 
+        && window.scrollY + window.innerHeight + 200 >= document.body.scrollHeight) 
     {
         this.load_comments();
     }
