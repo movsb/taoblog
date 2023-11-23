@@ -28,6 +28,10 @@ document.write(function(){/*
 				<input type="text" name="email" placeholder="邮箱（接收评论，不公开）"/>
 				<input type="text" name="url" placeholder="个人站点（可不填）" />
 				<input type="submit" id="comment-submit" value="发表评论" />
+				<div class="field">
+					<input type="checkbox" id="comment-wrap-lines" checked />
+					<label for="comment-wrap-lines">自动折行</label>
+				</div>
 				<div class=prompt style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>
 			</div>
 		</form>
@@ -109,6 +113,8 @@ Comment.prototype.init = function() {
             self.toggle_post_comment_button(self._count == 0);
         });
     });
+
+	document.getElementById('comment-wrap-lines').addEventListener('click', self.wrapLines.bind(self));
 
 	self.init_drag(document.getElementById('comment-form-div'));
 };
@@ -478,8 +484,14 @@ Comment.prototype.convert_commenter = function() {
 	}
 };
 
+Comment.prototype.wrapLines = function() {
+	let checkBox = document.getElementById('comment-wrap-lines');
+	let textarea = document.getElementById('comment-content');
+	textarea.wrap = checkBox.checked ? "on" : "off";
+};
+
 if(!(typeof fetch == 'function')) {
-	alert('你的浏览器版本过低（不支持 fetch），页面不能正确显示。');
+	alert('你的浏览器版本过低（不支持 fetch），评论不能正确显示。');
 }
 
 var comment = new Comment();

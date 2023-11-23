@@ -224,7 +224,7 @@ span.post-comment {
 				}
 			}
 
-			> input[type="text"] {
+			> input[type="text"], input[type="submit"], .field {
 				margin-bottom: 8px;
 				display: block;
 				box-sizing: border-box;
