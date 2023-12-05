@@ -34,7 +34,7 @@
  }
  pre[class*="language-"] > code {
    display: block;
-   padding: 1em;
+   padding: 0.7em 0;
    overflow: auto;
  }
  pre[class*="language-"] > code > div.line-numbers-wrapper {
@@ -47,7 +47,7 @@
 }
  
 :not(pre) > code[class*="language-"], pre[class*="language-"] {
-   background: #282c34;
+   background: #1c1c1c;
 }
 
 @media (prefers-color-scheme: light) {
@@ -148,7 +148,7 @@ pre[class*="language-"].line-numbers > code {
 	position: absolute;
 	pointer-events: none;
   top: 0;
-  padding: 1em 0;
+  padding: 0.7em 0;
 	font-size: 100%;
 	width: 3em; /* works for line-numbers below 1000 lines */
 	letter-spacing: -1px;

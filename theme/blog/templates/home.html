@@ -2,7 +2,6 @@
 <style>
 #latest-comment-list .post-comment-list {
 	padding-left: 0;
-	list-style: none;
 }
 #all-posts {
 	padding-left: 40px; /* https://stackoverflow.com/a/30424422/3628322 */
@@ -18,7 +17,7 @@
 <h2>近期文章</h2>
 <ul>
 {{range .Home.Posts}}
-    <li><a href="{{.Link}}">{{.NonPublic}}{{.Title}}</a></li>
+	<li><a href="{{.Link}}">{{.NonPublic}}{{.Title}}</a></li>
 {{end}}
 </ul>
 
@@ -45,13 +44,13 @@
 
 {{ if .Config.Site.ShowStatus }}
 <div class="status">
-    <h2>服务状态</h2>
-    <ul>
+	<h2>服务状态</h2>
+	<ul>
 		<li>服务器开始运行于{{ .Config.Site.Since }}，已运行 {{ .Config.Site.Since.Days }} 天。</li>
 		{{ with .Home }}
 		<li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
 		{{ end }}
-    </ul>
+	</ul>
 </div>
 {{ end }}
 
