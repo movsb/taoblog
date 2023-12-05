@@ -22,7 +22,7 @@ document.write(function(){/*
 			</div>
 		</div>
 		<form id="comment-form">
-			<textarea id="comment-content" name="source" wrap="off"></textarea>
+			<textarea id="comment-content" name="source" wrap="on"></textarea>
 			<div class="fields">
 				<input type="text" name="author" placeholder="昵称" />
 				<input type="text" name="email" placeholder="邮箱（接收评论，不公开）"/>
