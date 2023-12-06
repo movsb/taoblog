@@ -130,14 +130,6 @@
         }
     }
 
-    blockquote {
-		background-color: var(--blockquote-color-bg);
-        padding:1px 1.5em;
-        margin:1em 0;
-        border-left: var(--blockquote-border-left);
-        border-radius: var(--border-radius);
-    }
-
     figure {
         text-align: center;
     }
@@ -159,6 +151,18 @@
 			background-position: left center;
 		}
 	}
+}
+
+blockquote {
+	padding:0 .7em;
+	margin:1em 0;
+	border-radius: var(--border-radius);
+	background-color: var(--blockquote-color-bg);
+}
+
+blockquote > p:first-child, blockquote > p:last-child {
+	padding-top: .5em;
+	padding-bottom: .5em;
 }
 
 /* 目录 */
