@@ -1,7 +1,6 @@
 package models
 
 import (
-	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
@@ -31,7 +30,7 @@ func (Comment) TableName() string {
 }
 
 // ToProtocols ...
-func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Comment {
+func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:         c.ID,
 		Parent:     c.Parent,
@@ -43,7 +42,7 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 		SourceType: c.SourceType,
 		Source:     c.Source,
 		Content:    c.Content,
-		IsAdmin:    strings.EqualFold(c.Email, adminEmail),
+		IsAdmin:    isAdmin(c.Email),
 		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
 	}
 
@@ -59,10 +58,10 @@ func (c *Comment) ToProtocols(adminEmail string, user *auth.User) *protocols.Com
 type Comments []*Comment
 
 // ToProtocols ...
-func (cs Comments) ToProtocols(adminEmail string, user *auth.User) []*protocols.Comment {
+func (cs Comments) ToProtocols(isAdmin func(s string) bool, user *auth.User) []*protocols.Comment {
 	comments := make([]*protocols.Comment, 0, len(cs))
 	for _, comment := range cs {
-		comments = append(comments, comment.ToProtocols(adminEmail, user))
+		comments = append(comments, comment.ToProtocols(isAdmin, user))
 	}
 	return comments
 }

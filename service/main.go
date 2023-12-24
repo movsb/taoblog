@@ -61,7 +61,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		Username:   s.cfg.Server.Mailer.Account,
 		Password:   s.cfg.Server.Mailer.Password,
 		AdminName:  s.cfg.Comment.Author,
-		AdminEmail: s.cfg.Comment.Email,
+		AdminEmail: s.cfg.Comment.Emails[0], // TODO 如果没配置，则不启用此功能
 		Config:     &s.cfg.Comment,
 	}
 	s.cmtntf.Init()

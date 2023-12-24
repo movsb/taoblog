@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -45,7 +46,7 @@ func (s *Service) GetComment2(name int64) *models.Comment {
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	return s.GetComment2(req.Id).ToProtocols(s.cfg.Comment.Email, user), nil
+	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user), nil
 }
 
 // UpdateComment ...
@@ -87,7 +88,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.cfg.Comment.Email, user), nil
+	return comment.ToProtocols(s.isAdminEmail, user), nil
 }
 
 // DeleteComment ...
@@ -102,7 +103,6 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 // ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
-	adminEmail := s.cfg.Comment.Email
 
 	if in.Limit <= 0 || in.Limit > 100 {
 		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
@@ -126,7 +126,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		stmt.MustFind(&parents)
-		parentProtocolComments = parents.ToProtocols(adminEmail, user)
+		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user)
 	}
 
 	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
@@ -145,7 +145,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 			}
 			stmt.MustFind(&children)
-			childrenProtocolComments = children.ToProtocols(adminEmail, user)
+			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user)
 		}
 		{
 			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
@@ -242,12 +242,12 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	comment.Content = s.convertCommentMarkdown(user, in)
 
-	adminEmail := s.cfg.Comment.Email
+	adminEmails := s.cfg.Comment.Emails
 
 	if user.IsGuest() {
 		notAllowedEmails := s.cfg.Comment.NotAllowedEmails
-		if adminEmail != "" {
-			notAllowedEmails = append(notAllowedEmails, adminEmail)
+		if len(adminEmails) > 0 {
+			notAllowedEmails = append(notAllowedEmails, adminEmails...)
 		}
 		// TODO use regexp to detect equality.
 		for _, email := range notAllowedEmails {
@@ -275,7 +275,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&comment)
 
-	return comment.ToProtocols(adminEmail, user), nil
+	return comment.ToProtocols(s.isAdminEmail, user), nil
 }
 
 func (s *Service) updateCommentsCount() {
@@ -354,6 +354,12 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 	return &protocols.SetCommentPostIDResponse{}, nil
 }
 
+func (s *Service) isAdminEmail(email string) bool {
+	return slices.ContainsFunc(s.cfg.Comment.Emails, func(s string) bool {
+		return strings.EqualFold(email, s)
+	})
+}
+
 func (s *Service) doCommentNotification(c *models.Comment) {
 	if !s.cfg.Comment.Notify {
 		zap.S().Infow(
@@ -366,18 +372,12 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 
 	postTitle := s.GetPostTitle(c.PostID)
 	postLink := fmt.Sprintf("%s/%d/", s.HomeURL(), c.PostID)
-	adminEmail := s.cfg.Comment.Email
-	if adminEmail == "" {
+	adminEmails := s.cfg.Comment.Emails
+	if len(adminEmails) == 0 {
 		return
 	}
 
-	adminEmail = strings.ToLower(adminEmail)
-	commentEmail := strings.ToLower(c.Email)
-
-	var distinctNames []string
-	var distinctEmails []string
-
-	if commentEmail != adminEmail {
+	if !s.isAdminEmail(c.Email) {
 		data := &comment_notify.AdminData{
 			Title:    postTitle,
 			Link:     postLink,
@@ -414,12 +414,15 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		return
 	}
 
+	var distinctNames []string
+	var distinctEmails []string
+
 	distinct := map[string]bool{}
 	for _, parent := range parents {
-		email := strings.ToLower(parent.Email)
-		if email == adminEmail || email == commentEmail {
+		if s.isAdminEmail(parent.Email) || strings.EqualFold(parent.Email, c.Email) {
 			continue
 		}
+		email := strings.ToLower(parent.Email)
 		if _, ok := distinct[email]; !ok {
 			distinct[email] = true
 			distinctNames = append(distinctNames, parent.Author)
