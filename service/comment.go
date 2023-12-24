@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -330,11 +331,11 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 	}
 
 	s.MustTxCall(func(txs *Service) error {
-		cmt := s.GetComment2(in.Id)
+		cmt := txs.GetComment2(in.Id)
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}
-		post := s.GetPostByID(in.PostId)
+		post := txs.GetPostByID(in.PostId)
 		if cmt.PostID == post.Id {
 			panic(`不能转移到相同的文章`)
 		}
@@ -346,6 +347,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 			})
 		txs.UpdatePostCommentCount(cmt.PostID)
 		txs.UpdatePostCommentCount(post.Id)
+		log.Printf("Transferred comments %d to post %d", cmt.ID, in.PostId)
 		return nil
 	})
 
