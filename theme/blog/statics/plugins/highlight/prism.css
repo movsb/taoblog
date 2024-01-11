@@ -46,16 +46,6 @@
 	height: 100%;
 }
  
-:not(pre) > code[class*="language-"], pre[class*="language-"] {
-   background: #1c1c1c;
-}
-
-@media (prefers-color-scheme: light) {
-  :not(pre) > code[class*="language-"], pre[class*="language-"] {
-    background: #f9f9f9;
-  }
-}
- 
  /* Inline code */
  :not(pre) > code[class*="language-"] {
    padding: .1em;

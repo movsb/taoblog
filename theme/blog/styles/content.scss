@@ -119,15 +119,13 @@
         height: auto;
         box-sizing: content-box;
         border: 1px solid transparent;
+		border-radius: 8px;
 
 		&:hover {
 			box-shadow: 0 0 5px gray;
 			cursor: zoom-in;
 		}
 
-        &.shadow {
-            box-shadow: 0px 0px 2px;
-        }
 		&.f-r {
 			float: right;
 			margin-left: 1em;
@@ -158,15 +156,10 @@
 }
 
 blockquote {
-	padding:0 .7em;
-	margin:1em 0;
-	border-radius: var(--border-radius);
-	background-color: var(--blockquote-color-bg);
-}
-
-blockquote > p:first-child, blockquote > p:last-child {
-	padding-top: .5em;
-	padding-bottom: .5em;
+	margin: 0 .25em;
+	border-left: .25em solid var(--border-color);
+	padding: 0 .5em;
+	opacity: 75%;
 }
 
 /* 目录 */

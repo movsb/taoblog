@@ -35,6 +35,7 @@ pre > code {
 	word-break: break-all;
 	background-color: var(--code-bg);
 	border: 1px solid var(--code-border-color);
+	color: #777;
 }
 
 @media (prefers-color-scheme: dark) {
