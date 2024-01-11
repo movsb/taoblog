@@ -180,21 +180,18 @@ Comment.prototype.normalize_comment = function(c) {
 	return c;
 }
 
-Comment.prototype.friendly_date = function(d) {
-	let date = new Date(d*1000);
-	return date.toLocaleString();
-};
-
 // https://stackoverflow.com/a/12034334/3628322
 // escape html to text
 Comment.prototype.h2t = function(h) {
-    var map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-    };
+	var map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		'\'': '&apos;',
+	};
 
-    return h.replace(/[&<>]/g, function (s) {
+    return h.replace(/[&<>'"]/g, function (s) {
         return map[s];
     });
 };
@@ -215,64 +212,57 @@ Comment.prototype.h2a = function(h) {
 }
 
 Comment.prototype.gen_comment_item = function(cmt) {
-	var s = '';
+	let loggedin = cmt.ip != '';
+	let date = new Date(cmt.date * 1000);
 
-    var loggedin = cmt.ip != '';
-
-    // 登录后可以显示评论者的详细信息
-    var info = '';
+	// 登录后可以显示评论者的详细信息
+	let info = '';
     if(loggedin) {
-        // author, email, url, ip, date
-		info = '编号：' + cmt.id
-			+ '\n作者：' + this.h2a(cmt.author)
-            + '\n邮箱：' + this.h2a(cmt.email)
-            + '\n网址：' + this.h2a(cmt.url)
-            + '\n地址：' + cmt.ip
-            + '\n日期：' + new Date(cmt.date*1000).toLocaleString()
-            ;
-    }
-
-	s += '<li style="display: none;" class="comment-li" id="comment-' + cmt.id + '" itemprop="comment">\n';
-	s += '<div class="comment-avatar">'
-		+ '<img src="' + this.gen_avatar(cmt.id) + '" width="48px" height="48px" title="'+info+'"/>'
-		+ '</div>\n';
-	s += '<div class="comment-meta">\n';
-
-	if(cmt.is_admin) {
-		s += '<span class="author">【作者】' + this.h2t(cmt.author) + '</span>\n';
-	} else {
-		s += '<span class="nickname">' + this.h2t(cmt.author) + '</span>\n';
+		info = `编号：${cmt.id}
+作者：${this.h2a(cmt.author)}
+邮箱：${this.h2a(cmt.email)}
+网址：${this.h2a(cmt.url)}
+地址：${cmt.ip}
+日期：${date.toLocaleString()}
+`;
 	}
 
+	let urlContent = '';
 	if(typeof cmt.url == 'string' && cmt.url.length) {
-		if(!cmt.url.match(/^https?:\/\//i))
-			cmt.url = 'http://' + cmt.url;
+		let url = cmt.url;
+		if(!url.match(/^https?:\/\//i)) {
+			url = `http://${url}`;
+		}
 		try {
-			let url = new URL(cmt.url);
-			s += '<span class="home"><a rel="nofollow" target="_blank" href="' + this.h2a(cmt.url) + '">' + this.h2t(url.origin) + '</a></span>\n';
+			let parsed = new URL(url);
+			urlContent = `<span class="home"><a rel="nofollow" target="_blank" href="${this.h2a(url)}">${this.h2t(parsed.origin)}</a></span>`;
 		} catch(e) {
 			console.log(e);
 		}
-	} 
-
-	s += '<time class="date" datetime="' + (new Date(cmt.date*1000)).toJSON() + '">' + cmt.date_fuzzy + '</time>\n';
-
-	s += '</div>\n';
-
-	if(cmt.source_type === 'markdown') {
-		s += '<div class="comment-content html-content">' + cmt.content + '</div>\n';
-	} else {
-		s += '<div class="comment-content">' + this.normalize_content(cmt.content) + '</div>\n';
 	}
-    s += '<div class="toolbar" style="margin-left: 54px;">';
-	s += '<a class="no-sel" onclick="comment.reply_to('+cmt.id+');return false;">回复</a>';
-	if(loggedin) {
-		s += '<a class="no-sel" onclick="confirm(\'确定要删除？\') && comment.delete_me('+cmt.id+');return false;">删除</a>';
-	}
-    s += '</div>';
-	s += '</li>';
 
-	return s;
+	let html = `
+<li style="display: none;" class="comment-li" id="comment-${cmt.id}">
+	<div class="comment-avatar">
+		<img src="${this.gen_avatar(cmt.id)}" width="48px" height="48px" title="${this.h2t(info)}"/>
+	</div>
+	<div class="comment-meta">
+		<span class="${cmt.is_admin ? "author" : "nickname"}">${cmt.is_admin ? '【作者】' : ''}${this.h2t(cmt.author)}</span>
+		${urlContent}
+		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}">${cmt.date_fuzzy}</time>
+	</div>
+	${cmt.source_type === 'markdown'
+		? `<div class="comment-content html-content">${cmt.content}</div>`
+		: `<div class="comment-content">${this.normalize_content(cmt.content)}</div>`
+	}
+	<div class="toolbar" style="margin-left: 54px;">
+		<a class="no-sel" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
+		${!loggedin ? '' : `<a class="no-sel" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});return false;">删除</a>`}
+	</div>
+</li>
+`;
+
+	return html;
 };
 
 Comment.prototype.reply_to = function(p){
@@ -298,7 +288,6 @@ Comment.prototype.move_to_center = function() {
 	var left = (ww-ew)/2, top = (wh-eh)/2;
 	e.css('left', left+'px');
 	e.css('top', top+'px');
-	console.log(ww,wh,ew,eh,left,top)
 };
 
 // https://www.w3schools.com/howto/howto_js_draggable.asp
@@ -360,8 +349,8 @@ Comment.prototype.delete_me = function(p) {
 
 // 为上一级评论添加div
 Comment.prototype.add_reply_div = function(id){
-	if($('#comment-'+id+' .comment-replies').length === 0){
-		$('#comment-'+id).append('<div class="comment-replies" id="comment-reply-'+id+'"><ol></ol></div>');
+	if($(`#comment-${id} .comment-replies`).length === 0){
+		$(`#comment-${id}`).append(`<div class="comment-replies" id="comment-reply-${id}"><ol></ol></div>`);
 	}
 };
 
@@ -371,9 +360,9 @@ Comment.prototype.append_children = function(ch, p) {
 
 		if(ch[i].parent == p) {
 			ch[i] = this.normalize_comment(ch[i]);
-			$('#comment-reply-'+p + ' ol:first').append(this.gen_comment_item(ch[i]));
-			$('#comment-'+ch[i].id).fadeIn();
-            TaoBlog.events.dispatch('comment', 'post', $('#comment-'+ch[i].id));
+			$(`#comment-reply-${p} ol:first`).append(this.gen_comment_item(ch[i]));
+			$(`#comment-${ch[i].id}`).fadeIn();
+			TaoBlog.events.dispatch('comment', 'post', $(`#comment-${ch[i].id}`));
 			this.add_reply_div(ch[i].id);
 			this.append_children(ch, ch[i].id);
 			delete ch[i];
@@ -403,7 +392,8 @@ Comment.prototype.load_comments = function() {
 
     var self = this;
 
-    $.get('/v3/posts/' + self.post_id + '/comments',
+	$.get(
+		`/v3/posts/${self.post_id}/comments`,
         {
             limit: 10,
 			offset: self._loaded,
@@ -455,7 +445,7 @@ Comment.prototype.formData = function() {
 Comment.prototype.postComment = async function() {
 	var body = this.formData();
 	var resp = await fetch(
-		'/v3/posts/' + this.post_id + '/comments',
+		`/v3/posts/${this.post_id}/comments`,
 		{
 			method: 'POST',
 			headers: {
