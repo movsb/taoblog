@@ -217,3 +217,19 @@ TaoBlog.events.add('comment', 'post', function(jItem) {
 	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
 });
 })();
+
+// TODO 目前的 Markdown 在处理 @2x 图片时无法处理 HTML 标签使用的图片 <img>，只能处理 ![]() 这种。
+// 这里使用脚本临时处理一下，后续应该在 Markdown 里面统一处理。
+(function(){
+	let imgs = document.querySelectorAll('img');
+	imgs.forEach(function(img) {
+		if(img.src.indexOf('@2x.') >= 0 && img.style.width == '' && img.style.height == '') {
+			img.addEventListener('load', function() {
+				if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+					img.style.width = `${img.naturalWidth/2}px`;
+					img.style.height = `${img.naturalHeight/2}px`;
+				}
+			});
+		}
+	});
+})();

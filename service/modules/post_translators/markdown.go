@@ -114,7 +114,7 @@ type _Image struct {
 }
 
 func (n *_Image) Dump(source []byte, level int) { ast.DumpHelper(n, source, level, nil, nil) }
-func (n *_Image) Type() ast.NodeType            { return ast.TypeBlock }
+func (n *_Image) Type() ast.NodeType            { return ast.TypeInline }
 func (n *_Image) Kind() ast.NodeKind            { return imageKind }
 
 func (me *MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
