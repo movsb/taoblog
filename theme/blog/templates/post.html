@@ -15,10 +15,12 @@
 		{{ if $.Author }}
 		<span class="author">{{ $.Author }}</span>
 		{{ end }}
-		<span class="date">{{ .DateString }}</span>
+		<span class="date" title="发表时间：{{.DateString}}
+修改时间：{{.ModifiedString}}">{{ .DateString }}</span>
 		{{ with (index .Metas "weixin") }}
 			在<span class="weixin"><a class="no-external" href="https://mp.weixin.qq.com/s/{{.}}" target="_blank">微信</a></span>上查看
 		{{ end }}
+		阅读次数：<span class="view">{{ .PageView }}</span>
 	</div>
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
@@ -26,11 +28,8 @@
     </div><!-- end entry -->
 	<div class="meta2 clearfix">
 		<p>
-			发表于：<span class="value" title="发表时间：{{.DateString}}
-修改时间：{{.ModifiedString}}">{{.DateString}}</span>
-			，阅读量：<span class="value">{{.PageView}}</span>
 			{{if .Tags}}
-				，标签：<span class="value">{{.TagsString}}</span>
+				<b>标签：</b><span class="value">{{.TagsString}}</span>
 			{{end}}
 		</p>
 	</div>
