@@ -42,7 +42,6 @@ type SiteConfig struct {
 	ShowStatus       bool          `yaml:"show_status"`
 	ShowRelatedPosts bool          `yaml:"show_related_posts"`
 	Search           SearchConfig  `yaml:"search"`
-	Copyright        string        `yaml:"copyright"`
 	RSS              RSSConfig     `yaml:"rss"`
 	Sitemap          SitemapConfig `yaml:"sitemap"`
 }
@@ -59,7 +58,6 @@ func DefaultSiteConfig() SiteConfig {
 		ShowStatus:       false,
 		ShowRelatedPosts: false,
 		Search:           DefaultSearchConfig(),
-		Copyright:        ``,
 		RSS:              DefaultRSSConfig(),
 		Sitemap:          DefaultSitemapConfig(),
 	}
