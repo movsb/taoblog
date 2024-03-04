@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math/rand"
 	"net"
 	"time"
 
@@ -164,9 +163,6 @@ func (s *Service) Description() string {
 	}
 	if d := s.cfg.Site.Description; d != `` {
 		return d
-	}
-	if n := len(s.cfg.Site.Mottoes); n > 0 {
-		return s.cfg.Site.Mottoes[rand.Intn(n)]
 	}
 	return ``
 }

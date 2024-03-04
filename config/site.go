@@ -36,7 +36,6 @@ type SiteConfig struct {
 	Home             string        `yaml:"home"`
 	Name             string        `yaml:"name"`
 	Description      string        `yaml:"description"`
-	Mottoes          []string      `yaml:"mottoes"`
 	Since            _Since        `yaml:"since,omitempty"`
 	ShowDescription  bool          `yaml:"show_description"`
 	ShowStatus       bool          `yaml:"show_status"`
