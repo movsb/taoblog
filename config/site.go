@@ -64,8 +64,7 @@ func DefaultSiteConfig() SiteConfig {
 
 // SearchConfig ...
 type SearchConfig struct {
-	Show     bool   `yaml:"show"`
-	EngineID string `yaml:"engine_id"`
+	Show bool `yaml:"show"`
 }
 
 // DefaultSearchConfig ...

@@ -247,7 +247,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 		<img src="${this.gen_avatar(cmt.id)}" width="48px" height="48px" title="${this.h2t(info)}"/>
 	</div>
 	<div class="comment-meta">
-		<span class="${cmt.is_admin ? "author" : "nickname"}">${cmt.is_admin ? '【作者】' : ''}${this.h2t(cmt.author)}</span>
+		<span class="${cmt.is_admin ? "author" : "nickname"}">${this.h2t(cmt.author)}</span>
 		${urlContent}
 		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}">${cmt.date_fuzzy}</time>
 	</div>
