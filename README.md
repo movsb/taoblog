@@ -40,22 +40,10 @@ run/        | 临时目录
 theme/      | 主题目录
 main.go     | 入口程序
 
-## RoadMap
-
-- 抄几个主题：
-
-  - [x] <http://www.templex.xyz/> 同王垠的博客
-  - [ ] <https://www.tbfeng.com/> 天边风
-  - [ ] <https://www.v2ex.com/t/561257> 你见过最简约美观的技术博客
-
 ## TODO
 
-- 移除 jQuery
-
-## 联系我
-
-- QQ: 191035066
-- EM: chkesp@gmail.com
+- [ ] 移除 jQuery（早期的代码和文章有依赖）
+- [ ] 把评论通知改成后台任务异步通知（因为可能失败，失败后应该重试）
 
 ## 如果你想试一下
 
