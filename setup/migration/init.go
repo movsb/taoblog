@@ -1,4 +1,4 @@
-package inits
+package migration
 
 import (
 	"database/sql"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taorm/taorm"
 )
 
@@ -42,7 +41,7 @@ func Init(cfg *config.Config, db *sql.DB) {
 		now := int32(time.Now().Unix())
 		tx.Model(&models.Option{
 			Name:  `db_ver`,
-			Value: fmt.Sprint(migration.MaxVersionNumber()),
+			Value: fmt.Sprint(MaxVersionNumber()),
 		}).MustCreate()
 		tx.Model(&models.Post{
 			Date:       now,

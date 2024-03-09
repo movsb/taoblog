@@ -18,7 +18,6 @@ import (
 	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/service"
-	inits "github.com/movsb/taoblog/setup/init"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
 	"github.com/movsb/taoblog/theme/modules/canonical"
@@ -127,7 +126,7 @@ func initDatabase(cfg *config.Config) *sql.DB {
 	if err := row.Scan(&count); err != nil {
 		if se, ok := err.(sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
-				inits.Init(cfg, db)
+				migration.Init(cfg, db)
 				return db
 			}
 		}
