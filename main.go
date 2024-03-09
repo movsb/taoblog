@@ -10,14 +10,9 @@ import (
 	"github.com/movsb/taoblog/modules/version"
 	_ "github.com/movsb/taoblog/setup/tool-deps"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 func main() {
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	zap.ReplaceGlobals(logger)
-
 	rootCmd := &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: `TaoBlog client & server program.`,

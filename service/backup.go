@@ -15,7 +15,6 @@ import (
 	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -73,14 +72,14 @@ func (s *Service) Backup(req *protocols.BackupRequest, srv protocols.Management_
 		}
 		n, err := io.Copy(w, rcs)
 		if err != nil {
-			zap.S().Errorw(`compress failed`, `err`, err)
+			log.Println(`compress failed:`, err)
 			panic(`compress failed`)
 		}
 		if err := w.Close(); err != nil {
-			zap.S().Errorw(`close failed`, `err`, err)
+			log.Println(`close failed:`, err)
 			panic(`close failed`)
 		}
-		zap.S().Infow(`compress completed`, `before`, n, `after`, buf.Len())
+		log.Printf(`compress completed: before: %v, after: %v`, n, buf.Len())
 		rcs.ReadCloser = ioutil.NopCloser(buf)
 		rcs.Size = func() int {
 			return buf.Len()
@@ -211,7 +210,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 		return ``, err
 	}
 
-	zap.L().Info(`backed up to file`, zap.String(`path`, tmpFile.Name()))
+	log.Printf(`backed up to file: path: %s`, tmpFile.Name())
 
 	return tmpFile.Name(), nil
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
 	"github.com/movsb/taoblog/theme/modules/watcher"
-	"go.uber.org/zap"
 )
 
 // Theme ...
@@ -209,7 +208,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 		if t.redir != nil {
 			target, err := t.redir.FindRedirect(req.URL.Path)
 			if err != nil {
-				zap.L().Error(`FindRedirect failed`, zap.Error(err))
+				log.Println(`FindRedirect failed. `, err)
 				// fallthrough
 			}
 			if target != `` {

@@ -23,7 +23,6 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -264,6 +263,9 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 				panic(exception.NewValidationError("不能使用此昵称"))
 			}
 		}
+		if in.Author != "" && strings.Contains(in.Author, "作者") {
+			panic(exception.NewValidationError("昵称中不应包含“作者”两字"))
+		}
 	}
 
 	s.MustTxCall(func(txs *Service) error {
@@ -362,11 +364,7 @@ func (s *Service) isAdminEmail(email string) bool {
 
 func (s *Service) doCommentNotification(c *models.Comment) {
 	if !s.cfg.Comment.Notify {
-		zap.S().Infow(
-			`comment notification is disabled`,
-			`comment_id`, c.ID,
-			`post_id`, c.PostID,
-		)
+		log.Printf(`comment notification is disabled. comment_id: %v, post_id: %v`, c.ID, c.PostID)
 		return
 	}
 
