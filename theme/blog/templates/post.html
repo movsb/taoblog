@@ -18,9 +18,9 @@
 		<span class="date" title="发表时间：{{.DateString}}
 修改时间：{{.ModifiedString}}">{{ .DateString }}</span>
 		{{ with (index .Metas "weixin") }}
-			在<span class="weixin"><a class="no-external" href="https://mp.weixin.qq.com/s/{{.}}" target="_blank">微信</a></span>上查看
+			<span>在<span class="weixin"><a class="no-external" href="https://mp.weixin.qq.com/s/{{.}}" target="_blank">微信</a></span>上查看</span>
 		{{ end }}
-		阅读次数：<span class="view">{{ .PageView }}</span>
+		<span>阅读次数：<span class="view">{{ .PageView }}</span></span>
 	</div>
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
