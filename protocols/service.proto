@@ -163,6 +163,15 @@ service TaoBlog {
 			description: "获取文章评论数。";
 		};
 	}
+	rpc PreviewComment (PreviewCommentRequest) returns (PreviewCommentResponse) {
+		option (google.api.http) = {
+			post: "/v3/comments:preview";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "评论预览。";
+		};
+	}
 }
 
 message PingRequest {

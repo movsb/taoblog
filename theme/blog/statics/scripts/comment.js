@@ -18,11 +18,14 @@ document.write(function(){/*
 				<img src="/images/close.svg" width="20" height="20" title="隐藏" class="closebtn"/>
 			</div>
 			<div class="comment-title">
-				<span>评论</span>
+				<span id="comment-title-status">编辑评论</span>
 			</div>
 		</div>
 		<form id="comment-form">
-			<textarea id="comment-content" name="source" wrap="on"></textarea>
+			<div class="content-area">
+				<textarea class="overlay" id="comment-content" name="source" wrap="on"></textarea>
+				<div class="overlay" id="comment-preview" style="display: none;"></div>
+			</div>
 			<div class="fields">
 				<input type="text" name="author" placeholder="昵称" />
 				<input type="text" name="email" placeholder="邮箱（接收评论，不公开）"/>
@@ -32,7 +35,11 @@ document.write(function(){/*
 					<input type="checkbox" id="comment-wrap-lines" checked />
 					<label for="comment-wrap-lines">自动折行</label>
 				</div>
-				<div class=prompt style="margin-top: 1em;"><b>注：</b>评论内容支持 Markdown 语法。</div>
+				<div class="field">
+					<input type="checkbox" id="comment-show-preview" />
+					<label for="comment-show-preview">显示预览</label>
+				</div>
+				<div class=prompt><b>注：</b>评论内容支持 Markdown 语法。</div>
 			</div>
 		</form>
 	</div>
@@ -78,6 +85,7 @@ Comment.prototype.init = function() {
 				TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id));
 				$('#comment-content').val('');
 				$('#comment-form-div').fadeOut();
+				self.toggleShowPreview(false, false);
 				self.save_info();
 				self._count++;
 				self.toggle_post_comment_button();
@@ -115,6 +123,7 @@ Comment.prototype.init = function() {
     });
 
 	document.getElementById('comment-wrap-lines').addEventListener('click', self.wrapLines.bind(self));
+	document.getElementById('comment-show-preview').addEventListener('click', self.showPreview.bind(self));
 
 	self.init_drag(document.getElementById('comment-form-div'));
 };
@@ -478,6 +487,53 @@ Comment.prototype.wrapLines = function() {
 	let checkBox = document.getElementById('comment-wrap-lines');
 	let textarea = document.getElementById('comment-content');
 	textarea.wrap = checkBox.checked ? "on" : "off";
+};
+
+Comment.prototype.toggleShowPreview = function(showPreview, checked) {
+	let textarea   = document.getElementById('comment-content');
+	let previewBox = document.getElementById('comment-preview');
+	let checkBox   = document.getElementById('comment-show-preview');
+	let status     = document.getElementById('comment-title-status');
+
+	textarea.style.display = showPreview ? 'none' : 'block';
+	previewBox.style.display = showPreview ? 'block' : 'none';
+	
+	if (typeof checked == 'boolean') {
+		checkBox.checked = checked;
+	}
+	
+	status.innerText = !showPreview ? '编辑评论' : '预览评论';
+};
+
+Comment.prototype.showPreview = async function() {
+	let checkBox   = document.getElementById('comment-show-preview');
+	let previewBox = document.getElementById('comment-preview');
+
+	if (!checkBox.checked) {
+		this.toggleShowPreview(false);
+		return;
+	}
+	
+	this.toggleShowPreview(true);
+
+	let source = document.getElementById('comment-form')['source'].value;
+	let resp = await fetch('/v3/comments:preview', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			markdown: source
+		})
+	});
+
+	if (!resp.ok) {
+		previewBox.innerText = '预览失败：' + (await resp.json()).message;
+		return;
+	}
+
+	let html = (await resp.json()).html;
+	previewBox.innerHTML = html;
 };
 
 if(!(typeof fetch == 'function')) {

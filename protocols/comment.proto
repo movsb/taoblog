@@ -69,3 +69,11 @@ message SetCommentPostIDRequest {
 message SetCommentPostIDResponse {
 
 }
+
+message PreviewCommentRequest {
+	string markdown = 1;
+}
+
+message PreviewCommentResponse {
+	string html = 1;
+}

@@ -340,6 +340,7 @@ type TaoBlogClient interface {
 	ListComments(ctx context.Context, in *ListCommentsRequest, opts ...grpc.CallOption) (*ListCommentsResponse, error)
 	SetCommentPostID(ctx context.Context, in *SetCommentPostIDRequest, opts ...grpc.CallOption) (*SetCommentPostIDResponse, error)
 	GetPostCommentsCount(ctx context.Context, in *GetPostCommentsCountRequest, opts ...grpc.CallOption) (*GetPostCommentsCountResponse, error)
+	PreviewComment(ctx context.Context, in *PreviewCommentRequest, opts ...grpc.CallOption) (*PreviewCommentResponse, error)
 }
 
 type taoBlogClient struct {
@@ -467,6 +468,15 @@ func (c *taoBlogClient) GetPostCommentsCount(ctx context.Context, in *GetPostCom
 	return out, nil
 }
 
+func (c *taoBlogClient) PreviewComment(ctx context.Context, in *PreviewCommentRequest, opts ...grpc.CallOption) (*PreviewCommentResponse, error) {
+	out := new(PreviewCommentResponse)
+	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/PreviewComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TaoBlogServer is the server API for TaoBlog service.
 // All implementations must embed UnimplementedTaoBlogServer
 // for forward compatibility
@@ -484,6 +494,7 @@ type TaoBlogServer interface {
 	ListComments(context.Context, *ListCommentsRequest) (*ListCommentsResponse, error)
 	SetCommentPostID(context.Context, *SetCommentPostIDRequest) (*SetCommentPostIDResponse, error)
 	GetPostCommentsCount(context.Context, *GetPostCommentsCountRequest) (*GetPostCommentsCountResponse, error)
+	PreviewComment(context.Context, *PreviewCommentRequest) (*PreviewCommentResponse, error)
 	mustEmbedUnimplementedTaoBlogServer()
 }
 
@@ -529,6 +540,9 @@ func (UnimplementedTaoBlogServer) SetCommentPostID(context.Context, *SetCommentP
 }
 func (UnimplementedTaoBlogServer) GetPostCommentsCount(context.Context, *GetPostCommentsCountRequest) (*GetPostCommentsCountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPostCommentsCount not implemented")
+}
+func (UnimplementedTaoBlogServer) PreviewComment(context.Context, *PreviewCommentRequest) (*PreviewCommentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreviewComment not implemented")
 }
 func (UnimplementedTaoBlogServer) mustEmbedUnimplementedTaoBlogServer() {}
 
@@ -777,6 +791,24 @@ func _TaoBlog_GetPostCommentsCount_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaoBlog_PreviewComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoBlogServer).PreviewComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.TaoBlog/PreviewComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoBlogServer).PreviewComment(ctx, req.(*PreviewCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TaoBlog_ServiceDesc is the grpc.ServiceDesc for TaoBlog service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -835,6 +867,10 @@ var TaoBlog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPostCommentsCount",
 			Handler:    _TaoBlog_GetPostCommentsCount_Handler,
+		},
+		{
+			MethodName: "PreviewComment",
+			Handler:    _TaoBlog_PreviewComment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

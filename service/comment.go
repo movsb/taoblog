@@ -76,7 +76,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		if hasSourceType {
 			data[`source_type`] = req.Comment.SourceType
 			data[`source`] = req.Comment.Source
-			data[`content`] = s.convertCommentMarkdown(user, req.Comment)
+			data[`content`] = s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source)
 		}
 		s.MustTxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
@@ -239,7 +239,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	comment.Content = s.convertCommentMarkdown(user, in)
+	comment.Content = s.convertCommentMarkdown(user, in.SourceType, in.Source)
 
 	adminEmails := s.cfg.Comment.Emails
 
@@ -285,8 +285,8 @@ func (s *Service) updateCommentsCount() {
 	s.SetOption("comment_count", count)
 }
 
-func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) string {
-	if c.SourceType != "markdown" {
+func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string) string {
+	if ty != "markdown" {
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
@@ -299,7 +299,7 @@ func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) 
 		goldmark.WithExtensions(extension.Footnote),
 		goldmark.WithExtensions(mathjax.MathJax),
 	)
-	doc := md.Parser().Parse(text.NewReader([]byte(c.Source)))
+	doc := md.Parser().Parse(text.NewReader([]byte(source)))
 
 	if !user.IsAdmin() {
 		if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -318,7 +318,7 @@ func (s *Service) convertCommentMarkdown(user *auth.User, c *protocols.Comment) 
 	}
 
 	var buf bytes.Buffer
-	if err := md.Renderer().Render(&buf, []byte(c.Source), doc); err != nil {
+	if err := md.Renderer().Render(&buf, []byte(source), doc); err != nil {
 		panic(exception.NewValidationError("不能转换 markdown"))
 	}
 
@@ -354,6 +354,12 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 	})
 
 	return &protocols.SetCommentPostIDResponse{}, nil
+}
+
+func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
+	user := s.auth.AuthGRPC(ctx)
+	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown)
+	return &protocols.PreviewCommentResponse{Html: html}, nil
 }
 
 func (s *Service) isAdminEmail(email string) bool {
