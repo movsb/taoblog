@@ -3,6 +3,11 @@
 #latest-comment-list .post-comment-list {
 	padding-left: 0;
 }
+#latest-comment-list p {
+	margin: 4px 0;
+	line-height: 1.3em;
+	word-break: break-word;
+}
 #all-posts {
 	padding-left: 40px; /* https://stackoverflow.com/a/30424422/3628322 */
 }
@@ -32,7 +37,7 @@
 			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
 			<ul class=post-comment-list>
 			{{ range .Comments}}
-				<li><b>{{.Author}}</b>：{{.Text}}</li>
+				<li><p><b>{{.Author}}</b>：{{.Text}}</p></li>
 			{{ end }}
 			</ul>
 		</li>
