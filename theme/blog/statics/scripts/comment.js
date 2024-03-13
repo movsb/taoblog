@@ -54,15 +54,18 @@ function Comment() {
 }
 
 Comment.prototype.init = function() {
-	var self = this;
+	let self = this;
 
 	self.post_id = +_post_id;
 
 	self.convert_commenter();
-
-    $('.post-comment').click(function(){
-        self.reply_to(0);
-    });
+	
+	let postComments = document.querySelectorAll('.post-comment');
+	postComments.forEach(function (elem) {
+		elem.addEventListener('click', function(elem) {
+			self.reply_to(0);
+		});
+	});
 
     // Ajax评论提交
     $('#comment-submit').click(function() {
@@ -70,9 +73,9 @@ Comment.prototype.init = function() {
 			$(this).attr('disabled', 'disabled');
 			$('#comment-submit').val('提交中...');
 			try {
-				var cmt = await self.postComment();
+				let cmt = await self.postComment();
 				cmt = self.normalize_comment(cmt);
-				var parent = self.parent;
+				let parent = self.parent;
 				if(parent == 0) {
 					$('#comment-list').prepend(self.gen_comment_item(cmt));
 					// 没有父评论，避免二次加载。
@@ -156,7 +159,7 @@ Comment.prototype.load_essential_comments = function() {
 };
 
 Comment.prototype.get_count = function(callback) {
-    var self = this;
+    let self = this;
     $.get('/v3/posts/' + self.post_id + '/comments:count',
         function(data) {
             self._count = data.count;
@@ -172,7 +175,7 @@ Comment.prototype.gen_avatar = function(id) {
 };
 
 Comment.prototype.normalize_content = function(c) {
-    var s = this.h2t(c);
+    let s = this.h2t(c);
     s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code"><code class="language-$2">$3</code></pre>');
     return s;
 };
@@ -192,7 +195,7 @@ Comment.prototype.normalize_comment = function(c) {
 // https://stackoverflow.com/a/12034334/3628322
 // escape html to text
 Comment.prototype.h2t = function(h) {
-	var map = {
+	let map = {
 		'&': '&amp;',
 		'<': '&lt;',
 		'>': '&gt;',
@@ -207,7 +210,7 @@ Comment.prototype.h2t = function(h) {
 
 // escape html to attribute
 Comment.prototype.h2a = function(h) {
-    var map = {
+    let map = {
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
@@ -279,7 +282,7 @@ Comment.prototype.reply_to = function(p){
 
 	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
 	if(window.localStorage) {
-		var commenter = JSON.parse(localStorage.getItem('commenter') || '{}');
+		let commenter = JSON.parse(localStorage.getItem('commenter') || '{}');
 		$('#comment-form input[name=author]').val(commenter.name || '');
 		$('#comment-form input[name=email]').val(commenter.email || '');
 		$('#comment-form input[name=url]').val(commenter.url || '');
@@ -291,10 +294,10 @@ Comment.prototype.reply_to = function(p){
 };
 
 Comment.prototype.move_to_center = function() {
-	var e = $('#comment-form-div');
-	var ww = window.innerWidth, wh = window.innerHeight;
-	var ew = e.outerWidth(), eh = e.outerHeight();
-	var left = (ww-ew)/2, top = (wh-eh)/2;
+	let e = $('#comment-form-div');
+	let ww = window.innerWidth, wh = window.innerHeight;
+	let ew = e.outerWidth(), eh = e.outerHeight();
+	let left = (ww-ew)/2, top = (wh-eh)/2;
 	e.css('left', left+'px');
 	e.css('top', top+'px');
 };
@@ -302,12 +305,12 @@ Comment.prototype.move_to_center = function() {
 // https://www.w3schools.com/howto/howto_js_draggable.asp
 Comment.prototype.init_drag = function(elmnt) {
 	console.log('init_drag');
-  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  var dragElem = elmnt.getElementsByClassName("drag-header");
-  if(!dragElem) { dragElem = elmnt; }
-  else {dragElem = dragElem[0];}
-  dragElem.onmousedown = dragMouseDown;
-  console.log(dragElem);
+	let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+	let dragElem = elmnt.getElementsByClassName("drag-header");
+	if(!dragElem) { dragElem = elmnt; }
+	else {dragElem = dragElem[0];}
+	dragElem.onmousedown = dragMouseDown;
+	console.log(dragElem);
 
   function dragMouseDown(e) {
     e = e || window.event;
@@ -341,7 +344,7 @@ Comment.prototype.init_drag = function(elmnt) {
 };
 
 Comment.prototype.delete_me = function(p) {
-    var self = this;
+    let self = this;
 	$.ajax({
         url: '/v3/comments/' + p,
         type: 'DELETE',
@@ -364,7 +367,7 @@ Comment.prototype.add_reply_div = function(id){
 };
 
 Comment.prototype.append_children = function(ch, p) {
-	for(var i=0; i<ch.length; i++){
+	for(let i=0; i<ch.length; i++){
 		if(!ch[i]) continue;
 
 		if(ch[i].parent == p) {
@@ -382,7 +385,7 @@ Comment.prototype.append_children = function(ch, p) {
 
 Comment.prototype.save_info = function() {
 	if(window.localStorage) {
-		var commenter = {
+		let commenter = {
 			name: $('#comment-form input[name=author]').val(),
 			email: $('#comment-form input[name=email]').val(),
 			url: $('#comment-form input[name=url]').val(),
@@ -399,7 +402,7 @@ Comment.prototype.load_comments = function() {
     }
     this.loading = true;
 
-    var self = this;
+    let self = this;
 
 	$.get(
 		`/v3/posts/${self.post_id}/comments`,
@@ -410,8 +413,8 @@ Comment.prototype.load_comments = function() {
         },
         function(resp) {
 			let cmts = resp.comments || [];
-            var ch_count = 0;
-            for(var i=0; i<cmts.length; i++){
+            let ch_count = 0;
+            for(let i=0; i<cmts.length; i++){
 				cmts[i] = self.normalize_comment(cmts[i]);
                 $('#comment-list').append(self.gen_comment_item(cmts[i]));
                 $('#comment-'+cmts[i].id).fadeIn();
@@ -438,8 +441,8 @@ Comment.prototype.load_comments = function() {
 };
 
 Comment.prototype.formData = function() {
-	var form = document.getElementById('comment-form');
-	var obj = {
+	let form = document.getElementById('comment-form');
+	let obj = {
 		post_id: this.post_id,
 		source_type: 'markdown',
 		parent: this.parent,
@@ -452,8 +455,8 @@ Comment.prototype.formData = function() {
 };
 
 Comment.prototype.postComment = async function() {
-	var body = this.formData();
-	var resp = await fetch(
+	let body = this.formData();
+	let resp = await fetch(
 		`/v3/posts/${this.post_id}/comments`,
 		{
 			method: 'POST',
@@ -471,7 +474,7 @@ Comment.prototype.postComment = async function() {
 
 Comment.prototype.convert_commenter = function() {
 	if(window.localStorage && !localStorage.getItem('commenter') && localStorage.getItem('cmt_author')) {
-		var commenter = {
+		let commenter = {
 			name: localStorage.getItem('cmt_author') || '',
 			email: localStorage.getItem('cmt_email') || '',
 			url: localStorage.getItem('cmt_url') || '',
@@ -540,5 +543,5 @@ if(!(typeof fetch == 'function')) {
 	alert('你的浏览器版本过低（不支持 fetch），评论不能正确显示。');
 }
 
-var comment = new Comment();
+let comment = new Comment();
 comment.init();
