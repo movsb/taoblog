@@ -153,8 +153,8 @@ span.post-comment {
 	overflow: auto; /* this is to enable resize area */
 
 	@media screen and (min-width: 501px) {
-		width: 650px;
-		height: 380px;
+		width: 580px;
+		height: 350px;
 		min-width: 400px;
 		min-height: 190px;
 		max-width: 90%;
@@ -217,14 +217,8 @@ span.post-comment {
 			@media screen and (min-width: 501px) {
 				width: 150px;
 				max-width: 150px;
-				padding: 0px 0px 0px 1em;
-			}
-
-			@media screen and (max-width: 500px) {
-				margin-top: 1em;
-				.prompt {
-					display: none;
-				}
+				padding: 0px 0px 0px 10px;
+				box-sizing: border-box;
 			}
 
 			> input[type="text"], input[type="submit"], .field {
