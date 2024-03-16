@@ -45,7 +45,7 @@ func (s *Service) GetComment2(name int64) *models.Comment {
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user), nil
+	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation), nil
 }
 
 // UpdateComment ...
@@ -87,7 +87,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.isAdminEmail, user), nil
+	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation), nil
 }
 
 // DeleteComment ...
@@ -125,7 +125,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		stmt.MustFind(&parents)
-		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user)
+		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation)
 	}
 
 	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
@@ -144,7 +144,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 			}
 			stmt.MustFind(&children)
-			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user)
+			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation)
 		}
 		{
 			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
@@ -166,6 +166,11 @@ func (s *Service) GetAllCommentsCount() int64 {
 	var count int64
 	s.tdb.Model(models.Comment{}).Select("count(1) as count").Find(&count)
 	return count
+}
+
+func (s *Service) geoLocation(ip string) string {
+	s.cmtgeo.Queue(ip, nil)
+	return s.cmtgeo.GetTimeout(ip, time.Millisecond*500)
 }
 
 // CreateComment ...
@@ -193,6 +198,11 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	// https://github.com/grpc-ecosystem/grpc-gateway/blob/20f268a412e5b342ebfb1a0eef7c3b7bd6c260ea/runtime/context.go#L103
 	if p := strings.IndexByte(forward, ','); p != -1 {
 		forward = forward[:p]
+	}
+
+	// 尽早查询地理信息
+	if err := s.cmtgeo.Queue(forward, nil); err != nil {
+		log.Println(err)
 	}
 
 	comment := models.Comment{
@@ -277,7 +287,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&comment)
 
-	return comment.ToProtocols(s.isAdminEmail, user), nil
+	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation), nil
 }
 
 func (s *Service) updateCommentsCount() {

@@ -13,6 +13,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/protocols"
+	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/search"
 	"github.com/movsb/taoblog/service/modules/storage"
@@ -30,6 +31,7 @@ type Service struct {
 	tdb      *taorm.DB
 	auth     *auth.Auth
 	cmtntf   *comment_notify.CommentNotifier
+	cmtgeo   *commentgeo.CommentGeo
 	store    storage.Store
 	cache    *memory_cache.MemoryCache
 	searcher *search.Engine
@@ -47,12 +49,13 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	}
 
 	s := &Service{
-		cfg:   cfg,
-		db:    db,
-		tdb:   taorm.NewDB(db),
-		auth:  auther,
-		store: localStorage,
-		cache: memory_cache.NewMemoryCache(time.Minute * 10),
+		cfg:    cfg,
+		db:     db,
+		tdb:    taorm.NewDB(db),
+		auth:   auther,
+		store:  localStorage,
+		cache:  memory_cache.NewMemoryCache(time.Minute * 10),
+		cmtgeo: commentgeo.NewCommentGeo(context.TODO()),
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{

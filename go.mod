@@ -22,6 +22,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
+require github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+
 require (
 	github.com/RoaringBitmap/roaring v0.9.1 // indirect
 	github.com/axiomhq/hyperloglog v0.0.0-20191112132149-a4c4c47bc57f // indirect

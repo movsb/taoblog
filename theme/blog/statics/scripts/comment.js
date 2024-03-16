@@ -239,6 +239,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 邮箱：${this.h2a(cmt.email)}
 网址：${this.h2a(cmt.url)}
 地址：${cmt.ip}
+位置：${cmt.geo_location}
 日期：${date.toLocaleString()}
 `;
 	}

@@ -30,7 +30,7 @@ func (Comment) TableName() string {
 }
 
 // ToProtocols ...
-func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User) *protocols.Comment {
+func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, geo func(ip string) string) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:         c.ID,
 		Parent:     c.Parent,
@@ -49,6 +49,9 @@ func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User) 
 	if user.IsAdmin() {
 		comment.Email = c.Email
 		comment.Ip = c.IP
+		if geo != nil {
+			comment.GeoLocation = geo(c.IP)
+		}
 	}
 
 	return &comment
@@ -58,10 +61,10 @@ func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User) 
 type Comments []*Comment
 
 // ToProtocols ...
-func (cs Comments) ToProtocols(isAdmin func(s string) bool, user *auth.User) []*protocols.Comment {
+func (cs Comments) ToProtocols(isAdmin func(s string) bool, user *auth.User, geo func(ip string) string) []*protocols.Comment {
 	comments := make([]*protocols.Comment, 0, len(cs))
 	for _, comment := range cs {
-		comments = append(comments, comment.ToProtocols(isAdmin, user))
+		comments = append(comments, comment.ToProtocols(isAdmin, user, geo))
 	}
 	return comments
 }

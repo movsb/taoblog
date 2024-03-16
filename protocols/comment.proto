@@ -20,6 +20,7 @@ message Comment {
 	repeated Comment children = 13;
 	bool is_admin = 14;
 	string date_fuzzy = 15;
+	string geo_location = 16;
 }
 
 message GetCommentRequest {
