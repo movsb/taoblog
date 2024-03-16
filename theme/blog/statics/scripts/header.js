@@ -98,3 +98,24 @@ TaoBlog.fn.highlight = function(re) {
 		lines.style.top = '-' + code.scrollTop + 'px';
 	});
 };
+
+TaoBlog.fn.fadeIn = function(elem, callback) {
+	elem.classList.remove('fade-out');
+	elem.style.display = 'block';
+	if (typeof callback == 'function') {
+		elem.addEventListener('animationend', function(event) {
+			callback();
+		}, { once: true});
+	}
+	elem.classList.add('fade-in');
+};
+TaoBlog.fn.fadeOut = function(elem, callback) {
+	elem.classList.remove('fade-in');
+	elem.addEventListener('animationend', function(event) {
+		elem.style.display = 'none';
+		if (typeof callback == 'function') {
+			callback();
+		}
+	}, { once: true});
+	elem.classList.add('fade-out');
+};

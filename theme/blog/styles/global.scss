@@ -162,3 +162,24 @@ table {
 		border: none;
 	}
 }
+
+@keyframes fadeIn {
+	0% { opacity: 0; display: block; }
+	100% { opacity: 1;}
+}
+
+@keyframes fadeOut {
+	0% { opacity: 1;}
+	100% { opacity: 0; display: none; }
+}
+
+.fade-in, .fade-out {
+	animation-duration: .5s;
+	animation-fill-mode:forwards;
+}
+.fade-in {
+	animation-name: fadeIn;
+}
+.fade-out {
+	animation-name: fadeOut;
+}

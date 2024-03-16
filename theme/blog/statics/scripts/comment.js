@@ -86,7 +86,7 @@ Comment.prototype.init = function() {
 				$('#comment-'+cmt.id).fadeIn();
 				TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id));
 				$('#comment-content').val('');
-				$('#comment-form-div').fadeOut();
+				self.showCommentBox(false);
 				self.toggleShowPreview(false, false);
 				self.save_info();
 				self._count++;
@@ -103,13 +103,13 @@ Comment.prototype.init = function() {
     });
 
     $('#comment-form-div .closebtn').click(function(){
-            $('#comment-form-div').fadeOut();
+		self.showCommentBox(false);
     });
 
     // hide comment box when ESC key pressed
     window.addEventListener('keyup', function(e) {
         if(e.keyCode == 27) {
-            $('#comment-form-div').fadeOut();
+			self.showCommentBox(false);
         }
     });
 
@@ -128,6 +128,11 @@ Comment.prototype.init = function() {
 	document.getElementById('comment-show-preview').addEventListener('click', self.showPreview.bind(self));
 
 	self.init_drag(document.getElementById('comment-form-div'));
+};
+
+Comment.prototype.showCommentBox = function(show, callback) {
+	let box = document.getElementById('comment-form-div');
+	(show ? TaoBlog.fn.fadeIn : TaoBlog.fn.fadeOut)(box, callback);
 };
 
 Comment.prototype.toggle_post_comment_button = function(show) {
@@ -288,8 +293,9 @@ Comment.prototype.reply_to = function(p){
 	}
 
 	this.move_to_center();
-	$('#comment-form-div').fadeIn();
-    $('#comment-content').focus();
+	this.showCommentBox(true, function() {
+		$('#comment-content').focus();
+	});
 };
 
 Comment.prototype.move_to_center = function() {
