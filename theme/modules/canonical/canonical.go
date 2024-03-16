@@ -2,11 +2,9 @@ package canonical
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/movsb/taoblog/metrics"
 	"github.com/movsb/taoblog/modules/utils"
@@ -30,77 +28,28 @@ type Renderer interface {
 	QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool
 }
 
-type Renderers struct {
-	themes  map[string]Renderer
-	Default string
-}
-
-func (r *Renderers) Get(name string) Renderer {
-	if name == `` {
-		name = r.Default
-	}
-	return r.themes[name]
-}
-
-func (r *Renderers) Add(name string, renderer Renderer) {
-	if r.themes == nil {
-		r.themes = make(map[string]Renderer)
-	}
-	r.themes[name] = renderer
-}
-
 // Canonical ...
 type Canonical struct {
-	mux *http.ServeMux
-	rs  *Renderers
-	mr  *metrics.Registry
+	mux      *http.ServeMux
+	renderer Renderer
+	mr       *metrics.Registry
 }
 
 // New ...
-func New(rs *Renderers, mr *metrics.Registry) *Canonical {
+func New(renderer Renderer, mr *metrics.Registry) *Canonical {
 	c := &Canonical{
-		mux: http.NewServeMux(),
-		rs:  rs,
-		mr:  mr,
+		mux:      http.NewServeMux(),
+		renderer: renderer,
+		mr:       mr,
 	}
 	return c
 }
 
-func (c *Canonical) r(w http.ResponseWriter, r *http.Request) Renderer {
-	theme := r.URL.Query().Get(`_theme`)
-	themeCookie, _ := r.Cookie(`theme`)
-
-	// We prefer theme from query, and save it in cookie if it differs.
-	if theme != `` {
-		if themeCookie == nil || themeCookie.Value != theme {
-			http.SetCookie(w, &http.Cookie{
-				Name:     `theme`,
-				Value:    theme,
-				Path:     `/`,
-				MaxAge:   int((time.Hour * 24).Seconds()),
-				HttpOnly: true,
-			})
-		}
-	} else {
-		if themeCookie != nil && themeCookie.Value != `` {
-			theme = themeCookie.Value
-		}
-	}
-
-	return c.rs.Get(theme)
-}
-
 // ServeHTTP implements htt.Handler.
 func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	renderer := c.r(w, req)
-	if renderer == nil {
-		log.Println(`unknown theme to use`)
-		return
-	}
-
 	defer func() {
 		if e := recover(); e != nil {
-			if !renderer.Exception(w, req, e) {
+			if !c.renderer.Exception(w, req, e) {
 				panic(e)
 			}
 		}
@@ -108,16 +57,16 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	path := req.URL.Path
 	if !isValidPath(path) {
-		renderer.Exception(w, req, errors.New(`invalid request path`))
+		c.renderer.Exception(w, req, errors.New(`invalid request path`))
 		return
 	}
 
 	if req.Method == http.MethodGet || req.Method == http.MethodOptions {
 		if regexpHome.MatchString(path) {
-			if renderer.ProcessHomeQueries(w, req, req.URL.Query()) {
+			if c.renderer.ProcessHomeQueries(w, req, req.URL.Query()) {
 				return
 			}
-			renderer.QueryHome(w, req)
+			c.renderer.QueryHome(w, req)
 			c.mr.CountHome()
 			c.mr.UserAgent(req.UserAgent())
 			return
@@ -131,7 +80,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			id := utils.MustToInt64(matches[1])
-			renderer.QueryByID(w, req, id)
+			c.renderer.QueryByID(w, req, id)
 			c.mr.CountPageView(id)
 			c.mr.UserAgent(req.UserAgent())
 			return
@@ -141,18 +90,18 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpFile.FindStringSubmatch(path)
 			postID := utils.MustToInt64(matches[1])
 			file := matches[2]
-			renderer.QueryFile(w, req, postID, file)
+			c.renderer.QueryFile(w, req, postID, file)
 			return
 		}
 
 		if regexpByTags.MatchString(path) {
 			matches := regexpByTags.FindStringSubmatch(path)
 			tags := strings.Split(matches[1], `+`)
-			renderer.QueryByTags(w, req, tags)
+			c.renderer.QueryByTags(w, req, tags)
 			return
 		}
 
-		if renderer.QuerySpecial(w, req, path) {
+		if c.renderer.QuerySpecial(w, req, path) {
 			return
 		}
 
@@ -160,7 +109,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpBySlug.FindStringSubmatch(path)
 			tree := matches[1]
 			slug := matches[2]
-			id, err := renderer.QueryBySlug(w, req, tree, slug)
+			id, err := c.renderer.QueryBySlug(w, req, tree, slug)
 			if err == nil {
 				c.mr.CountPageView(id)
 				c.mr.UserAgent(req.UserAgent())
@@ -175,7 +124,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				parents = parents[1:]
 			}
 			slug := matches[3]
-			id, err := renderer.QueryByPage(w, req, parents, slug)
+			id, err := c.renderer.QueryByPage(w, req, parents, slug)
 			if err == nil {
 				c.mr.CountPageView(id)
 				c.mr.UserAgent(req.UserAgent())
@@ -188,7 +137,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		renderer.QueryStatic(w, req, path)
+		c.renderer.QueryStatic(w, req, path)
 		return
 	}
 

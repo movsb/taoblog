@@ -7,7 +7,6 @@ type Config struct {
 	Database    DatabaseConfig    `yaml:"database"`
 	Server      ServerConfig      `yaml:"server"`
 	Data        DataConfig        `yaml:"data"`
-	Theme       ThemeConfig       `yaml:"theme"`
 	Maintenance MaintenanceConfig `yaml:"maintenance"`
 	Auth        AuthConfig        `yaml:"auth"`
 	Menus       []MenuItem        `yaml:"menus"`
@@ -22,7 +21,6 @@ func DefaultConfig() Config {
 		Database:    DefaultDatabaseConfig(),
 		Server:      DefaultServerConfig(),
 		Data:        DefaultDataConfig(),
-		Theme:       DefaultThemeConfig(),
 		Maintenance: DefaultMainMaintenanceConfig(),
 		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
@@ -81,18 +79,6 @@ type FileDataConfig struct {
 func DefaultFileDataConfig() FileDataConfig {
 	return FileDataConfig{
 		Path: `./files`,
-	}
-}
-
-// ThemeConfig ...
-type ThemeConfig struct {
-	Name string `yaml:"name"`
-}
-
-// DefaultThemeConfig ...
-func DefaultThemeConfig() ThemeConfig {
-	return ThemeConfig{
-		Name: `blog`,
 	}
 }
 

@@ -10,9 +10,6 @@ data:
   file:
     path: ./files
 
-theme:
-  name: BLOG
-
 maintenance:
   site_closed: false
   disable_admin: false
