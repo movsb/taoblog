@@ -122,7 +122,9 @@ func (cg *CommentGeo) Get(ip string) string {
 
 func (cg *CommentGeo) GetTimeout(ip string, timeout time.Duration) string {
 	ch := make(chan string, 1)
-	defer close(ch)
+	// 如果线程返回前函数返回了，会写 closed channel
+	// 那就不关了，不会泄漏
+	// defer close(ch)
 
 	go func() {
 		cg.Queue(ip, func() {

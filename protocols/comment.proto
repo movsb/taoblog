@@ -21,6 +21,9 @@ message Comment {
 	bool is_admin = 14;
 	string date_fuzzy = 15;
 	string geo_location = 16;
+	// 前端用户是否可以编辑此评论？
+	// 仅在 list/create 接口中返回。
+	bool can_edit = 17;
 }
 
 message GetCommentRequest {

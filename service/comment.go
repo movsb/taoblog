@@ -45,14 +45,18 @@ func (s *Service) GetComment2(name int64) *models.Comment {
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation), nil
+	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, ""), nil
 }
 
 // UpdateComment ...
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
 	if !user.IsAdmin() {
-		panic(`not enough permission`)
+		userIP := ipFromContext(ctx, true)
+		cmt := s.GetComment2(int64(req.Comment.Id))
+		if userIP != cmt.IP || !models.In5min(cmt.Date) {
+			panic(exception.NewValidationError(`超时或无权限编辑评论`))
+		}
 	}
 
 	var comment models.Comment
@@ -87,7 +91,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation), nil
+	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ""), nil
 }
 
 // DeleteComment ...
@@ -111,6 +115,8 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		in.Mode = protocols.ListCommentsMode_ListCommentsModeTree
 	}
 
+	userIP := ipFromContext(ctx, false)
+
 	var parentProtocolComments []*protocols.Comment
 	{
 		var parents models.Comments
@@ -125,7 +131,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		stmt.MustFind(&parents)
-		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation)
+		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP)
 	}
 
 	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
@@ -144,7 +150,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 			}
 			stmt.MustFind(&children)
-			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation)
+			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP)
 		}
 		{
 			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
@@ -173,16 +179,15 @@ func (s *Service) geoLocation(ip string) string {
 	return s.cmtgeo.GetTimeout(ip, time.Millisecond*500)
 }
 
-// CreateComment ...
-func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
-	user := s.auth.User(ctx)
-
-	// TODO this is temp
-	// TODO not http only
-
+// TODO this is temp
+// TODO not http only
+func ipFromContext(ctx context.Context, must bool) string {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		panic(`no md`)
+		if must {
+			panic(`no md`)
+		}
+		return ``
 	}
 	var forward string
 
@@ -190,7 +195,10 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		forward = forwards[0]
 	}
 	if forward == "" {
-		panic("invalid request") // TODO HTTP 400
+		if must {
+			panic("invalid request") // TODO HTTP 400
+		}
+		return ``
 	}
 
 	// since IP field has no room for proxies, strip them all.
@@ -200,9 +208,23 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		forward = forward[:p]
 	}
 
+	return forward
+}
+
+// CreateComment ...
+func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
+	user := s.auth.User(ctx)
+
+	ip := ipFromContext(ctx, true)
+
 	// 尽早查询地理信息
-	if err := s.cmtgeo.Queue(forward, nil); err != nil {
+	if err := s.cmtgeo.Queue(ip, nil); err != nil {
 		log.Println(err)
+	}
+
+	// 尝试检查可能的错误请求
+	if in.Parent < 0 {
+		panic(exception.NewValidationError(`错误的父评论`))
 	}
 
 	comment := models.Comment{
@@ -211,7 +233,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		Author:     in.Author,
 		Email:      in.Email,
 		URL:        in.Url,
-		IP:         forward,
+		IP:         ip,
 		Date:       int32(time.Now().Unix()),
 		SourceType: in.SourceType,
 		Source:     in.Source,
@@ -287,7 +309,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&comment)
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation), nil
+	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip), nil
 }
 
 func (s *Service) updateCommentsCount() {

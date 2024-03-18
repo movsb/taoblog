@@ -50,6 +50,9 @@ function Comment() {
 	this._loaded_ch = 0;
 	this.post_id = 0;
 	this.parent = 0;
+	this.being_edited = 0; // 正在被编辑的 ID，仅编辑时有效，> 0 时有效
+
+	TaoBlog.comments = {};
 }
 
 Comment.prototype.init = function() {
@@ -72,25 +75,34 @@ Comment.prototype.init = function() {
 			$(this).attr('disabled', 'disabled');
 			$('#comment-submit').val('提交中...');
 			try {
-				let cmt = await self.postComment();
-				cmt = self.normalize_comment(cmt);
-				let parent = self.parent;
-				if(parent == 0) {
-					$('#comment-list').prepend(self.gen_comment_item(cmt));
-					// 没有父评论，避免二次加载。
-					self._loaded ++;
-				} else {
-					self.add_reply_div(parent);
-					$('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(cmt));
+				let cmt = {};
+				if (self.being_edited >0) {
+					cmt = await self.updateComment();
+					cmt = self.normalize_comment(cmt);
+					let wrap = document.querySelector(`#comment-${cmt.id}`);
+					let content = wrap.querySelector(':scope > .comment-content');
+					content.innerHTML = cmt.content;
+				 } else {
+					cmt = await self.postComment();
+					cmt = self.normalize_comment(cmt);
+					let parent = self.parent;
+					if(parent == 0) {
+						$('#comment-list').prepend(self.gen_comment_item(cmt));
+						// 没有父评论，避免二次加载。
+						self._loaded ++;
+					} else {
+						self.add_reply_div(parent);
+						$('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(cmt));
+					}
+					$('#comment-'+cmt.id).fadeIn();
+					self._count++;
+					self.toggle_post_comment_button();
 				}
-				$('#comment-'+cmt.id).fadeIn();
-				TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id));
+				TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id), cmt);
 				$('#comment-content').val('');
 				self.showCommentBox(false);
 				self.toggleShowPreview(false, false);
 				self.save_info();
-				self._count++;
-				self.toggle_post_comment_button();
 			} catch(e) {
 				alert(e);
 			} finally {
@@ -128,11 +140,66 @@ Comment.prototype.init = function() {
 	document.getElementById('comment-show-preview').addEventListener('click', self.showPreview.bind(self));
 
 	self.init_drag(document.getElementById('comment-form-div'));
+	
+	TaoBlog.events.add('comment', 'post', function(jItem, cmt) {
+		TaoBlog.comments[cmt.id] = cmt;
+	});
 };
 
-Comment.prototype.showCommentBox = function(show, callback) {
+Comment.prototype.showCommentBox = function(show, callback, options) {
 	let box = document.getElementById('comment-form-div');
+	if (!show && (box.style.display == '' || box.style.display == 'none')) {
+		return;
+	}
 	(show ? TaoBlog.fn.fadeIn : TaoBlog.fn.fadeOut)(box, callback);
+	
+	if (show) {
+		if (typeof options != 'object' ) {
+			options = {};
+		}
+		
+		// 标题框
+		let status = document.getElementById('comment-title-status');
+		status.innerText = this.parent == 0
+			? '发表评论'
+			: this.parent > 0
+				? '回复评论'
+				: this.being_edited > 0
+					? '编辑评论'
+					: '（？？？）';
+		
+		// 编辑框是否可编辑？
+		let inputs = document.querySelectorAll('#comment-form .fields input[type=text]');
+		let allowEditingInfo =  options.allowEditingInfo ?? true;
+		inputs.forEach(function(input) {
+			// input.disabled = allowEditingInfo ? '' : 'disabled';
+			// console.log(input);
+			input.style.display = allowEditingInfo ? 'block' : 'none';
+		});
+		
+		// 编辑框初始值
+		// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
+		{
+			let savedCommenter = JSON.parse(localStorage.getItem('commenter') || '{}');
+			let commenter = options.commenter ?? {
+				author: savedCommenter.name ?? '',
+				email: savedCommenter.email ?? '',
+				url: savedCommenter.url ?? ''
+			};
+			let inputName = document.querySelector('#comment-form input[name=author]');
+			let inputEmail = document.querySelector('#comment-form input[name=email]');
+			let inputURL = document.querySelector('#comment-form input[name=url]');
+			inputName.value = commenter.author;
+			inputEmail.value = commenter.email;
+			inputURL.value = commenter.url;
+
+			let inputContent = document.querySelector('#comment-content');
+			// 其它时候（未提交之前）不应该修改编辑的内容
+			if (this.being_edited > 0) {
+				inputContent.value = TaoBlog.comments[this.being_edited].source;
+			}
+		}
+	}
 };
 
 Comment.prototype.toggle_post_comment_button = function(show) {
@@ -193,6 +260,9 @@ Comment.prototype.normalize_comment = function(c) {
 	c.is_admin = c.is_admin || false;
 	c.source_type = c.source_type || 'plain';
 	c.source = c.source || (c.source_type == 'plain' ? c.content : c.source);
+	c.date_fuzzy = c.date_fuzzy ?? '';
+	c.geo_location = c.geo_location ?? '';
+	c.can_edit = c.can_edit ?? false;
 	return c;
 }
 
@@ -274,6 +344,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	}
 	<div class="toolbar" style="margin-left: 54px;">
 		<a class="no-sel" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
+		${cmt.can_edit ? `<a class="no-sel" onclick="comment.edit(${cmt.id});return false;">编辑</a>` : ''}
 		${!loggedin ? '' : `<a class="no-sel" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});return false;">删除</a>`}
 	</div>
 </li>
@@ -283,19 +354,24 @@ Comment.prototype.gen_comment_item = function(cmt) {
 };
 
 Comment.prototype.reply_to = function(p){
+	this.being_edited = -1;
 	this.parent = +p;
-
-	// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
-	if(window.localStorage) {
-		let commenter = JSON.parse(localStorage.getItem('commenter') || '{}');
-		$('#comment-form input[name=author]').val(commenter.name || '');
-		$('#comment-form input[name=email]').val(commenter.email || '');
-		$('#comment-form input[name=url]').val(commenter.url || '');
-	}
-
 	this.move_to_center();
+	this.toggleShowPreview(false, false);
 	this.showCommentBox(true, function() {
 		$('#comment-content').focus();
+	});
+};
+
+Comment.prototype.edit = function(c) {
+	this.being_edited = c;
+	this.parent = -1;
+	this.move_to_center();
+	this.toggleShowPreview(false, false);
+	this.showCommentBox(true, function() {
+		$('#comment-content').focus();
+	}, {
+		allowEditingInfo: false,
 	});
 };
 
@@ -380,7 +456,7 @@ Comment.prototype.append_children = function(ch, p) {
 			ch[i] = this.normalize_comment(ch[i]);
 			$(`#comment-reply-${p} ol:first`).append(this.gen_comment_item(ch[i]));
 			$(`#comment-${ch[i].id}`).fadeIn();
-			TaoBlog.events.dispatch('comment', 'post', $(`#comment-${ch[i].id}`));
+			TaoBlog.events.dispatch('comment', 'post', $(`#comment-${ch[i].id}`), ch[i]);
 			this.add_reply_div(ch[i].id);
 			this.append_children(ch, ch[i].id);
 			delete ch[i];
@@ -424,7 +500,7 @@ Comment.prototype.load_comments = function() {
 				cmts[i] = self.normalize_comment(cmts[i]);
                 $('#comment-list').append(self.gen_comment_item(cmts[i]));
                 $('#comment-'+cmts[i].id).fadeIn();
-                TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id));
+                TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id), cmts[i]);
                 self.add_reply_div(cmts[i].id);
                 if(cmts[i].children) {
                     self.append_children(cmts[i].children, cmts[i].id);
@@ -460,6 +536,29 @@ Comment.prototype.formData = function() {
 	return obj;
 };
 
+Comment.prototype.updateComment = async function() {
+	let { source } = this.formData();
+	let resp = await fetch(
+		`/v3/comments/${this.being_edited}`,
+		{
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				comment: {
+					source_type: 'markdown',
+					source: source,
+				},
+				update_mask: "source,sourceType"
+			})
+		}
+	);
+	if(!resp.ok) {
+		throw new Error('编辑失败：' + (await resp.json()).message);
+	}
+	return resp.json();
+};
 Comment.prototype.postComment = async function() {
 	let body = this.formData();
 	let resp = await fetch(
@@ -502,7 +601,6 @@ Comment.prototype.toggleShowPreview = function(showPreview, checked) {
 	let textarea   = document.getElementById('comment-content');
 	let previewBox = document.getElementById('comment-preview');
 	let checkBox   = document.getElementById('comment-show-preview');
-	let status     = document.getElementById('comment-title-status');
 
 	textarea.style.display = showPreview ? 'none' : 'block';
 	previewBox.style.display = showPreview ? 'block' : 'none';
@@ -510,8 +608,6 @@ Comment.prototype.toggleShowPreview = function(showPreview, checked) {
 	if (typeof checked == 'boolean') {
 		checkBox.checked = checked;
 	}
-	
-	status.innerText = !showPreview ? '编辑评论' : '预览评论';
 };
 
 Comment.prototype.showPreview = async function() {
