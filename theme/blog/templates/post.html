@@ -22,10 +22,22 @@
 		{{ end }}
 		<span>阅读次数：<span class="view">{{ .PageView }}</span></span>
 	</div>
+{{ if .Outdated }}
+<div class="content-wrap outdated">
+{{ else }}
+<div class="content-wrap">
+{{ end }}
+<div class="content">
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
-    </div><!-- end entry -->
+</div>
+<div class="disclaimer">
+	<p>这篇文章的内容已被作者标记为“过时”/“需要更新”/“不具参考意义”。</p>
+	<button onclick="document.getElementsByClassName('content-wrap')[0].classList.remove('outdated');">仍然查看</button>
+</div>
+</div>
+	</div><!-- end entry -->
 	{{if .Tags}}
 	<div class="meta2 clearfix">
 		<p><b>标签：</b><span class="value">{{.TagsString}}</span></p>

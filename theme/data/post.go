@@ -96,3 +96,10 @@ func (p *Post) CustomFooter() (footer string) {
 	}
 	return
 }
+
+func (p *Post) Outdated() bool {
+	if value, ok := p.Metas[`outdated`]; ok && (value == `true` || value == `1`) {
+		return true
+	}
+	return false
+}

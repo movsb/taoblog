@@ -231,3 +231,20 @@ blockquote {
 	h5::before { content: "##### ";}
 	h6::before { content: "###### ";}
 }
+
+.content-wrap {
+	.disclaimer {
+		display: none;
+	}
+	&.outdated {
+		> .content {
+			display: none;
+		}
+		> .disclaimer {
+			display: block;
+			text-align: center;
+			line-height: 4em;
+			font-size: 1.3em;
+		}
+	}
+}
