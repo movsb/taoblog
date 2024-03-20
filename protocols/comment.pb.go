@@ -92,7 +92,7 @@ type Comment struct {
 	DateFuzzy   string     `protobuf:"bytes,15,opt,name=date_fuzzy,json=dateFuzzy,proto3" json:"date_fuzzy,omitempty"`
 	GeoLocation string     `protobuf:"bytes,16,opt,name=geo_location,json=geoLocation,proto3" json:"geo_location,omitempty"`
 	// 前端用户是否可以编辑此评论？
-	// 仅在 list 接口中返回。
+	// 仅在 list/create 接口中返回。
 	CanEdit bool `protobuf:"varint,17,opt,name=can_edit,json=canEdit,proto3" json:"can_edit,omitempty"`
 }
 

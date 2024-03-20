@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"sync/atomic"
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -26,15 +27,18 @@ import (
 
 // Service implements IServer.
 type Service struct {
-	cfg      *config.Config
-	db       *sql.DB
-	tdb      *taorm.DB
-	auth     *auth.Auth
-	cmtntf   *comment_notify.CommentNotifier
-	cmtgeo   *commentgeo.CommentGeo
-	store    storage.Store
-	cache    *memory_cache.MemoryCache
-	searcher *search.Engine
+	cfg    *config.Config
+	db     *sql.DB
+	tdb    *taorm.DB
+	auth   *auth.Auth
+	cmtntf *comment_notify.CommentNotifier
+	cmtgeo *commentgeo.CommentGeo
+	store  storage.Store
+	cache  *memory_cache.MemoryCache
+
+	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
+	// 的情况，此时此值为空。
+	searcher atomic.Pointer[search.Engine]
 
 	protocols.TaoBlogServer
 	protocols.ManagementServer

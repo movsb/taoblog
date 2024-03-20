@@ -27,6 +27,10 @@
 {{ end }}
 </ul>
 </div>
+{{ else if not .Search.Initialized }}
+<div>
+<p>搜索引擎尚未完成初始化。</p>
+</div>
 {{ else }}
 <div>
 <p>没有搜索结果。</p>

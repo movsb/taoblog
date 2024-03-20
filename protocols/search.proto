@@ -13,4 +13,5 @@ message SearchPostsResponse {
 		string content = 3;
 	}
 	repeated Post posts = 1;
+	bool initialized = 2;
 }

@@ -13,7 +13,13 @@ import (
 
 // TODO 权限
 func (s *Service) SearchPosts(ctx context.Context, in *protocols.SearchPostsRequest) (*protocols.SearchPostsResponse, error) {
-	posts, err := s.searcher.SearchPosts(ctx, in.Search)
+	searcher := s.searcher.Load()
+	if searcher == nil {
+		return &protocols.SearchPostsResponse{
+			Initialized: false,
+		}, nil
+	}
+	posts, err := searcher.SearchPosts(ctx, in.Search)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +46,10 @@ func (s *Service) RunSearchEngine(ctx context.Context) {
 	}
 	defer func() {
 		engine.Close()
-		s.searcher = nil
+		s.searcher.Store(nil)
 	}()
 
-	s.searcher = engine
+	s.searcher.Store(engine)
 
 	var lastCheck int64
 	s.reIndex(ctx, engine, &lastCheck)

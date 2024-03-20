@@ -14,7 +14,8 @@ import (
 
 // SearchData ...
 type SearchData struct {
-	Posts []*SearchPost
+	Initialized bool
+	Posts       []*SearchPost
 }
 
 type SearchPost struct {
@@ -57,7 +58,8 @@ func NewDataForSearch(cfg *config.Config, user *auth.User, service *service.Serv
 	}
 
 	d.Search = &SearchData{
-		Posts: posts2,
+		Initialized: rsp.Initialized,
+		Posts:       posts2,
 	}
 
 	return d
