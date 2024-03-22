@@ -38,6 +38,10 @@ pre > code {
 	color: #777;
 }
 
+a > code {
+	color: inherit;
+}
+
 @media (prefers-color-scheme: dark) {
 	pre[class*="language-"]>code, pre[class*="language-"]>code .line-numbers-rows {
 		background-color: transparent !important;

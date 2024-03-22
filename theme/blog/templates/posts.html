@@ -1,5 +1,10 @@
 {{ render "header" . }}
 <h1 style="text-align:center">全部文章列表</h1>
+<div class="summary">
+{{ with .Posts }}
+文章：{{.PostCount}}<span class=sep></span>页面：{{.PageCount}}<span class=sep></span>评论：{{.CommentCount}}<span class=sep></span>浏览：{{.ViewCount}}
+{{ end }}
+</div>
 <table>
 <thead>
 <tr>
@@ -22,11 +27,6 @@
     {{end}}
 </tbody>
 </table>
-<div class="footer">
-{{ with .Posts }}
-文章：{{.PostCount}}<span class=sep></span>页面：{{.PageCount}}<span class=sep></span>评论：{{.CommentCount}}<span class=sep></span>浏览：{{.ViewCount}}
-{{ end }}
-</div>
 {{ render "footer" . }}
 
 {{define "custom_header"}}
@@ -47,13 +47,10 @@ td:nth-child(2) {
         display: none;
     }
 }
-.footer {
-    border-top: 1px solid gray;
-    margin: 2em 0 0 0;
-    padding: 1em;
+.summary {
     text-align: center;
 }
-.footer .sep {
+.summary .sep {
     margin: 0 1em 0 1em;
 }
 </style>
