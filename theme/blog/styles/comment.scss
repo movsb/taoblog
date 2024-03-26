@@ -258,7 +258,7 @@ span.post-comment {
 	#comment-form-div {
 		background-color: var(--color-bg);
 		opacity: 0.95;
-		img {
+		img.closebtn {
 			filter: invert(80%);
 		}
 	}

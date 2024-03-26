@@ -4,7 +4,6 @@ import (
 	"compress/zlib"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,7 +36,7 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 		}
 		r = zr
 	} else {
-		r = ioutil.NopCloser(bpr)
+		r = io.NopCloser(bpr)
 	}
 	defer r.Close()
 
