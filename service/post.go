@@ -142,8 +142,10 @@ func (s *Service) getPostContent(id int64) (string, error) {
 		var tr post_translators.PostTranslator
 		switch p.SourceType {
 		case `markdown`:
-			mt := &post_translators.MarkdownTranslator{}
-			mt.SetPathResolver(s.PathResolver(id))
+			mt := post_translators.NewMarkdownTranslator(
+				post_translators.WithPathResolver(s.PathResolver(id)),
+				post_translators.WithRemoveTitleHeading(true),
+			)
 			tr = mt
 		case `html`:
 			tr = &post_translators.HTMLTranslator{}

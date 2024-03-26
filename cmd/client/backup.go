@@ -266,7 +266,7 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 					log.Printf("Local: copy %s\n", rf[i].Path)
 					copyRemote(rf[i])
 				} else {
-					log.Printf("Local: modtime of dir: %s", rf[i].Path)
+					// log.Printf("Local: modtime of dir: %s", rf[i].Path)
 					path := filepath.Join(localDir, lf[j].Path)
 					t := time.Unix(int64(rf[i].Time), 0)
 					if err := os.Chtimes(path, t, t); err != nil {

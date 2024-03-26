@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -10,19 +9,14 @@ import (
 	"time"
 	"unicode/utf8"
 
-	mathjax "github.com/litao91/goldmark-mathjax"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
+	"github.com/movsb/taoblog/service/modules/post_translators"
 	"github.com/movsb/taorm/taorm"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/renderer/html"
-	"github.com/yuin/goldmark/text"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -51,10 +45,10 @@ func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentReque
 // UpdateComment ...
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
+	cmtOld := s.GetComment2(int64(req.Comment.Id))
 	if !user.IsAdmin() {
 		userIP := ipFromContext(ctx, true)
-		cmt := s.GetComment2(int64(req.Comment.Id))
-		if userIP != cmt.IP || !models.In5min(cmt.Date) {
+		if userIP != cmtOld.IP || !models.In5min(cmtOld.Date) {
 			panic(exception.NewValidationError(`超时或无权限编辑评论`))
 		}
 	}
@@ -80,7 +74,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		if hasSourceType {
 			data[`source_type`] = req.Comment.SourceType
 			data[`source`] = req.Comment.Source
-			data[`content`] = s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source)
+			data[`content`] = s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID)
 		}
 		s.MustTxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
@@ -271,7 +265,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	comment.Content = s.convertCommentMarkdown(user, in.SourceType, in.Source)
+	comment.Content = s.convertCommentMarkdown(user, in.SourceType, in.Source, in.PostId)
 
 	adminEmails := s.cfg.Comment.Emails
 
@@ -317,44 +311,31 @@ func (s *Service) updateCommentsCount() {
 	s.SetOption("comment_count", count)
 }
 
-func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string) string {
+func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64) string {
 	if ty != "markdown" {
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
-	md := goldmark.New(
-		goldmark.WithRendererOptions(
-			html.WithUnsafe(),
-		),
-		goldmark.WithExtensions(extension.GFM),
-		goldmark.WithExtensions(extension.DefinitionList),
-		goldmark.WithExtensions(extension.Footnote),
-		goldmark.WithExtensions(mathjax.MathJax),
-	)
-	doc := md.Parser().Parse(text.NewReader([]byte(source)))
+	var md *post_translators.MarkdownTranslator
 
-	if !user.IsAdmin() {
-		if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-			if entering {
-				switch n.Kind() {
-				case ast.KindHeading:
-					panic(exception.NewValidationError(`Markdown 不能包含标题`))
-				case ast.KindHTMLBlock, ast.KindRawHTML:
-					panic(exception.NewValidationError(`Markdown 不能包含 HTML 元素`))
-				}
-			}
-			return ast.WalkContinue, nil
-		}); err != nil {
-			panic(err)
-		}
+	if user.IsAdmin() {
+		md = post_translators.NewMarkdownTranslator(
+			post_translators.WithPathResolver(s.PathResolver(postID)),
+		)
+	} else {
+		md = post_translators.NewMarkdownTranslator(
+			post_translators.WithPathResolver(s.PathResolver(postID)),
+			post_translators.WithDisableHeadings(true),
+			post_translators.WithDisableHTML(true),
+		)
 	}
 
-	var buf bytes.Buffer
-	if err := md.Renderer().Render(&buf, []byte(source), doc); err != nil {
+	_, content, err := md.Translate(source)
+	if err != nil {
 		panic(exception.NewValidationError("不能转换 markdown"))
 	}
 
-	return buf.String()
+	return content
 }
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
@@ -390,7 +371,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
-	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown)
+	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, 0)
 	return &protocols.PreviewCommentResponse{Html: html}, nil
 }
 

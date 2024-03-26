@@ -17,6 +17,7 @@ import (
 
 	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
+	"github.com/movsb/taoblog/modules/exception"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -29,7 +30,10 @@ import (
 
 // MarkdownTranslator ...
 type MarkdownTranslator struct {
-	pathResolver PathResolver
+	pathResolver       PathResolver
+	removeTitleHeading bool // 是否移除 H1
+	disableHeadings    bool // 评论中不允许标题
+	disableHTML        bool // 禁止 HTML 元素
 }
 
 var (
@@ -40,8 +44,48 @@ func init() {
 	imageKind = ast.NewNodeKind(`image`)
 }
 
-func (me *MarkdownTranslator) SetPathResolver(pathResolver PathResolver) {
-	me.pathResolver = pathResolver
+type Option func(me *MarkdownTranslator) error
+
+// 解析 Markdown 中的相对链接。
+func WithPathResolver(pathResolver PathResolver) Option {
+	return func(me *MarkdownTranslator) error {
+		me.pathResolver = pathResolver
+		return nil
+	}
+}
+
+// 移除 Markdown 中的标题（适用于文章）。
+func WithRemoveTitleHeading(remove bool) Option {
+	return func(me *MarkdownTranslator) error {
+		me.removeTitleHeading = remove
+		return nil
+	}
+}
+
+// 不允许评论中存在任何级别的“标题”。
+func WithDisableHeadings(disable bool) Option {
+	return func(me *MarkdownTranslator) error {
+		me.disableHeadings = disable
+		return nil
+	}
+}
+
+// 不允许使用 HTML 标签。
+func WithDisableHTML(disable bool) Option {
+	return func(me *MarkdownTranslator) error {
+		me.disableHTML = disable
+		return nil
+	}
+}
+
+func NewMarkdownTranslator(options ...Option) *MarkdownTranslator {
+	me := &MarkdownTranslator{}
+	for _, option := range options {
+		if err := option(me); err != nil {
+			log.Println(err)
+		}
+	}
+	return me
 }
 
 // Translate ...
@@ -73,11 +117,12 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 			heading := p.(*ast.Heading)
 			switch heading.Level {
 			case 1:
-				title = string(heading.Text(sourceBytes))
-				p = p.NextSibling()
-				parent := heading.Parent()
-				parent.RemoveChild(parent, heading)
-				continue
+				if !me.disableHeadings && me.removeTitleHeading {
+					title = string(heading.Text(sourceBytes))
+					p = p.NextSibling()
+					parent := heading.Parent()
+					parent.RemoveChild(parent, heading)
+				}
 			}
 		case p.Kind() == ast.KindParagraph:
 			para := p.(*ast.Paragraph)
@@ -96,6 +141,24 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 	}
 	if n == maxDepth {
 		panic(`max depth`)
+	}
+
+	if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if entering {
+			switch n.Kind() {
+			case ast.KindHeading:
+				if me.disableHeadings {
+					panic(exception.NewValidationError(`Markdown 不能包含标题`))
+				}
+			case ast.KindHTMLBlock, ast.KindRawHTML:
+				if me.disableHTML {
+					panic(exception.NewValidationError(`Markdown 不能包含 HTML 元素`))
+				}
+			}
+		}
+		return ast.WalkContinue, nil
+	}); err != nil {
+		panic(err)
 	}
 
 	rdr := md.Renderer()
@@ -204,9 +267,15 @@ func size(path string) (int, int) {
 		return 0, 0
 	}
 	width, height := imgConfig.Width, imgConfig.Height
-	if strings.Contains(filepath.Base(path), `@2x.`) {
-		width /= 2
-		height /= 2
+
+	for i := 1; i <= 10; i++ {
+		scaleFmt := fmt.Sprintf(`@%dx.`, i)
+		if strings.Contains(filepath.Base(path), scaleFmt) {
+			width /= i
+			height /= i
+			break
+		}
 	}
+
 	return width, height
 }
