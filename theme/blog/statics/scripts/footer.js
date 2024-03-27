@@ -1,33 +1,3 @@
-/* 回到顶端 */
-(function(){
-    var header_height = $('#header').height();
-    var topIsShowing = false;
-    var $topElement = $('#back-to-top');
-    var fadeDuration = 500;
-
-    window.addEventListener('scroll', function() {
-        if (this.window.scrollY > header_height) {
-            if (!topIsShowing) {
-                topIsShowing = true;
-                $topElement.fadeIn(fadeDuration);  // no wait on animation
-                console.log("back-top-top: fadeIn");
-            }
-        } else {
-            if (topIsShowing) {
-                $topElement.fadeOut(fadeDuration);
-                topIsShowing = false;
-                console.log("back-to-top: fadeOut");
-            }
-        }
-    });
-
-    $topElement.click(function(){
-        $('html,body').animate({
-            scrollTop: 0
-        }, 300);
-    })
-})();
-
 /* 目录展开与隐藏 */
 (function() {
     if($('.entry .toc').length == 0) return;
@@ -233,3 +203,119 @@ TaoBlog.events.add('comment', 'post', function(jItem) {
 		}
 	});
 })();
+
+// 简易的 Vim 按键模拟。
+class __Vim {
+	constructor() {
+		this.stack = [];
+		this.tree = {};
+		this.timer = null;
+
+		this.maps = {
+			'?': this.help,
+			gg: this.gg,
+			G: this.G,
+			f: this.f,
+			w: this.w,
+			j: this.j,
+			k: this.k,
+		};
+
+		this.init();
+	}
+	init() {
+		let self = this;
+
+		for (let key in this.maps) {
+			let root = this.tree;
+			for (let i in key) {
+				if (!root[key[i]]) {
+					root[key[i]] = {};
+				}
+				root = root[key[i]];
+			}
+			root.__handler = this.maps[key];
+		}
+
+		document.body.addEventListener('keypress', function (e) {
+			if (self.timer) {
+				clearInterval(self.timer);
+				self.timer = null;
+			}
+
+			if (e.target.tagName != 'BODY') {
+				self.stack = [];
+				return;
+			}
+
+			self.stack.push(e.key);
+			self.trigger();
+
+			if (self.stack.length) {
+				self.timer = setInterval(() => {
+					if (self.stack.length > 0) {
+						self.stack = [];
+						console.log('key stack cleared');
+					}
+				}, 1000);
+			}
+		});
+	}
+	trigger() {
+		let self = this;
+		let root = self.tree;
+		console.log('stack:', self.stack);
+		for (let i = 0; i < self.stack.length; i++) {
+			let child = root[self.stack[i]];
+			if (!child) {
+				root = null;
+				break;
+			}
+			root = child;
+		}
+		if (!root || !root.__handler) {
+			return;
+		}
+		// console.log(root);
+		console.log('triggering:', root);
+		root.__handler();
+		self.stack = [];
+	}
+	gg() {
+		window.scrollTo({left: 0, top: 0, behavior: 'smooth'});
+	}
+	G() {
+		window.scrollTo({left: 0, top: document.body.scrollHeight, behavior: 'smooth'}); 
+	}
+	j() {
+		window.scrollBy({left: 0, top: +150, behavior: 'smooth'});
+	}
+	k() {
+		window.scrollBy({left: 0, top: -150, behavior: 'smooth'});
+	}
+	f() {
+		if (document.fullscreenElement) {
+			document.exitFullscreen();
+		} else {
+			document.documentElement.requestFullscreen();
+		}
+	}
+	w() {
+		let elem = document.getElementById('content');
+		let maxWidth = elem.style.maxWidth;
+		elem.style.maxWidth = maxWidth == 'unset' ? 'var(--max-width)' : 'unset';
+	}
+	help() {
+		console.log('Vim Help');
+		console.table({
+			gg: '回到页首',
+			G: '回到页尾',
+			j: '向下滚动',
+			k: '向上滚动',
+			f: '进入全屏',
+			w: '进入宽屏模式',
+		});
+	}
+}
+
+TaoBlog.vim = new __Vim();

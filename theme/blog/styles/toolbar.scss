@@ -6,18 +6,6 @@
     box-sizing: border-box;
 }
 
-/* 回到顶部 */
-.back-to-top {
-    display: none;
-    cursor: pointer;
-    -moz-user-select: none;
-    user-select: none;
-    filter: opacity(70%);
-    &:hover {
-        filter: opacity(100%);
-    }
-}
-
 /* 图片查看 */
 #img-view {
     position: fixed;
