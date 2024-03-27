@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/xeonx/timeago"
 )
@@ -30,7 +29,7 @@ func (Comment) TableName() string {
 }
 
 // ToProtocols ...
-func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, geo func(ip string) string, userIP string) *protocols.Comment {
+func (c *Comment) ToProtocols(extra func(m *Comment, p *protocols.Comment)) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:         c.ID,
 		Parent:     c.Parent,
@@ -42,21 +41,12 @@ func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, 
 		SourceType: c.SourceType,
 		Source:     c.Source,
 		Content:    c.Content,
-		IsAdmin:    isAdmin(c.Email),
 		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
 	}
 
-	if user.IsAdmin() {
-		comment.Email = c.Email
-		comment.Ip = c.IP
-		if geo != nil {
-			comment.GeoLocation = geo(c.IP)
-		}
+	if extra != nil {
+		extra(c, &comment)
 	}
-
-	// 管理员、（同 IP 用户 & 5️⃣分钟内） 可编辑。
-	// TODO: IP：并不严格判断，比如网吧、办公室可能具有相同 IP。所以限制了时间范围。
-	comment.CanEdit = c.SourceType == `markdown` && (user.IsAdmin() || (userIP == c.IP && In5min(c.Date)))
 
 	return &comment
 }
@@ -69,10 +59,10 @@ func In5min(t int32) bool {
 type Comments []*Comment
 
 // ToProtocols ...
-func (cs Comments) ToProtocols(isAdmin func(s string) bool, user *auth.User, geo func(ip string) string, userIP string) []*protocols.Comment {
+func (cs Comments) ToProtocols(extra func(m *Comment, p *protocols.Comment)) []*protocols.Comment {
 	comments := make([]*protocols.Comment, 0, len(cs))
 	for _, comment := range cs {
-		comments = append(comments, comment.ToProtocols(isAdmin, user, geo, userIP))
+		comments = append(comments, comment.ToProtocols(extra))
 	}
 	return comments
 }

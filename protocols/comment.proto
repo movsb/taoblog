@@ -17,6 +17,7 @@ message Comment {
 	string source_type = 10;
 	string source = 11;
 	string content = 12;
+
 	repeated Comment children = 13;
 	bool is_admin = 14;
 	string date_fuzzy = 15;
@@ -24,6 +25,11 @@ message Comment {
 	// 前端用户是否可以编辑此评论？
 	// 仅在 list/create 接口中返回。
 	bool can_edit = 17;
+	// 文本预览。
+	// 复杂的评论（比如包含代码和图片）如果直接显示，会比较难看、难以理解、排版混乱
+	// 所以用类似微信/QQ消息的方式显示：[图片] [代码] [表情] [语音] [链接]
+	// 需要通过获取选项开启。
+	string text_preview = 18;
 }
 
 message GetCommentRequest {
@@ -59,6 +65,8 @@ message ListCommentsRequest {
 	int64 limit = 4;
 	int64 offset = 5;
 	string order_by = 6;
+	
+	bool with_text_preview = 20;
 }
 
 message ListCommentsResponse {

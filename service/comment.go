@@ -39,7 +39,7 @@ func (s *Service) GetComment2(name int64) *models.Comment {
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, ""), nil
+	return s.GetComment2(req.Id).ToProtocols(s.setExtraCommentsFields(user, ipFromContext(ctx, false))), nil
 }
 
 // UpdateComment ...
@@ -74,7 +74,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		if hasSourceType {
 			data[`source_type`] = req.Comment.SourceType
 			data[`source`] = req.Comment.Source
-			data[`content`] = s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID)
+			data[`content`] = s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, false)
 		}
 		s.MustTxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
@@ -85,7 +85,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ""), nil
+	return comment.ToProtocols(s.setExtraCommentsFields(user, ipFromContext(ctx, false))), nil
 }
 
 // DeleteComment ...
@@ -111,6 +111,12 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 
 	userIP := ipFromContext(ctx, false)
 
+	textPreview := func(m *models.Comment, p *protocols.Comment) {
+		if in.WithTextPreview {
+			p.TextPreview = s.convertCommentMarkdown(user, m.SourceType, m.Source, m.PostID, true)
+		}
+	}
+
 	var parentProtocolComments []*protocols.Comment
 	{
 		var parents models.Comments
@@ -125,7 +131,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		stmt.MustFind(&parents)
-		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP)
+		parentProtocolComments = parents.ToProtocols(s.setExtraCommentsFields(user, userIP, textPreview))
 	}
 
 	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
@@ -144,7 +150,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 			}
 			stmt.MustFind(&children)
-			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP)
+			childrenProtocolComments = children.ToProtocols(s.setExtraCommentsFields(user, userIP, textPreview))
 		}
 		{
 			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
@@ -265,7 +271,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	comment.Content = s.convertCommentMarkdown(user, in.SourceType, in.Source, in.PostId)
+	comment.Content = s.convertCommentMarkdown(user, in.SourceType, in.Source, in.PostId, false)
 
 	adminEmails := s.cfg.Comment.Emails
 
@@ -303,7 +309,27 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&comment)
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip), nil
+	return comment.ToProtocols(s.setExtraCommentsFields(user, ipFromContext(ctx, false))), nil
+}
+
+func (s *Service) setExtraCommentsFields(user *auth.User, userIP string, options ...func(m *models.Comment, p *protocols.Comment)) func(*models.Comment, *protocols.Comment) {
+	return func(m *models.Comment, p *protocols.Comment) {
+		p.IsAdmin = s.isAdminEmail(m.Email)
+
+		if user.IsAdmin() {
+			p.Email = m.Email
+			p.Ip = m.IP
+			p.GeoLocation = s.geoLocation(m.IP)
+		}
+
+		// 管理员、（同 IP 用户 & 5️⃣分钟内） 可编辑。
+		// TODO: IP：并不严格判断，比如网吧、办公室可能具有相同 IP。所以限制了时间范围。
+		p.CanEdit = m.SourceType == `markdown` && (user.IsAdmin() || (userIP == m.IP && models.In5min(m.Date)))
+
+		for _, option := range options {
+			option(m, p)
+		}
+	}
 }
 
 func (s *Service) updateCommentsCount() {
@@ -311,7 +337,7 @@ func (s *Service) updateCommentsCount() {
 	s.SetOption("comment_count", count)
 }
 
-func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64) string {
+func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, textPreview bool) string {
 	if ty != "markdown" {
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
@@ -329,6 +355,8 @@ func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source stri
 			post_translators.WithDisableHTML(true),
 		)
 	}
+
+	md.AddOptions(post_translators.WithTextPreview(textPreview))
 
 	_, content, err := md.Translate(source)
 	if err != nil {
@@ -371,7 +399,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
-	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, 0)
+	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, 0, false)
 	return &protocols.PreviewCommentResponse{Html: html}, nil
 }
 

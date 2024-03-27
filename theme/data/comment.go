@@ -33,6 +33,8 @@ func (d *Data) ListLatestComments() (posts []*LatestCommentsByPost) {
 			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
 			Limit:   10,
 			OrderBy: "date DESC",
+
+			WithTextPreview: true,
 		})
 	if err != nil {
 		panic(err)

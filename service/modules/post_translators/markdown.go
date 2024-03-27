@@ -34,14 +34,17 @@ type MarkdownTranslator struct {
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
 	disableHTML        bool // 禁止 HTML 元素
+	enableTextPreview  bool // 是否开启预览文本，参见：Comment::text_preview。
 }
 
 var (
-	imageKind ast.NodeKind
+	imageKind       ast.NodeKind
+	textPreviewKind ast.NodeKind
 )
 
 func init() {
 	imageKind = ast.NewNodeKind(`image`)
+	textPreviewKind = ast.NewNodeKind(`text_preview`)
 }
 
 type Option func(me *MarkdownTranslator) error
@@ -78,14 +81,29 @@ func WithDisableHTML(disable bool) Option {
 	}
 }
 
+// 是否开启文本预览转换。
+// 复杂的评论（比如包含代码和图片）如果直接显示，会比较难看、难以理解、排版混乱
+// 所以用类似微信/QQ消息的方式显示：[图片] [代码] [表情] [语音] [链接]
+// 需要通过获取选项开启。
+func WithTextPreview(enable bool) Option {
+	return func(me *MarkdownTranslator) error {
+		me.enableTextPreview = enable
+		return nil
+	}
+}
+
 func NewMarkdownTranslator(options ...Option) *MarkdownTranslator {
 	me := &MarkdownTranslator{}
+	me.AddOptions(options...)
+	return me
+}
+
+func (me *MarkdownTranslator) AddOptions(options ...Option) {
 	for _, option := range options {
 		if err := option(me); err != nil {
 			log.Println(err)
 		}
 	}
-	return me
 }
 
 // Translate ...
@@ -161,15 +179,68 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 		panic(err)
 	}
 
+	if me.enableTextPreview {
+		var loop int = 0
+		for ; loop >= 0; loop-- {
+			if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+				if !entering {
+					return ast.WalkContinue, nil
+				}
+
+				replace := func(n ast.Node, alt string) {
+					new := &_TextPreview{alt: alt}
+					cs := []ast.Node{}
+					for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+						cs = append(cs, c)
+					}
+					for _, c := range cs {
+						new.AppendChild(new, c)
+					}
+					n.Parent().ReplaceChild(n.Parent(), n, new)
+				}
+
+				switch tag := n.(type) {
+				case *ast.Link:
+					replace(tag, `[链接]`)
+				case *ast.Image:
+					replace(tag, `[图片]`)
+				case *ast.CodeBlock:
+					replace(tag, `[代码]`)
+				case *_Image:
+					replace(tag, `[图片]`)
+				case *ast.Paragraph:
+					replace(tag, ``)
+					loop++
+				}
+
+				return ast.WalkContinue, nil
+			}); err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	rdr := md.Renderer()
 	if reg, ok := rdr.(renderer.NodeRendererFuncRegisterer); ok {
 		reg.Register(imageKind, me.renderImage)
+		if me.enableTextPreview {
+			reg.Register(textPreviewKind, me.renderTextPreview)
+		}
 	}
 
 	buf := bytes.NewBuffer(nil)
 	err := rdr.Render(buf, []byte(source), doc)
 	return title, buf.String(), err
 }
+
+type _TextPreview struct {
+	ast.BaseInline
+	alt string
+}
+
+func (n *_TextPreview) Dump(source []byte, level int) { ast.DumpHelper(n, source, level, nil, nil) }
+func (n *_TextPreview) Type() ast.NodeType            { return ast.TypeInline }
+func (n *_TextPreview) Kind() ast.NodeKind            { return textPreviewKind }
 
 type _Image struct {
 	ast.BaseBlock
@@ -179,6 +250,17 @@ type _Image struct {
 func (n *_Image) Dump(source []byte, level int) { ast.DumpHelper(n, source, level, nil, nil) }
 func (n *_Image) Type() ast.NodeType            { return ast.TypeInline }
 func (n *_Image) Kind() ast.NodeKind            { return imageKind }
+
+func (me *MarkdownTranslator) renderTextPreview(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+	if !entering {
+		return ast.WalkContinue, nil
+	}
+
+	n := node.(*_TextPreview)
+	w.WriteString(n.alt)
+
+	return ast.WalkContinue, nil
+}
 
 func (me *MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
