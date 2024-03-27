@@ -104,7 +104,7 @@ TaoBlog.fn.fadeIn = function(elem, callback) {
 	elem.style.display = 'block';
 	if (typeof callback == 'function') {
 		elem.addEventListener('animationend', function(event) {
-			console.log('fade-in animationend');
+			// console.log('fade-in animationend');
 			callback();
 		}, { once: true});
 	}
@@ -113,7 +113,7 @@ TaoBlog.fn.fadeIn = function(elem, callback) {
 TaoBlog.fn.fadeOut = function(elem, callback) {
 	elem.classList.remove('fade-in');
 	elem.addEventListener('animationend', function(event) {
-		console.log('fade-out animationend');
+		// console.log('fade-out animationend');
 		elem.style.display = 'none';
 		if (typeof callback == 'function') {
 			callback();
