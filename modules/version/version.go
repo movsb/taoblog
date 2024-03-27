@@ -20,6 +20,12 @@ var (
 	GitCommit string
 )
 
+func init() {
+	if GitCommit == `` {
+		GitCommit = `HEAD`
+	}
+}
+
 // AddCommands ...
 func AddCommands(rootCmd *cobra.Command) {
 	versionCmd := &cobra.Command{
