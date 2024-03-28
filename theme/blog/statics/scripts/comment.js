@@ -222,11 +222,11 @@ Comment.prototype.toggle_post_comment_button = function(show) {
 };
 
 Comment.prototype.load_essential_comments = function() {
-    if(this._loaded + this._loaded_ch < this._count
-        && window.scrollY + window.innerHeight + 200 >= document.body.scrollHeight) 
-    {
-        this.load_comments();
-    }
+	if(this._loaded + this._loaded_ch < this._count
+		&& window.scrollY + window.innerHeight + 1000 >= document.body.scrollHeight) 
+	{
+		this.load_comments();
+	}
 };
 
 Comment.prototype.get_count = function(callback) {

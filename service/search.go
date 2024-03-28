@@ -75,6 +75,9 @@ func (s *Service) reIndex(ctx context.Context, engine *search.Engine, lastCheck 
 		log.Println(err)
 		return
 	}
+	if len(posts) <= 0 {
+		return
+	}
 	var posts2 []search.Post
 	for _, p := range posts {
 		posts2 = append(posts2, search.Post{
