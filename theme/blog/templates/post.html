@@ -8,7 +8,9 @@
 {{ render "header" . }}
 <article class="post">
 	{{ with .Post.Post }}
-	<h1 class="title clearfix"><a href="{{ .Link }}">{{ .Title }}</a></h1>
+	<div style="overflow: hidden;">
+		<h1 class="title clearfix"><a href="{{ .Link }}">{{ .Title }}</a></h1>
+	</div>
 	<div class="entry clearfix">
 	<div class="meta1 clearfix">
 		<a class="sitename" href="/">{{ $.Config.Site.Name }}</a>

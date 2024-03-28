@@ -207,114 +207,128 @@ TaoBlog.events.add('comment', 'post', function(jItem) {
 // 简易的 Vim 按键模拟。
 class __Vim {
 	constructor() {
-		this.stack = [];
-		this.tree = {};
-		this.timer = null;
-
-		this.maps = {
-			'?': this.help,
-			gg: this.gg,
-			G: this.G,
-			f: this.f,
-			w: this.w,
-			j: this.j,
-			k: this.k,
-		};
+		this.maps  = {};    // 按键绑定映射
+		this.tree  = {};    // TRIE 搜索树
+		this.stack = [];    // 按键栈
+		this.timer = null;  // 定时清理掉无效的按键
 
 		this.init();
 	}
+
 	init() {
-		let self = this;
-
-		for (let key in this.maps) {
-			let root = this.tree;
-			for (let i in key) {
-				if (!root[key[i]]) {
-					root[key[i]] = {};
-				}
-				root = root[key[i]];
-			}
-			root.__handler = this.maps[key];
-		}
-
-		document.body.addEventListener('keypress', function (e) {
-			if (self.timer) {
-				clearInterval(self.timer);
-				self.timer = null;
+		document.body.addEventListener('keypress', (function (e) {
+			if (this.timer) {
+				clearInterval(this.timer);
+				this.timer = null;
 			}
 
 			if (e.target.tagName != 'BODY') {
-				self.stack = [];
+				this.stack = [];
 				return;
 			}
 
-			self.stack.push(e.key);
-			self.trigger();
+			this.stack.push(e.key);
+			this.trigger();
 
-			if (self.stack.length) {
-				self.timer = setInterval(() => {
-					if (self.stack.length > 0) {
-						self.stack = [];
+			if (this.stack.length) {
+				this.timer = setInterval(() => {
+					if (this.stack.length > 0) {
+						this.stack = [];
 						console.log('key stack cleared');
 					}
 				}, 1000);
 			}
-		});
+		}).bind(this));
+		
+		this.maps = {
+			gg: function() {
+				window.scrollTo({left: 0, top: 0, behavior: 'smooth'});
+			},
+			G: function() {
+				window.scrollTo({left: 0, top: document.body.scrollHeight, behavior: 'smooth'}); 
+			},
+			j: function() {
+				window.scrollBy({left: 0, top: +150, behavior: 'smooth'});
+			},
+			k: function() {
+				window.scrollBy({left: 0, top: -150, behavior: 'smooth'});
+			},
+			f: function() {
+				if (document.fullscreenElement) {
+					document.exitFullscreen();
+				} else {
+					document.documentElement.requestFullscreen();
+				}
+			},
+			w: function() {
+				let elem = document.getElementById('content');
+				let maxWidth = elem.style.maxWidth;
+				elem.style.maxWidth = maxWidth == 'unset' ? 'var(--max-width)' : 'unset';
+			},
+			r: function() {
+				location.reload();
+			},
+			b: function() {
+				location.pathname = '/';
+			},
+			'?': function() {
+				console.log('Vim Help');
+				console.table({
+					gg: '回到页首',
+					G: '回到页尾',
+					j: '向下滚动',
+					k: '向上滚动',
+					f: '进入全屏',
+					w: '进入宽屏模式',
+					r: '刷新',
+					b: '回到首页',
+				});
+			},
+		};
+
+		for (let key in this.maps) {
+			let node = this.tree;
+			for (let i in key) {
+				if (!node[key[i]]) {
+					node[key[i]] = {};
+				}
+				node = node[key[i]];
+			}
+			node.__handler = this.maps[key];
+		}
 	}
+
 	trigger() {
-		let self = this;
-		let root = self.tree;
-		console.log('stack:', self.stack);
-		for (let i = 0; i < self.stack.length; i++) {
-			let child = root[self.stack[i]];
+		let node = this.tree;
+		console.log('stack:', this.stack);
+
+		// 遍历树以寻找匹配按键序列的按键映射/绑定。
+		for (let i = 0; i < this.stack.length; i++) {
+			let child = node[this.stack[i]];
 			if (!child) {
-				root = null;
+				node = null;
 				break;
 			}
-			root = child;
+			node = child;
 		}
-		if (!root || !root.__handler) {
+
+		// 说明根本没有这个按键映射，
+		// 属于无效的按键映射，清空。
+		if (!node) {
+			console.log('no such key binding:', this.stack);
+			this.stack = [];
 			return;
 		}
-		// console.log(root);
-		console.log('triggering:', root);
-		root.__handler();
-		self.stack = [];
-	}
-	gg() {
-		window.scrollTo({left: 0, top: 0, behavior: 'smooth'});
-	}
-	G() {
-		window.scrollTo({left: 0, top: document.body.scrollHeight, behavior: 'smooth'}); 
-	}
-	j() {
-		window.scrollBy({left: 0, top: +150, behavior: 'smooth'});
-	}
-	k() {
-		window.scrollBy({left: 0, top: -150, behavior: 'smooth'});
-	}
-	f() {
-		if (document.fullscreenElement) {
-			document.exitFullscreen();
-		} else {
-			document.documentElement.requestFullscreen();
+
+		// 按键组合还没有到达最后一个按键。
+		 if (!node.__handler) {
+			return;
 		}
-	}
-	w() {
-		let elem = document.getElementById('content');
-		let maxWidth = elem.style.maxWidth;
-		elem.style.maxWidth = maxWidth == 'unset' ? 'var(--max-width)' : 'unset';
-	}
-	help() {
-		console.log('Vim Help');
-		console.table({
-			gg: '回到页首',
-			G: '回到页尾',
-			j: '向下滚动',
-			k: '向上滚动',
-			f: '进入全屏',
-			w: '进入宽屏模式',
-		});
+
+		// console.log(node);
+		console.log('triggering:', node);
+		node.__handler.call(this);
+		this.stack = [];
 	}
 }
 

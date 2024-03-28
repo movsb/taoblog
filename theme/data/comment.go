@@ -31,7 +31,7 @@ func (d *Data) ListLatestComments() (posts []*LatestCommentsByPost) {
 	comments, err := d.svc.ListComments(d.User.Context(context.TODO()),
 		&protocols.ListCommentsRequest{
 			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
-			Limit:   10,
+			Limit:   15,
 			OrderBy: "date DESC",
 		})
 	if err != nil {
