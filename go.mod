@@ -2,7 +2,7 @@ module github.com/movsb/taoblog
 
 require (
 	github.com/blugelabs/bluge v0.1.9
-	github.com/golang/protobuf v1.5.3
+	github.com/golang/protobuf v1.5.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
