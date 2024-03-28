@@ -18,11 +18,11 @@ require (
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.56.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+require github.com/hashicorp/golang-lru/v2 v2.0.7
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.1 // indirect
@@ -51,7 +51,7 @@ require (
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/net v0.20.0
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
