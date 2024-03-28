@@ -2,10 +2,10 @@
 <base href="/{{.Post.Post.ID}}/" />
 <script>var _post_id = +"{{.Post.Post.ID}}";</script>
 <link rel="stylesheet" href="/plugins/highlight/prism.css" />
-{{end}}
+{{end -}}
 
-{{ $dot:=. }}
-{{ render "header" . }}
+{{- $dot:=. -}}
+{{- render "header" . -}}
 <article class="post">
 	{{ with .Post.Post }}
 	<div style="overflow: hidden;">

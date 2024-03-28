@@ -1,4 +1,4 @@
-{{define "custom_header"}}
+{{- define "custom_header"}}
 <style>
 #latest-comment-list .post-comment-list {
 	padding-left: 0;
@@ -12,18 +12,18 @@
 	padding-left: 40px; /* https://stackoverflow.com/a/30424422/3628322 */
 }
 </style>
-{{end}}
+{{end -}}
 
-{{define "custom_footer"}}
+{{- define "custom_footer"}}
 
-{{end}}
+{{end -}}
 
-{{ render "header" . }}
+{{- render "header" . }}
 <h2>近期文章</h2>
 <ul>
-{{range .Home.Posts}}
+{{- range .Home.Posts}}
 	<li><a href="{{.Link}}">{{.NonPublic}}{{.Title}}</a></li>
-{{end}}
+{{- end}}
 </ul>
 
 <p id=all-posts><a href="/posts">所有文章...</a></p>
@@ -36,9 +36,9 @@
 		<li>
 			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
 			<ul class=post-comment-list>
-			{{ range .Comments}}
+			{{- range .Comments}}
 				<li><p><b>{{.Author}}</b>：{{.Text}}</p></li>
-			{{ end }}
+			{{- end }}
 			</ul>
 		</li>
 	{{end}}
