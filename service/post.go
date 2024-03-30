@@ -423,7 +423,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		case "html":
 			tr = &post_translators.HTMLTranslator{}
 		case "markdown":
-			tr = &post_translators.MarkdownTranslator{}
+			tr = post_translators.NewMarkdownTranslator()
 		default:
 			panic("no translator found")
 		}

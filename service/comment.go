@@ -316,7 +316,7 @@ func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source stri
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
-	var md *post_translators.MarkdownTranslator
+	var md post_translators.PostTranslator
 
 	if user.IsAdmin() {
 		md = post_translators.NewMarkdownTranslator(

@@ -29,7 +29,7 @@ import (
 )
 
 // MarkdownTranslator ...
-type MarkdownTranslator struct {
+type _MarkdownTranslator struct {
 	pathResolver       PathResolver
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
@@ -44,11 +44,11 @@ func init() {
 	imageKind = ast.NewNodeKind(`image`)
 }
 
-type Option func(me *MarkdownTranslator) error
+type Option func(me *_MarkdownTranslator) error
 
 // 解析 Markdown 中的相对链接。
 func WithPathResolver(pathResolver PathResolver) Option {
-	return func(me *MarkdownTranslator) error {
+	return func(me *_MarkdownTranslator) error {
 		me.pathResolver = pathResolver
 		return nil
 	}
@@ -56,7 +56,7 @@ func WithPathResolver(pathResolver PathResolver) Option {
 
 // 移除 Markdown 中的标题（适用于文章）。
 func WithRemoveTitleHeading(remove bool) Option {
-	return func(me *MarkdownTranslator) error {
+	return func(me *_MarkdownTranslator) error {
 		me.removeTitleHeading = remove
 		return nil
 	}
@@ -64,7 +64,7 @@ func WithRemoveTitleHeading(remove bool) Option {
 
 // 不允许评论中存在任何级别的“标题”。
 func WithDisableHeadings(disable bool) Option {
-	return func(me *MarkdownTranslator) error {
+	return func(me *_MarkdownTranslator) error {
 		me.disableHeadings = disable
 		return nil
 	}
@@ -72,14 +72,14 @@ func WithDisableHeadings(disable bool) Option {
 
 // 不允许使用 HTML 标签。
 func WithDisableHTML(disable bool) Option {
-	return func(me *MarkdownTranslator) error {
+	return func(me *_MarkdownTranslator) error {
 		me.disableHTML = disable
 		return nil
 	}
 }
 
-func NewMarkdownTranslator(options ...Option) *MarkdownTranslator {
-	me := &MarkdownTranslator{}
+func NewMarkdownTranslator(options ...Option) *_MarkdownTranslator {
+	me := &_MarkdownTranslator{}
 	for _, option := range options {
 		if err := option(me); err != nil {
 			log.Println(err)
@@ -89,7 +89,7 @@ func NewMarkdownTranslator(options ...Option) *MarkdownTranslator {
 }
 
 // Translate ...
-func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
+func (me *_MarkdownTranslator) Translate(source string) (string, string, error) {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
@@ -117,13 +117,13 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 			heading := p.(*ast.Heading)
 			switch heading.Level {
 			case 1:
+				title = string(heading.Text(sourceBytes))
 				if !me.disableHeadings && me.removeTitleHeading {
-					title = string(heading.Text(sourceBytes))
 					p = p.NextSibling()
 					parent := heading.Parent()
 					parent.RemoveChild(parent, heading)
 					// p 已经 next，否则循环结束的时候再 next 会出错
-					continue
+					// continue
 				}
 			}
 		case p.Kind() == ast.KindParagraph:
@@ -182,7 +182,7 @@ func (n *_Image) Dump(source []byte, level int) { ast.DumpHelper(n, source, leve
 func (n *_Image) Type() ast.NodeType            { return ast.TypeInline }
 func (n *_Image) Kind() ast.NodeKind            { return imageKind }
 
-func (me *MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (me *_MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
 		return ast.WalkContinue, nil
 	}

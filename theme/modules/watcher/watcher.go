@@ -67,7 +67,9 @@ func (f *FolderChangedWatcher) changed(old, new []os.FileInfo) bool {
 func (f *FolderChangedWatcher) snapshot() []os.FileInfo {
 	entries, err := ioutil.ReadDir(f.root)
 	if err != nil {
-		log.Println(err)
+		if !os.IsNotExist(err) {
+			log.Println(err)
+		}
 		return nil
 	}
 	infos := make([]os.FileInfo, 0, len(entries))
