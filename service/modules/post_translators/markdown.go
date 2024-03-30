@@ -122,6 +122,8 @@ func (me *MarkdownTranslator) Translate(source string) (string, string, error) {
 					p = p.NextSibling()
 					parent := heading.Parent()
 					parent.RemoveChild(parent, heading)
+					// p 已经 next，否则循环结束的时候再 next 会出错
+					continue
 				}
 			}
 		case p.Kind() == ast.KindParagraph:
