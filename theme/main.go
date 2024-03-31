@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -231,9 +232,9 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 }
 
 func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool {
-	if p := query.Get("p"); p != "" {
-		w.Header().Set(`Location`, fmt.Sprintf("/%s/", p))
-		w.WriteHeader(301)
+	// 兼容非常早期的 p 查询参数。随时可以移除。
+	if id, err := strconv.Atoi(query.Get("p")); err == nil && id > 0 {
+		http.Redirect(w, req, fmt.Sprintf(`/%d/`, id), http.StatusPermanentRedirect)
 		return true
 	}
 	return false

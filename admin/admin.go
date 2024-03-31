@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"sync/atomic"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
@@ -27,7 +28,7 @@ type Admin struct {
 	templates *template.Template
 	mux       *utils.ServeMuxWithMethod
 	auth      *auth.Auth
-	canGoogle bool // not thread safe and has race, but it doesn't matter.
+	canGoogle atomic.Bool
 }
 
 func NewAdmin(service *service.Service, auth *auth.Auth, prefix string) *Admin {
@@ -69,14 +70,13 @@ func (a *Admin) route() {
 }
 
 func (a *Admin) detectNetwork() {
-	resp, err := http.Get("https://www.google.com")
-	if err != nil {
-		log.Println(`google accessible: `, false)
-		return
+	resp, err := http.Get(`https://www.gstatic.com/generate_204`)
+	if err == nil {
+		resp.Body.Close()
 	}
-	resp.Body.Close()
-	a.canGoogle = true
-	log.Println(`google accessible: `, true)
+	yes := err == nil && resp.StatusCode == 204
+	log.Println(`google accessible: `, yes)
+	a.canGoogle.Store(yes)
 }
 
 func (a *Admin) Handler() http.Handler {
@@ -93,13 +93,10 @@ func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.authorized(r) {
-		w.Header().Set(`Location`, `/`)
-		w.WriteHeader(302)
-		w.Write([]byte(`Logged in, redirecting to home...`))
+		http.Redirect(w, r, `/`, http.StatusFound)
 		return
 	}
-	w.Header().Set(`Location`, a.prefixed(`/login`))
-	w.WriteHeader(302)
+	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
 }
 
 func (a *Admin) authorized(r *http.Request) bool {
@@ -122,7 +119,7 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := LoginData{}
-	if a.canGoogle {
+	if a.canGoogle.Load() {
 		d.GoogleClientID = a.auth.Config().Google.ClientID
 	}
 	d.GitHubClientID = a.auth.Config().Github.ClientID
