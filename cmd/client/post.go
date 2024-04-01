@@ -332,6 +332,8 @@ func parsePostAssets(source string) ([]string, error) {
 			}
 			return
 		}
+		// TODO 简单方式去掉 ? 后面的查询参数，有 BUG，但是“够用”。
+		asset, _, _ = strings.Cut(asset, "?")
 		assets = append(assets, asset)
 	}
 

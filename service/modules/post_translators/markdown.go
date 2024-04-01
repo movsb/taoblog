@@ -11,8 +11,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
@@ -26,6 +28,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
+	html5 "golang.org/x/net/html"
 )
 
 // MarkdownTranslator ...
@@ -186,9 +189,37 @@ func (me *_MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node
 	if !entering {
 		return ast.WalkContinue, nil
 	}
+
 	n := node.(*_Image)
+
+	// 解析可能的自定义。
+	// 不是很严格，可能有转义错误。
+	url, _ := url.Parse(string(n.image.Destination))
+	if url == nil {
+		w.WriteString(`<img />`)
+		return ast.WalkContinue, nil
+	}
+
+	styles := map[string]string{}
+	classes := []string{}
+
+	q := url.Query()
+	scale := 1.0
+	if q.Has(`float`) {
+		styles[`float`] = `right`
+		classes = append(classes, `f-r`)
+		q.Del(`float`)
+	}
+	if n, err := strconv.ParseFloat(url.Query().Get(`scale`), 64); err == nil && n > 0 {
+		scale = n
+		q.Del(`scale`)
+	}
+
+	url.RawQuery = q.Encode()
+
 	_, _ = w.WriteString("<img src=\"")
-	_, _ = w.Write(util.EscapeHTML(util.URLEscape(n.image.Destination, true)))
+	// TODO 不知道 escape 几次了个啥。
+	_, _ = w.Write(util.EscapeHTML(util.URLEscape([]byte(url.String()), true)))
 	_, _ = w.WriteString(`" alt="`)
 	_, _ = w.Write(nodeToHTMLText(n.image, source))
 	_ = w.WriteByte('"')
@@ -197,17 +228,36 @@ func (me *_MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node
 	}
 	_, _ = w.WriteString(` loading="lazy"`)
 
-	path := string(n.image.Destination)
+	path := url.Path
 	if me.pathResolver != nil && !strings.Contains(path, `://`) {
 		path2, err := me.pathResolver.Resolve(path)
 		if err == nil {
 			path = path2
 		}
 	}
+
+	if len(styles) > 0 {
+		b := strings.Builder{}
+		b.WriteString(`style="`)
+		for k, v := range styles {
+			b.WriteString(fmt.Sprintf(`%s: %s;`, k, v))
+		}
+		b.WriteString(`"`)
+		w.WriteString(b.String())
+	}
+
+	if len(classes) > 0 {
+		w.WriteString(fmt.Sprintf(`class="%s"`, strings.Join(classes, " ")))
+	}
+
 	width, height := size(path)
 	if width > 0 && height > 0 {
-		w.WriteString(fmt.Sprintf(` width=%d height=%d`, width, height))
+		w.WriteString(fmt.Sprintf(` width=%d height=%d`, int(float64(width)*scale), int(float64(height)*scale)))
 	}
+
+	// TODO 用 Node 序列化，代替手写标签。
+	img := html5.Node{}
+	_ = img
 
 	_, _ = w.WriteString(" />")
 	return ast.WalkSkipChildren, nil
