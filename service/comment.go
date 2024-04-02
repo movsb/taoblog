@@ -377,7 +377,8 @@ func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewComme
 	if in.OpenLinksInNewTab {
 		options = append(options, post_translators.WithOpenLinksInNewTab())
 	}
-	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, 0, options...)
+	// TODO 安全检查：PostID 应该和 Referer 一致。
+	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, int64(in.PostId), options...)
 	return &protocols.PreviewCommentResponse{Html: html}, nil
 }
 

@@ -37,10 +37,6 @@ h4 { font-size: 1.2em; }
 h5 { font-size: 1.1em; }
 h6 { font-size: 1.0em; }
 
-.fa-mr {
-    margin-right: 0.5em;
-}
-
 /* 不可选 */
 .no-sel {
     user-select: none;
@@ -161,6 +157,11 @@ table {
 	&.no-border, &.no-border td {
 		border: none;
 	}
+}
+
+hr {
+	border: 0;
+	border-bottom: 1px dashed var(--border-color);
 }
 
 @keyframes fadeIn {

@@ -79,6 +79,9 @@ message PreviewCommentRequest {
 	// 是否在新窗口中打开链接。
 	// 对于正在编辑的评论来说，总是应该这样。
 	bool open_links_in_new_tab = 2;
+	// 所属文章编号。不是必须的。
+	// 但是为了计算图片的大小，建议加上。
+	int32 post_id = 3;
 }
 
 message PreviewCommentResponse {

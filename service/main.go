@@ -151,10 +151,6 @@ func (s *Service) TxCall(callback func(txs *Service) error) error {
 	})
 }
 
-func (s *Service) IsSiteClosed() bool {
-	return s.cfg.Maintenance.SiteClosed
-}
-
 // HomeURL returns the home URL of format https://localhost.
 func (s *Service) HomeURL() string {
 	return s.cfg.Site.Home

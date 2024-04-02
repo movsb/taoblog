@@ -629,7 +629,8 @@ Comment.prototype.showPreview = async function() {
 		},
 		body: JSON.stringify({
 			markdown: source,
-			open_links_in_new_tab: true
+			open_links_in_new_tab: true,
+			post_id: +this.post_id
 		})
 	});
 
