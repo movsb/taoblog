@@ -628,7 +628,8 @@ Comment.prototype.showPreview = async function() {
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({
-			markdown: source
+			markdown: source,
+			open_links_in_new_tab: true
 		})
 	});
 

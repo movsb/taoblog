@@ -61,3 +61,5 @@ require (
 go 1.21
 
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
+
+// replace github.com/yuin/goldmark => /Users/tao/code/goldmark

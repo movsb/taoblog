@@ -311,23 +311,25 @@ func (s *Service) updateCommentsCount() {
 	s.SetOption("comment_count", count)
 }
 
-func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64) string {
+func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, options ...post_translators.Option) string {
 	if ty != "markdown" {
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
 	var md post_translators.PostTranslator
 
+	options = append(options,
+		post_translators.WithPathResolver(s.PathResolver(postID)),
+	)
+
 	if user.IsAdmin() {
-		md = post_translators.NewMarkdownTranslator(
-			post_translators.WithPathResolver(s.PathResolver(postID)),
-		)
+		md = post_translators.NewMarkdownTranslator(options...)
 	} else {
-		md = post_translators.NewMarkdownTranslator(
-			post_translators.WithPathResolver(s.PathResolver(postID)),
+		options = append(options,
 			post_translators.WithDisableHeadings(true),
 			post_translators.WithDisableHTML(true),
 		)
+		md = post_translators.NewMarkdownTranslator(options...)
 	}
 
 	_, content, err := md.Translate(source)
@@ -371,7 +373,11 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
-	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, 0)
+	options := []post_translators.Option{}
+	if in.OpenLinksInNewTab {
+		options = append(options, post_translators.WithOpenLinksInNewTab())
+	}
+	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, 0, options...)
 	return &protocols.PreviewCommentResponse{Html: html}, nil
 }
 

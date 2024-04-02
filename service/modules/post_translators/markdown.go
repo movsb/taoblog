@@ -37,6 +37,7 @@ type _MarkdownTranslator struct {
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
 	disableHTML        bool // 禁止 HTML 元素
+	openLinksInNewTab  bool // 新窗口打开链接
 }
 
 var (
@@ -77,6 +78,15 @@ func WithDisableHeadings(disable bool) Option {
 func WithDisableHTML(disable bool) Option {
 	return func(me *_MarkdownTranslator) error {
 		me.disableHTML = disable
+		return nil
+	}
+}
+
+// 新窗口打开链接。
+// TODO 目前只能针对 Markdown 链接， HTML 标签链接不可用。
+func WithOpenLinksInNewTab() Option {
+	return func(me *_MarkdownTranslator) error {
+		me.openLinksInNewTab = true
 		return nil
 	}
 }
@@ -158,6 +168,12 @@ func (me *_MarkdownTranslator) Translate(source string) (string, string, error) 
 			case ast.KindHTMLBlock, ast.KindRawHTML:
 				if me.disableHTML {
 					panic(exception.NewValidationError(`Markdown 不能包含 HTML 元素`))
+				}
+			case ast.KindAutoLink, ast.KindLink:
+				if me.openLinksInNewTab {
+					n.SetAttributeString(`target`, []byte(`_blank`))
+					// TODO 会覆盖已经有了的
+					n.SetAttributeString(`class`, []byte(`external`))
 				}
 			}
 		}

@@ -142,17 +142,15 @@
     }
 }
 
-.entry, .comment-content {
-	a {
-		&.external::after {
-			content: "";
-			margin-left: 5px;
-			padding-left: 13px;
-			background-image: url(/images/external-anchor.png);
-			background-repeat: no-repeat;
-			background-position: left center;
-		}
-	}
+a {
+    &.external::after {
+        content: "";
+        margin-left: 5px;
+        padding-left: 13px;
+        background-image: url(/images/external-anchor.png);
+        background-repeat: no-repeat;
+        background-position: left center;
+    }
 }
 
 blockquote {

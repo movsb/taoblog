@@ -6,13 +6,13 @@ import (
 )
 
 func TestMarkdown(t *testing.T) {
-	tr := &MarkdownTranslator{}
+	tr := &_MarkdownTranslator{}
 	t2, s, err := tr.Translate(`### <a id="my-header"></a>Header`)
 	fmt.Println(t2, s, err)
 }
 
 func TestImage(t *testing.T) {
-	tr := &MarkdownTranslator{}
+	tr := &_MarkdownTranslator{}
 	t2, s, err := tr.Translate(`
 # heading
 

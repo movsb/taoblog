@@ -76,6 +76,9 @@ message SetCommentPostIDResponse {
 
 message PreviewCommentRequest {
 	string markdown = 1;
+	// 是否在新窗口中打开链接。
+	// 对于正在编辑的评论来说，总是应该这样。
+	bool open_links_in_new_tab = 2;
 }
 
 message PreviewCommentResponse {
