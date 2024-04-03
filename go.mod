@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/yuin/goldmark v1.6.0
+	github.com/yuin/goldmark v1.7.1
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.56.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0

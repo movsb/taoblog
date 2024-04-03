@@ -171,9 +171,9 @@ func (me *_MarkdownTranslator) Translate(source string) (string, string, error) 
 				}
 			case ast.KindAutoLink, ast.KindLink:
 				if me.openLinksInNewTab {
-					n.SetAttributeString(`target`, []byte(`_blank`))
+					n.SetAttributeString(`target`, `_blank`)
 					// TODO 会覆盖已经有了的
-					n.SetAttributeString(`class`, []byte(`external`))
+					n.SetAttributeString(`class`, `external`)
 				}
 			}
 		}
