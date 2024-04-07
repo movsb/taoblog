@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"time"
 
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/service/models"
+	setup_data "github.com/movsb/taoblog/setup/data"
 	"github.com/movsb/taorm/taorm"
 )
 
@@ -17,23 +19,30 @@ import (
 func Init(cfg *config.Config, db *sql.DB) {
 	var err error
 	var cmd *exec.Cmd
+
 	var fp io.ReadCloser
+	defer func() {
+		if fp != nil {
+			fp.Close()
+		}
+	}()
+
 	switch cfg.Database.Engine {
 	case `sqlite`:
 		cmd = exec.Command(`sqlite3`, cfg.Database.SQLite.Path)
-		fp, err = os.Open(`setup/data/schemas.sqlite.sql`)
+		fp, err = setup_data.Root.Open(`schemas.sqlite.sql`)
 		if err != nil {
 			panic(err)
 		}
 	default:
 		panic("unknown database engine")
 	}
-	defer fp.Close()
+
 	cmd.Stdin = fp
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, string(out))
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	tdb := taorm.NewDB(db)
