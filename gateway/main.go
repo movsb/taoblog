@@ -3,7 +3,9 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
+	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/service"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -76,8 +79,8 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 		mux2.Handle(method, pattern, handler)
 	}
 
-	handle("GET", `/v3/api`, getAPI)
-	handle("GET", `/v3/api/swagger`, getSwagger)
+	handle("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
+	handle("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
 
 	handle(`GET`, `/v3/comments/{id}/avatar`, g.GetAvatar)
 
@@ -120,12 +123,24 @@ func (g *Gateway) GetAvatar(w http.ResponseWriter, req *http.Request, params map
 	g.service.GetAvatar(in)
 }
 
-func getAPI(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	http.ServeFile(w, req, `protocols/docs/index.html`)
-}
-
-func getSwagger(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	http.ServeFile(w, req, `protocols/docs/taoblog.swagger.json`)
+func serveProtoDocsFile(path string) func(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	_, name := filepath.Split(path)
+	return func(w http.ResponseWriter, req *http.Request, params map[string]string) {
+		fp, err := proto_docs.Root.Open(path)
+		if err != nil {
+			panic(err)
+		}
+		defer fp.Close()
+		stat, err := fp.Stat()
+		if err != nil {
+			panic(err)
+		}
+		rs, ok := fp.(io.ReadSeeker)
+		if !ok {
+			panic(`bad embed file`)
+		}
+		http.ServeContent(w, req, name, stat.ModTime(), rs)
+	}
 }
 
 func deprecated(w http.ResponseWriter, r *http.Request) {
