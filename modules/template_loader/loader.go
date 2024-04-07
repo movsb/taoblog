@@ -1,5 +1,7 @@
 package templateloader
 
+// TODO 这个文件模块暂时没有使用。
+
 import (
 	"context"
 	"html/template"
