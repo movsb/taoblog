@@ -476,16 +476,12 @@ Comment.prototype.append_children = function(ch, p) {
 
 
 Comment.prototype.save_info = function() {
-	if(window.localStorage) {
-		let commenter = {
-			name: $('#comment-form input[name=author]').val(),
-			email: $('#comment-form input[name=email]').val(),
-			url: $('#comment-form input[name=url]').val(),
-		};
-		localStorage.setItem('commenter', JSON.stringify(commenter));
-	} else {
-		alert('抱歉，你的浏览器不支持 localStorage，评论者的相关信息将无法正确地保存以便后续使用。');
-	}
+	let commenter = {
+		name: $('#comment-form input[name=author]').val(),
+		email: $('#comment-form input[name=email]').val(),
+		url: $('#comment-form input[name=url]').val(),
+	};
+	localStorage.setItem('commenter', JSON.stringify(commenter));
 };
 
 Comment.prototype.load_comments = function() {
@@ -588,7 +584,7 @@ Comment.prototype.postComment = async function() {
 };
 
 Comment.prototype.convert_commenter = function() {
-	if(window.localStorage && !localStorage.getItem('commenter') && localStorage.getItem('cmt_author')) {
+	if(!localStorage.getItem('commenter') && localStorage.getItem('cmt_author')) {
 		let commenter = {
 			name: localStorage.getItem('cmt_author') || '',
 			email: localStorage.getItem('cmt_email') || '',
@@ -652,10 +648,6 @@ Comment.prototype.showPreview = async function() {
 	let html = (await resp.json()).html;
 	previewBox.innerHTML = html;
 };
-
-if(!(typeof fetch == 'function')) {
-	alert('你的浏览器版本过低（不支持 fetch），评论不能正确显示。');
-}
 
 let comment = new Comment();
 comment.init();
