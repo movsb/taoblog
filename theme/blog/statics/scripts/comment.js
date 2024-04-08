@@ -118,13 +118,6 @@ Comment.prototype.init = function() {
 		self.showCommentBox(false);
     });
 
-    // hide comment box when ESC key pressed
-    window.addEventListener('keyup', function(e) {
-        if(e.keyCode == 27) {
-			self.showCommentBox(false);
-        }
-    });
-
     window.addEventListener('scroll', function() {
         self.load_essential_comments();
     });
@@ -146,7 +139,14 @@ Comment.prototype.init = function() {
 	});
 };
 
+// show         是否显示评论框
+// callback     显示/隐藏完成后的回调函数
+// options
+//      allowEditingInfo    是否允许编辑评论者的信息
+//      commenter           评论者的信息
 Comment.prototype.showCommentBox = function(show, callback, options) {
+	let self = this;
+
 	let box = document.getElementById('comment-form-div');
 	if (!show && (box.style.display == '' || box.style.display == 'none')) {
 		return;
@@ -199,6 +199,16 @@ Comment.prototype.showCommentBox = function(show, callback, options) {
 				inputContent.value = TaoBlog.comments[this.being_edited].source;
 			}
 		}
+		
+		let onEsc = function(e) {
+			if (e.key === 'Escape') {
+				self.showCommentBox(false);
+				window.removeEventListener('keyup', onEsc);
+			}
+		};
+
+		// 按 ESC 关闭（隐藏）窗口。
+		window.addEventListener('keyup', onEsc);
 	}
 };
 
