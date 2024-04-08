@@ -15,7 +15,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
-	"github.com/movsb/taoblog/service/modules/post_translators"
+	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -311,28 +311,28 @@ func (s *Service) updateCommentsCount() {
 	s.SetOption("comment_count", count)
 }
 
-func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, options ...post_translators.Option) string {
+func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, options ...renderers.Option) string {
 	if ty != "markdown" {
 		panic(exception.NewValidationError("仅支持 markdown"))
 	}
 
-	var md post_translators.PostTranslator
+	var md renderers.Renderer
 
 	options = append(options,
-		post_translators.WithPathResolver(s.PathResolver(postID)),
+		renderers.WithPathResolver(s.PathResolver(postID)),
 	)
 
 	if user.IsAdmin() {
-		md = post_translators.NewMarkdownTranslator(options...)
+		md = renderers.NewMarkdown(options...)
 	} else {
 		options = append(options,
-			post_translators.WithDisableHeadings(true),
-			post_translators.WithDisableHTML(true),
+			renderers.WithDisableHeadings(true),
+			renderers.WithDisableHTML(true),
 		)
-		md = post_translators.NewMarkdownTranslator(options...)
+		md = renderers.NewMarkdown(options...)
 	}
 
-	_, content, err := md.Translate(source)
+	_, content, err := md.Render(source)
 	if err != nil {
 		panic(exception.NewValidationError("不能转换 markdown"))
 	}
@@ -373,9 +373,9 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
-	options := []post_translators.Option{}
+	options := []renderers.Option{}
 	if in.OpenLinksInNewTab {
-		options = append(options, post_translators.WithOpenLinksInNewTab())
+		options = append(options, renderers.WithOpenLinksInNewTab())
 	}
 	// TODO 安全检查：PostID 应该和 Referer 一致。
 	html := s.convertCommentMarkdown(user, `markdown`, in.Markdown, int64(in.PostId), options...)

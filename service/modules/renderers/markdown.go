@@ -1,4 +1,4 @@
-package post_translators
+package renderers
 
 import (
 	"bytes"
@@ -31,8 +31,8 @@ import (
 	html5 "golang.org/x/net/html"
 )
 
-// MarkdownTranslator ...
-type _MarkdownTranslator struct {
+// Markdown ...
+type _Markdown struct {
 	pathResolver       PathResolver
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
@@ -48,11 +48,11 @@ func init() {
 	imageKind = ast.NewNodeKind(`image`)
 }
 
-type Option func(me *_MarkdownTranslator) error
+type Option func(me *_Markdown) error
 
 // 解析 Markdown 中的相对链接。
 func WithPathResolver(pathResolver PathResolver) Option {
-	return func(me *_MarkdownTranslator) error {
+	return func(me *_Markdown) error {
 		me.pathResolver = pathResolver
 		return nil
 	}
@@ -60,7 +60,7 @@ func WithPathResolver(pathResolver PathResolver) Option {
 
 // 移除 Markdown 中的标题（适用于文章）。
 func WithRemoveTitleHeading(remove bool) Option {
-	return func(me *_MarkdownTranslator) error {
+	return func(me *_Markdown) error {
 		me.removeTitleHeading = remove
 		return nil
 	}
@@ -68,7 +68,7 @@ func WithRemoveTitleHeading(remove bool) Option {
 
 // 不允许评论中存在任何级别的“标题”。
 func WithDisableHeadings(disable bool) Option {
-	return func(me *_MarkdownTranslator) error {
+	return func(me *_Markdown) error {
 		me.disableHeadings = disable
 		return nil
 	}
@@ -76,7 +76,7 @@ func WithDisableHeadings(disable bool) Option {
 
 // 不允许使用 HTML 标签。
 func WithDisableHTML(disable bool) Option {
-	return func(me *_MarkdownTranslator) error {
+	return func(me *_Markdown) error {
 		me.disableHTML = disable
 		return nil
 	}
@@ -85,14 +85,14 @@ func WithDisableHTML(disable bool) Option {
 // 新窗口打开链接。
 // TODO 目前只能针对 Markdown 链接， HTML 标签链接不可用。
 func WithOpenLinksInNewTab() Option {
-	return func(me *_MarkdownTranslator) error {
+	return func(me *_Markdown) error {
 		me.openLinksInNewTab = true
 		return nil
 	}
 }
 
-func NewMarkdownTranslator(options ...Option) *_MarkdownTranslator {
-	me := &_MarkdownTranslator{}
+func NewMarkdown(options ...Option) *_Markdown {
+	me := &_Markdown{}
 	for _, option := range options {
 		if err := option(me); err != nil {
 			log.Println(err)
@@ -101,8 +101,7 @@ func NewMarkdownTranslator(options ...Option) *_MarkdownTranslator {
 	return me
 }
 
-// Translate ...
-func (me *_MarkdownTranslator) Translate(source string) (string, string, error) {
+func (me *_Markdown) Render(source string) (string, string, error) {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
@@ -201,7 +200,7 @@ func (n *_Image) Dump(source []byte, level int) { ast.DumpHelper(n, source, leve
 func (n *_Image) Type() ast.NodeType            { return ast.TypeInline }
 func (n *_Image) Kind() ast.NodeKind            { return imageKind }
 
-func (me *_MarkdownTranslator) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
 		return ast.WalkContinue, nil
 	}

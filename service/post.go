@@ -12,7 +12,7 @@ import (
 	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taoblog/service/modules/post_translators"
+	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -116,7 +116,7 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	return out, nil
 }
 
-func (s *Service) PathResolver(id int64) post_translators.PathResolver {
+func (s *Service) PathResolver(id int64) renderers.PathResolver {
 	return &PathResolver{s: s, id: id}
 }
 
@@ -139,20 +139,20 @@ func (s *Service) getPostContent(id int64) (string, error) {
 		var p models.Post
 		s.posts().Select("source_type,source").Where("id = ?", id).MustFind(&p)
 		var content string
-		var tr post_translators.PostTranslator
+		var tr renderers.Renderer
 		switch p.SourceType {
 		case `markdown`:
-			mt := post_translators.NewMarkdownTranslator(
-				post_translators.WithPathResolver(s.PathResolver(id)),
-				post_translators.WithRemoveTitleHeading(true),
+			mt := renderers.NewMarkdown(
+				renderers.WithPathResolver(s.PathResolver(id)),
+				renderers.WithRemoveTitleHeading(true),
 			)
 			tr = mt
 		case `html`:
-			tr = &post_translators.HTMLTranslator{}
+			tr = &renderers.HTML{}
 		default:
 			return ``, fmt.Errorf(`unknown source type`)
 		}
-		_, content, err := tr.Translate(p.Source)
+		_, content, err := tr.Render(p.Source)
 		if err != nil {
 			return ``, err
 		}
@@ -418,17 +418,18 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	if hasSource && hasSourceType {
-		var tr post_translators.PostTranslator
+		var tr renderers.Renderer
 		switch in.Post.SourceType {
 		case "html":
-			tr = &post_translators.HTMLTranslator{}
+			tr = &renderers.HTML{}
 		case "markdown":
-			tr = post_translators.NewMarkdownTranslator()
+			tr = renderers.NewMarkdown()
 		default:
 			panic("no translator found")
 		}
 
-		title, _, err := tr.Translate(in.Post.Source)
+		// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
+		title, _, err := tr.Render(in.Post.Source)
 		if err != nil {
 			panic(err)
 		}
