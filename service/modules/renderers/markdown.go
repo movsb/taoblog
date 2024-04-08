@@ -123,6 +123,7 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	var title string
 	maxDepth := 10000 // this is to avoid unwanted infinite loop.
 	n := 0
+	// TODO 移除这个循环，换 AstWalk
 	for p := doc.FirstChild(); p != nil && n < maxDepth; n++ {
 		switch {
 		case p.Kind() == ast.KindHeading:
@@ -135,7 +136,7 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 					parent := heading.Parent()
 					parent.RemoveChild(parent, heading)
 					// p 已经 next，否则循环结束的时候再 next 会出错
-					// continue
+					continue
 				}
 			}
 		}
