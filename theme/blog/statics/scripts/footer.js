@@ -261,9 +261,7 @@ class __Vim {
 				}
 			},
 			w: function() {
-				let elem = document.getElementById('content');
-				let maxWidth = elem.style.maxWidth;
-				elem.style.maxWidth = maxWidth == 'unset' ? 'var(--max-width)' : 'unset';
+				document.body.classList.toggle("wide");
 			},
 			r: function() {
 				location.reload();

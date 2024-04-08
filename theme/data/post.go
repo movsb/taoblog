@@ -103,3 +103,11 @@ func (p *Post) Outdated() bool {
 	}
 	return false
 }
+
+// 是否开启宽屏？
+func (p *Post) Wide() bool {
+	if value, ok := p.Metas[`wide`]; ok && (value == `true` || value == `1`) {
+		return true
+	}
+	return false
+}

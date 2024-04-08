@@ -17,7 +17,7 @@
 	<script src="/scripts/header.js"></script>
     {{ render "custom_header" . }}
 </head>
-<body class="line-numbers">
+<body class="{{ $.BodyClass }}">
 <div id="wrapper">
     <!-- 头部开始 -->
 	{{ if not .Post }}

@@ -3,6 +3,7 @@ package data
 import (
 	"html/template"
 	"io"
+	"strings"
 
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
@@ -47,6 +48,18 @@ type Data struct {
 
 	// If it is the tag.
 	Tag *TagData
+}
+
+func (d *Data) BodyClass() string {
+	c := []string{
+		`line-numbers`,
+	}
+	if d.Post != nil {
+		if d.Post.Post.Wide() {
+			c = append(c, `wide`)
+		}
+	}
+	return strings.Join(c, ` `)
 }
 
 func (d *Data) Author() string {

@@ -1,7 +1,11 @@
 /* 内容 */
 
 #content {
-    max-width: var(--max-width);
+	max-width: var(--max-width);
+}
+
+body.wide #content {
+	max-width: unset;
 }
 
 #content {
