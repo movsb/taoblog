@@ -91,6 +91,7 @@ func (c *Client) CreatePost() error {
 	cfg.Modified = rp.Modified
 	c.savePostConfig(&cfg)
 
+	// TODO 应该先上传文件，但是会拿不到编号
 	c.UploadPostFiles(assets)
 
 	return nil
@@ -207,6 +208,7 @@ func (c *Client) UpdatePost() error {
 	cfg.Metas = rp.Metas
 	c.savePostConfig(&cfg)
 
+	// TODO 应该先上传文件，但是会拿不到编号
 	c.UploadPostFiles(assets)
 
 	return nil

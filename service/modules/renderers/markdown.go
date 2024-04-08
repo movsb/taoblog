@@ -138,18 +138,6 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 					// continue
 				}
 			}
-		case p.Kind() == ast.KindParagraph:
-			para := p.(*ast.Paragraph)
-			for c := para.FirstChild(); c != nil; c = c.NextSibling() {
-				if c.Kind() == ast.KindImage {
-					oldImage := c.(*ast.Image)
-					newImage := &_Image{
-						image: oldImage,
-					}
-					para.ReplaceChild(para, oldImage, newImage)
-					c = newImage
-				}
-			}
 		}
 		p = p.NextSibling()
 	}
@@ -160,6 +148,13 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering {
 			switch n.Kind() {
+			case ast.KindImage:
+				oldImage := n.(*ast.Image)
+				newImage := &_Image{
+					image: oldImage,
+				}
+				parent := n.Parent()
+				parent.ReplaceChild(parent, oldImage, newImage)
 			case ast.KindHeading:
 				if me.disableHeadings {
 					panic(exception.NewValidationError(`Markdown 不能包含标题`))
