@@ -331,3 +331,12 @@ class __Vim {
 }
 
 TaoBlog.vim = new __Vim();
+
+// 加载字体
+(function() {
+	let link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.type = 'text/css';
+	link.href = 'https://npm.elemecdn.com/lxgw-wenkai-webfont/style.css';
+	document.head.appendChild(link);
+}) ();
