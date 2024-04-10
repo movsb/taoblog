@@ -19,7 +19,6 @@ import (
 
 	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
-	"github.com/movsb/taoblog/modules/exception"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -29,6 +28,8 @@ import (
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 	html5 "golang.org/x/net/html"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Markdown ...
@@ -158,11 +159,11 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 				parent.ReplaceChild(parent, oldImage, newImage)
 			case ast.KindHeading:
 				if me.disableHeadings {
-					panic(exception.NewValidationError(`Markdown 不能包含标题`))
+					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含标题元素。`)
 				}
 			case ast.KindHTMLBlock, ast.KindRawHTML:
 				if me.disableHTML {
-					panic(exception.NewValidationError(`Markdown 不能包含 HTML 元素`))
+					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含 HTML 标签。`)
 				}
 			case ast.KindAutoLink, ast.KindLink:
 				if me.openLinksInNewTab {
@@ -174,7 +175,7 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		}
 		return ast.WalkContinue, nil
 	}); err != nil {
-		panic(err)
+		return ``, ``, err
 	}
 
 	rdr := md.Renderer()
