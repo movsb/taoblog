@@ -3,11 +3,12 @@ class ImageView {
 
 	init() {
 		this._initView();
+		
+		this._rootDiv   = document.getElementById('img-view');
+		this._elemImg   = this._rootDiv.querySelector(':scope > img');
+		this._elemInfo  = this._rootDiv.querySelector(':scope .info');
+		this._elemTip   = this._rootDiv.querySelector(':scope .tip');
 
-		this._$imgView = $('#img-view');
-		this._$img = $('#img-view > img');
-		this._$info = $('#img-view .info');
-		this._$tip = $('#img-view .tip');
 		this._imageIndex = -1;
 		this._scale = 1;
 		this._transform = {};
@@ -15,7 +16,7 @@ class ImageView {
 		this._countDown = 3;
 		setInterval(function () {
 			if (--this._countDown == 0) {
-				this._$info.hide();
+				this._elemInfo.style.display = 'none';
 			}
 		}.bind(this), 1000);
 
@@ -24,9 +25,13 @@ class ImageView {
 		this._boundEvents = {};
 
 		this._initBindings();
-
-		this._images = $('.entry img');
-		this._images.click(this._onPostImageClick.bind(this));
+		
+		let images = document.querySelectorAll('.entry img');
+		let self = this;
+		images.forEach(function(img) {
+			img.addEventListener('click', self._onPostImageClick.bind(self));
+		});
+		this._images = images;
 
 		this._retina = false;
 	}
@@ -69,13 +74,11 @@ class ImageView {
 		}
 	}
 	_showInfo(rawWidth, rawHeight, scale) {
-		var s = '';
-		s += '第 ' + (this._imageIndex + 1) + '/' + this._images.length + ' 张';
-		s += '，原始尺寸：' + rawWidth + '*' + rawHeight;
-		s += '，缩放比例：' + Math.round(scale * 100) + '%';
-
-		this._$info.text(s);
-		this._$info.show();
+		let s = `第 ${this._imageIndex+1}/${this._images.length} 张`
+		+ `，原始尺寸：${rawWidth}x${rawHeight}，缩放比例：${Math.round(scale*100)}%`;
+		
+		this._elemInfo.innerText = s;
+		this._elemInfo.style.display = 'block';
 		this._countDown = 3;
 	}
 	nextImage(dir) {
@@ -99,46 +102,51 @@ class ImageView {
 		return s;
 	}
 	rotateImage(fwd) {
+		let img = this._elemImg;
 		if (fwd == undefined) {
 			this._transform = {};
-			this._$img.css('transform', this.transforms());
+			img.style.transform = this.transforms();
 			this._degree = 0;
 			this._scale = 1;
 		} else {
 			this._degree += !!fwd ? +90 : -90;
-			this._$img.attr('data-busy', '1');
-			this._$img.css('transition', 'transform 0.3s linear');
-			this._transform.rotateZ = this._degree + 'deg';
-			this._$img.css('transform', this.transforms());
+			img.setAttribute('data-busy', '1');
+			img.style.transition = 'transform 0.3s linear';
+			this._transform.rotateZ = `${this._degree}deg`;
+			img.style.transform = this.transforms();
 		}
 	}
 	viewImage(img) {
 		if (img != null) {
 			// tips
-			var tip_times_total = 1;
-			var tip_times = +this._$img.attr('data-times') || 0;
+			let tip_times_total = 1;
+			let tip_times = +this._elemImg.getAttribute('data-times') || 0;
 
 			if (tip_times == 0) {
-				this._$tip.text('左键拖动，上中下键旋转，滚动缩放，左右切换；单击图片或空白区域退出。');
+				this._elemTip.innerText = '左键拖动，上中下键旋转，滚动缩放，左右切换；单击图片或空白区域退出。';
 			}
 
 			if (tip_times < tip_times_total) {
 				tip_times++;
-				this._$img.attr('data-times', tip_times);
+				this._elemImg.setAttribute('data-times', tip_times);
 			} else if (tip_times == tip_times_total) {
-				this._$tip.hide();
+				this._elemTip.style.display = 'none';
 			}
+			
+			this._elemImg.addEventListener('load', function() {
+				this._rootDiv.style.display = 'block';
 
-			this._$img[0].onload = function () {
-				this._rawWidth = this._$img.prop('naturalWidth');
-				this._rawHeight = this._$img.prop('naturalHeight');
+				// console.log(this._rootDiv.clientWidth);
+				this._rawWidth = this._elemImg.naturalWidth;
+				this._rawHeight = this._elemImg.naturalHeight;
 
-				var initScale = this._retina ? 0.5 : 1;
-				var initWidth = this._rawWidth * initScale;
-				var initHeight = this._rawHeight * initScale;
+				let initScale = this._retina ? 0.5 : 1;
+				let initWidth = this._rawWidth * initScale;
+				let initHeight = this._rawHeight * initScale;
 
 				{
-					var scaleWidth = this._$imgView.width() / initWidth, scaleHeight = this._$imgView.height() / initHeight;
+					let scaleWidth  = this._rootDiv.clientWidth  / initWidth;
+					let scaleHeight = this._rootDiv.clientHeight / initHeight;
 
 					// if smaller than container
 					if (scaleWidth >= 1 && scaleHeight >= 1) {
@@ -154,46 +162,51 @@ class ImageView {
 					initHeight = this._rawHeight * initScale;
 				}
 
-				this._$img.css('left', (this._$imgView.width() - initWidth) / 2 + 'px');
-				this._$img.css('top', (this._$imgView.height() - initHeight) / 2 + 'px');
-				this._$img.css('width', initWidth + 'px');
-				this._$img.css('height', initHeight + 'px');
-				this._$imgView.show();
-
-				$('body').css('max-height', window.innerHeight);
-				$('body').css('overflow', 'hidden');
+				let img = this._elemImg;
+				img.style.left      = `${(this._rootDiv.clientWidth  - initWidth) /2}px`;
+				img.style.top       = `${(this._rootDiv.clientHeight - initHeight)/2}px`;
+				img.style.width     = `${initWidth}px`;
+				img.style.height    = `${initHeight}px`;
+				img.style.display   = 'block';
+				
+				let body =document.body;
+				body.style.maxHeight = window.innerHeight + 'px';
+				body.style.overflow = 'hidden';
 
 				this._showInfo(this._rawWidth, this._rawHeight, initScale);
-			}.bind(this);
-			this._$img[0].onerror = function () {
+			}.bind(this));
+
+			this._elemImg.onerror = function () {
 				this._showInfo(0, 0, 0);
 			}.bind(this);
-			var src = img.src;
+
+			let src = img.src;
 			if (img.classList.contains('transparent')) {
-				this._$img[0].classList.add('transparent');
+				this._elemImg.classList.add('transparent');
 			} else {
-				this._$img[0].classList.remove('transparent');
+				this._elemImg.classList.remove('transparent');
 			}
 			this._retina = src.indexOf('@2x.') != -1;
-			this._$img.attr('src', src);
+			this._elemImg.src = src;
 		} else {
 			// 以下两行清除因拖动导致的设置
-			this._$img.css('left', '0px');
-			this._$img.css('top', '0px');
-			$('body').css('max-height', 'none');
-			$('body').css('overflow', 'auto');
+			this._elemImg.style.left = '0';
+			this._elemImg.style.top = '0';
+			document.body.style.maxHeight = 'none';
+			document.body.style.overflow = 'auto';
 
 			// 清除旋转
 			this._transform = {};
-			this._$img.css('transform', this.transforms());
+			this._elemImg.style.transform = this.transforms();
 
 			this._dragging = false;
 			this._scale = 1;
 			this._degree = 0;
-			this._$imgView.hide();
+			this._elemImg.style.display = 'none';
+			this._rootDiv.style.display = 'none';
 
 			// 清除透明
-			this._$img[0].classList.remove('transparent');
+			this._elemImg.classList.remove('transparent');
 		}
 
 		if (img != null) {
@@ -222,27 +235,38 @@ class ImageView {
 		div.innerHTML = html;
 		document.body.appendChild(div.firstElementChild);
 	}
+
 	_initBindings() {
 		this._boundEvents.keyHandler = this._keyHandler.bind(this);
 
-		this._$img.on('mousedown', this._onImgMouseDown.bind(this));
-		this._$img.on('mousemove', this._onImgMouseMove.bind(this));
-		this._$img.on('mouseup', this._onImgMouseUp.bind(this));
-		this._$img.on('click', this._onImgClick.bind(this));
-		this._$img.on('dblclick', this._onImgDblClick.bind(this));
-		this._$img.on('transitionend', this._onTransitionEnd.bind(this));
-
-		this._$imgView.on('wheel', this._onDivMouseWheel.bind(this));
-		this._$imgView.on('mousemove', this._onDivMouseMove.bind(this));
-		this._$imgView.on('click', this._onDivClick.bind(this));
+		let imgHandlers = {
+			'mousedown':        this._onImgMouseDown,
+			'mousemove':        this._onImgMouseMove,
+			'mouseup':          this._onImgMouseUp,
+			'click':            this._onImgClick,
+			'dblclick':         this._onImgDblClick,
+			'transitionend':    this._onTransitionEnd,
+		};
+		for (let key in imgHandlers) {
+			this._elemImg.addEventListener(key, imgHandlers[key].bind(this));
+		}
+		
+		let divHandlers = {
+			'wheel':        this._onDivMouseWheel,
+			'mousemove':    this._onDivMouseMove,
+			'click':        this._onDivClick,
+		};
+		for (let key in divHandlers) {
+			this._rootDiv.addEventListener(key, divHandlers[key].bind(this));
+		}
 	}
 	_onImgMouseDown(e) {
-		if (this._$img.attr('data-busy') == '1') {
+		if (this._elemImg.getAttribute('data-busy') == '1') {
 			e.preventDefault();
 			return false;
 		}
 
-		var target = e.target;
+		let target = e.target;
 
 		// http://stackoverflow.com/a/2725963
 		if (e.which == 1) { // left button
@@ -250,7 +274,7 @@ class ImageView {
 			this._offsetY = e.clientY;
 
 			this._coordX = parseInt(target.style.left);
-			this._corrdY = parseInt(target.style.top);
+			this._coordY = parseInt(target.style.top);
 
 			this._dragging = true;
 		} else if (e.which == 2) { // middle button
@@ -265,10 +289,10 @@ class ImageView {
 			return false;
 		}
 
-		var left = this._coordX + e.clientX - this._offsetX + 'px';
-		var top = this._corrdY + e.clientY - this._offsetY + 'px';
+		let left = this._coordX + e.clientX - this._offsetX + 'px';
+		let top = this._coordY + e.clientY - this._offsetY + 'px';
 
-		var target = e.target;
+		let target = e.target;
 		target.style.left = left;
 		target.style.top = top;
 
@@ -278,13 +302,15 @@ class ImageView {
 	_onImgMouseUp(e) {
 		this._dragging = false;
 		e.preventDefault();
+		console.log('exit dragging');
 		return false;
 	}
 	_onImgClick(e) {
-		var smallMove = false;
+		console.log('img: click');
+		let smallMove = false;
 		{
-			var horz = Math.abs(e.clientX - this._offsetX);
-			var vert = Math.abs(e.clientY - this._offsetY);
+			let horz = Math.abs(e.clientX - this._offsetX);
+			let vert = Math.abs(e.clientY - this._offsetY);
 
 			if (horz <= 1 && vert <= 1) {
 				smallMove = true;
@@ -293,9 +319,11 @@ class ImageView {
 
 		if (smallMove) {
 			this.viewImage(null);
+			console.log('hide because of small move');
 		}
 
 		e.preventDefault();
+		e.stopPropagation();
 		return false;
 	}
 	_onImgDblClick(e) {
@@ -304,20 +332,22 @@ class ImageView {
 		return false;
 	}
 	_onTransitionEnd(e) {
-		this._$img.css('transition', '');
-		this._$img.attr('data-busy', '');
+		this._elemImg.style.transition = '';
+		this._elemImg.setAttribute('data-busy', '');
 	}
 	_onDivMouseWheel(e) {
-		if (this._$img.attr('data-busy') == '1') {
+		if (this._elemImg.getAttribute('data-busy') == '1') {
 			e.preventDefault();
 			return false;
 		}
 
 		// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
-		this._scale += e.originalEvent.deltaY * -0.01;
-		this._scale = Math.min(Math.max(.125, this._scale), 4);
+		// 根据 delta 值（正、负）求得允许范围内的新的缩放值。
+		this._scale += e.deltaY * -0.01;
+		this._scale = Math.min(Math.max(.25, this._scale), 5);
+
 		this._transform.scale = this._scale;
-		this._$img.css('transform', this.transforms());
+		this._elemImg.style.transform = this.transforms();
 
 		this._showInfo(this._rawWidth, this._rawHeight, this._scale);
 
@@ -326,10 +356,11 @@ class ImageView {
 	}
 	_onDivMouseMove(e) {
 		if (this._dragging) {
-			var left = this._corrdX + e.clientX - this._offsetX + 'px';
-			var top = this._corrdY + e.clientY - this._offsetY + 'px';
-			this._$img.css('left', left);
-			this._$img.css('top', top);
+			let left = this._coordX + e.clientX - this._offsetX + 'px';
+			let top = this._coordY + e.clientY - this._offsetY + 'px';
+			this._elemImg.style.left = left;
+			this._elemImg.style.top = top;
+			// console.log('left & top: ', left, top);
 			return false;
 		}
 
@@ -340,5 +371,5 @@ class ImageView {
 	}
 }
 
-var imgview = new ImageView();
-imgview.init();
+var imgView = new ImageView();
+imgView.init();
