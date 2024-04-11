@@ -13,33 +13,37 @@
 		}
 	};
 
-	var $body = $('body');
-    // jQuery adds _ parameter to skip cache
-    var s = document.createElement('script');
-    s.src= 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js';
-    s.async = true;
-    $body[0].appendChild(s);
+	// jQuery adds _ parameter to skip cache
+	let s = document.createElement('script');
+	s.src= 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js';
+	s.async = true;
+	document.body.appendChild(s);
 
-    var mathjaxTimer;
+    let mathjaxTimer;
     mathjaxTimer = setInterval(function(){
         if(!window.MathJax || !MathJax.isReady) return;
         clearInterval(mathjaxTimer);
 
 		console.log('mathjax loaded');
+		
+		let p = document.createElement('p');
+		p.innerText = '$a$';
 
-        MathJax.Hub.Typeset($('<p>$a$</p>').get(0), function(){
+        MathJax.Hub.Typeset(p, function(){
 			console.log('typeset warming-up');
 
 			// for old-styled maths
-            $('code:not([class*="lang"])').each(function(_, e) {
-                var html = $(e).html();
+            document.querySelectorAll('code:not([class*="lang"])').forEach(function(e) {
+				let html = e.innerHTML;
                 if(html.startsWith('$') && html.endsWith('$')) {
-                    var wrap = $(html.startsWith('$$') ? '<div/>' : '<span/>')
-                        .css('margin', '3px')
-                        .html(html)[0];
-                    MathJax.Hub.Typeset(wrap);
+					let parent = document.createElement('div');
+					parent.innerHTML = html.startsWith('$$') ? '<div></div>' : '<span></span>';
+					let child = parent.firstElementChild;
+					child.style.margin = '3px';
+					child.innerHTML = html;
+                    MathJax.Hub.Typeset(child);
                     // console.log('Typeset: ', e);
-                    $(e).replaceWith(wrap);
+					e.replaceWith(child);
                 }
 			});
 
