@@ -1,4 +1,3 @@
-
 function __TaoBlog()
 {
     function EventDispatcher()
@@ -55,48 +54,39 @@ TaoBlog.fn.externAnchor = function() {
 }();
 
 // 代码高亮
-TaoBlog.fn.highlight = function(re) {
-	var e = $(re);
-	var lang = e.attr('lang');
-	// https://stackoverflow.com/a/1318091/3628322
-	var hasLang = typeof lang !== typeof undefined && lang !== false;
-	var hasCode = e.find('>code').length > 0;
-	// console.log(re, hasLang, hasCode);
-	if(hasLang && !hasCode) {
-		let code = $('<code/>').html(e.html());
-		code.addClass("language-" + lang);
-		e.removeAttr('lang');
-		e.html('');
-		e.append(code);
-		hasCode = true;
-	}
-	if (re.classList.length == 0) {
-		re.classList.add('language-none');
-	}
-	if(hasCode) {
-		console.log('有代码');
-		e.removeClass('code');
-		// TODO
-		// e.addClass('line-numbers');
-		Prism.highlightAllUnder(re);
-	} else {
-		console.log('没有 code', re);
+TaoBlog.fn.highlight = function(pre) {
+	// 必须是 <pre><code class="language-xxx"></code></pre>
+	{
+		let code = pre.querySelector(':scope > code');
+		if (code) {
+			let hasLang = false;
+			code.classList.forEach(function(name) {
+				if (!hasLang && /^language-/.test(name)) {
+					hasLang = true;
+				}
+			});
+			if (!hasLang) {
+				code.classList.add('language-none');
+			}
+		}
 	}
 
-	let lines = re.querySelector('span.line-numbers-rows');
-	if(lines === null) {
-		console.log('没有行号');
-		return;
+	Prism.highlightAllUnder(pre);
+
+	// 自动滚动行号
+	{
+		let lines = pre.querySelector('span.line-numbers-rows');
+		if(!lines) { return; }
+		let div = document.createElement('div');
+		div.classList.add('line-numbers-wrapper');
+		let code = lines.parentElement;
+		code.appendChild(div);
+		lines.remove();
+		div.appendChild(lines);
+		code.addEventListener('scroll', function() {
+			lines.style.top = `-${code.scrollTop}px`;
+		});
 	}
-	let div = document.createElement('div');
-	div.classList.add('line-numbers-wrapper');
-	let code = lines.parentElement;
-	code.appendChild(div);
-	lines.remove();
-	div.appendChild(lines);
-	code.addEventListener('scroll', function() {
-		lines.style.top = '-' + code.scrollTop + 'px';
-	});
 };
 
 TaoBlog.fn.fadeIn = function(elem, callback) {

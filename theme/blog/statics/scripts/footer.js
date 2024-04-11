@@ -158,7 +158,7 @@ function hasMath() {
 }
 
 if(hasMath()) {
-    var s = document.createElement('script');
+	let s = document.createElement('script');
     s.src = '/plugins/mathjax/mathjax.js';
     s.async = true;
     document.body.appendChild(s);
@@ -167,15 +167,15 @@ if(hasMath()) {
 
 // 代码高亮
 (function(){
-var s = document.createElement('script');
-s.src = '/plugins/highlight/prism.js';
+let s = document.createElement('script');
 s.async = false;
 s.setAttribute('data-manual', '');
 s.onload = function() {
-	$('pre').each(function(_, re, _){
-		TaoBlog.fn.highlight(re);
+	document.querySelectorAll('pre').forEach(function(pre) {
+		TaoBlog.fn.highlight(pre);
 	});
 };
+s.src = '/plugins/highlight/prism.js';
 document.body.appendChild(s);
 
 TaoBlog.events.add('comment', 'post', function(jItem) {
