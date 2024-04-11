@@ -3,7 +3,7 @@
     position: fixed;
     z-index: 1000000;
     display: none;
-    background-color: var(--toolbar-imgview-bg);
+    background-color: rgba(0,0,0,0.85);
     left: 0px;
     top: 0px;
     right: 0px;
@@ -27,7 +27,6 @@
         bottom: 20px;
         text-align: center;
         color: aliceblue;
-        text-shadow: 0 0 3px #ff608d;
+		text-shadow: 0 0 3px var(--a-fg);
     }
 }
-
