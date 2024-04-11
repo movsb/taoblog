@@ -144,6 +144,10 @@ body.wide #content {
         margin: auto;
         box-shadow: var(--box-shadow);
     }
+
+	.toc {
+		display: none;
+	}
 }
 
 a {
@@ -164,48 +168,7 @@ blockquote {
 	opacity: 75%;
 }
 
-/* 目录 */
-@media screen and (min-width: 600px) {
-    .entry div.toc {
-        position: fixed;
-        box-sizing: border-box;
-        padding: 1rem;
-        top: 1rem;
-        right: 1rem;
-        max-height: 45%;
-        max-width: 320px;
-        overflow: auto;
-        border: 1px solid var(--border-color);
-        line-height: 1.5em;
-		color: var(--color-fg);
-		background-color: var(--color-bg);
-		z-index: 1000;
-		opacity: 0.88;
-    }
-}
-
 .entry {
-    div.toc {
-        .h2 {
-            margin: 0px;
-            font-size: 20px;
-        }
-
-        a {
-            color: inherit;
-            font-size: 12px;
-        }
-
-        a.active {
-            text-decoration: underline;
-        }
-
-        ul:first-of-type {
-            padding-left: 1em;
-            margin-bottom: 0px;
-        }
-    }
-
     object.pdf {
         width: 100%;
         height: 600px;
