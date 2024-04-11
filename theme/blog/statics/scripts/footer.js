@@ -1,19 +1,3 @@
-/* pre 的双击全选与全窗口 */
-(function() {
-    $('.entry pre, .entry code').on('dblclick', function(e) {
-        var t = e.target.tagName;
-        if(t == 'PRE' || t == 'CODE') {
-            var selection = window.getSelection();
-            var range = document.createRange();
-            range.selectNodeContents(e.target);
-            selection.removeAllRanges();
-            selection.addRange(range);
-            e.preventDefault();
-            return;
-        }
-    });
-})();
-
 // 图片来源
 (function() {
     function replace(img) {
