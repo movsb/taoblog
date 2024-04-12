@@ -35,11 +35,23 @@ func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
 
 	defer resp.Body.Close()
 
-	for name, value := range resp.Header {
-		in.SetHeader(name, value[0])
+	// 删除可能有隐私的头部字段。
+	// TODO：内部缓存，只正向代理 body。
+	for k := range knownHeaders {
+		if v := resp.Header.Get(k); v != "" {
+			in.SetHeader(k, v)
+		}
 	}
 
 	in.SetStatus(resp.StatusCode)
 
 	io.Copy(in.W, resp.Body)
+}
+
+var knownHeaders = map[string]bool{
+	`Content-Length`: true,
+	`Content-Type`:   true,
+	`Last-Modified`:  true,
+	`Expires`:        true,
+	`Cache-Control`:  true,
 }
