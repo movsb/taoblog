@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 )
@@ -62,6 +63,7 @@ func github(ctx context.Context, email string, p *Params) (*http.Response, error
 
 		githubLock.Lock()
 		githubEmailCache[email] = avatarURL
+		log.Println(`请求头像：`, avatarURL)
 		githubLock.Unlock()
 	}
 
