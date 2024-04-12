@@ -28,6 +28,7 @@
     imgs.forEach(function(img){ replace(img); });
 })();
 
+// 除非是早期的链接，后面由 markdown 生成的链接会自动标记。
 (function() {
 	let anchors = document.querySelectorAll('article a');
 	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
@@ -75,12 +76,12 @@ s.onload = function() {
 s.src = '/plugins/highlight/prism.js';
 document.body.appendChild(s);
 
-TaoBlog.events.add('comment', 'post', function(jItem) {
-	let pres = jItem[0].querySelectorAll(':scope > .comment-content pre');
+TaoBlog.events.add('comment', 'post', function(item, cmt) {
+	let pres = item.querySelectorAll(':scope > .comment-content pre');
 	pres.forEach(function(pre) {
 		TaoBlog.fn.highlight(pre);
 	});
-	let anchors = jItem[0].querySelectorAll(':scope a');
+	let anchors = item.querySelectorAll(':scope a');
 	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
 });
 })();

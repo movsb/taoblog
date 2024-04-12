@@ -44,14 +44,137 @@ document.write(function(){/*
 	</div>
 */}.toString().slice(14,-3));
 
+class CommentAPI
+{
+	constructor(postID) {
+		this._postID = postID;
+	}
+
+	// 返回文章的评论数。
+	async getCountForPost() {
+		let path = `/v3/posts/${this._postID}/comments:count`;
+		let rsp = await fetch(path);
+		if (!rsp.ok) { throw rsp.statusText; }
+		let json = await rsp.json();
+		return +json.count;
+	}
+	
+	// 创建一条评论。
+	async createComment(bodyObj) {
+		let path = `/v3/posts/${this._postID}/comments`;
+		let rsp = await fetch(path, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(bodyObj)
+		});
+		if (!rsp.ok) {
+			throw new Error('发表失败：' + (await rsp.json()).message);
+		}
+		return await rsp.json();
+	}
+
+	// 更新/“编辑”一条已有评论。
+	// 返回更新后的评论项。
+	// 参数：id        - 评论编号
+	// 参数：source    - 评论 markdown 原文
+	async updateComment(id, source) {
+		let path = `/v3/comments/${id}`;
+		let rsp = await fetch(path, {
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				comment: {
+					source_type: 'markdown',
+					source: source
+				},
+				update_mask: 'source,sourceType'
+			})
+		});
+		if (!rsp.ok) { throw new Error('更新失败：' + (await rsp.json()).message); }
+		return await rsp.json();
+	}
+
+	// 返回头像链接。
+	avatarURLOf(id) {
+		return `/v3/comments/${id}/avatar`;
+	}
+	
+
+	// 删除一条评论。
+	async deleteComment(id) {
+		let path = `/v3/comments/${id}`;
+		let rsp = await fetch(path, {
+			method: 'DELETE'
+		});
+		if (!rsp.ok) { throw new Error(rsp.statusText); }
+	}
+
+	// 评论预览。
+	async previewComment(postID, source) {
+		let path = `/v3/comments:preview`;
+		let rsp = await fetch(path, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				markdown: source,
+				open_links_in_new_tab: true,
+				post_id: postID
+			})
+		});
+		if (!rsp.ok) {
+			throw new Error((await rsp.json()).message);
+		}
+		return await rsp.json();
+	}
+	
+	// 列举评论。
+	async listComments(postID, args) {
+		let path = `/v3/posts/${postID}/comments?${args}`;
+		let rsp = await fetch(path);
+		if (!rsp.ok) {
+			throw new Error(rsp.statusText);
+		}
+		return await rsp.json();
+	}
+}
+
+// 代表一个用来操作评论项的类。
+class CommentNode {
+	constructor(node) {
+		this._node = node;
+	}
+
+	setContent(html) {
+		let content = this._node.querySelector(':scope > .comment-content');
+		content.innerHTML = html;
+	}
+}
+
 function Comment() {
     this._count  =0;
     this._loaded = 0;       // 已加载评论数
 	this._loaded_ch = 0;
 	this.post_id = 0;
-	this.parent = 0;
-	this.being_edited = 0; // 正在被编辑的 ID，仅编辑时有效，> 0 时有效
+	
+	this.being_replied = 0; // 正在回复的评论。
+	this.being_edited = 0;  // 正在被编辑的 ID，仅编辑时有效，> 0 时有效
 
+	// 页面评论数量。
+	this._elemTotal = document.querySelector('#comment-title .total');
+	// 总评论列表。
+	this._elemList = document.querySelector('#comment-list');
+	
+	// 每篇文章都有 `_post_id`。
+	this.api = new CommentAPI(+_post_id);
+
+	// 当前页面的所有已加载的评论。
+	// 缓存起来的目的是为了“编辑”。
 	TaoBlog.comments = {};
 }
 
@@ -69,75 +192,64 @@ Comment.prototype.init = function() {
 		});
 	});
 
-    // Ajax评论提交
-    $('#comment-submit').click(function() {
-		async function work() {
-			$(this).attr('disabled', 'disabled');
-			$('#comment-submit').val('提交中...');
-			try {
-				let cmt = {};
-				if (self.being_edited >0) {
-					cmt = await self.updateComment();
-					cmt = self.normalize_comment(cmt);
-					let wrap = document.querySelector(`#comment-${cmt.id}`);
-					let content = wrap.querySelector(':scope > .comment-content');
-					content.innerHTML = cmt.content;
-				 } else {
-					cmt = await self.postComment();
-					cmt = self.normalize_comment(cmt);
-					let parent = self.parent;
-					if(parent == 0) {
-						$('#comment-list').prepend(self.gen_comment_item(cmt));
-						// 没有父评论，避免二次加载。
-						self._loaded ++;
-					} else {
-						self.add_reply_div(parent);
-						$('#comment-reply-'+parent + ' ol:first').append(self.gen_comment_item(cmt));
-					}
-					$('#comment-'+cmt.id).fadeIn();
-					self._count++;
-					self.toggle_post_comment_button();
-				}
-				TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmt.id), cmt);
-				$('#comment-content').val('');
-				self.showCommentBox(false);
-				self.toggleShowPreview(false, false);
-				self.save_info();
-			} catch(e) {
-				alert(e);
-			} finally {
-				$('#comment-submit').val('发表评论');
-				$('#comment-submit').removeAttr('disabled');
+	// Ajax评论提交
+	let submit = document.querySelector('#comment-submit');
+	submit.addEventListener('click', async function(event){
+		event.preventDefault();
+		event.stopPropagation();
+		
+		try {
+			self.setStates({submitting: true});
+			if (self.being_edited >0) {
+				await self.updateComment();
+			 } else {
+				await self.createComment();
 			}
+		} catch(e) {
+			alert(e);
+		} finally {
+			self.setStates({submitted: true});
 		}
-		work();
-        return false;
-    });
+	});
 
-    $('#comment-form-div .closebtn').click(function(){
+	document.querySelector('#comment-form-div .closebtn').addEventListener('click', function(){
 		self.showCommentBox(false);
-    });
+	});
 
     window.addEventListener('scroll', function() {
         self.load_essential_comments();
     });
 
-    window.addEventListener('load', function() {
-        self.get_count(function() {
-            self.load_essential_comments();
-            self.toggle_post_comment_button(self._count == 0);
-        });
-    });
+	window.addEventListener('load', function() {
+		self.getCount();
+	});
 
 	document.getElementById('comment-wrap-lines').addEventListener('click', self.wrapLines.bind(self));
 	document.getElementById('comment-show-preview').addEventListener('click', self.showPreview.bind(self));
 
 	self.init_drag(document.getElementById('comment-form-div'));
 	
-	TaoBlog.events.add('comment', 'post', function(jItem, cmt) {
+	TaoBlog.events.add('comment', 'post', function(item, cmt) {
 		TaoBlog.comments[cmt.id] = cmt;
 	});
 };
+
+// 返回指定编号的评论项根元素节点。
+Comment.prototype.nodeOf = function(id) {
+	return document.querySelector(`#comment-${id}`);
+}
+Comment.prototype.replyList = function(id) {
+	return document.querySelector(`#comment-reply-${id} ol:first-child`);
+}
+Comment.prototype.clearContent = function() {
+	let content = document.querySelector('#comment-content');
+	content.value = '';
+}
+
+// 投递新增评论的通知消息。
+Comment.prototype.dispatch = function(node, cmt) {
+	TaoBlog.events.dispatch('comment', 'post', node, cmt);
+}
 
 // show         是否显示评论框
 // callback     显示/隐藏完成后的回调函数
@@ -160,9 +272,9 @@ Comment.prototype.showCommentBox = function(show, callback, options) {
 		
 		// 标题框
 		let status = document.getElementById('comment-title-status');
-		status.innerText = this.parent == 0
+		status.innerText = this.being_replied == 0
 			? '发表评论'
-			: this.parent > 0
+			: this.being_replied > 0
 				? '回复评论'
 				: this.being_edited > 0
 					? '编辑评论'
@@ -222,13 +334,15 @@ Comment.prototype.toggle_post_comment_button = function(show) {
             return;
         }
     }
-    if(show) {
-        $('#comment-title .post-comment').fadeOut();
-        $('.comment-func').fadeIn();
-    } else {
-        $('#comment-title .post-comment').fadeIn();
-        $('.comment-func').fadeOut();
-    }
+	let btn = document.querySelectorAll('#comment-title .post-comment');
+	let func = document.querySelectorAll('.comment-func');
+	if(show) {
+		btn.forEach((b)=>b.style.display = 'none');
+		func.forEach((f)=>TaoBlog.fn.fadeIn(f));
+	} else {
+		btn.forEach((b)=> b.style.display = 'unset');
+		func.forEach((f)=>TaoBlog.fn.fadeOut(f));
+	}
 };
 
 Comment.prototype.load_essential_comments = function() {
@@ -239,20 +353,20 @@ Comment.prototype.load_essential_comments = function() {
 	}
 };
 
-Comment.prototype.get_count = function(callback) {
-    let self = this;
-    $.get('/v3/posts/' + self.post_id + '/comments:count',
-        function(data) {
-            self._count = data.count;
-            $('#comment-title .total').text(self._count);
-            callback();
-        },
-        'json'
-    );
-};
+// 获取文章的最新评论数。
+// 获取完成后会自动按需加载评论。
+Comment.prototype.getCount = async function(callback) {
+	try {
+		let count = await this.api.getCountForPost();
 
-Comment.prototype.gen_avatar = function(id) {
-	return '/v3/comments/' + id + '/avatar';
+		this._elemTotal.innerText = count;
+		this._count = count;
+
+		this.load_essential_comments();
+		this.toggle_post_comment_button(this._count == 0);
+	} catch(e) {
+		alert(e);
+	}
 };
 
 Comment.prototype.normalize_content = function(c) {
@@ -341,7 +455,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	let html = `
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
-		<img src="${this.gen_avatar(cmt.id)}" width="48px" height="48px" title="${this.h2t(info)}"/>
+		<img src="${this.api.avatarURLOf(cmt.id)}" width="48px" height="48px" title="${this.h2t(info)}"/>
 	</div>
 	<div class="comment-meta">
 		<span class="${cmt.is_admin ? "author" : "nickname"}">${this.h2t(cmt.author)}</span>
@@ -365,33 +479,42 @@ Comment.prototype.gen_comment_item = function(cmt) {
 
 Comment.prototype.reply_to = function(p){
 	this.being_edited = -1;
-	this.parent = +p;
+	this.being_replied = +p;
 	this.move_to_center();
 	this.toggleShowPreview(false, false);
 	this.showCommentBox(true, function() {
-		$('#comment-content').focus();
+		document.querySelector('#comment-content').focus();
 	});
 };
 
 Comment.prototype.edit = function(c) {
 	this.being_edited = c;
-	this.parent = -1;
+	this.being_replied = -1;
 	this.move_to_center();
 	this.toggleShowPreview(false, false);
 	this.showCommentBox(true, function() {
-		$('#comment-content').focus();
+		document.querySelector('#comment-content').focus();
 	}, {
 		allowEditingInfo: false,
 	});
 };
 
 Comment.prototype.move_to_center = function() {
-	let e = $('#comment-form-div');
+	let div = document.querySelector('#comment-form-div');
 	let ww = window.innerWidth, wh = window.innerHeight;
-	let ew = e.outerWidth(), eh = e.outerHeight();
+	let ew = parseInt(getComputedStyle(div)['width']);
+	let eh = parseInt(getComputedStyle(div)['height']);
 	let left = (ww-ew)/2, top = (wh-eh)/2;
-	e.css('left', left+'px');
-	e.css('top', top+'px');
+	div.style.left = `${left}px`;
+	div.style.top = `${top}px`;
+	console.table({
+		ww: ww,
+		wh: wh,
+		ew: ew,
+		eh: eh,
+		left: left,
+		top: top,
+	});
 };
 
 // https://www.w3schools.com/howto/howto_js_draggable.asp
@@ -435,26 +558,26 @@ Comment.prototype.init_drag = function(elmnt) {
   }
 };
 
-Comment.prototype.delete_me = function(p) {
-    let self = this;
-	$.ajax({
-        url: '/v3/comments/' + p,
-        type: 'DELETE',
-        success: function() {
-            $('#comment-'+p).remove();
-            self._count--;
-            self.toggle_post_comment_button();
-		},
-        error: function(){
-            alert('删除失败。');
-        }
-    });
+Comment.prototype.delete_me = async function(id) {
+	try {
+		this.api.deleteComment(id);
+		let node = this.nodeOf(id);
+		node.remove();
+		this._count--;
+		this.toggle_post_comment_button();
+	} catch(e) {
+		alert(e);
+	}
 };
 
 // 为上一级评论添加div
 Comment.prototype.add_reply_div = function(id){
-	if($(`#comment-${id} .comment-replies`).length === 0){
-		$(`#comment-${id}`).append(`<div class="comment-replies" id="comment-reply-${id}"><ol></ol></div>`);
+	let replies = document.querySelectorAll(`#comment-${id} .comment-replies`);
+	if (replies.length == 0) {
+		let div = document.createElement('div');
+		div.innerHTML = `<div class="comment-replies" id="comment-reply-${id}"><ol></ol></div>`;
+		let parent = document.querySelector(`#comment-${id}`);
+		parent.appendChild(div.firstElementChild);
 	}
 };
 
@@ -464,9 +587,13 @@ Comment.prototype.append_children = function(ch, p) {
 
 		if(ch[i].parent == p) {
 			ch[i] = this.normalize_comment(ch[i]);
-			$(`#comment-reply-${p} ol:first`).append(this.gen_comment_item(ch[i]));
-			$(`#comment-${ch[i].id}`).fadeIn();
-			TaoBlog.events.dispatch('comment', 'post', $(`#comment-${ch[i].id}`), ch[i]);
+			let ol = document.querySelector(`#comment-reply-${p} ol:first-child`);
+			let div = document.createElement('div');
+			div.innerHTML = this.gen_comment_item(ch[i]);
+			ol.appendChild(div.firstElementChild);
+			let item = document.querySelector(`#comment-${ch[i].id}`);
+			TaoBlog.fn.fadeIn(item);
+			TaoBlog.events.dispatch('comment', 'post', item, ch[i]);
 			this.add_reply_div(ch[i].id);
 			this.append_children(ch, ch[i].id);
 			delete ch[i];
@@ -477,55 +604,56 @@ Comment.prototype.append_children = function(ch, p) {
 
 Comment.prototype.save_info = function() {
 	let commenter = {
-		name: $('#comment-form input[name=author]').val(),
-		email: $('#comment-form input[name=email]').val(),
-		url: $('#comment-form input[name=url]').val(),
+		name: document.querySelector('#comment-form input[name=author]').value,
+		email: document.querySelector('#comment-form input[name=email]').value,
+		url: document.querySelector('#comment-form input[name=url]').value,
 	};
 	localStorage.setItem('commenter', JSON.stringify(commenter));
 };
 
-Comment.prototype.load_comments = function() {
-    if (this.loading) {
-        return;
-    }
-    this.loading = true;
+Comment.prototype.load_comments = async function() {
+	if (this.loading) {
+		return;
+	}
 
-    let self = this;
+	let cmts = [];
 
-	$.get(
-		`/v3/posts/${self.post_id}/comments`,
-        {
-            limit: 10,
-			offset: self._loaded,
-			order_by: 'id desc'
-        },
-        function(resp) {
-			let cmts = resp.comments || [];
-            let ch_count = 0;
-            for(let i=0; i<cmts.length; i++){
-				cmts[i] = self.normalize_comment(cmts[i]);
-                $('#comment-list').append(self.gen_comment_item(cmts[i]));
-                $('#comment-'+cmts[i].id).fadeIn();
-                TaoBlog.events.dispatch('comment', 'post', $('#comment-'+cmts[i].id), cmts[i]);
-                self.add_reply_div(cmts[i].id);
-                if(cmts[i].children) {
-                    self.append_children(cmts[i].children, cmts[i].id);
-                    ch_count += cmts[i].children.length;
-                }
-            }
+	try {
+		this.loading = true;
 
-            if(cmts.length != 0) {
-                self._loaded += cmts.length;
-            }
-            self._loaded_ch += ch_count;
-            $('#comment-title .loaded').text(self._loaded + self._loaded_ch);
-        },
-        'json'
-    ).fail(function(x) {
-        alert(x.responseText);
-    }).always(function(){
-        self.loading = false;
-    });
+		let args = new URLSearchParams;
+		args.set('limit', '10');
+		args.set('offset', `${this._loaded}`);
+		args.set('order_by', 'id desc');
+
+		let rsp = await this.api.listComments(this.post_id, args);
+		cmts = rsp.comments;
+	} catch(e) {
+		alert(e);
+		return;
+	} finally {
+		this.loading = false;
+	}
+
+	let ch_count = 0;
+	for(let i=0; i<cmts.length; i++){
+		cmts[i] = this.normalize_comment(cmts[i]);
+		let node = this.createNodeFrom(cmts[i]);
+		this._elemList.appendChild(node);
+		TaoBlog.fn.fadeIn(node);
+		TaoBlog.events.dispatch('comment', 'post', node, cmts[i]);
+		this.add_reply_div(cmts[i].id);
+		if(cmts[i].children) {
+			this.append_children(cmts[i].children, cmts[i].id);
+			ch_count += cmts[i].children.length;
+		}
+	}
+
+	if(cmts.length != 0) {
+		this._loaded += cmts.length;
+	}
+	this._loaded_ch += ch_count;
+	document.querySelector('#comment-title .loaded').innerText = this._loaded + this._loaded_ch;
 };
 
 Comment.prototype.formData = function() {
@@ -533,7 +661,7 @@ Comment.prototype.formData = function() {
 	let obj = {
 		post_id: this.post_id,
 		source_type: 'markdown',
-		parent: this.parent,
+		parent: this.being_replied,
 		author: form['author'].value,
 		email: form['email'].value,
 		url: form['url'].value,
@@ -544,43 +672,73 @@ Comment.prototype.formData = function() {
 
 Comment.prototype.updateComment = async function() {
 	let { source } = this.formData();
-	let resp = await fetch(
-		`/v3/comments/${this.being_edited}`,
-		{
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				comment: {
-					source_type: 'markdown',
-					source: source,
-				},
-				update_mask: "source,sourceType"
-			})
-		}
-	);
-	if(!resp.ok) {
-		throw new Error('编辑失败：' + (await resp.json()).message);
-	}
-	return resp.json();
+	let id = this.being_edited;
+
+	let cmt = await this.api.updateComment(id, source);
+	cmt = this.normalize_comment(cmt);
+
+	let node = this.nodeOf(id);
+	let obj = new CommentNode(node);
+	obj.setContent(cmt.content);
+
+	this.dispatch(node, cmt);
+	
+	this.clearContent();
+	this.showCommentBox(false);
+	this.toggleShowPreview(false, false);
+
+	return cmt;
 };
-Comment.prototype.postComment = async function() {
-	let body = this.formData();
-	let resp = await fetch(
-		`/v3/posts/${this.post_id}/comments`,
-		{
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(body)
-		}
-	);
-	if(!resp.ok) {
-		throw new Error('发表失败：' + (await resp.json()).message);
+
+Comment.prototype.createNodeFrom = function(cmt) {
+	let div = document.createElement('div');
+	div.innerHTML = this.gen_comment_item(cmt);
+	return div.firstElementChild;
+}
+
+Comment.prototype.setStates = function(states) {
+	let submitButton = document.querySelector('#comment-submit');
+	
+	if (states.submitting) {
+		submitButton.setAttribute('disabled', 'disabled');
+		submitButton.value = '提交中……';
 	}
-	return resp.json();
+	if (states.submitted) {
+		submitButton.value = '发表评论';
+		submitButton.removeAttribute('disabled');
+	}
+}
+
+Comment.prototype.createComment = async function() {
+	let body = this.formData();
+
+	let cmt = await this.api.createComment(body);
+	cmt = this.normalize_comment(cmt);
+
+	let node = this.createNodeFrom(cmt);
+
+	// 没有回复谁，插入到最新评论。
+	if (this.being_replied == 0) {
+		this._elemList.prepend(node);
+		this._loaded++;
+	} else {
+		this.add_reply_div(this.being_replied);
+		let list = this.replyList(this.being_replied);
+		list.appendChild(node);
+	}
+
+	this.dispatch(node, cmt);
+
+	TaoBlog.fn.fadeIn(node);
+	this._count++;
+	this.toggle_post_comment_button();
+
+	this.clearContent();
+	this.showCommentBox(false);
+	this.toggleShowPreview(false, false);
+	this.save_info();
+
+	return cmt;
 };
 
 Comment.prototype.convert_commenter = function() {
@@ -628,25 +786,14 @@ Comment.prototype.showPreview = async function() {
 	this.toggleShowPreview(true);
 
 	let source = document.getElementById('comment-form')['source'].value;
-	let resp = await fetch('/v3/comments:preview', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			markdown: source,
-			open_links_in_new_tab: true,
-			post_id: +this.post_id
-		})
-	});
 
-	if (!resp.ok) {
-		previewBox.innerText = '预览失败：' + (await resp.json()).message;
+	try {
+		let rsp = await this.api.previewComment(+this.post_id, source);
+		previewBox.innerHTML = rsp.html;
+	} catch(e) {
+		previewBox.innerText = '预览失败：' + e;
 		return;
 	}
-
-	let html = (await resp.json()).html;
-	previewBox.innerHTML = html;
 };
 
 let comment = new Comment();

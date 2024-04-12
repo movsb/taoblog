@@ -225,9 +225,11 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	ip := ipFromContext(ctx, true)
 
 	// 尽早查询地理信息
-	if err := s.cmtgeo.Queue(ip, nil); err != nil {
-		log.Println(err)
-	}
+	go func() {
+		if err := s.cmtgeo.Queue(ip, nil); err != nil {
+			log.Println(err)
+		}
+	}()
 
 	// 尝试检查可能的错误请求
 	if in.Parent < 0 {
