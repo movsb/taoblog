@@ -55,6 +55,17 @@ TaoBlog.fn.externAnchor = function() {
 
 // 代码高亮
 TaoBlog.fn.highlight = function(pre) {
+	// 早期代码兼容：
+	// <pre class="code" lang="cpp"></pre>
+	{
+		if (pre.classList.contains('code') && pre.getAttribute('lang') != '' && !pre.firstElementChild) {
+			let code = document.createElement('code');
+			code.innerHTML = pre.innerHTML;
+			code.classList.add(`language-${pre.getAttribute('lang')}`);
+			pre.innerHTML = '';
+			pre.appendChild(code);
+		}
+	}
 	// 必须是 <pre><code class="language-xxx"></code></pre>
 	{
 		let code = pre.querySelector(':scope > code');
