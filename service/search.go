@@ -33,7 +33,8 @@ func (s *Service) SearchPosts(ctx context.Context, in *protocols.SearchPostsRequ
 		})
 	}
 	return &protocols.SearchPostsResponse{
-		Posts: rspPosts,
+		Posts:       rspPosts,
+		Initialized: true,
 	}, nil
 }
 
