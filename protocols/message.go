@@ -3,7 +3,7 @@ package protocols
 import "io"
 
 type GetAvatarRequest struct {
-	CommentID       int64
+	Ephemeral       int
 	IfModifiedSince string
 	IfNoneMatch     string
 	SetStatus       func(statusCode int)

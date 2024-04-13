@@ -36,6 +36,8 @@ type Service struct {
 	store  storage.Store
 	cache  *memory_cache.MemoryCache
 
+	avatarCache *AvatarCache
+
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
 	searcher atomic.Pointer[search.Engine]
@@ -60,6 +62,8 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		store:  localStorage,
 		cache:  memory_cache.NewMemoryCache(time.Minute * 10),
 		cmtgeo: commentgeo.NewCommentGeo(context.TODO()),
+
+		avatarCache: NewAvatarCache(),
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{

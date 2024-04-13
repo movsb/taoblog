@@ -2,16 +2,78 @@ package service
 
 import (
 	"fmt"
+	"hash/fnv"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/avatar"
 )
 
+type AvatarCache struct {
+	id2email map[int]string
+	email2id map[string]int
+	lock     sync.RWMutex
+}
+
+func NewAvatarCache() *AvatarCache {
+	return &AvatarCache{
+		id2email: make(map[int]string),
+		email2id: make(map[string]int),
+	}
+}
+
+// 简单的“一致性”哈希生成算法。
+func (c *AvatarCache) id(email string) int {
+	hash := fnv.New32()
+	hash.Write([]byte(email))
+	sum := hash.Sum32() & 0x7fffffff
+	for {
+		e, ok := c.id2email[int(sum)]
+		if ok && e != email {
+			sum++
+			continue
+		}
+		break
+	}
+	return int(sum)
+}
+
+func (c *AvatarCache) ID(email string) int {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	email = strings.ToLower(email)
+
+	if id, ok := c.email2id[email]; ok {
+		return id
+	}
+
+	next := c.id(email)
+
+	c.email2id[email] = int(next)
+	c.id2email[next] = email
+
+	return next
+}
+
+func (c *AvatarCache) Email(id int) string {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	return c.id2email[id]
+}
+
 // GetAvatar ...
 func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
+	email := s.avatarCache.Email(in.Ephemeral)
+	if email == "" {
+		in.SetStatus(http.StatusNotFound)
+		return
+	}
+
 	p := avatar.Params{
 		Headers: make(http.Header),
 	}
@@ -23,10 +85,8 @@ func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
 		p.Headers.Add("If-None-Match", in.IfNoneMatch)
 	}
 
-	var comment models.Comment
-	s.tdb.Select(`email`).Where(`id = ?`, in.CommentID).MustFind(&comment)
-
-	resp, err := avatar.Get(comment.Email, &p)
+	// TODO 并没有限制获取未公开发表文章的评论。
+	resp, err := avatar.Get(email, &p)
 	if err != nil {
 		in.SetStatus(500)
 		fmt.Fprint(in.W, err)

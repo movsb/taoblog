@@ -99,8 +99,8 @@ class CommentAPI
 	}
 
 	// 返回头像链接。
-	avatarURLOf(id) {
-		return `/v3/comments/${id}/avatar`;
+	avatarURLOf(ephemeral) {
+		return `/v3/avatar/${ephemeral}`;
 	}
 	
 
@@ -387,6 +387,7 @@ Comment.prototype.normalize_comment = function(c) {
 	c.date_fuzzy = c.date_fuzzy ?? '';
 	c.geo_location = c.geo_location ?? '';
 	c.can_edit = c.can_edit ?? false;
+	c.avatar = c.avatar ?? 0;
 	return c;
 }
 
@@ -455,7 +456,7 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	let html = `
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
-		<img src="${this.api.avatarURLOf(cmt.id)}" width="48px" height="48px" title="${this.h2t(info)}"/>
+		<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${this.h2t(info)}"/>
 	</div>
 	<div class="comment-meta">
 		<span class="${cmt.is_admin ? "author" : "nickname"}">${this.h2t(cmt.author)}</span>

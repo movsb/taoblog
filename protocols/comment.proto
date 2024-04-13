@@ -24,6 +24,8 @@ message Comment {
 	// 前端用户是否可以编辑此评论？
 	// 仅在 list/create 接口中返回。
 	bool can_edit = 17;
+	// 头像内部临时ID
+	int32 avatar = 18;
 }
 
 message GetCommentRequest {

@@ -30,7 +30,7 @@ func (Comment) TableName() string {
 }
 
 // ToProtocols ...
-func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, geo func(ip string) string, userIP string) *protocols.Comment {
+func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, geo func(ip string) string, userIP string, avatar func(email string) int) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:         c.ID,
 		Parent:     c.Parent,
@@ -44,6 +44,7 @@ func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, 
 		Content:    c.Content,
 		IsAdmin:    isAdmin(c.Email),
 		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
+		Avatar:     int32(avatar(c.Email)),
 	}
 
 	if user.IsAdmin() {
@@ -69,10 +70,10 @@ func In5min(t int32) bool {
 type Comments []*Comment
 
 // ToProtocols ...
-func (cs Comments) ToProtocols(isAdmin func(s string) bool, user *auth.User, geo func(ip string) string, userIP string) []*protocols.Comment {
+func (cs Comments) ToProtocols(isAdmin func(s string) bool, user *auth.User, geo func(ip string) string, userIP string, avatar func(email string) int) []*protocols.Comment {
 	comments := make([]*protocols.Comment, 0, len(cs))
 	for _, comment := range cs {
-		comments = append(comments, comment.ToProtocols(isAdmin, user, geo, userIP))
+		comments = append(comments, comment.ToProtocols(isAdmin, user, geo, userIP, avatar))
 	}
 	return comments
 }

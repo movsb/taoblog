@@ -82,7 +82,7 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
 	handle("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
 
-	handle(`GET`, `/v3/comments/{id}/avatar`, g.GetAvatar)
+	handle(`GET`, `/v3/avatar/{id}`, g.GetAvatar)
 
 	handle(`GET`, `/v3/posts/{post_id}/files`, g.ListFiles)
 	handle(`GET`, `/v3/posts/{post_id}/files/{file=**}`, g.GetFile)
@@ -103,13 +103,12 @@ func redirectToGrafana(w http.ResponseWriter, req *http.Request, params map[stri
 }
 
 func (g *Gateway) GetAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	commentID, err := strconv.Atoi(params[`id`])
+	ephemeral, err := strconv.Atoi(params[`id`])
 	if err != nil {
 		panic(err)
 	}
-
 	in := &protocols.GetAvatarRequest{
-		CommentID:       int64(commentID),
+		Ephemeral:       ephemeral,
 		IfModifiedSince: req.Header.Get("If-Modified-Since"),
 		IfNoneMatch:     req.Header.Get("If-None-Match"),
 		SetStatus: func(statusCode int) {

@@ -35,12 +35,16 @@ func (s *Service) GetComment2(name int64) *models.Comment {
 	return &comment
 }
 
+func (s *Service) avatar(email string) int {
+	return s.avatarCache.ID(email)
+}
+
 // GetComment ...
 // TODO perm check
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, ""), nil
+	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
 }
 
 // UpdateComment ...
@@ -91,7 +95,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ""), nil
+	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
 }
 
 // DeleteComment ...
@@ -131,7 +135,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		stmt.MustFind(&parents)
-		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP)
+		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
 	}
 
 	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
@@ -150,7 +154,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 			}
 			stmt.MustFind(&children)
-			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP)
+			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
 		}
 		{
 			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
@@ -327,7 +331,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&comment)
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip), nil
+	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip, s.avatar), nil
 }
 
 func (s *Service) updateCommentsCount() {
