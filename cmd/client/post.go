@@ -334,6 +334,10 @@ func parsePostAssets(source string) ([]string, error) {
 			}
 			return
 		}
+		// 锚点儿
+		if strings.HasPrefix(asset, `#`) {
+			return
+		}
 		// TODO 简单方式去掉 ? 后面的查询参数，有 BUG，但是“够用”。
 		asset, _, _ = strings.Cut(asset, "?")
 		assets = append(assets, asset)
