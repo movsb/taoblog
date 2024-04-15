@@ -36,7 +36,6 @@ modules/    | 公共模块
 protocols/  | 协议定义
 service/    | 服务实现
 setup/      | 安装管理
-run/        | 临时目录
 theme/      | 主题目录
 main.go     | 入口程序
 

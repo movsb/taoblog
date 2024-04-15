@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/movsb/taoblog/metrics"
+	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
 )
 

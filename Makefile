@@ -25,15 +25,6 @@ push-image:
 try:
 	docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:amd64-latest
 
-.PHONY: compose
-compose:
-	mkdir -p run
-	[ -f run/docker-compose.yml ] || cp setup/compose/docker-compose.yml run
-	[ -f run/taoblog.db ] || touch run/taoblog.db
-	[ -d run/prometheus ] || cp -R setup/compose/prometheus run
-	[ -d run/grafana ] || cp -R setup/compose/grafana run
-	(cd run && docker-compose up)
-
 .PHONY: tools
 tools:
 	go install \
