@@ -92,7 +92,7 @@ func (c *Client) CreatePost() error {
 	c.savePostConfig(&cfg)
 
 	// TODO 应该先上传文件，但是会拿不到编号
-	c.UploadPostFiles(assets)
+	c.UploadPostFiles(assets, true)
 
 	return nil
 }
@@ -209,7 +209,7 @@ func (c *Client) UpdatePost() error {
 	c.savePostConfig(&cfg)
 
 	// TODO 应该先上传文件，但是会拿不到编号
-	c.UploadPostFiles(assets)
+	c.UploadPostFiles(assets, true)
 
 	return nil
 }
@@ -226,7 +226,7 @@ func (c *Client) DeletePost(id int64) error {
 // TODO 目前为了简单起见，使用的是 HTTP POST 方式上传；
 // TODO 应该像 Backup 那样改成带进度的 protocol buffer 方式上传。
 // files 路径列表，相对于工作目录，相对路径。
-func (c *Client) UploadPostFiles(files []string) {
+func (c *Client) UploadPostFiles(files []string, deleteExtraneousRemoteFiles bool) {
 	config := c.readPostConfig()
 	if config.ID <= 0 {
 		panic("post not posted, post it first.")
@@ -332,7 +332,9 @@ func (c *Client) UploadPostFiles(files []string) {
 		}
 
 		if i == -1 {
-			deleteRemote(rr[j])
+			if deleteExtraneousRemoteFiles {
+				deleteRemote(rr[j])
+			}
 			j--
 			continue
 		}
@@ -379,8 +381,12 @@ func (c *Client) UploadPostFiles(files []string) {
 				panic(err)
 			}
 			copyToRemote(rl[i], data)
+			i--
 		case n > 0:
-			deleteRemote(rr[j])
+			if deleteExtraneousRemoteFiles {
+				deleteRemote(rr[j])
+			}
+			j--
 		case n == 0:
 			lm, rm := os.FileMode(rl[i].Mode), os.FileMode(rr[j].Mode)
 			if lm.IsDir() != rm.IsDir() {

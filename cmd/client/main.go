@@ -101,7 +101,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:       cobra.MinimumNArgs(1),
 		Deprecated: `将会自动上传文章附件，此命令不再需要手动执行。`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.UploadPostFiles(args)
+			client.UploadPostFiles(args, false)
 		},
 	}
 	postsCmd.AddCommand(postsUploadCmd)
