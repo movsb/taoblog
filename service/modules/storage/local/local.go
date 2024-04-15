@@ -31,7 +31,7 @@ func (l *Local) path(id int64, path string, createDir bool) (string, error) {
 			return "", err
 		}
 	}
-	path = filepath.Join(dir, path)
+	path = filepath.Join(dir, filepath.Clean(path))
 	return path, nil
 }
 

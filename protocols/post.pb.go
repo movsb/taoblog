@@ -628,6 +628,698 @@ func (x *SetRedirectRequest) GetStatusCode() int32 {
 	return 0
 }
 
+type FileSpec struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Mode uint32 `protobuf:"varint,2,opt,name=mode,proto3" json:"mode,omitempty"`
+	Size uint32 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	Time uint32 `protobuf:"varint,4,opt,name=time,proto3" json:"time,omitempty"`
+}
+
+func (x *FileSpec) Reset() {
+	*x = FileSpec{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSpec) ProtoMessage() {}
+
+func (x *FileSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSpec.ProtoReflect.Descriptor instead.
+func (*FileSpec) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *FileSpec) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *FileSpec) GetMode() uint32 {
+	if x != nil {
+		return x.Mode
+	}
+	return 0
+}
+
+func (x *FileSpec) GetSize() uint32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileSpec) GetTime() uint32 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+type FileSystemRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Init *FileSystemRequest_InitRequest `protobuf:"bytes,1,opt,name=init,proto3" json:"init,omitempty"`
+	// Types that are assignable to Request:
+	//
+	//	*FileSystemRequest_ListFiles
+	//	*FileSystemRequest_WriteFile
+	//	*FileSystemRequest_DeleteFile
+	Request isFileSystemRequest_Request `protobuf_oneof:"Request"`
+}
+
+func (x *FileSystemRequest) Reset() {
+	*x = FileSystemRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemRequest) ProtoMessage() {}
+
+func (x *FileSystemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemRequest.ProtoReflect.Descriptor instead.
+func (*FileSystemRequest) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *FileSystemRequest) GetInit() *FileSystemRequest_InitRequest {
+	if x != nil {
+		return x.Init
+	}
+	return nil
+}
+
+func (m *FileSystemRequest) GetRequest() isFileSystemRequest_Request {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (x *FileSystemRequest) GetListFiles() *FileSystemRequest_ListFilesRequest {
+	if x, ok := x.GetRequest().(*FileSystemRequest_ListFiles); ok {
+		return x.ListFiles
+	}
+	return nil
+}
+
+func (x *FileSystemRequest) GetWriteFile() *FileSystemRequest_WriteFileRequest {
+	if x, ok := x.GetRequest().(*FileSystemRequest_WriteFile); ok {
+		return x.WriteFile
+	}
+	return nil
+}
+
+func (x *FileSystemRequest) GetDeleteFile() *FileSystemRequest_DeleteFileRequest {
+	if x, ok := x.GetRequest().(*FileSystemRequest_DeleteFile); ok {
+		return x.DeleteFile
+	}
+	return nil
+}
+
+type isFileSystemRequest_Request interface {
+	isFileSystemRequest_Request()
+}
+
+type FileSystemRequest_ListFiles struct {
+	ListFiles *FileSystemRequest_ListFilesRequest `protobuf:"bytes,10,opt,name=list_files,json=listFiles,proto3,oneof"`
+}
+
+type FileSystemRequest_WriteFile struct {
+	WriteFile *FileSystemRequest_WriteFileRequest `protobuf:"bytes,11,opt,name=write_file,json=writeFile,proto3,oneof"`
+}
+
+type FileSystemRequest_DeleteFile struct {
+	DeleteFile *FileSystemRequest_DeleteFileRequest `protobuf:"bytes,12,opt,name=delete_file,json=deleteFile,proto3,oneof"`
+}
+
+func (*FileSystemRequest_ListFiles) isFileSystemRequest_Request() {}
+
+func (*FileSystemRequest_WriteFile) isFileSystemRequest_Request() {}
+
+func (*FileSystemRequest_DeleteFile) isFileSystemRequest_Request() {}
+
+type FileSystemResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Init *FileSystemResponse_InitResponse `protobuf:"bytes,1,opt,name=init,proto3" json:"init,omitempty"`
+	// Types that are assignable to Response:
+	//
+	//	*FileSystemResponse_ListFiles
+	//	*FileSystemResponse_WriteFile
+	//	*FileSystemResponse_DeleteFile
+	Response isFileSystemResponse_Response `protobuf_oneof:"Response"`
+}
+
+func (x *FileSystemResponse) Reset() {
+	*x = FileSystemResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemResponse) ProtoMessage() {}
+
+func (x *FileSystemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemResponse.ProtoReflect.Descriptor instead.
+func (*FileSystemResponse) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *FileSystemResponse) GetInit() *FileSystemResponse_InitResponse {
+	if x != nil {
+		return x.Init
+	}
+	return nil
+}
+
+func (m *FileSystemResponse) GetResponse() isFileSystemResponse_Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (x *FileSystemResponse) GetListFiles() *FileSystemResponse_ListFilesResponse {
+	if x, ok := x.GetResponse().(*FileSystemResponse_ListFiles); ok {
+		return x.ListFiles
+	}
+	return nil
+}
+
+func (x *FileSystemResponse) GetWriteFile() *FileSystemResponse_WriteFileResponse {
+	if x, ok := x.GetResponse().(*FileSystemResponse_WriteFile); ok {
+		return x.WriteFile
+	}
+	return nil
+}
+
+func (x *FileSystemResponse) GetDeleteFile() *FileSystemResponse_DeleteFileResponse {
+	if x, ok := x.GetResponse().(*FileSystemResponse_DeleteFile); ok {
+		return x.DeleteFile
+	}
+	return nil
+}
+
+type isFileSystemResponse_Response interface {
+	isFileSystemResponse_Response()
+}
+
+type FileSystemResponse_ListFiles struct {
+	ListFiles *FileSystemResponse_ListFilesResponse `protobuf:"bytes,10,opt,name=list_files,json=listFiles,proto3,oneof"`
+}
+
+type FileSystemResponse_WriteFile struct {
+	WriteFile *FileSystemResponse_WriteFileResponse `protobuf:"bytes,11,opt,name=write_file,json=writeFile,proto3,oneof"`
+}
+
+type FileSystemResponse_DeleteFile struct {
+	DeleteFile *FileSystemResponse_DeleteFileResponse `protobuf:"bytes,12,opt,name=delete_file,json=deleteFile,proto3,oneof"`
+}
+
+func (*FileSystemResponse_ListFiles) isFileSystemResponse_Response() {}
+
+func (*FileSystemResponse_WriteFile) isFileSystemResponse_Response() {}
+
+func (*FileSystemResponse_DeleteFile) isFileSystemResponse_Response() {}
+
+type FileSystemRequest_InitRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to For:
+	//
+	//	*FileSystemRequest_InitRequest_Post_
+	For isFileSystemRequest_InitRequest_For `protobuf_oneof:"For"`
+}
+
+func (x *FileSystemRequest_InitRequest) Reset() {
+	*x = FileSystemRequest_InitRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemRequest_InitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemRequest_InitRequest) ProtoMessage() {}
+
+func (x *FileSystemRequest_InitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemRequest_InitRequest.ProtoReflect.Descriptor instead.
+func (*FileSystemRequest_InitRequest) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{10, 0}
+}
+
+func (m *FileSystemRequest_InitRequest) GetFor() isFileSystemRequest_InitRequest_For {
+	if m != nil {
+		return m.For
+	}
+	return nil
+}
+
+func (x *FileSystemRequest_InitRequest) GetPost() *FileSystemRequest_InitRequest_Post {
+	if x, ok := x.GetFor().(*FileSystemRequest_InitRequest_Post_); ok {
+		return x.Post
+	}
+	return nil
+}
+
+type isFileSystemRequest_InitRequest_For interface {
+	isFileSystemRequest_InitRequest_For()
+}
+
+type FileSystemRequest_InitRequest_Post_ struct {
+	Post *FileSystemRequest_InitRequest_Post `protobuf:"bytes,1,opt,name=post,proto3,oneof"`
+}
+
+func (*FileSystemRequest_InitRequest_Post_) isFileSystemRequest_InitRequest_For() {}
+
+type FileSystemRequest_ListFilesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *FileSystemRequest_ListFilesRequest) Reset() {
+	*x = FileSystemRequest_ListFilesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemRequest_ListFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemRequest_ListFilesRequest) ProtoMessage() {}
+
+func (x *FileSystemRequest_ListFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemRequest_ListFilesRequest.ProtoReflect.Descriptor instead.
+func (*FileSystemRequest_ListFilesRequest) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{10, 1}
+}
+
+type FileSystemRequest_WriteFileRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Spec *FileSpec `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	Data []byte    `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (x *FileSystemRequest_WriteFileRequest) Reset() {
+	*x = FileSystemRequest_WriteFileRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemRequest_WriteFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemRequest_WriteFileRequest) ProtoMessage() {}
+
+func (x *FileSystemRequest_WriteFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemRequest_WriteFileRequest.ProtoReflect.Descriptor instead.
+func (*FileSystemRequest_WriteFileRequest) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{10, 2}
+}
+
+func (x *FileSystemRequest_WriteFileRequest) GetSpec() *FileSpec {
+	if x != nil {
+		return x.Spec
+	}
+	return nil
+}
+
+func (x *FileSystemRequest_WriteFileRequest) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type FileSystemRequest_DeleteFileRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+}
+
+func (x *FileSystemRequest_DeleteFileRequest) Reset() {
+	*x = FileSystemRequest_DeleteFileRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemRequest_DeleteFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemRequest_DeleteFileRequest) ProtoMessage() {}
+
+func (x *FileSystemRequest_DeleteFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemRequest_DeleteFileRequest.ProtoReflect.Descriptor instead.
+func (*FileSystemRequest_DeleteFileRequest) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{10, 3}
+}
+
+func (x *FileSystemRequest_DeleteFileRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type FileSystemRequest_InitRequest_Post struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+}
+
+func (x *FileSystemRequest_InitRequest_Post) Reset() {
+	*x = FileSystemRequest_InitRequest_Post{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemRequest_InitRequest_Post) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemRequest_InitRequest_Post) ProtoMessage() {}
+
+func (x *FileSystemRequest_InitRequest_Post) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemRequest_InitRequest_Post.ProtoReflect.Descriptor instead.
+func (*FileSystemRequest_InitRequest_Post) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{10, 0, 0}
+}
+
+func (x *FileSystemRequest_InitRequest_Post) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type FileSystemResponse_InitResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *FileSystemResponse_InitResponse) Reset() {
+	*x = FileSystemResponse_InitResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemResponse_InitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemResponse_InitResponse) ProtoMessage() {}
+
+func (x *FileSystemResponse_InitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemResponse_InitResponse.ProtoReflect.Descriptor instead.
+func (*FileSystemResponse_InitResponse) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{11, 0}
+}
+
+type FileSystemResponse_ListFilesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Files []*FileSpec `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+}
+
+func (x *FileSystemResponse_ListFilesResponse) Reset() {
+	*x = FileSystemResponse_ListFilesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemResponse_ListFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemResponse_ListFilesResponse) ProtoMessage() {}
+
+func (x *FileSystemResponse_ListFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemResponse_ListFilesResponse.ProtoReflect.Descriptor instead.
+func (*FileSystemResponse_ListFilesResponse) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{11, 1}
+}
+
+func (x *FileSystemResponse_ListFilesResponse) GetFiles() []*FileSpec {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+type FileSystemResponse_WriteFileResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *FileSystemResponse_WriteFileResponse) Reset() {
+	*x = FileSystemResponse_WriteFileResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemResponse_WriteFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemResponse_WriteFileResponse) ProtoMessage() {}
+
+func (x *FileSystemResponse_WriteFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemResponse_WriteFileResponse.ProtoReflect.Descriptor instead.
+func (*FileSystemResponse_WriteFileResponse) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{11, 2}
+}
+
+type FileSystemResponse_DeleteFileResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *FileSystemResponse_DeleteFileResponse) Reset() {
+	*x = FileSystemResponse_DeleteFileResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_post_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileSystemResponse_DeleteFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSystemResponse_DeleteFileResponse) ProtoMessage() {}
+
+func (x *FileSystemResponse_DeleteFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_post_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSystemResponse_DeleteFileResponse.ProtoReflect.Descriptor instead.
+func (*FileSystemResponse_DeleteFileResponse) Descriptor() ([]byte, []int) {
+	return file_protocols_post_proto_rawDescGZIP(), []int{11, 3}
+}
+
 var File_protocols_post_proto protoreflect.FileDescriptor
 
 var file_protocols_post_proto_rawDesc = []byte{
@@ -707,10 +1399,82 @@ var file_protocols_post_proto_rawDesc = []byte{
 	0x61, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65,
 	0x74, 0x50, 0x61, 0x74, 0x68, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x5f,
 	0x63, 0x6f, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x73, 0x74, 0x61, 0x74,
-	0x75, 0x73, 0x43, 0x6f, 0x64, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x6f, 0x76, 0x73, 0x62, 0x2f, 0x74, 0x61, 0x6f, 0x62, 0x6c,
-	0x6f, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x73, 0x43, 0x6f, 0x64, 0x65, 0x22, 0x5a, 0x0a, 0x08, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x70,
+	0x65, 0x63, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69,
+	0x7a, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x12,
+	0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x74, 0x69,
+	0x6d, 0x65, 0x22, 0xd0, 0x04, 0x0a, 0x11, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65,
+	0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3c, 0x0a, 0x04, 0x69, 0x6e, 0x69, 0x74,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
+	0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x2e, 0x49, 0x6e, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x52, 0x04, 0x69, 0x6e, 0x69, 0x74, 0x12, 0x4e, 0x0a, 0x0a, 0x6c, 0x69, 0x73, 0x74, 0x5f, 0x66,
+	0x69, 0x6c, 0x65, 0x73, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65,
+	0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c,
+	0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x09, 0x6c, 0x69, 0x73,
+	0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x4e, 0x0a, 0x0a, 0x77, 0x72, 0x69, 0x74, 0x65, 0x5f,
+	0x66, 0x69, 0x6c, 0x65, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65,
+	0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x46, 0x69,
+	0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x09, 0x77, 0x72, 0x69,
+	0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x51, 0x0a, 0x0b, 0x64, 0x65, 0x6c, 0x65, 0x74, 0x65,
+	0x5f, 0x66, 0x69, 0x6c, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74,
+	0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65,
+	0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x0a, 0x64,
+	0x65, 0x6c, 0x65, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x1a, 0x71, 0x0a, 0x0b, 0x49, 0x6e, 0x69,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x43, 0x0a, 0x04, 0x70, 0x6f, 0x73, 0x74,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
+	0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x2e, 0x49, 0x6e, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x2e, 0x50, 0x6f, 0x73, 0x74, 0x48, 0x00, 0x52, 0x04, 0x70, 0x6f, 0x73, 0x74, 0x1a, 0x16, 0x0a,
+	0x04, 0x50, 0x6f, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x02, 0x69, 0x64, 0x42, 0x05, 0x0a, 0x03, 0x46, 0x6f, 0x72, 0x1a, 0x12, 0x0a, 0x10,
+	0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x4f, 0x0a, 0x10, 0x57, 0x72, 0x69, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x04, 0x73, 0x70, 0x65, 0x63, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46,
+	0x69, 0x6c, 0x65, 0x53, 0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65, 0x63, 0x12, 0x12, 0x0a,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74,
+	0x61, 0x1a, 0x27, 0x0a, 0x11, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x42, 0x09, 0x0a, 0x07, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xd4, 0x03, 0x0a, 0x12, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79,
+	0x73, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x04,
+	0x69, 0x6e, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65,
+	0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x49, 0x6e, 0x69, 0x74, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x04, 0x69, 0x6e, 0x69, 0x74, 0x12, 0x50, 0x0a, 0x0a,
+	0x6c, 0x69, 0x73, 0x74, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x2f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c,
+	0x65, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x48, 0x00, 0x52, 0x09, 0x6c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x50,
+	0x0a, 0x0a, 0x77, 0x72, 0x69, 0x74, 0x65, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x18, 0x0b, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46,
+	0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x48, 0x00, 0x52, 0x09, 0x77, 0x72, 0x69, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65,
+	0x12, 0x53, 0x0a, 0x0b, 0x64, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x18,
+	0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x30, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
+	0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x48, 0x00, 0x52, 0x0a, 0x64, 0x65, 0x6c, 0x65, 0x74,
+	0x65, 0x46, 0x69, 0x6c, 0x65, 0x1a, 0x0e, 0x0a, 0x0c, 0x49, 0x6e, 0x69, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x3e, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x29, 0x0a, 0x05, 0x66, 0x69,
+	0x6c, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x53, 0x70, 0x65, 0x63, 0x52, 0x05,
+	0x66, 0x69, 0x6c, 0x65, 0x73, 0x1a, 0x13, 0x0a, 0x11, 0x57, 0x72, 0x69, 0x74, 0x65, 0x46, 0x69,
+	0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x14, 0x0a, 0x12, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x42, 0x0a, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x24, 0x5a, 0x22,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x6f, 0x76, 0x73, 0x62,
+	0x2f, 0x74, 0x61, 0x6f, 0x62, 0x6c, 0x6f, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
+	0x6c, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -725,29 +1489,52 @@ func file_protocols_post_proto_rawDescGZIP() []byte {
 	return file_protocols_post_proto_rawDescData
 }
 
-var file_protocols_post_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_protocols_post_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_protocols_post_proto_goTypes = []interface{}{
-	(*Post)(nil),                         // 0: protocols.Post
-	(*GetPostRequest)(nil),               // 1: protocols.GetPostRequest
-	(*UpdatePostRequest)(nil),            // 2: protocols.UpdatePostRequest
-	(*DeletePostRequest)(nil),            // 3: protocols.DeletePostRequest
-	(*GetPostCommentsCountRequest)(nil),  // 4: protocols.GetPostCommentsCountRequest
-	(*GetPostCommentsCountResponse)(nil), // 5: protocols.GetPostCommentsCountResponse
-	(*SetPostStatusRequest)(nil),         // 6: protocols.SetPostStatusRequest
-	(*SetPostStatusResponse)(nil),        // 7: protocols.SetPostStatusResponse
-	(*SetRedirectRequest)(nil),           // 8: protocols.SetRedirectRequest
-	nil,                                  // 9: protocols.Post.MetasEntry
-	(*fieldmaskpb.FieldMask)(nil),        // 10: google.protobuf.FieldMask
+	(*Post)(nil),                                  // 0: protocols.Post
+	(*GetPostRequest)(nil),                        // 1: protocols.GetPostRequest
+	(*UpdatePostRequest)(nil),                     // 2: protocols.UpdatePostRequest
+	(*DeletePostRequest)(nil),                     // 3: protocols.DeletePostRequest
+	(*GetPostCommentsCountRequest)(nil),           // 4: protocols.GetPostCommentsCountRequest
+	(*GetPostCommentsCountResponse)(nil),          // 5: protocols.GetPostCommentsCountResponse
+	(*SetPostStatusRequest)(nil),                  // 6: protocols.SetPostStatusRequest
+	(*SetPostStatusResponse)(nil),                 // 7: protocols.SetPostStatusResponse
+	(*SetRedirectRequest)(nil),                    // 8: protocols.SetRedirectRequest
+	(*FileSpec)(nil),                              // 9: protocols.FileSpec
+	(*FileSystemRequest)(nil),                     // 10: protocols.FileSystemRequest
+	(*FileSystemResponse)(nil),                    // 11: protocols.FileSystemResponse
+	nil,                                           // 12: protocols.Post.MetasEntry
+	(*FileSystemRequest_InitRequest)(nil),         // 13: protocols.FileSystemRequest.InitRequest
+	(*FileSystemRequest_ListFilesRequest)(nil),    // 14: protocols.FileSystemRequest.ListFilesRequest
+	(*FileSystemRequest_WriteFileRequest)(nil),    // 15: protocols.FileSystemRequest.WriteFileRequest
+	(*FileSystemRequest_DeleteFileRequest)(nil),   // 16: protocols.FileSystemRequest.DeleteFileRequest
+	(*FileSystemRequest_InitRequest_Post)(nil),    // 17: protocols.FileSystemRequest.InitRequest.Post
+	(*FileSystemResponse_InitResponse)(nil),       // 18: protocols.FileSystemResponse.InitResponse
+	(*FileSystemResponse_ListFilesResponse)(nil),  // 19: protocols.FileSystemResponse.ListFilesResponse
+	(*FileSystemResponse_WriteFileResponse)(nil),  // 20: protocols.FileSystemResponse.WriteFileResponse
+	(*FileSystemResponse_DeleteFileResponse)(nil), // 21: protocols.FileSystemResponse.DeleteFileResponse
+	(*fieldmaskpb.FieldMask)(nil),                 // 22: google.protobuf.FieldMask
 }
 var file_protocols_post_proto_depIdxs = []int32{
-	9,  // 0: protocols.Post.metas:type_name -> protocols.Post.MetasEntry
+	12, // 0: protocols.Post.metas:type_name -> protocols.Post.MetasEntry
 	0,  // 1: protocols.UpdatePostRequest.post:type_name -> protocols.Post
-	10, // 2: protocols.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
-	3,  // [3:3] is the sub-list for method output_type
-	3,  // [3:3] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	22, // 2: protocols.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
+	13, // 3: protocols.FileSystemRequest.init:type_name -> protocols.FileSystemRequest.InitRequest
+	14, // 4: protocols.FileSystemRequest.list_files:type_name -> protocols.FileSystemRequest.ListFilesRequest
+	15, // 5: protocols.FileSystemRequest.write_file:type_name -> protocols.FileSystemRequest.WriteFileRequest
+	16, // 6: protocols.FileSystemRequest.delete_file:type_name -> protocols.FileSystemRequest.DeleteFileRequest
+	18, // 7: protocols.FileSystemResponse.init:type_name -> protocols.FileSystemResponse.InitResponse
+	19, // 8: protocols.FileSystemResponse.list_files:type_name -> protocols.FileSystemResponse.ListFilesResponse
+	20, // 9: protocols.FileSystemResponse.write_file:type_name -> protocols.FileSystemResponse.WriteFileResponse
+	21, // 10: protocols.FileSystemResponse.delete_file:type_name -> protocols.FileSystemResponse.DeleteFileResponse
+	17, // 11: protocols.FileSystemRequest.InitRequest.post:type_name -> protocols.FileSystemRequest.InitRequest.Post
+	9,  // 12: protocols.FileSystemRequest.WriteFileRequest.spec:type_name -> protocols.FileSpec
+	9,  // 13: protocols.FileSystemResponse.ListFilesResponse.files:type_name -> protocols.FileSpec
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_protocols_post_proto_init() }
@@ -864,6 +1651,163 @@ func file_protocols_post_proto_init() {
 				return nil
 			}
 		}
+		file_protocols_post_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSpec); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemRequest_InitRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemRequest_ListFilesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemRequest_WriteFileRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemRequest_DeleteFileRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemRequest_InitRequest_Post); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemResponse_InitResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemResponse_ListFilesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemResponse_WriteFileResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_post_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FileSystemResponse_DeleteFileResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	file_protocols_post_proto_msgTypes[10].OneofWrappers = []interface{}{
+		(*FileSystemRequest_ListFiles)(nil),
+		(*FileSystemRequest_WriteFile)(nil),
+		(*FileSystemRequest_DeleteFile)(nil),
+	}
+	file_protocols_post_proto_msgTypes[11].OneofWrappers = []interface{}{
+		(*FileSystemResponse_ListFiles)(nil),
+		(*FileSystemResponse_WriteFile)(nil),
+		(*FileSystemResponse_DeleteFile)(nil),
+	}
+	file_protocols_post_proto_msgTypes[13].OneofWrappers = []interface{}{
+		(*FileSystemRequest_InitRequest_Post_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -871,7 +1815,7 @@ func file_protocols_post_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_protocols_post_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

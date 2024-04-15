@@ -65,3 +65,55 @@ message SetRedirectRequest {
 	string target_path = 2;
 	int32 status_code = 3;
 }
+
+message FileSpec {
+	string path = 1;
+	uint32 mode = 2;
+	uint32 size = 3;
+	uint32 time = 4;
+}
+
+message FileSystemRequest {
+	message InitRequest {
+		message Post {
+			int64 id = 1;
+		}
+		oneof For {
+			Post post = 1;
+		}
+	}
+
+	InitRequest init = 1;
+
+	message ListFilesRequest {}
+	message WriteFileRequest {
+		FileSpec spec = 1;
+		bytes data = 2;
+	}
+	message DeleteFileRequest {
+		string path = 1;
+	}
+	oneof Request {
+		ListFilesRequest list_files = 10;
+		WriteFileRequest write_file = 11;
+		DeleteFileRequest delete_file = 12;
+	}
+}
+
+message FileSystemResponse {
+	message InitResponse{}
+	
+	InitResponse init = 1;
+	
+	message ListFilesResponse {
+		repeated FileSpec files = 1;
+	}
+	message WriteFileResponse { }
+	message DeleteFileResponse { }
+
+	oneof Response {
+		ListFilesResponse list_files = 10;
+		WriteFileResponse write_file = 11;
+		DeleteFileResponse delete_file = 12;
+	}
+}

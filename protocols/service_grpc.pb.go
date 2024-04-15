@@ -26,6 +26,7 @@ type ManagementClient interface {
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (Management_BackupClient, error)
 	BackupFiles(ctx context.Context, opts ...grpc.CallOption) (Management_BackupFilesClient, error)
 	SetRedirect(ctx context.Context, in *SetRedirectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	FileSystem(ctx context.Context, opts ...grpc.CallOption) (Management_FileSystemClient, error)
 }
 
 type managementClient struct {
@@ -108,6 +109,37 @@ func (c *managementClient) SetRedirect(ctx context.Context, in *SetRedirectReque
 	return out, nil
 }
 
+func (c *managementClient) FileSystem(ctx context.Context, opts ...grpc.CallOption) (Management_FileSystemClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Management_ServiceDesc.Streams[2], "/protocols.Management/FileSystem", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &managementFileSystemClient{stream}
+	return x, nil
+}
+
+type Management_FileSystemClient interface {
+	Send(*FileSystemRequest) error
+	Recv() (*FileSystemResponse, error)
+	grpc.ClientStream
+}
+
+type managementFileSystemClient struct {
+	grpc.ClientStream
+}
+
+func (x *managementFileSystemClient) Send(m *FileSystemRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *managementFileSystemClient) Recv() (*FileSystemResponse, error) {
+	m := new(FileSystemResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ManagementServer is the server API for Management service.
 // All implementations must embed UnimplementedManagementServer
 // for forward compatibility
@@ -115,6 +147,7 @@ type ManagementServer interface {
 	Backup(*BackupRequest, Management_BackupServer) error
 	BackupFiles(Management_BackupFilesServer) error
 	SetRedirect(context.Context, *SetRedirectRequest) (*emptypb.Empty, error)
+	FileSystem(Management_FileSystemServer) error
 	mustEmbedUnimplementedManagementServer()
 }
 
@@ -130,6 +163,9 @@ func (UnimplementedManagementServer) BackupFiles(Management_BackupFilesServer) e
 }
 func (UnimplementedManagementServer) SetRedirect(context.Context, *SetRedirectRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetRedirect not implemented")
+}
+func (UnimplementedManagementServer) FileSystem(Management_FileSystemServer) error {
+	return status.Errorf(codes.Unimplemented, "method FileSystem not implemented")
 }
 func (UnimplementedManagementServer) mustEmbedUnimplementedManagementServer() {}
 
@@ -209,6 +245,32 @@ func _Management_SetRedirect_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Management_FileSystem_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ManagementServer).FileSystem(&managementFileSystemServer{stream})
+}
+
+type Management_FileSystemServer interface {
+	Send(*FileSystemResponse) error
+	Recv() (*FileSystemRequest, error)
+	grpc.ServerStream
+}
+
+type managementFileSystemServer struct {
+	grpc.ServerStream
+}
+
+func (x *managementFileSystemServer) Send(m *FileSystemResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *managementFileSystemServer) Recv() (*FileSystemRequest, error) {
+	m := new(FileSystemRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Management_ServiceDesc is the grpc.ServiceDesc for Management service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -230,6 +292,12 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "BackupFiles",
 			Handler:       _Management_BackupFiles_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "FileSystem",
+			Handler:       _Management_FileSystem_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

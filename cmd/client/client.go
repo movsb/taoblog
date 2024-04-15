@@ -3,26 +3,14 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-	"os"
 
 	"github.com/movsb/taoblog/protocols"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-)
-
-var (
-	// ErrStatusCode ...
-	ErrStatusCode = errors.New("http.statusCode != 200")
-)
-
-const (
-	contentTypeBinary = "application/octet-stream"
 )
 
 // Client ...
@@ -101,28 +89,4 @@ func NewClient(config HostConfig) *Client {
 
 func (c *Client) token() context.Context {
 	return metadata.NewOutgoingContext(context.TODO(), metadata.Pairs("token", c.config.Token))
-}
-
-func (c *Client) post(path string, body io.Reader, ty string) *http.Response {
-	req, err := http.NewRequest("POST", c.config.API+path, body)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Authorization", c.config.Token)
-	req.Header.Set("Content-Type", ty)
-	resp, err := c.client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	return resp
-}
-
-func (c *Client) mustPost(path string, body io.Reader, ty string) *http.Response {
-	resp := c.post(path, body, ty)
-	if resp.StatusCode != 200 {
-		io.Copy(os.Stderr, resp.Body)
-		resp.Body.Close()
-		panic(resp.Status)
-	}
-	return resp
 }
