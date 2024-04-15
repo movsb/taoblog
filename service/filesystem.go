@@ -8,6 +8,7 @@ import (
 	fspkg "io/fs"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/movsb/taoblog/protocols"
@@ -159,7 +160,9 @@ func (fs *_FileSystemForPost) DeleteFile(path string) error {
 }
 
 func (fs *_FileSystemForPost) WriteFile(spec *protocols.FileSpec, r io.Reader) error {
-	tmp, err := os.CreateTemp("", `taoblog-*`)
+	finalPath, _ := fs.s.Store().PathOf(fs.id, spec.Path)
+
+	tmp, err := os.CreateTemp(filepath.Dir(finalPath), `taoblog-*`)
 	if err != nil {
 		return err
 	}
@@ -182,8 +185,7 @@ func (fs *_FileSystemForPost) WriteFile(spec *protocols.FileSpec, r io.Reader) e
 		return err
 	}
 
-	path, _ := fs.s.Store().PathOf(fs.id, spec.Path)
-	if err := os.Rename(tmp.Name(), path); err != nil {
+	if err := os.Rename(tmp.Name(), finalPath); err != nil {
 		return err
 	}
 
