@@ -1,7 +1,10 @@
 /* 头部 */
 
 #header .content {
-    max-width: var(--max-width);
+	max-width: var(--max-width);
+}
+body.wide #header .content {
+	max-width: unset;
 }
 
 #header {
@@ -87,9 +90,14 @@
 }
 
 @media screen and (max-width: $max_width) {
-    #header .content {
-        text-align: center;
-    }
+    #header {
+		.content {
+			text-align: center;
+		}
+		.search {
+			margin: .5em;
+		}
+	}
 }
 
 @media(prefers-color-scheme: light) {
@@ -110,7 +118,7 @@
             }
             .search {
                 position: absolute;
-                right: 10px;
+				right: 0;
 				top: 10px;
 				input {
 					position: relative;

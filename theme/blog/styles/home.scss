@@ -1,0 +1,16 @@
+#latest-comment-list .post-comment-list {
+	padding-left: 0;
+}
+#latest-comment-list p {
+	margin: 4px 0;
+	line-height: 1.3em;
+	word-break: break-word;
+}
+#all-posts {
+	list-style: none;
+}
+@media screen and (max-width: $max_width) {
+	#latest-comment-list, #latest-post-list, #status-list, #all-posts {
+		padding-left: 1em;
+	}
+}
