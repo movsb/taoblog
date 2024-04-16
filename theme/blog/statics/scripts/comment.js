@@ -29,7 +29,7 @@ document.write(function(){/*
 			<div class="fields">
 				<input type="text" name="author" placeholder="昵称" />
 				<input type="text" name="email" placeholder="邮箱(不公开)"/>
-				<input type="text" name="url" placeholder="个人站点(可不填)" />
+				<input type="text" name="url" placeholder="网站(可不填)" />
 				<input type="submit" id="comment-submit" value="发表评论" />
 				<div class="field">
 					<input type="checkbox" id="comment-wrap-lines" checked />

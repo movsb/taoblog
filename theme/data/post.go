@@ -38,9 +38,9 @@ func newPosts(posts []*protocols.Post) []*Post {
 	return ps
 }
 
-// NonPublic ...
-func (p *Post) NonPublic() string {
-	switch p.Status {
+// 返回文章的公开状态字符串。
+func (p *Post) StatusString() string {
+	switch p.Post.Status {
 	case ``:
 		panic(`post.Status empty`)
 	case `public`:

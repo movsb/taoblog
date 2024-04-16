@@ -9,7 +9,7 @@
 <h2>近期文章</h2>
 <ul id="latest-post-list">
 {{- range .Home.Posts}}
-	<li><a href="{{.Link}}">{{.NonPublic}}{{.Title}}</a></li>
+	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
 {{- end}}
 </ul>
 

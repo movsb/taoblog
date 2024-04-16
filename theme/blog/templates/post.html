@@ -9,7 +9,7 @@
 <article class="post">
 	{{ with .Post.Post }}
 	<div style="overflow: hidden;">
-		<h1 class="title clearfix"><a href="{{ .Link }}">{{ .Title }}</a></h1>
+		<h1 class="title clearfix"><a href="{{ .Link }}">{{.StatusString}}{{ .Title }}</a></h1>
 	</div>
 	<div class="entry clearfix">
 	<div class="meta1 clearfix">
