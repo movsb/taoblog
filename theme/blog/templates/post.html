@@ -9,10 +9,10 @@
 <article class="post">
 	{{ with .Post.Post }}
 	<div style="overflow: hidden;">
-		<h1 class="title clearfix"><a href="{{ .Link }}">{{.StatusString}}{{ .Title }}</a></h1>
+		<h1 class="title"><a href="{{ .Link }}">{{.StatusString}}{{ .Title }}</a></h1>
 	</div>
-	<div class="entry clearfix">
-	<div class="meta1 clearfix">
+	<div class="entry">
+	<div class="meta1">
 		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ $.Config.Site.Name }}</a>
 		{{ if $.Author }}
 		<span class="author">{{ $.Author }}</span>
@@ -41,7 +41,7 @@
 </div>
 	</div><!-- end entry -->
 	{{if .Tags}}
-	<div class="meta2 clearfix">
+	<div class="meta2">
 		<p><b>标签：</b><span class="value">{{.TagsString}}</span></p>
 	</div>
 	{{end}}
@@ -49,7 +49,7 @@
 	{{ end }}
 
 	{{ if and $dot.Config.Site.ShowRelatedPosts $dot.Post.Post.Related }}
-    <div class="related clearfix">
+    <div class="related">
         <h3>相关文章</h3>
         <ul>
         {{ range $dot.Post.Post.Related }}
@@ -59,7 +59,7 @@
     </div><!-- end related -->
 	{{ end }}
     <!-- comments begin -->
-    <div id="comments" class="clearfix">
+    <div id="comments">
         <script src="/scripts/comment.js"></script>
     </div>
     <!-- comments end -->
