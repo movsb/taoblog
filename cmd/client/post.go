@@ -226,7 +226,11 @@ func (c *Client) DeletePost(id int64) error {
 // TODO 目前为了简单起见，使用的是 HTTP POST 方式上传；
 // TODO 应该像 Backup 那样改成带进度的 protocol buffer 方式上传。
 // files 路径列表，相对于工作目录，相对路径。
+// TODO 由于评论中可能也带有图片引用，但是不会被算计到。所以远端的多余
+// TODO 文件总是不会被删除：deleteExtraneousRemoteFiles 参数暂时不生效。
 func (c *Client) UploadPostFiles(files []string, deleteExtraneousRemoteFiles bool) {
+	deleteExtraneousRemoteFiles = false
+
 	config := c.readPostConfig()
 	if config.ID <= 0 {
 		panic("post not posted, post it first.")
