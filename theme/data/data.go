@@ -52,7 +52,7 @@ type Data struct {
 
 func (d *Data) BodyClass() string {
 	c := []string{
-		`line-numbers`,
+		`line-numbers`, // https://prismjs.com/plugins/line-numbers/#how-to-use
 	}
 	if d.Post != nil {
 		if d.Post.Post.Wide() {
