@@ -19,10 +19,15 @@ func NewDataForTag(cfg *config.Config, user *auth.User, service *service.Service
 		User:   user,
 		Meta:   &MetaData{},
 	}
-	posts := newPosts(service.GetPostsByTags(tags).ToProtocols())
 	td := &TagData{
 		Names: tags,
-		Posts: posts,
+	}
+	posts := service.GetPostsByTags(tags).ToProtocols()
+	for _, p := range posts {
+		pp := newPost(p)
+		pp.link = service.GetLink(p.Id)
+		td.Posts = append(td.Posts, pp)
+
 	}
 	d.Tag = td
 	return d

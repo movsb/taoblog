@@ -57,21 +57,24 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 		panic(err)
 	}
 	outs := posts.ToProtocols()
-	for _, out := range outs {
-		content, err := s.getPostContent(out.Id)
-		if err != nil {
-			panic(err)
+	if in.WithContent {
+		for _, out := range outs {
+			content, err := s.getPostContent(out.Id)
+			if err != nil {
+				panic(err)
+			}
+			out.Content = content
 		}
-		out.Content = content
 	}
 	return outs
 }
 
-func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64) []*protocols.Post {
+func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64, withContent bool) []*protocols.Post {
 	in := protocols.ListPostsRequest{
-		Fields:  fields,
-		Limit:   limit,
-		OrderBy: "date DESC",
+		Fields:      fields,
+		Limit:       limit,
+		OrderBy:     "date DESC",
+		WithContent: withContent,
 	}
 	return s.MustListPosts(ctx, &in)
 }
@@ -137,16 +140,19 @@ func (s *Service) getPostContent(id int64) (string, error) {
 	content, err := s.cache.Get(fmt.Sprintf(`post:%d`, id), func(key string) (interface{}, error) {
 		_ = key
 		var p models.Post
-		s.posts().Select("source_type,source").Where("id = ?", id).MustFind(&p)
+		s.posts().Select("type,source_type,source").Where("id = ?", id).MustFind(&p)
 		var content string
 		var tr renderers.Renderer
 		switch p.SourceType {
 		case `markdown`:
-			mt := renderers.NewMarkdown(
+			options := []renderers.Option{
 				renderers.WithPathResolver(s.PathResolver(id)),
 				renderers.WithRemoveTitleHeading(true),
-			)
-			tr = mt
+			}
+			if link := s.linker.PostOrPage(id); link != s.plainLink(id) {
+				options = append(options, renderers.WithModifiedAnchorReference(link))
+			}
+			tr = renderers.NewMarkdown(options...)
 		case `html`:
 			tr = &renderers.HTML{}
 		default:
@@ -168,6 +174,25 @@ func (s *Service) GetPostTitle(ID int64) string {
 	var p models.Post
 	s.posts().Select("title").Where("id = ?", ID).MustFind(&p)
 	return p.Title
+}
+
+// 临时放这儿。
+// 本应该由各主题自己实现的。
+func (s *Service) GetLink(ID int64) string {
+	if ID == 514 {
+		ID += 0
+	}
+	var p models.Post
+	s.posts().Select("id,slug,category,type").Where("id = ?", ID).MustFind(&p)
+	if p.Type == `page` && p.Slug != "" && p.Category == 0 {
+		return fmt.Sprintf(`/%s`, p.Slug)
+	}
+	return s.plainLink(p.ID)
+}
+
+// 普通链接是为了附件的 <base> 而设置，对任何主题都生效。
+func (s *Service) plainLink(id int64) string {
+	return fmt.Sprintf(`/%d/`, id)
 }
 
 func (s *Service) GetPostByID(id int64) *protocols.Post {
@@ -423,12 +448,12 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		case "html":
 			tr = &renderers.HTML{}
 		case "markdown":
+			// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
 			tr = renderers.NewMarkdown()
 		default:
 			panic("no translator found")
 		}
 
-		// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
 		title, _, err := tr.Render(in.Post.Source)
 		if err != nil {
 			panic(err)
@@ -549,7 +574,7 @@ func (s *Service) FindRedirect(sourcePath string) (string, error) {
 	return r.TargetPath, nil
 }
 
-func (s *Service) findRedirect(ctx context.Context, txs *Service, sourcePath string) (*models.Redirect, error) {
+func (s *Service) findRedirect(_ context.Context, txs *Service, sourcePath string) (*models.Redirect, error) {
 	var r models.Redirect
 	if err := txs.tdb.Where(`source_path=?`, sourcePath).Find(&r); err != nil {
 		return nil, err

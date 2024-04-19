@@ -63,8 +63,10 @@ func serve() {
 		mux.Handle(a.Prefix(), a.Handler())
 	}
 
-	canon := canonical.New(theme.NewTheme(cfg, theService, theAuth, `theme/blog`), r)
+	theme := theme.New(cfg, theService, theAuth, `theme/blog`)
+	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
+	theService.SetLinker(theme.Linker())
 
 	server := &http.Server{
 		Addr:    cfg.Server.HTTPListen,

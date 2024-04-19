@@ -44,8 +44,7 @@ type Theme struct {
 	namedTemplates   map[string]*template.Template
 }
 
-// NewTheme ...
-func NewTheme(cfg *config.Config, service *service.Service, auth *auth.Auth, base string) *Theme {
+func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base string) *Theme {
 	t := &Theme{
 		cfg:     cfg,
 		base:    base,
@@ -62,6 +61,18 @@ func NewTheme(cfg *config.Config, service *service.Service, auth *auth.Auth, bas
 	t.loadTemplates()
 	t.watchTheme()
 	return t
+}
+
+type _ThemeLinker struct {
+	t *Theme
+}
+
+func (t *_ThemeLinker) PostOrPage(id int64) string {
+	return t.t.service.GetLink(id)
+}
+
+func (t *Theme) Linker() canonical.Linker {
+	return &_ThemeLinker{t}
 }
 
 func createMenus(items []config.MenuItem, outer bool) string {

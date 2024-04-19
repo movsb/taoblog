@@ -18,6 +18,8 @@ type ListPostsRequest struct {
 	Fields  string
 	Limit   int64
 	OrderBy string
+
+	WithContent bool
 }
 
 type ListTagsWithCountRequest struct {

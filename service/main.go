@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/search"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/service/modules/storage/local"
+	"github.com/movsb/taoblog/theme/modules/canonical"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -37,6 +38,8 @@ type Service struct {
 	cache  *memory_cache.MemoryCache
 
 	avatarCache *AvatarCache
+
+	linker canonical.Linker
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
@@ -96,6 +99,10 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	go s.RunSearchEngine(context.TODO())
 
 	return s
+}
+
+func (s *Service) SetLinker(linker canonical.Linker) {
+	s.linker = linker
 }
 
 // GrpcAddress ...

@@ -62,7 +62,11 @@ func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Servi
 		postsData.ViewCount += int64(p.PageView)
 	}
 
-	postsData.Posts = newPosts(posts)
+	for _, p := range posts {
+		pp := newPost(p)
+		pp.link = service.GetLink(pp.ID)
+		postsData.Posts = append(postsData.Posts, pp)
+	}
 	d.Posts = postsData
 	return d
 }

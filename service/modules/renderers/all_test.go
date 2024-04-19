@@ -57,6 +57,31 @@ func TestMarkdownAll(t *testing.T) {
 			Markdown:    fmt.Sprintf(`![](%s/avatar.jpg?scale=0.1)`, host),
 			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" loading="lazy" width=46 height=46 /></p>`, host),
 		},
+		{
+			ID:          4,
+			Description: `修改页面锚点的指向`,
+			Options:     []renderers.Option{},
+			Markdown:    `[A](#section)`,
+			Html:        `<p><a href="#section">A</a></p>`,
+		},
+		{
+			ID:          5,
+			Description: `修改页面锚点的指向`,
+			Options: []renderers.Option{
+				renderers.WithModifiedAnchorReferenceForPage("/about"),
+			},
+			Markdown: `[A](#section)`,
+			Html:     `<p><a href="/about#section">A</a></p>`,
+		},
+		{
+			ID:          6,
+			Description: `修改页面锚点的指向`,
+			Options: []renderers.Option{
+				renderers.WithModifiedAnchorReferenceForPage("/about/"),
+			},
+			Markdown: `[A](#section)`,
+			Html:     `<p><a href="/about/#section">A</a></p>`,
+		},
 	}
 	for _, tc := range cases {
 		md := renderers.NewMarkdown(tc.Options...)

@@ -38,6 +38,8 @@ type _Markdown struct {
 	disableHeadings    bool // 评论中不允许标题
 	disableHTML        bool // 禁止 HTML 元素
 	openLinksInNewTab  bool // 新窗口打开链接
+
+	modifiedAnchorReference string
 }
 
 var (
@@ -78,6 +80,15 @@ func WithDisableHeadings(disable bool) Option {
 func WithDisableHTML(disable bool) Option {
 	return func(me *_Markdown) error {
 		me.disableHTML = disable
+		return nil
+	}
+}
+
+// 修改锚点页内引用（#）的指向为绝对地址。
+// https://github.com/movsb/taoblog/blob/5c86466f3c1ab2f1543c3a5be4abc24f9c60c532/docs/TODO.md
+func WithModifiedAnchorReference(relativePath string) Option {
+	return func(me *_Markdown) error {
+		me.modifiedAnchorReference = relativePath
 		return nil
 	}
 }
@@ -169,6 +180,16 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 					n.SetAttributeString(`target`, `_blank`)
 					// TODO 会覆盖已经有了的
 					n.SetAttributeString(`class`, `external`)
+				}
+
+				if n.Kind() == ast.KindLink && me.modifiedAnchorReference != "" {
+					link := n.(*ast.Link)
+					if href := string(link.Destination); strings.HasPrefix(href, "#") {
+						if url, err := url.Parse(href); err == nil {
+							url.Path = me.modifiedAnchorReference
+							link.Destination = []byte(url.String())
+						}
+					}
 				}
 			}
 		}

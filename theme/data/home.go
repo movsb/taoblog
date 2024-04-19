@@ -30,12 +30,19 @@ func NewDataForHome(cfg *config.Config, user *auth.User, service *service.Servic
 		PageCount:    service.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: service.GetDefaultIntegerOption("comment_count", 0),
 	}
-	home.Posts = newPosts(service.MustListPosts(user.Context(context.TODO()),
+	posts := service.MustListPosts(user.Context(context.TODO()),
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,type,status,date",
 			Limit:   20,
 			OrderBy: "date DESC",
-		}))
+		},
+	)
+	// 太 hardcode shit 了。
+	for _, p := range posts {
+		pp := newPost(p)
+		pp.link = service.GetLink(p.Id)
+		home.Posts = append(home.Posts, pp)
+	}
 	d.Home = home
 	d.svc = service
 	return d

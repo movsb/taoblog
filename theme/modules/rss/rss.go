@@ -86,6 +86,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		user.Context(context.TODO()),
 		"id,title,date",
 		int64(r.Config.Site.RSS.ArticleCount),
+		true,
 	)
 
 	rssArticles := make([]*Article, 0, len(articles))

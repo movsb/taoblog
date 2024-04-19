@@ -7,7 +7,6 @@ import (
 
 	"github.com/movsb/taoblog/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
@@ -72,29 +71,4 @@ func (d *Data) Author() string {
 // MetaData ...
 type MetaData struct {
 	Title string // 实际上应该为站点标题，但是好像成了文章标题？
-}
-
-// PostData ...
-type PostData struct {
-	Post *Post
-}
-
-// NewDataForPost ...
-func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Service, post *protocols.Post) *Data {
-	d := &Data{
-		Config: cfg,
-		User:   user,
-		Meta: &MetaData{
-			Title: post.Title,
-		},
-	}
-	p := &PostData{
-		Post: newPost(post),
-	}
-	d.Post = p
-	if cfg.Site.ShowRelatedPosts {
-		p.Post.Related = service.GetRelatedPosts(post.Id)
-	}
-	p.Post.Tags = service.GetPostTags(p.Post.Id)
-	return d
 }
