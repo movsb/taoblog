@@ -35,32 +35,46 @@
 })();
 
 // 数学公式
-(function(){
-function hasMath() {
-	var math = document.querySelector('.math');
-	if (math !== null) {
-		return true;
-	}
+(function() {
+	let maths = document.querySelectorAll('.math.inline,.math.display');
+	if (maths.length <= 0) return;
 
-    var has = false;
-
-    // old-style, to-be-removed
-	let codes = document.querySelectorAll('code:not([class*="lang"])');
-	codes.forEach(function(e) {
-		var t = e.innerHTML;
-		if(t.startsWith('$') && t.endsWith('$')) {
-			has = true;
+	window.MathJax = {
+		jax: ["input/TeX", "output/HTML-CSS"],
+		extensions: ["tex2jax.js"],
+		tex2jax: {
+			skipTags: [],
+			inlineMath: [['$', '$']],
+			displayMath: [['$$', '$$']]
+		},
+		skipStartupTypeset: true,
+		menuSettings: {
+			zoom: 'Double-Click'
 		}
-	});
-    return has;
-}
+	};
 
-if(hasMath()) {
 	let s = document.createElement('script');
-    s.src = '/plugins/mathjax/mathjax.js';
-    s.async = true;
-    document.body.appendChild(s);
-}
+	s.async = true;
+	s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js';
+	document.body.appendChild(s);
+
+	let timer = null;
+	timer = setInterval(function() {
+		if (!window.MathJax || !MathJax.isReady) {
+			return;
+		}
+		clearInterval(timer);
+		console.log('MathJax loaded.');
+
+		let p = document.createElement('p');
+		p.innerText = '$a$';
+
+		MathJax.Hub.Typeset(p, function() {
+			maths.forEach(function(math) {
+				MathJax.Hub.Typeset(math);
+			});
+		});
+	}, 1000);
 })();
 
 // 代码高亮

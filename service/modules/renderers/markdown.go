@@ -122,7 +122,10 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithExtensions(extension.DefinitionList),
 		goldmark.WithExtensions(extension.Footnote),
-		goldmark.WithExtensions(mathjax.MathJax),
+		goldmark.WithExtensions(mathjax.NewMathJax(
+			mathjax.WithInlineDelim(`$`, `$`),
+			mathjax.WithBlockDelim(`$$`, `$$`),
+		)),
 		goldmark.WithExtensions(wikitable.New()),
 	)
 

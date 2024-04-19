@@ -13,16 +13,9 @@ import (
 
 func TestMarkdown(t *testing.T) {
 	tr := renderers.NewMarkdown()
-	t2, s, err := tr.Render(`### <a id="my-header"></a>Header`)
-	fmt.Println(t2, s, err)
-}
-
-func TestImage(t *testing.T) {
-	tr := renderers.NewMarkdown()
-	t2, s, err := tr.Render(`
-# heading
-
-![a](a.png)
+	t2, s, err := tr.Render(`$$
+\sqrt{公式}
+$$
 `)
 	fmt.Println(t2, s, err)
 }
