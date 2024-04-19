@@ -20,12 +20,6 @@ body.wide #content {
     h1 {
         color: var(--title-fg);
         font-size: 2em;
-        a {
-            color: inherit;
-			&:hover {
-				text-decoration: unset;
-			}
-        }
     }
 
     /* toolbar */

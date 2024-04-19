@@ -8,8 +8,9 @@
 {{- render "header" . -}}
 <article class="post">
 	{{ with .Post.Post }}
+	<!-- 这样做可以让 <article> 元素占满屏幕 -->
 	<div style="overflow: hidden;">
-		<h1 class="title"><a href="{{ .Link }}">{{.StatusString}}{{ .Title }}</a></h1>
+		<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
 	</div>
 	<div class="entry">
 	<div class="meta1">
