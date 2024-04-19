@@ -27,7 +27,6 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
-	html5 "golang.org/x/net/html"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -209,6 +208,7 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	url, _ := url.Parse(string(n.image.Destination))
 	if url == nil {
 		w.WriteString(`<img />`)
+		log.Println(`图片地址解析失败：`, string(n.image.Destination))
 		return ast.WalkContinue, nil
 	}
 
@@ -240,14 +240,6 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	}
 	_, _ = w.WriteString(` loading="lazy"`)
 
-	path := url.Path
-	if me.pathResolver != nil && !strings.Contains(path, `://`) {
-		path2, err := me.pathResolver.Resolve(path)
-		if err == nil {
-			path = path2
-		}
-	}
-
 	if len(styles) > 0 {
 		b := strings.Builder{}
 		b.WriteString(`style="`)
@@ -262,14 +254,25 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		w.WriteString(fmt.Sprintf(`class="%s"`, strings.Join(classes, " ")))
 	}
 
-	width, height := size(path)
-	if width > 0 && height > 0 {
-		w.WriteString(fmt.Sprintf(` width=%d height=%d`, int(float64(width)*scale), int(float64(height)*scale)))
+	updatedURL := url.String()
+	// 看起来是文章内的相对链接？
+	// 如果是的话，需要 resolve 到相对应的目录。
+	if !url.IsAbs() && !strings.HasPrefix(url.Path, `/`) && me.pathResolver != nil {
+		pathRelative, err := me.pathResolver.Resolve(url.Path)
+		if err != nil {
+			log.Println(`解析图片相对路径失败`)
+			// fallthrough
+		} else {
+			url.Path = pathRelative
+			updatedURL = url.String()
+		}
 	}
 
-	// TODO 用 Node 序列化，代替手写标签。
-	img := html5.Node{}
-	_ = img
+	width, height := size(updatedURL)
+	if width > 0 && height > 0 {
+		widthScaled, heightScaled := int(float64(width)*scale), int(float64(height)*scale)
+		w.WriteString(fmt.Sprintf(` width=%d height=%d`, widthScaled, heightScaled))
+	}
 
 	_, _ = w.WriteString(" />")
 	return ast.WalkSkipChildren, nil
@@ -332,6 +335,7 @@ func size(path string) (int, int) {
 	}
 	width, height := imgConfig.Width, imgConfig.Height
 
+	// TODO 移除通过 @2x 类似的图片缩放支持。
 	for i := 1; i <= 10; i++ {
 		scaleFmt := fmt.Sprintf(`@%dx.`, i)
 		if strings.Contains(filepath.Base(path), scaleFmt) {
