@@ -33,7 +33,7 @@ func TestMarkdownAll(t *testing.T) {
 	host := server.URL
 
 	cases := []struct {
-		ID          int
+		ID          float32
 		Options     []renderers.Option
 		Description string
 		Markdown    string
@@ -65,7 +65,7 @@ func TestMarkdownAll(t *testing.T) {
 			Html:        `<p><a href="#section">A</a></p>`,
 		},
 		{
-			ID:          5,
+			ID:          4.1,
 			Description: `修改页面锚点的指向`,
 			Options: []renderers.Option{
 				renderers.WithModifiedAnchorReference("/about"),
@@ -74,13 +74,36 @@ func TestMarkdownAll(t *testing.T) {
 			Html:     `<p><a href="/about#section">A</a></p>`,
 		},
 		{
-			ID:          6,
+			ID:          4.2,
 			Description: `修改页面锚点的指向`,
 			Options: []renderers.Option{
 				renderers.WithModifiedAnchorReference("/about/"),
 			},
 			Markdown: `[A](#section)`,
 			Html:     `<p><a href="/about/#section">A</a></p>`,
+		},
+		{
+			ID:          5.0,
+			Description: `新窗口打开链接`,
+			Options:     []renderers.Option{},
+			Markdown:    `[](/foo)`,
+			Html:        `<p><a href="/foo"></a></p>`,
+		},
+		{
+			ID: 5.1,
+			Options: []renderers.Option{
+				renderers.WithOpenLinksInNewTab(),
+			},
+			Markdown: `[](/foo)`,
+			Html:     `<p><a href="/foo" target="_blank" class="external"></a></p>`,
+		},
+		{
+			ID: 5.1,
+			Options: []renderers.Option{
+				renderers.WithOpenLinksInNewTab(),
+			},
+			Markdown: `[](#section)`,
+			Html:     `<p><a href="#section"></a></p>`,
 		},
 	}
 	for _, tc := range cases {

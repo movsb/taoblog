@@ -95,6 +95,7 @@ func WithModifiedAnchorReference(relativePath string) Option {
 
 // 新窗口打开链接。
 // TODO 目前只能针对 Markdown 链接， HTML 标签链接不可用。
+// 注意：锚点 （#section）这种不会在新窗口打开。
 func WithOpenLinksInNewTab() Option {
 	return func(me *_Markdown) error {
 		me.openLinksInNewTab = true
@@ -176,10 +177,15 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含 HTML 标签。`)
 				}
 			case ast.KindAutoLink, ast.KindLink:
-				if me.openLinksInNewTab {
-					n.SetAttributeString(`target`, `_blank`)
-					// TODO 会覆盖已经有了的
-					n.SetAttributeString(`class`, `external`)
+				if n.Kind() == ast.KindLink {
+					link := string(n.(*ast.Link).Destination)
+					if !strings.HasPrefix(link, `#`) {
+						if me.openLinksInNewTab {
+							n.SetAttributeString(`target`, `_blank`)
+							// TODO 会覆盖已经有了的
+							n.SetAttributeString(`class`, `external`)
+						}
+					}
 				}
 
 				if n.Kind() == ast.KindLink && me.modifiedAnchorReference != "" {
