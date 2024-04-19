@@ -68,7 +68,7 @@ func TestMarkdownAll(t *testing.T) {
 			ID:          5,
 			Description: `修改页面锚点的指向`,
 			Options: []renderers.Option{
-				renderers.WithModifiedAnchorReferenceForPage("/about"),
+				renderers.WithModifiedAnchorReference("/about"),
 			},
 			Markdown: `[A](#section)`,
 			Html:     `<p><a href="/about#section">A</a></p>`,
@@ -77,7 +77,7 @@ func TestMarkdownAll(t *testing.T) {
 			ID:          6,
 			Description: `修改页面锚点的指向`,
 			Options: []renderers.Option{
-				renderers.WithModifiedAnchorReferenceForPage("/about/"),
+				renderers.WithModifiedAnchorReference("/about/"),
 			},
 			Markdown: `[A](#section)`,
 			Html:     `<p><a href="/about/#section">A</a></p>`,
