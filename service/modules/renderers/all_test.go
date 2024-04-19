@@ -52,6 +52,13 @@ func TestMarkdownAll(t *testing.T) {
 </ul>`,
 		},
 		{
+			ID:       2.1,
+			Markdown: `- ![avatar](test_data/中文.jpg?scale=0.3)`,
+			Html: `<ul>
+<li><img src="test_data/%E4%B8%AD%E6%96%87.jpg" alt="avatar" loading="lazy" width=138 height=138 /></li>
+</ul>`,
+		},
+		{
 			ID:          3,
 			Description: `支持网络图片的缩放`,
 			Markdown:    fmt.Sprintf(`![](%s/avatar.jpg?scale=0.1)`, host),
@@ -108,7 +115,7 @@ func TestMarkdownAll(t *testing.T) {
 	}
 	for _, tc := range cases {
 		md := renderers.NewMarkdown(tc.Options...)
-		if tc.ID == 2 {
+		if tc.ID == 2.1 {
 			log.Println(`debug`)
 		}
 		_, html, err := md.Render(tc.Markdown)

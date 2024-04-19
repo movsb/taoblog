@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	urlpkg "net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -281,7 +282,6 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		w.WriteString(fmt.Sprintf(`class="%s"`, strings.Join(classes, " ")))
 	}
 
-	updatedURL := url.String()
 	// 看起来是文章内的相对链接？
 	// 如果是的话，需要 resolve 到相对应的目录。
 	if !url.IsAbs() && !strings.HasPrefix(url.Path, `/`) && me.pathResolver != nil {
@@ -291,11 +291,10 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 			// fallthrough
 		} else {
 			url.Path = pathRelative
-			updatedURL = url.String()
 		}
 	}
 
-	width, height := size(updatedURL)
+	width, height := size(url)
 	if width > 0 && height > 0 {
 		widthScaled, heightScaled := int(float64(width)*scale), int(float64(height)*scale)
 		w.WriteString(fmt.Sprintf(` width=%d height=%d`, widthScaled, heightScaled))
@@ -319,16 +318,17 @@ func nodeToHTMLText(n ast.Node, source []byte) []byte {
 	return buf.Bytes()
 }
 
-func size(path string) (int, int) {
+func size(url *urlpkg.URL) (int, int) {
 	var fp io.ReadCloser
-	if strings.Contains(path, `://`) {
-		resp, err := http.Get(path)
+	switch strings.ToLower(url.Scheme) {
+	case `http`, `https`:
+		resp, err := http.Get(url.String())
 		if err != nil {
 			panic(err)
 		}
 		fp = resp.Body
-	} else {
-		f, err := os.Open(path)
+	default:
+		f, err := os.Open(url.Path)
 		if err != nil {
 			// panic(err)
 			return 0, 0
@@ -342,7 +342,7 @@ func size(path string) (int, int) {
 			if _, err := sfp.Seek(0, io.SeekStart); err != nil {
 				panic(err)
 			}
-			if strings.EqualFold(filepath.Ext(path), `.svg`) {
+			if strings.EqualFold(filepath.Ext(url.Path), `.svg`) {
 				type _SvgSize struct {
 					Width  string `xml:"width,attr"`
 					Height string `xml:"height,attr"`
@@ -365,7 +365,7 @@ func size(path string) (int, int) {
 	// TODO 移除通过 @2x 类似的图片缩放支持。
 	for i := 1; i <= 10; i++ {
 		scaleFmt := fmt.Sprintf(`@%dx.`, i)
-		if strings.Contains(filepath.Base(path), scaleFmt) {
+		if strings.Contains(filepath.Base(url.Path), scaleFmt) {
 			width /= i
 			height /= i
 			break
