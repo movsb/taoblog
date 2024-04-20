@@ -17,8 +17,6 @@ import (
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/search"
-	"github.com/movsb/taoblog/service/modules/storage"
-	"github.com/movsb/taoblog/service/modules/storage/local"
 	"github.com/movsb/taoblog/theme/modules/canonical"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc"
@@ -34,7 +32,6 @@ type Service struct {
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
 	cmtgeo *commentgeo.CommentGeo
-	store  storage.Store
 	cache  *memory_cache.MemoryCache
 
 	avatarCache *AvatarCache
@@ -52,17 +49,11 @@ type Service struct {
 
 // NewService ...
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
-	localStorage, err := local.NewLocal(cfg.Data.File.Path)
-	if err != nil {
-		panic(err)
-	}
-
 	s := &Service{
 		cfg:    cfg,
 		db:     db,
 		tdb:    taorm.NewDB(db),
 		auth:   auther,
-		store:  localStorage,
 		cache:  memory_cache.NewMemoryCache(time.Minute * 10),
 		cmtgeo: commentgeo.NewCommentGeo(context.TODO()),
 
@@ -139,11 +130,6 @@ func (s *Service) Ping(ctx context.Context, in *protocols.PingRequest) (*protoco
 // Config ...
 func (s *Service) Config() *config.Config {
 	return s.cfg
-}
-
-// Store ...
-func (s *Service) Store() storage.Store {
-	return s.store
 }
 
 // MustTxCall ...

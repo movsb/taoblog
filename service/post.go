@@ -13,6 +13,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -120,19 +121,20 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 }
 
 func (s *Service) PathResolver(id int64) renderers.PathResolver {
-	return &PathResolver{s: s, id: id}
+	return &PathResolver{
+		fs: storage.NewLocal(s.cfg.Data.File.Path, id),
+	}
 }
 
 type PathResolver struct {
-	s  *Service
-	id int64
+	fs storage.FileSystem
 }
 
-func (r *PathResolver) Resolve(path string) (string, error) {
+func (r *PathResolver) Resolve(path string) string {
 	if strings.Contains(path, `://`) {
-		return path, nil
+		return path
 	}
-	return r.s.store.PathOf(r.id, path)
+	return r.fs.Resolve(path)
 }
 
 // TODO 使用磁盘缓存，而不是内存缓存。

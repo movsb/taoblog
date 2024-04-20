@@ -5,5 +5,5 @@ type Renderer interface {
 }
 
 type PathResolver interface {
-	Resolve(path string) (string, error)
+	Resolve(path string) string
 }

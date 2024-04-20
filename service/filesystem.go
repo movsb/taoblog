@@ -3,15 +3,11 @@ package service
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
-	fspkg "io/fs"
 	"log"
-	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/modules/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -23,7 +19,7 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 
 	initialized := false
 
-	var fs _FileSystem
+	var fs storage.FileSystem
 
 	for {
 		req, err := srv.Recv()
@@ -48,7 +44,7 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 		} else if initReq != nil {
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
-				fs, err = s.fileSystemForPost(init.Id)
+				fs, err = s.FileSystemForPost(init.Id)
 			}
 			if err != nil {
 				return status.Error(codes.Internal, err.Error())
@@ -110,93 +106,7 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 	}
 }
 
-type _FileSystem interface {
-	ListFiles() ([]*protocols.FileSpec, error)
-	DeleteFile(path string) error
-	WriteFile(spec *protocols.FileSpec, r io.Reader) error
-}
-
-type _FileSystemForPost struct {
-	s  *Service
-	id int64
-}
-
-func (fs *_FileSystemForPost) ListFiles() ([]*protocols.FileSpec, error) {
-	filePaths, err := fs.s.Store().List(fs.id)
-	if err != nil {
-		return nil, err
-	}
-
-	files := []*protocols.FileSpec{}
-	for _, path := range filePaths {
-		spec, err := func() (*protocols.FileSpec, error) {
-			fp, err := fs.s.Store().Open(fs.id, path)
-			if err != nil {
-				return nil, err
-			}
-			defer fp.Close()
-			stat, err := fp.Stat()
-			if err != nil {
-				return nil, err
-			}
-			return &protocols.FileSpec{
-				Path: path,
-				Mode: uint32(stat.Mode()),
-				Size: uint32(stat.Size()),
-				Time: uint32(stat.ModTime().Unix()),
-			}, nil
-		}()
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, spec)
-	}
-
-	return files, nil
-}
-
-func (fs *_FileSystemForPost) DeleteFile(path string) error {
-	return fs.s.Store().Remove(fs.id, path)
-}
-
-func (fs *_FileSystemForPost) WriteFile(spec *protocols.FileSpec, r io.Reader) error {
-	finalPath, _ := fs.s.Store().PathOf(fs.id, spec.Path)
-
-	tmp, err := os.CreateTemp(filepath.Dir(finalPath), `taoblog-*`)
-	if err != nil {
-		return err
-	}
-
-	if n, err := io.Copy(tmp, r); err != nil || n != int64(spec.Size) {
-		return fmt.Errorf(`write error: %d %v`, n, err)
-	}
-
-	if err := tmp.Chmod(fspkg.FileMode(spec.Mode)); err != nil {
-		return err
-	}
-
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-
-	t := time.Unix(int64(spec.Time), 0)
-
-	if err := os.Chtimes(tmp.Name(), t, t); err != nil {
-		return err
-	}
-
-	if err := os.Rename(tmp.Name(), finalPath); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Service) fileSystemForPost(id int64) (*_FileSystemForPost, error) {
-	_ = s.MustGetPost(id)
-
-	return &_FileSystemForPost{
-		s:  s,
-		id: id,
-	}, nil
+func (s *Service) FileSystemForPost(id int64) (*storage.Local, error) {
+	// _ = s.MustGetPost(id)
+	return storage.NewLocal(s.cfg.Data.File.Path, id), nil
 }

@@ -364,8 +364,11 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 }
 
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
-	file = filepath.Clean(file)
-	fp, err := t.service.Store().Open(postID, file)
+	fs, err := t.service.FileSystemForPost(postID)
+	if err != nil {
+		panic(err)
+	}
+	fp, err := fs.OpenFile(file)
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.NotFound(w, req)

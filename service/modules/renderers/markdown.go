@@ -288,13 +288,8 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	// 看起来是文章内的相对链接？
 	// 如果是的话，需要 resolve 到相对应的目录。
 	if !url.IsAbs() && !strings.HasPrefix(url.Path, `/`) && me.pathResolver != nil {
-		pathRelative, err := me.pathResolver.Resolve(url.Path)
-		if err != nil {
-			log.Println(`解析图片相对路径失败`)
-			// fallthrough
-		} else {
-			url.Path = pathRelative
-		}
+		pathRelative := me.pathResolver.Resolve(url.Path)
+		url.Path = pathRelative
 	}
 
 	width, height := size(url)
