@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/service"
 )

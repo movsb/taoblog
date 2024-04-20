@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"

@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
-	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/cmd/config"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"

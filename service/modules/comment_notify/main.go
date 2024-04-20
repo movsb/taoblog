@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"log"
 
-	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/mailer"
 )
 

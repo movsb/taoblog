@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/config"
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
