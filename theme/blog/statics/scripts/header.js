@@ -54,9 +54,11 @@ TaoBlog.fn.externAnchor = function() {
 }();
 
 // 代码高亮
+// 必须是 <pre><code class="language-xxx"></code></pre>
 TaoBlog.fn.highlight = function(pre) {
 	// 早期代码兼容：
 	// <pre class="code" lang="cpp"></pre>
+	// 处理成 `lang-xxx` 形式。
 	{
 		if (pre.classList.contains('code') && pre.getAttribute('lang') != '' && !pre.firstElementChild) {
 			let code = document.createElement('code');
@@ -66,7 +68,9 @@ TaoBlog.fn.highlight = function(pre) {
 			pre.appendChild(code);
 		}
 	}
-	// 必须是 <pre><code class="language-xxx"></code></pre>
+
+	// 没有指定 `language-xxx` 的代码块的处理：加上 language-none。
+	// 注意：有些 <pre><code> 是后端渲染/手写标记着色的，此时不需要前端着色。
 	{
 		let code = pre.querySelector(':scope > code');
 		if (code) {
@@ -82,6 +86,7 @@ TaoBlog.fn.highlight = function(pre) {
 		}
 	}
 
+	// 主要的代码着色行。
 	Prism.highlightAllUnder(pre);
 
 	// 自动滚动行号
