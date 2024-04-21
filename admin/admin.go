@@ -4,13 +4,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"net/url"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/service"
 )
 
 type LoginData struct {
@@ -24,49 +22,38 @@ func (d *LoginData) HasSocialLogins() bool {
 
 type Admin struct {
 	prefix    string // not including last /
-	service   *service.Service
 	templates *template.Template
-	mux       *utils.ServeMuxWithMethod
+	mux       *http.ServeMux
 	auth      *auth.Auth
 	canGoogle atomic.Bool
 }
 
-func NewAdmin(service *service.Service, auth *auth.Auth, prefix string) *Admin {
-	a := &Admin{
-		prefix:  prefix,
-		service: service,
-		mux:     utils.NewServeMuxWithMethod(),
-		auth:    auth,
+func NewAdmin(auth *auth.Auth, prefix string) *Admin {
+	if !strings.HasSuffix(prefix, "/") {
+		panic("前缀应该以 / 结束。")
 	}
-	a.parsePrefix()
+	a := &Admin{
+		prefix: prefix,
+		mux:    http.NewServeMux(),
+		auth:   auth,
+	}
 	a.route()
 	a.loadTemplates()
 	go a.detectNetwork()
 	return a
 }
 
-func (a *Admin) Prefix() string {
-	return a.prefix + `/`
-}
-
-// only Path is used.
-func (a *Admin) parsePrefix() {
-	u, err := url.Parse(a.prefix)
-	if err != nil {
-		panic(err)
-	}
-	a.prefix = filepath.Join(`/`, u.Path)
-}
-
 func (a *Admin) route() {
-	a.mux.HandleFunc(http.MethodGet, `/`, a.getRoot)
+	m := a.mux
 
-	a.mux.HandleFunc(http.MethodGet, `/login`, a.getLogin)
-	a.mux.HandleFunc(http.MethodGet, `/logout`, a.getLogout)
+	m.HandleFunc(`GET /{$}`, a.getRoot)
 
-	a.mux.HandleFunc(http.MethodPost, `/login/basic`, a.loginByPassword)
-	a.mux.HandleFunc(http.MethodGet, `/login/github`, a.loginByGithub)
-	a.mux.HandleFunc(http.MethodPost, `/login/google`, a.loginByGoogle)
+	m.HandleFunc(`GET /login`, a.getLogin)
+	m.HandleFunc(`GET /logout`, a.getLogout)
+
+	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
+	m.HandleFunc(`GET /login/github`, a.loginByGithub)
+	m.HandleFunc(`POST /login/google`, a.loginByGoogle)
 }
 
 func (a *Admin) detectNetwork() {
@@ -80,7 +67,11 @@ func (a *Admin) detectNetwork() {
 }
 
 func (a *Admin) Handler() http.Handler {
-	return http.StripPrefix(a.prefix, a.mux)
+	prefix := strings.TrimSuffix(a.prefix, "/")
+	if prefix == "" {
+		return a.mux
+	}
+	return http.StripPrefix(prefix, a.mux)
 }
 
 func (a *Admin) prefixed(s string) string {
@@ -88,10 +79,6 @@ func (a *Admin) prefixed(s string) string {
 }
 
 func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != `/` {
-		http.NotFound(w, r)
-		return
-	}
 	if a.authorized(r) {
 		http.Redirect(w, r, `/`, http.StatusFound)
 		return

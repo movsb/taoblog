@@ -58,9 +58,10 @@ func serve() {
 	gateway.NewGateway(theService, theAuth, mux)
 
 	if !cfg.Maintenance.DisableAdmin {
-		a := admin.NewAdmin(theService, theAuth, `/admin/`)
-		log.Println(`admin on`, a.Prefix())
-		mux.Handle(a.Prefix(), a.Handler())
+		prefix := `/admin/`
+		a := admin.NewAdmin(theAuth, prefix)
+		log.Println(`admin on`, prefix)
+		mux.Handle(prefix, a.Handler())
 	}
 
 	theme := theme.New(cfg, theService, theAuth, `theme/blog`)
