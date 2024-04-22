@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -228,8 +229,17 @@ func (c *Client) DeletePost(id int64) error {
 // files 路径列表，相对于工作目录，相对路径。
 // TODO 由于评论中可能也带有图片引用，但是不会被算计到。所以远端的多余
 // TODO 文件总是不会被删除：deleteExtraneousRemoteFiles 参数暂时不生效。
+// NOTE 会自动去重本地文件。
+// NOTE 会自动排除 config.yml 文件。
 func (c *Client) UploadPostFiles(files []string, deleteExtraneousRemoteFiles bool) {
 	deleteExtraneousRemoteFiles = false
+
+	// 排序并去重。
+	{
+		sort.Strings(files)
+		files = slices.DeleteFunc(files, func(f string) bool { return f == `config.yml` })
+		files = slices.Compact(files)
+	}
 
 	config := c.readPostConfig()
 	if config.ID <= 0 {
