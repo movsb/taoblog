@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/sha1"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -82,10 +83,14 @@ func (*Auth) sha1(in string) string {
 	return fmt.Sprintf("%x", h)
 }
 
+func constantEqual(x, y string) bool {
+	return subtle.ConstantTimeCompare([]byte(x), []byte(y)) == 1
+}
+
 func (o *Auth) AuthLogin(username string, password string) bool {
 	if username != `` {
-		if username == o.cfg.Basic.Username {
-			if password == o.cfg.Basic.Password {
+		if constantEqual(username, o.cfg.Basic.Username) {
+			if constantEqual(password, o.cfg.Basic.Password) {
 				return true
 			}
 		}
