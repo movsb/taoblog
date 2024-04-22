@@ -5,6 +5,8 @@ import (
 )
 
 func Test(t *testing.T) {
+	t.SkipNow()
+
 	m, err := DialTLS("smtp.qq.com:465")
 	if err != nil {
 		t.Fatal(err)

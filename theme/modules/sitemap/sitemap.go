@@ -2,25 +2,19 @@ package sitemap
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 )
 
-const tmpl = `
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-{{- /* trim */ -}}
-{{ range .Articles }}
-	<url><loc>{{ .Link }}</loc></url>
-{{- end }}
-</urlset>
-`
+//go:embed sitemap.xml
+var tmpl string
 
 // Article ...
 type Article struct {
@@ -32,20 +26,17 @@ type Article struct {
 type Sitemap struct {
 	Articles []*Article
 
-	Config *config.Config
-
 	tmpl *template.Template
 	svc  *service.Service
 	auth *auth.Auth
 }
 
 // New ...
-func New(cfg *config.Config, svc *service.Service, auth *auth.Auth) *Sitemap {
+func New(svc *service.Service, auth *auth.Auth) *Sitemap {
 	s := &Sitemap{
-		Config: cfg,
-		svc:    svc,
-		auth:   auth,
-		tmpl:   template.Must(template.New(`sitemap`).Parse(tmpl)),
+		svc:  svc,
+		auth: auth,
+		tmpl: template.Must(template.New(`sitemap`).Parse(tmpl)),
 	}
 
 	return s
@@ -82,7 +73,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	handle304.ArticleResponse(w, s.svc.LastArticleUpdateTime())
 
 	w.Header().Set("Content-Type", "application/xml")
-	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`))
+	fmt.Fprintln(w, `<?xml version="1.0" encoding="UTF-8"?>`)
 
 	if err := cs.tmpl.Execute(w, cs); err != nil {
 		panic(err)

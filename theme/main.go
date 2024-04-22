@@ -52,11 +52,11 @@ func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base str
 		auth:    auth,
 		redir:   service,
 	}
-	if cfg.Site.RSS.Enabled {
-		t.rss = rss.New(cfg, service, auth)
+	if r := cfg.Site.RSS; r.Enabled {
+		t.rss = rss.New(service, auth, rss.WithArticleCount(r.ArticleCount))
 	}
 	if cfg.Site.Sitemap.Enabled {
-		t.sitemap = sitemap.New(cfg, service, auth)
+		t.sitemap = sitemap.New(service, auth)
 	}
 	t.loadTemplates()
 	t.watchTheme()

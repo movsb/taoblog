@@ -1,0 +1,15 @@
+<rss version="2.0">
+<channel>
+	<title>{{ .Name }}</title>
+	<link>{{ .Link }}</link>
+	<description>{{ .Description }}</description>
+	{{- range .Articles }}
+	<item>
+		<title>{{ .Title }}</title>
+		<link>{{ .Link }}</link>
+		<pubDate>{{ .Date }}</pubDate>
+		<description>{{ .Content }}</description>
+	</item>
+	{{- end }}
+</channel>
+</rss>
