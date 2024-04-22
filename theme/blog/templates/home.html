@@ -26,7 +26,7 @@
 			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
 			<ul class=post-comment-list>
 			{{- range .Comments}}
-				<li><p><b>{{.Author}}</b>：{{.Text}}</p></li>
+				<li><p><b>{{.Author}}</b>：{{.PrettyText}}</p></li>
 			{{- end }}
 			</ul>
 		</li>

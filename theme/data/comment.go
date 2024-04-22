@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/modules/renderers"
 )
 
 // Comment ...
@@ -17,6 +18,15 @@ func (c *Comment) Text() string {
 		return c.Source
 	}
 	return c.Content
+}
+
+func (c *Comment) PrettyText() string {
+	prettifier := renderers.Prettifier{}
+	text, err := prettifier.Prettify(c.Content)
+	if err != nil {
+		return c.Text()
+	}
+	return text
 }
 
 // LatestCommentsByPost ...
