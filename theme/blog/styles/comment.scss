@@ -82,6 +82,7 @@ span.post-comment {
             margin-top: 0;
             padding-left: 0.4em;
             list-style-type: reset;
+			line-height: var(--line-height-tight);
             &:not(.html-content) {
 				white-space: pre-wrap;
 			}
@@ -248,8 +249,6 @@ span.post-comment {
 				border: 1px solid var(--border-color);
 				border-radius: var(--border-radius);
 				overflow: auto;
-			}
-			textarea {
 			}
 		}
 	}

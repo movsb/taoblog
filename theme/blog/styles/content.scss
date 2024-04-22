@@ -54,12 +54,13 @@ body.wide #content {
 @media screen and (max-width: $max_width) {
     .entry {
         padding: 0px 0px 16px;
+		line-height: var(--line-height-tight);
     }
 }
 @media screen and (min-width: $max_width+1) {
     .entry {
         padding-bottom: 16px;
-        line-height: 2em;
+		line-height: var(--line-height-loose);
     }
 }
 

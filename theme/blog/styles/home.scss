@@ -3,7 +3,7 @@
 }
 #latest-comment-list p {
 	margin: 4px 0;
-	line-height: 1.3em;
+	line-height: var(--line-height-tight);
 	word-break: break-word;
 }
 #all-posts {
