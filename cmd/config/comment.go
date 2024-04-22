@@ -30,7 +30,7 @@ func DefaultCommentTemplatesConfig() CommentTemplatesConfig {
 	const adminTemplate = `
 <b>您的博文“{{.Title}}”有新的评论啦！</b><br/><br/>
 
-<div>{{ .Content }}</div>
+<pre>{{ .Content }}</pre>
 <br/>
 
 <b>链接：</b><a href="{{.Link}}">{{.Link}}</a><br/>
@@ -43,7 +43,7 @@ func DefaultCommentTemplatesConfig() CommentTemplatesConfig {
 	const guestTemplate = `
 <b>您在博文“{{.Title}}”的评论有新的回复啦！</b><br/><br/>
 
-<div>{{ .Content }}</div>
+<pre>{{ .Content }}</pre>
 <br/>
 
 <b>链接：</b><a href="{{.Link}}">{{.Link}}</a><br/>
