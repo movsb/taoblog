@@ -24,6 +24,8 @@ require (
 
 require github.com/hashicorp/golang-lru/v2 v2.0.7
 
+require github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6 // indirect
+
 require (
 	github.com/RoaringBitmap/roaring v0.9.1 // indirect
 	github.com/axiomhq/hyperloglog v0.0.0-20191112132149-a4c4c47bc57f // indirect

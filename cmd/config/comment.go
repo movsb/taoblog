@@ -72,8 +72,7 @@ func DefaultCommentPushConfig() CommentPushConfig {
 
 // CommentChanifyPushConfig ...
 type CommentChanifyPushConfig struct {
-	Endpoint string `yaml:"endpoint"`
-	Token    string `yaml:"token"`
+	Token string `yaml:"token"`
 }
 
 // DefaultCommentChanifyPushConfig ...

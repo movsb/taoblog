@@ -86,12 +86,20 @@ func DefaultFileDataConfig() FileDataConfig {
 type MaintenanceConfig struct {
 	SiteClosed   bool `yaml:"site_closed"`
 	DisableAdmin bool `yaml:"disable_admin"`
+	Webhook      struct {
+		ReloaderPath string `yaml:"reloader_path"`
+		GitHub       struct {
+			Secret string `yaml:"secret"`
+		} `yaml:"github"`
+	} `yaml:"webhook"`
 }
 
 // DefaultMainMaintenanceConfig ...
 func DefaultMainMaintenanceConfig() MaintenanceConfig {
-	return MaintenanceConfig{
+	c := MaintenanceConfig{
 		SiteClosed:   false,
 		DisableAdmin: false,
 	}
+	c.Webhook.ReloaderPath = `/tmp/taoblog-reloader.sock`
+	return c
 }

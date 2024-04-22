@@ -7,12 +7,15 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/movsb/pkg/notify"
+
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/modules/webhooks"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -81,6 +84,16 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 	handle("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
 
 	handle(`GET`, `/v3/avatar/{id}`, g.GetAvatar)
+
+	mux.HandleFunc(`POST /v3/webhooks/github`, webhooks.CreateHandler(
+		g.service.Config().Maintenance.Webhook.GitHub.Secret,
+		g.service.Config().Maintenance.Webhook.ReloaderPath,
+		func(content string) {
+			tk := g.service.Config().Comment.Push.Chanify.Token
+			ch := notify.NewOfficialChanify(tk)
+			ch.Send("博客更新", content, true)
+		},
+	))
 
 	return nil
 }

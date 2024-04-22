@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
@@ -83,6 +84,8 @@ func serve() {
 	}()
 
 	log.Println("Server started on", server.Addr)
+	ch := notify.NewOfficialChanify(cfg.Comment.Push.Chanify.Token)
+	ch.Send("博客状态", "已经开始运行。", true)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
