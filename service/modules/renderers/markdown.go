@@ -43,14 +43,6 @@ type _Markdown struct {
 	modifiedAnchorReference string
 }
 
-var (
-	imageKind ast.NodeKind
-)
-
-func init() {
-	imageKind = ast.NewNodeKind(`image`)
-}
-
 type Option func(me *_Markdown) error
 
 // 解析 Markdown 中的相对链接。
@@ -118,6 +110,9 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
+			renderer.WithNodeRenderers(
+				util.Prioritized(me, 100),
+			),
 		),
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithExtensions(extension.DefinitionList),
@@ -165,13 +160,6 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering {
 			switch n.Kind() {
-			case ast.KindImage:
-				oldImage := n.(*ast.Image)
-				newImage := &_Image{
-					image: oldImage,
-				}
-				parent := n.Parent()
-				parent.ReplaceChild(parent, oldImage, newImage)
 			case ast.KindHeading:
 				if me.disableHeadings {
 					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含标题元素。`)
@@ -208,38 +196,28 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		return ``, ``, err
 	}
 
-	rdr := md.Renderer()
-	if reg, ok := rdr.(renderer.NodeRendererFuncRegisterer); ok {
-		reg.Register(imageKind, me.renderImage)
-	}
-
 	buf := bytes.NewBuffer(nil)
-	err := rdr.Render(buf, []byte(source), doc)
+	err := md.Renderer().Render(buf, []byte(source), doc)
 	return title, buf.String(), err
 }
 
-type _Image struct {
-	ast.BaseBlock
-	image *ast.Image
+func (me *_Markdown) RegisterFuncs(r renderer.NodeRendererFuncRegisterer) {
+	r.Register(ast.KindImage, me.renderImage)
 }
-
-func (n *_Image) Dump(source []byte, level int) { ast.DumpHelper(n, source, level, nil, nil) }
-func (n *_Image) Type() ast.NodeType            { return ast.TypeInline }
-func (n *_Image) Kind() ast.NodeKind            { return imageKind }
 
 func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
 		return ast.WalkContinue, nil
 	}
 
-	n := node.(*_Image)
+	n := node.(*ast.Image)
 
 	// 解析可能的自定义。
 	// 不是很严格，可能有转义错误。
-	url, _ := url.Parse(string(n.image.Destination))
+	url, _ := url.Parse(string(n.Destination))
 	if url == nil {
 		w.WriteString(`<img />`)
-		log.Println(`图片地址解析失败：`, string(n.image.Destination))
+		log.Println(`图片地址解析失败：`, string(n.Destination))
 		return ast.WalkContinue, nil
 	}
 
@@ -264,8 +242,13 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	// TODO 不知道 escape 几次了个啥。
 	_, _ = w.Write(util.EscapeHTML(util.URLEscape([]byte(url.String()), true)))
 	_, _ = w.WriteString(`" alt="`)
-	_, _ = w.Write(nodeToHTMLText(n.image, source))
+	_, _ = w.Write(nodeToHTMLText(n, source))
 	_ = w.WriteByte('"')
+	if n.Title != nil {
+		_, _ = w.WriteString(` title="`)
+		w.Write(util.EscapeHTML(n.Title))
+		_ = w.WriteByte('"')
+	}
 	if n.Attributes() != nil {
 		html.RenderAttributes(w, n, html.ImageAttributeFilter)
 	}

@@ -105,10 +105,20 @@ func TestMarkdownAll(t *testing.T) {
 			Markdown: `[](#section)`,
 			Html:     `<p><a href="#section"></a></p>`,
 		},
+		{
+			ID: 6.0,
+			Markdown: `
+![样式1](1.jpg "样式1")
+![样式2](2.jpg "样式2")
+![样式3](3.jpg '样式3"><a>"')`,
+			Html: `<p><img src="1.jpg" alt="样式1" title="样式1" loading="lazy" />
+<img src="2.jpg" alt="样式2" title="样式2" loading="lazy" />
+<img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;" loading="lazy" /></p>`,
+		},
 	}
 	for _, tc := range cases {
 		md := renderers.NewMarkdown(tc.Options...)
-		if tc.ID == 2.1 {
+		if tc.ID == 6.0 {
 			log.Println(`debug`)
 		}
 		_, html, err := md.Render(tc.Markdown)
