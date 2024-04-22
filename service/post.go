@@ -435,6 +435,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			hasTags = true
 		case `metas`:
 			hasMetas = true
+		case `type`:
+			m[path] = in.Post.Type
 		default:
 			panic(`unknown update mask`)
 		}
@@ -453,7 +455,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
 			tr = renderers.NewMarkdown()
 		default:
-			panic("no translator found")
+			panic("no renderer was found")
 		}
 
 		title, _, err := tr.Render(in.Post.Source)

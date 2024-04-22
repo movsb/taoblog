@@ -195,6 +195,7 @@ func (c *Client) UpdatePost() error {
 				`slug`,
 				`tags`,
 				`metas`,
+				`type`,
 			},
 		},
 	})
@@ -390,17 +391,17 @@ func (c *Client) UploadPostFiles(files []string, deleteExtraneousRemoteFiles boo
 		}
 		switch n := strings.Compare(rl[i].Path, rr[j].Path); {
 		case n < 0:
+			if deleteExtraneousRemoteFiles {
+				deleteRemote(rr[j])
+			}
+			j--
+		case n > 0:
 			data, err := os.ReadFile(rl[i].Path)
 			if err != nil {
 				panic(err)
 			}
 			copyToRemote(rl[i], data)
 			i--
-		case n > 0:
-			if deleteExtraneousRemoteFiles {
-				deleteRemote(rr[j])
-			}
-			j--
 		case n == 0:
 			lm, rm := os.FileMode(rl[i].Mode), os.FileMode(rr[j].Mode)
 			if lm.IsDir() != rm.IsDir() {
