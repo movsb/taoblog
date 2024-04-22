@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -134,14 +135,14 @@ func (s *Service) UpdateObjectTags(pid int64, tags []string) {
 	)
 
 	for _, t := range oldTags {
-		if !utils.StrInSlice(newTags, t) {
+		if !slices.Contains(newTags, t) {
 			toBeDeled = append(toBeDeled, t)
 		}
 	}
 
 	for _, t := range newTags {
 		t = strings.TrimSpace(t)
-		if t != "" && !utils.StrInSlice(oldTags, t) {
+		if t != "" && !slices.Contains(oldTags, t) {
 			toBeAdded = append(toBeAdded, t)
 		}
 	}

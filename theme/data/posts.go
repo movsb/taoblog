@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
@@ -45,10 +45,10 @@ func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Servi
 	if len(sort) != 2 {
 		sort = []string{"date", "desc"}
 	}
-	if !utils.StrInSlice([]string{"id", "title", "date", "page_view", "comments"}, sort[0]) {
+	if !slices.Contains([]string{"id", "title", "date", "page_view", "comments"}, sort[0]) {
 		sort[0] = "date"
 	}
-	if !utils.StrInSlice([]string{"asc", "desc"}, sort[1]) {
+	if !slices.Contains([]string{"asc", "desc"}, sort[1]) {
 		sort[1] = "desc"
 	}
 
