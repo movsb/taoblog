@@ -48,7 +48,7 @@ func ListBackupFiles(dir string) ([]*protocols.BackupFileSpec, error) {
 		if err != nil {
 			return err
 		}
-		if !info.Mode().IsRegular() && !info.Mode().IsDir() {
+		if !info.Mode().IsRegular() || info.Mode().IsDir() {
 			return nil
 		}
 		rel, err := filepath.Rel(dir, path)
