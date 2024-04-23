@@ -41,6 +41,7 @@ type _Markdown struct {
 	openLinksInNewTab  bool // 新窗口打开链接
 
 	modifiedAnchorReference string
+	assetSourceFinder       AssetFinder
 }
 
 type Option func(me *_Markdown) error
@@ -92,6 +93,16 @@ func WithModifiedAnchorReference(relativePath string) Option {
 func WithOpenLinksInNewTab() Option {
 	return func(me *_Markdown) error {
 		me.openLinksInNewTab = true
+		return nil
+	}
+}
+
+type AssetFinder func(path string) (name, url, description string, found bool)
+
+// 提供文章附件的引用来源
+func WithAssetSources(fn AssetFinder) Option {
+	return func(me *_Markdown) error {
+		me.assetSourceFinder = fn
 		return nil
 	}
 }
@@ -157,6 +168,8 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		panic(`max depth`)
 	}
 
+	imagesToBeFigure := []ast.Node{}
+
 	if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering {
 			switch n.Kind() {
@@ -189,11 +202,30 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 						}
 					}
 				}
+			case ast.KindImage:
+				if n.Parent().ChildCount() == 1 {
+					// 标记有来源的图片，移除其父 <p>。
+					// 因为 <figure> 不能出现在 <p> 中。
+					if me.assetSourceFinder != nil {
+						if url, err := url.Parse(string(n.(*ast.Image).Destination)); err == nil {
+							if _, _, _, hasSource := me.assetSourceFinder(url.Path); hasSource {
+								imagesToBeFigure = append(imagesToBeFigure, n)
+							}
+						}
+					}
+				}
 			}
 		}
 		return ast.WalkContinue, nil
 	}); err != nil {
 		return ``, ``, err
+	}
+
+	// 处理需要把 img 转换成 figure 的节点。
+	for _, node := range imagesToBeFigure {
+		p := node.Parent()
+		pp := p.Parent()
+		pp.ReplaceChild(pp, p, node)
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -237,6 +269,30 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	}
 
 	url.RawQuery = q.Encode()
+
+	// 如果有来源，包在 <figure> 中。
+	//  <figure>
+	//      <img src="full-piano.png" alt="Full Piano Keyboard">
+	//      <figcaption>
+	//          <a href="https://www.piano-keyboard-guide.com/piano-notes-and-keys.html" target="_blank" class="external">Full Piano Keyboard</a>
+	//      </figcaption>
+	//  </figure>
+	//  defer 还能这么用！😂😂😂
+	if me.assetSourceFinder != nil {
+		srcName, srcURL, srcDesc, hasSource := me.assetSourceFinder(url.Path)
+		if hasSource && srcName != "" && srcURL != "" {
+			w.WriteString("<figure>\n")
+			defer w.WriteString("</figure>\n")
+			defer w.WriteString("</figcaption>\n")
+			defer w.WriteString(fmt.Sprintf(
+				`<a href="%s" target="_blank" class="external">%s</a>`,
+				util.EscapeHTML([]byte(srcURL)),
+				util.EscapeHTML([]byte(srcName)),
+			))
+			defer w.WriteString("<figcaption>\n")
+			_ = srcDesc
+		}
+	}
 
 	_, _ = w.WriteString("<img src=\"")
 	// TODO 不知道 escape 几次了个啥。

@@ -141,7 +141,7 @@ func (s *Service) getPostContent(id int64) (string, error) {
 	content, err := s.cache.Get(fmt.Sprintf(`post:%d`, id), func(key string) (interface{}, error) {
 		_ = key
 		var p models.Post
-		s.posts().Select("type,source_type,source").Where("id = ?", id).MustFind(&p)
+		s.posts().Select("type,source_type,source,metas").Where("id = ?", id).MustFind(&p)
 		var content string
 		var tr renderers.Renderer
 		switch p.SourceType {
@@ -149,6 +149,15 @@ func (s *Service) getPostContent(id int64) (string, error) {
 			options := []renderers.Option{
 				renderers.WithPathResolver(s.PathResolver(id)),
 				renderers.WithRemoveTitleHeading(true),
+				renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
+					if src, ok := p.Metas.Sources[path]; ok {
+						name = src.Name
+						url = src.URL
+						description = src.Description
+						found = true
+					}
+					return
+				}),
 			}
 			if link := s.linker.PostOrPage(id); link != s.plainLink(id) {
 				options = append(options, renderers.WithModifiedAnchorReference(link))
