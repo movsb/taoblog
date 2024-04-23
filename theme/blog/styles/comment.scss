@@ -64,12 +64,6 @@ span.post-comment {
             margin-bottom: 6px;
         }
 
-        @media screen and (min-width: 501px) {
-            .comment-replies {
-                margin-left: 1em;
-            }
-        }
-
         @media screen and (min-width: 601px) {
             .comment-replies {
                 margin-left: 1em;
@@ -89,6 +83,7 @@ span.post-comment {
 
 			img {
 				max-width: 100%;
+				height: auto;
 			}
 
             pre {
@@ -153,8 +148,8 @@ span.post-comment {
 	resize: both;
 	overflow: auto; /* this is to enable resize area */
 
-	@media screen and (min-width: 501px) {
-		width: 580px;
+	@media screen and (min-width: 601px) {
+		width: 550px;
 		height: 350px;
 		min-width: 400px;
 		min-height: 190px;
@@ -162,10 +157,9 @@ span.post-comment {
 		max-height: 90%;
 	}
 
-	@media screen and (max-width: 500px) {
+	@media screen and (max-width: 600px) {
 		width: 90%;
-		height: unset !important;
-		min-height: 400px;
+		height: 65%;
 	}
 
 	.nc {
@@ -194,7 +188,7 @@ span.post-comment {
 		text-align: center;
 		font-size: 1.5em;
 		top: -5px;
-		@media screen and (min-width: 501px) {
+		@media screen and (min-width: 601px) {
 			margin-right: 150px;
 		}
 	}
@@ -208,17 +202,19 @@ span.post-comment {
 		right: 10px;
 		bottom: 10px;
 
-		@media screen and (max-width: 500px) {
+		@media screen and (max-width: 600px) {
 			flex-direction: column;
 		}
 
 		.fields {
-			flex: 1;
-
-			@media screen and (min-width: 501px) {
+			@media screen and (min-width: 601px) {
 				width: 150px;
 				max-width: 150px;
 				padding: 0px 0px 0px 10px;
+				box-sizing: border-box;
+			}
+			@media screen and (max-width: 600px) {
+				padding-top: 10px;
 				box-sizing: border-box;
 			}
 
@@ -234,6 +230,7 @@ span.post-comment {
 		.content-area {
 			flex: 1;
 			min-width: 50px;
+			overflow: hidden;
 			.overlay {
 				width: 100%;
 				height: 100%;

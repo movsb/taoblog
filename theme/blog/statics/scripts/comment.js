@@ -154,6 +154,10 @@ class CommentNode {
 		let content = this._node.querySelector(':scope > .comment-content');
 		content.innerHTML = html;
 	}
+	
+	scrollIntoView() {
+		this._node.scrollIntoView({behavior: 'smooth'});
+	}
 }
 
 function Comment() {
@@ -192,7 +196,6 @@ Comment.prototype.init = function() {
 		});
 	});
 
-	// Ajax评论提交
 	let submit = document.querySelector('#comment-submit');
 	submit.addEventListener('click', async function(event){
 		event.preventDefault();
@@ -420,7 +423,14 @@ Comment.prototype.h2a = function(h) {
     return h.replace(/[&<>'"]/g, function (s) {
         return map[s];
     });
-}
+};
+
+Comment.prototype.locate = function(id) {
+	let node = this.nodeOf(id);
+	let obj = new CommentNode(node);
+	obj.scrollIntoView();
+	history.replaceState(null, '', `#${node.id}`);
+};
 
 Comment.prototype.gen_comment_item = function(cmt) {
 	let loggedin = cmt.ip != '';
@@ -456,7 +466,9 @@ Comment.prototype.gen_comment_item = function(cmt) {
 	let html = `
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
-		<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${this.h2t(info)}"/>
+		<a href="#comment-${cmt.id}" onclick="comment.locate(${cmt.id});return false;">
+			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${this.h2t(info)}"/>
+		</a>
 	</div>
 	<div class="comment-meta">
 		<span class="${cmt.is_admin ? "author" : "nickname"}">${this.h2t(cmt.author)}</span>
@@ -502,20 +514,16 @@ Comment.prototype.edit = function(c) {
 
 Comment.prototype.move_to_center = function() {
 	let div = document.querySelector('#comment-form-div');
-	let ww = window.innerWidth, wh = window.innerHeight;
-	let ew = parseInt(getComputedStyle(div)['width']);
-	let eh = parseInt(getComputedStyle(div)['height']);
+	let ww = window.innerWidth;
+	let wh = window.innerHeight;
+	let cw = getComputedStyle(div)['width'];
+	let ch = getComputedStyle(div)['height'];
+	let ew = /\d+%/.test(cw) ? parseInt(cw)/100*ww : parseInt(cw);
+	let eh = /\d+%/.test(ch) ? parseInt(ch)/100*wh : parseInt(ch);
 	let left = (ww-ew)/2, top = (wh-eh)/2;
 	div.style.left = `${left}px`;
 	div.style.top = `${top}px`;
-	console.table({
-		ww: ww,
-		wh: wh,
-		ew: ew,
-		eh: eh,
-		left: left,
-		top: top,
-	});
+	console.table({ ww, wh, cw, ch, ew, eh, left, top });
 };
 
 // https://www.w3schools.com/howto/howto_js_draggable.asp
