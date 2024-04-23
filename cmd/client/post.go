@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"
@@ -32,13 +33,13 @@ var sourceNames = []string{
 
 // PostConfig ...
 type PostConfig struct {
-	ID       int64             `json:"id" yaml:"id"`
-	Title    string            `json:"title" yaml:"title"`
-	Modified int32             `json:"modified" yaml:"modified"`
-	Tags     []string          `json:"tags" yaml:"tags"`
-	Metas    map[string]string `json:"metas" yaml:"metas"`
-	Slug     string            `json:"slug" yaml:"slug,omitempty"`
-	Type     string            `json:"type" yaml:"type"`
+	ID       int64           `json:"id" yaml:"id"`
+	Title    string          `json:"title" yaml:"title"`
+	Modified int32           `json:"modified" yaml:"modified"`
+	Tags     []string        `json:"tags" yaml:"tags"`
+	Metas    models.PostMeta `json:"metas" yaml:"metas"`
+	Slug     string          `json:"slug" yaml:"slug,omitempty"`
+	Type     string          `json:"type" yaml:"type"`
 }
 
 // InitPost ...
@@ -76,7 +77,7 @@ func (c *Client) CreatePost() error {
 	p.Tags = cfg.Tags
 	p.Slug = cfg.Slug
 	p.Type = cfg.Type
-	p.Metas = cfg.Metas
+	p.Metas = cfg.Metas.ToProtocols()
 
 	var assets []string
 
@@ -122,7 +123,7 @@ func (c *Client) GetPost() {
 	cfg.Title = post.Title
 	cfg.Modified = post.Modified
 	cfg.Type = post.Type
-	cfg.Metas = post.Metas
+	cfg.Metas = *models.PostMetaFrom(post.Metas)
 	c.savePostConfig(&cfg)
 
 	filename := "README.md"
@@ -178,24 +179,31 @@ func (c *Client) UpdatePost() error {
 	p.Slug = cfg.Slug
 	p.Modified = cfg.Modified
 	p.Type = cfg.Type
-	p.Metas = cfg.Metas
+	p.Metas = cfg.Metas.ToProtocols()
 
 	var assets []string
 
 	p.SourceType, p.Source, assets = readSource(".")
 
+	updateMasks := []string{
+		`title`,
+		`source_type`,
+		`source`,
+		`slug`,
+		`tags`,
+		`type`,
+	}
+
+	// 有些文章在远程有 meta 但是本地没有。
+	// 如果更新，则不应该带 meta，而是等待同步回来。
+	if !cfg.Metas.IsEmpty() {
+		updateMasks = append(updateMasks, `metas`)
+	}
+
 	rp, err := c.blog.UpdatePost(c.token(), &protocols.UpdatePostRequest{
 		Post: &p,
 		UpdateMask: &field_mask.FieldMask{
-			Paths: []string{
-				`title`,
-				`source_type`,
-				`source`,
-				`slug`,
-				`tags`,
-				`metas`,
-				`type`,
-			},
+			Paths: updateMasks,
 		},
 	})
 	if err != nil {
@@ -206,7 +214,7 @@ func (c *Client) UpdatePost() error {
 	cfg.Slug = rp.Slug
 	cfg.Modified = rp.Modified
 	cfg.Type = rp.Type
-	cfg.Metas = rp.Metas
+	cfg.Metas = *models.PostMetaFrom(rp.Metas)
 	c.savePostConfig(&cfg)
 
 	// TODO 应该先上传文件，但是会拿不到编号

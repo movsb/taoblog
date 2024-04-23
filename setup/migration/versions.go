@@ -2,8 +2,12 @@ package migration
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
+	"fmt"
 
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm/taorm"
 )
 
@@ -301,4 +305,68 @@ func v20(tx *sql.Tx) {
 
 func v21(tx *sql.Tx) {
 	mustExec(tx, `DROP TABLE pingbacks`)
+}
+
+type MapStr2Str map[string]string
+
+func (m MapStr2Str) Value() (driver.Value, error) {
+	return json.Marshal(m)
+}
+
+func (m *MapStr2Str) Scan(value interface{}) error {
+	switch v := value.(type) {
+	case string:
+		return json.Unmarshal([]byte(v), m)
+	case []byte:
+		return json.Unmarshal(v, m)
+	}
+	return errors.New(`unsupported type`)
+}
+
+func v22(tx *sql.Tx) {
+	type v22PostOld struct {
+		ID    int64
+		Metas MapStr2Str
+	}
+
+	// 暂时有 Bugs，必须用指针。
+	var oldPosts []*v22PostOld
+	taorm.MustScanRows(&oldPosts, tx, `select id,metas from posts where  metas not like 'null' and metas != '{}'`)
+
+	type v22PostNew struct {
+		ID    int64
+		Metas models.PostMeta
+	}
+
+	var newPosts []v22PostNew
+	for _, old := range oldPosts {
+		new := v22PostNew{
+			ID:    old.ID,
+			Metas: models.PostMeta{},
+		}
+		m := &new.Metas
+
+		for key, val := range old.Metas {
+			switch key {
+			case `header`:
+				m.Header = val
+			case `footer`:
+				m.Footer = val
+			case `outdated`:
+				m.Outdated = val == `true` || val == `1`
+			case `wide`:
+				m.Wide = val == `true` || val == `1`
+			case `weixin`:
+				m.Weixin = val
+			default:
+				panic(fmt.Sprintf("未知元数据：%s: %v", key, val))
+			}
+		}
+
+		newPosts = append(newPosts, new)
+	}
+
+	for _, new := range newPosts {
+		mustExec(tx, `update posts set metas=? where id=?`, new.Metas, new.ID)
+	}
 }

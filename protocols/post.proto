@@ -4,6 +4,34 @@ option go_package = "github.com/movsb/taoblog/protocols";
 
 import "google/protobuf/field_mask.proto";
 
+message Metas {
+	message Source {
+		string name = 1;
+		string url = 2;
+		string description = 3;
+		int32  time = 4;
+	}
+	
+	// TODO：以下两者应该由 style.css 和 script.js 等独立文件实现。
+	// 置于 <head> 最后的。
+	string header = 1;
+	// 置于 <body> 最后的。
+	string footer = 2;
+
+	// 文章是否已经过时。
+	bool outdated = 3;
+	
+	// 是否以宽屏模式显示内容。
+	bool wide = 4;
+
+	// 文章附件来源。
+	// 第一个参数是相对路径。
+	map<string,Source> sources = 10;
+
+	// 微信短链接。形如："-UWZEu5Z74DZgRzKksTBtw"。
+	string weixin = 100;
+}
+
 message Post {
 	int64 id = 1;
 	int32 date = 2;
@@ -17,7 +45,7 @@ message Post {
 	int64 page_view = 10;
 	bool comment_status = 11;
 	int64 comments = 12;
-	map<string,string> metas = 13;
+	Metas metas = 13;
 	string source = 14;
 	string source_type = 15;
 	repeated string tags = 16;

@@ -1,33 +1,3 @@
-// 图片来源
-(function() {
-    function replace(img) {
-        var figure = document.createElement('figure');
-
-        var newImg = img.cloneNode(false);
-        newImg.removeAttribute('data-name');
-        newImg.removeAttribute('data-origin');
-        figure.appendChild(newImg);
-
-        var caption = document.createElement('figcaption');
-        caption.innerText = '图片来源：';
-
-        var a = document.createElement('a');
-        a.innerText = img.getAttribute('data-name') || img.getAttribute('alt');
-        a.setAttribute('href', img.getAttribute('data-origin'));
-        a.setAttribute('target', '_blank');
-
-        caption.appendChild(a);
-
-        figure.appendChild(caption);
-
-        img.parentNode.insertBefore(figure, img);
-        img.parentNode.removeChild(img);
-    }
-
-    var imgs = document.querySelectorAll('.entry img[data-origin]');
-    imgs.forEach(function(img){ replace(img); });
-})();
-
 // 除非是早期的链接，后面由 markdown 生成的链接会自动标记。
 (function() {
 	let anchors = document.querySelectorAll('article a');

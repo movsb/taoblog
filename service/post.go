@@ -366,7 +366,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		Type:       in.Type,
 		Category:   0,
 		Status:     "draft",
-		Metas:      map[string]string{},
+		Metas:      *models.PostMetaFrom(in.Metas),
 		Source:     in.Source,
 		SourceType: in.SourceType,
 	}
@@ -468,7 +468,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		}
 	}
 	if hasMetas {
-		m[`metas`] = models.PostMeta(in.Post.Metas)
+		m[`metas`] = models.PostMetaFrom(in.Post.Metas)
 	}
 
 	s.MustTxCall(func(txs *Service) error {

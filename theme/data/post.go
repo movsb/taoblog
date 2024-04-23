@@ -46,7 +46,7 @@ type Post struct {
 	ID      int64
 	Content template.HTML
 	Related []*models.PostForRelated
-	Metas   map[string]string
+	Metas   models.PostMeta
 	link    string
 }
 
@@ -55,7 +55,7 @@ func newPost(post *protocols.Post) *Post {
 		Post:    post,
 		ID:      post.Id,
 		Content: template.HTML(post.Content),
-		Metas:   post.Metas,
+		Metas:   *models.PostMetaFrom(post.Metas),
 	}
 	return p
 }
@@ -106,33 +106,11 @@ func (p *Post) TagsString() template.HTML {
 	return template.HTML(strings.Join(ts, " · "))
 }
 
-// CustomHeader ...
-func (p *Post) CustomHeader() (header string) {
-	if i, ok := p.Metas["header"]; ok {
-		header = i
-	}
-	return
-}
-
-// CustomFooter ...
-func (p *Post) CustomFooter() (footer string) {
-	if i, ok := p.Metas["footer"]; ok {
-		footer = i
-	}
-	return
-}
-
 func (p *Post) Outdated() bool {
-	if value, ok := p.Metas[`outdated`]; ok && (value == `true` || value == `1`) {
-		return true
-	}
-	return false
+	return p.Metas.Outdated
 }
 
 // 是否开启宽屏？
 func (p *Post) Wide() bool {
-	if value, ok := p.Metas[`wide`]; ok && (value == `true` || value == `1`) {
-		return true
-	}
-	return false
+	return p.Metas.Wide
 }
