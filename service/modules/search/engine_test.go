@@ -15,11 +15,11 @@ func TestEngine(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := engine.IndexPosts(context.TODO(), []Post{
-		{ID: 1, Title: `标题`, Content: `桃子爱雪舞桃子不爱雪舞`},
+		{ID: 1, Title: `标题`, Content: `昔我往矣，杨柳依依。今我来思，雨雪霏霏。`},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	result, err := engine.SearchPosts(context.TODO(), `标桃雪`)
+	result, err := engine.SearchPosts(context.TODO(), `杨柳依依`)
 	if err != nil {
 		t.Fatal(err)
 	}
