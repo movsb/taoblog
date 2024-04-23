@@ -366,7 +366,8 @@ func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source stri
 func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetCommentPostIDRequest) (*protocols.SetCommentPostIDResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
 	if !user.IsAdmin() {
-		panic(403)
+		// TODO 没有必要细说，统一成无权限就行了。
+		return nil, status.Error(codes.PermissionDenied, `你没有权限转移评论。`)
 	}
 
 	s.MustTxCall(func(txs *Service) error {
