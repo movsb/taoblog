@@ -58,24 +58,22 @@ td:nth-child(2) {
 
 {{define "custom_footer"}}
 <script>
-    if('URLSearchParams' in window) {
-        var table = document.getElementsByTagName('table')[0];
-        table.addEventListener('click', function(ev) {
-            if(ev.target.tagName === 'TH') {
-                var th = ev.target;
-                var searchParams = new URLSearchParams(location.search);
-                var oldSort = (searchParams.get('sort')||'').split('.');
-                if(oldSort.length != 2) {
-                    oldSort = ['id','desc'];
-                }
-                var newSort = [th.classList[0], 'asc'];
-                if(newSort[0] === oldSort[0]) {
-                    newSort[1] = oldSort[1] === 'asc' ? 'desc' : 'asc';
-                }
-                searchParams.set('sort', newSort.join('.'));
-                location.search = searchParams.toString();
-            }
-        });
-    }
+	let table = document.getElementsByTagName('table')[0];
+	table.addEventListener('click', function(ev) {
+		if(ev.target.tagName === 'TH') {
+			var th = ev.target;
+			var searchParams = new URLSearchParams(location.search);
+			var oldSort = (searchParams.get('sort')||'').split('.');
+			if(oldSort.length != 2) {
+				oldSort = ['id','desc'];
+			}
+			var newSort = [th.classList[0], 'asc'];
+			if(newSort[0] === oldSort[0]) {
+				newSort[1] = oldSort[1] === 'asc' ? 'desc' : 'asc';
+			}
+			searchParams.set('sort', newSort.join('.'));
+			location.search = searchParams.toString();
+		}
+	});
 </script>
 {{end}}

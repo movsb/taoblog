@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
@@ -50,11 +49,11 @@ func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentReque
 // UpdateComment ...
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	cmtOld := s.GetComment2(int64(req.Comment.Id))
+	cmtOld := s.GetComment2(req.Comment.Id)
 	if !user.IsAdmin() {
 		userIP := ipFromContext(ctx, true)
 		if userIP != cmtOld.IP || !models.In5min(cmtOld.Date) {
-			panic(exception.NewValidationError(`超时或无权限编辑评论`))
+			return nil, status.Error(codes.PermissionDenied, `超时或无权限编辑评论`)
 		}
 	}
 
@@ -235,11 +234,6 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}()
 
-	// 尝试检查可能的错误请求
-	if in.Parent < 0 {
-		panic(exception.NewValidationError(`错误的父评论`))
-	}
-
 	comment := models.Comment{
 		PostID:     in.PostId,
 		Parent:     in.Parent,
@@ -341,7 +335,7 @@ func (s *Service) updateCommentsCount() {
 
 func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, options ...renderers.Option) (string, error) {
 	if ty != "markdown" {
-		panic(exception.NewValidationError("仅支持 markdown"))
+		return "", status.Error(codes.InvalidArgument, "仅支持 Markdown")
 	}
 
 	var md renderers.Renderer

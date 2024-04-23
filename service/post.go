@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/movsb/taoblog/modules/exception"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -400,7 +399,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
-		panic(exception.NewValidationError("无效文章"))
+		return nil, status.Error(codes.InvalidArgument, "无效文章编号、更新字段")
 	}
 
 	p := models.Post{
