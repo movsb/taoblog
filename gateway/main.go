@@ -7,10 +7,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/movsb/pkg/notify"
-
-	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/httprule"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
@@ -45,47 +43,31 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 		),
 	)
 
-	mux.HandleFunc(`/v1/`, deprecated)
-	mux.HandleFunc(`/v2/`, deprecated)
 	mux.Handle(`/v3/`, mux2)
 
-	if err := g.runHTTPService(context.TODO(), mux, mux2); err != nil {
+	if err := g.register(context.TODO(), mux2); err != nil {
 		panic(err)
 	}
 
 	return g
 }
 
-// runHTTPService ...
-// TODO auth
-func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
+func (g *Gateway) register(ctx context.Context, mux2 *runtime.ServeMux) error {
 	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
 	protocols.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
 
-	compile := func(rule string) httprule.Template {
-		if compiler, err := httprule.Parse(rule); err != nil {
-			panic(err)
-		} else {
-			return compiler.Compile()
-		}
-	}
+	mux2.HandlePath("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
+	mux2.HandlePath("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
 
-	handle := func(method string, rule string, handler runtime.HandlerFunc) {
-		t := compile(rule)
-		pattern, err := runtime.NewPattern(1, t.OpCodes, t.Pool, t.Verb)
-		if err != nil {
-			panic(err)
-		}
+	mux2.HandlePath(`GET`, `/v3/avatar/{id}`, g.getAvatar)
 
-		mux2.Handle(method, pattern, handler)
-	}
+	mux2.HandlePath(`POST`, `/v3/webhooks/github`, g.githubWebhook())
 
-	handle("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
-	handle("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
+	return nil
+}
 
-	handle(`GET`, `/v3/avatar/{id}`, g.GetAvatar)
-
-	mux.HandleFunc(`POST /v3/webhooks/github`, webhooks.CreateHandler(
+func (g *Gateway) githubWebhook() func(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	h := webhooks.CreateHandler(
 		g.service.Config().Maintenance.Webhook.GitHub.Secret,
 		g.service.Config().Maintenance.Webhook.ReloaderPath,
 		func(content string) {
@@ -93,12 +75,13 @@ func (g *Gateway) runHTTPService(ctx context.Context, mux *http.ServeMux, mux2 *
 			ch := notify.NewOfficialChanify(tk)
 			ch.Send("博客更新", content, true)
 		},
-	))
-
-	return nil
+	)
+	return func(w http.ResponseWriter, req *http.Request, params map[string]string) {
+		h(w, req)
+	}
 }
 
-func (g *Gateway) GetAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	ephemeral, err := strconv.Atoi(params[`id`])
 	if err != nil {
 		panic(err)
@@ -136,8 +119,4 @@ func serveProtoDocsFile(path string) func(w http.ResponseWriter, req *http.Reque
 		}
 		http.ServeContent(w, req, name, stat.ModTime(), rs)
 	}
-}
-
-func deprecated(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 }
