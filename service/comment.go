@@ -109,24 +109,22 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 // ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
 	user := s.auth.AuthGRPC(ctx)
+	userIP := ipFromContext(ctx, false)
 
 	if in.Limit <= 0 || in.Limit > 100 {
 		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
 	}
 
-	if in.Mode == protocols.ListCommentsMode_ListCommentsModeUnspecified {
-		in.Mode = protocols.ListCommentsMode_ListCommentsModeTree
+	if in.Mode == protocols.ListCommentsRequest_Unspecified {
+		in.Mode = protocols.ListCommentsRequest_Tree
 	}
 
-	userIP := ipFromContext(ctx, false)
-
-	var parentProtocolComments []*protocols.Comment
+	var parents models.Comments
 	{
-		var parents models.Comments
 		// TODO ensure that fields must include root etc to be used later.
 		// TODO verify fields that are sanitized.
 		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
-		stmt.WhereIf(in.Mode == protocols.ListCommentsMode_ListCommentsModeTree, "root = 0")
+		stmt.WhereIf(in.Mode == protocols.ListCommentsRequest_Tree, "root = 0")
 		stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
 		// limit & offset apply to parent comments only
 		stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
@@ -134,41 +132,32 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		stmt.MustFind(&parents)
-		parentProtocolComments = parents.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
 	}
 
-	needChildren := in.Mode == protocols.ListCommentsMode_ListCommentsModeTree && len(parentProtocolComments) > 0
+	var children models.Comments
 
-	if needChildren {
-		var childrenProtocolComments []*protocols.Comment
-		{
-			parentIDs := make([]int64, 0, len(parentProtocolComments))
-			for _, parent := range parentProtocolComments {
-				parentIDs = append(parentIDs, parent.Id)
-			}
-			var children models.Comments
-			stmt := s.tdb.Select(strings.Join(in.Fields, ","))
-			stmt.Where("root IN (?)", parentIDs)
-			if user.IsGuest() {
-				stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
-			}
-			stmt.MustFind(&children)
-			childrenProtocolComments = children.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
+	// 其实是可以合并这两段高度相似的代码的，不过，因为 limit/offset 只限制顶级评论不限制子评论的原因，SQL 语句不好写。
+	if in.Mode == protocols.ListCommentsRequest_Tree && len(parents) > 0 {
+		parentIDs := make([]int64, 0, len(parents))
+		for _, parent := range parents {
+			parentIDs = append(parentIDs, parent.ID)
 		}
-		{
-			childrenMap := make(map[int64][]*protocols.Comment, len(parentProtocolComments))
-			for _, child := range childrenProtocolComments {
-				childrenMap[child.Root] = append(childrenMap[child.Root], child)
-			}
-			for _, parent := range parentProtocolComments {
-				parent.Children = childrenMap[parent.Id]
-			}
+
+		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
+		stmt.Where("root IN (?)", parentIDs)
+		if user.IsGuest() {
+			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
+		stmt.MustFind(&children)
 	}
 
-	return &protocols.ListCommentsResponse{
-		Comments: parentProtocolComments,
-	}, nil
+	comments := make(models.Comments, 0, len(parents)+len(children))
+	comments = append(comments, parents...)
+	comments = append(comments, children...)
+
+	protoComments := comments.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
+
+	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
 }
 
 func (s *Service) GetAllCommentsCount() int64 {

@@ -312,7 +312,7 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 
 	if len(styles) > 0 {
 		b := strings.Builder{}
-		b.WriteString(`style="`)
+		b.WriteString(` style="`)
 		for k, v := range styles {
 			b.WriteString(fmt.Sprintf(`%s: %s;`, k, v))
 		}
@@ -321,7 +321,7 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	}
 
 	if len(classes) > 0 {
-		w.WriteString(fmt.Sprintf(`class="%s"`, strings.Join(classes, " ")))
+		w.WriteString(fmt.Sprintf(` class="%s"`, strings.Join(classes, " ")))
 	}
 
 	// 看起来是文章内的相对链接？

@@ -17,7 +17,6 @@ message Comment {
 	string source_type = 10;
 	string source = 11;
 	string content = 12;
-	repeated Comment children = 13;
 	bool is_admin = 14;
 	string date_fuzzy = 15;
 	string geo_location = 16;
@@ -45,14 +44,16 @@ message DeleteCommentResponse {
 
 }
 
-enum ListCommentsMode {
-	ListCommentsModeUnspecified = 0;
-	ListCommentsModeTree = 1;
-	ListCommentsModeFlat = 2;
-}
-
 message ListCommentsRequest {
-	ListCommentsMode mode = 1;
+	enum Mode {
+		Unspecified = 0;
+		// limit 控制顶级评论的数量，子评论全部返回。用于以树型结构展示。
+		Tree = 1;
+		// limit 控制全部评论的数量，不区分父子评论。用于平铺展示近期评论。
+		Flat = 2;
+	}
+
+	Mode mode = 1;
 	// 0 for all posts.
 	int64 post_id = 2;
 	// defaults to "*".

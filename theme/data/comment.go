@@ -40,7 +40,7 @@ type LatestCommentsByPost struct {
 func (d *Data) ListLatestComments() (posts []*LatestCommentsByPost) {
 	comments, err := d.svc.ListComments(d.User.Context(context.TODO()),
 		&protocols.ListCommentsRequest{
-			Mode:    protocols.ListCommentsMode_ListCommentsModeFlat,
+			Mode:    protocols.ListCommentsRequest_Flat,
 			Limit:   15,
 			OrderBy: "date DESC",
 		})

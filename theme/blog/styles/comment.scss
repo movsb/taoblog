@@ -13,9 +13,12 @@ span.post-comment {
     }
 }
 
+#comment-title-status {
+	font-size: 130%;
+}
+
 /* 评论标题 */
 #comment-title {
-    font-size: 1.5em;
 	border-bottom: 1px solid var(--border-color);
     .count-wrap {
         color: #cfcfcf;
@@ -141,6 +144,7 @@ span.post-comment {
 	top: 0px;
 	background-color: rgba(255,255,255,0.95);
 	padding: 10px;
+	padding-top: 0;
 	border: 1px solid grey;
 	border-radius: var(--border-radius);
 	box-sizing: border-box;
@@ -163,7 +167,7 @@ span.post-comment {
 	}
 
 	.nc {
-		height: 28px;
+		height: 38px;
 		cursor: move;
 	}
 
@@ -173,7 +177,7 @@ span.post-comment {
 		top: 6px;
 		cursor: pointer;
 		height: 20px;
-		right: 6px;
+		right: 10px;
 		img {
 			float: right;
 			opacity: 0.3;
@@ -184,10 +188,10 @@ span.post-comment {
 	}
 
 	.comment-title {
-		position: relative;
 		text-align: center;
-		font-size: 1.5em;
-		top: -5px;
+		height: 100%;
+		padding-top: 7px;
+		box-sizing: border-box;
 		@media screen and (min-width: 601px) {
 			margin-right: 150px;
 		}
@@ -254,7 +258,7 @@ span.post-comment {
 	#comment-form-div {
 		background-color: var(--color-bg);
 		opacity: 0.95;
-		img.closebtn {
+		img.close {
 			filter: invert(80%);
 		}
 	}
