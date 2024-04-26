@@ -1,14 +1,19 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha1"
 	"crypto/subtle"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
+	"slices"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
 	"google.golang.org/grpc/codes"
@@ -24,17 +29,16 @@ type AuthContext struct {
 
 // User entity.
 type User struct {
-	ID int64
-}
+	ID          int64
+	Email       string
+	DisplayName string
 
-var (
-	guest = &User{ID: 0}
-	admin = &User{ID: 1}
-)
+	webAuthnCredentials []webauthn.Credential
+}
 
 // IsGuest ...
 func (u *User) IsGuest() bool {
-	return u.ID == 0
+	return u == nil || u.ID == 0
 }
 
 // IsAdmin ...
@@ -54,20 +58,99 @@ func (u *User) Context(parent context.Context) context.Context {
 	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
 }
 
+var _ webauthn.User = (*User)(nil)
+
+func (u *User) WebAuthnID() []byte {
+	if u.ID <= 0 || u.ID > math.MaxInt32 {
+		panic(`user id is invalid`)
+	}
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, uint32(u.ID))
+	return buf
+}
+func (u *User) WebAuthnName() string {
+	return u.Email
+}
+func (u *User) WebAuthnDisplayName() string {
+	return u.DisplayName
+}
+func (u *User) WebAuthnCredentials() []webauthn.Credential {
+	return u.webAuthnCredentials
+}
+func (u *User) WebAuthnIcon() string {
+	return ""
+}
+
+var guest = &User{
+	ID:                  0,
+	Email:               "",
+	DisplayName:         "未注册用户",
+	webAuthnCredentials: nil,
+}
+
+var admin = &User{
+	ID: 1,
+}
+
 type Auth struct {
-	cfg config.AuthConfig
+	cfg      config.AuthConfig
+	optioner Optioner
+}
+
+type Optioner interface {
+	SetOption(name string, value any)
+	GetDefaultStringOption(name string, def string) string
 }
 
 // New ...
 func New(cfg config.AuthConfig) *Auth {
 	a := Auth{}
 	a.cfg = cfg
+	if len(cfg.AdminEmails) == 0 {
+		panic("no admin emails")
+	}
+	admin.Email = cfg.AdminEmails[0]
+	admin.DisplayName = cfg.AdminName
 	return &a
 }
 
+func (a *Auth) SetAdminWebAuthnCredentials(j string) {
+	if err := json.Unmarshal([]byte(j), &admin.webAuthnCredentials); err != nil {
+		panic("credentials:" + err.Error())
+	}
+}
+
+func (a *Auth) SetService(optioner Optioner) {
+	a.optioner = optioner
+}
+
 // temporary
-func (a *Auth) Config() config.AuthConfig {
-	return a.cfg
+func (a *Auth) Config() *config.AuthConfig {
+	return &a.cfg
+}
+
+// 找不到返回空。
+func (o *Auth) GetUserByID(id int64) *User {
+	if id == admin.ID {
+		return admin
+	}
+	return guest
+}
+
+func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
+	existed := slices.IndexFunc(user.webAuthnCredentials, func(c webauthn.Credential) bool {
+		return bytes.Equal(c.PublicKey, cred.PublicKey)
+	})
+	if existed >= 0 {
+		user.webAuthnCredentials[existed] = *cred
+	} else {
+		user.webAuthnCredentials = append(user.webAuthnCredentials, *cred)
+	}
+	body, err := json.Marshal(user.webAuthnCredentials)
+	if err != nil {
+		panic(err)
+	}
+	o.optioner.SetOption(`admin_webauthn_credentials`, string(body))
 }
 
 func (o *Auth) Login() string {
@@ -87,19 +170,19 @@ func constantEqual(x, y string) bool {
 	return subtle.ConstantTimeCompare([]byte(x), []byte(y)) == 1
 }
 
-func (o *Auth) AuthLogin(username string, password string) bool {
+func (o *Auth) AuthLogin(username string, password string) *User {
 	if username != `` {
 		if constantEqual(username, o.cfg.Basic.Username) {
 			if constantEqual(password, o.cfg.Basic.Password) {
-				return true
+				return admin
 			}
 		}
 	}
-	return false
+	return guest
 }
 
 func (o *Auth) AuthRequest(req *http.Request) *User {
-	loginCookie, err := req.Cookie(`login`)
+	loginCookie, err := req.Cookie(CookieNameLogin)
 	if err != nil {
 		return guest
 	}
@@ -203,12 +286,17 @@ func (a *Auth) User(ctx context.Context) *User {
 	return guest
 }
 
+const (
+	CookieNameLogin  = `taoblog.login`
+	CookieNameUserID = `taoblog.user_id`
+)
+
 // MakeCookie ...
-func (a *Auth) MakeCookie(w http.ResponseWriter, r *http.Request) {
+func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	agent := r.Header.Get("User-Agent")
 	cookie := a.sha1(agent + a.Login())
 	http.SetCookie(w, &http.Cookie{
-		Name:     `login`,
+		Name:     CookieNameLogin,
 		Value:    cookie,
 		MaxAge:   0,
 		Path:     `/`,
@@ -216,17 +304,36 @@ func (a *Auth) MakeCookie(w http.ResponseWriter, r *http.Request) {
 		Secure:   true,
 		HttpOnly: true,
 	})
+	// 只用于前端展示使用，不能用作凭证。
+	http.SetCookie(w, &http.Cookie{
+		Name:   CookieNameUserID,
+		Value:  fmt.Sprint(u.ID),
+		MaxAge: 0,
+		Path:   `/`,
+		Domain: ``,
+		// Secure:   true,
+		// HttpOnly: true,
+	})
 }
 
 // RemoveCookie ...
 func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     `login`,
+		Name:     CookieNameLogin,
 		Value:    ``,
 		MaxAge:   -1,
 		Path:     `/`,
 		Domain:   ``,
 		Secure:   true,
 		HttpOnly: true,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:   CookieNameUserID,
+		Value:  ``,
+		MaxAge: -1,
+		Path:   `/`,
+		Domain: ``,
+		// Secure:   true,
+		// HttpOnly: true,
 	})
 }

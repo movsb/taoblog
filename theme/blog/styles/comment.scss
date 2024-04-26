@@ -2,15 +2,10 @@
 
 #comments {
     overflow: hidden;
-}
 
-span.post-comment {
-    font-weight: bold;
-    cursor: pointer;
-    &:hover {
-        text-decoration: underline;
-        color: var(--a-fg);
-    }
+	.pointer {
+		cursor: pointer;
+	}
 }
 
 #comment-title-status {
@@ -20,19 +15,42 @@ span.post-comment {
 /* 评论标题 */
 #comment-title {
 	border-bottom: 1px solid var(--border-color);
-    .count-wrap {
-        color: #cfcfcf;
-        font-weight: normal;
-        font-size: 0.7em;
-    }
-
-    span.post-comment {
+	display: flex;
+	align-items: baseline;
+	.item {
         margin-left: 1em;
         font-weight: normal;
         font-size: 0.7em;
-        display: none;
+	}
+    .count-wrap {
+        color: #cfcfcf;
     }
+	.right {
+		flex: max-content;
+		text-align: end;
+	}
+	.pointer {
+		color: inherit;
+	}
 }
+
+#comments {
+	.sign-in {
+		display: inline;
+	}
+	.delete-comment {
+		display: none;
+	}
+}
+#comments.signed-in {
+	.sign-in {
+		display: none;
+	}
+	.delete-comment {
+		display: inline;
+	}
+}
+
 
 /* 评论列表 */
 #comment-list {
@@ -114,6 +132,18 @@ span.post-comment {
             }
         }
     }
+}
+
+#comment-list {
+	.edit-comment {
+		display: none;
+	}
+	.edit-comment.can-edit {
+		display: inline;
+	}
+}
+#comments.signed-in #comment-list .edit-comment {
+	display: inline;
 }
 
 /* 评论功能区 */

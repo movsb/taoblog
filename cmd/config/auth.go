@@ -6,6 +6,9 @@ type AuthConfig struct {
 	Basic  BasicAuthConfig  `yaml:"basic"`
 	Github GithubAuthConfig `yaml:"github"`
 	Google GoogleAuthConfig `yaml:"google"`
+
+	AdminName   string
+	AdminEmails []string
 }
 
 // DefaultAuthConfig ...

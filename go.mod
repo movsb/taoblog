@@ -22,9 +22,22 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/hashicorp/golang-lru/v2 v2.0.7
+require (
+	github.com/go-webauthn/webauthn v0.10.2
+	github.com/hashicorp/golang-lru/v2 v2.0.7
+	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6
+)
 
-require github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6 // indirect
+require (
+	github.com/fxamacker/cbor/v2 v2.6.0 // indirect
+	github.com/go-webauthn/x v0.1.9 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/google/go-tpm v0.9.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+)
 
 require (
 	github.com/RoaringBitmap/roaring v0.9.1 // indirect

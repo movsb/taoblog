@@ -55,12 +55,22 @@ func serve() {
 
 	theAuth := auth.New(cfg.Auth)
 	theService := service.NewService(cfg, db, theAuth)
+	theAuth.SetService(theService)
+
+	theAuth.SetAdminWebAuthnCredentials(theService.GetDefaultStringOption(`admin_webauthn_credentials`, "[]"))
 
 	gateway.NewGateway(theService, theAuth, mux)
 
 	if !cfg.Maintenance.DisableAdmin {
 		prefix := `/admin/`
-		a := admin.NewAdmin(theAuth, prefix)
+
+		u, err := url.Parse(cfg.Site.Home)
+		if err != nil {
+			panic(err)
+		}
+
+		// TODO 检测本地是否是 HTTPS，否则不能开始  WebAuthn。
+		a := admin.NewAdmin(theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String(), `https://blog.home.twofei.com`})
 		log.Println(`admin on`, prefix)
 		mux.Handle(prefix, a.Handler())
 	}

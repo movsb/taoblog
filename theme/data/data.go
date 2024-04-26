@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"html/template"
 	"io"
 	"strings"
@@ -47,6 +48,17 @@ type Data struct {
 
 	// If it is the tag.
 	Tag *TagData
+}
+
+func (d *Data) Title() string {
+	if d.Meta != nil && d.Meta.Title != "" {
+		return fmt.Sprintf(`%s - %s`, d.Meta.Title, d.Config.Site.Name)
+	}
+	return d.Config.Site.Name
+}
+
+func (d *Data) SiteName() string {
+	return d.Config.Site.Name
 }
 
 func (d *Data) BodyClass() string {

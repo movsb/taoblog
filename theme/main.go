@@ -171,16 +171,6 @@ func (t *Theme) loadTemplates() {
 		"raw": func(s string) template.HTML {
 			return template.HTML(s)
 		},
-		"get_config": func(name string) string {
-			switch name {
-			case `blog_name`:
-				return t.service.Name()
-			case `blog_desc`:
-				return t.service.Description()
-			default:
-				panic(`cannot get this option`)
-			}
-		},
 		"menus": func() template.HTML {
 			return template.HTML(menustr)
 		},

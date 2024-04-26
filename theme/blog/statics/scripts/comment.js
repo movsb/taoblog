@@ -1,47 +1,52 @@
 document.write(function(){/*
-	<!--评论标题 -->
-	<h3 id="comment-title">
-		文章评论
-		<span class="no-sel count-wrap"> <span class="loaded">0</span>/<span class="total">0</span></span>
-		<span class="post-comment">发表评论</span>
-	</h3>
-	<!-- 评论列表  -->
-	<ol id="comment-list"></ol>
-	<!-- 评论功能区  -->
-	<div class="comment-func">
-		<div>还没有用户发表评论，<span class="post-comment">发表评论</span></div>
+<div id="comments">
+<!--评论标题 -->
+<h3 id="comment-title">
+	文章评论
+	<span class="count-wrap item"> <span class="loaded">0</span>/<span class="total">0</span></span>
+	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
+	<span class="right item">
+		<a class="sign-in pointer" onclick="comment.login()">登录</a>
+	</span>
+</h3>
+<!-- 评论列表  -->
+<ol id="comment-list"></ol>
+<!-- 评论功能区  -->
+<div class="comment-func">
+	<div>还没有用户发表过评论，我要<a class="post-comment pointer" onclick="comment.reply_to(0)">发表评论</a>。</div>
+</div>
+<!-- 评论框 -->
+<div id="comment-form-div">
+	<div class="no-sel nc drag-header">
+		<div class="ncbtns">
+			<img src="/images/close.svg" width="20" height="20" title="隐藏" class="close" onclick="comment.hide();"/>
+		</div>
+		<div class="comment-title">
+			<span id="comment-title-status">编辑评论</span>
+		</div>
 	</div>
-	<!-- 评论框 -->
-	<div id="comment-form-div">
-		<div class="no-sel nc drag-header">
-			<div class="ncbtns">
-				<img src="/images/close.svg" width="20" height="20" title="隐藏" class="close" onclick="comment.hide();"/>
+	<form id="comment-form">
+		<div class="content-area">
+			<textarea class="overlay" id="comment-content" name="source" wrap="on"></textarea>
+			<div class="overlay" id="comment-preview" style="display: none;"></div>
+		</div>
+		<div class="fields">
+			<input type="text" name="author" placeholder="昵称" />
+			<input type="text" name="email" placeholder="邮箱(不公开)"/>
+			<input type="text" name="url" placeholder="网站(可不填)" />
+			<input type="submit" id="comment-submit" value="发表评论" />
+			<div class="field">
+				<input type="checkbox" id="comment-wrap-lines" checked />
+				<label for="comment-wrap-lines">自动折行</label>
 			</div>
-			<div class="comment-title">
-				<span id="comment-title-status">编辑评论</span>
+			<div class="field">
+				<input type="checkbox" id="comment-show-preview" />
+				<label for="comment-show-preview">显示预览</label>
 			</div>
 		</div>
-		<form id="comment-form">
-			<div class="content-area">
-				<textarea class="overlay" id="comment-content" name="source" wrap="on"></textarea>
-				<div class="overlay" id="comment-preview" style="display: none;"></div>
-			</div>
-			<div class="fields">
-				<input type="text" name="author" placeholder="昵称" />
-				<input type="text" name="email" placeholder="邮箱(不公开)"/>
-				<input type="text" name="url" placeholder="网站(可不填)" />
-				<input type="submit" id="comment-submit" value="发表评论" />
-				<div class="field">
-					<input type="checkbox" id="comment-wrap-lines" checked />
-					<label for="comment-wrap-lines">自动折行</label>
-				</div>
-				<div class="field">
-					<input type="checkbox" id="comment-show-preview" />
-					<label for="comment-show-preview">显示预览</label>
-				</div>
-			</div>
-		</form>
-	</div>
+	</form>
+</div>
+</div>
 */}.toString().slice(14,-3));
 
 class CommentAPI
@@ -130,10 +135,8 @@ class CommentAPI
 	// 删除一条评论。
 	async deleteComment(id) {
 		let path = `/v3/comments/${id}`;
-		let rsp = await fetch(path, {
-			method: 'DELETE'
-		});
-		if (!rsp.ok) { throw new Error(rsp.statusText); }
+		let rsp = await fetch(path, { method: 'DELETE' });
+		if (!rsp.ok) {throw new Error(await rsp.text()); }
 	}
 
 	// 评论预览。
@@ -376,7 +379,8 @@ class CommentListUI {
 		} else {
 			let comment = comments_or_comment;
 			this._append(comment.parent, comment, comment.parent == 0);
-			// TODO 增加计数
+			this._loaded_all    += 1;
+			this._loaded_roots  += comment.root == 0 ? 1 : 0;
 		}
 
 		this._updateStats();
@@ -425,13 +429,6 @@ class Comment {
 	init() {
 		let self = this;
 
-		let postComments = document.querySelectorAll('.post-comment');
-		postComments.forEach(function (elem) {
-			elem.addEventListener('click', function (elem) {
-				self.reply_to(0);
-			});
-		});
-
 		this.form.submit(async () => {
 			try {
 				self.setStates({ submitting: true });
@@ -459,6 +456,11 @@ class Comment {
 		this.preview.on(this.showPreview.bind(this));
 
 		self.init_drag(document.getElementById('comment-form-div'));
+
+		if (TaoBlog.userID > 0) {
+			let root = document.getElementById('comments');
+			root.classList.add('signed-in');
+		}
 	}
 	clearContent() {
 		let content = document.querySelector('#comment-content');
@@ -525,13 +527,10 @@ class Comment {
 		}
 	}
 	toggle_post_comment_button(show) {
-		let btn = document.querySelectorAll('#comment-title .post-comment');
 		let func = document.querySelectorAll('.comment-func');
 		if (show) {
-			btn.forEach((b) => b.style.display = 'none');
 			func.forEach((f) => TaoBlog.fn.fadeIn(f));
 		} else {
-			btn.forEach((b) => b.style.display = 'unset');
 			func.forEach((f) => TaoBlog.fn.fadeOut(f));
 		}
 	}
@@ -639,8 +638,8 @@ class Comment {
 				: `<div class="comment-content">${this.normalize_content(cmt.content)}</div>`}
 	<div class="toolbar" style="margin-left: 54px;">
 		<a class="no-sel" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
-		${cmt.can_edit ? `<a class="no-sel" onclick="comment.edit(${cmt.id});return false;">编辑</a>` : ''}
-		${!loggedin ? '' : `<a class="no-sel" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});return false;">删除</a>`}
+		<a class="no-sel edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
+		<a class="no-sel delete-comment" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});">删除</a>
 	</div>
 	<div class="comment-replies" id="comment-reply-${cmt.id}"><ol></ol></div>
 </li>
@@ -817,6 +816,22 @@ class Comment {
 			this.preview.setHTML(rsp.html);
 		} catch (e) {
 			this.preview.setError('预览失败：' + e);
+		}
+	}
+	async login() {
+		let wa = new WebAuthn();
+		try {
+			await wa.login();
+			let root = document.getElementById('comments');
+			root.classList.add('signed-in');
+			TaoBlog.userID = TaoBlog.fn.getUserID();
+			alert('登录成功。');
+		} catch(e) {
+			if (e instanceof DOMException && e.name == "AbortError") {
+				console.log('已取消登录。');
+				return;
+			}
+			alert(e);
 		}
 	}
 }

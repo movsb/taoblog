@@ -18,9 +18,9 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `invalid body: %v`, err)
 		return
 	}
-	success := a.auth.AuthLogin(t.Username, t.Password)
-	if success {
-		a.auth.MakeCookie(w, r)
+	user := a.auth.AuthLogin(t.Username, t.Password)
+	if user.IsAdmin() {
+		a.auth.MakeCookie(user, w, r)
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -29,9 +29,9 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 
 func (a *Admin) loginByGithub(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
-	success := a.auth.AuthGitHub(code).IsAdmin()
-	if success {
-		a.auth.MakeCookie(w, r)
+	user := a.auth.AuthGitHub(code)
+	if user.IsAdmin() {
+		a.auth.MakeCookie(user, w, r)
 		http.Redirect(w, r, `/`, http.StatusFound)
 	} else {
 		http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
@@ -49,9 +49,9 @@ func (a *Admin) loginByGoogle(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `invalid body: %v`, err)
 		return
 	}
-	success := a.auth.AuthGoogle(t.Token).IsAdmin()
-	if success {
-		a.auth.MakeCookie(w, r)
+	user := a.auth.AuthGoogle(t.Token)
+	if user.IsAdmin() {
+		a.auth.MakeCookie(user, w, r)
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)

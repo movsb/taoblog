@@ -29,7 +29,7 @@ func GatewayAuthInterceptor(a *Auth) grpc.UnaryServerInterceptor {
 				for _, cookie := range cookies {
 					header.Add(`Cookie`, cookie)
 				}
-				if loginCookie, err := (&http.Request{Header: header}).Cookie(`login`); err == nil {
+				if loginCookie, err := (&http.Request{Header: header}).Cookie(CookieNameLogin); err == nil {
 					login = loginCookie.Value
 				}
 			}

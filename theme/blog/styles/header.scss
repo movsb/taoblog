@@ -35,10 +35,6 @@ body.wide #header .content {
             }
         }
 
-        .motto {
-            color: white;
-        }
-
         .nav {
             a {
                 transition: all 0.2s;
@@ -109,9 +105,6 @@ body.wide #header .content {
 @media screen and (min-width: $max_width+1) {
     #header {
         .content {
-            .motto {
-                padding-left: 2em;
-            }
             .nav {
                 float: right;
             }

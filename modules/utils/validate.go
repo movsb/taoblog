@@ -21,7 +21,7 @@ func IsURL(Url string, addScheme bool) bool {
 	if err != nil {
 		return false
 	}
-	if u.Host == "" {
+	if !strings.Contains(u.Host, ".") {
 		return false
 	}
 	return true

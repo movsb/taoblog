@@ -127,3 +127,13 @@ TaoBlog.fn.fadeOut = function(elem, callback) {
 	}, { once: true});
 	elem.classList.add('fade-out');
 };
+
+TaoBlog.fn.getUserID = function() {
+	let matches = /taoblog\.user_id=(\d+)/.exec(document.cookie);
+	if (matches && matches.length == 2) {
+		return +matches[1];
+	}
+	return 0;
+};
+
+TaoBlog.userID = TaoBlog.fn.getUserID();

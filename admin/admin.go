@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/base64"
 	"html/template"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 )
 
 type LoginData struct {
+	Name           string
 	GoogleClientID string
 	GitHubClientID string
 }
@@ -23,37 +25,26 @@ func (d *LoginData) HasSocialLogins() bool {
 type Admin struct {
 	prefix    string // not including last /
 	templates *template.Template
-	mux       *http.ServeMux
 	auth      *auth.Auth
+	webAuthn  *auth.WebAuthn
 	canGoogle atomic.Bool
+
+	displayName string
 }
 
-func NewAdmin(auth *auth.Auth, prefix string) *Admin {
+func NewAdmin(auth1 *auth.Auth, prefix string, domain, displayName string, origins []string) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
 	a := &Admin{
-		prefix: prefix,
-		mux:    http.NewServeMux(),
-		auth:   auth,
+		prefix:      prefix,
+		auth:        auth1,
+		displayName: displayName,
+		webAuthn:    auth.NewWebAuthn(auth1, domain, displayName, origins),
 	}
-	a.route()
 	a.loadTemplates()
 	go a.detectNetwork()
 	return a
-}
-
-func (a *Admin) route() {
-	m := a.mux
-
-	m.HandleFunc(`GET /{$}`, a.getRoot)
-
-	m.HandleFunc(`GET /login`, a.getLogin)
-	m.HandleFunc(`GET /logout`, a.getLogout)
-
-	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
-	m.HandleFunc(`GET /login/github`, a.loginByGithub)
-	m.HandleFunc(`POST /login/google`, a.loginByGoogle)
 }
 
 func (a *Admin) detectNetwork() {
@@ -67,20 +58,41 @@ func (a *Admin) detectNetwork() {
 }
 
 func (a *Admin) Handler() http.Handler {
+	m := http.NewServeMux()
+
+	m.HandleFunc(`GET /{$}`, a.getRoot)
+	m.HandleFunc(`GET /script.js`, a.getScript)
+
+	m.HandleFunc(`GET /login`, a.getLogin)
+	m.HandleFunc(`GET /logout`, a.getLogout)
+
+	m.HandleFunc(`GET /profile`, a.getProfile)
+
+	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
+	m.HandleFunc(`GET /login/github`, a.loginByGithub)
+	m.HandleFunc(`POST /login/google`, a.loginByGoogle)
+
+	const webAuthnPrefix = `/login/webauthn/`
+	m.Handle(webAuthnPrefix, a.webAuthn.Handler(webAuthnPrefix))
+
 	prefix := strings.TrimSuffix(a.prefix, "/")
 	if prefix == "" {
-		return a.mux
+		return m
 	}
-	return http.StripPrefix(prefix, a.mux)
+	return http.StripPrefix(prefix, m)
 }
 
 func (a *Admin) prefixed(s string) string {
 	return filepath.Join(a.prefix, s)
 }
 
+func (a *Admin) getScript(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "admin/script.js")
+}
+
 func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 	if a.authorized(r) {
-		http.Redirect(w, r, `/`, http.StatusFound)
+		http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
 		return
 	}
 	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
@@ -92,7 +104,10 @@ func (a *Admin) authorized(r *http.Request) bool {
 }
 
 func (a *Admin) loadTemplates() {
-	tmpl, err := template.New("admin").ParseFiles(`admin/login.html`) // TODO: don't use relative path.
+	tmpl, err := template.New("admin").ParseFiles(
+		`admin/login.html`,
+		`admin/profile.html`,
+	) // TODO: don't use relative path.
 	if err != nil {
 		panic(err)
 	}
@@ -101,11 +116,13 @@ func (a *Admin) loadTemplates() {
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 	if a.authorized(r) {
-		http.Redirect(w, r, a.prefixed(`/`), http.StatusFound)
+		http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
 		return
 	}
 
-	d := LoginData{}
+	d := LoginData{
+		Name: a.displayName,
+	}
 	if a.canGoogle.Load() {
 		d.GoogleClientID = a.auth.Config().Google.ClientID
 	}
@@ -120,4 +137,32 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 func (a *Admin) getLogout(w http.ResponseWriter, r *http.Request) {
 	a.auth.RemoveCookie(w)
 	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
+}
+
+type ProfileData struct {
+	Name string
+	User *auth.User
+}
+
+func (d *ProfileData) PublicKeys() []string {
+	ss := make([]string, 0, len(d.User.WebAuthnCredentials()))
+	for _, c := range d.User.WebAuthnCredentials() {
+		ss = append(ss, base64.RawURLEncoding.EncodeToString(c.ID))
+	}
+	return ss
+}
+
+func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
+	if !a.authorized(r) {
+		http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
+		return
+	}
+	d := &ProfileData{
+		Name: a.displayName,
+		User: a.auth.AuthRequest(r),
+	}
+	if err := a.templates.ExecuteTemplate(w, `profile.html`, &d); err != nil {
+		log.Println(`admin: failed to render:`, err)
+		return
+	}
 }

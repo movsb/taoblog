@@ -5,17 +5,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
-    <title>
-        {{- if .Meta.Title -}}
-            {{- .Meta.Title -}}
-            {{- " - " -}}
-        {{- end -}}
-        {{- get_config "blog_name" -}}
-    </title>
+<title>{{ $.Title }}</title>
 <link rel="preconnect" href="https://npm.elemecdn.com">
-    <link rel="stylesheet" type="text/css" href="/style.css" />
-	<script src="/scripts/header.js"></script>
-    {{ render "custom_header" . }}
+<link rel="stylesheet" type="text/css" href="/style.css" />
+<script src="/scripts/header.js"></script>
+{{ render "custom_header" . }}
 </head>
 <body class="{{ $.BodyClass }}">
 <div id="wrapper">
@@ -24,10 +18,7 @@
     <header id="header">
         <div class="content">
             <div class="padding">
-                <div class="sitename"><a href="/">{{get_config "blog_name"}}</a></div>
-				{{ with (get_config "blog_desc")}}
-				<p class="motto">{{ . }}</p>
-				{{ end }}
+                <div class="sitename"><a href="/">{{ $.SiteName }}</a></div>
 {{ if and .Config.Site.Search.Show }}
 <form name="search_box" class="search" action="/search">
 <input name="q" placeholder="Search"/>

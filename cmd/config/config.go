@@ -27,5 +27,9 @@ func Load(r io.Reader) *Config {
 	if err != nil {
 		panic(err)
 	}
+
+	c.Auth.AdminName = c.Comment.Author
+	c.Auth.AdminEmails = c.Comment.Emails
+
 	return &c
 }

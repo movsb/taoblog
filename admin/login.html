@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>登录 - TaoBlog</title>
+<title>登录 - {{ .Name }}</title>
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 <style>
 body {
@@ -10,27 +11,32 @@ body {
     margin: 1em;
 }
 
-#wrapper {
-    max-width: 300px;
-}
-
-#title {
-    font-size: 1.5em;
-    border-bottom: 1px solid gray;
-}
-
-#input-wrapper {
-    display: flex;
+@media screen and (min-width: 500px) {
+	#wrapper {
+		max-width: 300px;
+	}
 }
 
 input, button {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.5em;
-    line-height: 1em;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.8em;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding-left: 7px;
+	padding-right: 7px;
 }
-
+input[type=text],input[type=password] {
+	line-height: 3em;
+}
+button, input[type=submit] {
+	line-height: 3.5em;
+	background-color: #eee;
+	color: inherit;
+}
+button:hover, input[type=submit]:hover {
+	background-color: #e8e8e8;
+}
 </style>
 <script>
 window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
@@ -38,49 +44,32 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
     return false;
 };
 </script>
+<script src="script.js"></script>
 </head>
 <body>
 <div id="wrapper">
-<h2>用户名登录</h2>
-<form method="post" id="login-form">
-	<div id="input-wrapper">
-		<div class=left>
-			<div>
-				<input type="text" name="user" placeholder="用户名" />
-				<input type="password" name="passwd" placeholder="密码" />
-			</div>	
-			<div class="submit" style="text-align: right;">
-				<input type="submit" value="登录" />
-				<input type="button" value="取消" onclick="location.href='/';" />
-			</div>
-			<script>
-				(function(){
-					let form = document.getElementById('login-form');
-					form.addEventListener('submit', async function(ev){
-						ev.stopPropagation();
-						ev.preventDefault();
-
-						let resp = await fetch(location.pathname + '/basic', {
-							method: 'POST',
-							credentials: "include",
-							body: JSON.stringify({
-								username: form.elements['user'].value,
-								password: form.elements['passwd'].value,
-							}),
-						});
-						if (resp.status == 200) {
-							location.href = '/';
-						} else {
-							alert('Error: ' + resp.statusText);
-						}
-
-						return true;
-					});
-				})();
-			</script>
-		</div>
-	</div>
-</form>
+<h1>{{ .Name }}</h1>
+<button onclick="location.href='/'">返回首页</button>
+<h2>通行密钥登录</h2>
+<div>
+	<button onclick="webauthn()">登录</button>
+	<script>
+		async function webauthn() {
+			let wa = new WebAuthn();
+			try {
+				await wa.login();
+				alert('登录成功。');
+				location.href = 'profile';
+			} catch(e) {
+				if (e instanceof DOMException && e.name == "AbortError") {
+					console.log('已取消操作。');
+					return;
+				}
+				alert(e);
+			}
+		}
+	</script>
+</div>
 {{ if .HasSocialLogins }}
 <h2>社交帐号登录</h2>
 <div>
@@ -122,7 +111,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 						if (resp.status == 200) {
 							var auth2 = gapi.auth2.getAuthInstance();
 							auth2.disconnect().then(function () {
-								location.href = '/';
+								location.href = 'profile';
 							});
 						} else {
 							alert('Error: ' + resp.statusText);
@@ -150,8 +139,47 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 	</script>
 	</div>
 	{{ end }}
-	</div>
 </div>
 {{ end }}
+<h2>用户名登录</h2>
+<form method="post" id="login-form">
+	<div id="input-wrapper">
+		<div class=left>
+			<div>
+				<input type="text" name="user" placeholder="用户名" />
+				<input type="password" name="passwd" placeholder="密码" />
+			</div>	
+			<div class="submit" style="text-align: right;">
+				<input type="submit" value="登录" />
+			</div>
+			<script>
+				(function(){
+					let form = document.getElementById('login-form');
+					form.addEventListener('submit', async function(ev){
+						ev.stopPropagation();
+						ev.preventDefault();
+
+						let resp = await fetch(location.pathname + '/basic', {
+							method: 'POST',
+							credentials: "include",
+							body: JSON.stringify({
+								username: form.elements['user'].value,
+								password: form.elements['passwd'].value,
+							}),
+						});
+						if (resp.status == 200) {
+							location.href = 'profile';
+						} else {
+							alert('Error: ' + resp.statusText);
+						}
+
+						return true;
+					});
+				})();
+			</script>
+		</div>
+	</div>
+</form>
+</div>
 </body>
 </html>
