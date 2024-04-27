@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
@@ -80,9 +81,11 @@ func serve() {
 	mux.Handle(`/`, canon)
 	theService.SetLinker(theme.Linker())
 
+	reqLog := logs.NewRequestLogger(`access.log`)
+
 	server := &http.Server{
 		Addr:    cfg.Server.HTTPListen,
-		Handler: mux,
+		Handler: reqLog.Handler(mux),
 	}
 
 	go func() {
