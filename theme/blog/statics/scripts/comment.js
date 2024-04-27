@@ -19,7 +19,7 @@ document.write(function(){/*
 <div id="comment-form-div">
 	<div class="no-sel nc drag-header">
 		<div class="ncbtns">
-			<img src="/images/close.svg" width="20" height="20" title="隐藏" class="close" onclick="comment.hide();"/>
+			<div title="隐藏" class="close" onclick="comment.hide();"></div>
 		</div>
 		<div class="comment-title">
 			<span id="comment-title-status">编辑评论</span>

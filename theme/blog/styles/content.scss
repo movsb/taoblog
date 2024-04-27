@@ -150,7 +150,7 @@ a {
         content: "";
         margin-left: 5px;
         padding-left: 13px;
-        background-image: url(/images/external-anchor.png);
+        background-image: url($externalAnchor);
         background-repeat: no-repeat;
         background-position: left center;
     }

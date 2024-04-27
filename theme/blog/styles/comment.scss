@@ -206,17 +206,18 @@
 		position: absolute;
 		top: 6px;
 		cursor: pointer;
-		height: 20px;
+		height: 25px;
 		right: 10px;
-		img {
-			float: right;
-			opacity: 0.3;
-			&:hover {
-				opacity: 0.6;
-			}
+		
+		.close {
+			width: 25px;
+			height: 25px;
+			background-image: url($closeButton);
+			background-size: cover;
+			filter: opacity(.3);
+			transition: filter .1s linear;
 		}
 	}
-
 	.comment-title {
 		text-align: center;
 		height: 100%;
@@ -288,8 +289,21 @@
 	#comment-form-div {
 		background-color: var(--color-bg);
 		opacity: 0.95;
-		img.close {
-			filter: invert(80%);
+	}
+}
+
+#comment-form-div {
+	@media (prefers-color-scheme: light) {
+		.ncbtns .close:hover {
+			filter: opacity(.6);
+		}
+	}
+	@media (prefers-color-scheme: dark) {
+		.ncbtns .close {
+			filter: invert(30%);
+			&:hover {
+				filter: invert(50%);
+			}
 		}
 	}
 }
