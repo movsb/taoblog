@@ -22,8 +22,10 @@ class ImageViewUI {
 		
 		this._viewImage(img);
 
-		this._boundKeyHandler = this._keyHandler.bind(this);
-		document.body.addEventListener('keydown', this._boundKeyHandler);
+		if (!this._isMobileDevice()) {
+			this._boundKeyHandler = this._keyHandler.bind(this);
+			document.body.addEventListener('keydown', this._boundKeyHandler);
+		}
 	}
 
 	_viewImage(img) {
@@ -34,9 +36,16 @@ class ImageViewUI {
 		this.img.src = src;	
 	}
 	_hideImage() {
-		document.body.style.maxHeight = 'none';
-		document.body.style.overflow = 'auto';
-		document.body.removeEventListener('keydown', this._boundKeyHandler);
+		if (this._isMobileDevice()) {
+			let wrapper = document.getElementById('wrapper');
+			wrapper.style.display = 'block';
+			window.scrollTo({left: 0, top: this._scrollY});
+		} else {
+			let body = document.body;
+			body.style.maxHeight = 'none';
+			body.style.overflow = 'auto';
+			body.removeEventListener('keydown', this._boundKeyHandler);
+		}
 		this.root.remove();
 	}
 
@@ -78,16 +87,33 @@ class ImageViewUI {
 		style.top       = `${(this.root.clientHeight - initHeight)/2}px`;
 		style.width     = `${initWidth}px`;
 		style.height    = `${initHeight}px`;
-		style.display   = 'block';
-		
-		let body =document.body;
-		body.style.maxHeight = window.innerHeight + 'px';
-		body.style.overflow = 'hidden';
+
+		if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeIn) {
+			TaoBlog.fn.fadeIn(this.img);
+		} else {
+			style.display   = 'block';
+		}
+
+		// 这个是 Zoom.js 的 Bugs。
+		// 本来在桌面浏览器上对 body hidden 就够了，
+		// 但是移动设备上会出现当页面有滚动时，图片预览缩放功能乱跑。
+		if (this._isMobileDevice()) {
+			this._scrollY = window.scrollY;
+			let wrapper = document.getElementById('wrapper');
+			wrapper.style.display = 'none';
+		} else {
+			let body = document.body;
+			body.style.maxHeight = window.innerHeight + 'px';
+			body.style.overflow = 'hidden';
+		}
+	}
+	_isMobileDevice() {
+		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
 	}
 	_initBindings() {
 		this.img.addEventListener('load', this._onImgLoad.bind(this));
 
-		if ('ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent)) {
+		if (this._isMobileDevice()) {
 			let zoom = new Zoom(this.img, {
 				rotate: false,
 				// minZoom: 0.25,

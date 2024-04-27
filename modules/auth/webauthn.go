@@ -68,6 +68,7 @@ func (a *WebAuthn) Handler(prefix string) http.Handler {
 
 // [1,2,3] => XXXXXX
 // 官方的 protocol.URLEncodedBase64 会把结果把成 JSON 字符串，不好用。
+// TODO 支持批量转码。
 func (a *WebAuthn) base64Encode(w http.ResponseWriter, r *http.Request) {
 	var bs []byte
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&bs); err != nil {

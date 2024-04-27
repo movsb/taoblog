@@ -22,8 +22,10 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 	if user.IsAdmin() {
 		a.auth.MakeCookie(user, w, r)
 		w.WriteHeader(http.StatusOK)
+		return
 	} else {
-		w.WriteHeader(http.StatusUnauthorized)
+		http.Error(w, `用户名/密码不正确。`, http.StatusUnauthorized)
+		return
 	}
 }
 

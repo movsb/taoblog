@@ -114,7 +114,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 								location.href = 'profile';
 							});
 						} else {
-							alert('Error: ' + resp.statusText);
+							alert('Error: ' + await resp.text());
 						}
 					},
 					function(error) {
@@ -146,8 +146,8 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 	<div id="input-wrapper">
 		<div class=left>
 			<div>
-				<input type="text" name="user" placeholder="用户名" />
-				<input type="password" name="passwd" placeholder="密码" />
+				<input type="text" name="user" placeholder="用户名" required />
+				<input type="password" name="passwd" placeholder="密码" required />
 			</div>	
 			<div class="submit" style="text-align: right;">
 				<input type="submit" value="登录" />
@@ -170,7 +170,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 						if (resp.status == 200) {
 							location.href = 'profile';
 						} else {
-							alert('Error: ' + resp.statusText);
+							alert('Error: ' + await resp.text());
 						}
 
 						return true;
