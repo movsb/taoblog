@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 
@@ -33,9 +34,10 @@ func (c *Client) GetComment(cmdID int64) *protocols.Comment {
 	return cmt
 }
 
-// UpdateComment ...
-func (c *Client) UpdateComment(cmdID int64) {
-	cmt := c.GetComment(cmdID)
+// 更新一条评论。
+// 非 Markdown 评论会被转换为 Markdown。
+func (c *Client) UpdateComment(cmtID int64) {
+	cmt := c.GetComment(cmtID)
 	editor, ok := os.LookupEnv(`EDITOR`)
 	if !ok {
 		editor = `vim`
@@ -71,7 +73,7 @@ func (c *Client) UpdateComment(cmdID int64) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	newInfo, err := os.Stat(tmpFile.Name())

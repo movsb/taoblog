@@ -551,46 +551,30 @@ class Comment {
 			alert(e);
 		}
 	}
-	normalize_content(c) {
-		let s = this.h2t(c);
-		s = s.replace(/```(\s*(\w+)\s*)?\r?\n([\s\S]+?)```/mg, '<pre class="code"><code class="language-$2">$3</code></pre>');
-		return s;
-	}
-	// https://stackoverflow.com/a/12034334/3628322
-	// escape html to text
-	h2t(h) {
-		let map = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			'"': '&quot;',
-			'\'': '&apos;',
-		};
-
-		return h.replace(/[&<>'"]/g, function (s) {
-			return map[s];
-		});
-	}
-	// escape html to attribute
-	h2a(h) {
-		let map = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			"'": '&#39;',
-			'"': '&quot;'
-		};
-
-		return h.replace(/[&<>'"]/g, function (s) {
-			return map[s];
-		});
-	}
 	locate(id) {
 		let ui = new CommentNodeUI(id);
 		ui.locate();
 		history.replaceState(null, '', `#${ui.htmlID}`);
 	}
 	gen_comment_item(cmt) {
+		// 把可能的 HTML 特殊字符转义以作为纯文本嵌入到页面中。
+		// 单、双引号均没必要转换，任何时候都不会引起歧义。
+		const h2t = (h) => {
+			const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;'};
+			return h.replace(/[&<>]/g, c => map[c]);
+		};
+		// 转义成属性值。
+		// 两种情况：手写和非手写。
+		// 手写的时候知道什么时候需要把值用单、双引号包起来，跟本函数无关。
+		// 如果是构造 HTML，则（我）总是放在单、双引号中，所以 < > 其实没必要转义，
+		// 而如果可能不放在引号中，则需要转义。' " 则总是需要转义。
+		// 试了一下在火狐中执行 temp0.setAttribute('title', 'a > b')，不管是查看或者编辑，都没被转义。
+		// https://mina86.com/2021/no-you-dont-need-to-escape-that/
+		const h2a = (h) => {
+			const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
+			return h.replace(/[&'"]/g, c => map[c]);
+		};
+
 		let loggedin = cmt.ip != '';
 		let date = new Date(cmt.date * 1000);
 
@@ -598,9 +582,9 @@ class Comment {
 		let info = '';
 		if (loggedin) {
 			info = `编号：${cmt.id}
-作者：${this.h2a(cmt.author)}
-邮箱：${this.h2a(cmt.email)}
-网址：${this.h2a(cmt.url)}
+作者：${cmt.author}
+邮箱：${cmt.email}
+网址：${cmt.url}
 地址：${cmt.ip}
 位置：${cmt.geo_location}
 日期：${date.toLocaleString()}
@@ -615,7 +599,7 @@ class Comment {
 			}
 			try {
 				let parsed = new URL(url);
-				urlContent = `<span class="home"><a rel="nofollow" target="_blank" href="${this.h2a(url)}">${this.h2t(parsed.origin)}</a></span>`;
+				urlContent = `<span class="home"><a rel="nofollow" target="_blank" href="${h2a(url)}">${h2t(parsed.origin)}</a></span>`;
 			} catch (e) {
 				console.log(e);
 			}
@@ -625,17 +609,17 @@ class Comment {
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
 		<a href="#comment-${cmt.id}" onclick="comment.locate(${cmt.id});return false;">
-			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${this.h2t(info)}"/>
+			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${h2a(info)}"/>
 		</a>
 	</div>
 	<div class="comment-meta">
-		<span class="${cmt.is_admin ? "author" : "nickname"}">${this.h2t(cmt.author)}</span>
+		<span class="${cmt.is_admin ? "author" : "nickname"}">${h2t(cmt.author)}</span>
 		${urlContent}
 		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}">${cmt.date_fuzzy}</time>
 	</div>
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content">${cmt.content}</div>`
-				: `<div class="comment-content">${this.normalize_content(cmt.content)}</div>`}
+				: `<div class="comment-content">${h2t(cmt.content)}</div>`}
 	<div class="toolbar" style="margin-left: 54px;">
 		<a class="no-sel" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
 		<a class="no-sel edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
