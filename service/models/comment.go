@@ -55,9 +55,10 @@ func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, 
 		}
 	}
 
-	// 管理员、（同 IP 用户 & 5️⃣分钟内） 可编辑。
+	// （同 IP 用户 & 5️⃣分钟内） 可编辑。
 	// TODO: IP：并不严格判断，比如网吧、办公室可能具有相同 IP。所以限制了时间范围。
-	comment.CanEdit = c.SourceType == `markdown` && (user.IsAdmin() || (userIP == c.IP && In5min(c.Date)))
+	// NOTE：管理员总是可以编辑，跟此值无关。
+	comment.CanEdit = c.SourceType == `markdown` && (userIP == c.IP && In5min(c.Date))
 
 	return &comment
 }
