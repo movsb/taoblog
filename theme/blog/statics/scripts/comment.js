@@ -412,6 +412,7 @@ class CommentListUI {
 		let ui = new CommentNodeUI(comment.id);
 		ui.setContent(comment.content);
 		TaoBlog.events.dispatch('comment', 'post', ui.htmlNode, comment);
+		this._comments[comment.id] = comment;
 	}
 
 	remove(id) {
