@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -153,7 +154,7 @@ func (s *Service) TxCall(callback func(txs *Service) error) error {
 
 // HomeURL returns the home URL of format https://localhost.
 func (s *Service) HomeURL() string {
-	return s.cfg.Site.Home
+	return strings.TrimSuffix(s.cfg.Site.Home, "/")
 }
 
 func (s *Service) Name() string {
