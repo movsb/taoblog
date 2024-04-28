@@ -68,7 +68,10 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		AdminEmail: s.cfg.Comment.Emails[0], // TODO 如果没配置，则不启用此功能
 		Config:     &s.cfg.Comment,
 	}
+
 	s.cmtntf.Init()
+
+	s.cacheAllEmailAvatars()
 
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(

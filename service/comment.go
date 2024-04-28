@@ -40,6 +40,18 @@ func (s *Service) avatar(email string) int {
 	return s.avatarCache.ID(email)
 }
 
+// 像二狗说的那样，服务启动时缓存所有的头像哈希值，
+// 否则缓存的页面图片在服务重启后刷新时会加载失败。
+// https://qwq.me/p/249/1#comment-506
+// NOTE: ORM 不支持 distinct，所以没写。
+func (s *Service) cacheAllEmailAvatars() {
+	var comments models.Comments
+	s.tdb.Select(`email`).MustFind(&comments)
+	for _, c := range comments {
+		_ = s.avatarCache.ID(c.Email)
+	}
+}
+
 // GetComment ...
 // TODO perm check
 // TODO remove email & user
