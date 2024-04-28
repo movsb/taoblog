@@ -838,6 +838,7 @@ class Comment {
 		try {
 			let rsp = await this.api.previewComment(+this.post_id, source);
 			this.preview.setHTML(rsp.html);
+			TaoBlog.events.dispatch('comment', 'preview', this.preview.container);
 		} catch (e) {
 			this.preview.setError('预览失败：' + e);
 		}

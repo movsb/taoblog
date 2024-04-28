@@ -68,6 +68,10 @@ TaoBlog.events.add('comment', 'post', function(item, cmt) {
 	let anchors = item.querySelectorAll(':scope a');
 	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
 });
+TaoBlog.events.add('comment', 'preview', function(div) {
+	let pres = div.querySelectorAll(':scope pre');
+	pres.forEach(pre => TaoBlog.fn.highlight(pre));
+});
 })();
 
 // TODO 目前的 Markdown 在处理 @2x 图片时无法处理 HTML 标签使用的图片 <img>，只能处理 ![]() 这种。
