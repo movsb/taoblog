@@ -370,3 +370,7 @@ func v22(tx *sql.Tx) {
 		mustExec(tx, `update posts set metas=? where id=?`, new.Metas, new.ID)
 	}
 }
+
+func v23(tx *sql.Tx) {
+	mustExec(tx, "CREATE INDEX `post_id` on `comments` (`post_id`)")
+}
