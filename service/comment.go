@@ -474,7 +474,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		}
 		s.cmtntf.NotifyAdmin(data)
 
-		if config := s.cmtntf.Config.Push.Chanify; config != nil {
+		if config := s.cmtntf.Config.Push.Chanify; config.Token != "" {
 			comment_notify.Chanify(config.Token, data)
 		}
 	}

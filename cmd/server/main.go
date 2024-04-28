@@ -96,8 +96,10 @@ func serve() {
 	}()
 
 	log.Println("Server started on", server.Addr)
-	ch := notify.NewOfficialChanify(cfg.Comment.Push.Chanify.Token)
-	ch.Send("博客状态", "已经开始运行。", true)
+	if chanify := cfg.Comment.Push.Chanify; chanify.Token != "" {
+		ch := notify.NewOfficialChanify(chanify.Token)
+		ch.Send("博客状态", "已经开始运行。", true)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)

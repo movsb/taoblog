@@ -29,9 +29,9 @@ type AuthContext struct {
 
 // User entity.
 type User struct {
-	ID          int64
-	Email       string
-	DisplayName string
+	ID          int64  // 不可变 ID
+	Email       string // 可变 ID
+	DisplayName string // 昵称
 
 	webAuthnCredentials []webauthn.Credential
 }
@@ -106,10 +106,9 @@ type Optioner interface {
 func New(cfg config.AuthConfig) *Auth {
 	a := Auth{}
 	a.cfg = cfg
-	if len(cfg.AdminEmails) == 0 {
-		panic("no admin emails")
+	if len(cfg.AdminEmails) > 0 {
+		admin.Email = cfg.AdminEmails[0]
 	}
-	admin.Email = cfg.AdminEmails[0]
 	admin.DisplayName = cfg.AdminName
 	return &a
 }

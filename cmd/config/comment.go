@@ -60,13 +60,13 @@ func DefaultCommentTemplatesConfig() CommentTemplatesConfig {
 
 // CommentPushConfig ...
 type CommentPushConfig struct {
-	Chanify *CommentChanifyPushConfig `yaml:"chanify"`
+	Chanify CommentChanifyPushConfig `yaml:"chanify"`
 }
 
 // DefaultCommentPushConfig ...
 func DefaultCommentPushConfig() CommentPushConfig {
 	return CommentPushConfig{
-		Chanify: nil,
+		Chanify: DefaultCommentChanifyPushConfig(),
 	}
 }
 

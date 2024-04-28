@@ -6,6 +6,7 @@ body {
     font: var(--font-size) "Trebuchet MS","Microsoft YaHei",'Noto Sans',sans-serif;
 	font-family: "LXGW WenKai";
 	font-weight: normal;
+	transition: background-color .2s linear;
 }
 
 @media screen and (max-width: $max_width) {
@@ -99,6 +100,16 @@ input[type=text]:hover, input[type=submit]:hover, textarea:hover, button:hover {
 
 a, input, textarea {
 	transition: all 0.2s ease-out;
+}
+
+input[type=checkbox] {
+	accent-color: var(--accent-color);
+}
+input[type=text],input[type=password],textarea {
+	caret-color: var(--accent-color);
+	&::placeholder {
+		opacity: .25;
+	}
 }
 
 pre {

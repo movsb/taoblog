@@ -32,8 +32,6 @@ type GuestData struct {
 }
 
 type CommentNotifier struct {
-	AdminName  string
-	AdminEmail string
 	MailServer string
 	Username   string
 	Password   string
@@ -52,7 +50,7 @@ func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {
 	}
 	subject := "[新博文评论] " + data.Title
 	body := buf.String()
-	cn.sendMailAsync(cn.AdminName, cn.AdminEmail, subject, body)
+	cn.sendMailAsync(cn.Config.Author, cn.Config.Emails[0], subject, body)
 }
 
 func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipients []string) {
