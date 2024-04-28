@@ -28,7 +28,7 @@ func (s *Service) comments() *taorm.Stmt {
 }
 
 // GetComment2 ...
-func (s *Service) GetComment2(name int64) *models.Comment {
+func (s *Service) getComment2(name int64) *models.Comment {
 	var comment models.Comment
 	s.comments().Where("id=?", name).MustFind(&comment)
 	return &comment
@@ -43,13 +43,13 @@ func (s *Service) avatar(email string) int {
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	return s.GetComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
+	return s.getComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
 }
 
 // UpdateComment ...
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
-	cmtOld := s.GetComment2(req.Comment.Id)
+	cmtOld := s.getComment2(req.Comment.Id)
 	if !user.IsAdmin() {
 		userIP := ipFromContext(ctx, true)
 		if userIP != cmtOld.IP || !models.In5min(cmtOld.Date) {
@@ -100,7 +100,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 // DeleteComment ...
 func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteCommentRequest) (*protocols.DeleteCommentResponse, error) {
 	s.auth.AuthGRPC(ctx).MustBeAdmin()
-	cmt := s.GetComment2(int64(in.Id))
+	cmt := s.getComment2(int64(in.Id))
 	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
 	s.UpdatePostCommentCount(cmt.PostID)
 	return &protocols.DeleteCommentResponse{}, nil
@@ -265,7 +265,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	}
 
 	if in.Parent > 0 {
-		pc := s.GetComment2(in.Parent)
+		pc := s.getComment2(in.Parent)
 		comment.Root = pc.Root
 		if pc.Root == 0 {
 			comment.Root = pc.ID
@@ -360,7 +360,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 	}
 
 	s.MustTxCall(func(txs *Service) error {
-		cmt := txs.GetComment2(in.Id)
+		cmt := txs.getComment2(in.Id)
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}
@@ -485,6 +485,6 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 	s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
 }
 
-func (s *Service) deletePostComments(ctx context.Context, postID int64) {
+func (s *Service) deletePostComments(_ context.Context, postID int64) {
 	s.tdb.From(models.Comment{}).Where(`post_id=?`, postID).MustDelete()
 }

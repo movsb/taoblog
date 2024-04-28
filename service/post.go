@@ -504,7 +504,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	return np, nil
 }
 
-// DeletePost ...
+// 用于删除一篇文章。
+// 这个函数基本没怎么测试过，因为基本上只是设置为不公开。
 func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostRequest) (*empty.Empty, error) {
 	user := s.auth.AuthGRPC(ctx)
 	if !user.IsAdmin() {

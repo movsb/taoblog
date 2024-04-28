@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"sync"
@@ -26,14 +27,17 @@ func NewAvatarCache() *AvatarCache {
 }
 
 // 简单的“一致性”哈希生成算法。
+// 此“一致性”与分布式中的“一致性”不是同一种事物。
+// &math.MaxIn32：不是必须的，只是简单地为了数值更小、不要负数。
 func (c *AvatarCache) id(email string) int {
 	hash := fnv.New32()
 	hash.Write([]byte(email))
-	sum := hash.Sum32() & 0x7fffffff
+	sum := hash.Sum32() & math.MaxInt32
 	for {
 		e, ok := c.id2email[int(sum)]
 		if ok && e != email {
 			sum++
+			sum &= math.MaxInt32
 			continue
 		}
 		break
@@ -53,7 +57,7 @@ func (c *AvatarCache) ID(email string) int {
 
 	next := c.id(email)
 
-	c.email2id[email] = int(next)
+	c.email2id[email] = next
 	c.id2email[next] = email
 
 	return next
