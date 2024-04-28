@@ -208,10 +208,12 @@ func (s *Service) GetAllCommentsCount() int64 {
 }
 
 func (s *Service) geoLocation(ip string) string {
-	if err := s.cmtgeo.Queue(ip, nil); err != nil {
-		log.Println(`GeoLocation.Queue:`, ip, err)
-	}
-	return s.cmtgeo.GetTimeout(ip, time.Millisecond*500)
+	go func() {
+		if err := s.cmtgeo.Queue(ip, nil); err != nil {
+			log.Println(`GeoLocation.Queue:`, ip, err)
+		}
+	}()
+	return s.cmtgeo.Get(ip)
 }
 
 // TODO this is temp

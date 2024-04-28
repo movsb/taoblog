@@ -15,5 +15,6 @@ func TestAll(t *testing.T) {
 		fmt.Println(cg.Get(`8.8.8.8`))
 	})
 	cg.Queue(`1.1.1.1`, nil)
-	fmt.Println(cg.GetTimeout(`1.1.1.1`, time.Second))
+	time.Sleep(time.Second)
+	fmt.Println(cg.Get(`1.1.1.1`))
 }
