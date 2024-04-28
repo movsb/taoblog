@@ -60,6 +60,7 @@
     </div><!-- end related -->
 	{{ end }}
     <!-- comments begin -->
+	<script>TaoBlog.comments = {{ $.Post.CommentsAsJsonArray }};</script>
 	<script src="/scripts/comment.js"></script>
     <!-- comments end -->
 </article>

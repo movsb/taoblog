@@ -65,6 +65,7 @@ func (a *Admin) Handler() http.Handler {
 
 	m.HandleFunc(`GET /login`, a.getLogin)
 	m.HandleFunc(`GET /logout`, a.getLogout)
+	m.HandleFunc(`POST /logout`, a.postLogout)
 
 	m.HandleFunc(`GET /profile`, a.getProfile)
 
@@ -137,6 +138,9 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 func (a *Admin) getLogout(w http.ResponseWriter, r *http.Request) {
 	a.auth.RemoveCookie(w)
 	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
+}
+func (a *Admin) postLogout(w http.ResponseWriter, r *http.Request) {
+	a.auth.RemoveCookie(w)
 }
 
 type ProfileData struct {

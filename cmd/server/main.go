@@ -71,7 +71,7 @@ func serve() {
 		}
 
 		// TODO 检测本地是否是 HTTPS，否则不能开始  WebAuthn。
-		a := admin.NewAdmin(theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String(), `https://blog.home.twofei.com`})
+		a := admin.NewAdmin(theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()})
 		log.Println(`admin on`, prefix)
 		mux.Handle(prefix, a.Handler())
 	}

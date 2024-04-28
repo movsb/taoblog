@@ -25,6 +25,9 @@
     .count-wrap {
         color: #cfcfcf;
     }
+	.count-loaded-wrap {
+		display: none;
+	}
 	.right {
 		flex: max-content;
 		text-align: end;
@@ -38,6 +41,9 @@
 	.sign-in {
 		display: inline;
 	}
+	.sign-out {
+		display: none;
+	}
 	.delete-comment {
 		display: none;
 	}
@@ -45,6 +51,12 @@
 #comments.signed-in {
 	.sign-in {
 		display: none;
+	}
+	.sign-out {
+		display: inline;
+	}
+	.edit-comment {
+		display: inline;
 	}
 	.delete-comment {
 		display: inline;
@@ -61,12 +73,9 @@
         padding: 0;
         list-style: none;
     }
-
     .comment-avatar {
         cursor: pointer;
     }
-
-
     .comment-li {
         padding: 1em 0px 1em 1em;
 
@@ -142,13 +151,14 @@
 		display: inline;
 	}
 }
-#comments.signed-in #comment-list .edit-comment {
-	display: inline;
-}
 
 /* 评论功能区 */
 #comments .comment-func {
     margin: 2em 1em;
+	display: none;
+}
+#comments.no-comments .comment-func {
+	display: block;
 }
 
 .comment-meta {

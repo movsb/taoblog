@@ -331,7 +331,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		return
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p)
+	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, t.service.ListPostAllComments(req, p.Id))
 	tmpl := t.getNamed()[`post.html`]
 	d.Template = tmpl
 	d.Writer = w

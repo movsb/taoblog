@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -158,6 +160,25 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	protoComments := comments.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
 
 	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
+}
+
+// 用于前端渲染全部评论的函数。
+func (s *Service) ListPostAllComments(req *http.Request, pid int64) []*protocols.Comment {
+	user := s.auth.AuthRequest(req)
+	header := req.Header.Get(`x-forwarded-for`)
+	if header == "" {
+		host, _, _ := net.SplitHostPort(req.RemoteAddr)
+		host = strings.Trim(host, `[]`)
+		header = host
+	}
+	userIP := ipFromContext(metadata.NewIncomingContext(req.Context(), metadata.Pairs(`x-forwarded-for`, header)), true)
+
+	var comments models.Comments
+	stmt := s.tdb.Select(`*`)
+	stmt.Where("post_id=?", pid)
+	stmt.MustFind(&comments)
+
+	return comments.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
 }
 
 func (s *Service) GetAllCommentsCount() int64 {
