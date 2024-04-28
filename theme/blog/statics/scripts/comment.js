@@ -474,6 +474,12 @@ class Comment {
 			root.classList.add('signed-in');
 		}
 
+		let debouncing = undefined;
+		window.addEventListener('resize', () => {
+			clearTimeout(debouncing);
+			debouncing = setTimeout(this.keepInside, 100);
+		});
+
 		this.preload();
 	}
 	preload() {
@@ -490,6 +496,7 @@ class Comment {
 			this.list.animation = true;
 			this.toggle_post_comment_button();
 		} else {
+			let self = this;
 			window.addEventListener('scroll', function () {
 				self.load_essential_comments();
 			});
@@ -704,6 +711,32 @@ class Comment {
 		div.style.top = `${top}px`;
 		console.table({ ww, wh, cw, ch, ew, eh, left, top });
 	}
+	keepInside() {
+		let div = document.querySelector('#comment-form-div');
+		let ww = window.innerWidth;
+		let wh = window.innerHeight;
+		let cw = getComputedStyle(div)['width'];
+		let ch = getComputedStyle(div)['height'];
+
+		// 移动设备谁没事儿拖来拖去？🤔
+		if (/\d+%/.test(cw) || /\d+%/.test(ch)) { return; }
+		let ew = parseInt(cw), eh = parseInt(ch);
+		let left = parseInt(div.style.left), top = parseInt(div.style.top);
+
+		if (!(left<0 || top<0 || left+ew>ww || top+eh>wh)) {
+			return;
+		}
+
+		// NOTE：left & top 两次次被调整，仍然可能超出。
+		const padding = 10;
+		left = Math.max(left,   padding          );
+		top  = Math.max(top,    padding          );
+		left = Math.min(left,   ww - ew - padding);
+		top  = Math.min(top,    wh - eh - padding);
+		
+		div.style.left = `${left}px`;
+		div.style.top = `${top}px`;
+	}
 	// https://www.w3schools.com/howto/howto_js_draggable.asp
 	init_drag(elmnt) {
 		console.log('init_drag');
@@ -711,7 +744,7 @@ class Comment {
 		let dragElem = elmnt.getElementsByClassName("drag-header");
 		if (!dragElem) { dragElem = elmnt; }
 		else { dragElem = dragElem[0]; }
-		dragElem.onmousedown = dragMouseDown;
+		dragElem.onmousedown = dragMouseDown.bind(this);
 		console.log(dragElem);
 
 		function dragMouseDown(e) {
@@ -720,9 +753,9 @@ class Comment {
 			// get the mouse cursor position at startup:
 			pos3 = e.clientX;
 			pos4 = e.clientY;
-			document.onmouseup = closeDragElement;
+			document.onmouseup = closeDragElement.bind(this);
 			// call a function whenever the cursor moves:
-			document.onmousemove = elementDrag;
+			document.onmousemove = elementDrag.bind(this);
 		}
 
 		function elementDrag(e) {
@@ -742,6 +775,8 @@ class Comment {
 			// stop moving when mouse button is released:
 			document.onmouseup = null;
 			document.onmousemove = null;
+
+			this.keepInside();
 		}
 	}
 	async delete_me(id) {
