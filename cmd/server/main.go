@@ -79,7 +79,6 @@ func serve() {
 	theme := theme.New(cfg, theService, theAuth, `theme/blog`)
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
-	theService.SetLinker(theme.Linker())
 
 	reqLog := logs.NewRequestLogger(`access.log`)
 

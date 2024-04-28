@@ -79,18 +79,6 @@ func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base str
 	return t
 }
 
-type _ThemeLinker struct {
-	t *Theme
-}
-
-func (t *_ThemeLinker) PostOrPage(id int64) string {
-	return t.t.service.GetLink(id)
-}
-
-func (t *Theme) Linker() canonical.Linker {
-	return &_ThemeLinker{t}
-}
-
 func createMenus(items []config.MenuItem, outer bool) string {
 	menus := bytes.NewBuffer(nil)
 	var genSubMenus func(buf *bytes.Buffer, items []config.MenuItem)

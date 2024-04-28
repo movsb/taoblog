@@ -15,12 +15,6 @@ type RedirectFinder interface {
 	FindRedirect(sourcePath string) (targetPath string, err error)
 }
 
-// Linker 用于生成文章/页面等的相对链接。
-type Linker interface {
-	// 为文章、页面生成链接。
-	PostOrPage(id int64) string
-}
-
 // Renderer ...
 type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool

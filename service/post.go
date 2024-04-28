@@ -163,7 +163,7 @@ func (s *Service) getPostContent(id int64) (string, error) {
 					return
 				}),
 			}
-			if link := s.linker.PostOrPage(id); link != s.plainLink(id) {
+			if link := s.GetLink(id); link != s.plainLink(id) {
 				options = append(options, renderers.WithModifiedAnchorReference(link))
 			}
 			tr = renderers.NewMarkdown(options...)
