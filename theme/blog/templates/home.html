@@ -21,12 +21,12 @@
 {{ $comments := .ListLatestComments}}
 {{ if $comments }}
 	<ul id=latest-comment-list>
-	{{range $comments}}
+	{{range $comment := $comments}}
 		<li>
 			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
 			<ul class=post-comment-list>
 			{{- range .Comments}}
-				<li><p><b>{{.Author}}</b>：{{.PrettyText}}</p></li>
+				<li><p><b>{{.Author}}</b>：<span>{{.PrettyText}}</span><a class="goto" href="/{{$comment.PostID}}/#comment-{{.Id}}">#</a></p></li>
 			{{- end }}
 			</ul>
 		</li>

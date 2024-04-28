@@ -49,6 +49,11 @@ message Post {
 	string source = 14;
 	string source_type = 15;
 	repeated string tags = 16;
+
+	// 文章最后被评论的时间。与文章的更新时间一起贡献给 304 处理函数。
+	// 这个值可以是空的，表示没有被评论过。
+	// 删除评论不会修改这个时间。
+	int32 last_commented_at = 17;
 }
 
 message GetPostRequest {

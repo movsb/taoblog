@@ -81,7 +81,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 	<button style="display: none;" id="google-signin-button-hidden">hidden sign-in button</button>
 	<script src="https://apis.google.com/js/api:client.js"></script>
 	<script>
-		(function() {
+		setTimeout(function() {
 			let btn = document.getElementById('google-signin-button');
 			let btnHidden = document.getElementById('google-signin-button-hidden');
 			btn.addEventListener('click', function(e) {
@@ -122,7 +122,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 					}
 				);
 			});
-		})();
+		}, 0);
 	</script>
 	</div>
 	{{end}}

@@ -101,7 +101,7 @@ func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
 
 	// 删除可能有隐私的头部字段。
 	// TODO：内部缓存，只正向代理 body。
-	for k := range knownHeaders {
+	for _, k := range knownHeaders {
 		if v := resp.Header.Get(k); v != "" {
 			in.SetHeader(k, v)
 		}
@@ -112,10 +112,10 @@ func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
 	io.Copy(in.W, resp.Body)
 }
 
-var knownHeaders = map[string]bool{
-	`Content-Length`: true,
-	`Content-Type`:   true,
-	`Last-Modified`:  true,
-	`Expires`:        true,
-	`Cache-Control`:  true,
+var knownHeaders = []string{
+	`Content-Length`,
+	`Content-Type`,
+	`Last-Modified`,
+	`Expires`,
+	`Cache-Control`,
 }

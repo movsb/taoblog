@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -36,6 +39,25 @@ func (s *Service) getComment2(name int64) *models.Comment {
 
 func (s *Service) avatar(email string) int {
 	return s.avatarCache.ID(email)
+}
+
+// 像二狗说的那样，服务启动时缓存所有的头像哈希值，
+// 否则缓存的页面图片在服务重启后刷新时会加载失败。
+// https://qwq.me/p/249/1#comment-506
+// NOTE: ORM 不支持 distinct，所以没写。
+func (s *Service) cacheAllCommenterData() {
+	var comments models.Comments
+	s.tdb.Select(`email,ip`).OrderBy(`date desc`).MustFind(&comments)
+	for _, c := range comments {
+		_ = s.avatarCache.ID(c.Email)
+	}
+	if !strings.EqualFold(version.GitCommit, `head`) {
+		go func() {
+			for _, c := range comments {
+				s.cmtgeo.Queue(c.IP, nil)
+			}
+		}()
+	}
 }
 
 // GetComment ...
@@ -160,6 +182,25 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
 }
 
+// 用于前端渲染全部评论的函数。
+func (s *Service) ListPostAllComments(req *http.Request, pid int64) []*protocols.Comment {
+	user := s.auth.AuthRequest(req)
+	header := req.Header.Get(`x-forwarded-for`)
+	if header == "" {
+		host, _, _ := net.SplitHostPort(req.RemoteAddr)
+		host = strings.Trim(host, `[]`)
+		header = host
+	}
+	userIP := ipFromContext(metadata.NewIncomingContext(req.Context(), metadata.Pairs(`x-forwarded-for`, header)), true)
+
+	var comments models.Comments
+	stmt := s.tdb.Select(`*`)
+	stmt.Where("post_id=?", pid)
+	stmt.MustFind(&comments)
+
+	return comments.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
+}
+
 func (s *Service) GetAllCommentsCount() int64 {
 	var count int64
 	s.tdb.Model(models.Comment{}).Select("count(1) as count").Find(&count)
@@ -167,7 +208,9 @@ func (s *Service) GetAllCommentsCount() int64 {
 }
 
 func (s *Service) geoLocation(ip string) string {
-	s.cmtgeo.Queue(ip, nil)
+	if err := s.cmtgeo.Queue(ip, nil); err != nil {
+		log.Println(`GeoLocation.Queue:`, ip, err)
+	}
 	return s.cmtgeo.GetTimeout(ip, time.Millisecond*500)
 }
 
@@ -408,7 +451,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 
 	postTitle := s.GetPostTitle(c.PostID)
 	// TODO 修改链接。
-	postLink := fmt.Sprintf("%s/%d/", s.HomeURL(), c.PostID)
+	postLink := fmt.Sprintf("%s/%d/#comment-%d", s.HomeURL(), c.PostID, c.ID)
 	adminEmails := s.cfg.Comment.Emails
 	if len(adminEmails) == 0 {
 		return

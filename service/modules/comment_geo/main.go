@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -24,10 +25,12 @@ func NewCommentGeo(ctx context.Context) *CommentGeo {
 	if err != nil {
 		panic(err)
 	}
-	return &CommentGeo{
+	geo := &CommentGeo{
 		ctx: ctx,
 		lru: cache,
 	}
+	go geo.clearBad()
+	return geo
 }
 
 // http://ip-api.com/json/8.8.8.8
@@ -55,6 +58,7 @@ type Resp struct {
 	RegionName string `json:"regionName"`
 	City       string `json:"city"`
 	Isp        string `json:"isp"`
+	Message    string `json:"message"`
 }
 
 func (r *Resp) valid() bool {
@@ -63,6 +67,9 @@ func (r *Resp) valid() bool {
 }
 
 func (r *Resp) String() string {
+	if r.Message != "" {
+		return r.Message
+	}
 	return fmt.Sprintf(`%s, %s, %s; %s`,
 		r.Country, r.RegionName, r.City, r.Isp)
 }
@@ -78,8 +85,15 @@ func (cg *CommentGeo) Queue(ip string, fn func()) error {
 		return nil
 	}
 
+	// log.Println(`GeoLocation queue:`, ip)
+
+	// 限流目标网站的请求量。
 	cg.mu.Lock()
 	defer cg.mu.Unlock()
+
+	if cg.lru.Contains(ip) {
+		return nil
+	}
 
 	ctx, cancel := context.WithTimeout(cg.ctx, time.Second*3)
 	defer cancel()
@@ -106,7 +120,11 @@ func (cg *CommentGeo) Queue(ip string, fn func()) error {
 		return fmt.Errorf(`decoding error: %v`, err)
 	}
 	if !r.valid() {
-		return fmt.Errorf(`invalid ip response`)
+		// return fmt.Errorf(`invalid ip response`)
+		log.Println(`GeoLocation: error:`, `invalid ip response`)
+		// 错的也保存，防止重复查。
+		cg.lru.Add(ip, &r)
+		return nil
 	}
 
 	cg.lru.Add(ip, &r)
@@ -138,4 +156,8 @@ func (cg *CommentGeo) GetTimeout(ip string, timeout time.Duration) string {
 	case s := <-ch:
 		return s
 	}
+}
+
+func (cg *CommentGeo) clearBad() {
+
 }

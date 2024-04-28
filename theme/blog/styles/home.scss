@@ -6,6 +6,21 @@
 	line-height: var(--line-height-tight);
 	word-break: break-word;
 }
+#latest-comment-list {
+	.post-comment-list {
+		.goto {
+			// display: none;
+			opacity: 0;
+			cursor: pointer;
+			transition: opacity .2s linear;
+		}
+		p:hover {
+			.goto {
+				opacity: 1;
+			}
+		}
+	}
+}
 #all-posts {
 	list-style: none;
 }

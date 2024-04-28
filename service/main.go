@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -50,14 +51,11 @@ type Service struct {
 // NewService ...
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	s := &Service{
-		cfg:    cfg,
-		db:     db,
-		tdb:    taorm.NewDB(db),
-		auth:   auther,
-		cache:  memory_cache.NewMemoryCache(time.Minute * 10),
-		cmtgeo: commentgeo.NewCommentGeo(context.TODO()),
-
-		avatarCache: NewAvatarCache(),
+		cfg:   cfg,
+		db:    db,
+		tdb:   taorm.NewDB(db),
+		auth:  auther,
+		cache: memory_cache.NewMemoryCache(time.Minute * 10),
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
@@ -69,6 +67,11 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		Config:     &s.cfg.Comment,
 	}
 	s.cmtntf.Init()
+
+	s.avatarCache = NewAvatarCache()
+	s.cmtgeo = commentgeo.NewCommentGeo(context.TODO())
+
+	s.cacheAllCommenterData()
 
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
@@ -150,7 +153,7 @@ func (s *Service) TxCall(callback func(txs *Service) error) error {
 
 // HomeURL returns the home URL of format https://localhost.
 func (s *Service) HomeURL() string {
-	return s.cfg.Site.Home
+	return strings.TrimSuffix(s.cfg.Site.Home, "/")
 }
 
 func (s *Service) Name() string {

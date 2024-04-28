@@ -1,12 +1,14 @@
 package data
 
 import (
+	"bytes"
 	"fmt"
 	"html"
 	"html/template"
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
@@ -16,11 +18,38 @@ import (
 
 // PostData ...
 type PostData struct {
-	Post *Post
+	Post     *Post
+	Comments []*protocols.Comment
+}
+
+func (d *PostData) CommentsAsJsonArray() template.JS {
+	if d.Comments == nil {
+		d.Comments = make([]*protocols.Comment, 0)
+	}
+
+	buf := bytes.NewBuffer(nil)
+
+	// 简单格式化一下。
+	// [
+	//      {...},
+	//      {...},
+	//      {...},
+	// ]
+	buf.WriteString("[\n")
+	// TODO 这个  marshaller 会把 < > 给转义了，其实没必要。
+	encoder := jsonpb.Marshaler{
+		OrigName: true,
+	}
+	for _, c := range d.Comments {
+		encoder.Marshal(buf, c)
+		buf.WriteString(",\n")
+	}
+	buf.WriteString("]")
+	return template.JS(buf.String())
 }
 
 // NewDataForPost ...
-func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Service, post *protocols.Post) *Data {
+func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Service, post *protocols.Post, comments []*protocols.Comment) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
@@ -37,6 +66,7 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Servic
 	}
 	p.Post.Tags = service.GetPostTags(p.Post.Id)
 	p.Post.link = service.GetLink(post.Id)
+	p.Comments = comments
 	return d
 }
 

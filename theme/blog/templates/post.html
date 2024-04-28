@@ -35,7 +35,7 @@
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
 </div>
-<div class="disclaimer">
+<div class="disclaimer" style="display: none;">
 	<p>这篇文章的内容已被作者标记为“过时”/“需要更新”/“不具参考意义”。</p>
 	<button onclick="document.getElementsByClassName('content-wrap')[0].classList.remove('outdated');">仍然查看</button>
 </div>
@@ -60,6 +60,7 @@
     </div><!-- end related -->
 	{{ end }}
     <!-- comments begin -->
+	<script>TaoBlog.comments = {{ $.Post.CommentsAsJsonArray }};</script>
 	<script src="/scripts/comment.js"></script>
     <!-- comments end -->
 </article>

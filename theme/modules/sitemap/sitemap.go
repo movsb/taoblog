@@ -10,7 +10,6 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
-	"github.com/movsb/taoblog/theme/modules/handle304"
 )
 
 //go:embed sitemap.xml
@@ -44,10 +43,6 @@ func New(svc *service.Service, auth *auth.Auth) *Sitemap {
 
 // ServeHTTP ...
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if handle304.ArticleRequest(w, req, s.svc.LastArticleUpdateTime()) {
-		return
-	}
-
 	user := s.auth.AuthRequest(req)
 
 	articles := s.svc.MustListPosts(
@@ -69,8 +64,6 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	cs := *s
 	cs.Articles = rssArticles
-
-	handle304.ArticleResponse(w, s.svc.LastArticleUpdateTime())
 
 	w.Header().Set("Content-Type", "application/xml")
 	fmt.Fprintln(w, `<?xml version="1.0" encoding="UTF-8"?>`)

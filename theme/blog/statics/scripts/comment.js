@@ -3,10 +3,11 @@ document.write(function(){/*
 <!--评论标题 -->
 <h3 id="comment-title">
 	文章评论
-	<span class="count-wrap item"> <span class="loaded">0</span>/<span class="total">0</span></span>
+	<span class="count-wrap item"><span class="count-loaded-wrap"><span class="loaded">0</span>/</span><span class="total">0</span></span>
 	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
 	<span class="right item">
 		<a class="sign-in pointer" onclick="comment.login()">登录</a>
+		<a class="sign-out pointer" onclick="comment.logout()">登出</a>
 	</span>
 </h3>
 <!-- 评论列表  -->
@@ -65,23 +66,29 @@ class CommentAPI
 	}
 
 	_normalize(c) {
+		if (c.id == undefined) {
+			throw "评论编号无效。";
+		}
+
 		c.id = +c.id;
-		c.parent = +c.parent;
-		c.root = +c.root;
 		c.post_id = +c.post_id;
+
+		c.parent = +(c.parent ?? 0);
+		c.root = +(c.root ?? 0);
 
 		c.author = c.author ?? '';
 		c.email = c.email ?? '';
 		c.url = c.url ?? '';
 		c.ip = c.ip ?? '';
-		c.children = c.children ?? [];
-		c.is_admin = c.is_admin ?? false;
 		c.source_type = c.source_type ?? 'plain';
 		c.source = c.source || (c.source_type == 'plain' ? c.content : c.source);
+
+		c.is_admin = c.is_admin ?? false;
 		c.date_fuzzy = c.date_fuzzy ?? '';
 		c.geo_location = c.geo_location ?? '';
 		c.can_edit = c.can_edit ?? false;
 		c.avatar = c.avatar ?? 0;
+
 		return c;
 	}
 	
@@ -318,6 +325,9 @@ class CommentListUI {
 		// 所有的原始评论对象。
 		// 缓存起来是为了再编辑。
 		this._comments = {};
+
+		// 插入时是否慢动作？
+		this.animation = true;
 	}
 
 	get comments()  { return this._comments; }
@@ -340,13 +350,19 @@ class CommentListUI {
 		let elem = CommentNodeUI.createElem(rawComment,
 			comment.gen_comment_item.bind(comment) // TODO 这是个全局变量
 		);
+
 		if (before) {
 			parent.prepend(elem);
 		} else {
 			parent.appendChild(elem);
 		}
 
-		TaoBlog.fn.fadeIn(elem);
+		if (this.animation) {
+			TaoBlog.fn.fadeIn(elem);
+		} else {
+			elem.style.display = 'block';
+		}
+
 		TaoBlog.events.dispatch('comment', 'post', elem, rawComment);
 
 		this._comments[rawComment.id] = rawComment;
@@ -360,25 +376,31 @@ class CommentListUI {
 	}
 
 	// 插入评论列表。
-	// 注意：评论必须是严格排序的，否则插入顺序可能乱。
+	// 注意：评论必须是严格排序的，否则插入顺序可能乱？？？
+	// 更新：插入顺序，新的评论始终在上面，不管是父、子评论。
 	insert(comments_or_comment) {
 		if (Array.isArray(comments_or_comment)) {
 			let comments = comments_or_comment;
-			let recurse = (id, before) => {
+			let recurse = (id) => {
 				let children = comments.filter((c) => c.parent == id);
+
+				// 新的插前面。
+				children.sort((a,b) => (id == 0 ? -1 : +1)*(a.date - b.date));
+
 				children.forEach((c) => {
-					this._append(id, c);
-					recurse(c.id, false);
+					this._append(id, c, false);
+					recurse(c.id);
 				});
 			};
 
-			recurse(0, false);
+			recurse(0);
 
 			this._loaded_roots  += comments.filter((c)=>c.root == 0).length;
 			this._loaded_all    += comments.length;
 		} else {
 			let comment = comments_or_comment;
 			this._append(comment.parent, comment, comment.parent == 0);
+			this._count         += 1;
 			this._loaded_all    += 1;
 			this._loaded_roots  += comment.root == 0 ? 1 : 0;
 		}
@@ -423,9 +445,6 @@ class Comment {
 		// 列表管理对象
 		this.list = new CommentListUI();
 	}
-	hide() {
-		this.showCommentBox(false);
-	}
 	init() {
 		let self = this;
 
@@ -444,14 +463,6 @@ class Comment {
 			}
 		});
 
-		window.addEventListener('scroll', function () {
-			self.load_essential_comments();
-		});
-
-		window.addEventListener('load', function () {
-			self.getCount();
-		});
-
 		document.getElementById('comment-wrap-lines').addEventListener('click', self.wrapLines.bind(self));
 		this.preview.on(this.showPreview.bind(this));
 
@@ -461,10 +472,38 @@ class Comment {
 			let root = document.getElementById('comments');
 			root.classList.add('signed-in');
 		}
+
+		this.preload();
+	}
+	preload() {
+		const loaded = true;
+		
+		if (loaded) {
+			let comments = TaoBlog.comments;
+			this.list.count = comments.length;
+			for (let i=0; i<comments.length; i++) {
+				comments[i] = this.api._normalize(comments[i]);
+			}
+			this.list.animation = false;
+			this.list.insert(comments);
+			this.list.animation = true;
+			this.toggle_post_comment_button();
+		} else {
+			window.addEventListener('scroll', function () {
+				self.load_essential_comments();
+			});
+			
+			window.addEventListener('load', function () {
+				self.getCount();
+			});
+		}
 	}
 	clearContent() {
 		let content = document.querySelector('#comment-content');
 		content.value = '';
+	}
+	hide() {
+		this.showCommentBox(false);
 	}
 	// show         是否显示评论框
 	// callback     显示/隐藏完成后的回调函数
@@ -527,11 +566,11 @@ class Comment {
 		}
 	}
 	toggle_post_comment_button(show) {
-		let func = document.querySelectorAll('.comment-func');
-		if (show) {
-			func.forEach((f) => TaoBlog.fn.fadeIn(f));
+		let root = document.querySelector('#comments');
+		if (this.list.count > 0) {
+			root.classList.remove('no-comments');
 		} else {
-			func.forEach((f) => TaoBlog.fn.fadeOut(f));
+			root.classList.add('no-comments');
 		}
 	}
 	async load_essential_comments() {
@@ -546,7 +585,7 @@ class Comment {
 			let count = await this.api.getCountForPost();
 			this.list.count = count;
 			await this.load_essential_comments();
-			this.toggle_post_comment_button(this.list.count == 0);
+			this.toggle_post_comment_button();
 		} catch (e) {
 			alert(e);
 		}
@@ -609,7 +648,7 @@ class Comment {
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
 		<a href="#comment-${cmt.id}" onclick="comment.locate(${cmt.id});return false;">
-			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${h2a(info)}"/>
+			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${h2a(info)}" loading=lazy />
 		</a>
 	</div>
 	<div class="comment-meta">
@@ -620,10 +659,10 @@ class Comment {
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content">${cmt.content}</div>`
 				: `<div class="comment-content">${h2t(cmt.content)}</div>`}
-	<div class="toolbar" style="margin-left: 54px;">
-		<a class="no-sel" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
-		<a class="no-sel edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
-		<a class="no-sel delete-comment" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});">删除</a>
+	<div class="toolbar no-sel" style="margin-left: 54px;">
+		<a class="" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
+		<a class="edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
+		<a class="delete-comment" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});">删除</a>
 	</div>
 	<div class="comment-replies" id="comment-reply-${cmt.id}"><ol></ol></div>
 </li>
@@ -708,7 +747,7 @@ class Comment {
 		try {
 			await this.api.deleteComment(id);
 			this.list.remove(id);
-			this.toggle_post_comment_button(this.list.count == 0);
+			this.toggle_post_comment_button();
 		} catch (e) {
 			alert(e);
 		}
@@ -778,8 +817,8 @@ class Comment {
 	async createComment() {
 		let body = this.formData();
 		let cmt = await this.api.createComment(body);
-		this.toggle_post_comment_button(false);
 		this.list.insert(cmt);
+		this.toggle_post_comment_button();
 
 		this.hide();
 		this.clearContent();
@@ -816,6 +855,18 @@ class Comment {
 				return;
 			}
 			alert(e);
+		}
+	}
+	async logout() {
+		try {
+			let path = `/admin/logout`;
+			let rsp = await fetch(path, { method: 'POST'});
+			if (!rsp.ok) { throw new Error(await rsp.text()); }
+			let root = document.getElementById('comments');
+			root.classList.remove('signed-in');
+		} catch (e) {
+			alert('登出失败：' + e);
+			return;
 		}
 	}
 }
