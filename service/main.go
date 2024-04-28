@@ -51,14 +51,11 @@ type Service struct {
 // NewService ...
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	s := &Service{
-		cfg:    cfg,
-		db:     db,
-		tdb:    taorm.NewDB(db),
-		auth:   auther,
-		cache:  memory_cache.NewMemoryCache(time.Minute * 10),
-		cmtgeo: commentgeo.NewCommentGeo(context.TODO()),
-
-		avatarCache: NewAvatarCache(),
+		cfg:   cfg,
+		db:    db,
+		tdb:   taorm.NewDB(db),
+		auth:  auther,
+		cache: memory_cache.NewMemoryCache(time.Minute * 10),
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
@@ -69,10 +66,12 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		AdminEmail: s.cfg.Comment.Emails[0], // TODO 如果没配置，则不启用此功能
 		Config:     &s.cfg.Comment,
 	}
-
 	s.cmtntf.Init()
 
-	s.cacheAllEmailAvatars()
+	s.avatarCache = NewAvatarCache()
+	s.cmtgeo = commentgeo.NewCommentGeo(context.TODO())
+
+	s.cacheAllCommenterData()
 
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(

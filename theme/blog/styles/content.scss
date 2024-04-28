@@ -193,9 +193,6 @@ blockquote {
 }
 
 .content-wrap {
-	.disclaimer {
-		display: none;
-	}
 	&.outdated {
 		> .content {
 			display: none;

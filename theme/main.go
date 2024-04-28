@@ -17,6 +17,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/data"
@@ -42,6 +43,8 @@ type Theme struct {
 	tmplLock         sync.RWMutex
 	partialTemplates *template.Template
 	namedTemplates   map[string]*template.Template
+
+	specialMux *http.ServeMux
 }
 
 func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base string) *Theme {
@@ -51,15 +54,28 @@ func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base str
 		service: service,
 		auth:    auth,
 		redir:   service,
+
+		specialMux: http.NewServeMux(),
 	}
+
+	m := t.specialMux
+
 	if r := cfg.Site.RSS; r.Enabled {
 		t.rss = rss.New(service, auth, rss.WithArticleCount(r.ArticleCount))
+		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
 	}
 	if cfg.Site.Sitemap.Enabled {
 		t.sitemap = sitemap.New(service, auth)
+		m.Handle(`GET /sitemap.xml`, t.LastPostTime304Handler(t.sitemap))
 	}
+
+	m.HandleFunc(`GET /search`, t.querySearch)
+	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
+	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
+
 	t.loadTemplates()
 	t.watchTheme()
+
 	return t
 }
 
@@ -263,17 +279,42 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
-	if handle304.ArticleRequest(w, r, t.service.LastArticleUpdateTime()) {
-		return
+func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *protocols.Post) bool {
+	h3 := handle304.New(
+		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
+		handle304.WithEntityTag(version.GitCommit, p.Modified, p.LastCommentedAt),
+	)
+	if h3.Match(w, r) {
+		return true
 	}
+	h3.Response(w)
+	return false
+}
 
+func (t *Theme) LastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
+	return t.LastPostTime304Handler(h)
+}
+
+func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		last := t.service.LastArticleUpdateTime()
+		h3 := handle304.New(
+			handle304.WithNotModified(last),
+			handle304.WithEntityTag(version.GitCommit, last),
+		)
+		if h3.Match(w, r) {
+			return
+		}
+		h3.Response(w)
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForPosts(t.cfg, t.auth.AuthRequest(r), t.service, r)
 	tmpl := t.getNamed()[`posts.html`]
 	d.Template = tmpl
 	d.Writer = w
-
-	handle304.ArticleResponse(w, t.service.LastArticleUpdateTime())
 
 	if err := tmpl.Execute(w, d); err != nil {
 		panic(err)
@@ -281,21 +322,14 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
-	if handle304.ArticleRequest(w, r, t.service.LastArticleUpdateTime()) {
-		return
-	}
-
 	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service)
 	tmpl := t.getNamed()[`tags.html`]
 	d.Template = tmpl
 	d.Writer = w
 
-	handle304.ArticleResponse(w, t.service.LastArticleUpdateTime())
-
 	if err := tmpl.Execute(w, d); err != nil {
 		panic(err)
 	}
-
 }
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
@@ -327,7 +361,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, parents st
 }
 
 func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *protocols.Post) {
-	if handle304.ArticleRequest(w, req, time.Unix(int64(p.Modified), 0)) {
+	if t.Post304Handler(w, req, p) {
 		return
 	}
 
@@ -335,8 +369,6 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 	tmpl := t.getNamed()[`post.html`]
 	d.Template = tmpl
 	d.Writer = w
-
-	handle304.ArticleResponse(w, time.Unix(int64(p.Modified), 0))
 
 	if err := tmpl.Execute(w, d); err != nil {
 		log.Println(err)
@@ -384,28 +416,9 @@ func (t *Theme) userMustCanSeePost(req *http.Request, post *protocols.Post) {
 }
 
 func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool {
-	if req.Method == http.MethodGet {
-		switch file {
-		case `/rss`:
-			if t.cfg.Site.RSS.Enabled {
-				t.rss.ServeHTTP(w, req)
-				return true
-			}
-		case `/sitemap.xml`:
-			if t.cfg.Site.Sitemap.Enabled {
-				t.sitemap.ServeHTTP(w, req)
-				return true
-			}
-		case `/search`:
-			t.querySearch(w, req)
-			return true
-		case `/posts`:
-			t.queryPosts(w, req)
-			return true
-		case `/tags`:
-			t.queryTags(w, req)
-			return true
-		}
+	if h, p := t.specialMux.Handler(req); p != "" {
+		h.ServeHTTP(w, req)
+		return true
 	}
 	return false
 }

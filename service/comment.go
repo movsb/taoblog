@@ -14,6 +14,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -44,11 +45,18 @@ func (s *Service) avatar(email string) int {
 // 否则缓存的页面图片在服务重启后刷新时会加载失败。
 // https://qwq.me/p/249/1#comment-506
 // NOTE: ORM 不支持 distinct，所以没写。
-func (s *Service) cacheAllEmailAvatars() {
+func (s *Service) cacheAllCommenterData() {
 	var comments models.Comments
-	s.tdb.Select(`email`).MustFind(&comments)
+	s.tdb.Select(`email,ip`).OrderBy(`date desc`).MustFind(&comments)
 	for _, c := range comments {
 		_ = s.avatarCache.ID(c.Email)
+	}
+	if !strings.EqualFold(version.GitCommit, `head`) {
+		go func() {
+			for _, c := range comments {
+				s.cmtgeo.Queue(c.IP, nil)
+			}
+		}()
 	}
 }
 
@@ -200,7 +208,9 @@ func (s *Service) GetAllCommentsCount() int64 {
 }
 
 func (s *Service) geoLocation(ip string) string {
-	s.cmtgeo.Queue(ip, nil)
+	if err := s.cmtgeo.Queue(ip, nil); err != nil {
+		log.Println(`GeoLocation.Queue:`, ip, err)
+	}
 	return s.cmtgeo.GetTimeout(ip, time.Millisecond*500)
 }
 
