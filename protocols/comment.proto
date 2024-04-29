@@ -25,6 +25,8 @@ message Comment {
 	bool can_edit = 17;
 	// 头像内部临时ID
 	int32 avatar = 18;
+
+	int32 modified = 19;
 }
 
 message GetCommentRequest {

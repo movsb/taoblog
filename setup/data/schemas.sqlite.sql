@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `comments` (
     `url` TEXT NOT NULL,
     `ip` TEXT NOT NULL,
     `date` INTEGER NOT NULL,
+    `modified` INTEGER NOT NULL,
     `source_type` TEXT NOT NULL,
     `source` TEXT NOT NULL,
     `content` TEXT NOT NULL,

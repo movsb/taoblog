@@ -407,3 +407,8 @@ ON comments.id = dates.id AND comments.date = dates.max_date
 func v24(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE posts ADD COLUMN `last_commented_at` INTEGER NOT NULL DEFAULT 0")
 }
+
+func v25(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE comments ADD COLUMN `modified` INTEGER NOT NULL DEFAULT 0")
+	mustExec(tx, "UPDATE comments set modified = date")
+}

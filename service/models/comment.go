@@ -19,6 +19,7 @@ type Comment struct {
 	URL        string `json:"url"`
 	IP         string `json:"ip"`
 	Date       int32  `json:"date"`
+	Modified   int32  `json:"modified"`
 	SourceType string `json:"source_type"`
 	Source     string `json:"source"`
 	Content    string `json:"content"`
@@ -39,6 +40,7 @@ func (c *Comment) ToProtocols(isAdmin func(email string) bool, user *auth.User, 
 		Author:     c.Author,
 		Url:        c.URL,
 		Date:       c.Date,
+		Modified:   c.Modified,
 		SourceType: c.SourceType,
 		Source:     c.Source,
 		Content:    c.Content,

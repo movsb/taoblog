@@ -67,7 +67,10 @@ func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentReque
 	return s.getComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
 }
 
-// UpdateComment ...
+// 更新评论。
+//
+// NOTE：只支持更新评论内容。
+// NOTE：带上时间戳，防止异地多次更新的冲突（太严格了吧！）
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
 	user := s.auth.AuthGRPC(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
@@ -83,23 +86,31 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 	if req.Comment != nil && req.UpdateMask != nil && req.UpdateMask.Paths != nil {
 		data := map[string]interface{}{}
 		var hasSourceType, hasSource bool
+		var hasModified bool
 		for _, mask := range req.UpdateMask.Paths {
 			switch mask {
 			default:
 				panic(`unknown update_mask field`)
 			case `source_type`:
 				hasSourceType = true
+				data[`source_type`] = req.Comment.SourceType
 			case `source`:
 				hasSource = true
+				data[`source`] = req.Comment.Source
+			case `modified`:
+				hasModified = true
+				data[`modified`] = time.Now().Unix()
 			}
+		}
+		if !hasModified {
+			return nil, status.Error(codes.Aborted, `更新评论需要带上评论本身的修改时间。`)
+		} else if cmtOld.Modified != req.Comment.Modified {
+			return nil, status.Error(codes.Aborted, `当前评论内容已在其它地方被修改过，请刷新后重新提交。`)
 		}
 		if hasSourceType != hasSource {
 			panic(`source_type and source must be both specified`)
 		}
 		if hasSourceType {
-			data[`source_type`] = req.Comment.SourceType
-			data[`source`] = req.Comment.Source
-
 			if content, err := s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID); err != nil {
 				return nil, err
 			} else {

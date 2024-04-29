@@ -83,11 +83,14 @@ class CommentAPI
 		c.source_type = c.source_type ?? 'plain';
 		c.source = c.source || (c.source_type == 'plain' ? c.content : c.source);
 
-		c.is_admin = c.is_admin ?? false;
+		c.date = +(c.date ?? 0);
+		c.modified = +(c.modified ?? 0);
 		c.date_fuzzy = c.date_fuzzy ?? '';
+
+		c.is_admin = c.is_admin ?? false;
 		c.geo_location = c.geo_location ?? '';
 		c.can_edit = c.can_edit ?? false;
-		c.avatar = c.avatar ?? 0;
+		c.avatar = +(c.avatar ?? 0);
 
 		return c;
 	}
@@ -113,7 +116,7 @@ class CommentAPI
 	// 返回更新后的评论项。
 	// 参数：id        - 评论编号
 	// 参数：source    - 评论 markdown 原文
-	async updateComment(id, source) {
+	async updateComment(id, modified, source) {
 		let path = `/v3/comments/${id}`;
 		let rsp = await fetch(path, {
 			method: 'PATCH',
@@ -123,9 +126,10 @@ class CommentAPI
 			body: JSON.stringify({
 				comment: {
 					source_type: 'markdown',
-					source: source
+					source: source,
+					modified: modified,
 				},
-				update_mask: 'source,sourceType'
+				update_mask: 'source,sourceType,modified'
 			})
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + (await rsp.json()).message); }
@@ -828,15 +832,16 @@ class Comment {
 	async updateComment() {
 		let { source } = this.formData();
 		let id = this.being_edited;
+		let raw = this.list.comments[id];
 
-		let cmt = await this.api.updateComment(id, source);
-		this.list.update(cmt);
+		let updated = await this.api.updateComment(id, raw.modified, source);
+		this.list.update(updated);
 
 		this.clearContent();
 		this.hide();
 		this.preview.show(false);
 
-		return cmt;
+		return updated;
 	}
 	setStates(states) {
 		let submitButton = document.querySelector('#comment-submit');

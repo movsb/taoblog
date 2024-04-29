@@ -137,9 +137,11 @@ type Post struct {
 	Source        string   `protobuf:"bytes,14,opt,name=source,proto3" json:"source,omitempty"`
 	SourceType    string   `protobuf:"bytes,15,opt,name=source_type,json=sourceType,proto3" json:"source_type,omitempty"`
 	Tags          []string `protobuf:"bytes,16,rep,name=tags,proto3" json:"tags,omitempty"`
-	// 文章最后被评论的时间。与文章的更新时间一起贡献给 304 处理函数。
-	// 这个值可以是空的，表示没有被评论过。
-	// 删除评论不会修改这个时间。
+	// ~~文章最后被评论的时间~~。
+	// 更新：文章的评论最后有更新（包括：创建、更新、删除）的时间。
+	// 与文章的更新时间一起贡献给 304 处理函数。
+	// 这个值可以是空的，表示没有被评论过。（更新：也可能表示数据库升级开始后没有评论过）
+	// TODO 考虑换个名字了。
 	LastCommentedAt int32 `protobuf:"varint,17,opt,name=last_commented_at,json=lastCommentedAt,proto3" json:"last_commented_at,omitempty"`
 }
 
