@@ -189,9 +189,6 @@ func (s *Service) GetPostTitle(ID int64) string {
 // 临时放这儿。
 // 本应该由各主题自己实现的。
 func (s *Service) GetLink(ID int64) string {
-	if ID == 514 {
-		ID += 0
-	}
 	var p models.Post
 	s.posts().Select("id,slug,category,type").Where("id = ?", ID).MustFind(&p)
 	if p.Type == `page` && p.Slug != "" && p.Category == 0 {
@@ -201,6 +198,9 @@ func (s *Service) GetLink(ID int64) string {
 }
 
 // 普通链接是为了附件的 <base> 而设置，对任何主题都生效。
+func (s *Service) GetPlainLink(id int64) string {
+	return s.plainLink(id)
+}
 func (s *Service) plainLink(id int64) string {
 	return fmt.Sprintf(`/%d/`, id)
 }

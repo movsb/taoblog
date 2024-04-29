@@ -323,6 +323,17 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
 	post := t.service.GetPostByID(id)
 	t.userMustCanSeePost(req, post)
+
+	if post.Type == `page` {
+		link := t.service.GetLink(id)
+		// 因为只处理了一层页面路径，所以要判断一下。
+		if link != t.service.GetPlainLink(id) {
+			http.Redirect(w, req, link, http.StatusPermanentRedirect)
+			return nil
+		}
+		return nil
+	}
+
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
 	return nil
