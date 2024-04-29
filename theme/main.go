@@ -411,8 +411,25 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 	return false
 }
 
-// QueryStatic ...
+var cacheControl = `max-age=21600, must-revalidate`
+
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	path := filepath.Join(t.base, `statics`, file)
+
+	// 开发模式下不要缓存资源文件，因为经常更新，否则需要强制刷新，太蛋疼了，会加强很多字体文件，很慢。
+	if t.service.DevMode() {
+		fp, err := os.Open(filepath.Clean(path))
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer fp.Close()
+		http.ServeContent(w, req, path, time.Time{}, fp)
+		return
+	}
+
+	// 正式环境也不要缓存太久，因为博客在经常更新。
+	w.Header().Add(`Cache-Control`, cacheControl)
 	http.ServeFile(w, req, path)
 }

@@ -113,27 +113,13 @@ body.wide #content {
         }
     }
 
-    img {
-        max-width: 100%;
-        height: auto;
-        box-sizing: content-box;
-        border: 1px solid transparent;
-		border-radius: 8px;
-
+	img {
 		&:hover {
 			box-shadow: 0 0 5px gray;
 			cursor: zoom-in;
 		}
+	}
 
-		&.f-r {
-			float: right;
-			margin-left: 1em !important;
-		}
-    }
-
-    figure {
-        text-align: center;
-    }
     p > img:only-child {
         display: block;
         margin: auto;

@@ -14,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/memory_cache"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -159,6 +160,10 @@ func (s *Service) Description() string {
 		return d
 	}
 	return ``
+}
+
+func (s *Service) DevMode() bool {
+	return version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`)
 }
 
 // LastArticleUpdateTime ...

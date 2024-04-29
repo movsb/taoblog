@@ -135,6 +135,23 @@ li {
 }
 
 img {
+	max-width: 100%;
+	height: auto;
+	box-sizing: content-box;
+	border: 1px solid transparent;
+	border-radius: var(--border-radius);
+
+	&.f-r {
+		float: right;
+		margin-left: 1em !important;
+	}
+}
+
+figure {
+	text-align: center;
+}
+
+img {
 	@media (prefers-color-scheme: dark) {
 		filter: brightness(0.7);
 		&.transparent {
