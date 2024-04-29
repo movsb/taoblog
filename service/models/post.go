@@ -11,20 +11,21 @@ import (
 
 // Post ...
 type Post struct {
-	ID            int64
-	Date          int32
-	Modified      int32
-	Title         string
-	Slug          string
-	Type          string
-	Category      uint
-	Status        string
-	PageView      uint
-	CommentStatus uint
-	Comments      uint
-	Metas         PostMeta
-	Source        string
-	SourceType    string
+	ID              int64
+	Date            int32
+	Modified        int32
+	LastCommentedAt int32
+	Title           string
+	Slug            string
+	Type            string
+	Category        uint
+	Status          string
+	PageView        uint
+	CommentStatus   uint
+	Comments        uint
+	Metas           PostMeta
+	Source          string
+	SourceType      string
 }
 
 type PostMeta struct {
@@ -133,6 +134,8 @@ func (p *Post) ToProtocols() *protocols.Post {
 		Metas:         p.Metas.ToProtocols(),
 		Source:        p.Source,
 		SourceType:    p.SourceType,
+
+		LastCommentedAt: p.LastCommentedAt,
 	}
 
 	return &out

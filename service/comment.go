@@ -109,6 +109,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.MustTxCall(func(txs *Service) error {
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
 			txs.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
+			txs.updatePostCommentCount(comment.PostID, time.Now())
 			return nil
 		})
 	} else {
@@ -123,7 +124,8 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 	s.auth.AuthGRPC(ctx).MustBeAdmin()
 	cmt := s.getComment2(int64(in.Id))
 	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
-	s.UpdatePostCommentCount(cmt.PostID)
+	s.updatePostCommentCount(cmt.PostID, time.Now())
+	s.updateCommentsCount()
 	return &protocols.DeleteCommentResponse{}, nil
 }
 
@@ -380,8 +382,8 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 			c.Root = 0
 		}
 		txs.tdb.Model(&c).MustCreate()
+		txs.updatePostCommentCount(c.PostID, time.Unix(int64(c.Date), 0))
 		txs.updateCommentsCount()
-		txs.UpdatePostCommentCount(c.PostID)
 		return nil
 	})
 
@@ -447,8 +449,8 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 			MustUpdateMap(map[string]interface{}{
 				`post_id`: post.Id,
 			})
-		txs.UpdatePostCommentCount(cmt.PostID)
-		txs.UpdatePostCommentCount(post.Id)
+		txs.updatePostCommentCount(cmt.PostID, time.Now())
+		txs.updatePostCommentCount(post.Id, time.Now())
 		log.Printf("Transferred comments %d to post %d", cmt.ID, in.PostId)
 		return nil
 	})

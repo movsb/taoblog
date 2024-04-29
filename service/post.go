@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -44,7 +43,6 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 		panic(err)
 	}
 	out.Content = content
-	out.LastCommentedAt = int32(s.getPostLastCommentTime(out.Id))
 
 	return out
 }
@@ -117,8 +115,6 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	if !in.WithMetas {
 		out.Metas = nil
 	}
-
-	out.LastCommentedAt = int32(s.getPostLastCommentTime(out.Id))
 
 	return out, nil
 }
@@ -268,7 +264,6 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 	}
 	out := p.ToProtocols()
 	out.Content = content
-	out.LastCommentedAt = int32(s.getPostLastCommentTime(out.Id))
 	return out
 }
 
@@ -357,10 +352,12 @@ func (s *Service) GetPostTags(ID int64) []string {
 	return s.GetObjectTagNames(ID)
 }
 
-func (s *Service) UpdatePostCommentCount(name int64) {
+// t: last_commented_at 表示文章评论最后被操作的时间。不是最后被评论的时间。
+// 因为属于是外部关联资源，对 304 有贡献。
+func (s *Service) updatePostCommentCount(pid int64, t time.Time) {
 	var count uint
-	s.tdb.Model(models.Comment{}).Where(`post_id=?`, name).MustCount(&count)
-	s.tdb.MustExec(`UPDATE posts SET comments=? WHERE id=?`, count, name)
+	s.tdb.Model(models.Comment{}).Where(`post_id=?`, pid).MustCount(&count)
+	s.tdb.MustExec(`UPDATE posts SET comments=?,last_commented_at=? WHERE id=?`, count, t.Unix(), pid)
 }
 
 // CreatePost ...
@@ -640,40 +637,4 @@ func (s *Service) SetRedirect(ctx context.Context, in *protocols.SetRedirectRequ
 		}
 		return txs.tdb.Model(r).Create()
 	})
-}
-
-// 由于评论更新并不会更新文章的修改时间，但页面应该重新渲染。
-// 所以这个功能是为了记录最后的评论时间。
-// 但是这个时间我觉得并没有必要存到数据库里面。
-// 文章的修改时间（特指用于处理 304 的那个时间），应该用两者中的较大者。
-// TODO 应该缓存。
-// type PostLastUpdatedAt struct {
-// 	// map[int64]int64
-// 	m sync.Map
-// }
-
-func (s *Service) getPostLastCommentTime(pid int64) int64 {
-	query := `
-SELECT
-	/* posts.id,posts.modified,comments.date */
-	comments.date
-FROM
-	posts
-INNER JOIN 
-	comments
-ON posts.id = comments.post_id
-INNER JOIN
-	(
-		SELECT
-			id,post_id,max(date) AS maxDate
-		FROM comments
-		GROUP BY post_id
-	) AS dates
-ON comments.id = dates.id AND comments.date = dates.maxDate where posts.id=?;
-`
-	var date int64
-	if err := s.tdb.Raw(query, pid).Find(&date); err != nil {
-		log.Println(err) // 不重要？没处理没评论时的错误。
-	}
-	return date
 }

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
     `date` INTEGER NOT NULL,
     `modified` INTEGER NOT NULL,
+    `last_commented_at` INTEGER NOT NULL,
     `title` TEXT  NOT NULL,
     `slug` TEXT NOT NULL,
     `type` TEXT NOT NULL,
@@ -40,6 +41,10 @@ CREATE TABLE IF NOT EXISTS `comments` (
     `parent` INTEGER NOT NULL,
     `root` INTEGER NOT NULL
 );
+-- 奇怪，为什么不能直接在 create table 的时候写？
+-- sqlite3 好像没有创建普通索引的写法？
+-- https://sqlite.org/syntax/column-constraint.html
+CREATE INDEX `post_id` on `comments` (`post_id`);
 
 -- 创建表 文章分类 categories
 CREATE TABLE IF NOT EXISTS categories (

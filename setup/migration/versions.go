@@ -374,3 +374,36 @@ func v22(tx *sql.Tx) {
 func v23(tx *sql.Tx) {
 	mustExec(tx, "CREATE INDEX `post_id` on `comments` (`post_id`)")
 }
+
+// 由于评论更新并不会更新文章的修改时间，但页面应该重新渲染。
+// 文章的修改时间（特指用于处理 304 的那个时间），应该用两者中的较大者。
+// 所以这个功能是为了记录最后的评论时间。
+// ~~但是这个时间我觉得并没有必要存到数据库里面。~~
+// 更新：有必要。因为历史评论可能被编辑，被编辑的评论会影响文章的“修改时间”，但是不能更新到评论本身，
+// 否则评论列表就会变化。因为目前评论只有创建时间，没有修改时间。评论列表是按创建时间排序的。
+// 下面这条语句本来是想执行的，但是报错。不执行问题也不大。
+/*
+	mustExec(tx, `
+UPDATE
+	posts
+SET
+	last_comment_time = dates.max_date
+INNER JOIN
+	comments
+ON
+	posts.id = comments.post_id
+INNER JOIN
+	(
+		SELECT
+			max(date) AS max_date
+		FROM
+			comments
+		GROUP BY
+			post_id
+	) AS dates
+ON comments.id = dates.id AND comments.date = dates.max_date
+`)
+*/
+func v24(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN `last_commented_at` INTEGER NOT NULL DEFAULT 0")
+}
