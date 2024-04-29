@@ -1,7 +1,7 @@
 document.write(function(){/*
 <div id="comments">
 <!--评论标题 -->
-<h3 id="comment-title">
+<div id="comment-title">
 	文章评论
 	<span class="count-wrap item"><span class="count-loaded-wrap"><span class="loaded">0</span>/</span><span class="total">0</span></span>
 	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
@@ -9,7 +9,7 @@ document.write(function(){/*
 		<a class="sign-in pointer" onclick="comment.login()">登录</a>
 		<a class="sign-out pointer" onclick="comment.logout()">登出</a>
 	</span>
-</h3>
+</div>
 <!-- 评论列表  -->
 <ol id="comment-list"></ol>
 <!-- 评论功能区  -->

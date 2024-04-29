@@ -178,10 +178,12 @@ blockquote {
 
 /* 相关文章推荐 */
 .post .related {
-    margin-bottom: 3em;
-    h3 {
-        border-bottom: 1px solid var(--border-color);
-    }
+	margin: 2rem 0px 1rem;
+	.name {
+		font-size: 1.4em;
+		padding-bottom: .1em;
+		border-bottom: 1px solid var(--border-color);
+	}
 }
 
 .entry {
