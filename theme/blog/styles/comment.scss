@@ -234,7 +234,7 @@
 			height: 25px;
 			background-image: url($closeButton);
 			background-size: cover;
-			filter: opacity(.3);
+			filter: opacity(.1);
 			transition: filter .1s linear;
 		}
 	}
@@ -315,7 +315,7 @@
 #comment-form-div {
 	@media (prefers-color-scheme: light) {
 		.ncbtns .close:hover {
-			filter: opacity(.6);
+			filter: opacity(.3);
 		}
 	}
 	@media (prefers-color-scheme: dark) {

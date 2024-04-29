@@ -272,6 +272,7 @@ class CommentPreviewUI {
 class CommentFormUI {
 	constructor() {
 		this._form = document.getElementById('comment-form');
+		this._stashedContent = "";
 	}
 
 	get elemAuthor()    { return this._form['author'];  }
@@ -313,6 +314,13 @@ class CommentFormUI {
 			e.stopPropagation();
 			callback();
 		});
+	}
+
+	stashContent() {
+		this._stashedContent = this.source;
+	}
+	popContent() {
+		this.source = this._stashedContent;
 	}
 }
 
@@ -683,7 +691,10 @@ class Comment {
 		return html;
 	}
 	reply_to(p) {
-		this.being_edited = -1;
+		if (this.being_edited > 0) {
+			this.being_edited = -1;
+			this.form.popContent();
+		}
 		this.being_replied = +p;
 		this.move_to_center();
 		this.preview.show(false);
@@ -692,8 +703,11 @@ class Comment {
 		});
 	}
 	edit(c) {
+		if (this.being_replied > -1) {
+			this.being_replied = -1;
+			this.form.stashContent();
+		}
 		this.being_edited = c;
-		this.being_replied = -1;
 		this.move_to_center();
 		this.preview.show(false);
 		this.showCommentBox(true, function () {
@@ -731,7 +745,7 @@ class Comment {
 			return;
 		}
 
-		// NOTE：left & top 两次次被调整，仍然可能超出。
+		// NOTE：left & top 两次被调整，仍然可能超出。
 		const padding = 10;
 		left = Math.max(left,   padding          );
 		top  = Math.max(top,    padding          );
