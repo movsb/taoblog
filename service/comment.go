@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -255,7 +254,27 @@ const (
 	maxContentLen  = 4096
 )
 
-// CreateComment ...
+// 创建一条评论。
+//
+// 前期验证项：
+//
+// Author 不为空、长度不超限
+// Email 不为空、长度不超限
+// URL 可为空，若不为空，需要为正确的 URL，可不加 http 前缀，自动加
+// SourceType 只能为 markdown
+// Source 不为空且不超限。
+//
+// 检查昵称是否被允许
+// 检查邮箱是否被允许
+//
+// 检查项：
+// post id 存在
+// parent 是否存在
+// 且和 parent 的 post id 一样
+// root 置为 parent / parent的root
+// IP 从请求中自动获取，忽略传入。
+// Date 服务端的当前时间戳，忽略传入。
+// Content 自动由 source 生成。
 func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
 	user := s.auth.User(ctx)
 
@@ -268,71 +287,61 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}()
 
-	comment := models.Comment{
+	c := models.Comment{
 		PostID:     in.PostId,
 		Parent:     in.Parent,
-		Author:     in.Author,
-		Email:      in.Email,
-		URL:        in.Url,
+		Author:     strings.TrimSpace(in.Author),
+		Email:      strings.TrimSpace(in.Email),
+		URL:        strings.TrimSpace(in.Url),
 		IP:         ip,
 		Date:       int32(time.Now().Unix()),
 		SourceType: in.SourceType,
 		Source:     in.Source,
 	}
 
-	if in.Author == "" {
+	if c.Author == "" {
 		return nil, status.Error(codes.InvalidArgument, `昵称不能为空`)
 	}
-	if utf8.RuneCountInString(in.Author) >= maxNicknameLen {
-		errors.Join()
+	if utf8.RuneCountInString(c.Author) >= maxNicknameLen {
 		return nil, status.Errorf(codes.InvalidArgument, `昵称太长（最长 %d 个字符）`, maxNicknameLen)
 	}
 
-	if !utils.IsEmail(in.Email) {
+	if !utils.IsEmail(c.Email) {
 		return nil, status.Errorf(codes.InvalidArgument, `邮箱格式不正确`)
 	}
-	if utf8.RuneCountInString(in.Email) >= maxEmailLen {
+	if utf8.RuneCountInString(c.Email) >= maxEmailLen {
 		return nil, status.Errorf(codes.InvalidArgument, `邮箱太长（最长 %d 个字符）`, maxEmailLen)
 	}
 
-	if in.Url != "" && !utils.IsURL(in.Url, true) {
-		return nil, status.Errorf(codes.InvalidArgument, `网址格式不正确`)
+	if c.URL != "" {
+		if !strings.Contains(c.URL, "://") {
+			c.URL = `http://` + c.URL
+		}
+		if !utils.IsURL(c.URL, false) {
+			return nil, status.Errorf(codes.InvalidArgument, `网址格式不正确`)
+		}
 	}
-	if utf8.RuneCountInString(in.Url) >= maxUrlLen {
+	if utf8.RuneCountInString(c.URL) >= maxUrlLen {
 		return nil, status.Errorf(codes.InvalidArgument, `网址太长（最长 %d 个字符）`, maxUrlLen)
 	}
 
-	if in.Source == "" {
+	if c.SourceType != `markdown` {
+		return nil, status.Error(codes.InvalidArgument, `只允许 Markdown 评论内容`)
+	}
+	if c.Source == "" {
 		return nil, status.Error(codes.InvalidArgument, `评论内容不能为空`)
 	}
-	if utf8.RuneCountInString(in.Source) >= maxContentLen {
+	if utf8.RuneCountInString(c.Source) >= maxContentLen {
 		return nil, status.Error(codes.InvalidArgument, `评论内容太长`)
 	}
 
-	if in.Parent > 0 {
-		pc := s.getComment2(in.Parent)
-		comment.Root = pc.Root
-		if pc.Root == 0 {
-			comment.Root = pc.ID
-		}
-	}
-
-	if content, err := s.convertCommentMarkdown(user, in.SourceType, in.Source, in.PostId); err == nil {
-		comment.Content = content
-	} else {
-		return nil, err
-	}
-
-	adminEmails := s.cfg.Comment.Emails
-
 	if user.IsGuest() {
 		notAllowedEmails := s.cfg.Comment.NotAllowedEmails
-		if len(adminEmails) > 0 {
+		if adminEmails := s.cfg.Comment.Emails; len(adminEmails) > 0 {
 			notAllowedEmails = append(notAllowedEmails, adminEmails...)
 		}
-		// TODO use regexp to detect equality.
 		for _, email := range notAllowedEmails {
-			if email != "" && in.Email != "" && strings.EqualFold(email, in.Email) {
+			if email != "" && c.Email != "" && strings.EqualFold(email, c.Email) {
 				return nil, status.Error(codes.InvalidArgument, `不能使用此邮箱地址`)
 			}
 		}
@@ -341,25 +350,44 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 			notAllowedAuthors = append(notAllowedAuthors, adminName)
 		}
 		for _, author := range notAllowedAuthors {
-			if author != "" && in.Author != "" && strings.EqualFold(author, string(in.Author)) {
+			if author != "" && c.Author != "" && strings.EqualFold(author, string(c.Author)) {
 				return nil, status.Error(codes.InvalidArgument, `不能使用此昵称`)
 			}
 		}
-		if in.Author != "" && strings.Contains(in.Author, "作者") {
+		if c.Author != "" && strings.Contains(in.Author, "作者") {
 			return nil, status.Error(codes.InvalidArgument, "昵称中不应包含“作者”两字")
 		}
 	}
 
+	if content, err := s.convertCommentMarkdown(user, c.SourceType, c.Source, c.PostID); err == nil {
+		c.Content = content
+	} else {
+		return nil, err
+	}
+
 	s.MustTxCall(func(txs *Service) error {
-		txs.tdb.Model(&comment).MustCreate()
+		if c.Parent > 0 {
+			pc := s.getComment2(c.Parent)
+			if pc.Root != 0 {
+				c.Root = pc.Root
+			} else {
+				c.Root = pc.ID
+			}
+			if c.PostID != pc.PostID {
+				panic(status.Error(codes.InvalidArgument, `不是同一篇文章的父评论。`))
+			}
+		} else {
+			c.Root = 0
+		}
+		txs.tdb.Model(&c).MustCreate()
 		txs.updateCommentsCount()
-		txs.UpdatePostCommentCount(comment.PostID)
+		txs.UpdatePostCommentCount(c.PostID)
 		return nil
 	})
 
-	s.doCommentNotification(&comment)
+	s.doCommentNotification(&c)
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip, s.avatar), nil
+	return c.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip, s.avatar), nil
 }
 
 func (s *Service) updateCommentsCount() {
@@ -369,7 +397,7 @@ func (s *Service) updateCommentsCount() {
 
 func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, options ...renderers.Option) (string, error) {
 	if ty != "markdown" {
-		return "", status.Error(codes.InvalidArgument, "仅支持 Markdown")
+		return "", status.Error(codes.InvalidArgument, "仅支持 Markdown 评论")
 	}
 
 	var md renderers.Renderer

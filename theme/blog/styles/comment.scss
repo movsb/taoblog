@@ -157,8 +157,15 @@
     margin: 2em 1em;
 	display: none;
 }
-#comments.no-comments .comment-func {
-	display: block;
+#comments.no-comments {
+	.comment-func {
+		display: block;
+	}
+	#comment-title {
+		.post-comment {
+			display: none;
+		}
+	}
 }
 
 .comment-meta {
