@@ -1,0 +1,36 @@
+{{- $dot:=. -}}
+<!DOCTYPE html> 
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<title>{{ $.Title }}</title>
+<link rel="stylesheet" type="text/css" href="/style.css" />
+<link rel="stylesheet" href="/plugins/highlight/prism.css" />
+<script src="/scripts/header.js"></script>
+</head>
+<body class="{{ $.BodyClass }}">
+<div id="wrapper">
+<section id="main">
+<div id="content">
+<h1>{{ $.Meta.Title }}</h1>
+<script>var _post_id = +{{.Post.Post.Id}};</script>
+<div class="tweet">
+	<article class="post">
+	<div class="entry">
+		<div class="content">
+		{{ .Post.Post.Content }}
+		</div>
+		<div class="meta1">
+			<span class="date">{{ .Post.Post.ShortDateString }}</span>
+			<span class="comments"><a href="/admin/editor?id={{.Post.Post.Id}}">编辑</a></span>
+		</div>
+	</div>
+	<!-- comments begin -->
+	<script>TaoBlog.comments = {{ $.Post.CommentsAsJsonArray }};</script>
+	<script src="/scripts/comment.js"></script>
+	<!-- comments end -->
+	</article>
+</div>
+{{ render "footer" . }}

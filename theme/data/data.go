@@ -48,6 +48,9 @@ type Data struct {
 
 	// If it is the tag.
 	Tag *TagData
+
+	// 碎碎念、叽叽喳喳🦜
+	Tweets *TweetsData
 }
 
 func (d *Data) Title() string {
@@ -69,6 +72,9 @@ func (d *Data) BodyClass() string {
 		if d.Post.Post.Wide() {
 			c = append(c, `wide`)
 		}
+	}
+	if d.Tweets != nil {
+		c = append(c, `wide`)
 	}
 	return strings.Join(c, ` `)
 }

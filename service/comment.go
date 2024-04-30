@@ -380,7 +380,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.MustTxCall(func(txs *Service) error {
 		if c.Parent > 0 {
-			pc := s.getComment2(c.Parent)
+			pc := txs.getComment2(c.Parent)
 			if pc.Root != 0 {
 				c.Root = pc.Root
 			} else {

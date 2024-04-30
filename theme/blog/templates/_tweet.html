@@ -1,0 +1,16 @@
+{{ define "_tweet" }}
+<article class="post">
+<div class="entry">
+	<div class="content">
+	{{ .Content }}
+	</div>
+	<div class="meta1">
+		<span class="date">{{ .ShortDateString }}</span>
+		<span class="comments"><a href="{{ .Link }}#comments">{{ .CommentString }}</a></span>
+		<span class="comments"><a href="/admin/editor?id={{.Id}}">编辑</a></span>
+	</div>
+</div>
+<!-- comments begin -->
+<!-- comments end -->
+</article>
+{{ end }}

@@ -327,3 +327,13 @@
 		}
 	}
 }
+
+// 临时放这儿！
+@media screen and (max-width: 500px) {
+	#comment-list .comment-li {
+		padding-left: 0;
+	}
+	#comment-list .comment-li .comment-replies > ol > li {
+		padding-left: 4px;
+	}
+}

@@ -71,6 +71,8 @@ func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base str
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
+	// m.Handle(`GET /tweets`, t.LastPostTime304HandlerFunc(t.queryTweets))
+	m.HandleFunc(`GET /tweets`, t.queryTweets)
 	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
 
 	t.loadTemplates()
@@ -184,6 +186,12 @@ func (t *Theme) loadTemplates() {
 			}
 			if t := t.getPartial().Lookup(name); t != nil {
 				return t.Execute(data.Writer, data)
+			}
+			return nil
+		},
+		"partial": func(name string, data *data.Data, data2 any) error {
+			if t := t.getPartial().Lookup(name); t != nil {
+				return t.Execute(data.Writer, data2)
 			}
 			return nil
 		},
@@ -309,6 +317,17 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
+	d := data.NewDataForTweets(t.service.Config(), t.auth.AuthRequest(r), t.service)
+	tmpl := t.getNamed()[`tweets.html`]
+	d.Template = tmpl
+	d.Writer = w
+
+	if err := tmpl.Execute(w, d); err != nil {
+		panic(err)
+	}
+}
+
 func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service)
 	tmpl := t.getNamed()[`tags.html`]
@@ -364,8 +383,15 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		return
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, t.service.ListPostAllComments(req, p.Id))
-	tmpl := t.getNamed()[`post.html`]
+	var d *data.Data
+	d = data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, t.service.ListPostAllComments(req, p.Id))
+
+	var tmpl *template.Template
+	if p.Type == `tweet` {
+		tmpl = t.getNamed()[`tweet.html`]
+	} else {
+		tmpl = t.getNamed()[`post.html`]
+	}
 	d.Template = tmpl
 	d.Writer = w
 

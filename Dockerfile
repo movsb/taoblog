@@ -7,7 +7,9 @@ WORKDIR /workspace
 
 ADD admin/login.html admin/
 ADD admin/profile.html admin/
+ADD admin/editor.html admin/
 ADD admin/script.js  admin/
+ADD admin/editor.js  admin/
 ADD theme/blog/statics theme/blog/statics/
 ADD theme/blog/templates theme/blog/templates/
 ADD taoblog taoblog

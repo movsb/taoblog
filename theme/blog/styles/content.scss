@@ -52,16 +52,14 @@ body.wide #content {
 
 /* 文章内容 */
 @media screen and (max-width: $max_width) {
-    .entry {
-        padding: 0px 0px 16px;
+	.entry {
 		line-height: var(--line-height-tight);
-    }
+	}
 }
 @media screen and (min-width: $max_width+1) {
-    .entry {
-        padding-bottom: 16px;
+	.entry {
 		line-height: var(--line-height-loose);
-    }
+	}
 }
 
 @media screen and (max-width: $max_width) {
@@ -76,7 +74,6 @@ body.wide #content {
     display: block;
 	color: var(--post-fg);
     text-align: justify;
-    margin-bottom: 3em;
 
      pre {
         box-sizing: border-box;

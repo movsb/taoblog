@@ -47,12 +47,18 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 	return out
 }
 
-// MustListPosts ...
+// 奇怪，为什么这个方法不是 protobuf 写的？🤔
 func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
 	user := s.auth.User(ctx)
 	var posts models.Posts
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
 	stmt.WhereIf(user.IsGuest(), "status = 'public'")
+	// 为了兼容，并不能列举碎碎念。
+	if in.Kind == "" {
+		stmt.Where(`(type=? OR type=?)`, `post`, `page`)
+	} else {
+		panic("不支持其它种类。")
+	}
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
@@ -66,6 +72,32 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 			out.Content = content
 		}
 	}
+	return outs
+}
+
+func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
+	user := s.auth.User(ctx)
+
+	stmt := s.tdb.Select("*").OrderBy(`date desc`)
+	stmt.WhereIf(user.IsGuest(), "status = 'public'")
+	stmt.Where(`type=?`, `tweet`)
+	stmt.Limit(30)
+
+	var posts models.Posts
+	if err := stmt.Find(&posts); err != nil {
+		panic(err)
+	}
+
+	outs := posts.ToProtocols()
+
+	for _, out := range outs {
+		content, err := s.getPostContent(out.Id)
+		if err != nil {
+			panic(err)
+		}
+		out.Content = content
+	}
+
 	return outs
 }
 
@@ -382,6 +414,10 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		SourceType: in.SourceType,
 	}
 
+	if in.Status != "" {
+		p.Status = in.Status
+	}
+
 	if p.Type == `` {
 		p.Type = `post`
 	}
@@ -448,7 +484,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		case `type`:
 			m[path] = in.Post.Type
 		default:
-			panic(`unknown update mask`)
+			panic(`unknown update mask:` + path)
 		}
 	}
 

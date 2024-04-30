@@ -14,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/xeonx/timeago"
 )
 
 // PostData ...
@@ -118,6 +119,15 @@ func (p *Post) DateString() string {
 	y, m, d := t.Date()
 	return fmt.Sprintf("%d年%02d月%02d日", y, m, d)
 }
+func (p *Post) ShortDateString() string {
+	return timeago.Chinese.Format(time.Unix(int64(p.Date), 0))
+}
+func (p *Post) CommentString() string {
+	if p.Comments == 0 {
+		return `没有评论`
+	}
+	return fmt.Sprintf(`%d 条评论`, p.Comments)
+}
 
 // ModifiedString ...
 func (p *Post) ModifiedString() string {
@@ -142,5 +152,8 @@ func (p *Post) Outdated() bool {
 
 // 是否开启宽屏？
 func (p *Post) Wide() bool {
+	if p.Type == `tweet` {
+		return true
+	}
 	return p.Metas.Wide
 }

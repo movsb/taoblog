@@ -20,6 +20,8 @@ type ListPostsRequest struct {
 	OrderBy string
 
 	WithContent bool
+
+	Kind string // models.Kind
 }
 
 type ListTagsWithCountRequest struct {
