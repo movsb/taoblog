@@ -7,7 +7,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taorm/taorm"
+	"github.com/movsb/taorm"
 )
 
 func (s *Service) tags() *taorm.Stmt {

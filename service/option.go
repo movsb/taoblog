@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taorm/taorm"
+	"github.com/movsb/taorm"
 )
 
 func optionCacheKey(name string) string {

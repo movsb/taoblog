@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/movsb/taoblog/service/models"
-	"github.com/movsb/taorm/taorm"
+	"github.com/movsb/taorm"
 )
 
 func v0(tx *sql.Tx) {

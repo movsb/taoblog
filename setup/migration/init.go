@@ -12,7 +12,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
-	"github.com/movsb/taorm/taorm"
+	"github.com/movsb/taorm"
 )
 
 // Init ...

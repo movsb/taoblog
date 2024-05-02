@@ -18,7 +18,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers"
-	"github.com/movsb/taorm/taorm"
+	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -165,6 +165,9 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		if user.IsGuest() {
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
+		if len(in.Types) > 0 {
+			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in ?`, in.Types)
+		}
 		stmt.MustFind(&parents)
 	}
 
@@ -181,6 +184,9 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		stmt.Where("root IN (?)", parentIDs)
 		if user.IsGuest() {
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+		}
+		if len(in.Types) > 0 {
+			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in ?`, in.Types)
 		}
 		stmt.MustFind(&children)
 	}

@@ -64,6 +64,10 @@ message ListCommentsRequest {
 	int64 limit = 4;
 	int64 offset = 5;
 	string order_by = 6;
+
+	// 文章的种类，比如 post、page、tweet。
+	// 如果不指定的话，则是全部种类。
+	repeated string types = 10;
 }
 
 message ListCommentsResponse {
