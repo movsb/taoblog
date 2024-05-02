@@ -3,7 +3,7 @@ class PostManagementAPI
 	constructor() { }
 
 	// 创建一条文章。
-	async createPost(source) {
+	async createPost(source, time) {
 		let path = `/v3/posts`;
 		let rsp = await fetch(path, {
 			method: 'POST',
@@ -11,6 +11,7 @@ class PostManagementAPI
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
+				date: time,
 				type: 'tweet',
 				status: 'public',
 				source: source,
@@ -30,7 +31,7 @@ class PostManagementAPI
 	// 返回更新后的评论项。
 	// 参数：id        - 评论编号
 	// 参数：source    - 评论 markdown 原文
-	async updatePost(id, modified, source) {
+	async updatePost(id, modified, source, created) {
 		let path = `/v3/posts/${id}`;
 		let rsp = await fetch(path, {
 			method: 'PATCH',
@@ -41,9 +42,10 @@ class PostManagementAPI
 				post: {
 					source_type: 'markdown',
 					source: source,
+					date: created,
 					modified: modified,
 				},
-				update_mask: 'source,sourceType'
+				update_mask: 'source,sourceType,created'
 			})
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }
@@ -59,8 +61,30 @@ class PostFormUI {
 	}
 
 	get elemSource()    { return this._form['source'];  }
+	get elemTime()      { return this._form['time'];    }
 
 	get source()    { return this.elemSource.value;     }
+	get time()      {
+		let t = this.elemTime.value;
+		let d = new Date(t).getTime() / 1000;
+		if (!d) {
+			d = new Date().getTime() / 1000;
+		}
+		d = Math.floor(d);
+		return d;
+	}
+	set time(t)      {
+		const convertToDateTimeLocalString = (date) => {
+			const year = date.getFullYear();
+			const month = (date.getMonth() + 1).toString().padStart(2, "0");
+			const day = date.getDate().toString().padStart(2, "0");
+			const hours = date.getHours().toString().padStart(2, "0");
+			const minutes = date.getMinutes().toString().padStart(2, "0");
+		  
+			return `${year}-${month}-${day}T${hours}:${minutes}`;
+		};
+		this.elemTime.value = convertToDateTimeLocalString(new Date(t));
+	}
 
 	set source(v)   { this.elemSource.value = v;        }
 
@@ -80,9 +104,9 @@ formUI.submit(async () => {
 	try {
 		let post = undefined;
 		if (_post_id > 0) {
-			post = await postAPI.updatePost(_post_id, _modified, formUI.source);
+			post = await postAPI.updatePost(_post_id, _modified, formUI.source, formUI.time);
 		} else {
-			post = await postAPI.createPost(formUI.source);
+			post = await postAPI.createPost(formUI.source, formUI.time);
 		}
 		alert('成功。');
 		window.location = `/${post.id}/`;
@@ -90,3 +114,6 @@ formUI.submit(async () => {
 		alert(e);
 	}
 });
+if (typeof _created == 'number') {
+	formUI.time = _created*1000;
+}

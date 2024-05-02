@@ -21,6 +21,7 @@ textarea {
 <script>
 	var _post_id = {{ $.Post.Id }};
 	var _modified = {{ $.Post.Modified }};
+	var _created = {{ $.Post.Date }};
 </script>
 {{ end }}
 <form>
@@ -29,6 +30,7 @@ textarea {
 {{ else }}
 	<textarea name="source"></textarea>
 {{ end }}
+	<input type="datetime-local" name="time" value="" />
 	<input type="submit" value="提交" />
 </form>
 <script src="editor.js"></script>

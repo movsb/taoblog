@@ -414,6 +414,10 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		SourceType: in.SourceType,
 	}
 
+	if in.Date > 0 {
+		p.Date = in.Date
+	}
+
 	if in.Status != "" {
 		p.Status = in.Status
 	}
@@ -453,10 +457,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		ID: in.Post.Id,
 	}
 
-	modified := time.Now().Unix()
+	now := time.Now().Unix()
 
 	m := map[string]interface{}{
-		`modified`: modified,
+		`modified`: now,
 	}
 
 	var hasSourceType, hasSource bool
@@ -483,6 +487,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			hasMetas = true
 		case `type`:
 			m[path] = in.Post.Type
+		case `created`:
+			m[`date`] = in.Post.Date
 		default:
 			panic(`unknown update mask:` + path)
 		}

@@ -49,17 +49,9 @@
 
 // 代码高亮
 (function(){
-let s = document.createElement('script');
-s.async = false;
-s.setAttribute('data-manual', '');
-s.onload = function() {
-	document.querySelectorAll('pre').forEach(function(pre) {
-		TaoBlog.fn.highlight(pre);
-	});
-};
-s.src = '/plugins/highlight/prism.js';
-document.body.appendChild(s);
-
+document.querySelectorAll('pre').forEach(function(pre) {
+	TaoBlog.fn.highlight(pre);
+});
 TaoBlog.events.add('comment', 'post', function(item, cmt) {
 	let pres = item.querySelectorAll(':scope > .comment-content pre');
 	pres.forEach(function(pre) {

@@ -7,14 +7,15 @@
 <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 <title>{{ $.Title }}</title>
 <link rel="stylesheet" type="text/css" href="/style.css" />
-<link rel="stylesheet" href="/plugins/highlight/prism.css" />
 <script src="/scripts/header.js"></script>
+<script src="/plugins/highlight/prism.js" data-manual=""></script>
+<link rel="stylesheet" href="/plugins/highlight/prism.css" />
 </head>
 <body class="{{ $.BodyClass }}">
 <div id="wrapper">
 <section id="main">
 <div id="content">
-<h1>{{ $.Meta.Title }}</h1>
+<!-- <h1>{{ $.Meta.Title }}</h1> -->
 <script>var _post_id = +{{.Post.Post.Id}};</script>
 <div class="tweet">
 	<article class="post">
