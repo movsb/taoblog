@@ -26,9 +26,7 @@ type _ReadCloseSizer struct {
 
 // Backup ...
 func (s *Service) Backup(req *protocols.BackupRequest, srv protocols.Management_BackupServer) error {
-	if !s.auth.AuthGRPC(srv.Context()).IsAdmin() {
-		return status.Error(codes.Unauthenticated, "bad credentials")
-	}
+	s.MustBeAdmin(srv.Context())
 
 	sendPreparingProgress := func(progress float32) error {
 		return srv.Send(&protocols.BackupResponse{
@@ -216,9 +214,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 }
 
 func (s *Service) BackupFiles(srv protocols.Management_BackupFilesServer) error {
-	if !s.auth.AuthGRPC(srv.Context()).IsAdmin() {
-		return status.Error(codes.Unauthenticated, "bad credentials")
-	}
+	s.MustBeAdmin(srv.Context())
 
 	listFiles := func(req *protocols.BackupFilesRequest_ListFilesRequest) error {
 		files, err := utils.ListBackupFiles(s.cfg.Data.File.Path)

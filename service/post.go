@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -49,10 +50,11 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 
 // 奇怪，为什么这个方法不是 protobuf 写的？🤔
 func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
-	user := s.auth.User(ctx)
+	ac := auth.Context(ctx)
+
 	var posts models.Posts
 	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
-	stmt.WhereIf(user.IsGuest(), "status = 'public'")
+	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
 	// 为了兼容，并不能列举碎碎念。
 	if in.Kind == "" {
 		stmt.Where(`(type=? OR type=?)`, `post`, `page`)
@@ -76,10 +78,10 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 }
 
 func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
-	user := s.auth.User(ctx)
+	ac := auth.Context(ctx)
 
 	stmt := s.tdb.Select("*").OrderBy(`date desc`)
-	stmt.WhereIf(user.IsGuest(), "status = 'public'")
+	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
 	stmt.Where(`type=?`, `tweet`)
 	stmt.Limit(30)
 
@@ -113,7 +115,7 @@ func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64
 
 // GetPost ...
 func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*protocols.Post, error) {
-	user := s.auth.AuthGRPC(ctx)
+	ac := auth.Context(ctx)
 
 	var p models.Post
 	if err := s.tdb.Where("id = ?", in.Id).Find(&p); err != nil {
@@ -123,7 +125,7 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 		panic(err)
 	}
 
-	if p.Status != `public` && !user.IsAdmin() {
+	if p.Status != `public` && !ac.User.IsAdmin() {
 		panic(status.Error(codes.NotFound, `post not found`))
 	}
 
@@ -394,10 +396,7 @@ func (s *Service) updatePostCommentCount(pid int64, t time.Time) {
 
 // CreatePost ...
 func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocols.Post, error) {
-	user := s.auth.AuthGRPC(ctx)
-	if !user.IsAdmin() {
-		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
-	}
+	s.MustBeAdmin(ctx)
 
 	createdAt := int32(time.Now().Unix())
 
@@ -444,10 +443,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 
 // UpdatePost ...
 func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostRequest) (*protocols.Post, error) {
-	user := s.auth.AuthGRPC(ctx)
-	if !user.IsAdmin() {
-		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
-	}
+	s.MustBeAdmin(ctx)
 
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
 		return nil, status.Error(codes.InvalidArgument, "无效文章编号、更新字段")
@@ -551,10 +547,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 // 用于删除一篇文章。
 // 这个函数基本没怎么测试过，因为基本上只是设置为不公开。
 func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostRequest) (*empty.Empty, error) {
-	user := s.auth.AuthGRPC(ctx)
-	if !user.IsAdmin() {
-		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
-	}
+	s.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
 		var p models.Post
@@ -584,10 +577,7 @@ func (s *Service) updatePostPageCount() {
 
 // SetPostStatus sets post status.
 func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatusRequest) (*protocols.SetPostStatusResponse, error) {
-	user := s.auth.AuthGRPC(ctx)
-	if !user.IsAdmin() {
-		return nil, status.Error(codes.PermissionDenied, `not enough permission`)
-	}
+	s.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
 		var post models.Post

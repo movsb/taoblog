@@ -13,9 +13,7 @@ import (
 )
 
 func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
-	if !s.auth.AuthGRPC(srv.Context()).IsAdmin() {
-		return status.Error(codes.Unauthenticated, "bad credentials")
-	}
+	s.MustBeAdmin(srv.Context())
 
 	initialized := false
 

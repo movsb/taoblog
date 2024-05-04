@@ -71,7 +71,6 @@ func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base str
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
-	// m.Handle(`GET /tweets`, t.LastPostTime304HandlerFunc(t.queryTweets))
 	m.HandleFunc(`GET /tweets`, t.queryTweets)
 	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
 

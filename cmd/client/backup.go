@@ -103,7 +103,7 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 			if err == io.EOF {
 				return 0, err
 			}
-			panic(err)
+			log.Fatalln(err)
 		}
 		switch typed := rsp.BackupResponseMessage.(type) {
 		case *protocols.BackupResponse_Preparing_:

@@ -2,13 +2,10 @@ package auth
 
 import (
 	"bytes"
-	"context"
 	"crypto/sha1"
 	"crypto/subtle"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -16,81 +13,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
-
-type ctxAuthKey struct{}
-
-type AuthContext struct {
-	User *User
-}
-
-// User entity.
-type User struct {
-	ID          int64  // 不可变 ID
-	Email       string // 可变 ID
-	DisplayName string // 昵称
-
-	webAuthnCredentials []webauthn.Credential
-}
-
-// IsGuest ...
-func (u *User) IsGuest() bool {
-	return u == nil || u.ID == 0
-}
-
-// IsAdmin ...
-func (u *User) IsAdmin() bool {
-	return u.ID != 0
-}
-
-// MustBeAdmin will panic if not admin.
-func (u *User) MustBeAdmin() {
-	if !u.IsAdmin() {
-		panic(status.Error(codes.PermissionDenied, `not enough permission`))
-	}
-}
-
-// Context creates a new context containing the user.
-func (u *User) Context(parent context.Context) context.Context {
-	return context.WithValue(parent, ctxAuthKey{}, AuthContext{u})
-}
-
-var _ webauthn.User = (*User)(nil)
-
-func (u *User) WebAuthnID() []byte {
-	if u.ID <= 0 || u.ID > math.MaxInt32 {
-		panic(`user id is invalid`)
-	}
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, uint32(u.ID))
-	return buf
-}
-func (u *User) WebAuthnName() string {
-	return u.Email
-}
-func (u *User) WebAuthnDisplayName() string {
-	return u.DisplayName
-}
-func (u *User) WebAuthnCredentials() []webauthn.Credential {
-	return u.webAuthnCredentials
-}
-func (u *User) WebAuthnIcon() string {
-	return ""
-}
-
-var guest = &User{
-	ID:                  0,
-	Email:               "",
-	DisplayName:         "未注册用户",
-	webAuthnCredentials: nil,
-}
-
-var admin = &User{
-	ID: 1,
-}
 
 type Auth struct {
 	cfg      config.AuthConfig
@@ -203,17 +126,6 @@ func (o *Auth) AuthCookie(login string, userAgent string) *User {
 	return guest
 }
 
-func (o *Auth) AuthGRPC(ctx context.Context) *User {
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if tokens, ok := md["token"]; ok && len(tokens) > 0 {
-			if tokens[0] == o.cfg.Key {
-				return admin
-			}
-		}
-	}
-	return o.User(ctx)
-}
-
 func (o *Auth) AuthGoogle(token string) *User {
 	fullClientID := o.cfg.Google.ClientID + ".apps.googleusercontent.com"
 	claims, err := googleidtokenverifier.Verify(token, fullClientID)
@@ -273,14 +185,6 @@ func (o *Auth) AuthGitHub(code string) *User {
 	}
 	if user.ID != 0 && user.ID == o.cfg.Github.UserID {
 		return admin
-	}
-	return guest
-}
-
-// User ...
-func (a *Auth) User(ctx context.Context) *User {
-	if value, ok := ctx.Value(ctxAuthKey{}).(AuthContext); ok {
-		return value.User
 	}
 	return guest
 }

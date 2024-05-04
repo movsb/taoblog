@@ -63,8 +63,8 @@ func (s *Service) cacheAllCommenterData() {
 // TODO perm check
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
-	user := s.auth.AuthGRPC(ctx)
-	return s.getComment2(req.Id).ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
+	ac := auth.Context(ctx)
+	return s.getComment2(req.Id).ToProtocols(s.isAdminEmail, ac.User, s.geoLocation, "", s.avatar), nil
 }
 
 // 更新评论。
@@ -72,9 +72,9 @@ func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentReque
 // NOTE：只支持更新评论内容。
 // NOTE：带上时间戳，防止异地多次更新的冲突（太严格了吧！）
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
-	user := s.auth.AuthGRPC(ctx)
+	ac := auth.Context(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
-	if !user.IsAdmin() {
+	if !ac.User.IsAdmin() {
 		userIP := ipFromContext(ctx, true)
 		if userIP != cmtOld.IP || !models.In5min(cmtOld.Date) {
 			return nil, status.Error(codes.PermissionDenied, `超时或无权限编辑评论`)
@@ -111,7 +111,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			panic(`source_type and source must be both specified`)
 		}
 		if hasSourceType {
-			if content, err := s.convertCommentMarkdown(user, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID); err != nil {
+			if content, err := s.convertCommentMarkdown(ac.User, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID); err != nil {
 				return nil, err
 			} else {
 				data[`content`] = content
@@ -127,12 +127,12 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.isAdminEmail, user, s.geoLocation, "", s.avatar), nil
+	return comment.ToProtocols(s.isAdminEmail, ac.User, s.geoLocation, "", s.avatar), nil
 }
 
 // DeleteComment ...
 func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteCommentRequest) (*protocols.DeleteCommentResponse, error) {
-	s.auth.AuthGRPC(ctx).MustBeAdmin()
+	s.MustBeAdmin(ctx)
 	cmt := s.getComment2(int64(in.Id))
 	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
 	s.updatePostCommentCount(cmt.PostID, time.Now())
@@ -142,7 +142,7 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 
 // ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
-	user := s.auth.AuthGRPC(ctx)
+	user := auth.Context(ctx).User
 	userIP := ipFromContext(ctx, false)
 
 	if in.Limit <= 0 || in.Limit > 100 {
@@ -295,7 +295,7 @@ const (
 // Date 服务端的当前时间戳，忽略传入。
 // Content 自动由 source 生成。
 func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
-	user := s.auth.User(ctx)
+	user := auth.Context(ctx).User
 
 	ip := ipFromContext(ctx, true)
 
@@ -445,11 +445,7 @@ func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source stri
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
 func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetCommentPostIDRequest) (*protocols.SetCommentPostIDResponse, error) {
-	user := s.auth.AuthGRPC(ctx)
-	if !user.IsAdmin() {
-		// TODO 没有必要细说，统一成无权限就行了。
-		return nil, status.Error(codes.PermissionDenied, `你没有权限转移评论。`)
-	}
+	s.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
 		cmt := txs.getComment2(in.Id)
@@ -476,13 +472,15 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 }
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
-	user := s.auth.AuthGRPC(ctx)
+	ac := auth.Context(ctx)
+
 	options := []renderers.Option{}
 	if in.OpenLinksInNewTab {
 		options = append(options, renderers.WithOpenLinksInNewTab())
 	}
+
 	// TODO 安全检查：PostID 应该和 Referer 一致。
-	content, err := s.convertCommentMarkdown(user, `markdown`, in.Markdown, int64(in.PostId), options...)
+	content, err := s.convertCommentMarkdown(ac.User, `markdown`, in.Markdown, int64(in.PostId), options...)
 	return &protocols.PreviewCommentResponse{Html: content}, err
 }
 

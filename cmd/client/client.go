@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -88,5 +89,5 @@ func NewClient(config HostConfig) *Client {
 }
 
 func (c *Client) token() context.Context {
-	return metadata.NewOutgoingContext(context.TODO(), metadata.Pairs("token", c.config.Token))
+	return metadata.NewOutgoingContext(context.TODO(), metadata.Pairs(auth.TokenName, c.config.Token))
 }

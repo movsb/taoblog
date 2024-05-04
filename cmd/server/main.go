@@ -84,7 +84,7 @@ func serve() {
 
 	server := &http.Server{
 		Addr:    cfg.Server.HTTPListen,
-		Handler: reqLog.Handler(mux),
+		Handler: theAuth.UserFromCookieHandler(reqLog.Handler(mux)),
 	}
 
 	go func() {

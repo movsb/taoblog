@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"sync/atomic"
@@ -22,6 +23,7 @@ import (
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -72,7 +74,13 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
-			auth.GatewayAuthInterceptor(s.auth),
+			s.auth.UserFromGatewayCookieInterceptor(),
+			s.auth.UserFromClientTokenUnaryInterceptor(),
+			grpcLogger,
+		),
+		grpc_middleware.WithStreamServerChain(
+			grpc_recovery.StreamServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
+			s.auth.UserFromClientTokenStreamInterceptor(),
 		),
 	)
 
@@ -91,9 +99,30 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	return s
 }
 
+// 从 Context 中取出用户并且必须为 Admin，否则 panic。
+func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
+	ac := auth.Context(ctx)
+	if ac == nil {
+		panic("AuthContext 不应为 nil")
+	}
+	if !ac.User.IsAdmin() {
+		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
+	}
+	return ac
+}
+
 // GrpcAddress ...
 func (s *Service) GrpcAddress() string {
 	return s.cfg.Server.GRPCListen
+}
+
+func grpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	peer, ok := peer.FromContext(ctx)
+	if !ok {
+		panic(`grpc needs peer info`)
+	}
+	log.Println(`Peer:`, peer.Addr.String())
+	return handler(ctx, req)
 }
 
 func exceptionRecoveryHandler(e interface{}) error {
