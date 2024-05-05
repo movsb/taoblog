@@ -19,7 +19,7 @@ func (s *Service) GetTagByName(name string) *models.Tag {
 	var tag models.Tag
 	err := s.tags().Where("name=?", name).Find(&tag)
 	if err != nil {
-		panic(&TagNotFoundError{})
+		panic(err)
 	}
 	return &tag
 }

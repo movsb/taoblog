@@ -32,9 +32,6 @@ func (s *Service) MustGetPost(name int64) *protocols.Post {
 	var p models.Post
 	stmt := s.posts().Where("id = ?", name)
 	if err := stmt.Find(&p); err != nil {
-		if taorm.IsNotFoundError(err) {
-			panic(&PostNotFoundError{})
-		}
 		panic(err)
 	}
 
@@ -125,14 +122,11 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 
 	var p models.Post
 	if err := s.tdb.Where("id = ?", in.Id).Find(&p); err != nil {
-		if taorm.IsNotFoundError(err) {
-			panic(status.Error(codes.NotFound, `post not found`))
-		}
 		panic(err)
 	}
 
 	if p.Status != `public` && !ac.User.IsAdmin() {
-		panic(status.Error(codes.NotFound, `post not found`))
+		panic(codes.PermissionDenied)
 	}
 
 	out := p.ToProtocols()
@@ -293,9 +287,6 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 		WhereIf(isPage, "type = 'page'").
 		OrderBy("date DESC")
 	if err := stmt.Find(&p); err != nil {
-		if taorm.IsNotFoundError(err) {
-			panic(&PostNotFoundError{})
-		}
 		panic(err)
 	}
 	content, err := s.getPostContent(p.ID)
@@ -327,7 +318,7 @@ func (s *Service) parseCategoryTree(tree string) (id int64) {
 
 	var cat models.Category
 	if err := s.tdb.Where("path=? AND slug=?", path, slug).Find(&cat); err != nil {
-		panic(&CategoryNotFoundError{})
+		panic(err)
 	}
 
 	return cat.ID

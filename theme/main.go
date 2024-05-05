@@ -26,6 +26,9 @@ import (
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
 	"github.com/movsb/taoblog/theme/modules/watcher"
+	"github.com/movsb/taorm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Theme ...
@@ -216,27 +219,33 @@ func (t *Theme) loadTemplates() {
 }
 
 func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool {
-	switch te := e.(type) {
-	case *service.PostNotFoundError, *service.TagNotFoundError, *service.CategoryNotFoundError:
-		if t.redir != nil {
-			target, err := t.redir.FindRedirect(req.URL.Path)
-			if err != nil {
-				log.Println(`FindRedirect failed. `, err)
-				// fallthrough
-			}
-			if target != `` {
-				http.Redirect(w, req, target, http.StatusPermanentRedirect)
+	if err, ok := e.(error); ok {
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.PermissionDenied:
+				w.WriteHeader(403)
+				t.getNamed()[`403.html`].Execute(w, nil)
+				return true
+			case codes.NotFound:
+				w.WriteHeader(http.StatusNotFound)
+				t.getNamed()[`404.html`].Execute(w, nil)
 				return true
 			}
 		}
-		w.WriteHeader(404)
-		t.getNamed()[`404.html`].Execute(w, nil)
-		return true
-	case string: // hack hack
-		switch te {
-		case "403":
-			w.WriteHeader(403)
-			t.getNamed()[`403.html`].Execute(w, nil)
+		if taorm.IsNotFoundError(err) {
+			if t.redir != nil {
+				target, err := t.redir.FindRedirect(req.URL.Path)
+				if err != nil {
+					log.Println(`FindRedirect failed. `, err)
+					// fallthrough
+				}
+				if target != `` {
+					http.Redirect(w, req, target, http.StatusPermanentRedirect)
+					return true
+				}
+			}
+			w.WriteHeader(404)
+			t.getNamed()[`404.html`].Execute(w, nil)
 			return true
 		}
 	}
@@ -439,7 +448,7 @@ func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64
 func (t *Theme) userMustCanSeePost(req *http.Request, post *protocols.Post) {
 	user := t.auth.AuthRequest(req)
 	if user.IsGuest() && post.Status != "public" {
-		panic("403")
+		panic(status.Error(codes.PermissionDenied, "你无权限查看此文章。"))
 	}
 }
 

@@ -144,6 +144,8 @@ func exceptionRecoveryHandler(e interface{}) error {
 		}
 	case *status.Status:
 		return te.Err()
+	case codes.Code:
+		return status.Error(te, te.String())
 	case error:
 		if st, ok := status.FromError(te); ok {
 			return st.Err()

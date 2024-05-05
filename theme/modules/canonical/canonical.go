@@ -136,7 +136,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if strings.HasSuffix(path, "/") {
-			w.WriteHeader(403)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
