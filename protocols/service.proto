@@ -34,7 +34,8 @@ service Management {
 		};
 	};
 
-	// 文件系统管理：期允许管理的对象：文章附近、评论附件、备份文件、根目录等。
+	// 文件系统管理：期允许管理的对象：文章附件、评论附件、备份文件、根目录等。
+	// TODO：合并上述 BackupFiles 接口、Backup 接口。
 
 	rpc FileSystem(stream FileSystemRequest) returns (stream FileSystemResponse) {
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {

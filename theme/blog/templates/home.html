@@ -18,7 +18,7 @@
 </ul>
 
 <h2>近期评论</h2>
-{{ $comments := .ListLatestComments}}
+{{ $comments := .Home.Comments}}
 {{ if $comments }}
 	<ul id=latest-comment-list>
 	{{range $comment := $comments}}

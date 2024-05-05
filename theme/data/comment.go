@@ -1,8 +1,6 @@
 package data
 
 import (
-	"context"
-
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/renderers"
 )
@@ -34,35 +32,4 @@ type LatestCommentsByPost struct {
 	PostTitle string
 	PostID    int64
 	Comments  []*Comment
-}
-
-// ListLatestComments ...
-// TODO 这个函数竟然是被 home 直接在模板里面调用的，离谱。
-func (d *Data) ListLatestComments() (posts []*LatestCommentsByPost) {
-	comments, err := d.svc.ListComments(d.User.Context(context.TODO()),
-		&protocols.ListCommentsRequest{
-			Mode:    protocols.ListCommentsRequest_Flat,
-			Limit:   15,
-			OrderBy: "date DESC",
-			Types:   []string{`post`, `page`},
-		})
-	if err != nil {
-		panic(err)
-	}
-	postsMap := make(map[int64]*LatestCommentsByPost)
-	for _, c := range comments.Comments {
-		p, ok := postsMap[c.PostId]
-		if !ok {
-			p = &LatestCommentsByPost{
-				PostID:    c.PostId,
-				PostTitle: d.svc.GetPostTitle(c.PostId),
-			}
-			postsMap[c.PostId] = p
-			posts = append(posts, p)
-		}
-		p.Comments = append(p.Comments, &Comment{
-			Comment: c,
-		})
-	}
-	return
 }

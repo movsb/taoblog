@@ -23,18 +23,18 @@ func (t *TweetsData) Last(i int) bool {
 	return i == t.Count-1
 }
 
-func NewDataForTweets(cfg *config.Config, user *auth.User, svc *service.Service) *Data {
+func NewDataForTweets(ctx context.Context, cfg *config.Config, svc *service.Service) *Data {
 	d := &Data{
 		Meta: &MetaData{
 			Title: fmt.Sprintf(`%s的碎碎念`, cfg.Comment.Author),
 		},
-		User:   user,
+		User:   auth.Context(ctx).User,
 		Config: cfg,
 		svc:    svc,
 		Tweets: &TweetsData{},
 	}
 
-	posts := svc.MustListLatestTweets(user.Context(context.TODO()))
+	posts := svc.MustListLatestTweets(ctx)
 	for _, p := range posts {
 		pp := newPost(p)
 		pp.link = svc.GetPlainLink(p.Id)

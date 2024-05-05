@@ -2,20 +2,33 @@ package auth
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"net/netip"
+	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
 type ctxAuthKey struct{}
 
 type AuthContext struct {
+	// 当前请求所引用的用户。
+	// 不会随不同的请求改变。
 	User *User
+
+	// 请求来源 IP 地址。
+	// 包括 HTTP 请求，GRPC 请求。
+	RemoteAddr netip.Addr
+
+	// 用户使用的代理端名字。
+	UserAgent string
 }
 
 // 从 Context 里面提取出当前的用户信息。
@@ -39,16 +52,32 @@ func _Context(ctx context.Context) *AuthContext {
 	return nil
 }
 
+// 创建一个新的 Context，包含相关信息。
+func _NewContext(parent context.Context, user *User, remoteAddr netip.Addr, userAgent string) context.Context {
+	ac := AuthContext{
+		User:       user,
+		RemoteAddr: remoteAddr,
+		UserAgent:  userAgent,
+	}
+	if !remoteAddr.IsValid() {
+		panic("无效的远程地址。")
+	}
+	return context.WithValue(parent, ctxAuthKey{}, &ac)
+}
+
 // 把 Cookie 转换成已登录用户。
 // 适用于浏览器登录的用户。
 //
 // Note: Cookie 同样会被带给 Grpc Gateway，在那里通过 Interceptor 转换成用户。
+// 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
+// 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := a.AuthRequest(r)
-		ctxUser := user.Context(r.Context())
-		ctxReq := r.WithContext(ctxUser)
-		h.ServeHTTP(w, ctxReq)
+		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
+		userAgent := r.URL.Query().Get(`User-Agent`)
+		ac := _NewContext(r.Context(), user, remoteAddr, userAgent)
+		h.ServeHTTP(w, r.WithContext(ac))
 	})
 }
 
@@ -59,7 +88,7 @@ func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 // 而 metadata 只是一个普通的 map[string][]string，不能传递指针。
 // 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
-func (a *Auth) UserFromGatewayCookieInterceptor() grpc.UnaryServerInterceptor {
+func (a *Auth) UserFromGatewayInterceptor() grpc.UnaryServerInterceptor {
 	const (
 		gatewayCookie    = runtime.MetadataPrefix + "cookie"
 		gatewayUserAgent = runtime.MetadataPrefix + "user-agent"
@@ -73,6 +102,11 @@ func (a *Auth) UserFromGatewayCookieInterceptor() grpc.UnaryServerInterceptor {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			panic(status.Error(codes.InvalidArgument, "需要 Metadata。"))
+		}
+
+		// TODO 这是一个手写的常量。
+		if len(md.Get(`request_from_gateway`)) <= 0 {
+			return handler(ctx, req)
 		}
 
 		var (
@@ -94,7 +128,11 @@ func (a *Auth) UserFromGatewayCookieInterceptor() grpc.UnaryServerInterceptor {
 			userAgent = userAgents[0]
 		}
 
-		ctx = a.AuthCookie(login, userAgent).Context(ctx)
+		user := a.AuthCookie(login, userAgent)
+
+		remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
+
+		ctx = _NewContext(ctx, user, remoteAddr, userAgent)
 
 		return handler(ctx, req)
 	}
@@ -130,6 +168,7 @@ func addUserContextToInterceptor(ctx context.Context, key string) context.Contex
 	if !ok {
 		panic(status.Error(codes.InvalidArgument, "需要 Metadata。"))
 	}
+
 	user := guest
 	if tokens, ok := md[TokenName]; ok && len(tokens) > 0 {
 		if tokens[0] == key {
@@ -137,5 +176,53 @@ func addUserContextToInterceptor(ctx context.Context, key string) context.Contex
 		}
 	}
 
-	return user.Context(ctx)
+	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
+
+	var userAgent string
+	if userAgents := md.Get(`User-Agent`); len(userAgents) > 0 { // 会自动小写
+		userAgent = userAgents[0]
+	}
+
+	return _NewContext(ctx, user, remoteAddr, userAgent)
+}
+
+// grpc 服务是被代理过的，所以从 peer.Peer 拿到的是错误的。
+// 需要从 nginx 的 forward 中取，得确保配置了。
+// NOTE：本地也是统一走 nginx 代理的，也不能缺少。
+// TODO：允许本地不走代理，使用 peer.Peer 地址。
+// https://en.wikipedia.org/wiki/X-Forwarded-For#Format
+// https://github.com/grpc-ecosystem/grpc-gateway/blob/20f268a412e5b342ebfb1a0eef7c3b7bd6c260ea/runtime/context.go#L103
+// TODO md 也是从 ctx 来的。
+func parseRemoteAddrFromMetadata(ctx context.Context, md metadata.MD) netip.Addr {
+	var f string
+	if fs, ok := md[`x-forwarded-for`]; ok && len(fs) > 0 {
+		f = fs[0]
+	}
+	if f == "" {
+		if peer, ok := peer.FromContext(ctx); ok {
+			f, _, _ = net.SplitHostPort(peer.Addr.String())
+		}
+	}
+	return parseRemoteAddr(f)
+}
+
+func parseRemoteAddrFromHeader(hdr http.Header, remoteAddr string) netip.Addr {
+	var f string
+	if fs := hdr.Values(`x-forwarded-for`); len(fs) > 0 {
+		f = fs[0]
+	}
+	if f == "" {
+		f, _, _ = net.SplitHostPort(remoteAddr)
+	}
+	return parseRemoteAddr(f)
+}
+
+func parseRemoteAddr(f string) netip.Addr {
+	if f == "" {
+		panic(`缺少 X-Forwarded-For / RemoteAddr / Peer 字段。`)
+	}
+	if p := strings.IndexByte(f, ','); p != -1 {
+		f = f[:p]
+	}
+	return netip.MustParseAddr(f)
 }

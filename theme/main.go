@@ -253,7 +253,7 @@ func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, que
 }
 
 func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
-	d := data.NewDataForHome(t.cfg, t.auth.AuthRequest(req), t.service)
+	d := data.NewDataForHome(req.Context(), t.cfg, t.service)
 	tmpl := t.getNamed()[`home.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -306,7 +306,7 @@ func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 }
 
 func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForPosts(t.cfg, t.auth.AuthRequest(r), t.service, r)
+	d := data.NewDataForPosts(r.Context(), t.cfg, t.service, r)
 	tmpl := t.getNamed()[`posts.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -317,7 +317,7 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTweets(t.service.Config(), t.auth.AuthRequest(r), t.service)
+	d := data.NewDataForTweets(r.Context(), t.service.Config(), t.service)
 	tmpl := t.getNamed()[`tweets.html`]
 	d.Template = tmpl
 	d.Writer = w
@@ -382,8 +382,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		return
 	}
 
-	var d *data.Data
-	d = data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, t.service.ListPostAllComments(req, p.Id))
+	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, t.service.ListPostAllComments(req, p.Id))
 
 	var tmpl *template.Template
 	if p.Type == `tweet` {
@@ -457,7 +456,11 @@ func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file strin
 		fp, err := os.Open(filepath.Clean(path))
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			code := http.StatusInternalServerError
+			if os.IsNotExist(err) {
+				code = http.StatusNotFound
+			}
+			http.Error(w, err.Error(), code)
 			return
 		}
 		defer fp.Close()

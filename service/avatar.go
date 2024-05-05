@@ -49,6 +49,10 @@ func (c *AvatarCache) ID(email string) int {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	if email == "" {
+		panic("错误的邮箱。")
+	}
+
 	email = strings.ToLower(email)
 
 	if id, ok := c.email2id[email]; ok {

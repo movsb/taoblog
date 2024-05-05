@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -20,9 +19,35 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.Comment) {
+	ac := auth.Context(ctx)
+
+	set := func(c *protocols.Comment) {
+		c.IsAdmin = s.isAdminEmail(c.Email)
+		c.Avatar = int32(s.avatarCache.ID(c.Email))
+
+		// （同 IP 用户 & 5️⃣分钟内） 可编辑。
+		// TODO: IP：并不严格判断，比如网吧、办公室可能具有相同 IP。所以限制了时间范围。
+		// NOTE：管理员总是可以编辑，跟此值无关。
+		// 只允许编辑 Markdown 评论。
+		// TODO：其实也允许/也已经支持编辑早期的 HTML 评论，但是在保存的时候已经被转换成 Markdown。
+		c.CanEdit = c.SourceType == `markdown` && (ac.RemoteAddr.String() == c.Ip && in5min(c.Date))
+
+		if !ac.User.IsAdmin() {
+			c.Email = ""
+			c.Ip = ""
+		} else {
+			c.GeoLocation = s.geoLocation(c.Ip)
+		}
+	}
+
+	return func(c *protocols.Comment) {
+		set(c)
+	}
+}
 
 // Deprecated.
 func (s *Service) comments() *taorm.Stmt {
@@ -34,10 +59,6 @@ func (s *Service) getComment2(name int64) *models.Comment {
 	var comment models.Comment
 	s.comments().Where("id=?", name).MustFind(&comment)
 	return &comment
-}
-
-func (s *Service) avatar(email string) int {
-	return s.avatarCache.ID(email)
 }
 
 // 像二狗说的那样，服务启动时缓存所有的头像哈希值，
@@ -63,8 +84,11 @@ func (s *Service) cacheAllCommenterData() {
 // TODO perm check
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
-	ac := auth.Context(ctx)
-	return s.getComment2(req.Id).ToProtocols(s.isAdminEmail, ac.User, s.geoLocation, "", s.avatar), nil
+	return s.getComment2(req.Id).ToProtocols(s.setCommentExtraFields(ctx)), nil
+}
+
+func in5min(t int32) bool {
+	return time.Since(time.Unix(int64(t), 0)) < time.Minute*5
 }
 
 // 更新评论。
@@ -75,8 +99,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 	ac := auth.Context(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
 	if !ac.User.IsAdmin() {
-		userIP := ipFromContext(ctx, true)
-		if userIP != cmtOld.IP || !models.In5min(cmtOld.Date) {
+		if ac.RemoteAddr.String() != cmtOld.IP || !in5min(cmtOld.Date) {
 			return nil, status.Error(codes.PermissionDenied, `超时或无权限编辑评论`)
 		}
 	}
@@ -127,7 +150,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.isAdminEmail, ac.User, s.geoLocation, "", s.avatar), nil
+	return comment.ToProtocols(s.setCommentExtraFields(ctx)), nil
 }
 
 // DeleteComment ...
@@ -142,8 +165,7 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 
 // ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
-	user := auth.Context(ctx).User
-	userIP := ipFromContext(ctx, false)
+	ac := auth.Context(ctx)
 
 	if in.Limit <= 0 || in.Limit > 100 {
 		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
@@ -162,7 +184,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
 		// limit & offset apply to parent comments only
 		stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
-		if user.IsGuest() {
+		if ac.User.IsGuest() {
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		if len(in.Types) > 0 {
@@ -182,7 +204,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 
 		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
 		stmt.Where("root IN (?)", parentIDs)
-		if user.IsGuest() {
+		if ac.User.IsGuest() {
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		if len(in.Types) > 0 {
@@ -195,28 +217,18 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	comments = append(comments, parents...)
 	comments = append(comments, children...)
 
-	protoComments := comments.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
+	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx))
 
 	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
 }
 
 // 用于前端渲染全部评论的函数。
 func (s *Service) ListPostAllComments(req *http.Request, pid int64) []*protocols.Comment {
-	user := s.auth.AuthRequest(req)
-	header := req.Header.Get(`x-forwarded-for`)
-	if header == "" {
-		host, _, _ := net.SplitHostPort(req.RemoteAddr)
-		host = strings.Trim(host, `[]`)
-		header = host
-	}
-	userIP := ipFromContext(metadata.NewIncomingContext(req.Context(), metadata.Pairs(`x-forwarded-for`, header)), true)
-
 	var comments models.Comments
 	stmt := s.tdb.Select(`*`)
 	stmt.Where("post_id=?", pid)
 	stmt.MustFind(&comments)
-
-	return comments.ToProtocols(s.isAdminEmail, user, s.geoLocation, userIP, s.avatar)
+	return comments.ToProtocols(s.setCommentExtraFields(req.Context()))
 }
 
 func (s *Service) GetAllCommentsCount() int64 {
@@ -232,38 +244,6 @@ func (s *Service) geoLocation(ip string) string {
 		}
 	}()
 	return s.cmtgeo.Get(ip)
-}
-
-// TODO this is temp
-// TODO not http only
-func ipFromContext(ctx context.Context, must bool) string {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		if must {
-			panic(`no md`)
-		}
-		return ``
-	}
-	var forward string
-
-	if forwards, ok := md["x-forwarded-for"]; ok && len(forwards) > 0 {
-		forward = forwards[0]
-	}
-	if forward == "" {
-		if must {
-			panic("invalid request") // TODO HTTP 400
-		}
-		return ``
-	}
-
-	// since IP field has no room for proxies, strip them all.
-	// https://en.wikipedia.org/wiki/X-Forwarded-For#Format
-	// https://github.com/grpc-ecosystem/grpc-gateway/blob/20f268a412e5b342ebfb1a0eef7c3b7bd6c260ea/runtime/context.go#L103
-	if p := strings.IndexByte(forward, ','); p != -1 {
-		forward = forward[:p]
-	}
-
-	return forward
 }
 
 const (
@@ -295,13 +275,11 @@ const (
 // Date 服务端的当前时间戳，忽略传入。
 // Content 自动由 source 生成。
 func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
-	user := auth.Context(ctx).User
-
-	ip := ipFromContext(ctx, true)
+	ac := auth.Context(ctx)
 
 	// 尽早查询地理信息
 	go func() {
-		if err := s.cmtgeo.Queue(ip, nil); err != nil {
+		if err := s.cmtgeo.Queue(ac.RemoteAddr.String(), nil); err != nil {
 			log.Println(err)
 		}
 	}()
@@ -312,7 +290,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		Author:     strings.TrimSpace(in.Author),
 		Email:      strings.TrimSpace(in.Email),
 		URL:        strings.TrimSpace(in.Url),
-		IP:         ip,
+		IP:         ac.RemoteAddr.String(),
 		Date:       int32(time.Now().Unix()),
 		SourceType: in.SourceType,
 		Source:     in.Source,
@@ -354,7 +332,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		return nil, status.Error(codes.InvalidArgument, `评论内容太长`)
 	}
 
-	if user.IsGuest() {
+	if ac.User.IsGuest() {
 		notAllowedEmails := s.cfg.Comment.NotAllowedEmails
 		if adminEmails := s.cfg.Comment.Emails; len(adminEmails) > 0 {
 			notAllowedEmails = append(notAllowedEmails, adminEmails...)
@@ -378,7 +356,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	if content, err := s.convertCommentMarkdown(user, c.SourceType, c.Source, c.PostID); err == nil {
+	if content, err := s.convertCommentMarkdown(ac.User, c.SourceType, c.Source, c.PostID); err == nil {
 		c.Content = content
 	} else {
 		return nil, err
@@ -406,7 +384,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&c)
 
-	return c.ToProtocols(s.isAdminEmail, user, s.geoLocation, ip, s.avatar), nil
+	return c.ToProtocols(s.setCommentExtraFields(ctx)), nil
 }
 
 func (s *Service) updateCommentsCount() {
@@ -484,6 +462,8 @@ func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewComme
 	return &protocols.PreviewCommentResponse{Html: content}, err
 }
 
+// 判断评论者的邮箱是否为管理员。
+// 不区分大小写。
 func (s *Service) isAdminEmail(email string) bool {
 	return slices.ContainsFunc(s.cfg.Comment.Emails, func(s string) bool {
 		return strings.EqualFold(email, s)

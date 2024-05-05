@@ -1,13 +1,10 @@
 package auth
 
 import (
-	"context"
 	"encoding/binary"
 	"math"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // User entity.
@@ -27,18 +24,6 @@ func (u *User) IsGuest() bool {
 // IsAdmin ...
 func (u *User) IsAdmin() bool {
 	return u.ID != 0
-}
-
-// MustBeAdmin will panic if not admin.
-func (u *User) MustBeAdmin() {
-	if !u.IsAdmin() {
-		panic(status.Error(codes.PermissionDenied, `not enough permission`))
-	}
-}
-
-// Context creates a new context containing the user.
-func (u *User) Context(parent context.Context) context.Context {
-	return context.WithValue(parent, ctxAuthKey{}, &AuthContext{u})
 }
 
 var _ webauthn.User = (*User)(nil)

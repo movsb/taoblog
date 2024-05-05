@@ -15,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/webhooks"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -41,6 +42,11 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 				},
 			},
 		),
+		// service 的 rpc 请求可能来自 Gateway 或者 client。
+		// 添加一个头部以示区分。不同的来源有不同的 auth 附加方法。
+		runtime.WithMetadata(func(ctx context.Context, r *http.Request) metadata.MD {
+			return metadata.Pairs(`request_from_gateway`, `true`)
+		}),
 	)
 
 	mux.Handle(`/v3/`, mux2)

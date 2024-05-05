@@ -77,6 +77,7 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 	return outs
 }
 
+// TODO：改成 grpc。
 func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
 	ac := auth.Context(ctx)
 

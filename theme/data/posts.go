@@ -23,10 +23,10 @@ type PostsData struct {
 }
 
 // NewDataForPosts ...
-func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Service, r *http.Request) *Data {
+func NewDataForPosts(ctx context.Context, cfg *config.Config, service *service.Service, r *http.Request) *Data {
 	d := &Data{
 		Config: cfg,
-		User:   user,
+		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},
 	}
 
@@ -52,7 +52,7 @@ func NewDataForPosts(cfg *config.Config, user *auth.User, service *service.Servi
 		sort[1] = "desc"
 	}
 
-	posts := service.MustListPosts(user.Context(context.TODO()),
+	posts := service.MustListPosts(ctx,
 		&protocols.ListPostsRequest{
 			Fields:  "id,title,date,page_view,comments,status",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),

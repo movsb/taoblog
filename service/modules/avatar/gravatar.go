@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -17,7 +16,7 @@ const (
 func gravatar(_ context.Context, email string, p *Params) (*http.Response, error) {
 	sum := sha256.Sum256([]byte(strings.ToLower(email)))
 	u := fmt.Sprintf(`%s/%x?d=mm&s=100`, gGrAvatarHost, sum)
-	log.Println(`请求头像：`, u)
+	// log.Println(`请求头像：`, u)
 	req, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err

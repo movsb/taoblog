@@ -3,7 +3,6 @@ package rss
 // https://validator.w3.org/feed/check.cgi?url=https%3A%2F%2Fblog.twofei.com%2Frss#l9
 
 import (
-	"context"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -80,10 +79,8 @@ func New(svc *service.Service, auth *auth.Auth, options ...Option) *RSS {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	user := r.auth.AuthRequest(req)
-
 	articles := r.svc.GetLatestPosts(
-		user.Context(context.TODO()),
+		req.Context(),
 		"id,title,date",
 		int64(r.config.articleCount),
 		true,
