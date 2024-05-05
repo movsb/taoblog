@@ -3,6 +3,7 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/protocols";
 
 import "google/protobuf/field_mask.proto";
+import "protocols/comment.proto";
 
 message Metas {
 	message Source {
@@ -99,6 +100,14 @@ message SetRedirectRequest {
 	string source_path = 1;
 	string target_path = 2;
 	int32 status_code = 3;
+}
+
+// 获取某篇文章的全部评论。
+message GetPostCommentsRequest {
+	int64 id = 1;
+}
+message GetPostCommentsResponse {
+	repeated Comment comments = 1;
 }
 
 message FileSpec {

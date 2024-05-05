@@ -401,6 +401,7 @@ type TaoBlogClient interface {
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*Post, error)
 	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	SetPostStatus(ctx context.Context, in *SetPostStatusRequest, opts ...grpc.CallOption) (*SetPostStatusResponse, error)
+	GetPostComments(ctx context.Context, in *GetPostCommentsRequest, opts ...grpc.CallOption) (*GetPostCommentsResponse, error)
 	CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error)
 	GetComment(ctx context.Context, in *GetCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 	UpdateComment(ctx context.Context, in *UpdateCommentRequest, opts ...grpc.CallOption) (*Comment, error)
@@ -467,6 +468,15 @@ func (c *taoBlogClient) DeletePost(ctx context.Context, in *DeletePostRequest, o
 func (c *taoBlogClient) SetPostStatus(ctx context.Context, in *SetPostStatusRequest, opts ...grpc.CallOption) (*SetPostStatusResponse, error) {
 	out := new(SetPostStatusResponse)
 	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/SetPostStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taoBlogClient) GetPostComments(ctx context.Context, in *GetPostCommentsRequest, opts ...grpc.CallOption) (*GetPostCommentsResponse, error) {
+	out := new(GetPostCommentsResponse)
+	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/GetPostComments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -555,6 +565,7 @@ type TaoBlogServer interface {
 	UpdatePost(context.Context, *UpdatePostRequest) (*Post, error)
 	DeletePost(context.Context, *DeletePostRequest) (*emptypb.Empty, error)
 	SetPostStatus(context.Context, *SetPostStatusRequest) (*SetPostStatusResponse, error)
+	GetPostComments(context.Context, *GetPostCommentsRequest) (*GetPostCommentsResponse, error)
 	CreateComment(context.Context, *Comment) (*Comment, error)
 	GetComment(context.Context, *GetCommentRequest) (*Comment, error)
 	UpdateComment(context.Context, *UpdateCommentRequest) (*Comment, error)
@@ -587,6 +598,9 @@ func (UnimplementedTaoBlogServer) DeletePost(context.Context, *DeletePostRequest
 }
 func (UnimplementedTaoBlogServer) SetPostStatus(context.Context, *SetPostStatusRequest) (*SetPostStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPostStatus not implemented")
+}
+func (UnimplementedTaoBlogServer) GetPostComments(context.Context, *GetPostCommentsRequest) (*GetPostCommentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPostComments not implemented")
 }
 func (UnimplementedTaoBlogServer) CreateComment(context.Context, *Comment) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
@@ -729,6 +743,24 @@ func _TaoBlog_SetPostStatus_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaoBlogServer).SetPostStatus(ctx, req.(*SetPostStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaoBlog_GetPostComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPostCommentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoBlogServer).GetPostComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.TaoBlog/GetPostComments",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoBlogServer).GetPostComments(ctx, req.(*GetPostCommentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -907,6 +939,10 @@ var TaoBlog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetPostStatus",
 			Handler:    _TaoBlog_SetPostStatus_Handler,
+		},
+		{
+			MethodName: "GetPostComments",
+			Handler:    _TaoBlog_GetPostComments_Handler,
 		},
 		{
 			MethodName: "CreateComment",

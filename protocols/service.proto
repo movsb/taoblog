@@ -110,6 +110,14 @@ service TaoBlog {
 			description: "是否公开文章。";
 		};
 	}
+	rpc GetPostComments(GetPostCommentsRequest) returns (GetPostCommentsResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts/{id=*}/comments";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取某篇文章的全部评论。比 ListComments 接口简单很多。";
+		};
+	}
 
 	// Comments
 
@@ -149,10 +157,10 @@ service TaoBlog {
 	}
 	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse) {
 		option (google.api.http) = {
-			get: "/v3/posts/{post_id=*}/comments";
+			get: "/v3/comments";
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "获取（某篇文章的）评论列表。";
+			description: "获取评论列表。";
 		};
 	}
 	rpc SetCommentPostID (SetCommentPostIDRequest) returns (SetCommentPostIDResponse) {

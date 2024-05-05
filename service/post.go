@@ -114,6 +114,11 @@ func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64
 	return s.MustListPosts(ctx, &in)
 }
 
+func (s *Service) isPostPublic(id int64) bool {
+	p := s.MustGetPost(id)
+	return p.Status == `public`
+}
+
 // GetPost ...
 func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*protocols.Post, error) {
 	ac := auth.Context(ctx)

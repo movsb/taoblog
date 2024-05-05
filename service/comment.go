@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -222,13 +221,17 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
 }
 
-// 用于前端渲染全部评论的函数。
-func (s *Service) ListPostAllComments(req *http.Request, pid int64) []*protocols.Comment {
+func (s *Service) GetPostComments(ctx context.Context, req *protocols.GetPostCommentsRequest) (*protocols.GetPostCommentsResponse, error) {
+	if !s.isPostPublic(req.Id) {
+		return nil, status.Error(codes.PermissionDenied, `你无权查看此文章的评论。`)
+	}
 	var comments models.Comments
 	stmt := s.tdb.Select(`*`)
-	stmt.Where("post_id=?", pid)
+	stmt.Where("post_id=?", req.Id)
 	stmt.MustFind(&comments)
-	return comments.ToProtocols(s.setCommentExtraFields(req.Context()))
+	return &protocols.GetPostCommentsResponse{
+		Comments: comments.ToProtocols(s.setCommentExtraFields(ctx)),
+	}, nil
 }
 
 func (s *Service) GetAllCommentsCount() int64 {

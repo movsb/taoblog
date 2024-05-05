@@ -382,7 +382,12 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		return
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, t.service.ListPostAllComments(req, p.Id))
+	rsp, err := t.service.GetPostComments(req.Context(), &protocols.GetPostCommentsRequest{Id: p.Id})
+	if err != nil {
+		panic(err)
+	}
+
+	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
 
 	var tmpl *template.Template
 	if p.Type == `tweet` {
