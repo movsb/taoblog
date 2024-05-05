@@ -45,6 +45,20 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 };
 </script>
 <script src="script.js"></script>
+<script>
+function redirect(to) {
+	if (!to) {
+		let args = new URLSearchParams(location.search);
+		if (args.has('u')) {
+			to = args.get('u');
+		}
+	}
+	if (!to) {
+		to = 'profile';
+	}
+	window.location = to;
+}
+</script>
 </head>
 <body>
 <div id="wrapper">
@@ -59,7 +73,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 			try {
 				await wa.login();
 				alert('登录成功。');
-				location.href = 'profile';
+				redirect();
 			} catch(e) {
 				if (e instanceof DOMException && e.name == "AbortError") {
 					console.log('已取消操作。');
@@ -111,7 +125,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 						if (resp.status == 200) {
 							var auth2 = gapi.auth2.getAuthInstance();
 							auth2.disconnect().then(function () {
-								location.href = 'profile';
+								redirect();
 							});
 						} else {
 							alert('Error: ' + await resp.text());
@@ -168,7 +182,7 @@ window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
 							}),
 						});
 						if (resp.status == 200) {
-							location.href = 'profile';
+							redirect();
 						} else {
 							alert('Error: ' + await resp.text());
 						}

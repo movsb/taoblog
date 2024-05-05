@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ func (d *LoginData) HasSocialLogins() bool {
 }
 
 type Admin struct {
-	prefix    string // not including last /
+	prefix    string
 	templates *template.Template
 	auth      *auth.Auth
 	webAuthn  *auth.WebAuthn
@@ -70,7 +71,7 @@ func (a *Admin) detectNetwork() {
 func (a *Admin) Handler() http.Handler {
 	m := http.NewServeMux()
 
-	m.HandleFunc(`GET /{$}`, a.getRoot)
+	m.Handle(`GET /{$}`, a.requireLogin(a.getRoot))
 	m.Handle(`GET /script.js`, a.serveFile(`script.js`))
 	m.Handle(`GET /editor.js`, a.serveFile(`editor.js`))
 
@@ -78,8 +79,8 @@ func (a *Admin) Handler() http.Handler {
 	m.HandleFunc(`GET /logout`, a.getLogout)
 	m.HandleFunc(`POST /logout`, a.postLogout)
 
-	m.HandleFunc(`GET /profile`, a.getProfile)
-	m.HandleFunc(`GET /editor`, a.getEditor)
+	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
+	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -88,11 +89,7 @@ func (a *Admin) Handler() http.Handler {
 	const webAuthnPrefix = `/login/webauthn/`
 	m.Handle(webAuthnPrefix, a.webAuthn.Handler(webAuthnPrefix))
 
-	prefix := strings.TrimSuffix(a.prefix, "/")
-	if prefix == "" {
-		return m
-	}
-	return http.StripPrefix(prefix, m)
+	return http.StripPrefix(strings.TrimSuffix(a.prefix, "/"), m)
 }
 
 func (a *Admin) prefixed(s string) string {
@@ -105,17 +102,31 @@ func (a *Admin) serveFile(path string) http.Handler {
 	})
 }
 
-func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
-	if a.authorized(r) {
-		http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
-		return
+func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to string) {
+	args := url.Values{}
+	args.Set(`u`, to)
+
+	u, err := url.Parse(a.prefixed(`/login`))
+	if err != nil {
+		panic(err)
 	}
-	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
+
+	u.RawQuery = args.Encode()
+	http.Redirect(w, r, u.String(), http.StatusFound)
 }
 
-func (a *Admin) authorized(r *http.Request) bool {
-	user := a.auth.AuthRequest(r)
-	return user.IsAdmin()
+func (a *Admin) requireLogin(h http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !a.auth.AuthRequest(r).IsAdmin() {
+			a.redirectToLogin(w, r, r.RequestURI)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
 }
 
 func (a *Admin) loadTemplates() {
@@ -131,8 +142,12 @@ func (a *Admin) loadTemplates() {
 }
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
-	if a.authorized(r) {
-		http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
+	if a.auth.AuthRequest(r).IsAdmin() {
+		to := a.prefixed(`/profile`)
+		if u := r.URL.Query().Get(`u`); u != "" {
+			to = u
+		}
+		http.Redirect(w, r, to, http.StatusFound)
 		return
 	}
 
@@ -172,10 +187,6 @@ func (d *ProfileData) PublicKeys() []string {
 }
 
 func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
-	if !a.authorized(r) {
-		http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
-		return
-	}
 	d := &ProfileData{
 		Name: a.displayName,
 		User: a.auth.AuthRequest(r),
@@ -192,11 +203,6 @@ type EditorData struct {
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
-	if !a.authorized(r) {
-		http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
-		return
-	}
-
 	d := &EditorData{
 		User: a.auth.AuthRequest(r),
 	}
