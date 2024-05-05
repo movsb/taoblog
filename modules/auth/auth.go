@@ -18,6 +18,7 @@ import (
 type Auth struct {
 	cfg      config.AuthConfig
 	optioner Optioner
+	devMode  bool
 }
 
 type Optioner interface {
@@ -26,9 +27,12 @@ type Optioner interface {
 }
 
 // New ...
-func New(cfg config.AuthConfig) *Auth {
-	a := Auth{}
-	a.cfg = cfg
+// DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
+func New(cfg config.AuthConfig, devMode bool) *Auth {
+	a := Auth{
+		cfg:     cfg,
+		devMode: devMode,
+	}
 	if len(cfg.AdminEmails) > 0 {
 		admin.Email = cfg.AdminEmails[0]
 	}
@@ -204,7 +208,7 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 		MaxAge:   0,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   true,
+		Secure:   !a.devMode,
 		HttpOnly: true,
 	})
 	// 只用于前端展示使用，不能用作凭证。
@@ -214,8 +218,6 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 		MaxAge: 0,
 		Path:   `/`,
 		Domain: ``,
-		// Secure:   true,
-		// HttpOnly: true,
 	})
 }
 
@@ -227,7 +229,7 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 		MaxAge:   -1,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   true,
+		Secure:   !a.devMode,
 		HttpOnly: true,
 	})
 	http.SetCookie(w, &http.Cookie{
@@ -236,7 +238,5 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 		MaxAge: -1,
 		Path:   `/`,
 		Domain: ``,
-		// Secure:   true,
-		// HttpOnly: true,
 	})
 }

@@ -466,7 +466,7 @@ func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file strin
 	path := filepath.Join(t.base, `statics`, file)
 
 	// 开发模式下不要缓存资源文件，因为经常更新，否则需要强制刷新，太蛋疼了，会加强很多字体文件，很慢。
-	if t.service.DevMode() {
+	if service.DevMode() {
 		fp, err := os.Open(filepath.Clean(path))
 		if err != nil {
 			log.Println(err)

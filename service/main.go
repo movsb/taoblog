@@ -201,7 +201,7 @@ func (s *Service) Description() string {
 	return ``
 }
 
-func (s *Service) DevMode() bool {
+func DevMode() bool {
 	return version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`)
 }
 

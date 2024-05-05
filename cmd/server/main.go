@@ -54,7 +54,7 @@ func serve() {
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
 
-	theAuth := auth.New(cfg.Auth)
+	theAuth := auth.New(cfg.Auth, service.DevMode())
 	theService := service.NewService(cfg, db, theAuth)
 	theAuth.SetService(theService)
 
