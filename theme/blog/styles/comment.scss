@@ -273,7 +273,7 @@
 				box-sizing: border-box;
 			}
 
-			> input[type="text"], input[type="submit"], .field {
+			> input[type=text], input[type=submit],input[type=email],input[type=url], .field {
 				margin-bottom: 8px;
 				display: block;
 				box-sizing: border-box;

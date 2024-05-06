@@ -24,7 +24,7 @@ import (
 func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.Comment) {
 	ac := auth.Context(ctx)
 
-	set := func(c *protocols.Comment) {
+	return func(c *protocols.Comment) {
 		c.IsAdmin = s.isAdminEmail(c.Email)
 		c.Avatar = int32(s.avatarCache.ID(c.Email))
 
@@ -41,10 +41,6 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 		} else {
 			c.GeoLocation = s.geoLocation(c.Ip)
 		}
-	}
-
-	return func(c *protocols.Comment) {
-		set(c)
 	}
 }
 
@@ -133,6 +129,9 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			panic(`source_type and source must be both specified`)
 		}
 		if hasSourceType {
+			if strings.TrimSpace(req.Comment.Source) == "" {
+				return nil, status.Error(codes.InvalidArgument, `评论内容不能为空。`)
+			}
 			if content, err := s.convertCommentMarkdown(ac.User, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID); err != nil {
 				return nil, err
 			} else {
@@ -277,6 +276,8 @@ const (
 // IP 从请求中自动获取，忽略传入。
 // Date 服务端的当前时间戳，忽略传入。
 // Content 自动由 source 生成。
+//
+// NOTE: 默认的 modified 修改时间为 0，表示从未被修改过。
 func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
 	ac := auth.Context(ctx)
 
@@ -328,7 +329,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	if c.SourceType != `markdown` {
 		return nil, status.Error(codes.InvalidArgument, `只允许 Markdown 评论内容`)
 	}
-	if c.Source == "" {
+	if strings.TrimSpace(c.Source) == "" {
 		return nil, status.Error(codes.InvalidArgument, `评论内容不能为空`)
 	}
 	if utf8.RuneCountInString(c.Source) >= maxContentLen {

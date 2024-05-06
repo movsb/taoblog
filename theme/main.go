@@ -155,7 +155,7 @@ func (t *Theme) watchTheme() {
 			if err := cmd.Run(); err != nil {
 				log.Println(err)
 			} else {
-				log.Println(`rebuild styles`)
+				log.Println(`rebuilt styles`)
 			}
 		}
 	}()
