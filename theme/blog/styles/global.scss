@@ -71,19 +71,19 @@ button, input[type=submit] {
     }
 }
 
-input[type=text], a, textarea {
+input[type=text],input[type=password], a, textarea {
     &:focus {
         outline: none;
     }
 }
 @media (prefers-color-scheme: dark) {
-	input[type=text], textarea {
+	input[type=text], input[type=password],input[type=datetime-local], textarea {
 		color: var(--color-fg);
 		background-color: var(--color-bg);
 	}
 }
 
-input[type=text], input[type=submit], textarea, button {
+input[type=text], input[type=password], input[type=submit],input[type=datetime-local], textarea, button {
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
     padding: 5px 7px;
@@ -94,7 +94,7 @@ button, input[type=submit] {
 	background-color: transparent;
 }
 
-input[type=text]:hover, input[type=submit]:hover, textarea:hover, button:hover {
+input[type=text]:hover, input[type=password]:hover, input[type=submit]:hover, textarea:hover, button:hover {
     border: 1px solid var(--border-color-hover);
 }
 
@@ -107,9 +107,17 @@ input[type=checkbox] {
 }
 input[type=text],input[type=password],textarea {
 	caret-color: var(--accent-color);
+	box-sizing: border-box;
 	&::placeholder {
-		opacity: .25;
+		opacity: .45;
 	}
+}
+// 为什么默认有白色的背景色？
+input[type=password] {
+	background-color: inherit;
+}
+input[type=datetime-local] {
+	box-sizing: border-box;
 }
 
 pre {
@@ -134,6 +142,10 @@ li {
 	margin: 0.2em 0;
 }
 
+figure {
+	text-align: center;
+}
+
 img {
 	max-width: 100%;
 	height: auto;
@@ -145,13 +157,6 @@ img {
 		float: right;
 		margin-left: 1em !important;
 	}
-}
-
-figure {
-	text-align: center;
-}
-
-img {
 	@media (prefers-color-scheme: dark) {
 		filter: brightness(0.7);
 		&.transparent {

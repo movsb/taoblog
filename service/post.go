@@ -410,6 +410,10 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		SourceType: in.SourceType,
 	}
 
+	if strings.TrimSpace(p.Source) == "" {
+		return nil, status.Error(codes.InvalidArgument, "内容不应为空。")
+	}
+
 	if in.Date > 0 {
 		p.Date = in.Date
 	}

@@ -3,21 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <title>文章编辑</title>
-<style>
-textarea {
-	width: 100%;
-	height: 100%;
-	min-height: 300px;
-	box-sizing: border-box;
-}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<link rel="icon" type="image/jpeg" href="/favicon.jpg">
+<link rel="stylesheet" type="text/css" href="/style.css" />
+<link rel="stylesheet" type="text/css" href="https://npm.elemecdn.com/lxgw-wenkai-webfont/style.css" />
 </head>
-<body>
+<body class="admin editor">
 {{ if not $.Post }}
-<h1>文章创建</h1>
 <script>var _post_id = 0;</script>
 {{ else }}
-<h1>文章编辑</h1>
 <script>
 	var _post_id = {{ $.Post.Id }};
 	var _modified = {{ $.Post.Modified }};
@@ -31,6 +25,7 @@ textarea {
 	<textarea name="source"></textarea>
 {{ end }}
 	<input type="datetime-local" name="time" value="" />
+	<br />
 	<input type="submit" value="提交" />
 </form>
 <script src="editor.js"></script>
