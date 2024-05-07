@@ -38,6 +38,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
+	nhooyr.io/websocket v1.8.11 // indirect
 )
 
 require (

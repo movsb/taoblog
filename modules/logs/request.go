@@ -45,8 +45,16 @@ func NewRequestLogger(path string) *RequestLogger {
 	return l
 }
 
+// TODO：Go 的内嵌接口不支持展开，
+// 比如 http.ResponseWriter 如果实现了 Hijacker，
+// _ResponseWriter 虽然内嵌了 http.ResponseWriter，
+// 但是不会自动实现这个 Hijacker 接口。有点儿无解。即便换成 any 也不行。
+// 所以暂时不处理 WebSocket 的返回码。
+// 更新：先内嵌部分已知的接口以缓解这个问题。
+// https://blog.twofei.com/909/
 type _ResponseWriter struct {
 	http.ResponseWriter
+	http.Hijacker
 	code int
 }
 
@@ -58,7 +66,11 @@ func (w *_ResponseWriter) WriteHeader(statusCode int) {
 func (l *RequestLogger) Handler(h http.Handler) http.Handler {
 	tz := time.FixedZone(`China`, 8*60*60)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ww := &_ResponseWriter{w, 200}
+		var hijacker http.Hijacker
+		if h, ok := w.(http.Hijacker); ok {
+			hijacker = h
+		}
+		ww := &_ResponseWriter{w, hijacker, 200}
 		h.ServeHTTP(ww, r)
 		l.counter.Store(0)
 		l.lock.Lock()

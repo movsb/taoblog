@@ -77,13 +77,15 @@ func ListBackupFiles(dir string) ([]*protocols.BackupFileSpec, error) {
 // TODO 不应该引入专用的 FileSpec 定义。
 // path 中包含的目录必须存在，否则失败。
 // TODO 没移除失败的文件。
+// NOTE：安全写：先写临时文件，再移动过去。临时文件写在目标目录，不存在跨设备移动文件的问题。
+// NOTE：如果 r 超过 size，会报错。
 func WriteFile(path string, mode fs.FileMode, modified time.Time, size int64, r io.Reader) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), `taoblog-*`)
 	if err != nil {
 		return err
 	}
 
-	if n, err := io.Copy(tmp, r); err != nil || n != size {
+	if n, err := io.Copy(tmp, io.LimitReader(r, size+1)); err != nil || n != size {
 		return fmt.Errorf(`write error: %d %v`, n, err)
 	}
 

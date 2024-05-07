@@ -2,10 +2,12 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"log"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"google.golang.org/grpc/codes"
@@ -13,6 +15,7 @@ import (
 )
 
 func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
+	// TODO 如果是评论，允许用户上传文件。
 	s.MustBeAdmin(srv.Context())
 
 	initialized := false
@@ -42,7 +45,7 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 		} else if initReq != nil {
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
-				fs, err = s.FileSystemForPost(init.Id)
+				fs, err = s.FileSystemForPost(srv.Context(), init.Id)
 			}
 			if err != nil {
 				return status.Error(codes.Internal, err.Error())
@@ -104,7 +107,13 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 	}
 }
 
-func (s *Service) FileSystemForPost(id int64) (*storage.Local, error) {
+func (s *Service) FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error) {
 	// _ = s.MustGetPost(id)
-	return storage.NewLocal(s.cfg.Data.File.Path, id), nil
+	maxFileSize := int32(1 << 20)
+	if ac := auth.Context(ctx); ac != nil && ac.User.IsAdmin() {
+		maxFileSize = 100 << 20
+	}
+	return storage.NewLocal(s.cfg.Data.File.Path, id,
+		storage.WithMaxFileSize(maxFileSize),
+	), nil
 }

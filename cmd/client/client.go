@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/movsb/taoblog/modules/auth"
@@ -19,8 +18,7 @@ import (
 type Client struct {
 	config HostConfig
 
-	client *http.Client
-	cc     *grpc.ClientConn
+	cc *grpc.ClientConn
 
 	blog       protocols.TaoBlogClient
 	management protocols.ManagementClient
@@ -30,13 +28,6 @@ type Client struct {
 func NewClient(config HostConfig) *Client {
 	c := &Client{
 		config: config,
-	}
-	c.client = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !config.Verify,
-			},
-		},
 	}
 
 	grpcAddress := c.config.GRPC

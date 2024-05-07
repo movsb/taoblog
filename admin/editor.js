@@ -88,6 +88,22 @@ class PostFormUI {
 
 	set source(v)   { this.elemSource.value = v;        }
 
+	/**
+	 * @param {any[]} list
+	 */
+	set files(list) {
+		console.log(list);
+		let ol = this._form.querySelector('.files .list');
+		ol.innerHTML = '';
+		list.files.forEach(f => {
+			let li = document.createElement('li');
+			let name = document.createElement('span');
+			name.innerText = f.path;
+			li.appendChild(name);
+			ol.appendChild(li);
+		});
+	}
+
 	submit(callback) {
 		let submit = document.querySelector('input[type=submit]');
 		submit.addEventListener('click', (e) => {
@@ -96,6 +112,108 @@ class PostFormUI {
 			callback();
 		});
 	}
+
+	drop(callback) {
+		window.addEventListener('dragenter', e => {
+			e.stopPropagation();
+			e.preventDefault();
+		}, false);
+		window.addEventListener('dragover', e => {
+			e.stopPropagation();
+			e.preventDefault();
+			e.dataTransfer.dropEffect = 'copy';
+		}, false);
+		window.addEventListener('drop', e => {
+			e.stopPropagation();
+			e.preventDefault();
+			// TODO 换 items，可以知道是否为目录。
+			console.log(e.dataTransfer.files);
+			callback(e.dataTransfer.files);
+		}, false);
+	}
+}
+
+class FilesManager {
+	constructor(id) {
+		if (!id) { throw new Error('无效文章编号。'); }
+		this._post_id = +id;
+	}
+	connect() {
+		this._ws = new WebSocket(`/v3/posts/${this._post_id}/files`);
+		return new Promise((resolve, reject) => {
+			this._ws.onclose = () => { console.log('ws closed'); reject("ws closed"); };
+			this._ws.onerror = (e) => { console.log(e); reject(e); };
+			this._ws.onmessage = console.log;
+			this._ws.onopen = () => resolve(this);
+		});
+	}
+	close() {
+		this._ws && this._ws.close();
+	}
+	
+	_promise(data, callback) {
+		if (this._ws.readyState != WebSocket.OPEN) {
+			throw new Error('WebSocket 连接不正确。');
+		}
+		this._ws.send(JSON.stringify(data));
+		return new Promise((resolve, reject) => {
+			this._ws.onmessage = (m) => {
+				console.log(m);
+				resolve(callback(JSON.parse(m.data)));
+				this._ws.onmessage = console.log;
+			};
+			this._ws.onerror = (e) => {
+				console.error(e);
+				reject(e);
+				this._ws.onerror = alert;
+			};
+		});
+	}
+	
+	// 列举所有的文件列表。
+	// NOTE: 返回的文件用 path 代表 name。
+	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
+	// 用 name 表示 path 容易误解。
+	async list() {
+		let data = { list_files: {}};
+		return this._promise(data, obj => obj?.list_files);
+	}
+
+	// 创建一个文件。
+	// f: <input type="file" /> 中拿来的文件。
+	async create(f) {
+		let r = new FileReader();
+		r.readAsDataURL(f);
+		return new Promise((resolve, reject) => {
+			r.onerror = (e) => {
+				console.error('读文件失败：', r.error);
+				reject(r.error);
+			}
+			r.onload = async () => {
+				const data = {
+					write_file: {
+						spec: {
+							path: f.name,
+							mode: 0o644,
+							size: f.size,
+							time: Math.floor(f.lastModified/1000),
+						},
+						data: r.result.slice(r.result.indexOf(',')+1),
+					},
+				};
+				try {
+					resolve(await this._promise(data, obj => obj.write_file));
+				} catch(e) {
+					reject(e);
+				}
+			};
+		});
+	}
+	
+	// 删除一个文件。
+	async delete(path) {
+		
+	}
 }
 
 let postAPI = new PostManagementAPI();
@@ -103,8 +221,8 @@ let formUI = new PostFormUI();
 formUI.submit(async () => {
 	try {
 		let post = undefined;
-		if (_post_id > 0) {
-			post = await postAPI.updatePost(_post_id, _modified, formUI.source, formUI.time);
+		if (window._post_id > 0) {
+			post = await postAPI.updatePost(window._post_id, _modified, formUI.source, formUI.time);
 		} else {
 			post = await postAPI.createPost(formUI.source, formUI.time);
 		}
@@ -117,3 +235,50 @@ formUI.submit(async () => {
 if (typeof _created == 'number') {
 	formUI.time = _created*1000;
 }
+formUI.drop(async files => {
+	if (!window._post_id) {
+		alert('新建文章暂不支持上传文件，请先发表。');
+		return;
+	}
+	if (files.length <= 0) { return; }
+	if (files.length > 1) {
+		// TODO 其实接口完全允许多文件上传。
+		alert('目前仅支持单文件上传哦。');
+		return;
+	}
+
+	let fm = new FilesManager(+window._post_id);
+	await fm.connect();
+	Array.from(files).forEach(async f => {
+		if (f.size > (1 << 20)) {
+			alert(`文件 "${f.name}" 太大，不予上传。`);
+			return;
+		}
+		if (f.size == 0 || f.type == "") {
+			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
+			return;
+		}
+		try {
+			await fm.create(f);
+			alert(`文件 ${f.name} 上传成功。`);
+		} catch(e) {
+			alert(`文件 ${f.name} 上传失败：${e}`);
+		}
+		let list = await fm.list();
+		// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
+		// 导致我的不得不用 formUI，而不是 this。
+		formUI.files = list;
+		console.log(this);
+	});
+});
+(async function() {
+	if (!window._post_id) {
+		console.log('新建文章不支持查询文件列表。');
+		return;
+	}
+	let fm = new FilesManager(+window._post_id);
+	await fm.connect();
+	let list = await fm.list();
+	formUI.files = list;
+	fm.close();
+})();

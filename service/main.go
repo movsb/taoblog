@@ -74,12 +74,13 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	server := grpc.NewServer(
 		grpc_middleware.WithUnaryServerChain(
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
-			s.auth.UserFromGatewayInterceptor(),
+			s.auth.UserFromGatewayUnaryInterceptor(),
 			s.auth.UserFromClientTokenUnaryInterceptor(),
 			grpcLoggerUnary,
 		),
 		grpc_middleware.WithStreamServerChain(
 			grpc_recovery.StreamServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
+			s.auth.UserFromGatewayStreamInterceptor(),
 			s.auth.UserFromClientTokenStreamInterceptor(),
 			grpcLoggerStream,
 		),

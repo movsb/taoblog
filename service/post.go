@@ -91,7 +91,7 @@ func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
 	outs := posts.ToProtocols()
 
 	for _, out := range outs {
-		content, err := s.getPostContent(out.Id)
+		content, err := s.getPostContent(out.Id, WithGetPostContentOptionIsTweets())
 		if err != nil {
 			panic(err)
 		}
@@ -170,9 +170,43 @@ func (r *PathResolver) Resolve(path string) string {
 	return r.fs.Resolve(path)
 }
 
+type GetPostContentOptions struct {
+	isTweet  bool
+	isTweets bool
+}
+
+type GetPostContentOption func(o *GetPostContentOptions)
+
+func WithGetPostContentOptionIsTweets() func(o *GetPostContentOptions) {
+	return func(o *GetPostContentOptions) {
+		o.isTweets = true
+	}
+}
+func WithGetPostContentOptionIsTweet() func(o *GetPostContentOptions) {
+	return func(o *GetPostContentOptions) {
+		o.isTweet = true
+	}
+}
+
 // TODO 使用磁盘缓存，而不是内存缓存。
-func (s *Service) getPostContent(id int64) (string, error) {
-	content, err := s.cache.Get(fmt.Sprintf(`post:%d`, id), func(key string) (interface{}, error) {
+func (s *Service) getPostContent(id int64, options ...GetPostContentOption) (string, error) {
+	opts := GetPostContentOptions{}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	// Tweets 页面把所有文章显示在一起，此时不能用相对链接，必须修改。
+	var cacheKey string
+	switch {
+	default:
+		cacheKey = fmt.Sprintf(`post:%d`, id)
+	case opts.isTweet:
+		cacheKey = fmt.Sprintf(`post:%d`, id)
+	case opts.isTweets:
+		cacheKey = fmt.Sprintf(`tweets:post:%d`, id)
+	}
+
+	content, err := s.cache.Get(cacheKey, func(key string) (interface{}, error) {
 		_ = key
 		var p models.Post
 		s.posts().Select("type,source_type,source,metas").Where("id = ?", id).MustFind(&p)
@@ -195,6 +229,9 @@ func (s *Service) getPostContent(id int64) (string, error) {
 			}
 			if link := s.GetLink(id); link != s.plainLink(id) {
 				options = append(options, renderers.WithModifiedAnchorReference(link))
+			}
+			if opts.isTweets {
+				options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
 			}
 			tr = renderers.NewMarkdown(options...)
 		case `html`:

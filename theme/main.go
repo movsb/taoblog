@@ -423,7 +423,7 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 }
 
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
-	fs, err := t.service.FileSystemForPost(postID)
+	fs, err := t.service.FileSystemForPost(req.Context(), postID)
 	if err != nil {
 		panic(err)
 	}
@@ -442,6 +442,7 @@ func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// TODO: 改成 ServeFileFS
 	http.ServeContent(w, req, stat.Name(), stat.ModTime(), fp)
 }
 

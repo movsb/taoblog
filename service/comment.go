@@ -474,6 +474,7 @@ func (s *Service) isAdminEmail(email string) bool {
 	})
 }
 
+// TODO 改成后台任务异步通知（因为可能失败，失败后应该重试）
 func (s *Service) doCommentNotification(c *models.Comment) {
 	if !s.cfg.Comment.Notify {
 		log.Printf(`comment notification is disabled. comment_id: %v, post_id: %v`, c.ID, c.PostID)

@@ -42,6 +42,8 @@ type _Markdown struct {
 
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
+
+	useAbsolutePaths string
 }
 
 type Option func(me *_Markdown) error
@@ -103,6 +105,17 @@ type AssetFinder func(path string) (name, url, description string, found bool)
 func WithAssetSources(fn AssetFinder) Option {
 	return func(me *_Markdown) error {
 		me.assetSourceFinder = fn
+		return nil
+	}
+}
+
+// 在 Tweets 页面下展示不止一篇文章的时候，文章内引用的资源的链接不能是相对链接（找不到），
+// 必须修改成引用相对于文章的路径。
+// 好希望有多个 <base> 支持啊，比如每个 <article> 下面有自己的 <base>。
+// TODO：暂时只支持 <img>, <a>。
+func WithUseAbsolutePaths(base string) Option {
+	return func(me *_Markdown) error {
+		me.useAbsolutePaths = base
 		return nil
 	}
 }
@@ -228,9 +241,42 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		pp.ReplaceChild(pp, p, node)
 	}
 
+	if me.useAbsolutePaths != "" {
+		if err := me.doUseAbsolutePaths(doc); err != nil {
+			return ``, ``, err
+		}
+	}
+
 	buf := bytes.NewBuffer(nil)
 	err := md.Renderer().Render(buf, []byte(source), doc)
 	return title, buf.String(), err
+}
+
+func (me *_Markdown) doUseAbsolutePaths(doc ast.Node) error {
+	base, _ := url.Parse(me.useAbsolutePaths)
+
+	modify := func(u string) string {
+		if u, err := url.Parse(u); err == nil {
+			if u.Scheme == "" && u.Host == "" && !filepath.IsAbs(u.Path) {
+				return base.JoinPath(u.Path).String()
+			}
+		}
+		return u
+	}
+
+	return ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if entering {
+			switch n.Kind() {
+			case ast.KindImage:
+				img := n.(*ast.Image)
+				img.Destination = []byte(modify(string(img.Destination)))
+			case ast.KindLink:
+				link := n.(*ast.Link)
+				link.Destination = []byte(modify(string(link.Destination)))
+			}
+		}
+		return ast.WalkContinue, nil
+	})
 }
 
 func (me *_Markdown) RegisterFuncs(r renderer.NodeRendererFuncRegisterer) {

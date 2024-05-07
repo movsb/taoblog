@@ -6,6 +6,7 @@ import (
 	fspkg "io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -39,16 +40,30 @@ type Local struct {
 	root string
 	id   int64
 	dir  string
+
+	maxFileSize int32
 }
 
 var _ FileSystem = (*Local)(nil)
 
-func NewLocal(root string, id int64) *Local {
-	return &Local{
+type Option func(*Local)
+
+func WithMaxFileSize(size int32) Option {
+	return func(l *Local) {
+		l.maxFileSize = size
+	}
+}
+
+func NewLocal(root string, id int64, options ...Option) *Local {
+	l := &Local{
 		root: root,
 		id:   id,
 		dir:  filepath.Join(root, fmt.Sprint(id)),
 	}
+	for _, opt := range options {
+		opt(l)
+	}
+	return l
 }
 
 func (fs *Local) pathOf(path string) string {
@@ -81,12 +96,22 @@ func (fs *Local) OpenFile(path string) (File, error) {
 }
 
 func (fs *Local) WriteFile(spec *protocols.FileSpec, r io.Reader) error {
+	if fs.maxFileSize > 0 && spec.Size > uint32(fs.maxFileSize) {
+		return fmt.Errorf(`文件太大（允许大小：%v 字节）。`, fs.maxFileSize)
+	}
+	// NOTE：实际上并没有什么用/并不关心。只是想看看有没有恶意上传😏。
+	mode := fspkg.FileMode(spec.Mode)
+	if strings.Contains(mode.Perm().String(), `x`) {
+		return fmt.Errorf(`不允许上传带可执行权限位的文件。`)
+	}
+
 	path := fs.pathOf(spec.Path)
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	return utils.WriteFile(path, fspkg.FileMode(spec.Mode), time.Unix(int64(spec.Time), 0), int64(spec.Size), r)
+
+	return utils.WriteFile(path, mode, time.Unix(int64(spec.Time), 0), int64(spec.Size), r)
 }
 
 func (fs *Local) Resolve(path string) string {

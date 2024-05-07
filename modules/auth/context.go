@@ -81,6 +81,11 @@ func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	})
 }
 
+const (
+	GatewayCookie    = runtime.MetadataPrefix + "cookie"
+	GatewayUserAgent = runtime.MetadataPrefix + "user-agent"
+)
+
 // 把 Gateway 的 Cookie 转换成已登录用户。
 // 适用于服务端代码功能。
 //
@@ -88,54 +93,63 @@ func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 // 而 metadata 只是一个普通的 map[string][]string，不能传递指针。
 // 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
-func (a *Auth) UserFromGatewayInterceptor() grpc.UnaryServerInterceptor {
-	const (
-		gatewayCookie    = runtime.MetadataPrefix + "cookie"
-		gatewayUserAgent = runtime.MetadataPrefix + "user-agent"
-	)
-
+func (a *Auth) UserFromGatewayUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		if ac := _Context(ctx); ac != nil {
-			return handler(ctx, req)
-		}
-
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			panic(status.Error(codes.InvalidArgument, "需要 Metadata。"))
-		}
-
-		// TODO 这是一个手写的常量。
-		if len(md.Get(`request_from_gateway`)) <= 0 {
-			return handler(ctx, req)
-		}
-
-		var (
-			login     string
-			userAgent string
-		)
-
-		if cookies := md.Get(gatewayCookie); len(cookies) > 0 {
-			header := http.Header{}
-			for _, cookie := range cookies {
-				header.Add(`Cookie`, cookie)
-			}
-			if loginCookie, err := (&http.Request{Header: header}).Cookie(CookieNameLogin); err == nil {
-				login = loginCookie.Value
-			}
-		}
-
-		if userAgents := md.Get(gatewayUserAgent); len(userAgents) > 0 {
-			userAgent = userAgents[0]
-		}
-
-		user := a.AuthCookie(login, userAgent)
-
-		remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
-
-		ctx = _NewContext(ctx, user, remoteAddr, userAgent)
-
+		ctx = a.addUserContextToInterceptorForGateway(ctx)
 		return handler(ctx, req)
 	}
+}
+
+func (a *Auth) UserFromGatewayStreamInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		wss := grpc_middleware.WrappedServerStream{
+			ServerStream:   ss,
+			WrappedContext: a.addUserContextToInterceptorForGateway(ss.Context()),
+		}
+		return handler(srv, &wss)
+	}
+}
+
+// TODO 没更改的话不要改变 ServerStream 的 context。
+func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) context.Context {
+	if ac := _Context(ctx); ac != nil {
+		return ctx
+	}
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		panic(status.Error(codes.InvalidArgument, "需要 Metadata。"))
+	}
+
+	// TODO 这是一个手写的常量。
+	if len(md.Get(`request_from_gateway`)) <= 0 {
+		return ctx
+	}
+
+	var (
+		login     string
+		userAgent string
+	)
+
+	if cookies := md.Get(GatewayCookie); len(cookies) > 0 {
+		header := http.Header{}
+		for _, cookie := range cookies {
+			header.Add(`Cookie`, cookie)
+		}
+		if loginCookie, err := (&http.Request{Header: header}).Cookie(CookieNameLogin); err == nil {
+			login = loginCookie.Value
+		}
+	}
+
+	if userAgents := md.Get(GatewayUserAgent); len(userAgents) > 0 {
+		userAgent = userAgents[0]
+	}
+
+	user := a.AuthCookie(login, userAgent)
+
+	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
+
+	return _NewContext(ctx, user, remoteAddr, userAgent)
 }
 
 const TokenName = `token`
@@ -144,7 +158,7 @@ const TokenName = `token`
 // 适用于服务端代码功能。
 func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = addUserContextToInterceptor(ctx, a.cfg.Key)
+		ctx = addUserContextToInterceptorForToken(ctx, a.cfg.Key)
 		return handler(ctx, req)
 	}
 }
@@ -153,13 +167,13 @@ func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerIntercept
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream:   ss,
-			WrappedContext: addUserContextToInterceptor(ss.Context(), a.cfg.Key),
+			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), a.cfg.Key),
 		}
 		return handler(srv, &wss)
 	}
 }
 
-func addUserContextToInterceptor(ctx context.Context, key string) context.Context {
+func addUserContextToInterceptorForToken(ctx context.Context, key string) context.Context {
 	if ac := _Context(ctx); ac != nil {
 		return ctx
 	}
