@@ -37,12 +37,16 @@ document.write(function(){/*
 			<input type="url" name="url" placeholder="网站(可不填)" />
 			<input type="submit" id="comment-submit" value="发表评论" />
 			<div class="field">
-				<input type="checkbox" id="comment-wrap-lines" checked />
-				<label for="comment-wrap-lines">自动折行</label>
+				<label>
+					<input type="checkbox" id="comment-wrap-lines" checked />
+					自动折行
+				</label>
 			</div>
 			<div class="field">
-				<input type="checkbox" id="comment-show-preview" />
-				<label for="comment-show-preview">显示预览</label>
+				<label>
+					<input type="checkbox" id="comment-show-preview" />
+					显示预览
+				</label>
 			</div>
 		</div>
 	</form>
