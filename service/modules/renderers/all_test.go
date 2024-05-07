@@ -115,6 +115,12 @@ func TestMarkdownAll(t *testing.T) {
 <img src="2.jpg" alt="样式2" title="样式2" loading="lazy" />
 <img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;" loading="lazy" /></p>`,
 		},
+		{
+			ID:       7.0,
+			Markdown: `![](1.png?scale=.3)`,
+			Options:  []renderers.Option{renderers.WithUseAbsolutePaths(`/911/`)},
+			Html:     `<p><img src="/911/1.png" alt="" loading="lazy" /></p>`,
+		},
 	}
 	for _, tc := range cases {
 		md := renderers.NewMarkdown(tc.Options...)

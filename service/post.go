@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -155,17 +156,21 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 
 func (s *Service) PathResolver(id int64) renderers.PathResolver {
 	return &PathResolver{
-		fs: storage.NewLocal(s.cfg.Data.File.Path, id),
+		base: s.cfg.Data.File.Path,
+		fs:   storage.NewLocal(s.cfg.Data.File.Path, id),
 	}
 }
 
 type PathResolver struct {
-	fs storage.FileSystem
+	base string
+	fs   storage.FileSystem
 }
 
+// 1.jpg -> files/{id}/1.jpg
+// /{Id}/1.jpg -> files/{id}/1.jpg
 func (r *PathResolver) Resolve(path string) string {
-	if strings.Contains(path, `://`) {
-		return path
+	if strings.HasPrefix(path, `/`) {
+		return filepath.Join(r.base, path)
 	}
 	return r.fs.Resolve(path)
 }

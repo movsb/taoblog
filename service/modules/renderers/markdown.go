@@ -14,6 +14,7 @@ import (
 	"net/url"
 	urlpkg "net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -258,7 +259,10 @@ func (me *_Markdown) doUseAbsolutePaths(doc ast.Node) error {
 	modify := func(u string) string {
 		if u, err := url.Parse(u); err == nil {
 			if u.Scheme == "" && u.Host == "" && !filepath.IsAbs(u.Path) {
-				return base.JoinPath(u.Path).String()
+				// 会丢失原 u 的查询参数。
+				// return base.JoinPath(u.Path).String()
+				u.Path = path.Join(base.Path, u.Path)
+				return u.String()
 			}
 		}
 		return u
@@ -372,7 +376,7 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 
 	// 看起来是文章内的相对链接？
 	// 如果是的话，需要 resolve 到相对应的目录。
-	if !url.IsAbs() && !strings.HasPrefix(url.Path, `/`) && me.pathResolver != nil {
+	if url.Scheme == "" && url.Host == "" && me.pathResolver != nil {
 		pathRelative := me.pathResolver.Resolve(url.Path)
 		url.Path = pathRelative
 	}
@@ -411,6 +415,8 @@ func size(url *urlpkg.URL) (int, int) {
 		}
 		fp = resp.Body
 	default:
+		// 有可能是引用别的文章的链接，这样会是以 / 开头的绝对路径。
+		// 只是相对于站点，而不是相对于文件系统，所以要去除。
 		f, err := os.Open(url.Path)
 		if err != nil {
 			// panic(err)
