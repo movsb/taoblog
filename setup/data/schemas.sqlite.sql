@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS `comments` (
     `modified` INTEGER NOT NULL,
     `source_type` TEXT NOT NULL,
     `source` TEXT NOT NULL,
-    `content` TEXT NOT NULL,
     `parent` INTEGER NOT NULL,
     `root` INTEGER NOT NULL
 );

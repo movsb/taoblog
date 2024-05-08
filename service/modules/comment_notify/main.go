@@ -12,6 +12,7 @@ import (
 var adminTmpl *template.Template
 var guestTmpl *template.Template
 
+// TODO prettify 内容。
 type AdminData struct {
 	Title   string `yaml:"title"`
 	Link    string `yaml:"link"`
@@ -23,6 +24,7 @@ type AdminData struct {
 	HomePage string `yaml:"home_page"`
 }
 
+// TODO prettify 内容。
 type GuestData struct {
 	Title   string
 	Link    string

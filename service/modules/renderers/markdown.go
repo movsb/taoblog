@@ -48,6 +48,7 @@ type _Markdown struct {
 	assetSourceFinder       AssetFinder
 
 	useAbsolutePaths string
+	noRendering      bool
 }
 
 type Option func(me *_Markdown) error
@@ -80,6 +81,15 @@ func WithDisableHeadings(disable bool) Option {
 func WithDisableHTML(disable bool) Option {
 	return func(me *_Markdown) error {
 		me.disableHTML = disable
+		return nil
+	}
+}
+
+// 不动态计算图片大小。适用于提交的时候，只会检查合法性。计算是在返回的时候进行。
+// 不渲染，只解析，并判断合法性。不返回内容。
+func WithoutRendering() Option {
+	return func(me *_Markdown) error {
+		me.noRendering = true
 		return nil
 	}
 }
@@ -143,6 +153,8 @@ func NewMarkdown(options ...Option) *_Markdown {
 	return me
 }
 
+// TODO 只是不渲染的话，其实不需要加载插件？
+// TODO 把 parse、检查、渲染过程分开。
 func (me *_Markdown) Render(source string) (string, string, error) {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(
@@ -264,6 +276,10 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		if err := me.doOpenLinkInNewTab(doc, []byte(source)); err != nil {
 			return ``, ``, err
 		}
+	}
+
+	if me.noRendering {
+		return ``, ``, nil
 	}
 
 	buf := bytes.NewBuffer(nil)

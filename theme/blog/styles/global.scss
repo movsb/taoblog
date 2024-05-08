@@ -125,6 +125,7 @@ pre {
 	// 要去掉，只应针对最外层的 pre。
     border-radius: var(--border-radius);
 	overflow: auto;
+	line-height: var(--line-height-tight);
 }
 
 i, em {

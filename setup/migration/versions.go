@@ -412,3 +412,8 @@ func v25(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE comments ADD COLUMN `modified` INTEGER NOT NULL DEFAULT 0")
 	mustExec(tx, "UPDATE comments set modified = date")
 }
+
+func v26(tx *sql.Tx) {
+	mustExec(tx, "UPDATE comments SET source=content WHERE source_type='plain' AND source=''")
+	mustExec(tx, "ALTER TABLE comments DROP COLUMN content")
+}

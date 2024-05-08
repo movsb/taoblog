@@ -41,6 +41,21 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 		} else {
 			c.GeoLocation = s.geoLocation(c.Ip)
 		}
+
+		switch c.SourceType {
+		case `markdown`:
+			content, err := s.convertCommentMarkdown(true, c.Source, c.PostId)
+			if err != nil {
+				log.Println("转换评论时出错：", err)
+				// 也不能干啥……
+				// fallthrough
+			}
+			c.Content = content
+		case `plain`:
+			c.Content = c.Source
+		default:
+			c.Content = ""
+		}
 	}
 }
 
@@ -132,10 +147,11 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			if strings.TrimSpace(req.Comment.Source) == "" {
 				return nil, status.Error(codes.InvalidArgument, `评论内容不能为空。`)
 			}
-			if content, err := s.convertCommentMarkdown(ac.User, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID); err != nil {
+			if req.Comment.SourceType != `markdown` {
+				return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
+			}
+			if _, err := s.convertCommentMarkdown(ac.User.IsAdmin(), req.Comment.Source, cmtOld.PostID, renderers.WithoutRendering()); err != nil {
 				return nil, err
-			} else {
-				data[`content`] = content
 			}
 		}
 		s.MustTxCall(func(txs *Service) error {
@@ -327,7 +343,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	}
 
 	if c.SourceType != `markdown` {
-		return nil, status.Error(codes.InvalidArgument, `只允许 Markdown 评论内容`)
+		return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
 	}
 	if strings.TrimSpace(c.Source) == "" {
 		return nil, status.Error(codes.InvalidArgument, `评论内容不能为空`)
@@ -360,9 +376,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	if content, err := s.convertCommentMarkdown(ac.User, c.SourceType, c.Source, c.PostID); err == nil {
-		c.Content = content
-	} else {
+	if _, err := s.convertCommentMarkdown(ac.User.IsAdmin(), c.Source, c.PostID, renderers.WithoutRendering()); err != nil {
 		return nil, err
 	}
 
@@ -396,11 +410,13 @@ func (s *Service) updateCommentsCount() {
 	s.SetOption("comment_count", count)
 }
 
-func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source string, postID int64, options ...renderers.Option) (string, error) {
-	if ty != "markdown" {
-		return "", status.Error(codes.InvalidArgument, "仅支持 Markdown 评论")
-	}
-
+// 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
+// 一旦发表/更新成功：始终认为评论是合法的。
+//
+// 换言之，发表/更新调用此接口，把评论转换成 html 时用 convert 接口。
+// 前者用请求身份，后者不限身份。
+// TODO 像 getPostContent 一样走缓存。
+func (s *Service) convertCommentMarkdown(secure bool, source string, postID int64, options ...renderers.Option) (string, error) {
 	var md renderers.Renderer
 
 	options = append(options,
@@ -408,15 +424,14 @@ func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source stri
 		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
 	)
 
-	if user.IsAdmin() {
-		md = renderers.NewMarkdown(options...)
-	} else {
+	if !secure {
 		options = append(options,
 			renderers.WithDisableHeadings(true),
 			renderers.WithDisableHTML(true),
 		)
-		md = renderers.NewMarkdown(options...)
 	}
+
+	md = renderers.NewMarkdown(options...)
 
 	_, content, err := md.Render(source)
 	if err != nil {
@@ -463,7 +478,7 @@ func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewComme
 	}
 
 	// TODO 安全检查：PostID 应该和 Referer 一致。
-	content, err := s.convertCommentMarkdown(ac.User, `markdown`, in.Markdown, int64(in.PostId), options...)
+	content, err := s.convertCommentMarkdown(ac.User.IsAdmin(), in.Markdown, int64(in.PostId), options...)
 	return &protocols.PreviewCommentResponse{Html: content}, err
 }
 
@@ -499,9 +514,6 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 			Content:  c.Source,
 			Email:    c.Email,
 			HomePage: c.URL,
-		}
-		if data.Content == "" {
-			data.Content = c.Content
 		}
 		s.cmtntf.NotifyAdmin(data)
 
@@ -553,9 +565,6 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		Date:    time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 		Author:  c.Author,
 		Content: c.Source,
-	}
-	if guestData.Content == "" {
-		guestData.Content = c.Content
 	}
 
 	s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)

@@ -21,7 +21,6 @@ type Comment struct {
 	Modified   int32  `json:"modified"`
 	SourceType string `json:"source_type"`
 	Source     string `json:"source"`
-	Content    string `json:"content"`
 }
 
 // TableName ...
@@ -37,6 +36,7 @@ func (Comment) TableName() string {
 // - GeoLocation
 // - CanEdit
 // - Avatar
+// - Content
 func (c *Comment) ToProtocols(redact func(c *protocols.Comment)) *protocols.Comment {
 	comment := protocols.Comment{
 		Id:         c.ID,
@@ -51,7 +51,6 @@ func (c *Comment) ToProtocols(redact func(c *protocols.Comment)) *protocols.Comm
 		Modified:   c.Modified,
 		SourceType: c.SourceType,
 		Source:     c.Source,
-		Content:    c.Content,
 		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
 	}
 	redact(&comment)

@@ -767,13 +767,13 @@ class Comment {
 	}
 	// https://www.w3schools.com/howto/howto_js_draggable.asp
 	init_drag(elmnt) {
-		console.log('init_drag');
+		// console.log('init_drag');
 		let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 		let dragElem = elmnt.getElementsByClassName("drag-header");
 		if (!dragElem) { dragElem = elmnt; }
 		else { dragElem = dragElem[0]; }
 		dragElem.onmousedown = dragMouseDown.bind(this);
-		console.log(dragElem);
+		// console.log(dragElem);
 
 		function dragMouseDown(e) {
 			e = e || window.event;
