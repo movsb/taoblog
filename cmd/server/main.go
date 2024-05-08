@@ -50,6 +50,8 @@ func serve() {
 
 	migration.Migrate(db)
 
+	log.Println(`DevMode:`, service.DevMode())
+
 	var mux = http.NewServeMux()
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
@@ -70,13 +72,12 @@ func serve() {
 			panic(err)
 		}
 
-		// TODO 检测本地是否是 HTTPS，否则不能开始  WebAuthn。
-		a := admin.NewAdmin(theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()})
+		a := admin.NewAdmin(service.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()})
 		log.Println(`admin on`, prefix)
 		mux.Handle(prefix, a.Handler())
 	}
 
-	theme := theme.New(cfg, theService, theAuth, `theme/blog`)
+	theme := theme.New(service.DevMode(), cfg, theService, theAuth)
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
 

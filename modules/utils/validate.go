@@ -26,3 +26,10 @@ func IsURL(Url string, addScheme bool) bool {
 	}
 	return true
 }
+
+func Must[A any, Error error](a A, e Error) A {
+	if error(e) != nil {
+		panic(e)
+	}
+	return a
+}

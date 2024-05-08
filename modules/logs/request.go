@@ -7,6 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/movsb/taoblog/modules/auth"
 )
 
 type RequestLogger struct {
@@ -76,9 +78,10 @@ func (l *RequestLogger) Handler(h http.Handler) http.Handler {
 		l.lock.Lock()
 		defer l.lock.Unlock()
 		now := time.Now().In(tz).Format(`2006-01-02 15:04:05`)
+		ac := auth.Context(r.Context())
 		fmt.Fprintf(l.f,
 			"%s %-15s %3d %-8s %-32s %-32s %-32s\n",
-			now, r.Header.Get(`X-Forwarded-For`), ww.code, r.Method, r.RequestURI, r.Referer(), r.Header.Get(`User-Agent`),
+			now, ac.RemoteAddr.String(), ww.code, r.Method, r.RequestURI, r.Referer(), r.Header.Get(`User-Agent`),
 		)
 	})
 }

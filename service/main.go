@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -203,7 +204,7 @@ func (s *Service) Description() string {
 }
 
 func DevMode() bool {
-	return version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`)
+	return os.Getenv(`DEV`) != `0` && (version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`))
 }
 
 // LastArticleUpdateTime ...

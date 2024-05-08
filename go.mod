@@ -23,9 +23,11 @@ require (
 )
 
 require (
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6
+	nhooyr.io/websocket v1.8.11
 )
 
 require (
@@ -38,7 +40,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	nhooyr.io/websocket v1.8.11 // indirect
 )
 
 require (
@@ -71,7 +72,6 @@ require (
 	golang.org/x/net v0.23.0
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

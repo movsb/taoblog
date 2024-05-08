@@ -3,21 +3,24 @@ package admin
 import (
 	"embed"
 	"encoding/base64"
-	"html/template"
+	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync/atomic"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
-//go:embed editor.js script.js
+//go:embed statics templates
 var root embed.FS
 
 type LoginData struct {
@@ -31,22 +34,40 @@ func (d *LoginData) HasSocialLogins() bool {
 }
 
 type Admin struct {
+	rootFS fs.FS
+	tmplFS fs.FS
+
 	prefix    string
-	templates *template.Template
 	auth      *auth.Auth
 	webAuthn  *auth.WebAuthn
 	canGoogle atomic.Bool
 
 	svc *service.Service
 
+	templates *utils.TemplateLoader
+
 	displayName string
 }
 
-func NewAdmin(svc *service.Service, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string) *Admin {
+func NewAdmin(devMode bool, svc *service.Service, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
+
+	var rootFS fs.FS
+	var tmplFS fs.FS
+
+	if devMode {
+		rootFS = os.DirFS(`admin/statics`)
+		tmplFS = utils.NewLocal(`admin/templates`)
+	} else {
+		rootFS = utils.Must(fs.Sub(root, `statics`))
+		tmplFS = utils.Must(fs.Sub(root, `templates`))
+	}
+
 	a := &Admin{
+		rootFS:      rootFS,
+		tmplFS:      tmplFS,
 		svc:         svc,
 		prefix:      prefix,
 		auth:        auth1,
@@ -68,12 +89,13 @@ func (a *Admin) detectNetwork() {
 	a.canGoogle.Store(yes)
 }
 
+// fs 可以传 nil，表示使用 embed 文件系统。
 func (a *Admin) Handler() http.Handler {
 	m := http.NewServeMux()
 
+	// 奇怪，这里不能写 GET /，会冲突。
+	m.Handle(`/`, http.FileServerFS(utils.Must(fs.Sub(root, `statics`))))
 	m.Handle(`GET /{$}`, a.requireLogin(a.getRoot))
-	m.Handle(`GET /script.js`, a.serveFile(`script.js`))
-	m.Handle(`GET /editor.js`, a.serveFile(`editor.js`))
 
 	m.HandleFunc(`GET /login`, a.getLogin)
 	m.HandleFunc(`GET /logout`, a.getLogout)
@@ -94,12 +116,6 @@ func (a *Admin) Handler() http.Handler {
 
 func (a *Admin) prefixed(s string) string {
 	return filepath.Join(a.prefix, s)
-}
-
-func (a *Admin) serveFile(path string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFileFS(w, r, root, path)
-	})
 }
 
 func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to string) {
@@ -130,15 +146,17 @@ func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) loadTemplates() {
-	tmpl, err := template.New("admin").ParseFiles(
-		`admin/login.html`,
-		`admin/profile.html`,
-		`admin/editor.html`,
-	) // TODO: don't use relative path.
-	if err != nil {
-		panic(err)
+	a.templates = utils.NewTemplateLoader(a.tmplFS, nil)
+}
+
+func (a *Admin) executeTemplate(w io.Writer, name string, data any) {
+	t2 := a.templates.GetNamed(name)
+	if t2 == nil {
+		panic(`未找到模板：` + name)
 	}
-	a.templates = tmpl
+	if err := t2.Execute(w, data); err != nil {
+		log.Println(err)
+	}
 }
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
@@ -159,10 +177,7 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	d.GitHubClientID = a.auth.Config().Github.ClientID
 
-	if err := a.templates.ExecuteTemplate(w, `login.html`, &d); err != nil {
-		log.Println(`admin: failed to render:`, err)
-		return
-	}
+	a.executeTemplate(w, `login.html`, &d)
 }
 
 func (a *Admin) getLogout(w http.ResponseWriter, r *http.Request) {
@@ -191,10 +206,7 @@ func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 		Name: a.displayName,
 		User: a.auth.AuthRequest(r),
 	}
-	if err := a.templates.ExecuteTemplate(w, `profile.html`, &d); err != nil {
-		log.Println(`admin: failed to render:`, err)
-		return
-	}
+	a.executeTemplate(w, `profile.html`, &d)
 }
 
 type EditorData struct {
@@ -215,9 +227,5 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		post := a.svc.MustGetPost(int64(pid))
 		d.Post = post
 	}
-
-	if err := a.templates.ExecuteTemplate(w, `editor.html`, &d); err != nil {
-		log.Println(`admin: failed to render:`, err)
-		return
-	}
+	a.executeTemplate(w, `editor.html`, &d)
 }

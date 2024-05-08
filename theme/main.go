@@ -5,27 +5,29 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
-	"sync"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
 	"github.com/movsb/taoblog/theme/modules/canonical"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
-	"github.com/movsb/taoblog/theme/modules/watcher"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,8 +35,10 @@ import (
 
 // Theme ...
 type Theme struct {
+	rootFS fs.FS
+	tmplFS fs.FS
+
 	cfg     *config.Config
-	base    string // base directory
 	service *service.Service
 	auth    *auth.Auth
 
@@ -43,17 +47,30 @@ type Theme struct {
 	rss     *rss.RSS
 	sitemap *sitemap.Sitemap
 
-	tmplLock         sync.RWMutex
-	partialTemplates *template.Template
-	namedTemplates   map[string]*template.Template
+	templates *utils.TemplateLoader
 
 	specialMux *http.ServeMux
 }
 
-func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base string) *Theme {
+func New(devMode bool, cfg *config.Config, service *service.Service, auth *auth.Auth) *Theme {
+	var rootFS, tmplFS, stylesFS fs.FS
+
+	if devMode {
+		rootFS = os.DirFS(`theme/blog/statics`)
+		tmplFS = utils.NewLocal(`theme/blog/templates`)
+		stylesFS = utils.NewLocal(`theme/blog/styles`)
+	} else {
+		// TODO 硬编码成 blog 了。
+		rootFS = utils.Must(fs.Sub(blog.Root, `statics`))
+		tmplFS = utils.Must(fs.Sub(blog.Root, `templates`))
+		stylesFS = utils.Must(fs.Sub(blog.Root, `styles`))
+	}
+
 	t := &Theme{
+		rootFS: rootFS,
+		tmplFS: tmplFS,
+
 		cfg:     cfg,
-		base:    base,
 		service: service,
 		auth:    auth,
 		redir:   service,
@@ -78,7 +95,7 @@ func New(cfg *config.Config, service *service.Service, auth *auth.Auth, base str
 	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
 
 	t.loadTemplates()
-	t.watchTheme()
+	t.watchStyles(stylesFS)
 
 	return t
 }
@@ -123,56 +140,7 @@ func createMenus(items []config.MenuItem, outer bool) string {
 	return menus.String()
 }
 
-func (t *Theme) getPartial() *template.Template {
-	t.tmplLock.RLock()
-	defer t.tmplLock.RUnlock()
-	return t.partialTemplates
-}
-
-func (t *Theme) getNamed() map[string]*template.Template {
-	t.tmplLock.RLock()
-	defer t.tmplLock.RUnlock()
-	return t.namedTemplates
-}
-
-func (t *Theme) watchTheme() {
-	go func() {
-		root, exts := filepath.Join(t.base, "templates"), []string{`.html`}
-		w := watcher.NewFolderChangedWatcher(root, exts)
-		for range w.Watch() {
-			log.Println(`reload templates`)
-			t.loadTemplates()
-		}
-	}()
-	go func() {
-		root, exts := filepath.Join(t.base, "styles"), []string{`.scss`}
-		w := watcher.NewFolderChangedWatcher(root, exts)
-		for range w.Watch() {
-			cmd := exec.Command(`make`, `theme`)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				log.Println(err)
-			} else {
-				log.Println(`rebuilt styles`)
-			}
-		}
-	}()
-}
-
 func (t *Theme) loadTemplates() {
-	t.tmplLock.Lock()
-	defer t.tmplLock.Unlock()
-
-	defer func() {
-		if err := recover(); err != nil {
-			t.partialTemplates = template.Must(template.New(`empty`).Parse(``))
-			t.namedTemplates = nil
-			log.Println(err)
-		}
-	}()
-
 	menustr := createMenus(t.cfg.Menus, false)
 	funcs := template.FuncMap{
 		// https://githut.com/golang/go/issues/14256
@@ -186,35 +154,59 @@ func (t *Theme) loadTemplates() {
 			if t := data.Template.Lookup(name); t != nil {
 				return t.Execute(data.Writer, data)
 			}
-			if t := t.getPartial().Lookup(name); t != nil {
+			if t := t.templates.GetPartial(name); t != nil {
 				return t.Execute(data.Writer, data)
 			}
+			// TODO 找不到应该报错。
 			return nil
 		},
 		"partial": func(name string, data *data.Data, data2 any) error {
-			if t := t.getPartial().Lookup(name); t != nil {
+			if t := t.templates.GetPartial(name); t != nil {
 				return t.Execute(data.Writer, data2)
 			}
+			// TODO 找不到应该报错。
 			return nil
 		},
 	}
 
-	t.partialTemplates = template.New(`partial`).Funcs(funcs)
-	t.namedTemplates = make(map[string]*template.Template)
+	t.templates = utils.NewTemplateLoader(t.tmplFS, funcs)
+}
 
-	templateFiles, err := filepath.Glob(filepath.Join(t.base, `templates`, `*.html`))
-	if err != nil {
-		panic(err)
+func (t *Theme) watchStyles(stylesFS fs.FS) {
+	if changed, ok := stylesFS.(utils.FsWithChangeNotify); ok {
+		log.Println(`Listening for style changes`)
+		go func() {
+			for event := range changed.Changed() {
+				switch event.Op {
+				case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
+					// log.Println(`Will run make`)
+					cmd := exec.Command(`make`, `theme`)
+					cmd.Stdin = os.Stdin
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					if err := cmd.Run(); err != nil {
+						log.Println(err)
+					} else {
+						log.Println(`Rebuilt styles`)
+					}
+				}
+			}
+		}()
 	}
+}
 
-	for _, path := range templateFiles {
-		name := filepath.Base(path)
-		if name[0] == '_' {
-			template.Must(t.partialTemplates.ParseFiles(path))
-		} else {
-			tmpl := template.Must(template.New(name).Funcs(funcs).ParseFiles(path))
-			t.namedTemplates[tmpl.Name()] = tmpl
-		}
+func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
+	t2 := t.templates.GetNamed(name)
+	if t2 == nil {
+		panic(`未找到模板：` + name)
+	}
+	if d == nil {
+		d = &data.Data{}
+	}
+	d.Template = t2
+	d.Writer = w
+	if err := t2.Execute(w, d); err != nil {
+		log.Println(err)
 	}
 }
 
@@ -224,11 +216,11 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 			switch st.Code() {
 			case codes.PermissionDenied:
 				w.WriteHeader(403)
-				t.getNamed()[`403.html`].Execute(w, nil)
+				t.executeTemplate(`403.html`, w, nil)
 				return true
 			case codes.NotFound:
 				w.WriteHeader(http.StatusNotFound)
-				t.getNamed()[`404.html`].Execute(w, nil)
+				t.executeTemplate(`404.html`, w, nil)
 				return true
 			}
 		}
@@ -245,7 +237,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 				}
 			}
 			w.WriteHeader(404)
-			t.getNamed()[`404.html`].Execute(w, nil)
+			t.executeTemplate(`404.html`, w, nil)
 			return true
 		}
 	}
@@ -263,24 +255,13 @@ func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, que
 
 func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
 	d := data.NewDataForHome(req.Context(), t.cfg, t.service)
-	tmpl := t.getNamed()[`home.html`]
-	d.Template = tmpl
-	d.Writer = w
-	if err := tmpl.Execute(w, d); err != nil {
-		log.Println(err)
-	}
+	t.executeTemplate(`home.html`, w, d)
 	return nil
 }
 
 func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForSearch(t.cfg, t.auth.AuthRequest(r), t.service, r)
-	tmpl := t.getNamed()[`search.html`]
-	d.Template = tmpl
-	d.Writer = w
-
-	if err := tmpl.Execute(w, d); err != nil {
-		panic(err)
-	}
+	t.executeTemplate(`search.html`, w, d)
 }
 
 func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *protocols.Post) bool {
@@ -316,35 +297,17 @@ func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 
 func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForPosts(r.Context(), t.cfg, t.service, r)
-	tmpl := t.getNamed()[`posts.html`]
-	d.Template = tmpl
-	d.Writer = w
-
-	if err := tmpl.Execute(w, d); err != nil {
-		panic(err)
-	}
+	t.executeTemplate(`posts.html`, w, d)
 }
 
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForTweets(r.Context(), t.service.Config(), t.service)
-	tmpl := t.getNamed()[`tweets.html`]
-	d.Template = tmpl
-	d.Writer = w
-
-	if err := tmpl.Execute(w, d); err != nil {
-		panic(err)
-	}
+	t.executeTemplate(`tweets.html`, w, d)
 }
 
 func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service)
-	tmpl := t.getNamed()[`tags.html`]
-	d.Template = tmpl
-	d.Writer = w
-
-	if err := tmpl.Execute(w, d); err != nil {
-		panic(err)
-	}
+	t.executeTemplate(`tags.html`, w, d)
 }
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
@@ -398,28 +361,18 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 
 	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
 
-	var tmpl *template.Template
+	var name string
 	if p.Type == `tweet` {
-		tmpl = t.getNamed()[`tweet.html`]
+		name = `tweet.html`
 	} else {
-		tmpl = t.getNamed()[`post.html`]
+		name = `post.html`
 	}
-	d.Template = tmpl
-	d.Writer = w
-
-	if err := tmpl.Execute(w, d); err != nil {
-		log.Println(err)
-	}
+	t.executeTemplate(name, w, d)
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
 	d := data.NewDataForTag(t.cfg, t.auth.AuthRequest(req), t.service, tags)
-	tmpl := t.getNamed()[`tag.html`]
-	d.Template = tmpl
-	d.Writer = w
-	if err := tmpl.Execute(w, d); err != nil {
-		panic(err)
-	}
+	t.executeTemplate(`tag.html`, w, d)
 }
 
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
@@ -464,26 +417,8 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 var cacheControl = `max-age=21600, must-revalidate`
 
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
-	path := filepath.Join(t.base, `statics`, file)
-
-	// 开发模式下不要缓存资源文件，因为经常更新，否则需要强制刷新，太蛋疼了，会加强很多字体文件，很慢。
-	if service.DevMode() {
-		fp, err := os.Open(filepath.Clean(path))
-		if err != nil {
-			log.Println(err)
-			code := http.StatusInternalServerError
-			if os.IsNotExist(err) {
-				code = http.StatusNotFound
-			}
-			http.Error(w, err.Error(), code)
-			return
-		}
-		defer fp.Close()
-		http.ServeContent(w, req, path, time.Time{}, fp)
-		return
-	}
-
 	// 正式环境也不要缓存太久，因为博客在经常更新。
 	w.Header().Add(`Cache-Control`, cacheControl)
-	http.ServeFile(w, req, path)
+	// TODO embed 没有 last modified
+	http.ServeFileFS(w, req, t.rootFS, file)
 }
