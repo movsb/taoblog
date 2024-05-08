@@ -42,17 +42,6 @@ function __TaoBlog()
 
 var TaoBlog = window.TaoBlog = new __TaoBlog();
 
-// Add anchors to external links and open it in new tab instead
-TaoBlog.fn.externAnchor = function() {
-	let hostname = location.hostname;
-	return function(a) {
-		if (a.href != "" && a.hostname !== hostname && !a.classList.contains('no-external')) {
-			a.setAttribute('target', '_blank');
-			a.classList.add('external');
-		}
-	};
-}();
-
 // 代码高亮
 // 必须是 <pre><code class="language-xxx"></code></pre>
 TaoBlog.fn.highlight = function(pre) {

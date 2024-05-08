@@ -39,7 +39,8 @@ type _Markdown struct {
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
 	disableHTML        bool // 禁止 HTML 元素
-	openLinksInNewTab  bool // 新窗口打开链接
+
+	openLinksInNewTab OpenLinksInNewTabKind // 新窗口打开链接
 
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
@@ -92,13 +93,22 @@ func WithModifiedAnchorReference(relativePath string) Option {
 
 // 新窗口打开链接。
 // TODO 目前只能针对 Markdown 链接， HTML 标签链接不可用。
-// 注意：锚点 （#section）这种不会在新窗口打开。
-func WithOpenLinksInNewTab() Option {
+// 注意：锚点 （#section）这种始终不会在新窗口打开。
+func WithOpenLinksInNewTab(kind OpenLinksInNewTabKind) Option {
 	return func(me *_Markdown) error {
-		me.openLinksInNewTab = true
+		me.openLinksInNewTab = kind
 		return nil
 	}
 }
+
+type OpenLinksInNewTabKind int
+
+const (
+	OpenLinksInNewTabKindKeep     OpenLinksInNewTabKind = iota // 不作为。
+	OpenLinksInNewTabKindNever                                 // 全部链接在当前窗口打开。
+	OpenLinksInNewTabKindAll                                   // 全部链接在新窗口打开，适用于评论预览时。
+	OpenLinksInNewTabKindExternal                              // 仅外站链接在新窗口打开。
+)
 
 type AssetFinder func(path string) (name, url, description string, found bool)
 
@@ -196,17 +206,6 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含 HTML 标签。`)
 				}
 			case ast.KindAutoLink, ast.KindLink:
-				if n.Kind() == ast.KindLink {
-					link := string(n.(*ast.Link).Destination)
-					if !strings.HasPrefix(link, `#`) {
-						if me.openLinksInNewTab {
-							n.SetAttributeString(`target`, `_blank`)
-							// TODO 会覆盖已经有了的
-							n.SetAttributeString(`class`, `external`)
-						}
-					}
-				}
-
 				if n.Kind() == ast.KindLink && me.modifiedAnchorReference != "" {
 					link := n.(*ast.Link)
 					if href := string(link.Destination); strings.HasPrefix(href, "#") {
@@ -248,9 +247,77 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		}
 	}
 
+	if me.openLinksInNewTab != OpenLinksInNewTabKindKeep {
+		if err := me.doOpenLinkInNewTab(doc, []byte(source)); err != nil {
+			return ``, ``, err
+		}
+	}
+
 	buf := bytes.NewBuffer(nil)
 	err := md.Renderer().Render(buf, []byte(source), doc)
 	return title, buf.String(), err
+}
+
+func (me *_Markdown) doOpenLinkInNewTab(doc ast.Node, source []byte) error {
+	// Never 的时候只是简单地不处理。
+	if me.openLinksInNewTab == OpenLinksInNewTabKindNever {
+		return nil
+	}
+
+	addClass := func(node ast.Node) {
+		var str string
+		if cls, ok := node.AttributeString(`class`); ok {
+			switch typed := cls.(type) {
+			case string:
+				str = typed
+			case []byte:
+				str = string(typed)
+			}
+		}
+		if str == "" {
+			str = `external`
+		} else {
+			str += ` external`
+		}
+		node.SetAttributeString(`class`, str)
+		node.SetAttributeString(`target`, `_blank`)
+	}
+
+	modify := func(node ast.Node) {
+		var dst string
+		switch typed := node.(type) {
+		case *ast.Link:
+			dst = string(typed.Destination)
+		case *ast.AutoLink:
+			dst = string(typed.URL(source))
+		}
+
+		if me.openLinksInNewTab == OpenLinksInNewTabKindAll {
+			if !strings.HasPrefix(dst, `#`) {
+				addClass(node)
+			}
+			return
+		} else if me.openLinksInNewTab == OpenLinksInNewTabKindExternal {
+			// 外部站点新窗口打开。
+			// 简单起见，默认站内都是相对链接。
+			// 所以，如果不是相对，则总是外部的。
+			if u, err := url.Parse(dst); err == nil {
+				if u.Scheme != "" && u.Host != "" {
+					addClass(node)
+				}
+			}
+		}
+	}
+
+	return ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if entering {
+			switch n.Kind() {
+			case ast.KindAutoLink, ast.KindLink:
+				modify(n)
+			}
+		}
+		return ast.WalkContinue, nil
+	})
 }
 
 func (me *_Markdown) doUseAbsolutePaths(doc ast.Node) error {

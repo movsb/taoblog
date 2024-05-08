@@ -231,6 +231,7 @@ func (s *Service) getPostContent(id int64, options ...GetPostContentOption) (str
 					}
 					return
 				}),
+				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
 			}
 			if link := s.GetLink(id); link != s.plainLink(id) {
 				options = append(options, renderers.WithModifiedAnchorReference(link))

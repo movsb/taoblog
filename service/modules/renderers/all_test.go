@@ -92,15 +92,15 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID: 5.1,
 			Options: []renderers.Option{
-				renderers.WithOpenLinksInNewTab(),
+				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
 			},
 			Markdown: `[](/foo)`,
-			Html:     `<p><a href="/foo" target="_blank" class="external"></a></p>`,
+			Html:     `<p><a href="/foo" class="external" target="_blank"></a></p>`,
 		},
 		{
 			ID: 5.1,
 			Options: []renderers.Option{
-				renderers.WithOpenLinksInNewTab(),
+				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
 			},
 			Markdown: `[](#section)`,
 			Html:     `<p><a href="#section"></a></p>`,
@@ -132,7 +132,7 @@ func TestMarkdownAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		if strings.TrimSpace(html) != strings.TrimSpace(tc.Html) {
-			t.Fatalf("not equal:\n%s\n%s\n%s\n\n", tc.Markdown, tc.Html, html)
+			t.Fatalf("not equal %v:\n%s\n%s\n%s\n\n", tc.ID, tc.Markdown, tc.Html, html)
 		}
 	}
 }

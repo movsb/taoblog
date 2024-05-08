@@ -405,6 +405,7 @@ func (s *Service) convertCommentMarkdown(user *auth.User, ty string, source stri
 
 	options = append(options,
 		renderers.WithPathResolver(s.PathResolver(postID)),
+		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
 	)
 
 	if user.IsAdmin() {
@@ -458,7 +459,7 @@ func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewComme
 
 	options := []renderers.Option{}
 	if in.OpenLinksInNewTab {
-		options = append(options, renderers.WithOpenLinksInNewTab())
+		options = append(options, renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll))
 	}
 
 	// TODO 安全检查：PostID 应该和 Referer 一致。

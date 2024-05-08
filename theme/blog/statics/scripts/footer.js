@@ -1,9 +1,3 @@
-// 除非是早期的链接，后面由 markdown 生成的链接会自动标记。
-(function() {
-	let anchors = document.querySelectorAll('article a');
-	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
-})();
-
 // 数学公式
 (function() {
 	let maths = document.querySelectorAll('.math.inline,.math.display');
@@ -54,11 +48,7 @@ document.querySelectorAll('pre').forEach(function(pre) {
 });
 TaoBlog.events.add('comment', 'post', function(item, cmt) {
 	let pres = item.querySelectorAll(':scope > .comment-content pre');
-	pres.forEach(function(pre) {
-		TaoBlog.fn.highlight(pre);
-	});
-	let anchors = item.querySelectorAll(':scope a');
-	anchors.forEach(a => { TaoBlog.fn.externAnchor(a); });
+	pres.forEach(pre => TaoBlog.fn.highlight(pre));
 });
 TaoBlog.events.add('comment', 'preview', function(div) {
 	let pres = div.querySelectorAll(':scope pre');
@@ -209,12 +199,3 @@ class __Vim {
 }
 
 TaoBlog.vim = new __Vim();
-
-// 加载字体
-(function() {
-	let link = document.createElement('link');
-	link.rel = 'stylesheet';
-	link.type = 'text/css';
-	link.href = 'https://npm.elemecdn.com/lxgw-wenkai-webfont/style.css';
-	document.head.appendChild(link);
-}) ();
