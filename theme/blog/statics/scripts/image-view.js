@@ -133,20 +133,30 @@ class ImageViewUI {
 				}
 			});
 		} else {
+			let moveHandler = this._onImgMouseMove.bind(this);
+			
+			// https://stackoverflow.com/a/52839734/3628322
+			this.img.addEventListener('mousedown', (e)=> {
+				// console.log('down...');
+				this._onImgMouseDown(e);
+				window.addEventListener('mousemove', moveHandler, true);
+				window.addEventListener('mouseup', (e) => {
+					// console.log('up...');
+					this._onImgMouseUp(e);
+					window.removeEventListener('mousemove', moveHandler, true);
+				}, { once: true });
+			}, true);
+
 			let imgHandlers = {
-				'mousedown':        this._onImgMouseDown,
-				'mousemove':        this._onImgMouseMove,
-				'mouseup':          this._onImgMouseUp,
 				'click':            this._onImgClick,
 				'transitionend':    this._onTransitionEnd,
 			};
 			for (let key in imgHandlers) {
-				this.img.addEventListener(key, imgHandlers[key].bind(this));
+				this.img.addEventListener(key, imgHandlers[key].bind(this), true);
 			}
 			
 			let divHandlers = {
 				'wheel':        this._onDivMouseWheel,
-				'mousemove':    this._onDivMouseMove,
 				'click':        this._onDivClick,
 			};
 			for (let key in divHandlers) {
@@ -160,15 +170,13 @@ class ImageViewUI {
 			return false;
 		}
 
-		let target = e.target;
-
 		// http://stackoverflow.com/a/2725963
 		if (e.which == 1) { // left button
 			this._offsetX = e.clientX;
 			this._offsetY = e.clientY;
 
-			this._coordX = parseInt(target.style.left);
-			this._coordY = parseInt(target.style.top);
+			this._coordX = parseInt(this.img.style.left);
+			this._coordY = parseInt(this.img.style.top);
 
 			this._dragging = true;
 		}
@@ -177,16 +185,16 @@ class ImageViewUI {
 		return false;
 	}
 	_onImgMouseMove(e) {
+		console.log('moving');
 		if (!this._dragging) {
 			return false;
 		}
 
 		let left = this._coordX + e.clientX - this._offsetX + 'px';
 		let top = this._coordY + e.clientY - this._offsetY + 'px';
-
-		let target = e.target;
-		target.style.left = left;
-		target.style.top = top;
+		
+		this.img.style.left = left;
+		this.img.style.top = top;
 
 		e.preventDefault();
 		return false;
@@ -237,18 +245,6 @@ class ImageViewUI {
 
 		e.preventDefault();
 		return false;
-	}
-	_onDivMouseMove(e) {
-		if (this._dragging) {
-			let left = this._coordX + e.clientX - this._offsetX + 'px';
-			let top = this._coordY + e.clientY - this._offsetY + 'px';
-			this.img.style.left = left;
-			this.img.style.top = top;
-			// console.log('left & top: ', left, top);
-			return false;
-		}
-
-		return true;
 	}
 	_onDivClick(e) {
 		this._hideImage(null);
