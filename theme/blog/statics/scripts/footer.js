@@ -43,16 +43,21 @@
 
 // 代码高亮
 (function(){
-document.querySelectorAll('pre').forEach(function(pre) {
-	TaoBlog.fn.highlight(pre);
-});
+// e: div.chroma
+let scroll = (e) => {
+	let tr = e.querySelector(':scope .lntable tr');
+	let td =  e.querySelector(':scope .lntable .lntd:first-child');
+	tr.onscroll = e => td.style.top = `${-e.target.scrollTop}px`;
+	// console.log(`scroll:`, tr, td);
+};
+document.querySelectorAll('div.chroma').forEach(e => scroll(e));
 TaoBlog.events.add('comment', 'post', function(item, cmt) {
-	let pres = item.querySelectorAll(':scope > .comment-content pre');
-	pres.forEach(pre => TaoBlog.fn.highlight(pre));
+	let pres = item.querySelectorAll(':scope > .comment-content div.chroma');
+	pres.forEach(e => scroll(e));
 });
 TaoBlog.events.add('comment', 'preview', function(div) {
-	let pres = div.querySelectorAll(':scope pre');
-	pres.forEach(pre => TaoBlog.fn.highlight(pre));
+	let pres = div.querySelectorAll(':scope div.chroma');
+	pres.forEach(e => scroll(e));
 });
 })();
 

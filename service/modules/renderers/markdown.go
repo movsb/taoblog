@@ -19,9 +19,11 @@ import (
 	"strconv"
 	"strings"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -157,6 +159,17 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 			mathjax.WithBlockDelim(`$$`, `$$`),
 		)),
 		goldmark.WithExtensions(wikitable.New()),
+		goldmark.WithExtensions(highlighting.NewHighlighting(
+			// highlighting.WithCSSWriter(os.Stdout),
+			highlighting.WithStyle(`onedark`),
+			highlighting.WithFormatOptions(
+				chromahtml.LineNumbersInTable(true),
+				// 博客主题默认，不需要额外配置。
+				// chromahtml.TabWidth(4),
+				chromahtml.WithClasses(true),
+				chromahtml.WithLineNumbers(true),
+			),
+		)),
 	)
 
 	pCtx := parser.NewContext()

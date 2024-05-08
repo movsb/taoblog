@@ -122,6 +122,7 @@ pre {
     margin: 1em 0;
     max-height: 600px;
     max-height: 80vh;
+	// 要去掉，只应针对最外层的 pre。
     border-radius: var(--border-radius);
 	overflow: auto;
 }

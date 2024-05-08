@@ -65,9 +65,7 @@ func (d *Data) SiteName() string {
 }
 
 func (d *Data) BodyClass() string {
-	c := []string{
-		`line-numbers`, // https://prismjs.com/plugins/line-numbers/#how-to-use
-	}
+	c := []string{}
 	if d.Post != nil {
 		if d.Post.Post.Wide() {
 			c = append(c, `wide`)

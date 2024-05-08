@@ -32,16 +32,3 @@
   比如，页面地址是 `/about`，base 是 `/123/`，锚点是 `#name`。
   那么，修改前，锚点的绝对地址是 `/123/#name`，这会导致浏览器重新加载。
   而如果渲染时把锚点改成 `/about#name`，就不会重新加载了。
-
-## 代码高亮
-
-后端渲染/手写的带废材的代码块不能被正确高亮：
-
-```html
-<pre>
-<code>export PS1="<span style="color:blue;">\\[</span>\033[31m<span style="color:blue;">\\]</span>\W \$<span style="color:blue;">\\[</span>\033[m<span style="color:blue;">\\]</span> "</code>
-</pre>
-```
-
-暂时没有好办法，尽量不这样写。
-参考：<https://prismjs.com/faq.html#why-is-pre-existing-html-stripped-off>。

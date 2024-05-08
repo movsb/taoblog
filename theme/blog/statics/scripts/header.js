@@ -43,56 +43,9 @@ function __TaoBlog()
 var TaoBlog = window.TaoBlog = new __TaoBlog();
 
 // 代码高亮
-// 必须是 <pre><code class="language-xxx"></code></pre>
-TaoBlog.fn.highlight = function(pre) {
-	// 早期代码兼容：
-	// <pre class="code" lang="cpp"></pre>
-	// 处理成 `lang-xxx` 形式。
-	{
-		if (pre.classList.contains('code') && pre.getAttribute('lang') != '' && !pre.firstElementChild) {
-			let code = document.createElement('code');
-			code.innerHTML = pre.innerHTML;
-			code.classList.add(`language-${pre.getAttribute('lang')}`);
-			pre.innerHTML = '';
-			pre.appendChild(code);
-		}
-	}
-
-	// 没有指定 `language-xxx` 的代码块的处理：加上 language-none。
-	// 注意：有些 <pre><code> 是后端渲染/手写标记着色的，此时不需要前端着色。
-	{
-		let code = pre.querySelector(':scope > code');
-		if (code) {
-			let hasLang = false;
-			code.classList.forEach(function(name) {
-				if (!hasLang && /^language-/.test(name)) {
-					hasLang = true;
-				}
-			});
-			if (!hasLang) {
-				code.classList.add('language-none');
-			}
-		}
-	}
-
-	// 主要的代码着色行。
-	Prism.highlightAllUnder(pre);
-
-	// 自动滚动行号
-	{
-		let lines = pre.querySelector('span.line-numbers-rows');
-		if(!lines) { return; }
-		let div = document.createElement('div');
-		div.classList.add('line-numbers-wrapper');
-		let code = lines.parentElement;
-		code.appendChild(div);
-		lines.remove();
-		div.appendChild(lines);
-		code.addEventListener('scroll', function() {
-			lines.style.top = `-${code.scrollTop}px`;
-		});
-	}
-};
+// TODO 早期代码兼容：
+// <pre class="code" lang="cpp"></pre>
+// 处理成 `lang-xxx` 形式。
 
 TaoBlog.fn.fadeIn = function(elem, callback) {
 	elem.classList.remove('fade-out');

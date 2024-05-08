@@ -1,10 +1,6 @@
-/* old */
-pre.code {
-	line-height: 1.5em;
-}
 /* 代码块 */
 pre > code {
-    display: inline-block;
+	// display: inline-block;
 	background: none;
 	font-family: var(--mono-font);
 	text-align: left;
@@ -13,8 +9,8 @@ pre > code {
 	word-break: normal;
 	word-wrap: normal;
 	line-height: 1.5em;
-    max-height: 600px;
-    max-height: 60vh;
+	max-height: 500px;
+	max-height: 50vh;
 
 	-moz-tab-size: 4;
 	tab-size: 4;
@@ -36,26 +32,168 @@ pre > code {
 	background-color: var(--code-bg);
 	border: 1px solid var(--code-border-color);
 	color: #777;
+	transition: background-color .2s linear;
 }
 
 a > code {
 	color: inherit;
 }
 
+pre, code {
+	// 默认颜色，在 chroma 下看起来还不错的样子？
+	color: var(--button-color-bg);
+}
+
 @media (prefers-color-scheme: dark) {
-	pre[class*="language-"]>code, pre[class*="language-"]>code .line-numbers-rows {
+	pre > code {
 		background-color: transparent !important;
 	}
-
-	code[class*="language-"],
-	pre[class*="language-"] {
+	pre, code {
 		color: inherit !important;
 	}
+}
 
-	.token.operator,
-	.token.entity,
-	.token.url,
-	.token.variable {
-		background: unset !important;
+// 样式重置文章风格影响的表格。
+div.chroma {
+	table {
+		tr, th, td {
+			border: none;
+			padding: 0;
+			margin: 0;
+		}
+	}
+	pre.chroma {
+		padding: 0;
 	}
 }
+
+.chroma {
+	background: unset;
+}
+
+div.chroma {
+	pre.chroma {
+		line-height: 1.5em !important;
+		overflow: hidden;
+		max-height: unset;
+		margin: .5em 0;
+		font-family: var(--mono-font);
+	}
+}
+
+table.lntable {
+	display: block;
+	position: relative;
+	overflow: hidden;
+	> tbody {
+		display: block;
+		margin-left: 3em;
+		padding-left: 1em;
+
+		border-left: 1px solid #ddd;
+		@media (prefers-color-scheme: dark) {
+			border-left: 1px solid #666;
+		}
+
+		box-sizing: border-box;
+
+		> tr {
+			overflow: scroll;
+			max-height: 60vh;
+			display: block;
+		}
+	}
+
+	// 行号列。
+	td.lntd:nth-child(1) {
+		color: #777;
+		@media (prefers-color-scheme: dark) {
+			color: #666;
+		}
+		position: absolute;
+		left: 0;
+		width: 4em;
+		pre.chroma {
+			margin-right: 1em;
+			padding-right: 8px;
+			box-sizing: border-box;
+			text-align: right;
+			border-radius: unset;
+		}
+	}
+}
+
+// 以下是用 formatter.WriteCSS 自动生成的。
+// 加上几个注释掉的。
+// TODO 改成接口，方便后台直接选配色。
+// /* Background */ .bg { color: #abb2bf; background-color: #282c34;-moz-tab-size: 4; -o-tab-size: 4; tab-size: 4; }
+// /* PreWrapper */ .chroma { color: #abb2bf; background-color: #282c34;-moz-tab-size: 4; -o-tab-size: 4; tab-size: 4; }
+// /* LineTableTD */ .chroma .lntd:last-child { width: 100%; }/* LineNumbers targeted by URL anchor */ .chroma .ln:target { color: #abb2bf; background-color: #3d4148 }
+// /* LineNumbersTable targeted by URL anchor */ .chroma .lnt:target { color: #abb2bf; background-color: #3d4148 }
+// /* LineLink */ .chroma .lnlinks { outline: none; text-decoration: none; color: inherit }
+// /* LineTableTD */ .chroma .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+// /* LineTable */ .chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
+// /* LineHighlight */ .chroma .hl { background-color: #3d4148 }
+// /* LineNumbersTable */ .chroma .lnt { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #55595f }
+// /* LineNumbers */ .chroma .ln { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #55595f }
+/* Line */ .chroma .line { display: flex; }
+/* Keyword */ .chroma .k { color: #c678dd }
+/* KeywordConstant */ .chroma .kc { color: #e5c07b }
+/* KeywordDeclaration */ .chroma .kd { color: #c678dd }
+/* KeywordNamespace */ .chroma .kn { color: #c678dd }
+/* KeywordPseudo */ .chroma .kp { color: #c678dd }
+/* KeywordReserved */ .chroma .kr { color: #c678dd }
+/* KeywordType */ .chroma .kt { color: #e5c07b }
+/* Name */ .chroma .n { color: #e06c75 }
+/* NameAttribute */ .chroma .na { color: #e06c75 }
+/* NameBuiltin */ .chroma .nb { color: #e5c07b }
+/* NameBuiltinPseudo */ .chroma .bp { color: #e06c75 }
+/* NameClass */ .chroma .nc { color: #e5c07b }
+/* NameConstant */ .chroma .no { color: #e06c75 }
+/* NameDecorator */ .chroma .nd { color: #61afef }
+/* NameEntity */ .chroma .ni { color: #e06c75 }
+/* NameException */ .chroma .ne { color: #e06c75 }
+/* NameFunction */ .chroma .nf { color: #61afef; font-weight: bold }
+/* NameFunctionMagic */ .chroma .fm { color: #56b6c2; font-weight: bold }
+/* NameLabel */ .chroma .nl { color: #e06c75 }
+/* NameNamespace */ .chroma .nn { color: #e06c75 }
+/* NameOther */ .chroma .nx { color: #e06c75 }
+/* NameProperty */ .chroma .py { color: #e06c75 }
+/* NameTag */ .chroma .nt { color: #e06c75 }
+/* NameVariable */ .chroma .nv { color: #e06c75 }
+/* NameVariableClass */ .chroma .vc { color: #e06c75 }
+/* NameVariableGlobal */ .chroma .vg { color: #e06c75 }
+/* NameVariableInstance */ .chroma .vi { color: #e06c75 }
+/* NameVariableMagic */ .chroma .vm { color: #e06c75 }
+/* LiteralString */ .chroma .s { color: #98c379 }
+/* LiteralStringAffix */ .chroma .sa { color: #98c379 }
+/* LiteralStringBacktick */ .chroma .sb { color: #98c379 }
+/* LiteralStringChar */ .chroma .sc { color: #98c379 }
+/* LiteralStringDelimiter */ .chroma .dl { color: #98c379 }
+/* LiteralStringDoc */ .chroma .sd { color: #98c379 }
+/* LiteralStringDouble */ .chroma .s2 { color: #98c379 }
+/* LiteralStringEscape */ .chroma .se { color: #98c379 }
+/* LiteralStringHeredoc */ .chroma .sh { color: #98c379 }
+/* LiteralStringInterpol */ .chroma .si { color: #98c379 }
+/* LiteralStringOther */ .chroma .sx { color: #98c379 }
+/* LiteralStringRegex */ .chroma .sr { color: #98c379 }
+/* LiteralStringSingle */ .chroma .s1 { color: #98c379 }
+/* LiteralStringSymbol */ .chroma .ss { color: #98c379 }
+/* LiteralNumber */ .chroma .m { color: #d19a66 }
+/* LiteralNumberBin */ .chroma .mb { color: #d19a66 }
+/* LiteralNumberFloat */ .chroma .mf { color: #d19a66 }
+/* LiteralNumberHex */ .chroma .mh { color: #d19a66 }
+/* LiteralNumberInteger */ .chroma .mi { color: #d19a66 }
+/* LiteralNumberIntegerLong */ .chroma .il { color: #d19a66 }
+/* LiteralNumberOct */ .chroma .mo { color: #d19a66 }
+/* Operator */ .chroma .o { color: #56b6c2 }
+/* OperatorWord */ .chroma .ow { color: #56b6c2 }
+/* Comment */ .chroma .c { color: #7f848e }
+/* CommentHashbang */ .chroma .ch { color: #7f848e }
+/* CommentMultiline */ .chroma .cm { color: #7f848e }
+/* CommentSingle */ .chroma .c1 { color: #7f848e }
+/* CommentSpecial */ .chroma .cs { color: #7f848e }
+/* CommentPreproc */ .chroma .cp { color: #7f848e }
+/* CommentPreprocFile */ .chroma .cpf { color: #7f848e }
+/* GenericDeleted */ .chroma .gd { color: #e06c75 }
+/* GenericInserted */ .chroma .gi { color: #98c379; font-weight: bold }
