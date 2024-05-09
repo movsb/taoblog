@@ -319,6 +319,8 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}()
 
+	now := time.Now()
+
 	c := models.Comment{
 		PostID:     in.PostId,
 		Parent:     in.Parent,
@@ -326,9 +328,22 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		Email:      strings.TrimSpace(in.Email),
 		URL:        strings.TrimSpace(in.Url),
 		IP:         ac.RemoteAddr.String(),
-		Date:       int32(time.Now().Unix()),
+		Date:       0,
 		SourceType: in.SourceType,
 		Source:     in.Source,
+	}
+
+	if in.Modified > 0 {
+		c.Modified = in.Modified
+	}
+	if in.Date > 0 {
+		c.Date = in.Date
+		if in.Modified == 0 {
+			c.Modified = c.Date
+		}
+	} else {
+		c.Date = int32(now.Unix())
+		c.Modified = int32(now.Unix())
 	}
 
 	if c.Author == "" {
@@ -357,7 +372,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		return nil, status.Errorf(codes.InvalidArgument, `网址太长（最长 %d 个字符）`, maxUrlLen)
 	}
 
-	if c.SourceType != `markdown` {
+	if c.SourceType != `markdown` && !ac.User.IsAdmin() {
 		return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
 	}
 	if strings.TrimSpace(c.Source) == "" {
@@ -391,8 +406,10 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		}
 	}
 
-	if _, err := s.convertCommentMarkdown(ac.User.IsAdmin(), c.Source, c.PostID, renderers.WithoutRendering()); err != nil {
-		return nil, err
+	if c.SourceType == `markdown` {
+		if _, err := s.convertCommentMarkdown(ac.User.IsAdmin(), c.Source, c.PostID, renderers.WithoutRendering()); err != nil {
+			return nil, err
+		}
 	}
 
 	s.MustTxCall(func(txs *Service) error {

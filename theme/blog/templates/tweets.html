@@ -19,7 +19,7 @@
 	<span class="comments"><a href="/admin/editor">新建</a></span>
 </div>
 <hr/>
-<div class="tweets">
+<div class="tweets" style="margin-bottom: 3em;">
 {{ range $i, $t := .Tweets.Tweets }}
 	{{ partial "_tweet" $ . }}
 	{{ if not ($.Tweets.Last $i)}}

@@ -689,7 +689,7 @@ class Comment {
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content">${cmt.content}</div>`
 				: `<div class="comment-content">${h2t(cmt.content)}</div>`}
-	<div class="toolbar no-sel" style="margin-left: 54px;">
+	<div class="toolbar no-sel">
 		<a class="" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
 		<a class="edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
 		<a class="delete-comment" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});">删除</a>

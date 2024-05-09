@@ -9,7 +9,7 @@ require (
 	github.com/litao91/goldmark-mathjax v0.0.0-20191101121019-011def32b12f
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
-	github.com/movsb/taorm v0.0.0-20240502155346-3e0da5c49caf
+	github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0

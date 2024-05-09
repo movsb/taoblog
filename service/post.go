@@ -82,7 +82,8 @@ func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
 	stmt := s.tdb.Select("*").OrderBy(`date desc`)
 	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
 	stmt.Where(`type=?`, `tweet`)
-	stmt.Limit(30)
+	// TODO 乱写的。
+	stmt.Limit(30000)
 
 	var posts models.Posts
 	if err := stmt.Find(&posts); err != nil {
@@ -438,11 +439,12 @@ func (s *Service) updatePostCommentCount(pid int64, t time.Time) {
 func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocols.Post, error) {
 	s.MustBeAdmin(ctx)
 
-	createdAt := int32(time.Now().Unix())
+	now := int32(time.Now().Unix())
 
 	p := models.Post{
-		Date:       createdAt,
-		Modified:   createdAt,
+		ID:         in.Id,
+		Date:       0,
+		Modified:   0,
 		Title:      strings.TrimSpace(in.Title),
 		Slug:       in.Slug,
 		Type:       in.Type,
@@ -457,8 +459,17 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		return nil, status.Error(codes.InvalidArgument, "内容不应为空。")
 	}
 
+	if in.Modified > 0 {
+		p.Modified = in.Modified
+	}
 	if in.Date > 0 {
 		p.Date = in.Date
+		if in.Modified == 0 {
+			p.Modified = p.Date
+		}
+	} else {
+		p.Date = now
+		p.Modified = now
 	}
 
 	if in.Status != "" {

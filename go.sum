@@ -202,6 +202,8 @@ github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6 h1:vDusal4I65KBQ/ArtEXfj
 github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
 github.com/movsb/taorm v0.0.0-20240502155346-3e0da5c49caf h1:D6hUBUyRjxFfH4rGEQaOYVw9Whe/CeYIYh7vlFAi/YE=
 github.com/movsb/taorm v0.0.0-20240502155346-3e0da5c49caf/go.mod h1:gWYI7w8tEhmbDtRb6h5iqzoEs+/jHEhwxSy+Vlwn3dg=
+github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c h1:2jPnw/yLpx6P5J9mDkWzwzEph1Lk8MklSZvbZmoGDvM=
+github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c/go.mod h1:gWYI7w8tEhmbDtRb6h5iqzoEs+/jHEhwxSy+Vlwn3dg=
 github.com/mschoch/smat v0.2.0 h1:8imxQsjDm8yFEAVBe7azKmKSgzSkZXDuKkSq9374khM=
 github.com/mschoch/smat v0.2.0/go.mod h1:kc9mz7DoBKqDyiRL7VZN8KvXQMWeTaVnttLRXOlotKw=
 github.com/mssola/user_agent v0.5.3 h1:lBRPML9mdFuIZgI2cmlQ+atbpJdLdeVl2IDodjBR578=

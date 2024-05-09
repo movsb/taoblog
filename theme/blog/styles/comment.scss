@@ -93,7 +93,7 @@
         }
 
         .comment-meta {
-            margin-left: 54px;
+            margin-left: 60px;
             margin-bottom: 6px;
         }
 
@@ -104,10 +104,7 @@
         }
 
         .comment-content {
-            margin-left: 54px;
-            margin-bottom: 0.5em;
-            margin-top: 0;
-            padding-left: 0.4em;
+			margin: 1em 0 1em 64px;
             list-style-type: reset;
 			line-height: var(--line-height-tight);
             &:not(.html-content) {
@@ -130,10 +127,10 @@
 				border-top: 1px dashed var(--border-color);
         }
 
-        .toolbar {
-            margin-bottom: 0.5em;
+		.toolbar {
 			opacity: 0.3;
 			transition: opacity 0.2s;
+			margin: 1em 0 1em 60px;
             &:hover {
                 opacity: 1;
             }

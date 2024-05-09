@@ -82,3 +82,11 @@ func NewClient(config HostConfig) *Client {
 func (c *Client) token() context.Context {
 	return metadata.NewOutgoingContext(context.TODO(), metadata.Pairs(auth.TokenName, c.config.Token))
 }
+
+func (c *Client) Token() context.Context {
+	return c.token()
+}
+
+func (c *Client) Blog() protocols.TaoBlogClient {
+	return c.blog
+}

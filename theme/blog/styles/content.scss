@@ -22,11 +22,6 @@ body.wide #content {
         font-size: 2em;
     }
 
-    /* toolbar */
-    .toolbar {
-        margin-bottom: 1em;
-    }
-
     /* 文章元数据 */
     .meta1, .meta2 { 
         a {
@@ -42,7 +37,6 @@ body.wide #content {
         }
     }
 	.meta1 {
-		margin-top: -1.2em;
 		opacity: 0.5;
 	}
 	.meta2 {
