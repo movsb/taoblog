@@ -9,13 +9,8 @@ import (
 	"github.com/movsb/taoblog/service"
 )
 
-// 马斯克应该不会告我吧？
-type Tweet struct {
-	*Post
-}
-
 type TweetsData struct {
-	Tweets []*Tweet
+	Tweets []*Post
 	Count  int
 }
 
@@ -38,7 +33,7 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc *service.Serv
 	for _, p := range posts {
 		pp := newPost(p)
 		pp.link = svc.GetPlainLink(p.Id)
-		d.Tweets.Tweets = append(d.Tweets.Tweets, &Tweet{pp})
+		d.Tweets.Tweets = append(d.Tweets.Tweets, pp)
 	}
 	d.Tweets.Count = len(d.Tweets.Tweets)
 

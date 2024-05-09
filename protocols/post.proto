@@ -12,6 +12,11 @@ message Metas {
 		string description = 3;
 		int32  time = 4;
 	}
+	message Geo {
+		string name = 1;
+		float longitude = 2;
+		float latitude = 3;
+	}
 	
 	// TODO：以下两者应该由 style.css 和 script.js 等独立文件实现。
 	// 置于 <head> 最后的。
@@ -28,6 +33,9 @@ message Metas {
 	// 文章附件来源。
 	// 第一个参数是相对路径。
 	map<string,Source> sources = 10;
+
+	// 地理位置信息。
+	Geo geo = 11;
 
 	// 微信短链接。形如："-UWZEu5Z74DZgRzKksTBtw"。
 	string weixin = 100;

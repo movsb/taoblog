@@ -464,6 +464,8 @@ type ListCommentsRequest struct {
 	Types []string `protobuf:"bytes,10,rep,name=types,proto3" json:"types,omitempty"`
 	// TODO 临时放这儿的！
 	// 需要统一定义并传递给 markdown 转换器。
+	// 可以名字为：MarkdownRenderOptions {}
+	// 并且在文章和各接口之间共享。
 	DoNotRenderCodeAsHtml bool `protobuf:"varint,11,opt,name=do_not_render_code_as_html,json=doNotRenderCodeAsHtml,proto3" json:"do_not_render_code_as_html,omitempty"`
 }
 

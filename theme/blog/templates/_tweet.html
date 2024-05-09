@@ -6,6 +6,9 @@
 	</div>
 	<div class="meta1">
 		<span class="date">{{ .ShortDateString }}</span>
+		{{ with .GeoString }}
+		<span class="geo">{{ . }}</span>
+		{{ end }}
 		<span class="comments"><a href="{{ .Link }}">{{ .CommentString }}</a></span>
 		<span class="comments"><a href="/admin/editor?id={{.Id}}">编辑</a></span>
 	</div>

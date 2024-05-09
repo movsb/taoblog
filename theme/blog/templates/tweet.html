@@ -24,6 +24,9 @@
 		</div>
 		<div class="meta1">
 			<span class="date">{{ .Post.Post.ShortDateString }}</span>
+			{{ with .Post.Post.GeoString }}
+			<span class="geo">{{ . }}</span>
+			{{ end }}
 			<span class="comments"><a href="/admin/editor?id={{.Post.Post.Id}}">编辑</a></span>
 		</div>
 	</div>

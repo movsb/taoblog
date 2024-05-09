@@ -41,6 +41,8 @@ type PostMeta struct {
 	Weixin string `json:"weixin,omitempty" yaml:"weixin,omitempty"`
 
 	Sources map[string]*PostMetaSource `json:"sources,omitempty" yaml:"sources,omitempty"`
+
+	Geo Geo `json:"geo,omitempty" yaml:"geo,omitempty"`
 }
 
 type PostMetaSource struct {
@@ -48,6 +50,17 @@ type PostMetaSource struct {
 	URL         string `json:"url,omitempty" yaml:"url,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	Time        int32  `json:"time,omitempty" yaml:"time,omitempty"`
+}
+
+// 本来想用 GeoJSON 的，但是感觉标准化程度还不高。
+// 想想还是算了，我只是想不丢失早期说说的地理位置信息。
+// 那就用最简单的方式：经、纬度、名字，后期再升级吧。
+// https://geojson.org/
+// https://en.wikipedia.org/wiki/GeoJSON
+type Geo struct {
+	Name      string  `json:"name,omitempty" yaml:"name,omitempty"`           // 地理位置的名字
+	Longitude float32 `json:"longitude,omitempty" yaml:"longitude,omitempty"` // 经度
+	Latitude  float32 `json:"latitude,omitempty" yaml:"latitude,omitempty"`   // 纬度
 }
 
 var (
@@ -86,11 +99,24 @@ func (m *PostMeta) ToProtocols() *protocols.Metas {
 			Time:        src.Time,
 		}
 	}
+	if g := m.Geo; g.Longitude != 0 && g.Latitude != 0 {
+		p.Geo = &protocols.Metas_Geo{
+			Longitude: g.Longitude,
+			Latitude:  g.Latitude,
+			Name:      g.Name,
+		}
+	}
 	return p
 }
 
 func (m *PostMeta) IsEmpty() bool {
-	return m.Header == "" && m.Footer == "" && !m.Outdated && !m.Wide && m.Weixin == "" && len(m.Sources) == 0
+	return m.Header == "" &&
+		m.Footer == "" &&
+		!m.Outdated &&
+		!m.Wide &&
+		m.Weixin == "" &&
+		len(m.Sources) == 0 &&
+		m.Geo.Longitude == 0 && m.Geo.Latitude == 0
 }
 
 func PostMetaFrom(p *protocols.Metas) *PostMeta {
@@ -112,6 +138,11 @@ func PostMetaFrom(p *protocols.Metas) *PostMeta {
 			Description: src.Description,
 			Time:        src.Time,
 		}
+	}
+	if g := p.Geo; g != nil {
+		m.Geo.Longitude = g.Longitude
+		m.Geo.Latitude = g.Latitude
+		m.Geo.Name = g.Name
 	}
 	return &m
 }
