@@ -23,6 +23,7 @@ import (
 
 type SetCommentExtraFieldsContext struct {
 	DoNotRenderCodeAsHtml bool
+	PrettifyHtml          bool
 }
 
 func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.Comment) {
@@ -50,6 +51,9 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 		if ctx, ok := ctx.Value(SetCommentExtraFieldsContext{}).(*SetCommentExtraFieldsContext); ok {
 			if ctx.DoNotRenderCodeAsHtml {
 				renderOptions = append(renderOptions, renderers.WithDoNotRenderCodeAsHTML())
+			}
+			if ctx.PrettifyHtml {
+				renderOptions = append(renderOptions, renderers.WithHtmlPrettifier())
 			}
 		}
 
@@ -244,6 +248,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 
 	ctx = context.WithValue(ctx, SetCommentExtraFieldsContext{}, &SetCommentExtraFieldsContext{
 		DoNotRenderCodeAsHtml: in.DoNotRenderCodeAsHtml,
+		PrettifyHtml:          in.PrettifyHtml,
 	})
 
 	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx))

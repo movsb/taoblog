@@ -5,6 +5,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
@@ -48,12 +49,18 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Se
 
 	comments, err := d.svc.ListComments(ctx,
 		&protocols.ListCommentsRequest{
+			Types: utils.IIF(
+				auth.Context(ctx).User.IsAdmin(),
+				nil, // TODO 允许管理员显示全部评论，暂时放这儿
+				[]string{`post`, `page`},
+			),
+
 			Mode:    protocols.ListCommentsRequest_Flat,
 			Limit:   15,
 			OrderBy: "date DESC",
-			Types:   []string{`post`, `page`},
 
 			DoNotRenderCodeAsHtml: true,
+			PrettifyHtml:          true,
 		})
 	if err != nil {
 		panic(err)

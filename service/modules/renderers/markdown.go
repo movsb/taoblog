@@ -335,7 +335,23 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 
 	buf := bytes.NewBuffer(nil)
 	err := md.Renderer().Render(buf, []byte(source), doc)
-	return title, buf.String(), err
+	if err != nil {
+		return ``, ``, err
+	}
+
+	htmlText := buf.Bytes()
+
+	for _, opt := range me.opts {
+		if filter, ok := opt.(HtmlFilter); ok {
+			filtered, err := filter.FilterHtml(htmlText)
+			if err != nil {
+				return ``, ``, err
+			}
+			htmlText = filtered
+		}
+	}
+
+	return title, string(htmlText), err
 }
 
 func (me *_Markdown) doOpenLinkInNewTab(doc ast.Node, source []byte) error {
