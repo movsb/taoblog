@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/yuin/goldmark/ast"
 	"golang.org/x/net/html"
 )
 
@@ -20,6 +21,7 @@ import (
 type Prettifier struct {
 }
 
+// https://yari-demos.prod.mdn.mozit.cloud/en-US/docs/Web/HTML/Inline_elements
 func (p *Prettifier) Prettify(htmlContent string) (string, error) {
 	doc, err := html.Parse(strings.NewReader(htmlContent))
 	if err != nil {
@@ -30,55 +32,61 @@ func (p *Prettifier) Prettify(htmlContent string) (string, error) {
 
 	var walk func(buf *bytes.Buffer, node *html.Node)
 	walk = func(buf *bytes.Buffer, node *html.Node) {
+		walkStatus := ast.WalkContinue
 		switch node.Type {
-		case html.DocumentNode:
 		case html.TextNode:
 			buf.WriteString(node.Data)
 		case html.ElementNode:
-			switch node.Data {
-			case `a`:
-				sub := bytes.NewBuffer(nil)
-				for c := node.FirstChild; c != nil; c = c.NextSibling {
-					walk(sub, c)
-				}
-				buf.WriteString(fmt.Sprintf(`[链接:%s]`, sub.String()))
-				return
-			case `img`:
-				var alt string
-				for _, a := range node.Attr {
-					if strings.ToLower(a.Key) == `alt` {
-						alt = a.Val
-					}
-				}
-				if alt == "" {
-					alt = "图片"
-				}
-				buf.WriteString(fmt.Sprintf(`[图片:%s]`, alt))
-			case `div`:
-				for _, a := range node.Attr {
-					if strings.ToLower(a.Key) == `class` {
-						if strings.Contains(a.Val, `footnotes`) {
-							return
-						}
-					}
-				}
-			case `pre`:
-				if node.FirstChild != nil && node.FirstChild.NextSibling == nil && node.FirstChild.Data == `code` {
-					buf.WriteString(`[代码]`)
-					return
-				}
-			case `table`:
-				buf.WriteString(`[表格]`)
-				return
+			walkStatus = ast.WalkContinue
+			if f, ok := prettifierStrings[node.Data]; ok {
+				buf.WriteString(fmt.Sprintf(`[%s]`, f))
+				walkStatus = ast.WalkSkipChildren
+			} else if f, ok := prettifierFuncs[node.Data]; ok {
+				walkStatus = f(buf, node)
 			}
-		default:
-			return
 		}
-		for c := node.FirstChild; c != nil; c = c.NextSibling {
-			walk(buf, c)
+		if walkStatus == ast.WalkContinue {
+			for c := node.FirstChild; c != nil; c = c.NextSibling {
+				walk(buf, c)
+			}
 		}
 	}
 
 	walk(buf, doc)
 	return buf.String(), nil
+}
+
+var prettifierStrings = map[string]string{
+	`a`:      `链接`,
+	`img`:    `图片`,
+	`table`:  `表格`,
+	`iframe`: `页面`,
+	`video`:  `视频`,
+	`audio`:  `音频`,
+	`canvas`: `画布`,
+	`embed`:  `对象`,
+	`map`:    `地图`,
+	`object`: `对象`,
+	`script`: `脚本`,
+	`svg`:    `图片`,
+}
+
+var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus{
+	`div`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		for _, a := range node.Attr {
+			if strings.ToLower(a.Key) == `class` {
+				if strings.Contains(a.Val, `footnotes`) {
+					return ast.WalkSkipChildren
+				}
+			}
+		}
+		return ast.WalkContinue
+	},
+	`pre`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		if node.FirstChild != nil && node.FirstChild.NextSibling == nil && node.FirstChild.Data == `code` {
+			buf.WriteString(`[代码]`)
+			return ast.WalkSkipChildren
+		}
+		return ast.WalkContinue
+	},
 }

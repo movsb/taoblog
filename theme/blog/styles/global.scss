@@ -157,11 +157,16 @@ img {
 		margin-left: 1em !important;
 	}
 	@media (prefers-color-scheme: dark) {
-		filter: brightness(0.7);
 		&.transparent {
 			/* 从 Firefox 打开一张透明的 PNG 时抄过来的 */
 			background: hsl(0,0%,90%);
 		}
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	img, video, iframe {
+		filter: brightness(0.7);
 	}
 }
 
@@ -202,6 +207,10 @@ ul, ol {
 	&.marker-asterisk       { list-style-type: "* ";        }
 	&.marker-period         { list-style-type: decimal;     }
 	&.marker-parenthesis    { list-style-type: parenthesis; }
+}
+
+iframe {
+	border-radius: var(--border-radius);
 }
 
 @keyframes fadeIn {
