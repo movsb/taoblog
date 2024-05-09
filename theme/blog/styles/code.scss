@@ -110,6 +110,7 @@ table.lntable {
 		@media (prefers-color-scheme: dark) {
 			color: #666;
 		}
+		user-select: none;
 		position: absolute;
 		left: 0;
 		width: 4em;

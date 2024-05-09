@@ -21,6 +21,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type SetCommentExtraFieldsContext struct {
+	DoNotRenderCodeAsHtml bool
+}
+
 func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.Comment) {
 	ac := auth.Context(ctx)
 
@@ -42,9 +46,16 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 			c.GeoLocation = s.geoLocation(c.Ip)
 		}
 
+		var renderOptions []renderers.Option
+		if ctx, ok := ctx.Value(SetCommentExtraFieldsContext{}).(*SetCommentExtraFieldsContext); ok {
+			if ctx.DoNotRenderCodeAsHtml {
+				renderOptions = append(renderOptions, renderers.WithDoNotRenderCodeAsHTML())
+			}
+		}
+
 		switch c.SourceType {
 		case `markdown`:
-			content, err := s.convertCommentMarkdown(true, c.Source, c.PostId)
+			content, err := s.convertCommentMarkdown(true, c.Source, c.PostId, renderOptions...)
 			if err != nil {
 				log.Println("转换评论时出错：", err)
 				// 也不能干啥……
@@ -230,6 +241,10 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	comments := make(models.Comments, 0, len(parents)+len(children))
 	comments = append(comments, parents...)
 	comments = append(comments, children...)
+
+	ctx = context.WithValue(ctx, SetCommentExtraFieldsContext{}, &SetCommentExtraFieldsContext{
+		DoNotRenderCodeAsHtml: in.DoNotRenderCodeAsHtml,
+	})
 
 	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx))
 

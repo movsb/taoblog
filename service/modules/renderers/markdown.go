@@ -47,10 +47,13 @@ type _Markdown struct {
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
 
-	useAbsolutePaths string
-	noRendering      bool
+	useAbsolutePaths      string
+	noRendering           bool
+	doNotRenderCodeAsHtml bool
 }
 
+// TODO 不要返回 error。
+// apply 的时候统一 catch 并返回初始化失败。
 type Option func(me *_Markdown) error
 
 // 解析 Markdown 中的相对链接。
@@ -143,6 +146,14 @@ func WithUseAbsolutePaths(base string) Option {
 	}
 }
 
+// 不要渲染代码。
+func WithDoNotRenderCodeAsHTML() Option {
+	return func(me *_Markdown) error {
+		me.doNotRenderCodeAsHtml = true
+		return nil
+	}
+}
+
 func NewMarkdown(options ...Option) *_Markdown {
 	me := &_Markdown{}
 	for _, option := range options {
@@ -156,22 +167,28 @@ func NewMarkdown(options ...Option) *_Markdown {
 // TODO 只是不渲染的话，其实不需要加载插件？
 // TODO 把 parse、检查、渲染过程分开。
 func (me *_Markdown) Render(source string) (string, string, error) {
-	md := goldmark.New(
+	options := []goldmark.Option{
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
 			renderer.WithNodeRenderers(
 				util.Prioritized(me, 100),
 			),
 		),
-		goldmark.WithExtensions(extension.GFM),
-		goldmark.WithExtensions(extension.DefinitionList),
-		goldmark.WithExtensions(extension.Footnote),
-		goldmark.WithExtensions(mathjax.NewMathJax(
+	}
+
+	extensions := []goldmark.Extender{
+		extension.GFM,
+		extension.DefinitionList,
+		extension.Footnote,
+		mathjax.NewMathJax(
 			mathjax.WithInlineDelim(`$`, `$`),
 			mathjax.WithBlockDelim(`$$`, `$$`),
-		)),
-		goldmark.WithExtensions(wikitable.New()),
-		goldmark.WithExtensions(highlighting.NewHighlighting(
+		),
+		wikitable.New(),
+	}
+
+	if !me.doNotRenderCodeAsHtml {
+		extensions = append(extensions, highlighting.NewHighlighting(
 			// highlighting.WithCSSWriter(os.Stdout),
 			highlighting.WithStyle(`onedark`),
 			highlighting.WithFormatOptions(
@@ -181,8 +198,10 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 				chromahtml.WithClasses(true),
 				chromahtml.WithLineNumbers(true),
 			),
-		)),
-	)
+		))
+	}
+
+	md := goldmark.New(append(options, goldmark.WithExtensions(extensions...))...)
 
 	pCtx := parser.NewContext()
 	sourceBytes := []byte(source)

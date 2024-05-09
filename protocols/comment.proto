@@ -68,6 +68,12 @@ message ListCommentsRequest {
 	// 文章的种类，比如 post、page、tweet。
 	// 如果不指定的话，则是全部种类。
 	repeated string types = 10;
+
+	// TODO 临时放这儿的！
+	// 需要统一定义并传递给 markdown 转换器。
+	// 可以名字为：MarkdownRenderOptions {}
+	// 并且在文章和各接口之间共享。
+	bool do_not_render_code_as_html = 11;
 }
 
 message ListCommentsResponse {
