@@ -432,21 +432,21 @@ func (s *Service) updateCommentsCount() {
 // 前者用请求身份，后者不限身份。
 // TODO 像 getPostContent 一样走缓存。
 func (s *Service) convertCommentMarkdown(secure bool, source string, postID int64, options ...renderers.Option) (string, error) {
-	var md renderers.Renderer
-
-	options = append(options,
+	opts := []renderers.Option{
 		renderers.WithPathResolver(s.PathResolver(postID)),
 		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
-	)
-
+	}
 	if !secure {
-		options = append(options,
+		opts = append(opts,
 			renderers.WithDisableHeadings(true),
 			renderers.WithDisableHTML(true),
 		)
 	}
 
-	md = renderers.NewMarkdown(options...)
+	// 最后才追加，允许外部覆盖内部默认。
+	opts = append(opts, options...)
+
+	md := renderers.NewMarkdown(opts...)
 
 	_, content, err := md.Render(source)
 	if err != nil {

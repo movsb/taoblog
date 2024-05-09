@@ -98,7 +98,7 @@ func TestMarkdownAll(t *testing.T) {
 			Html:     `<p><a href="/foo" class="external" target="_blank"></a></p>`,
 		},
 		{
-			ID: 5.1,
+			ID: 5.2,
 			Options: []renderers.Option{
 				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
 			},
@@ -131,8 +131,9 @@ func TestMarkdownAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sep := strings.Repeat("-", 128)
 		if strings.TrimSpace(html) != strings.TrimSpace(tc.Html) {
-			t.Fatalf("not equal %v:\n%s\n%s\n%s\n\n", tc.ID, tc.Markdown, tc.Html, html)
+			t.Fatalf("not equal %v:\n%s\n%s\n%s\n%s\n%s\n\n", tc.ID, tc.Markdown, sep, tc.Html, sep, html)
 		}
 	}
 }

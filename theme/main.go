@@ -91,7 +91,7 @@ func New(devMode bool, cfg *config.Config, service *service.Service, auth *auth.
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
-	m.HandleFunc(`GET /tweets`, t.queryTweets)
+	m.Handle(`GET /tweets`, t.LastPostTime304HandlerFunc(t.queryTweets))
 	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
 
 	t.loadTemplates()
