@@ -564,13 +564,13 @@ class Comment {
 						: '（？？？）';
 
 			// 编辑框是否可编辑？
-			let inputs = document.querySelectorAll('#comment-form .fields input[type=text]');
+			const inputs = (selectors => selectors.map(selector => document.querySelector(`#comment-form .fields ${selector}`)))([
+				'input[name=author]',
+				'input[name=email]',
+				'input[name=url',
+			]);
 			let allowEditingInfo = options.allowEditingInfo ?? true;
-			inputs.forEach(function (input) {
-				// input.disabled = allowEditingInfo ? '' : 'disabled';
-				// console.log(input);
-				input.style.display = allowEditingInfo ? 'block' : 'none';
-			});
+			inputs.forEach(input => input.style.display = allowEditingInfo ? 'block' : 'none');
 
 			// 编辑框初始值
 			// 设置已保存的作者/邮箱/网址,其实只需要在页面加载完成后设置一次即可，是嘛？
