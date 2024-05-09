@@ -220,7 +220,7 @@ func (s *Service) getPostContent(id int64, options ...GetPostContentOption) (str
 		var tr renderers.Renderer
 		switch p.SourceType {
 		case `markdown`:
-			options := []renderers.Option{
+			options := []renderers.Option2{
 				renderers.WithPathResolver(s.PathResolver(id)),
 				renderers.WithRemoveTitleHeading(true),
 				renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {

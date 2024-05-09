@@ -11,7 +11,7 @@ import (
 func TestPrettifier(t *testing.T) {
 	cases := []struct {
 		ID          float32
-		Options     []renderers.Option
+		Options     []renderers.Option2
 		Description string
 		Markdown    string
 		Text        string

@@ -189,6 +189,21 @@ hr {
 	border-bottom: 1px dashed var(--border-color);
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/@counter-style
+@counter-style parenthesis {
+	system: numeric;
+	symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
+	suffix: ") ";
+}
+ul, ol {
+	&.reset-list-style-type { list-style-type: initial;     }
+	&.marker-minus          { list-style-type: "- ";        }
+	&.marker-plus           { list-style-type: "+ ";        }
+	&.marker-asterisk       { list-style-type: "* ";        }
+	&.marker-period         { list-style-type: decimal;     }
+	&.marker-parenthesis    { list-style-type: parenthesis; }
+}
+
 @keyframes fadeIn {
 	0% { opacity: 0; display: block; }
 	100% { opacity: 1;}

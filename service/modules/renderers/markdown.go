@@ -37,6 +37,9 @@ import (
 
 // Markdown ...
 type _Markdown struct {
+	opts    []Option2
+	testing bool
+
 	pathResolver       PathResolver
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
@@ -154,14 +157,30 @@ func WithDoNotRenderCodeAsHTML() Option {
 	}
 }
 
-func NewMarkdown(options ...Option) *_Markdown {
+func NewMarkdown(options ...any) *_Markdown {
 	me := &_Markdown{}
-	for _, option := range options {
-		if err := option(me); err != nil {
-			log.Println(err)
-		}
-	}
+
+	me.AddOptions(options...)
+
 	return me
+}
+
+// TODO 判断重复。
+func (me *_Markdown) AddOptions(options ...any) {
+	for _, option := range options {
+		if v1, ok := option.(Option); ok {
+			if err := v1(me); err != nil {
+				// TODO 处理错误。
+				log.Println(err)
+			}
+		}
+		me.opts = append(me.opts, option)
+	}
+
+	// 目前的默认选项。
+	if !me.testing {
+		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
+	}
 }
 
 // TODO 只是不渲染的话，其实不需要加载插件？
@@ -299,6 +318,19 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 
 	if me.noRendering {
 		return ``, ``, nil
+	}
+
+	for _, opt := range me.opts {
+		if walker, ok := opt.(EnteringWalker); ok {
+			if err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+				if entering {
+					return walker.WalkEntering(n)
+				}
+				return ast.WalkContinue, nil
+			}); err != nil {
+				panic(err)
+			}
+		}
 	}
 
 	buf := bytes.NewBuffer(nil)

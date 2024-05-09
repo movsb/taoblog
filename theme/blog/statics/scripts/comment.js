@@ -215,7 +215,7 @@ class CommentNodeUI {
 	get elemContent()   { return this._node.querySelector(':scope > .comment-content'); }
 	get htmlID()        { return this._node.id; }
 	get htmlNode()      { return this._node; }
-	get replyList()     { return this._node.querySelector(`:scope ol:first-child`); }
+	get replyList()     { return this._node.querySelector(`:scope .comment-replies`); }
 
 	setContent(html) { this.elemContent.innerHTML = html; }
 	locate() { this._node.scrollIntoView({behavior: 'smooth'}); }
@@ -687,14 +687,14 @@ class Comment {
 		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}">${cmt.date_fuzzy}</time>
 	</div>
 	${cmt.source_type === 'markdown'
-				? `<div class="comment-content html-content">${cmt.content}</div>`
-				: `<div class="comment-content">${h2t(cmt.content)}</div>`}
+				? `<div class="comment-content html-content reset-list-style-type">${cmt.content}</div>`
+				: `<div class="comment-content reset-list-style-type">${h2t(cmt.content)}</div>`}
 	<div class="toolbar no-sel">
 		<a class="" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
 		<a class="edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
 		<a class="delete-comment" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});">删除</a>
 	</div>
-	<div class="comment-replies" id="comment-reply-${cmt.id}"><ol></ol></div>
+	<ol class="comment-replies" id="comment-reply-${cmt.id}"></ol>
 </li>
 `;
 

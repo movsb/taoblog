@@ -27,7 +27,7 @@ func TestMarkdownAll(t *testing.T) {
 
 	cases := []struct {
 		ID          float32
-		Options     []renderers.Option
+		Options     []renderers.Option2
 		Description string
 		Markdown    string
 		Html        string
@@ -60,14 +60,14 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:          4,
 			Description: `修改页面锚点的指向`,
-			Options:     []renderers.Option{},
+			Options:     []renderers.Option2{},
 			Markdown:    `[A](#section)`,
 			Html:        `<p><a href="#section">A</a></p>`,
 		},
 		{
 			ID:          4.1,
 			Description: `修改页面锚点的指向`,
-			Options: []renderers.Option{
+			Options: []renderers.Option2{
 				renderers.WithModifiedAnchorReference("/about"),
 			},
 			Markdown: `[A](#section)`,
@@ -76,7 +76,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:          4.2,
 			Description: `修改页面锚点的指向`,
-			Options: []renderers.Option{
+			Options: []renderers.Option2{
 				renderers.WithModifiedAnchorReference("/about/"),
 			},
 			Markdown: `[A](#section)`,
@@ -85,13 +85,13 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:          5.0,
 			Description: `新窗口打开链接`,
-			Options:     []renderers.Option{},
+			Options:     []renderers.Option2{},
 			Markdown:    `[](/foo)`,
 			Html:        `<p><a href="/foo"></a></p>`,
 		},
 		{
 			ID: 5.1,
-			Options: []renderers.Option{
+			Options: []renderers.Option2{
 				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
 			},
 			Markdown: `[](/foo)`,
@@ -99,7 +99,7 @@ func TestMarkdownAll(t *testing.T) {
 		},
 		{
 			ID: 5.2,
-			Options: []renderers.Option{
+			Options: []renderers.Option2{
 				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
 			},
 			Markdown: `[](#section)`,
@@ -118,15 +118,24 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       7.0,
 			Markdown: `![](1.png?scale=.3)`,
-			Options:  []renderers.Option{renderers.WithUseAbsolutePaths(`/911/`)},
+			Options:  []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
 			Html:     `<p><img src="/911/1.png" alt="" loading="lazy" /></p>`,
+		},
+		{
+			ID:       8.0,
+			Markdown: `- item`,
+			Options:  []renderers.Option2{renderers.WithReserveListItemMarkerStyle()},
+			Html: `<ul class="marker-minus">
+<li>item</li>
+</ul>`,
 		},
 	}
 	for _, tc := range cases {
-		md := renderers.NewMarkdown(tc.Options...)
-		if tc.ID == 6.0 {
+		if tc.ID == 2.0 {
 			log.Println(`debug`)
 		}
+		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
+		md := renderers.NewMarkdown(options...)
 		_, html, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Fatal(err)

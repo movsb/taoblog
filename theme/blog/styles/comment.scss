@@ -72,7 +72,7 @@
     padding: 0;
     list-style: none;
 
-    .comment-replies > ol {
+    .comment-replies {
         padding: 0;
         list-style: none;
     }
@@ -119,15 +119,9 @@
                 overflow: auto;
                 max-height: 350px;
 			}
+		}
 
-			// 每次评论内容开始时重置列表样式。
-			// 居然这么多年都没有真正生效过。
-			> ul {
-				list-style-type: initial;
-			}
-        }
-
-		.comment-replies > ol > li {
+		.comment-replies > li {
 				padding: 1em 0px 0em 1em;
 				border-top: 1px dashed var(--border-color);
         }
@@ -335,7 +329,7 @@
 	#comment-list .comment-li {
 		padding-left: 0;
 	}
-	#comment-list .comment-li .comment-replies > ol > li {
+	#comment-list .comment-li .comment-replies > li {
 		padding-left: 4px;
 	}
 }

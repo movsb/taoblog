@@ -46,7 +46,7 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 			c.GeoLocation = s.geoLocation(c.Ip)
 		}
 
-		var renderOptions []renderers.Option
+		var renderOptions []renderers.Option2
 		if ctx, ok := ctx.Value(SetCommentExtraFieldsContext{}).(*SetCommentExtraFieldsContext); ok {
 			if ctx.DoNotRenderCodeAsHtml {
 				renderOptions = append(renderOptions, renderers.WithDoNotRenderCodeAsHTML())
@@ -448,8 +448,8 @@ func (s *Service) updateCommentsCount() {
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 convert 接口。
 // 前者用请求身份，后者不限身份。
 // TODO 像 getPostContent 一样走缓存。
-func (s *Service) convertCommentMarkdown(secure bool, source string, postID int64, options ...renderers.Option) (string, error) {
-	opts := []renderers.Option{
+func (s *Service) convertCommentMarkdown(secure bool, source string, postID int64, options ...renderers.Option2) (string, error) {
+	opts := []renderers.Option2{
 		renderers.WithPathResolver(s.PathResolver(postID)),
 		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
 	}
@@ -504,7 +504,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
 
-	options := []renderers.Option{}
+	options := []renderers.Option2{}
 	if in.OpenLinksInNewTab {
 		options = append(options, renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll))
 	}
