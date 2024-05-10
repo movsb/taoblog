@@ -46,5 +46,12 @@ body.admin.editor {
 				}
 			}
 		}
+		.TinyMDE {
+			border: 1px solid var(--border-color);
+			padding: var(--textarea-padding);
+			border-radius: var(--border-radius);
+			tab-size: 4;
+			overflow: auto;
+		}
 	}
 }

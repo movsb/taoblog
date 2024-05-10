@@ -223,13 +223,13 @@ class CommentNodeUI {
 
 // 预览管理对象。
 class CommentPreviewUI {
-	constructor() {
+	constructor(toggleContent) {
 		this._generated = false;
+		this._toggleContent = toggleContent;
 	}
 
 	get checkBox()      { return document.getElementById('comment-show-preview'); }
 	get container()     { return document.getElementById('comment-preview'); }
-	get textarea()      { return document.getElementById('comment-content'); }
 
 	get checked()       { return this.checkBox.checked; }
 	
@@ -266,9 +266,7 @@ class CommentPreviewUI {
 		}.bind(this), 500);
 	}
 	show(yes) {
-		this.textarea.style.display = yes ? 'none' : 'block';
-		this.container.style.display = yes ? 'block' : 'none';
-		this.textarea.focus();
+		this._toggleContent(!yes);
 		this.checkBox.checked = yes;
 	}
 }
@@ -456,11 +454,15 @@ class Comment {
 		this.being_replied = 0; // 正在回复的评论。
 		this.being_edited = 0; // 正在被编辑的 ID，仅编辑时有效，> 0 时有效
 
+		this.tiny_editor = undefined;
+
 
 		this.api = new CommentAPI(this.post_id);
 
 		// 预览操作对象。
-		this.preview = new CommentPreviewUI();
+		this.preview = new CommentPreviewUI((show) => {
+			this.showContent(show);
+		});
 
 		// 表单管理对象。
 		this.form = new CommentFormUI();
@@ -503,6 +505,9 @@ class Comment {
 		});
 
 		this.preload();
+
+		// 问题可能比较多，先不公开。
+		// this.initEditor();
 	}
 	preload() {
 		const loaded = true;
@@ -528,10 +533,46 @@ class Comment {
 			});
 		}
 	}
-	clearContent() {
-		let content = document.querySelector('#comment-content');
-		content.value = '';
+
+	initEditor() {
+		class Editor {
+			constructor(container, textarea) {
+				// console.log(`Editor:`, container, textarea);
+				this.backend = new TinyMDE.Editor({
+					element: container, // TODO: BUG!
+					textarea: textarea,
+				});
+				this.element = document.querySelector('#comment-form .TinyMDE');
+			}
+		}
+		
+		let textarea = document.querySelector('#comment-content');
+		let mde = new Editor(
+			document.querySelector('.content-area'),
+			textarea,
+		);
+		this.tiny_editor = mde;
 	}
+
+	setContent(value) {
+		if (this.tiny_editor) {
+			this.tiny_editor.setContent(value);
+		} else {
+			let content = document.querySelector('#comment-content');
+			content.value = value;
+		}
+	}
+	clearContent() {
+		this.setContent("");
+	}
+	showContent(yes) {
+		let elem = this.tiny_editor
+			? this.tiny_editor.element
+			: document.querySelector('#comment-content');
+		elem.style.display = yes ? 'block' : 'none';
+		if (yes) elem.focus();
+	}
+
 	hide() {
 		this.showCommentBox(false);
 	}
@@ -577,10 +618,9 @@ class Comment {
 			{
 				this.form.restore();
 
-				let inputContent = document.querySelector('#comment-content');
 				// 其它时候（未提交之前）不应该修改编辑的内容
 				if (this.being_edited > 0) {
-					inputContent.value = this.list.comments[this.being_edited].source;
+					this.setContent(this.list.comments[this.being_edited].source);
 				}
 			}
 
@@ -708,9 +748,7 @@ class Comment {
 		this.being_replied = +p;
 		this.move_to_center();
 		this.preview.show(false);
-		this.showCommentBox(true, function () {
-			document.querySelector('#comment-content').focus();
-		});
+		this.showCommentBox(true, () => this.focus());
 	}
 	edit(c) {
 		if (this.being_replied > -1) {
@@ -720,11 +758,16 @@ class Comment {
 		this.being_edited = c;
 		this.move_to_center();
 		this.preview.show(false);
-		this.showCommentBox(true, function () {
-			document.querySelector('#comment-content').focus();
-		}, {
+		this.showCommentBox(true, ()=>this.focus(), {
 			allowEditingInfo: false,
 		});
+	}
+	focus() {
+		if (this.tiny_editor) {
+			
+		} else {
+			document.querySelector('#comment-content').focus();
+		}
 	}
 	move_to_center() {
 		let div = document.querySelector('#comment-form-div');

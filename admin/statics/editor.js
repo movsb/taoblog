@@ -78,6 +78,11 @@ class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('form');
 		this._previewCallbackReturned = true;
+
+		this.editor = new TinyMDE.Editor({
+			element: document.querySelector('#editor-container'),
+			textarea: document.querySelector('#editor-container textarea'),
+		});
 	}
 
 	get elemSource()    { return this._form['source'];  }
@@ -164,13 +169,23 @@ class PostFormUI {
 	// debounced
 	sourceChanged(callback) {
 		let debouncing = undefined;
-		this.elemSource.addEventListener('input', (e)=>{
-			if (this._previewCallbackReturned == false) { return; }
-			clearTimeout(debouncing);
-			debouncing = setTimeout(() => {
-				callback(this.elemSource.value);
-			}, 1000);
-		});
+		if (this.editor) {
+			this.editor.addEventListener('change', (e)=>{
+				if (this._previewCallbackReturned == false) { return; }
+				clearTimeout(debouncing);
+				debouncing = setTimeout(() => {
+					callback(e.content);
+				}, 500);
+			});
+		} else {
+			this.elemSource.addEventListener('input', (e)=>{
+				if (this._previewCallbackReturned == false) { return; }
+				clearTimeout(debouncing);
+				debouncing = setTimeout(() => {
+					callback(this.elemSource.value);
+				}, 500);
+			});
+		}
 	}
 }
 

@@ -1,0 +1,237 @@
+.TinyMDE {
+	/* background-color: #fff; */
+	/* color: #000; */
+	/* font-size: 16px; */
+	/* line-height: 24px; */
+	outline: none;
+	/* padding: 5px */
+	height: 100%;
+	box-sizing: border-box;
+}
+
+.TMBlankLine {
+	/* height: 24px */
+}
+
+.TMH1,
+.TMSetextH1 {
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 32px;
+	margin-bottom: 8px
+}
+
+.TMSetextH1 {
+	margin-bottom: 0
+}
+
+.TMSetextH1Marker {
+	margin-bottom: 8px
+}
+
+.TMH2,
+.TMSetextH2 {
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 28px;
+	margin-bottom: 4px
+}
+
+.TMMark_TMCode {
+	font-family: monospace;
+	font-family: var(--mono-font);
+	/* font-size: .9em */
+}
+.TMMark_TMCode, .TMCode {
+	color: #98c379 !important; /* 不知道为什么 */
+}
+
+.TMFencedCodeBacktick,
+.TMFencedCodeTilde,
+.TMIndentedCode {
+	/* background-color: #e0e0e0; */
+	font-family: monospace;
+	font-family: var(--mono-font);
+	color: #a50;
+}
+
+.TMCodeFenceBacktickOpen,
+.TMCodeFenceTildeOpen {
+	/* border-bottom: 1px solid silver; */
+	font-family: monospace;
+	font-family: var(--mono-font);
+	/* font-size: .9em */
+}
+
+.TMCodeFenceBacktickClose,
+.TMCodeFenceTildeClose {
+	/* border-top: 1px solid silver; */
+	font-family: monospace;
+	font-family: var(--mono-font);
+	/* font-size: .9em */
+}
+
+.TMMark.TMMark_TMCodeFenceTilde,
+.TMMark.TMMark_TMCodeFenceBacktick,
+.TMInfoString {
+	color: #98c379;
+}
+
+.TMCode {
+	/* border: 1px solid silver; */
+	/* border-radius: 2px */
+}
+
+.TMBlockquote {
+	border-left: 2px solid silver;
+	font-style: italic;
+	margin-left: 10px;
+	padding-left: 10px
+}
+
+.TMMark {
+	color: #a0a0a0
+}
+
+.TMMark_TMH1,
+.TMMark_TMH2,
+.TMMark_TMOL,
+.TMMark_TMUL {
+	color: #ff8080
+}
+
+.TMImage {
+	text-decoration: underline;
+	text-decoration-color: #0f0
+}
+
+.TMLink {
+	text-decoration: underline;
+	text-decoration-color: var(--accent-color);
+}
+
+.TMLinkLabel {
+	font-family: monospace;
+	text-decoration: underline
+}
+
+.TMLinkLabel_Definition,
+.TMLinkLabel_Valid {
+	color: #40c040
+}
+
+.TMLinkLabel_Invalid {
+	color: red
+}
+
+.TMLinkTitle {
+	/* font-style: italic */
+}
+
+.TMAutolink,
+.TMLinkDestination {
+	color: var(--accent-color);
+	text-decoration: underline
+}
+
+.TMHR {
+	position: relative
+}
+
+.TMHR:before {
+	border-bottom: 2px solid grey;
+	bottom: 50%;
+	content: "";
+	left: 40%;
+	position: absolute;
+	width: 20%;
+	z-index: 0
+}
+
+.TMHTML,
+.TMHTMLBlock {
+	color: #e06c75;
+	font-family: monospace;
+	/* font-size: .9em */
+}
+
+.TMCommandBar {
+	-ms-overflow-style: none;
+	background-color: #f8f8f8;
+	border: 4px solid #f8f8f8;
+	box-sizing: content-box;
+	display: flex;
+	height: 24px;
+	overflow-x: scroll;
+	overflow-y: hidden;
+	scrollbar-width: none;
+	-webkit-user-select: none;
+	user-select: none
+}
+
+.TMCommandBar::-webkit-scrollbar {
+	display: none
+}
+
+.TMCommandButton {
+	fill: #404040;
+	box-sizing: border-box;
+	color: #404040;
+	cursor: pointer;
+	display: inline-block;
+	font-family: sans-serif;
+	font-size: 20px;
+	height: 24px;
+	line-height: 18px;
+	margin-right: 4px;
+	padding: 3px;
+	text-align: center;
+	vertical-align: middle;
+	width: 24px
+}
+
+.TMCommandDivider {
+	border-left: 1px solid silver;
+	border-right: 1px solid #fff;
+	box-sizing: content-box;
+	height: 24px;
+	margin-left: 4px;
+	margin-right: 8px;
+	width: 0
+}
+
+.TMCommandButton_Active {
+	fill: navy;
+	background-color: #c0c0ff;
+	color: navy;
+	font-weight: 700
+}
+
+.TMCommandButton_Inactive {
+	background-color: #f8f8f8
+}
+
+.TMCommandButton_Disabled {
+	fill: #a0a0a0;
+	color: #a0a0a0
+}
+
+@media (hover:hover) {
+
+	.TMCommandButton_Active:hover,
+	.TMCommandButton_Disabled:hover,
+	.TMCommandButton_Inactive:hover {
+		fill: #000;
+		background-color: #e0e0ff
+	}
+}
+
+/* 一些我添加的 */
+
+code.TMCode {
+	margin: unset;
+	padding: unset;
+	border: none;
+	border-radius: unset;
+	background-color: unset;
+}
