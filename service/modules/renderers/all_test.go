@@ -129,16 +129,22 @@ func TestMarkdownAll(t *testing.T) {
 <li>item</li>
 </ul>`,
 		},
+		{
+			ID:       9.0,
+			Markdown: `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
+			Options:  []renderers.Option2{renderers.WithLazyLoadingFrames()},
+			Html:     `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="" loading="lazy"></iframe>`,
+		},
 	}
 	for _, tc := range cases {
-		if tc.ID == 2.0 {
+		if tc.ID == 9.0 {
 			log.Println(`debug`)
 		}
 		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
 		md := renderers.NewMarkdown(options...)
 		_, html, err := md.Render(tc.Markdown)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatal(tc.ID, err)
 		}
 		sep := strings.Repeat("-", 128)
 		if strings.TrimSpace(html) != strings.TrimSpace(tc.Html) {

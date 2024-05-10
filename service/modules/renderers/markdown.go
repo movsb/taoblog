@@ -3,6 +3,7 @@ package renderers
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif" // shut up
@@ -31,6 +32,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
+	xnethtml "golang.org/x/net/html"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -180,6 +182,7 @@ func (me *_Markdown) AddOptions(options ...any) {
 	// 目前的默认选项。
 	if !me.testing {
 		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
+		me.opts = append(me.opts, WithLazyLoadingFrames())
 	}
 }
 
@@ -341,9 +344,15 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 
 	htmlText := buf.Bytes()
 
+	// 非常低效的接口。
+	// TODO 重写一个新的 markdown 渲染器，渲染到 html 节点，而不是直接写 writer。
 	for _, opt := range me.opts {
 		if filter, ok := opt.(HtmlFilter); ok {
-			filtered, err := filter.FilterHtml(htmlText)
+			htmlDoc, err := xnethtml.Parse(bytes.NewReader(htmlText))
+			if err != nil {
+				return ``, ``, err
+			}
+			filtered, err := filter.FilterHtml(htmlDoc)
 			if err != nil {
 				return ``, ``, err
 			}
@@ -352,6 +361,32 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	}
 
 	return title, string(htmlText), err
+}
+
+func renderHtmlDoc(doc *xnethtml.Node) ([]byte, error) {
+	if doc != nil {
+		if html := doc.FirstChild; html != nil {
+			if head := html.FirstChild; head != nil {
+				if body := head.NextSibling; body != nil {
+					buf := bytes.NewBuffer(nil)
+					for c := body.FirstChild; c != nil; c = c.NextSibling {
+						if err := xnethtml.Render(buf, c); err != nil {
+							return nil, err
+						}
+					}
+					return buf.Bytes(), nil
+					// // 真蛋疼，还要移除 <body></body>
+					// bytes := buf.Bytes()
+					// if len(bytes) >= 13 {
+					// 	bytes = bytes[len("<body>"):]
+					// 	bytes = bytes[:len(bytes)-len("</body>")]
+					// }
+					// return bytes, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New(`empty html doc`)
 }
 
 func (me *_Markdown) doOpenLinkInNewTab(doc ast.Node, source []byte) error {
