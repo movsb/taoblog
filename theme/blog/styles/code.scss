@@ -98,7 +98,7 @@ table.lntable {
 		box-sizing: border-box;
 
 		> tr {
-			overflow: scroll;
+			overflow: auto;
 			max-height: 60vh;
 			display: block;
 		}
