@@ -437,7 +437,9 @@ var cacheControl = `max-age=21600, must-revalidate`
 // TODO 支持本地静态文件以临时存放临时文件。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	// 正式环境也不要缓存太久，因为博客在经常更新。
-	w.Header().Add(`Cache-Control`, cacheControl)
+	if !service.DevMode() {
+		w.Header().Add(`Cache-Control`, cacheControl)
+	}
 	// TODO embed 没有 last modified
 	http.ServeFileFS(w, req, t.rootFS, file)
 }
