@@ -1,8 +1,11 @@
 package data
 
 import (
+	"context"
+
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
@@ -13,21 +16,23 @@ type TagData struct {
 }
 
 // NewDataForTag ...
-func NewDataForTag(cfg *config.Config, user *auth.User, service *service.Service, tags []string) *Data {
+func NewDataForTag(ctx context.Context, cfg *config.Config, service *service.Service, tags []string) *Data {
 	d := &Data{
 		Config: cfg,
-		User:   user,
+		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},
 	}
 	td := &TagData{
 		Names: tags,
 	}
-	posts := service.GetPostsByTags(tags).ToProtocols()
-	for _, p := range posts {
+	posts, err := service.GetPostsByTags(ctx, &protocols.GetPostsByTagsRequest{Tags: tags})
+	if err != nil {
+		panic(err)
+	}
+	for _, p := range posts.Posts {
 		pp := newPost(p)
 		pp.link = service.GetLink(p.Id)
 		td.Posts = append(td.Posts, pp)
-
 	}
 	d.Tag = td
 	return d

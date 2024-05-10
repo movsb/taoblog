@@ -29,14 +29,14 @@ func (s *Service) posts() *taorm.Stmt {
 }
 
 // MustGetPost ...
-func (s *Service) MustGetPost(name int64) *protocols.Post {
+func (s *Service) MustGetPost(ctx context.Context, name int64) *protocols.Post {
 	var p models.Post
 	stmt := s.posts().Where("id = ?", name)
 	if err := stmt.Find(&p); err != nil {
 		panic(err)
 	}
 
-	out := p.ToProtocols()
+	out := p.ToProtocols(s.setPostExtraFields(ctx))
 	content, err := s.getPostContent(name)
 	if err != nil {
 		panic(err)
@@ -62,7 +62,7 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
-	outs := posts.ToProtocols()
+	outs := posts.ToProtocols(s.setPostExtraFields(ctx))
 	if in.WithContent {
 		for _, out := range outs {
 			content, err := s.getPostContent(out.Id)
@@ -90,7 +90,7 @@ func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
 		panic(err)
 	}
 
-	outs := posts.ToProtocols()
+	outs := posts.ToProtocols(s.setPostExtraFields(ctx))
 
 	for _, out := range outs {
 		content, err := s.getPostContent(out.Id, WithGetPostContentOptionIsTweets())
@@ -113,12 +113,15 @@ func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64
 	return s.MustListPosts(ctx, &in)
 }
 
-func (s *Service) isPostPublic(id int64) bool {
-	p := s.MustGetPost(id)
+// TODO 性能很差！
+func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
+	p := s.MustGetPost(ctx, id)
 	return p.Status == `public`
 }
 
-// GetPost ...
+// 获取指定编号的文章。
+//
+// NOTE：如果是公开文章但是非管理员用户，会过滤掉敏感字段。
 func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*protocols.Post, error) {
 	ac := auth.Context(ctx)
 
@@ -131,7 +134,7 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 		panic(codes.PermissionDenied)
 	}
 
-	out := p.ToProtocols()
+	out := p.ToProtocols(s.setPostExtraFields(ctx))
 
 	// TODO don't get these fields
 	if in.WithContent {
@@ -283,8 +286,8 @@ func (s *Service) plainLink(id int64) string {
 	return fmt.Sprintf(`/%d/`, id)
 }
 
-func (s *Service) GetPostByID(id int64) *protocols.Post {
-	return s.MustGetPost(id)
+func (s *Service) GetPostByID(ctx context.Context, id int64) *protocols.Post {
+	return s.MustGetPost(ctx, id)
 }
 
 func (s *Service) IncrementPostPageView(id int64) {
@@ -292,18 +295,18 @@ func (s *Service) IncrementPostPageView(id int64) {
 	s.tdb.MustExec(query, id)
 }
 
-func (s *Service) GetPostByPage(parents string, slug string) *protocols.Post {
-	return s.mustGetPostBySlugOrPage(true, parents, slug)
+func (s *Service) GetPostByPage(ctx context.Context, parents string, slug string) *protocols.Post {
+	return s.mustGetPostBySlugOrPage(ctx, true, parents, slug)
 }
 
-func (s *Service) GetPostBySlug(categories string, slug string) *protocols.Post {
-	return s.mustGetPostBySlugOrPage(false, categories, slug)
+func (s *Service) GetPostBySlug(ctx context.Context, categories string, slug string) *protocols.Post {
+	return s.mustGetPostBySlugOrPage(ctx, false, categories, slug)
 }
 
 // GetPostsByTags gets tag posts.
-func (s *Service) GetPostsByTags(tags []string) models.Posts {
+func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByTagsRequest) (*protocols.GetPostsByTagsResponse, error) {
 	var ids []int64
-	for _, tag := range tags {
+	for _, tag := range req.Tags {
 		t := s.GetTagByName(tag)
 		ids = append(ids, t.ID)
 	}
@@ -315,10 +318,12 @@ func (s *Service) GetPostsByTags(tags []string) models.Posts {
 		GroupBy(`posts.id`).
 		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
-	return posts
+	return &protocols.GetPostsByTagsResponse{
+		Posts: posts.ToProtocols(s.setPostExtraFields(ctx)),
+	}, nil
 }
 
-func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug string) *protocols.Post {
+func (s *Service) mustGetPostBySlugOrPage(ctx context.Context, isPage bool, parents string, slug string) *protocols.Post {
 	var catID int64
 	if !isPage {
 		catID = s.parseCategoryTree(parents)
@@ -337,7 +342,7 @@ func (s *Service) mustGetPostBySlugOrPage(isPage bool, parents string, slug stri
 	if err != nil {
 		panic(err)
 	}
-	out := p.ToProtocols()
+	out := p.ToProtocols(s.setPostExtraFields(ctx))
 	out.Content = content
 	return out
 }
@@ -493,7 +498,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		return nil
 	})
 
-	return p.ToProtocols(), nil
+	return p.ToProtocols(s.setPostExtraFields(ctx)), nil
 }
 
 // UpdatePost ...
@@ -591,7 +596,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		return nil
 	})
 
-	np := s.GetPostByID(p.ID)
+	np := s.GetPostByID(ctx, p.ID)
 	if hasTags {
 		np.Tags = s.GetPostTags(p.ID)
 	}
@@ -724,4 +729,14 @@ func (s *Service) SetRedirect(ctx context.Context, in *protocols.SetRedirectRequ
 		}
 		return txs.tdb.Model(r).Create()
 	})
+}
+
+func (s *Service) setPostExtraFields(ctx context.Context) func(c *protocols.Post) {
+	ac := auth.Context(ctx)
+
+	return func(p *protocols.Post) {
+		if !ac.User.IsAdmin() {
+			p.Metas.Geo = nil
+		}
+	}
 }

@@ -118,6 +118,14 @@ service TaoBlog {
 			description: "获取某篇文章的全部评论。比 ListComments 接口简单很多。";
 		};
 	}
+	rpc GetPostsByTags(GetPostsByTagsRequest) returns (GetPostsByTagsResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts:tags";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "根据标签列表获取全部的相关文章。";
+		};
+	}
 
 	// Comments
 

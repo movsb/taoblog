@@ -257,7 +257,8 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 }
 
 func (s *Service) GetPostComments(ctx context.Context, req *protocols.GetPostCommentsRequest) (*protocols.GetPostCommentsResponse, error) {
-	if !s.isPostPublic(req.Id) {
+	ac := auth.Context(ctx)
+	if !(ac.User.IsAdmin() || s.isPostPublic(ctx, req.Id)) {
 		return nil, status.Error(codes.PermissionDenied, `你无权查看此文章的评论。`)
 	}
 	var comments models.Comments
@@ -487,7 +488,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}
-		post := txs.GetPostByID(in.PostId)
+		post := txs.GetPostByID(ctx, in.PostId)
 		if cmt.PostID == post.Id {
 			panic(`不能转移到相同的文章`)
 		}

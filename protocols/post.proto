@@ -118,6 +118,13 @@ message GetPostCommentsResponse {
 	repeated Comment comments = 1;
 }
 
+message GetPostsByTagsRequest {
+	repeated string tags = 1;
+}
+message GetPostsByTagsResponse {
+	repeated Post posts = 1;
+}
+
 message FileSpec {
 	string path = 1;
 	uint32 mode = 2;

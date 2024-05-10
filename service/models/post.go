@@ -153,7 +153,7 @@ func (Post) TableName() string {
 }
 
 // ToProtocols ...
-func (p *Post) ToProtocols() *protocols.Post {
+func (p *Post) ToProtocols(redact func(p *protocols.Post)) *protocols.Post {
 	out := protocols.Post{
 		Id:            p.ID,
 		Date:          p.Date,
@@ -172,7 +172,7 @@ func (p *Post) ToProtocols() *protocols.Post {
 
 		LastCommentedAt: p.LastCommentedAt,
 	}
-
+	redact(&out)
 	return &out
 }
 
@@ -180,9 +180,9 @@ func (p *Post) ToProtocols() *protocols.Post {
 type Posts []*Post
 
 // ToProtocols ...
-func (ps Posts) ToProtocols() (posts []*protocols.Post) {
+func (ps Posts) ToProtocols(redact func(p *protocols.Post)) (posts []*protocols.Post) {
 	for _, post := range ps {
-		posts = append(posts, post.ToProtocols())
+		posts = append(posts, post.ToProtocols(redact))
 	}
 	return
 }

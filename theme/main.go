@@ -311,7 +311,7 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
-	post := t.service.GetPostByID(id)
+	post := t.service.GetPostByID(req.Context(), id)
 	t.userMustCanSeePost(req, post)
 
 	if post.Type == `page` {
@@ -334,7 +334,7 @@ func (t *Theme) incView(id int64) {
 }
 
 func (t *Theme) QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) (int64, error) {
-	post := t.service.GetPostBySlug(tree, slug)
+	post := t.service.GetPostBySlug(req.Context(), tree, slug)
 	t.userMustCanSeePost(req, post)
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
@@ -342,7 +342,7 @@ func (t *Theme) QueryBySlug(w http.ResponseWriter, req *http.Request, tree strin
 }
 
 func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) (int64, error) {
-	post := t.service.GetPostByPage(parents, slug)
+	post := t.service.GetPostByPage(req.Context(), parents, slug)
 	t.userMustCanSeePost(req, post)
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
@@ -371,7 +371,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTag(t.cfg, t.auth.AuthRequest(req), t.service, tags)
+	d := data.NewDataForTag(req.Context(), t.cfg, t.service, tags)
 	t.executeTemplate(`tag.html`, w, d)
 }
 

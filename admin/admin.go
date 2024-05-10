@@ -224,7 +224,7 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		post := a.svc.MustGetPost(int64(pid))
+		post := a.svc.MustGetPost(r.Context(), int64(pid))
 		d.Post = post
 	}
 	a.executeTemplate(w, `editor.html`, &d)
