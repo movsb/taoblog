@@ -254,7 +254,7 @@ formUI.drop(async files => {
 			alert(`文件 "${f.name}" 太大，不予上传。`);
 			return;
 		}
-		if (f.size == 0 || f.type == "") {
+		if (f.size == 0) {
 			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
 			return;
 		}
