@@ -15,13 +15,14 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/memory_cache"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/search"
 	"github.com/movsb/taorm"
+	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -36,7 +37,17 @@ type Service struct {
 	auth   *auth.Auth
 	cmtntf *comment_notify.CommentNotifier
 	cmtgeo *commentgeo.CommentGeo
-	cache  *memory_cache.MemoryCache
+
+	// 通用缓存
+	cache *lru.TTLCache[string, any]
+
+	// 文章内容缓存。
+	// NOTE：缓存 Key 是跟文章编号和内容选项相关的（因为内容选项不同内容也就不同），
+	// 所以存在一篇文章有多个缓存的问题。所以后面单独加了一个缓存来记录一篇文章对应了哪些
+	// 与之相关的内容缓存。创建/删除内容缓存时，同步更新两个缓存。
+	// TODO 我是不是应该直接缓存 *Post？不过好像也挺好改的。
+	postContentCaches *lru.TTLCache[_PostContentCacheKey, string]
+	postCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
 	avatarCache *AvatarCache
 
@@ -52,11 +63,14 @@ type Service struct {
 // NewService ...
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	s := &Service{
-		cfg:   cfg,
-		db:    db,
-		tdb:   taorm.NewDB(db),
-		auth:  auther,
-		cache: memory_cache.NewMemoryCache(time.Minute * 10),
+		cfg:  cfg,
+		db:   db,
+		tdb:  taorm.NewDB(db),
+		auth: auther,
+
+		cache:             lru.NewTTLCache[string, any](1024),
+		postContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](1024),
+		postCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{

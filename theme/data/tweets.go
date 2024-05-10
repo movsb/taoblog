@@ -6,6 +6,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
@@ -29,7 +30,11 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc *service.Serv
 		Tweets: &TweetsData{},
 	}
 
-	posts := svc.MustListLatestTweets(ctx)
+	posts := svc.MustListLatestTweets(ctx, &protocols.PostContentOptions{
+		WithContent:      true,
+		RenderCodeBlocks: true,
+		UseAbsolutePaths: true,
+	})
 	for _, p := range posts {
 		pp := newPost(p)
 		pp.link = svc.GetPlainLink(p.Id)

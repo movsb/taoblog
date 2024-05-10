@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"strconv"
+	"time"
 
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
@@ -12,13 +14,12 @@ func optionCacheKey(name string) string {
 }
 
 func (s *Service) GetStringOption(name string) (string, error) {
-	val, err := s.cache.Get(optionCacheKey(name), func(string) (interface{}, error) {
-		val, err := s._getOption(name)
-		if err != nil {
-			return nil, err
-		}
-		return val.(string), nil
-	})
+	val, err, _ := s.cache.GetOrLoad(context.TODO(), optionCacheKey(name),
+		func(ctx context.Context, _ string) (any, time.Duration, error) {
+			val, err := s._getOption(name)
+			return val, time.Minute * 10, err
+		},
+	)
 	if err != nil {
 		return ``, err
 	}
@@ -37,13 +38,16 @@ func (s *Service) GetDefaultStringOption(name string, def string) string {
 }
 
 func (s *Service) GetIntegerOption(name string) (int64, error) {
-	val, err := s.cache.Get(optionCacheKey(name), func(string) (interface{}, error) {
-		val, err := s._getOption(name)
-		if err != nil {
-			return nil, err
-		}
-		return strconv.ParseInt(val.(string), 10, 64)
-	})
+	val, err, _ := s.cache.GetOrLoad(context.TODO(), optionCacheKey(name),
+		func(ctx context.Context, _ string) (any, time.Duration, error) {
+			val, err := s._getOption(name)
+			if err != nil {
+				return nil, 0, err
+			}
+			n, err := strconv.ParseInt(val, 10, 64)
+			return n, time.Minute * 10, err
+		},
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -61,10 +65,10 @@ func (s *Service) GetDefaultIntegerOption(name string, def int64) int64 {
 	panic(err)
 }
 
-func (s *Service) _getOption(name string) (interface{}, error) {
+func (s *Service) _getOption(name string) (string, error) {
 	var option models.Option
 	if err := s.tdb.Model(models.Option{}).Where("name=?", name).Find(&option); err != nil {
-		return nil, err
+		return ``, err
 	}
 	return option.Value, nil
 }
@@ -99,5 +103,5 @@ func (s *Service) SetOption(name string, value interface{}) {
 		}
 		s.tdb.Model(&option).MustCreate()
 	}
-	s.cache.Set(optionCacheKey(name), value)
+	s.cache.Set(optionCacheKey(name), value, time.Minute*10)
 }

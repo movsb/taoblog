@@ -152,8 +152,10 @@ func (Post) TableName() string {
 	return `posts`
 }
 
-// ToProtocols ...
-func (p *Post) ToProtocols(redact func(p *protocols.Post)) *protocols.Post {
+// 以下字段由 setPostExtraFields 提供/清除。
+// - Metas.Geo
+// - Content
+func (p *Post) ToProtocols(redact func(p *protocols.Post) error) (*protocols.Post, error) {
 	out := protocols.Post{
 		Id:            p.ID,
 		Date:          p.Date,
@@ -172,17 +174,21 @@ func (p *Post) ToProtocols(redact func(p *protocols.Post)) *protocols.Post {
 
 		LastCommentedAt: p.LastCommentedAt,
 	}
-	redact(&out)
-	return &out
+	err := redact(&out)
+	return &out, err
 }
 
 // Posts ...
 type Posts []*Post
 
 // ToProtocols ...
-func (ps Posts) ToProtocols(redact func(p *protocols.Post)) (posts []*protocols.Post) {
+func (ps Posts) ToProtocols(redact func(p *protocols.Post) error) (posts []*protocols.Post, err error) {
 	for _, post := range ps {
-		posts = append(posts, post.ToProtocols(redact))
+		if p, err := post.ToProtocols(redact); err != nil {
+			return nil, err
+		} else {
+			posts = append(posts, p)
+		}
 	}
 	return
 }

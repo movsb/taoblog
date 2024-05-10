@@ -40,6 +40,7 @@ require (
 	github.com/google/go-tpm v0.9.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/phuslu/lru v1.0.15 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc // indirect
 	golang.org/x/crypto v0.21.0 // indirect

@@ -22,8 +22,8 @@ import (
 )
 
 type SetCommentExtraFieldsContext struct {
-	DoNotRenderCodeAsHtml bool
-	PrettifyHtml          bool
+	RenderCodeAsHtml bool
+	PrettifyHtml     bool
 }
 
 func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.Comment) {
@@ -49,8 +49,8 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 
 		var renderOptions []renderers.Option2
 		if ctx, ok := ctx.Value(SetCommentExtraFieldsContext{}).(*SetCommentExtraFieldsContext); ok {
-			if ctx.DoNotRenderCodeAsHtml {
-				renderOptions = append(renderOptions, renderers.WithDoNotRenderCodeAsHTML())
+			if ctx.RenderCodeAsHtml {
+				renderOptions = append(renderOptions, renderers.WithRenderCodeAsHTML())
 			}
 			if ctx.PrettifyHtml {
 				renderOptions = append(renderOptions, renderers.WithHtmlPrettifier())
@@ -247,8 +247,8 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	comments = append(comments, children...)
 
 	ctx = context.WithValue(ctx, SetCommentExtraFieldsContext{}, &SetCommentExtraFieldsContext{
-		DoNotRenderCodeAsHtml: in.DoNotRenderCodeAsHtml,
-		PrettifyHtml:          in.PrettifyHtml,
+		RenderCodeAsHtml: in.RenderCodeAsHtml,
+		PrettifyHtml:     in.PrettifyHtml,
 	})
 
 	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx))
@@ -488,7 +488,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}
-		post := txs.GetPostByID(ctx, in.PostId)
+		post := txs.GetPostByID(ctx, in.PostId, nil)
 		if cmt.PostID == post.Id {
 			panic(`不能转移到相同的文章`)
 		}

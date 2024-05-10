@@ -173,7 +173,7 @@ func TestPrettifier(t *testing.T) {
 		},
 		{
 			ID:       3,
-			Options:  []renderers.Option2{renderers.WithDoNotRenderCodeAsHTML()},
+			Options:  []renderers.Option2{},
 			Markdown: "代码：\n\n```go\npackage main\n```",
 			Text:     "代码：\n[代码]",
 		},

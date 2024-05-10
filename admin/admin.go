@@ -94,7 +94,7 @@ func (a *Admin) Handler() http.Handler {
 	m := http.NewServeMux()
 
 	// 奇怪，这里不能写 GET /，会冲突。
-	m.Handle(`/`, http.FileServerFS(utils.Must(fs.Sub(root, `statics`))))
+	m.Handle(`/`, http.FileServerFS(a.rootFS))
 	m.Handle(`GET /{$}`, a.requireLogin(a.getRoot))
 
 	m.HandleFunc(`GET /login`, a.getLogin)
@@ -224,7 +224,7 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		post := a.svc.MustGetPost(r.Context(), int64(pid))
+		post := a.svc.MustGetPost(r.Context(), int64(pid), nil)
 		d.Post = post
 	}
 	a.executeTemplate(w, `editor.html`, &d)

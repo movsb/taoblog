@@ -1,6 +1,8 @@
 package protocols
 
-import "io"
+import (
+	"io"
+)
 
 type GetAvatarRequest struct {
 	Ephemeral       int
@@ -19,7 +21,7 @@ type ListPostsRequest struct {
 	Limit   int64
 	OrderBy string
 
-	WithContent bool
+	ContentOptions PostContentOptions
 
 	Kind string // models.Kind
 }

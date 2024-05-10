@@ -311,7 +311,11 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
-	post := t.service.GetPostByID(req.Context(), id)
+	post := t.service.GetPostByID(req.Context(), id, &protocols.PostContentOptions{
+		WithContent:      true,
+		RenderCodeBlocks: true,
+		UseAbsolutePaths: false,
+	})
 	t.userMustCanSeePost(req, post)
 
 	if post.Type == `page` {
@@ -334,7 +338,11 @@ func (t *Theme) incView(id int64) {
 }
 
 func (t *Theme) QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) (int64, error) {
-	post := t.service.GetPostBySlug(req.Context(), tree, slug)
+	post := t.service.GetPostBySlug(req.Context(), tree, slug, &protocols.PostContentOptions{
+		WithContent:      true,
+		RenderCodeBlocks: true,
+		UseAbsolutePaths: false,
+	})
 	t.userMustCanSeePost(req, post)
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
@@ -342,7 +350,11 @@ func (t *Theme) QueryBySlug(w http.ResponseWriter, req *http.Request, tree strin
 }
 
 func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) (int64, error) {
-	post := t.service.GetPostByPage(req.Context(), parents, slug)
+	post := t.service.GetPostByPage(req.Context(), parents, slug, &protocols.PostContentOptions{
+		WithContent:      true,
+		RenderCodeBlocks: true,
+		UseAbsolutePaths: false,
+	})
 	t.userMustCanSeePost(req, post)
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)

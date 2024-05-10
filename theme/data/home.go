@@ -59,8 +59,7 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Se
 			Limit:   15,
 			OrderBy: "date DESC",
 
-			DoNotRenderCodeAsHtml: true,
-			PrettifyHtml:          true,
+			PrettifyHtml: true,
 		})
 	if err != nil {
 		panic(err)

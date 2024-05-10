@@ -52,9 +52,9 @@ type _Markdown struct {
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
 
-	useAbsolutePaths      string
-	noRendering           bool
-	doNotRenderCodeAsHtml bool
+	useAbsolutePaths string
+	noRendering      bool
+	renderCodeAsHtml bool
 }
 
 // TODO 不要返回 error。
@@ -151,10 +151,10 @@ func WithUseAbsolutePaths(base string) Option {
 	}
 }
 
-// 不要渲染代码。
-func WithDoNotRenderCodeAsHTML() Option {
+// 渲染代码。
+func WithRenderCodeAsHTML() Option {
 	return func(me *_Markdown) error {
-		me.doNotRenderCodeAsHtml = true
+		me.renderCodeAsHtml = true
 		return nil
 	}
 }
@@ -209,7 +209,7 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		wikitable.New(),
 	}
 
-	if !me.doNotRenderCodeAsHtml {
+	if me.renderCodeAsHtml {
 		extensions = append(extensions, highlighting.NewHighlighting(
 			// highlighting.WithCSSWriter(os.Stdout),
 			highlighting.WithStyle(`onedark`),

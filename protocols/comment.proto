@@ -73,7 +73,7 @@ message ListCommentsRequest {
 	// 需要统一定义并传递给 markdown 转换器。
 	// 可以名字为：MarkdownRenderOptions {}
 	// 并且在文章和各接口之间共享。
-	bool do_not_render_code_as_html = 11;
+	bool render_code_as_html = 11;
 	bool prettify_html = 12;
 }
 

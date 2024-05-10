@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -19,6 +21,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+type _PostContentCacheKey struct {
+	ID      int64
+	Options string
+}
 
 const (
 	postUntitled = `Untitled`
@@ -29,21 +36,11 @@ func (s *Service) posts() *taorm.Stmt {
 }
 
 // MustGetPost ...
-func (s *Service) MustGetPost(ctx context.Context, name int64) *protocols.Post {
+func (s *Service) MustGetPost(ctx context.Context, name int64, co *protocols.PostContentOptions) *protocols.Post {
 	var p models.Post
 	stmt := s.posts().Where("id = ?", name)
-	if err := stmt.Find(&p); err != nil {
-		panic(err)
-	}
-
-	out := p.ToProtocols(s.setPostExtraFields(ctx))
-	content, err := s.getPostContent(name)
-	if err != nil {
-		panic(err)
-	}
-	out.Content = content
-
-	return out
+	stmt.MustFind(&p)
+	return utils.Must(p.ToProtocols(s.setPostExtraFields(ctx, co)))
 }
 
 // 奇怪，为什么这个方法不是 protobuf 写的？🤔
@@ -62,21 +59,12 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
-	outs := posts.ToProtocols(s.setPostExtraFields(ctx))
-	if in.WithContent {
-		for _, out := range outs {
-			content, err := s.getPostContent(out.Id)
-			if err != nil {
-				panic(err)
-			}
-			out.Content = content
-		}
-	}
-	return outs
+
+	return utils.Must(posts.ToProtocols(s.setPostExtraFields(ctx, &in.ContentOptions)))
 }
 
 // TODO：改成 grpc。
-func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
+func (s *Service) MustListLatestTweets(ctx context.Context, co *protocols.PostContentOptions) []*protocols.Post {
 	ac := auth.Context(ctx)
 
 	stmt := s.tdb.Select("*").OrderBy(`date desc`)
@@ -90,32 +78,12 @@ func (s *Service) MustListLatestTweets(ctx context.Context) []*protocols.Post {
 		panic(err)
 	}
 
-	outs := posts.ToProtocols(s.setPostExtraFields(ctx))
-
-	for _, out := range outs {
-		content, err := s.getPostContent(out.Id, WithGetPostContentOptionIsTweets())
-		if err != nil {
-			panic(err)
-		}
-		out.Content = content
-	}
-
-	return outs
-}
-
-func (s *Service) GetLatestPosts(ctx context.Context, fields string, limit int64, withContent bool) []*protocols.Post {
-	in := protocols.ListPostsRequest{
-		Fields:      fields,
-		Limit:       limit,
-		OrderBy:     "date DESC",
-		WithContent: withContent,
-	}
-	return s.MustListPosts(ctx, &in)
+	return utils.Must(posts.ToProtocols(s.setPostExtraFields(ctx, co)))
 }
 
 // TODO 性能很差！
 func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
-	p := s.MustGetPost(ctx, id)
+	p := s.MustGetPost(ctx, id, nil)
 	return p.Status == `public`
 }
 
@@ -134,16 +102,14 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 		panic(codes.PermissionDenied)
 	}
 
-	out := p.ToProtocols(s.setPostExtraFields(ctx))
-
-	// TODO don't get these fields
-	if in.WithContent {
-		content, err := s.getPostContent(int64(in.Id))
-		if err != nil {
-			return nil, err
-		}
-		out.Content = content
+	out, err := p.ToProtocols(s.setPostExtraFields(ctx, &protocols.PostContentOptions{
+		WithContent:      in.WithContent,
+		RenderCodeBlocks: true,
+	}))
+	if err != nil {
+		return nil, err
 	}
+
 	if !in.WithSource {
 		out.SourceType = ``
 		out.Source = ``
@@ -179,86 +145,79 @@ func (r *PathResolver) Resolve(path string) string {
 	return r.fs.Resolve(path)
 }
 
-type GetPostContentOptions struct {
-	isTweet  bool
-	isTweets bool
-}
-
-type GetPostContentOption func(o *GetPostContentOptions)
-
-func WithGetPostContentOptionIsTweets() func(o *GetPostContentOptions) {
-	return func(o *GetPostContentOptions) {
-		o.isTweets = true
+func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protocols.PostContentOptions) (string, error) {
+	key := _PostContentCacheKey{
+		ID:      id,
+		Options: co.String(),
 	}
-}
-func WithGetPostContentOptionIsTweet() func(o *GetPostContentOptions) {
-	return func(o *GetPostContentOptions) {
-		o.isTweet = true
-	}
-}
-
-// TODO 使用磁盘缓存，而不是内存缓存。
-func (s *Service) getPostContent(id int64, options ...GetPostContentOption) (string, error) {
-	opts := GetPostContentOptions{}
-	for _, opt := range options {
-		opt(&opts)
-	}
-
-	// Tweets 页面把所有文章显示在一起，此时不能用相对链接，必须修改。
-	var cacheKey string
-	switch {
-	default:
-		cacheKey = fmt.Sprintf(`post:%d`, id)
-	case opts.isTweet:
-		cacheKey = fmt.Sprintf(`post:%d`, id)
-	case opts.isTweets:
-		cacheKey = fmt.Sprintf(`tweets:post:%d`, id)
-	}
-
-	content, err := s.cache.Get(cacheKey, func(key string) (interface{}, error) {
-		_ = key
-		var p models.Post
-		s.posts().Select("type,source_type,source,metas").Where("id = ?", id).MustFind(&p)
-		var content string
-		var tr renderers.Renderer
-		switch p.SourceType {
-		case `markdown`:
-			options := []renderers.Option2{
-				renderers.WithPathResolver(s.PathResolver(id)),
-				renderers.WithRemoveTitleHeading(true),
-				renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
-					if src, ok := p.Metas.Sources[path]; ok {
-						name = src.Name
-						url = src.URL
-						description = src.Description
-						found = true
-					}
-					return
-				}),
-				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
+	content, err, ok := s.postContentCaches.GetOrLoad(ctx, key,
+		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
+			content, err := s.getPostContent(id, co)
+			if err != nil {
+				return ``, 0, err
 			}
-			if link := s.GetLink(id); link != s.plainLink(id) {
-				options = append(options, renderers.WithModifiedAnchorReference(link))
-			}
-			if opts.isTweets {
-				options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
-			}
-			tr = renderers.NewMarkdown(options...)
-		case `html`:
-			tr = &renderers.HTML{}
-		default:
-			return ``, fmt.Errorf(`unknown source type`)
-		}
-		_, content, err := tr.Render(p.Source)
-		if err != nil {
-			return ``, err
-		}
-		return content, nil
-	})
+			s.postCaches.Append(id, key)
+			return content, time.Minute * 10, nil
+		},
+	)
 	if err != nil {
 		return ``, err
 	}
-	return content.(string), nil
+	log.Println(`cache status: get_post_content:`, ok, key)
+	return content, nil
+}
+
+func (s *Service) deletePostContentCacheFor(id int64) {
+	log.Println(`即将删除文章缓存：`, id)
+	s.postCaches.Delete(id, func(second _PostContentCacheKey) {
+		s.postContentCaches.Delete(second)
+		log.Println(`删除文章缓存：`, second)
+	})
+}
+
+func (s *Service) getPostContent(id int64, co *protocols.PostContentOptions) (string, error) {
+	if !co.WithContent {
+		panic(`without content but get content`)
+	}
+	var p models.Post
+	if err := s.tdb.Select("type,source_type,source,metas").Where("id = ?", id).Find(&p); err != nil {
+		return "", err
+	}
+	var content string
+	var tr renderers.Renderer
+	switch p.SourceType {
+	case `markdown`:
+		options := []renderers.Option2{
+			renderers.WithPathResolver(s.PathResolver(id)),
+			renderers.WithRemoveTitleHeading(true),
+			renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
+				if src, ok := p.Metas.Sources[path]; ok {
+					name = src.Name
+					url = src.URL
+					description = src.Description
+					found = true
+				}
+				return
+			}),
+			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
+		}
+		if link := s.GetLink(id); link != s.plainLink(id) {
+			options = append(options, renderers.WithModifiedAnchorReference(link))
+		}
+		if co.UseAbsolutePaths {
+			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
+		}
+		if co.RenderCodeBlocks {
+			options = append(options, renderers.WithRenderCodeAsHTML())
+		}
+		tr = renderers.NewMarkdown(options...)
+	case `html`:
+		tr = &renderers.HTML{}
+	default:
+		return ``, fmt.Errorf(`unknown source type`)
+	}
+	_, content, err := tr.Render(p.Source)
+	return content, err
 }
 
 func (s *Service) GetPostTitle(ID int64) string {
@@ -286,8 +245,8 @@ func (s *Service) plainLink(id int64) string {
 	return fmt.Sprintf(`/%d/`, id)
 }
 
-func (s *Service) GetPostByID(ctx context.Context, id int64) *protocols.Post {
-	return s.MustGetPost(ctx, id)
+func (s *Service) GetPostByID(ctx context.Context, id int64, co *protocols.PostContentOptions) *protocols.Post {
+	return s.MustGetPost(ctx, id, co)
 }
 
 func (s *Service) IncrementPostPageView(id int64) {
@@ -295,12 +254,12 @@ func (s *Service) IncrementPostPageView(id int64) {
 	s.tdb.MustExec(query, id)
 }
 
-func (s *Service) GetPostByPage(ctx context.Context, parents string, slug string) *protocols.Post {
-	return s.mustGetPostBySlugOrPage(ctx, true, parents, slug)
+func (s *Service) GetPostByPage(ctx context.Context, parents string, slug string, co *protocols.PostContentOptions) *protocols.Post {
+	return s.mustGetPostBySlugOrPage(ctx, true, parents, slug, co)
 }
 
-func (s *Service) GetPostBySlug(ctx context.Context, categories string, slug string) *protocols.Post {
-	return s.mustGetPostBySlugOrPage(ctx, false, categories, slug)
+func (s *Service) GetPostBySlug(ctx context.Context, categories string, slug string, co *protocols.PostContentOptions) *protocols.Post {
+	return s.mustGetPostBySlugOrPage(ctx, false, categories, slug, co)
 }
 
 // GetPostsByTags gets tag posts.
@@ -318,12 +277,14 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByT
 		GroupBy(`posts.id`).
 		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
-	return &protocols.GetPostsByTagsResponse{
-		Posts: posts.ToProtocols(s.setPostExtraFields(ctx)),
-	}, nil
+	outs, err := posts.ToProtocols(s.setPostExtraFields(ctx, req.ContentOptions))
+	if err != nil {
+		return nil, err
+	}
+	return &protocols.GetPostsByTagsResponse{Posts: outs}, nil
 }
 
-func (s *Service) mustGetPostBySlugOrPage(ctx context.Context, isPage bool, parents string, slug string) *protocols.Post {
+func (s *Service) mustGetPostBySlugOrPage(ctx context.Context, isPage bool, parents string, slug string, co *protocols.PostContentOptions) *protocols.Post {
 	var catID int64
 	if !isPage {
 		catID = s.parseCategoryTree(parents)
@@ -338,13 +299,7 @@ func (s *Service) mustGetPostBySlugOrPage(ctx context.Context, isPage bool, pare
 	if err := stmt.Find(&p); err != nil {
 		panic(err)
 	}
-	content, err := s.getPostContent(p.ID)
-	if err != nil {
-		panic(err)
-	}
-	out := p.ToProtocols(s.setPostExtraFields(ctx))
-	out.Content = content
-	return out
+	return utils.Must(p.ToProtocols(s.setPostExtraFields(ctx, co)))
 }
 
 // ParseTree parses category tree from URL to get last sub-category ID.
@@ -498,7 +453,8 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		return nil
 	})
 
-	return p.ToProtocols(s.setPostExtraFields(ctx)), nil
+	// TODO 暂时没提供选项。
+	return p.ToProtocols(s.setPostExtraFields(ctx, nil))
 }
 
 // UpdatePost ...
@@ -592,11 +548,12 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			txs.UpdateObjectTags(p.ID, in.Post.Tags)
 		}
 		txs.updateLastPostTime(time.Now())
-		txs.cache.Delete(fmt.Sprintf(`post:%d`, p.ID))
+		txs.deletePostContentCacheFor(p.ID)
 		return nil
 	})
 
-	np := s.GetPostByID(ctx, p.ID)
+	// TODO 暂时没提供选项。
+	np := s.GetPostByID(ctx, p.ID, nil)
 	if hasTags {
 		np.Tags = s.GetPostTags(p.ID)
 	}
@@ -615,6 +572,7 @@ func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostReques
 		txs.tdb.Model(&p).MustDelete()
 		txs.deletePostComments(ctx, int64(in.Id))
 		txs.deletePostTags(ctx, int64(in.Id))
+		txs.deletePostContentCacheFor(int64(in.Id))
 		txs.updatePostPageCount()
 		txs.updateCommentsCount()
 		return nil
@@ -731,12 +689,21 @@ func (s *Service) SetRedirect(ctx context.Context, in *protocols.SetRedirectRequ
 	})
 }
 
-func (s *Service) setPostExtraFields(ctx context.Context) func(c *protocols.Post) {
+func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Post) error {
 	ac := auth.Context(ctx)
 
-	return func(p *protocols.Post) {
+	return func(p *protocols.Post) error {
 		if !ac.User.IsAdmin() {
 			p.Metas.Geo = nil
 		}
+
+		if co != nil && co.WithContent {
+			content, err := s.getPostContentCached(ctx, p.Id, co)
+			if err != nil {
+				return err
+			}
+			p.Content = content
+		}
+		return nil
 	}
 }

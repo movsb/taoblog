@@ -67,6 +67,18 @@ message Post {
 	int32 last_commented_at = 17;
 }
 
+// 内容渲染选项。
+message PostContentOptions {
+	// 要不要内容？
+	bool with_content = 1;
+
+	// 要不要渲染代码 (成 HTML）？
+	bool render_code_blocks = 2;
+
+	// 文章中的相对链接改成使用绝对链接
+	bool use_absolute_paths = 3;
+}
+
 message GetPostRequest {
 	int32 id = 1;
 	bool with_source = 2;
@@ -120,6 +132,7 @@ message GetPostCommentsResponse {
 
 message GetPostsByTagsRequest {
 	repeated string tags = 1;
+	PostContentOptions content_options = 2;
 }
 message GetPostsByTagsResponse {
 	repeated Post posts = 1;

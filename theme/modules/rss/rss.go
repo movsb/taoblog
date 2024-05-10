@@ -79,12 +79,15 @@ func New(svc *service.Service, auth *auth.Auth, options ...Option) *RSS {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	articles := r.svc.GetLatestPosts(
-		req.Context(),
-		"id,title,date",
-		int64(r.config.articleCount),
-		true,
-	)
+	articles := r.svc.MustListPosts(req.Context(), &protocols.ListPostsRequest{
+		Fields:  "id,title,date",
+		Limit:   int64(r.config.articleCount),
+		OrderBy: `date desc`,
+		ContentOptions: protocols.PostContentOptions{
+			WithContent:      true,
+			RenderCodeBlocks: false,
+		},
+	})
 
 	rssArticles := make([]*Article, 0, len(articles))
 	for _, article := range articles {
