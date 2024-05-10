@@ -142,6 +142,9 @@ func createMenus(items []config.MenuItem, outer bool) string {
 
 func (t *Theme) loadTemplates() {
 	menustr := createMenus(t.cfg.Menus, false)
+
+	applyCustomTheme := t.service.CreateCustomThemeApplyFunc()
+
 	funcs := template.FuncMap{
 		// https://githut.com/golang/go/issues/14256
 		"raw": func(s string) template.HTML {
@@ -166,6 +169,9 @@ func (t *Theme) loadTemplates() {
 			}
 			// TODO 找不到应该报错。
 			return nil
+		},
+		"apply_site_theme_customs": func() template.HTML {
+			return template.HTML(applyCustomTheme())
 		},
 	}
 

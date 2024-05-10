@@ -1,9 +1,11 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"net"
 	"os"
@@ -228,4 +230,17 @@ func (s *Service) LastArticleUpdateTime() time.Time {
 		t = time.Unix(modified, 0)
 	}
 	return t
+}
+
+func (s *Service) CreateCustomThemeApplyFunc() func() string {
+	c := s.cfg.Site.Theme.Stylesheets
+	stylesheetTmpl := template.Must(template.New(`stylesheet`).Parse(c.Template))
+	return func() string {
+		w := bytes.NewBuffer(nil)
+		for _, ss := range c.Stylesheets {
+			stylesheetTmpl.Execute(w, ss)
+			fmt.Fprintln(w)
+		}
+		return w.String()
+	}
 }

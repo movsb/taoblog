@@ -1,6 +1,8 @@
 package config
 
-import "time"
+import (
+	"time"
+)
 
 type _Since time.Time
 
@@ -43,6 +45,10 @@ type SiteConfig struct {
 	Search           SearchConfig  `yaml:"search"`
 	RSS              RSSConfig     `yaml:"rss"`
 	Sitemap          SitemapConfig `yaml:"sitemap"`
+
+	// 尽管站点字体应该由各主题提供，但是为了能跨主题共享字体（减少配置麻烦），
+	// 所以我就在这里定义了针对所有站点适用的自定义样式表（或主题）集合。
+	Theme ThemeConfig `yaml:"theme"`
 }
 
 // DefaultSiteConfig ...
@@ -59,6 +65,7 @@ func DefaultSiteConfig() SiteConfig {
 		Search:           DefaultSearchConfig(),
 		RSS:              DefaultRSSConfig(),
 		Sitemap:          DefaultSitemapConfig(),
+		Theme:            DefaultThemeConfig(),
 	}
 }
 
@@ -95,5 +102,28 @@ type SitemapConfig struct {
 func DefaultSitemapConfig() SitemapConfig {
 	return SitemapConfig{
 		Enabled: true,
+	}
+}
+
+type ThemeConfig struct {
+	Stylesheets ThemeStylesheetsConfig `yaml:"stylesheets"`
+}
+
+func DefaultThemeConfig() ThemeConfig {
+	return ThemeConfig{
+		Stylesheets: DefaultThemeStylesheetsConfig(),
+	}
+}
+
+type ThemeStylesheetsConfig struct {
+	Template    string `yaml:"template"`
+	Stylesheets []struct {
+		Source string `yaml:"source"`
+	} `yaml:"stylesheets"`
+}
+
+func DefaultThemeStylesheetsConfig() ThemeStylesheetsConfig {
+	return ThemeStylesheetsConfig{
+		Template: `<link rel="stylesheet" type="text/css" href="{{.Source}}" />`,
 	}
 }

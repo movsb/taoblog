@@ -3,6 +3,7 @@ package admin
 import (
 	"embed"
 	"encoding/base64"
+	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -146,7 +147,13 @@ func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) loadTemplates() {
-	a.templates = utils.NewTemplateLoader(a.tmplFS, nil)
+	applyCustomTheme := a.svc.CreateCustomThemeApplyFunc()
+	funcs := template.FuncMap{
+		"apply_site_theme_customs": func() template.HTML {
+			return template.HTML(applyCustomTheme())
+		},
+	}
+	a.templates = utils.NewTemplateLoader(a.tmplFS, funcs)
 }
 
 func (a *Admin) executeTemplate(w io.Writer, name string, data any) {
