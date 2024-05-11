@@ -26,21 +26,3 @@ func IsURL(Url string, addScheme bool) bool {
 	}
 	return true
 }
-
-func Must[A any, Error error](a A, e Error) A {
-	if error(e) != nil {
-		panic(e)
-	}
-	return a
-}
-
-// Go 语言多少有点儿大病，以至于我需要写这种东西。
-// 是谁当初说不需要三元运算符的？我打断他的 🐶 腿。
-// https://en.wikipedia.org/wiki/IIf
-// https://blog.twofei.com/716/#没有条件运算符
-func IIF[Condition ~bool, Any any](cond Condition, first, second Any) Any {
-	if cond {
-		return first
-	}
-	return second
-}

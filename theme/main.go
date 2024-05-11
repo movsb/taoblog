@@ -181,20 +181,27 @@ func (t *Theme) loadTemplates() {
 func (t *Theme) watchStyles(stylesFS fs.FS) {
 	if changed, ok := stylesFS.(utils.FsWithChangeNotify); ok {
 		log.Println(`Listening for style changes`)
+
+		bundle := func() {
+			cmd := exec.Command(`make`, `theme`)
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				log.Println(err)
+			} else {
+				log.Println(`Rebuilt styles`)
+			}
+		}
+
+		bundle()
+
 		go func() {
+			debouncer := utils.NewDebouncer(time.Second, bundle)
 			for event := range changed.Changed() {
 				switch event.Op {
 				case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
-					// log.Println(`Will run make`)
-					cmd := exec.Command(`make`, `theme`)
-					cmd.Stdin = os.Stdin
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					if err := cmd.Run(); err != nil {
-						log.Println(err)
-					} else {
-						log.Println(`Rebuilt styles`)
-					}
+					debouncer.Enter()
 				}
 			}
 		}()
@@ -438,7 +445,11 @@ var cacheControl = `max-age=600, must-revalidate`
 
 // TODO 支持本地静态文件以临时存放临时文件。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
-	w.Header().Add(`Cache-Control`, cacheControl)
+	if service.DevMode() {
+		handle304.MustRevalidate(w)
+	} else {
+		w.Header().Add(`Cache-Control`, cacheControl)
+	}
 	// TODO embed 没有 last modified
 	http.ServeFileFS(w, req, t.rootFS, file)
 }

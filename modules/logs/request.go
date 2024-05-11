@@ -19,6 +19,10 @@ type RequestLogger struct {
 	counter atomic.Int32
 }
 
+func NewRequestLoggerHandler(path string) func(http.Handler) http.Handler {
+	return NewRequestLogger(path).Handler
+}
+
 func NewRequestLogger(path string) *RequestLogger {
 	fp, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {

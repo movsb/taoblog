@@ -84,6 +84,8 @@ type Service struct {
 	// 的情况，此时此值为空。
 	searcher atomic.Pointer[search.Engine]
 
+	maintenance *utils.Maintenance
+
 	protocols.TaoBlogServer
 	protocols.ManagementServer
 	protocols.SearchServer
@@ -101,6 +103,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		postContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](1024),
 		postCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		throttler:         utils.NewThrottler[_RequestThrottlerKey](),
+		maintenance:       &utils.Maintenance{},
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
@@ -250,6 +253,14 @@ func (s *Service) Description() string {
 
 func DevMode() bool {
 	return os.Getenv(`DEV`) != `0` && (version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`))
+}
+
+// 是否在维护模式。
+// 1. 手动进入。
+// 2. 自动升级过程中。
+// https://github.com/movsb/taoblog/commit/c4428d7
+func (s *Service) MaintenanceMode() *utils.Maintenance {
+	return s.maintenance
 }
 
 // LastArticleUpdateTime ...

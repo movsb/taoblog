@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/pkg/notify"
@@ -19,6 +20,8 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
@@ -81,11 +84,16 @@ func serve() {
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
 
-	reqLog := logs.NewRequestLogger(`access.log`)
-
 	server := &http.Server{
-		Addr:    cfg.Server.HTTPListen,
-		Handler: theAuth.UserFromCookieHandler(reqLog.Handler(mux)),
+		Addr: cfg.Server.HTTPListen,
+		Handler: utils.ChainFuncs(
+			http.Handler(mux),
+			theAuth.UserFromCookieHandler,
+			logs.NewRequestLoggerHandler(`access.log`),
+			theService.MaintenanceMode().Handler(func(ctx context.Context) bool {
+				return auth.Context(ctx).User.IsAdmin()
+			}),
+		),
 	}
 
 	go func() {
@@ -96,13 +104,16 @@ func serve() {
 		}
 	}()
 
+	var chanify *notify.Chanify
 	log.Println("Server started on", server.Addr)
-	if chanify := cfg.Comment.Push.Chanify; chanify.Token != "" {
+	if cc := cfg.Comment.Push.Chanify; cc.Token != "" {
 		if cfg.Comment.Notify {
-			ch := notify.NewOfficialChanify(chanify.Token)
-			ch.Send("博客状态", "已经开始运行。", true)
+			chanify = notify.NewOfficialChanify(cc.Token)
+			chanify.Send("博客状态", "已经开始运行。", true)
 		}
 	}
+
+	go liveCheck(theService, chanify)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -111,8 +122,33 @@ func serve() {
 	close(quit)
 
 	log.Println("server shutting down")
+	theService.MaintenanceMode().Enter(`服务重启中...`, time.Second*30)
 	server.Shutdown(context.Background())
 	log.Println("server shut down")
+}
+
+// TODO 文章 1 必须存在。可以是非公开状态。
+func liveCheck(s *service.Service, cc *notify.Chanify) {
+	t := time.NewTicker(time.Minute * 15)
+	defer t.Stop()
+
+	for range t.C {
+		for !func() bool {
+			now := time.Now()
+			s.GetPost(context.Background(), &protocols.GetPostRequest{Id: 1})
+			if elapsed := time.Since(now); elapsed > time.Second*10 {
+				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
+				log.Println(`服务接口响应非常慢了。`)
+				if cc != nil {
+					cc.Send(`服务不可用`, `保活检测卡住了。`, true)
+				}
+				return false
+			}
+			s.MaintenanceMode().Leave()
+			return true
+		}() {
+		}
+	}
 }
 
 func initDatabase(cfg *config.Config) *sql.DB {

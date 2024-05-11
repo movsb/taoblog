@@ -75,7 +75,7 @@ func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := a.AuthRequest(r)
 		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
-		userAgent := r.URL.Query().Get(`User-Agent`)
+		userAgent := r.Header.Get(`User-Agent`)
 		ac := _NewContext(r.Context(), user, remoteAddr, userAgent)
 		h.ServeHTTP(w, r.WithContext(ac))
 	})
