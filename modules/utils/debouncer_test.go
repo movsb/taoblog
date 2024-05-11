@@ -33,3 +33,20 @@ func TestDebouncer(t *testing.T) {
 	d.Enter()
 	time.Sleep(time.Second)
 }
+
+func TestThrottler(t *testing.T) {
+	l := utils.NewThrottler[int]()
+
+	expect := func(b, e bool) {
+		if b != e {
+			t.Fatal(b, e)
+		}
+	}
+
+	expect(l.Throttled(0, time.Second), false)
+	expect(l.Throttled(0, time.Second), true)
+	time.Sleep(time.Millisecond * 100)
+	expect(l.Throttled(0, time.Second), true)
+	time.Sleep(time.Second)
+	expect(l.Throttled(0, time.Second), false)
+}

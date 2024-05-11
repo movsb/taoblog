@@ -120,6 +120,7 @@ func in5min(t int32) bool {
 //
 // NOTE：只支持更新评论内容。
 // NOTE：带上时间戳，防止异地多次更新的冲突（太严格了吧！）
+// NOTE：带节流。
 func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
 	ac := auth.Context(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
@@ -315,6 +316,7 @@ const (
 // Content 自动由 source 生成。
 //
 // NOTE: 默认的 modified 修改时间为 0，表示从未被修改过。
+// NOTE: 带节流。
 func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
 	ac := auth.Context(ctx)
 

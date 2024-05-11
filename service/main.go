@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"net"
+	"net/netip"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -17,6 +18,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/cache"
@@ -30,6 +32,28 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+// 请求节流器限流信息。
+// 由于没有用户系统，目前根据 IP 限流。
+// 这样会对网吧、办公网络非常不友好。
+type _RequestThrottlerKey struct {
+	UserID int
+	IP     netip.Addr
+	Method string // 指 RPC 方法，用路径代替。
+}
+
+func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
+	ac := auth.Context(ctx)
+	method, ok := grpc.Method(ctx)
+	if !ok {
+		panic(status.Error(codes.Internal, "没有找到调用方法。"))
+	}
+	return _RequestThrottlerKey{
+		UserID: int(ac.User.ID),
+		IP:     ac.RemoteAddr,
+		Method: method,
+	}
+}
 
 // Service implements IServer.
 type Service struct {
@@ -50,6 +74,9 @@ type Service struct {
 	// TODO 我是不是应该直接缓存 *Post？不过好像也挺好改的。
 	postContentCaches *lru.TTLCache[_PostContentCacheKey, string]
 	postCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
+
+	// 请求节流器。
+	throttler *utils.Throttler[_RequestThrottlerKey]
 
 	avatarCache *AvatarCache
 
@@ -73,6 +100,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 		cache:             lru.NewTTLCache[string, any](1024),
 		postContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](1024),
 		postCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
+		throttler:         utils.NewThrottler[_RequestThrottlerKey](),
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
@@ -93,6 +121,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
 			s.auth.UserFromGatewayUnaryInterceptor(),
 			s.auth.UserFromClientTokenUnaryInterceptor(),
+			s.throttlerGatewayInterceptor,
 			grpcLoggerUnary,
 		),
 		grpc_middleware.WithStreamServerChain(
@@ -243,4 +272,28 @@ func (s *Service) CreateCustomThemeApplyFunc() func() string {
 		}
 		return w.String()
 	}
+}
+
+var methodThrottlerInfo = map[string]struct {
+	Interval time.Duration
+	Message  string
+}{
+	`/protocols.TaoBlog/CreateComment`: {
+		Interval: time.Second * 10,
+		Message:  `评论发表过于频繁，请稍等几秒后再试。`,
+	},
+	`/protocols.TaoBlog/UpdateComment`: {
+		Interval: time.Second * 5,
+		Message:  `评论更新过于频繁，请稍等几秒后再试。`,
+	},
+}
+
+func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	if info, ok := methodThrottlerInfo[info.FullMethod]; ok {
+		if s.throttler.Throttled(throttlerKeyOf(ctx), info.Interval) {
+			msg := utils.IIF(info.Message != "", info.Message, `你被节流了，请稍候再试。You've been throttled.`)
+			return nil, status.Error(codes.Aborted, msg)
+		}
+	}
+	return handler(ctx, req)
 }

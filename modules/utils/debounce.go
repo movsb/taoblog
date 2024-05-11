@@ -3,6 +3,8 @@ package utils
 import (
 	"sync"
 	"time"
+
+	"github.com/phuslu/lru"
 )
 
 // 防抖神器。
@@ -12,6 +14,8 @@ import (
 // 比如：我需要在模板文件更新后刷新模板，但是切分支的时候会有收到大量文件修改通知，
 // 此时不能每收到一个文件就触发一次刷新，需要在“稳定”（分支切换完全后、几秒内没有文件再有修改）
 // 的情况下方可刷新。可避免掉大量无意义的刷新。
+//
+// NOTE：回调函数 fn 是在独立的线程中被调用的。
 func NewDebouncer(interval time.Duration, fn func()) *_Debouncer {
 	if interval < time.Second {
 		panic(`invalid debouncer interval`)
@@ -65,4 +69,34 @@ func (d *_Debouncer) wait() {
 			}
 		}()
 	}
+}
+
+// 节流神器。
+//
+// 仅在动作完成一定时间后才允许再度执行。
+// 基于时间，而不是漏桶🪣或令牌。
+//
+// 比如：十秒钟内只允许评论一次。
+func NewThrottler[Key comparable]() *Throttler[Key] {
+	t := &Throttler[Key]{
+		// TODO：不是很清楚这个容量满了会是怎样？
+		// 如果满了就被迫删除，那岂不是仍然可以通过刷入大量 key 的
+		// 情况下强制失效后使旧 key 再度合法？
+		cache: lru.NewTTLCache[Key, time.Time](1024),
+	}
+	return t
+}
+
+type Throttler[Key comparable] struct {
+	cache *lru.TTLCache[Key, time.Time]
+}
+
+// 检测并更新
+func (t *Throttler[Key]) Throttled(key Key, interval time.Duration) bool {
+	last, ok := t.cache.Get(key)
+	if ok && time.Since(last) < interval {
+		return true
+	}
+	t.cache.Set(key, time.Now(), interval)
+	return false
 }

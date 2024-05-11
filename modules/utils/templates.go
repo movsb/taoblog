@@ -78,6 +78,7 @@ func (l *TemplateLoader) parseNamed() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	names, _ := fs.Glob(l.fsys, `[^_]*.html`)
+	l.named = make(map[string]*template.Template)
 	for _, name := range names {
 		// NOTE: name 如果包含 pattern 字符的话，这里大概率会出错。奇怪为什么没有按 name parse 的。
 		t2, err := template.New(name).Funcs(l.funcs).ParseFS(l.fsys, name)
