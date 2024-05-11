@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -27,18 +28,22 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap) *TemplateLoader {
 		named:   make(map[string]*template.Template),
 	}
 
-	l.parsePartial()
-	l.parseNamed()
+	bundle := func() {
+		l.parsePartial()
+		l.parseNamed()
+		log.Println(`Re-parsed all partial and named templates`)
+	}
+
+	bundle()
 
 	if changed, ok := fsys.(FsWithChangeNotify); ok {
 		log.Println(`Listening for template changes`)
 		go func() {
+			debouncer := NewDebouncer(time.Second, bundle)
 			for event := range changed.Changed() {
 				switch event.Op {
 				case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
-					l.parsePartial()
-					l.parseNamed()
-					log.Println(`Re-parsed all partial and named templates`)
+					debouncer.Enter()
 				}
 			}
 		}()
