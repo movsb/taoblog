@@ -514,6 +514,7 @@ func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewComme
 	if in.OpenLinksInNewTab {
 		options = append(options, renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll))
 	}
+	options = append(options, renderers.WithRenderCodeAsHTML())
 
 	// TODO 安全检查：PostID 应该和 Referer 一致。
 	content, err := s.convertCommentMarkdown(ac.User.IsAdmin(), in.Markdown, int64(in.PostId), options...)
