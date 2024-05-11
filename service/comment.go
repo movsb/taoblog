@@ -437,6 +437,10 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		txs.tdb.Model(&c).MustCreate()
 		txs.updatePostCommentCount(c.PostID, time.Unix(int64(c.Date), 0))
 		txs.updateCommentsCount()
+
+		// 创建评论会改变评论条数在 tweets 页面的显示，所以有必要影响缓存。
+		// 但是更新评论不会影响条数，目前进入页面一定会作 304 检测，所以评论列表一定会是最新的。
+		txs.updateLastPostTime(time.Now())
 		return nil
 	})
 

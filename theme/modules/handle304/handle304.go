@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#force_revalidation
+func MustRevalidate(w http.ResponseWriter) {
+	w.Header().Add(`Cache-Control`, `max-age=0, must-revalidate`)
+}
+
 const httpGmtFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 
 type Handler interface {

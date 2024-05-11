@@ -150,7 +150,7 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protoc
 		ID:      id,
 		Options: co.String(),
 	}
-	content, err, ok := s.postContentCaches.GetOrLoad(ctx, key,
+	content, err, _ := s.postContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			content, err := s.getPostContent(id, co)
 			if err != nil {
@@ -163,7 +163,6 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protoc
 	if err != nil {
 		return ``, err
 	}
-	log.Println(`cache status: get_post_content:`, ok, key)
 	return content, nil
 }
 
