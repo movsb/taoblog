@@ -44,18 +44,6 @@ body.wide #content {
 	}
 }
 
-/* 文章内容 */
-@media screen and (max-width: $max_width) {
-	.entry {
-		line-height: var(--line-height-tight);
-	}
-}
-@media screen and (min-width: $max_width+1) {
-	.entry {
-		line-height: var(--line-height-loose);
-	}
-}
-
 @media screen and (max-width: $max_width) {
     .entry img {
         height: unset !important;

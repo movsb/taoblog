@@ -48,7 +48,14 @@ var TaoBlog = window.TaoBlog = new __TaoBlog();
 // 处理成 `lang-xxx` 形式。
 
 TaoBlog.fn.fadeIn = function(elem, callback) {
+	return TaoBlog.fn._fadeIn(elem, callback, 'fade-in');
+};
+TaoBlog.fn.fadeIn95 = function(elem, callback) {
+	return TaoBlog.fn._fadeIn(elem, callback, 'fade-in-95');
+};
+TaoBlog.fn._fadeIn = function(elem, callback, name) {
 	elem.classList.remove('fade-out');
+	elem.classList.remove('fade-out-95');
 	elem.style.display = 'block';
 	if (typeof callback == 'function') {
 		elem.addEventListener('animationend', function(event) {
@@ -56,10 +63,17 @@ TaoBlog.fn.fadeIn = function(elem, callback) {
 			callback();
 		}, { once: true});
 	}
-	elem.classList.add('fade-in');
+	elem.classList.add(name);
 };
-TaoBlog.fn.fadeOut = function(elem, callback) {
+TaoBlog.fn.fadeOut = function(elem, callback, name) {
+	return TaoBlog.fn._fadeOut(elem, callback, 'fade-out');
+}
+TaoBlog.fn.fadeOut95 = function(elem, callback, name) {
+	return TaoBlog.fn._fadeOut(elem, callback, 'fade-out-95');
+}
+TaoBlog.fn._fadeOut = function(elem, callback, name) {
 	elem.classList.remove('fade-in');
+	elem.classList.remove('fade-in-95');
 	elem.addEventListener('animationend', function(event) {
 		// console.log('fade-out animationend');
 		elem.style.display = 'none';
@@ -67,7 +81,7 @@ TaoBlog.fn.fadeOut = function(elem, callback) {
 			callback();
 		}
 	}, { once: true});
-	elem.classList.add('fade-out');
+	elem.classList.add(name);
 };
 
 TaoBlog.fn.getUserID = function() {

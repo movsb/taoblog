@@ -11,6 +11,10 @@
 --box-shadow:               0 0 3px gray;
 --line-height-loose:        2em;
 --line-height-tight:        1.5em;
+
+--input-padding:            5px 7px;
+--button-padding:           var(--input-padding);
+--textarea-padding:         7px;
 }
 
 @media (prefers-color-scheme: light) {

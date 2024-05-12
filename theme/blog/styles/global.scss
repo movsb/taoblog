@@ -7,6 +7,7 @@ body {
 	font-family: "LXGW WenKai";
 	font-weight: normal;
 	transition: background-color .2s linear;
+	line-height: var(--line-height-tight);
 }
 
 @media screen and (max-width: $max_width) {
@@ -88,7 +89,11 @@ input[type=text],input[type=password],input[type=email],input[type=url], a, text
 input[type=text], input[type=password],input[type=email],input[type=url], input[type=submit],input[type=datetime-local], textarea, button {
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
-    padding: 5px 7px;
+	padding: var(--input-padding);
+}
+textarea {
+	padding: var(--textarea-padding);
+	line-height: inherit;
 }
 
 input[type=text]:hover, input[type=password]:hover,input[type=email]:hover,input[type=url]:hover, input[type=submit]:hover, textarea:hover, button:hover {
@@ -217,19 +222,24 @@ iframe {
 	0% { opacity: 0; display: block; }
 	100% { opacity: 1;}
 }
-
+@keyframes fadeIn95 {
+	0% { opacity: 0; display: block; }
+	100% { opacity: .95;}
+}
 @keyframes fadeOut {
 	0% { opacity: 1;}
 	100% { opacity: 0; display: none; }
 }
+@keyframes fadeOut95 {
+	0% { opacity: .95;}
+	100% { opacity: 0; display: none; }
+}
 
-.fade-in, .fade-out {
+.fade-in, .fade-in-95, .fade-out, .fade-out-95 {
 	animation-duration: .5s;
 	animation-fill-mode:forwards;
 }
-.fade-in {
-	animation-name: fadeIn;
-}
-.fade-out {
-	animation-name: fadeOut;
-}
+.fade-in { animation-name: fadeIn; }
+.fade-in-95 { animation-name: fadeIn95; }
+.fade-out { animation-name: fadeOut; }
+.fade-out-95 { animation-name: fadeOut95; }

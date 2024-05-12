@@ -269,6 +269,7 @@ class CommentPreviewUI {
 	show(yes) {
 		this.textarea.style.display = yes ? 'none' : 'block';
 		this.container.style.display = yes ? 'block' : 'none';
+		this.textarea.focus();
 		this.checkBox.checked = yes;
 	}
 }
@@ -546,7 +547,7 @@ class Comment {
 		if (!show && (box.style.display == '' || box.style.display == 'none')) {
 			return;
 		}
-		(show ? TaoBlog.fn.fadeIn : TaoBlog.fn.fadeOut)(box, callback);
+		(show ? TaoBlog.fn.fadeIn95 : TaoBlog.fn.fadeOut95)(box, callback);
 
 		if (show) {
 			if (typeof options != 'object') {
@@ -737,7 +738,7 @@ class Comment {
 		let left = (ww - ew) / 2, top = (wh - eh) / 2;
 		div.style.left = `${left}px`;
 		div.style.top = `${top}px`;
-		console.table({ ww, wh, cw, ch, ew, eh, left, top });
+		console.log({ ww, wh, cw, ch, ew, eh, left, top });
 	}
 	keepInside() {
 		let div = document.querySelector('#comment-form-div');
