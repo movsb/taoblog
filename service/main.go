@@ -3,12 +3,14 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
 	"net"
 	"net/netip"
+	"net/url"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -16,6 +18,7 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
@@ -146,6 +149,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	go server.Serve(listener)
 
 	go s.RunSearchEngine(context.TODO())
+	go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
 
 	return s
 }
@@ -307,4 +311,54 @@ func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req interface
 		}
 	}
 	return handler(ctx, req)
+}
+
+// 监控证书过期的剩余时间。
+func (s *Service) monitorCert(chanify *notify.Chanify) {
+	home := s.cfg.Site.Home
+	u, err := url.Parse(home)
+	if err != nil {
+		panic(err)
+	}
+	if u.Scheme != `https` {
+		return
+	}
+	port := utils.IIF(u.Port() == "", "443", u.Port())
+	addr := net.JoinHostPort(u.Hostname(), port)
+	check := func() {
+		conn, err := tls.Dial(`tcp`, addr, &tls.Config{})
+		if err != nil {
+			log.Println(err)
+			if chanify != nil {
+				chanify.Send(`错误`, err.Error(), true)
+			}
+			return
+		}
+		defer conn.Close()
+		cert := conn.ConnectionState().PeerCertificates[0]
+		left := time.Until(cert.NotAfter)
+		if left <= 0 {
+			log.Println(`已过期`)
+			if chanify != nil {
+				chanify.Send(`证书`, `已经过期。`, true)
+			}
+			return
+		}
+		daysLeft := int(left.Hours() / 24)
+		if daysLeft >= 15 {
+			return
+		}
+		log.Println(`剩余天数：`, daysLeft)
+		if chanify != nil {
+			chanify.Send(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft), true)
+		}
+	}
+	check()
+	go func() {
+		ticker := time.NewTicker(time.Hour * 24)
+		defer ticker.Stop()
+		for range ticker.C {
+			check()
+		}
+	}()
 }
