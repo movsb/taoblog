@@ -12,8 +12,6 @@ func MustRevalidate(w http.ResponseWriter) {
 	w.Header().Add(`Cache-Control`, `max-age=0, must-revalidate`)
 }
 
-const httpGmtFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
-
 type Handler interface {
 	Match(w http.ResponseWriter, r *http.Request) bool
 	Response(w http.ResponseWriter)
@@ -58,12 +56,12 @@ type NotModified struct {
 
 func (nm NotModified) Match(w http.ResponseWriter, r *http.Request) bool {
 	h := r.Header.Get(`If-Modified-Since`)
-	t, _ := time.ParseInLocation(httpGmtFormat, h, time.UTC)
+	t, _ := time.ParseInLocation(http.TimeFormat, h, time.UTC)
 	return t.Equal(nm.Modified)
 }
 
 func (nm NotModified) Response(w http.ResponseWriter) {
-	w.Header().Add(`Last-Modified`, nm.Modified.UTC().Format(httpGmtFormat))
+	w.Header().Add(`Last-Modified`, nm.Modified.UTC().Format(http.TimeFormat))
 }
 
 // 格式形如：文章的修改日期-博客版本号
