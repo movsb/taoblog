@@ -60,7 +60,8 @@ func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
 
 // Service implements IServer.
 type Service struct {
-	addr net.Addr // 服务器的监听地址
+	testing bool
+	addr    net.Addr // 服务器的监听地址
 
 	cfg    *config.Config
 	db     *sql.DB
@@ -77,8 +78,10 @@ type Service struct {
 	// 所以存在一篇文章有多个缓存的问题。所以后面单独加了一个缓存来记录一篇文章对应了哪些
 	// 与之相关的内容缓存。创建/删除内容缓存时，同步更新两个缓存。
 	// TODO 我是不是应该直接缓存 *Post？不过好像也挺好改的。
-	postContentCaches *lru.TTLCache[_PostContentCacheKey, string]
-	postCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
+	postContentCaches    *lru.TTLCache[_PostContentCacheKey, string]
+	postCaches           *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
+	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
+	commentCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
 	// 请求节流器。
 	throttler *utils.Throttler[_RequestThrottlerKey]
@@ -100,19 +103,30 @@ func (s *Service) Addr() net.Addr {
 	return s.addr
 }
 
-// NewService ...
+func NewServiceForTesting(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
+	return newService(cfg, db, auther, true)
+}
+
 func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
+	return newService(cfg, db, auther, false)
+}
+
+func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool) *Service {
 	s := &Service{
+		testing: testing,
+
 		cfg:  cfg,
 		db:   db,
 		tdb:  taorm.NewDB(db),
 		auth: auther,
 
-		cache:             lru.NewTTLCache[string, any](1024),
-		postContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](1024),
-		postCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-		throttler:         utils.NewThrottler[_RequestThrottlerKey](),
-		maintenance:       &utils.Maintenance{},
+		cache:                lru.NewTTLCache[string, any](1024),
+		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](1024),
+		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
+		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](1024),
+		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
+		throttler:            utils.NewThrottler[_RequestThrottlerKey](),
+		maintenance:          &utils.Maintenance{},
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
@@ -156,7 +170,10 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	go server.Serve(listener)
 
 	go s.RunSearchEngine(context.TODO())
-	go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
+
+	if !testing {
+		go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
+	}
 
 	return s
 }

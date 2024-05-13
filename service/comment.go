@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -21,12 +22,88 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type SetCommentExtraFieldsContext struct {
-	RenderCodeAsHtml bool
-	PrettifyHtml     bool
+func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceType, source string, postID int64, co *protocols.PostContentOptions) (string, error) {
+	key := _PostContentCacheKey{
+		ID:      id,
+		Options: co.String(),
+	}
+	content, err, _ := s.commentContentCaches.GetOrLoad(ctx, key,
+		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
+			// NOTE：带缓存的，默认认识总是安全的
+			content, err := s.getCommentContent(true, sourceType, source, postID, co)
+			if err != nil {
+				return ``, 0, err
+			}
+			s.commentCaches.Append(id, key)
+			return content, time.Minute * 10, nil
+		},
+	)
+	if err != nil {
+		return ``, err
+	}
+	return content, nil
 }
 
-func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.Comment) {
+func (s *Service) deleteCommentContentCacheFor(id int64) {
+	log.Println(`即将删除评论缓存：`, id)
+	s.commentCaches.Delete(id, func(second _PostContentCacheKey) {
+		s.commentContentCaches.Delete(second)
+		log.Println(`删除评论缓存：`, second)
+	})
+}
+
+// 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
+// 一旦发表/更新成功：始终认为评论是合法的。
+//
+// 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
+// 前者用请求身份，后者不限身份。
+func (s *Service) getCommentContent(secure bool, sourceType, source string, postID int64, co *protocols.PostContentOptions) (string, error) {
+	if co == nil {
+		co = &protocols.PostContentOptions{}
+	}
+	// if !co.WithContent {
+	// 	panic(`without content but get content`)
+	// }
+	var content string
+	var tr renderers.Renderer
+	switch sourceType {
+	case `markdown`:
+		options := []renderers.Option2{
+			renderers.WithPathResolver(s.PathResolver(postID)),
+			renderers.WithRemoveTitleHeading(true),
+			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
+		}
+		if !secure {
+			options = append(options,
+				renderers.WithDisableHeadings(true),
+				renderers.WithDisableHTML(true),
+			)
+		}
+		if link := s.GetLink(postID); link != s.plainLink(postID) {
+			options = append(options, renderers.WithModifiedAnchorReference(link))
+		}
+		if co.UseAbsolutePaths {
+			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(postID)))
+		}
+		if co.RenderCodeBlocks {
+			options = append(options, renderers.WithRenderCodeAsHTML())
+		}
+		if co.PrettifyHtml {
+			options = append(options, renderers.WithHtmlPrettifier())
+		}
+		tr = renderers.NewMarkdown(options...)
+	case `html`:
+		tr = &renderers.HTML{}
+	case `plain`:
+		return source, nil
+	default:
+		return ``, fmt.Errorf(`unknown source type`)
+	}
+	_, content, err := tr.Render(source)
+	return content, err
+}
+
+func (s *Service) setCommentExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Comment) {
 	ac := auth.Context(ctx)
 
 	return func(c *protocols.Comment) {
@@ -47,30 +124,13 @@ func (s *Service) setCommentExtraFields(ctx context.Context) func(c *protocols.C
 			c.GeoLocation = s.geoLocation(c.Ip)
 		}
 
-		var renderOptions []renderers.Option2
-		if ctx, ok := ctx.Value(SetCommentExtraFieldsContext{}).(*SetCommentExtraFieldsContext); ok {
-			if ctx.RenderCodeAsHtml {
-				renderOptions = append(renderOptions, renderers.WithRenderCodeAsHTML())
-			}
-			if ctx.PrettifyHtml {
-				renderOptions = append(renderOptions, renderers.WithHtmlPrettifier())
-			}
+		content, err := s.getCommentContentCached(ctx, c.Id, c.SourceType, c.Source, c.PostId, co)
+		if err != nil {
+			slog.Error("转换评论时出错：", slog.String(`error`, err.Error()))
+			// 也不能干啥……
+			// fallthrough
 		}
-
-		switch c.SourceType {
-		case `markdown`:
-			content, err := s.convertCommentMarkdown(true, c.Source, c.PostId, renderOptions...)
-			if err != nil {
-				log.Println("转换评论时出错：", err)
-				// 也不能干啥……
-				// fallthrough
-			}
-			c.Content = content
-		case `plain`:
-			c.Content = c.Source
-		default:
-			c.Content = ""
-		}
+		c.Content = content
 	}
 }
 
@@ -109,7 +169,7 @@ func (s *Service) cacheAllCommenterData() {
 // TODO perm check
 // TODO remove email & user
 func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
-	return s.getComment2(req.Id).ToProtocols(s.setCommentExtraFields(ctx)), nil
+	return s.getComment2(req.Id).ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{})), nil
 }
 
 func in5min(t int32) bool {
@@ -166,7 +226,9 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			if req.Comment.SourceType != `markdown` {
 				return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
 			}
-			if _, err := s.convertCommentMarkdown(ac.User.IsAdmin(), req.Comment.Source, cmtOld.PostID, renderers.WithoutRendering()); err != nil {
+			if _, err := s.getCommentContent(false, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &protocols.PostContentOptions{
+				WithContent: false,
+			}); err != nil {
 				return nil, err
 			}
 		}
@@ -174,13 +236,18 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			txs.tdb.Model(models.Comment{}).Where(`id=?`, req.Comment.Id).MustUpdateMap(data)
 			txs.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 			txs.updatePostCommentCount(comment.PostID, time.Now())
+			txs.deleteCommentContentCacheFor(comment.ID)
 			return nil
 		})
 	} else {
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.setCommentExtraFields(ctx)), nil
+	return comment.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
+		WithContent:       true,
+		RenderCodeBlocks:  true,
+		OpenLinksInNewTab: true,
+	})), nil
 }
 
 // DeleteComment ...
@@ -190,6 +257,7 @@ func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteComment
 	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
 	s.updatePostCommentCount(cmt.PostID, time.Now())
 	s.updateCommentsCount()
+	s.deleteCommentContentCacheFor(int64(in.Id))
 	return &protocols.DeleteCommentResponse{}, nil
 }
 
@@ -247,12 +315,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	comments = append(comments, parents...)
 	comments = append(comments, children...)
 
-	ctx = context.WithValue(ctx, SetCommentExtraFieldsContext{}, &SetCommentExtraFieldsContext{
-		RenderCodeAsHtml: in.RenderCodeAsHtml,
-		PrettifyHtml:     in.PrettifyHtml,
-	})
-
-	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx))
+	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx, in.ContentOptions))
 
 	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
 }
@@ -267,7 +330,12 @@ func (s *Service) GetPostComments(ctx context.Context, req *protocols.GetPostCom
 	stmt.Where("post_id=?", req.Id)
 	stmt.MustFind(&comments)
 	return &protocols.GetPostCommentsResponse{
-		Comments: comments.ToProtocols(s.setCommentExtraFields(ctx)),
+		Comments: comments.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
+			WithContent:       true,
+			RenderCodeBlocks:  true,
+			UseAbsolutePaths:  false,
+			OpenLinksInNewTab: true,
+		})),
 	}, nil
 }
 
@@ -415,7 +483,9 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	}
 
 	if c.SourceType == `markdown` {
-		if _, err := s.convertCommentMarkdown(ac.User.IsAdmin(), c.Source, c.PostID, renderers.WithoutRendering()); err != nil {
+		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, &protocols.PostContentOptions{
+			WithContent: false,
+		}); err != nil {
 			return nil, err
 		}
 	}
@@ -446,43 +516,17 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&c)
 
-	return c.ToProtocols(s.setCommentExtraFields(ctx)), nil
+	return c.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
+		WithContent:       true,
+		RenderCodeBlocks:  true,
+		UseAbsolutePaths:  false,
+		OpenLinksInNewTab: true,
+	})), nil
 }
 
 func (s *Service) updateCommentsCount() {
 	count := s.GetAllCommentsCount()
 	s.SetOption("comment_count", count)
-}
-
-// 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
-// 一旦发表/更新成功：始终认为评论是合法的。
-//
-// 换言之，发表/更新调用此接口，把评论转换成 html 时用 convert 接口。
-// 前者用请求身份，后者不限身份。
-// TODO 像 getPostContent 一样走缓存。
-func (s *Service) convertCommentMarkdown(secure bool, source string, postID int64, options ...renderers.Option2) (string, error) {
-	opts := []renderers.Option2{
-		renderers.WithPathResolver(s.PathResolver(postID)),
-		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
-	}
-	if !secure {
-		opts = append(opts,
-			renderers.WithDisableHeadings(true),
-			renderers.WithDisableHTML(true),
-		)
-	}
-
-	// 最后才追加，允许外部覆盖内部默认。
-	opts = append(opts, options...)
-
-	md := renderers.NewMarkdown(opts...)
-
-	_, content, err := md.Render(source)
-	if err != nil {
-		return ``, fmt.Errorf(`转换 Markdown 时出错：%w`, err)
-	}
-
-	return content, nil
 }
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
@@ -515,15 +559,11 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
-
-	options := []renderers.Option2{}
-	if in.OpenLinksInNewTab {
-		options = append(options, renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll))
-	}
-	options = append(options, renderers.WithRenderCodeAsHTML())
-
-	// TODO 安全检查：PostID 应该和 Referer 一致。
-	content, err := s.convertCommentMarkdown(ac.User.IsAdmin(), in.Markdown, int64(in.PostId), options...)
+	content, err := s.getCommentContent(ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId), &protocols.PostContentOptions{
+		WithContent:       true,
+		RenderCodeBlocks:  true,
+		OpenLinksInNewTab: true,
+	})
 	return &protocols.PreviewCommentResponse{Html: content}, err
 }
 

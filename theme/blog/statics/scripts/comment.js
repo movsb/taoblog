@@ -164,8 +164,7 @@ class CommentAPI
 			},
 			body: JSON.stringify({
 				markdown: source,
-				open_links_in_new_tab: true,
-				post_id: postID
+				post_id: postID,
 			})
 		});
 		if (!rsp.ok) {

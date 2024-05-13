@@ -108,6 +108,9 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 }
 
 func (s *Service) FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error) {
+	if s.testing {
+		panic(`测试服务器不用于本地文件系统。`)
+	}
 	// _ = s.MustGetPost(id)
 	maxFileSize := int32(1 << 20)
 	if ac := auth.Context(ctx); ac != nil && ac.User.IsAdmin() {
