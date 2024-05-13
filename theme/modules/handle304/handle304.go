@@ -12,6 +12,10 @@ func MustRevalidate(w http.ResponseWriter) {
 	w.Header().Add(`Cache-Control`, `max-age=0, must-revalidate`)
 }
 
+func CacheShortly(w http.ResponseWriter) {
+	w.Header().Add(`Cache-Control`, `max-age=600, must-revalidate`)
+}
+
 type Handler interface {
 	Match(w http.ResponseWriter, r *http.Request) bool
 	Response(w http.ResponseWriter)

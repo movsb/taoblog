@@ -441,15 +441,13 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 	return false
 }
 
-var cacheControl = `max-age=600, must-revalidate`
-
 // TODO 支持本地静态文件以临时存放临时文件。
+// TODO 没有处理错误（比较文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	if service.DevMode() {
 		handle304.MustRevalidate(w)
 	} else {
-		w.Header().Add(`Cache-Control`, cacheControl)
+		handle304.CacheShortly(w)
 	}
-	// TODO embed 没有 last modified
 	http.ServeFileFS(w, req, t.rootFS, file)
 }
