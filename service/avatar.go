@@ -111,15 +111,19 @@ func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
 		}
 	}
 
+	// 客户端缓存一天，失效了也可以继续用，后台慢慢刷新就行。
+	in.SetHeader(`Cache-Control`, `max-age=259200, stale-while-revalidate=86400`)
+
 	in.SetStatus(resp.StatusCode)
 
 	io.Copy(in.W, resp.Body)
 }
 
+// 不再提供以下字段，官方更新太频繁，意义不大。
+// `Expires`,
+// `Cache-Control`,
 var knownHeaders = []string{
 	`Content-Length`,
 	`Content-Type`,
 	`Last-Modified`,
-	`Expires`,
-	`Cache-Control`,
 }
