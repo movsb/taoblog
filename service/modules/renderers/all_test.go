@@ -119,7 +119,21 @@ func TestMarkdownAll(t *testing.T) {
 			ID:       7.0,
 			Markdown: `![](1.png?scale=.3)`,
 			Options:  []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
-			Html:     `<p><img src="/911/1.png" alt="" loading="lazy" /></p>`,
+			Html:     `<p><img src="/911/1.png" alt="" loading="lazy"/></p>`,
+		},
+		{
+			ID: 7.1,
+			Markdown: `<audio><source src="1.mp3"/></audio>
+<video><source src="1.mp4"/></video>
+<iframe src="1.html"></iframe>
+<object data="1.pdf"></object>
+`,
+			Options: []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
+			Html: `<p><audio><source src="/911/1.mp3"/></audio>
+<video><source src="/911/1.mp4"/></video></p>
+<iframe src="/911/1.html"></iframe>
+<object data="/911/1.pdf"></object>
+`,
 		},
 		{
 			ID:       8.0,
@@ -137,7 +151,7 @@ func TestMarkdownAll(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		if tc.ID == 9.0 {
+		if tc.ID == 7.1 {
 			log.Println(`debug`)
 		}
 		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)

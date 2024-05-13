@@ -1,5 +1,5 @@
 .PHONY: all
-all: protos theme main
+all: protos theme test main
 
 .PHONY: protos
 protos:
@@ -8,6 +8,10 @@ protos:
 .PHONY: theme
 theme:
 	@cd theme/blog/styles && ./make_style.sh
+
+.PHONY: test
+test:
+	go test ./...
 
 .PHONY: main
 main:

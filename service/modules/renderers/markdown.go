@@ -147,9 +147,11 @@ func WithAssetSources(fn AssetFinder) Option {
 // 必须修改成引用相对于文章的路径。
 // 好希望有多个 <base> 支持啊，比如每个 <article> 下面有自己的 <base>。
 // TODO：暂时只支持 <img>, <a>。
+// 参考 doc 中的 附件自动上传。
 func WithUseAbsolutePaths(base string) Option {
 	return func(me *_Markdown) error {
 		me.useAbsolutePaths = base
+		me.AddOptions(WithRootedPaths(base))
 		return nil
 	}
 }

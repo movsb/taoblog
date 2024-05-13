@@ -3,6 +3,9 @@ package renderers
 import (
 	"bytes"
 	"fmt"
+	"net/url"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/yuin/goldmark/ast"
@@ -183,6 +186,65 @@ func (m *_LazyLoadingFrames) FilterHtml(doc *html.Node) ([]byte, error) {
 		case html.ElementNode:
 			if node.Data == `iframe` {
 				node.Attr = append(node.Attr, html.Attribute{Key: `loading`, Val: `lazy`})
+			}
+		}
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+
+	walk(doc)
+
+	return renderHtmlDoc(doc)
+}
+
+// 对 WithUseAbsolutePaths 的补充。
+// 其实含义相同，只是换了个更正确的名字。
+// 上述只能针对 md 的 img 和 a，没法针对用 html
+// 插入的 audio / video / iframe / object。
+func WithRootedPaths(base string) Option2 {
+	return &_RootedPaths{
+		root: base,
+	}
+}
+
+type _RootedPaths struct {
+	root string
+}
+
+func (m *_RootedPaths) FilterHtml(doc *html.Node) ([]byte, error) {
+	find := func(node *html.Node, name string) int {
+		for i, a := range node.Attr {
+			if a.Key == name {
+				return i
+			}
+		}
+		return -1
+	}
+	modify := func(val *string) {
+		if u, err := url.Parse(*val); err == nil {
+			if u.Scheme == "" && u.Host == "" && !filepath.IsAbs(u.Path) {
+				u.Path = path.Join(m.root, u.Path)
+				*val = u.String()
+			}
+		}
+	}
+
+	var walk func(node *html.Node)
+	walk = func(node *html.Node) {
+		switch node.Type {
+		case html.ElementNode:
+			name := ""
+			switch node.Data {
+			case `iframe`, `source`, `audio`, `video`:
+				name = `src`
+			case `object`:
+				name = `data`
+			}
+			if name != "" {
+				if index := find(node, name); index >= 0 {
+					modify(&node.Attr[index].Val)
+				}
 			}
 		}
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
