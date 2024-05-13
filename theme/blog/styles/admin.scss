@@ -10,10 +10,38 @@ body.admin {
 
 body.admin.editor {
 	textarea {
-		margin: 4px 0 4px;
 		display: block;
 		width: 100%;
-		min-height: 300px;
+		height: 100%;
 		font-family: inherit;
+		box-sizing: border-box;
+		// 硬是不知道这是哪儿来的
+		margin: 0;
+		resize: vertical;
+	}
+	#container {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		#editor-container, #preview-container {
+			flex: 1;
+			min-width: 300px;
+			min-height: 300px;
+		}
+		#editor-container {
+		}
+		#preview-container {
+			padding: var(--textarea-padding);
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius);
+			overflow: auto;
+			// 为了使段落等元素预览时看起来高度和输入框一致。
+			> :first-child {
+				margin-top: 0;
+				> :first-child {
+					margin-top: 0;
+				}
+			}
+		}
 	}
 }

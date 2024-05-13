@@ -18,11 +18,18 @@
 </script>
 {{ end }}
 <form>
+	<div id="container">
+	<div id="editor-container">
 {{ if $.Post }}
 	<textarea name="source">{{ $.Post.Source }}</textarea>
 {{ else }}
 	<textarea name="source"></textarea>
 {{ end }}
+	</div>
+	<div id="preview-container">
+
+	</div>
+	</div>
 	<input type="datetime-local" name="time" value="" />
 	<br />
 	<input type="submit" value="提交" />

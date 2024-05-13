@@ -164,7 +164,7 @@ var file_protocols_service_proto_rawDesc = []byte{
 	0x73, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2c, 0x92, 0x41, 0x11,
 	0x1a, 0x0f, 0xe6, 0x96, 0x87, 0xe7, 0xab, 0xa0, 0xe6, 0x90, 0x9c, 0xe7, 0xb4, 0xa2, 0xe3, 0x80,
 	0x82, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x12, 0x12, 0x10, 0x2f, 0x76, 0x33, 0x2f, 0x73, 0x65, 0x61,
-	0x72, 0x63, 0x68, 0x2f, 0x70, 0x6f, 0x73, 0x74, 0x73, 0x32, 0xf9, 0x11, 0x0a, 0x07, 0x54, 0x61,
+	0x72, 0x63, 0x68, 0x2f, 0x70, 0x6f, 0x73, 0x74, 0x73, 0x32, 0xf9, 0x12, 0x0a, 0x07, 0x54, 0x61,
 	0x6f, 0x42, 0x6c, 0x6f, 0x67, 0x12, 0x5f, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x16, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
@@ -233,7 +233,15 @@ var file_protocols_service_proto_rawDesc = []byte{
 	0xe5, 0x88, 0x97, 0xe8, 0xa1, 0xa8, 0xe8, 0x8e, 0xb7, 0xe5, 0x8f, 0x96, 0xe5, 0x85, 0xa8, 0xe9,
 	0x83, 0xa8, 0xe7, 0x9a, 0x84, 0xe7, 0x9b, 0xb8, 0xe5, 0x85, 0xb3, 0xe6, 0x96, 0x87, 0xe7, 0xab,
 	0xa0, 0xe3, 0x80, 0x82, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x10, 0x12, 0x0e, 0x2f, 0x76, 0x33, 0x2f,
-	0x70, 0x6f, 0x73, 0x74, 0x73, 0x3a, 0x74, 0x61, 0x67, 0x73, 0x12, 0x7c, 0x0a, 0x0d, 0x43, 0x72,
+	0x70, 0x6f, 0x73, 0x74, 0x73, 0x3a, 0x74, 0x61, 0x67, 0x73, 0x12, 0x7e, 0x0a, 0x0b, 0x50, 0x72,
+	0x65, 0x76, 0x69, 0x65, 0x77, 0x50, 0x6f, 0x73, 0x74, 0x12, 0x1d, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x50, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x50, 0x6f, 0x73,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x50, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x50, 0x6f, 0x73, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x30, 0x92, 0x41, 0x11, 0x1a, 0x0f, 0xe6,
+	0x96, 0x87, 0xe7, 0xab, 0xa0, 0xe9, 0xa2, 0x84, 0xe8, 0xa7, 0x88, 0xe3, 0x80, 0x82, 0x82, 0xd3,
+	0xe4, 0x93, 0x02, 0x16, 0x3a, 0x01, 0x2a, 0x22, 0x11, 0x2f, 0x76, 0x33, 0x2f, 0x70, 0x6f, 0x73,
+	0x74, 0x73, 0x3a, 0x70, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x12, 0x7c, 0x0a, 0x0d, 0x43, 0x72,
 	0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x12, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x1a,
 	0x12, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x2e, 0x43, 0x6f, 0x6d, 0x6d,
@@ -342,27 +350,29 @@ var file_protocols_service_proto_goTypes = []interface{}{
 	(*SetPostStatusRequest)(nil),         // 11: protocols.SetPostStatusRequest
 	(*GetPostCommentsRequest)(nil),       // 12: protocols.GetPostCommentsRequest
 	(*GetPostsByTagsRequest)(nil),        // 13: protocols.GetPostsByTagsRequest
-	(*Comment)(nil),                      // 14: protocols.Comment
-	(*GetCommentRequest)(nil),            // 15: protocols.GetCommentRequest
-	(*UpdateCommentRequest)(nil),         // 16: protocols.UpdateCommentRequest
-	(*DeleteCommentRequest)(nil),         // 17: protocols.DeleteCommentRequest
-	(*ListCommentsRequest)(nil),          // 18: protocols.ListCommentsRequest
-	(*SetCommentPostIDRequest)(nil),      // 19: protocols.SetCommentPostIDRequest
-	(*GetPostCommentsCountRequest)(nil),  // 20: protocols.GetPostCommentsCountRequest
-	(*PreviewCommentRequest)(nil),        // 21: protocols.PreviewCommentRequest
-	(*BackupResponse)(nil),               // 22: protocols.BackupResponse
-	(*BackupFilesResponse)(nil),          // 23: protocols.BackupFilesResponse
-	(*emptypb.Empty)(nil),                // 24: google.protobuf.Empty
-	(*FileSystemResponse)(nil),           // 25: protocols.FileSystemResponse
-	(*SearchPostsResponse)(nil),          // 26: protocols.SearchPostsResponse
-	(*SetPostStatusResponse)(nil),        // 27: protocols.SetPostStatusResponse
-	(*GetPostCommentsResponse)(nil),      // 28: protocols.GetPostCommentsResponse
-	(*GetPostsByTagsResponse)(nil),       // 29: protocols.GetPostsByTagsResponse
-	(*DeleteCommentResponse)(nil),        // 30: protocols.DeleteCommentResponse
-	(*ListCommentsResponse)(nil),         // 31: protocols.ListCommentsResponse
-	(*SetCommentPostIDResponse)(nil),     // 32: protocols.SetCommentPostIDResponse
-	(*GetPostCommentsCountResponse)(nil), // 33: protocols.GetPostCommentsCountResponse
-	(*PreviewCommentResponse)(nil),       // 34: protocols.PreviewCommentResponse
+	(*PreviewPostRequest)(nil),           // 14: protocols.PreviewPostRequest
+	(*Comment)(nil),                      // 15: protocols.Comment
+	(*GetCommentRequest)(nil),            // 16: protocols.GetCommentRequest
+	(*UpdateCommentRequest)(nil),         // 17: protocols.UpdateCommentRequest
+	(*DeleteCommentRequest)(nil),         // 18: protocols.DeleteCommentRequest
+	(*ListCommentsRequest)(nil),          // 19: protocols.ListCommentsRequest
+	(*SetCommentPostIDRequest)(nil),      // 20: protocols.SetCommentPostIDRequest
+	(*GetPostCommentsCountRequest)(nil),  // 21: protocols.GetPostCommentsCountRequest
+	(*PreviewCommentRequest)(nil),        // 22: protocols.PreviewCommentRequest
+	(*BackupResponse)(nil),               // 23: protocols.BackupResponse
+	(*BackupFilesResponse)(nil),          // 24: protocols.BackupFilesResponse
+	(*emptypb.Empty)(nil),                // 25: google.protobuf.Empty
+	(*FileSystemResponse)(nil),           // 26: protocols.FileSystemResponse
+	(*SearchPostsResponse)(nil),          // 27: protocols.SearchPostsResponse
+	(*SetPostStatusResponse)(nil),        // 28: protocols.SetPostStatusResponse
+	(*GetPostCommentsResponse)(nil),      // 29: protocols.GetPostCommentsResponse
+	(*GetPostsByTagsResponse)(nil),       // 30: protocols.GetPostsByTagsResponse
+	(*PreviewPostResponse)(nil),          // 31: protocols.PreviewPostResponse
+	(*DeleteCommentResponse)(nil),        // 32: protocols.DeleteCommentResponse
+	(*ListCommentsResponse)(nil),         // 33: protocols.ListCommentsResponse
+	(*SetCommentPostIDResponse)(nil),     // 34: protocols.SetCommentPostIDResponse
+	(*GetPostCommentsCountResponse)(nil), // 35: protocols.GetPostCommentsCountResponse
+	(*PreviewCommentResponse)(nil),       // 36: protocols.PreviewCommentResponse
 }
 var file_protocols_service_proto_depIdxs = []int32{
 	2,  // 0: protocols.Management.Backup:input_type -> protocols.BackupRequest
@@ -378,37 +388,39 @@ var file_protocols_service_proto_depIdxs = []int32{
 	11, // 10: protocols.TaoBlog.SetPostStatus:input_type -> protocols.SetPostStatusRequest
 	12, // 11: protocols.TaoBlog.GetPostComments:input_type -> protocols.GetPostCommentsRequest
 	13, // 12: protocols.TaoBlog.GetPostsByTags:input_type -> protocols.GetPostsByTagsRequest
-	14, // 13: protocols.TaoBlog.CreateComment:input_type -> protocols.Comment
-	15, // 14: protocols.TaoBlog.GetComment:input_type -> protocols.GetCommentRequest
-	16, // 15: protocols.TaoBlog.UpdateComment:input_type -> protocols.UpdateCommentRequest
-	17, // 16: protocols.TaoBlog.DeleteComment:input_type -> protocols.DeleteCommentRequest
-	18, // 17: protocols.TaoBlog.ListComments:input_type -> protocols.ListCommentsRequest
-	19, // 18: protocols.TaoBlog.SetCommentPostID:input_type -> protocols.SetCommentPostIDRequest
-	20, // 19: protocols.TaoBlog.GetPostCommentsCount:input_type -> protocols.GetPostCommentsCountRequest
-	21, // 20: protocols.TaoBlog.PreviewComment:input_type -> protocols.PreviewCommentRequest
-	22, // 21: protocols.Management.Backup:output_type -> protocols.BackupResponse
-	23, // 22: protocols.Management.BackupFiles:output_type -> protocols.BackupFilesResponse
-	24, // 23: protocols.Management.SetRedirect:output_type -> google.protobuf.Empty
-	25, // 24: protocols.Management.FileSystem:output_type -> protocols.FileSystemResponse
-	26, // 25: protocols.Search.SearchPosts:output_type -> protocols.SearchPostsResponse
-	1,  // 26: protocols.TaoBlog.Ping:output_type -> protocols.PingResponse
-	7,  // 27: protocols.TaoBlog.CreatePost:output_type -> protocols.Post
-	7,  // 28: protocols.TaoBlog.GetPost:output_type -> protocols.Post
-	7,  // 29: protocols.TaoBlog.UpdatePost:output_type -> protocols.Post
-	24, // 30: protocols.TaoBlog.DeletePost:output_type -> google.protobuf.Empty
-	27, // 31: protocols.TaoBlog.SetPostStatus:output_type -> protocols.SetPostStatusResponse
-	28, // 32: protocols.TaoBlog.GetPostComments:output_type -> protocols.GetPostCommentsResponse
-	29, // 33: protocols.TaoBlog.GetPostsByTags:output_type -> protocols.GetPostsByTagsResponse
-	14, // 34: protocols.TaoBlog.CreateComment:output_type -> protocols.Comment
-	14, // 35: protocols.TaoBlog.GetComment:output_type -> protocols.Comment
-	14, // 36: protocols.TaoBlog.UpdateComment:output_type -> protocols.Comment
-	30, // 37: protocols.TaoBlog.DeleteComment:output_type -> protocols.DeleteCommentResponse
-	31, // 38: protocols.TaoBlog.ListComments:output_type -> protocols.ListCommentsResponse
-	32, // 39: protocols.TaoBlog.SetCommentPostID:output_type -> protocols.SetCommentPostIDResponse
-	33, // 40: protocols.TaoBlog.GetPostCommentsCount:output_type -> protocols.GetPostCommentsCountResponse
-	34, // 41: protocols.TaoBlog.PreviewComment:output_type -> protocols.PreviewCommentResponse
-	21, // [21:42] is the sub-list for method output_type
-	0,  // [0:21] is the sub-list for method input_type
+	14, // 13: protocols.TaoBlog.PreviewPost:input_type -> protocols.PreviewPostRequest
+	15, // 14: protocols.TaoBlog.CreateComment:input_type -> protocols.Comment
+	16, // 15: protocols.TaoBlog.GetComment:input_type -> protocols.GetCommentRequest
+	17, // 16: protocols.TaoBlog.UpdateComment:input_type -> protocols.UpdateCommentRequest
+	18, // 17: protocols.TaoBlog.DeleteComment:input_type -> protocols.DeleteCommentRequest
+	19, // 18: protocols.TaoBlog.ListComments:input_type -> protocols.ListCommentsRequest
+	20, // 19: protocols.TaoBlog.SetCommentPostID:input_type -> protocols.SetCommentPostIDRequest
+	21, // 20: protocols.TaoBlog.GetPostCommentsCount:input_type -> protocols.GetPostCommentsCountRequest
+	22, // 21: protocols.TaoBlog.PreviewComment:input_type -> protocols.PreviewCommentRequest
+	23, // 22: protocols.Management.Backup:output_type -> protocols.BackupResponse
+	24, // 23: protocols.Management.BackupFiles:output_type -> protocols.BackupFilesResponse
+	25, // 24: protocols.Management.SetRedirect:output_type -> google.protobuf.Empty
+	26, // 25: protocols.Management.FileSystem:output_type -> protocols.FileSystemResponse
+	27, // 26: protocols.Search.SearchPosts:output_type -> protocols.SearchPostsResponse
+	1,  // 27: protocols.TaoBlog.Ping:output_type -> protocols.PingResponse
+	7,  // 28: protocols.TaoBlog.CreatePost:output_type -> protocols.Post
+	7,  // 29: protocols.TaoBlog.GetPost:output_type -> protocols.Post
+	7,  // 30: protocols.TaoBlog.UpdatePost:output_type -> protocols.Post
+	25, // 31: protocols.TaoBlog.DeletePost:output_type -> google.protobuf.Empty
+	28, // 32: protocols.TaoBlog.SetPostStatus:output_type -> protocols.SetPostStatusResponse
+	29, // 33: protocols.TaoBlog.GetPostComments:output_type -> protocols.GetPostCommentsResponse
+	30, // 34: protocols.TaoBlog.GetPostsByTags:output_type -> protocols.GetPostsByTagsResponse
+	31, // 35: protocols.TaoBlog.PreviewPost:output_type -> protocols.PreviewPostResponse
+	15, // 36: protocols.TaoBlog.CreateComment:output_type -> protocols.Comment
+	15, // 37: protocols.TaoBlog.GetComment:output_type -> protocols.Comment
+	15, // 38: protocols.TaoBlog.UpdateComment:output_type -> protocols.Comment
+	32, // 39: protocols.TaoBlog.DeleteComment:output_type -> protocols.DeleteCommentResponse
+	33, // 40: protocols.TaoBlog.ListComments:output_type -> protocols.ListCommentsResponse
+	34, // 41: protocols.TaoBlog.SetCommentPostID:output_type -> protocols.SetCommentPostIDResponse
+	35, // 42: protocols.TaoBlog.GetPostCommentsCount:output_type -> protocols.GetPostCommentsCountResponse
+	36, // 43: protocols.TaoBlog.PreviewComment:output_type -> protocols.PreviewCommentResponse
+	22, // [22:44] is the sub-list for method output_type
+	0,  // [0:22] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

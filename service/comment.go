@@ -246,7 +246,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 	return comment.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
 		WithContent:       true,
 		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: true,
+		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 	})), nil
 }
 
@@ -334,7 +334,7 @@ func (s *Service) GetPostComments(ctx context.Context, req *protocols.GetPostCom
 			WithContent:       true,
 			RenderCodeBlocks:  true,
 			UseAbsolutePaths:  false,
-			OpenLinksInNewTab: true,
+			OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 		})),
 	}, nil
 }
@@ -520,7 +520,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 		WithContent:       true,
 		RenderCodeBlocks:  true,
 		UseAbsolutePaths:  false,
-		OpenLinksInNewTab: true,
+		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 	})), nil
 }
 
@@ -559,11 +559,14 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 
 func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
-	content, err := s.getCommentContent(ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId), &protocols.PostContentOptions{
-		WithContent:       true,
-		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: true,
-	})
+	content, err := s.getCommentContent(
+		ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId),
+		&protocols.PostContentOptions{
+			WithContent:       true,
+			RenderCodeBlocks:  true,
+			OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+		},
+	)
 	return &protocols.PreviewCommentResponse{Html: content}, err
 }
 

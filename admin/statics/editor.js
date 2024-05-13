@@ -53,15 +53,36 @@ class PostManagementAPI
 		console.log(c);
 		return c;
 	}
+
+	// 文章预览
+	async previewPost(id, source) {
+		let path = `/v3/posts:preview`;
+		let rsp = await fetch(path, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				id: id,
+				markdown: source,
+			})
+		});
+		if (!rsp.ok) {
+			throw new Error(await rsp.text());
+		}
+		return await rsp.json();
+	}
 }
 
 class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('form');
+		this._previewCallbackReturned = true;
 	}
 
 	get elemSource()    { return this._form['source'];  }
 	get elemTime()      { return this._form['time'];    }
+	get elemPreviewContainer() { return this._form.querySelector('#preview-container'); }
 
 	get source()    { return this.elemSource.value;     }
 	get time()      {
@@ -87,6 +108,14 @@ class PostFormUI {
 	}
 
 	set source(v)   { this.elemSource.value = v;        }
+	setPreview(v, ok)  {
+		if (!ok) {
+			this.elemPreviewContainer.innerText = v;
+		} else {
+			this.elemPreviewContainer.innerHTML = v;
+		}
+		this._previewCallbackReturned = true;
+	}
 
 	/**
 	 * @param {any[]} list
@@ -130,6 +159,18 @@ class PostFormUI {
 			console.log(e.dataTransfer.files);
 			callback(e.dataTransfer.files);
 		}, false);
+	}
+
+	// debounced
+	sourceChanged(callback) {
+		let debouncing = undefined;
+		this.elemSource.addEventListener('input', (e)=>{
+			if (this._previewCallbackReturned == false) { return; }
+			clearTimeout(debouncing);
+			debouncing = setTimeout(() => {
+				callback(this.elemSource.value);
+			}, 500);
+		});
 	}
 }
 
@@ -271,6 +312,18 @@ formUI.drop(async files => {
 		console.log(this);
 	});
 });
+let updatePreview = async (content) => {
+	try {
+		let rsp = await postAPI.previewPost(+window._post_id, content);
+		formUI.setPreview(rsp.html, true);
+	} catch (e) {
+		formUI.setPreview(e, false);
+	}
+};
+formUI.sourceChanged(async (content) => {
+	await updatePreview(content);
+});
+updatePreview(formUI.source);
 (async function() {
 	if (!window._post_id) {
 		console.log('新建文章不支持查询文件列表。');

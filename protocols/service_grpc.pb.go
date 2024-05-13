@@ -403,6 +403,7 @@ type TaoBlogClient interface {
 	SetPostStatus(ctx context.Context, in *SetPostStatusRequest, opts ...grpc.CallOption) (*SetPostStatusResponse, error)
 	GetPostComments(ctx context.Context, in *GetPostCommentsRequest, opts ...grpc.CallOption) (*GetPostCommentsResponse, error)
 	GetPostsByTags(ctx context.Context, in *GetPostsByTagsRequest, opts ...grpc.CallOption) (*GetPostsByTagsResponse, error)
+	PreviewPost(ctx context.Context, in *PreviewPostRequest, opts ...grpc.CallOption) (*PreviewPostResponse, error)
 	CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error)
 	GetComment(ctx context.Context, in *GetCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 	UpdateComment(ctx context.Context, in *UpdateCommentRequest, opts ...grpc.CallOption) (*Comment, error)
@@ -493,6 +494,15 @@ func (c *taoBlogClient) GetPostsByTags(ctx context.Context, in *GetPostsByTagsRe
 	return out, nil
 }
 
+func (c *taoBlogClient) PreviewPost(ctx context.Context, in *PreviewPostRequest, opts ...grpc.CallOption) (*PreviewPostResponse, error) {
+	out := new(PreviewPostResponse)
+	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/PreviewPost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taoBlogClient) CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error) {
 	out := new(Comment)
 	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/CreateComment", in, out, opts...)
@@ -577,6 +587,7 @@ type TaoBlogServer interface {
 	SetPostStatus(context.Context, *SetPostStatusRequest) (*SetPostStatusResponse, error)
 	GetPostComments(context.Context, *GetPostCommentsRequest) (*GetPostCommentsResponse, error)
 	GetPostsByTags(context.Context, *GetPostsByTagsRequest) (*GetPostsByTagsResponse, error)
+	PreviewPost(context.Context, *PreviewPostRequest) (*PreviewPostResponse, error)
 	CreateComment(context.Context, *Comment) (*Comment, error)
 	GetComment(context.Context, *GetCommentRequest) (*Comment, error)
 	UpdateComment(context.Context, *UpdateCommentRequest) (*Comment, error)
@@ -615,6 +626,9 @@ func (UnimplementedTaoBlogServer) GetPostComments(context.Context, *GetPostComme
 }
 func (UnimplementedTaoBlogServer) GetPostsByTags(context.Context, *GetPostsByTagsRequest) (*GetPostsByTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPostsByTags not implemented")
+}
+func (UnimplementedTaoBlogServer) PreviewPost(context.Context, *PreviewPostRequest) (*PreviewPostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreviewPost not implemented")
 }
 func (UnimplementedTaoBlogServer) CreateComment(context.Context, *Comment) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
@@ -793,6 +807,24 @@ func _TaoBlog_GetPostsByTags_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaoBlogServer).GetPostsByTags(ctx, req.(*GetPostsByTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaoBlog_PreviewPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewPostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoBlogServer).PreviewPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.TaoBlog/PreviewPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoBlogServer).PreviewPost(ctx, req.(*PreviewPostRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -979,6 +1011,10 @@ var TaoBlog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPostsByTags",
 			Handler:    _TaoBlog_GetPostsByTags_Handler,
+		},
+		{
+			MethodName: "PreviewPost",
+			Handler:    _TaoBlog_PreviewPost_Handler,
 		},
 		{
 			MethodName: "CreateComment",

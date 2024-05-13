@@ -18,8 +18,14 @@ message PostContentOptions {
 	// 要不要生成美化后的结果？
 	bool prettify_html = 4;
 
+	enum OpenLinkInNewTabKind {
+		OpenLinkInNewTabKindKeep = 0;
+		OpenLinkInNewTabKindNever = 1;
+		OpenLinkInNewTabKindAll = 2;
+		OpenLinkInNewTabKindExternal = 3;
+	}
 	// 新窗口打开链接？
-	bool open_links_in_new_tab = 5;
+	OpenLinkInNewTabKind open_links_in_new_tab = 5;
 }
 
 message Comment {

@@ -126,6 +126,15 @@ message GetPostsByTagsResponse {
 	repeated Post posts = 1;
 }
 
+message PreviewPostRequest {
+	int32 id = 1;
+	string markdown = 2;
+}
+
+message PreviewPostResponse {
+	string html = 1;
+}
+
 message FileSpec {
 	string path = 1;
 	uint32 mode = 2;

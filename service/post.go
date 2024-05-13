@@ -152,7 +152,9 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protoc
 	}
 	content, err, _ := s.postContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
-			content, err := s.getPostContent(id, co)
+			var p models.Post
+			s.posts().Where("id = ?", id).MustFind(&p)
+			content, err := s.getPostContent(id, p.SourceType, p.Source, p.Metas, co)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -174,23 +176,18 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 	})
 }
 
-func (s *Service) getPostContent(id int64, co *protocols.PostContentOptions) (string, error) {
+func (s *Service) getPostContent(id int64, sourceType, source string, metas models.PostMeta, co *protocols.PostContentOptions) (string, error) {
 	if !co.WithContent {
 		panic(`without content but get content`)
 	}
-	var p models.Post
-	if err := s.tdb.Select("type,source_type,source,metas").Where("id = ?", id).Find(&p); err != nil {
-		return "", err
-	}
 	var content string
 	var tr renderers.Renderer
-	switch p.SourceType {
+	switch sourceType {
 	case `markdown`:
 		options := []renderers.Option2{
-			renderers.WithPathResolver(s.PathResolver(id)),
 			renderers.WithRemoveTitleHeading(true),
 			renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
-				if src, ok := p.Metas.Sources[path]; ok {
+				if src, ok := metas.Sources[path]; ok {
 					name = src.Name
 					url = src.URL
 					description = src.Description
@@ -198,13 +195,16 @@ func (s *Service) getPostContent(id int64, co *protocols.PostContentOptions) (st
 				}
 				return
 			}),
-			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
+			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		}
-		if link := s.GetLink(id); link != s.plainLink(id) {
-			options = append(options, renderers.WithModifiedAnchorReference(link))
-		}
-		if co.UseAbsolutePaths {
-			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
+		if id > 0 {
+			options = append(options, renderers.WithPathResolver(s.PathResolver(id)))
+			if link := s.GetLink(id); link != s.plainLink(id) {
+				options = append(options, renderers.WithModifiedAnchorReference(link))
+			}
+			if co.UseAbsolutePaths {
+				options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
+			}
 		}
 		if co.RenderCodeBlocks {
 			options = append(options, renderers.WithRenderCodeAsHTML())
@@ -215,7 +215,7 @@ func (s *Service) getPostContent(id int64, co *protocols.PostContentOptions) (st
 	default:
 		return ``, fmt.Errorf(`unknown source type`)
 	}
-	_, content, err := tr.Render(p.Source)
+	_, content, err := tr.Render(source)
 	return content, err
 }
 
@@ -577,6 +577,19 @@ func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostReques
 		return nil
 	})
 	return &empty.Empty{}, nil
+}
+
+// TODO 文章编号可能是 0️⃣
+func (s *Service) PreviewPost(ctx context.Context, in *protocols.PreviewPostRequest) (*protocols.PreviewPostResponse, error) {
+	s.MustBeAdmin(ctx)
+	// ac := auth.Context(ctx)
+	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, &protocols.PostContentOptions{
+		WithContent:       true,
+		RenderCodeBlocks:  true,
+		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+		UseAbsolutePaths:  true,
+	})
+	return &protocols.PreviewPostResponse{Html: content}, err
 }
 
 // updateLastPostTime updates last_post_time in options.
