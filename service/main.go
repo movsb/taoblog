@@ -60,6 +60,8 @@ func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
 
 // Service implements IServer.
 type Service struct {
+	addr net.Addr // 服务器的监听地址
+
 	cfg    *config.Config
 	db     *sql.DB
 	tdb    *taorm.DB
@@ -92,6 +94,10 @@ type Service struct {
 	protocols.TaoBlogServer
 	protocols.ManagementServer
 	protocols.SearchServer
+}
+
+func (s *Service) Addr() net.Addr {
+	return s.addr
 }
 
 // NewService ...
@@ -146,6 +152,7 @@ func NewService(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
 	if err != nil {
 		panic(err)
 	}
+	s.addr = listener.Addr()
 	go server.Serve(listener)
 
 	go s.RunSearchEngine(context.TODO())

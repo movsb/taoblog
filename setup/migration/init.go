@@ -4,48 +4,36 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
-	"os"
-	"os/exec"
 	"time"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
 	"github.com/movsb/taorm"
 )
 
 // Init ...
-func Init(cfg *config.Config, db *sql.DB) {
+func Init(db *sql.DB, path string) {
 	var err error
-	var cmd *exec.Cmd
 
-	var fp io.ReadCloser
-	defer func() {
-		if fp != nil {
-			fp.Close()
-		}
-	}()
-
-	switch cfg.Database.Engine {
-	case `sqlite`:
-		cmd = exec.Command(`sqlite3`, cfg.Database.SQLite.Path)
-		fp, err = setup_data.Root.Open(`schemas.sqlite.sql`)
-		if err != nil {
-			panic(err)
-		}
-	default:
-		panic("unknown database engine")
-	}
-
-	cmd.Stdin = fp
-	out, err := cmd.CombinedOutput()
+	fp, err := setup_data.Root.Open(`schemas.sqlite.sql`)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, string(out))
-		log.Fatalln(err)
+		panic(err)
+	}
+	defer fp.Close()
+
+	all, err := io.ReadAll(fp)
+	if err != nil {
+		panic(err)
 	}
 
 	tdb := taorm.NewDB(db)
+
+	result, err := tdb.Exec(string(all))
+	if err != nil {
+		panic(err)
+	}
+	_ = result
+
 	tdb.MustTxCall(func(tx *taorm.DB) {
 		now := int32(time.Now().Unix())
 		tx.Model(&models.Option{

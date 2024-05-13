@@ -43,10 +43,10 @@ func TestThrottler(t *testing.T) {
 		}
 	}
 
-	expect(l.Throttled(0, time.Second), false)
-	expect(l.Throttled(0, time.Second), true)
+	expect(l.Throttled(0, time.Second, true), false)
+	expect(l.Throttled(0, time.Second, true), true)
 	time.Sleep(time.Millisecond * 100)
-	expect(l.Throttled(0, time.Second), true)
+	expect(l.Throttled(0, time.Second, true), true)
 	time.Sleep(time.Second)
-	expect(l.Throttled(0, time.Second), false)
+	expect(l.Throttled(0, time.Second, true), false)
 }

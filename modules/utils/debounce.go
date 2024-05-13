@@ -92,11 +92,17 @@ type Throttler[Key comparable] struct {
 }
 
 // 检测并更新
-func (t *Throttler[Key]) Throttled(key Key, interval time.Duration) bool {
+func (t *Throttler[Key]) Throttled(key Key, interval time.Duration, update bool) bool {
 	last, ok := t.cache.Get(key)
 	if ok && time.Since(last) < interval {
 		return true
 	}
-	t.cache.Set(key, time.Now(), interval)
+	if update {
+		t.Update(key, interval)
+	}
 	return false
+}
+
+func (t *Throttler[Key]) Update(key Key, interval time.Duration) {
+	t.cache.Set(key, time.Now(), interval)
 }

@@ -36,19 +36,19 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `Run the server`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			serve()
+			serve(context.Background())
 		},
 	}
 
 	rootCmd.AddCommand(serveCommand)
 }
 
-func serve() {
+func serve(ctx context.Context) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	db := initDatabase(cfg)
+	db := InitDatabase(`sqlite3`, cfg.Database.SQLite.Path)
 	defer db.Close()
 
 	migration.Migrate(db)
@@ -118,11 +118,14 @@ func serve() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
 	signal.Notify(quit, syscall.SIGTERM)
-	<-quit
-	close(quit)
+
+	select {
+	case <-quit:
+	case <-ctx.Done():
+	}
 
 	log.Println("server shutting down")
-	theService.MaintenanceMode().Enter(`服务重启中...`, time.Second*30)
+	theService.MaintenanceMode().Enter(`服务关闭中...`, time.Second*30)
 	server.Shutdown(context.Background())
 	log.Println("server shut down")
 }
@@ -151,26 +154,32 @@ func liveCheck(s *service.Service, cc *notify.Chanify) {
 	}
 }
 
-func initDatabase(cfg *config.Config) *sql.DB {
+func InitDatabase(engine string, path string) *sql.DB {
+	if engine != `sqlite3` {
+		panic(`unknown database engine`)
+	}
 	var db *sql.DB
 	var err error
 
-	switch cfg.Database.Engine {
-	case `sqlite`:
-		v := url.Values{}
-		v.Set(`cache`, `shared`)
-		v.Set(`mode`, `rwc`)
-		u := url.URL{
-			Scheme:   `file`,
-			Opaque:   url.PathEscape(cfg.Database.SQLite.Path),
-			RawQuery: v.Encode(),
-		}
-		db, err = sql.Open(`sqlite3`, u.String())
-		if err == nil {
-			db.SetMaxOpenConns(1)
-		}
-	default:
-		panic(`unknown database engine`)
+	v := url.Values{}
+	v.Set(`cache`, `shared`)
+	v.Set(`mode`, `rwc`)
+
+	if path == `` {
+		// 内存数据库
+		path = `no-matter-what-path-used`
+		v.Set(`mode`, `memory`)
+	}
+
+	u := url.URL{
+		Scheme:   `file`,
+		Opaque:   url.PathEscape(path),
+		RawQuery: v.Encode(),
+	}
+
+	db, err = sql.Open(`sqlite3`, u.String())
+	if err == nil {
+		db.SetMaxOpenConns(1)
 	}
 	if err != nil {
 		panic(err)
@@ -181,7 +190,7 @@ func initDatabase(cfg *config.Config) *sql.DB {
 	if err := row.Scan(&count); err != nil {
 		if se, ok := err.(sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
-				migration.Init(cfg, db)
+				migration.Init(db, path)
 				return db
 			}
 		}

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1"
 	"crypto/subtle"
 	"encoding/json"
@@ -13,6 +14,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
+	"google.golang.org/grpc/metadata"
 )
 
 type Auth struct {
@@ -239,4 +241,12 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 		Path:   `/`,
 		Domain: ``,
 	})
+}
+
+// 仅用于测试的帐号。
+func TestingAdminUserContext(a *Auth, userAgent string) context.Context {
+	md := metadata.Pairs(`request_from_gateway`, `1`)
+	md.Append(GatewayCookie, a.sha1(userAgent+a.Login()))
+	md.Append(GatewayUserAgent, userAgent)
+	return metadata.NewOutgoingContext(context.TODO(), md)
 }
