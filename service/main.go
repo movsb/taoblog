@@ -292,25 +292,39 @@ func (s *Service) CreateCustomThemeApplyFunc() func() string {
 var methodThrottlerInfo = map[string]struct {
 	Interval time.Duration
 	Message  string
+
+	// 仅节流返回正确错误码的接口。
+	// 如果接口返回错误，不更新。
+	OnSuccess bool
 }{
 	`/protocols.TaoBlog/CreateComment`: {
-		Interval: time.Second * 10,
-		Message:  `评论发表过于频繁，请稍等几秒后再试。`,
+		Interval:  time.Second * 10,
+		Message:   `评论发表过于频繁，请稍等几秒后再试。`,
+		OnSuccess: true,
 	},
 	`/protocols.TaoBlog/UpdateComment`: {
-		Interval: time.Second * 5,
-		Message:  `评论更新过于频繁，请稍等几秒后再试。`,
+		Interval:  time.Second * 5,
+		Message:   `评论更新过于频繁，请稍等几秒后再试。`,
+		OnSuccess: true,
 	},
 }
 
-func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	if info, ok := methodThrottlerInfo[info.FullMethod]; ok {
-		if s.throttler.Throttled(throttlerKeyOf(ctx), info.Interval) {
-			msg := utils.IIF(info.Message != "", info.Message, `你被节流了，请稍候再试。You've been throttled.`)
+func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	key := throttlerKeyOf(ctx)
+	ti, ok := methodThrottlerInfo[info.FullMethod]
+	if ok {
+		if s.throttler.Throttled(key, ti.Interval, false) {
+			msg := utils.IIF(ti.Message != "", ti.Message, `你被节流了，请稍候再试。You've been throttled.`)
 			return nil, status.Error(codes.Aborted, msg)
 		}
 	}
-	return handler(ctx, req)
+	resp, err := handler(ctx, req)
+
+	if !ti.OnSuccess || err == nil {
+		s.throttler.Update(key, ti.Interval)
+	}
+
+	return resp, err
 }
 
 // 监控证书过期的剩余时间。
