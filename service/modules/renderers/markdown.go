@@ -2,6 +2,7 @@ package renderers
 
 import (
 	"bytes"
+	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	_ "image/png"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	urlpkg "net/url"
@@ -19,6 +21,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	mathjax "github.com/litao91/goldmark-mathjax"
@@ -607,9 +610,16 @@ func size(url *urlpkg.URL) (int, int) {
 	var fp io.ReadCloser
 	switch strings.ToLower(url.Scheme) {
 	case `http`, `https`:
-		resp, err := http.Get(url.String())
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
 		if err != nil {
-			panic(err)
+			return 0, 0
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			slog.Debug("无法获取图片大小：", slog.String(`url`, url.String()))
+			return 0, 0
 		}
 		fp = resp.Body
 	default:
