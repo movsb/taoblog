@@ -23,10 +23,12 @@ body.admin.editor {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 4px;
+		margin: 1em 0;
 		#editor-container, #preview-container {
 			flex: 1;
 			min-width: 300px;
 			min-height: 300px;
+			max-height: 80vh;
 		}
 		#editor-container {
 		}
@@ -34,6 +36,7 @@ body.admin.editor {
 			padding: var(--textarea-padding);
 			border: 1px solid var(--border-color);
 			border-radius: var(--border-radius);
+			box-sizing: border-box;
 			overflow: auto;
 			// 为了使段落等元素预览时看起来高度和输入框一致。
 			> :first-child {

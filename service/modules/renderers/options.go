@@ -23,6 +23,9 @@ type EnteringWalker interface {
 type HtmlFilter interface {
 	FilterHtml(doc *html.Node) ([]byte, error)
 }
+type HtmlPrettifier interface {
+	PrettifyHtml(doc *html.Node) ([]byte, error)
+}
 
 // -----------------------------------------------------------------------------
 
@@ -81,7 +84,6 @@ var prettifierStrings = map[string]string{
 	`a`:      `链接`,
 	`img`:    `图片`,
 	`table`:  `表格`,
-	`iframe`: `页面`,
 	`video`:  `视频`,
 	`audio`:  `音频`,
 	`canvas`: `画布`,
@@ -90,6 +92,7 @@ var prettifierStrings = map[string]string{
 	`object`: `对象`,
 	`script`: `脚本`,
 	`svg`:    `图片`,
+	`code`:   `代码`,
 }
 
 var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus{
@@ -110,11 +113,26 @@ var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.Wa
 		}
 		return ast.WalkContinue
 	},
+	`iframe`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		for _, a := range node.Attr {
+			if strings.ToLower(a.Key) == `src` {
+				if u, err := url.Parse(a.Val); err == nil {
+					switch strings.ToLower(u.Hostname()) {
+					case `www.youtube.com`:
+						buf.WriteString(`[油管]`)
+						return ast.WalkSkipChildren
+					}
+				}
+			}
+		}
+		buf.WriteString(`[页面]`)
+		return ast.WalkSkipChildren
+	},
 }
 
 type _ContentPrettifier struct{}
 
-func (*_ContentPrettifier) FilterHtml(doc *html.Node) ([]byte, error) {
+func (*_ContentPrettifier) PrettifyHtml(doc *html.Node) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 
 	var walk func(buf *bytes.Buffer, node *html.Node)
@@ -126,8 +144,18 @@ func (*_ContentPrettifier) FilterHtml(doc *html.Node) ([]byte, error) {
 		case html.ElementNode:
 			walkStatus = ast.WalkContinue
 			if f, ok := prettifierStrings[node.Data]; ok {
-				buf.WriteString(fmt.Sprintf(`[%s]`, f))
-				walkStatus = ast.WalkSkipChildren
+				// 简短的代码直接显示。
+				if node.Data == `code` &&
+					node.FirstChild != nil &&
+					node.FirstChild.Type == html.TextNode &&
+					node.FirstChild.NextSibling == nil &&
+					len(node.FirstChild.Data) <= 16 {
+					buf.WriteString(node.FirstChild.Data)
+					walkStatus = ast.WalkSkipChildren
+				} else {
+					buf.WriteString(fmt.Sprintf(`[%s]`, f))
+					walkStatus = ast.WalkSkipChildren
+				}
 			} else if f, ok := prettifierFuncs[node.Data]; ok {
 				walkStatus = f(buf, node)
 			}

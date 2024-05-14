@@ -327,9 +327,10 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
 	post := t.service.GetPostByID(req.Context(), id, &protocols.PostContentOptions{
-		WithContent:      true,
-		RenderCodeBlocks: true,
-		UseAbsolutePaths: false,
+		WithContent:       true,
+		RenderCodeBlocks:  true,
+		UseAbsolutePaths:  false,
+		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 	})
 	t.userMustCanSeePost(req, post)
 

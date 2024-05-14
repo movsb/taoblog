@@ -1,13 +1,6 @@
-#latest-comment-list .post-comment-list {
-	padding-left: 0;
-}
-#latest-comment-list p {
-	margin: 4px 0;
-	line-height: var(--line-height-tight);
-	word-break: break-word;
-}
-#latest-comment-list {
-	.post-comment-list {
+#latest-comment-list, #latest-tweet-list {
+	.comment-list {
+		padding-left: 0;
 		.goto {
 			// display: none;
 			opacity: 0;
@@ -20,12 +13,19 @@
 			}
 		}
 	}
+	p {
+		margin: 4px 0;
+		line-height: var(--line-height-tight);
+		word-break: break-word;
+	}
 }
-#all-posts {
+
+#all-posts, #all-tweets {
 	list-style: none;
 }
+
 @media screen and (max-width: $max_width) {
-	#latest-comment-list, #latest-post-list, #status-list, #all-posts {
+	#latest-comment-list, #latest-post-list, #latest-tweet-list, #status-list, #all-posts {
 		padding-left: 1em;
 	}
 }

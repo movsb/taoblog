@@ -30,10 +30,11 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc *service.Serv
 		Tweets: &TweetsData{},
 	}
 
-	posts := svc.MustListLatestTweets(ctx, &protocols.PostContentOptions{
-		WithContent:      true,
-		RenderCodeBlocks: true,
-		UseAbsolutePaths: true,
+	posts := svc.MustListLatestTweets(ctx, 0, &protocols.PostContentOptions{
+		WithContent:       true,
+		RenderCodeBlocks:  true,
+		UseAbsolutePaths:  true,
+		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 	})
 	for _, p := range posts {
 		pp := newPost(p)

@@ -213,6 +213,7 @@ func TestPrettifier(t *testing.T) {
 <object></object>
 <script></script>
 <svg></svg>
+<code></code>
 `,
 			Text: `光看歌词怎么行？必须种草易仁莲：
 [页面]
@@ -223,7 +224,9 @@ func TestPrettifier(t *testing.T) {
 [地图]
 [对象]
 [脚本]
-[图片]`,
+[图片]
+[代码]
+`,
 		},
 	}
 	for _, tc := range cases {

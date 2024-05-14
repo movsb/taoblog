@@ -64,14 +64,15 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 }
 
 // TODO：改成 grpc。
-func (s *Service) MustListLatestTweets(ctx context.Context, co *protocols.PostContentOptions) []*protocols.Post {
+func (s *Service) MustListLatestTweets(ctx context.Context, limit int, co *protocols.PostContentOptions) []*protocols.Post {
 	ac := auth.Context(ctx)
 
 	stmt := s.tdb.Select("*").OrderBy(`date desc`)
 	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
 	stmt.Where(`type=?`, `tweet`)
-	// TODO 乱写的。
-	stmt.Limit(30000)
+	if limit > 0 {
+		stmt.Limit(int64(limit))
+	}
 
 	var posts models.Posts
 	if err := stmt.Find(&posts); err != nil {
@@ -145,6 +146,10 @@ func (r *PathResolver) Resolve(path string) string {
 	return r.fs.Resolve(path)
 }
 
+func (s *Service) GetPostContentCached(ctx context.Context, id int64, co *protocols.PostContentOptions) (string, error) {
+	return s.getPostContentCached(ctx, id, co)
+}
+
 func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protocols.PostContentOptions) (string, error) {
 	key := _PostContentCacheKey{
 		ID:      id,
@@ -178,8 +183,9 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 
 func (s *Service) getPostContent(id int64, sourceType, source string, metas models.PostMeta, co *protocols.PostContentOptions) (string, error) {
 	if !co.WithContent {
-		panic(`without content but get content`)
+		return ``, errors.New(`without content but get content`)
 	}
+
 	var content string
 	var tr renderers.Renderer
 	switch sourceType {
@@ -208,6 +214,9 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		}
 		if co.RenderCodeBlocks {
 			options = append(options, renderers.WithRenderCodeAsHTML())
+		}
+		if co.PrettifyHtml {
+			options = append(options, renderers.WithHtmlPrettifier())
 		}
 		tr = renderers.NewMarkdown(options...)
 	case `html`:

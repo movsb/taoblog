@@ -26,6 +26,7 @@ import (
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
@@ -365,7 +366,26 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		}
 	}
 
-	return title, string(htmlText), err
+	// TODO 和渲染分开，根本不是一个阶段的事
+	prettified := ""
+	for _, opt := range me.opts {
+		if filter, ok := opt.(HtmlPrettifier); ok {
+			if prettified != "" {
+				return ``, ``, errors.New(`不应有多个内容美化器`)
+			}
+			htmlDoc, err := xnethtml.Parse(bytes.NewReader(htmlText))
+			if err != nil {
+				return ``, ``, err
+			}
+			filtered, err := filter.PrettifyHtml(htmlDoc)
+			if err != nil {
+				return ``, ``, err
+			}
+			prettified = string(filtered)
+		}
+	}
+
+	return title, utils.IIF(prettified == "", string(htmlText), prettified), err
 }
 
 func renderHtmlDoc(doc *xnethtml.Node) ([]byte, error) {
