@@ -93,6 +93,8 @@ func (g *Gateway) createFileManager(kind string) http.Handler {
 		panic(`only for post currently`)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 这里没鉴权，后端会鉴权。
+		// 鉴权了会比较好，可以少打开一个到后端的连接。
 		ws, err := websocket.Accept(w, r, nil)
 		if err != nil {
 			log.Println(err)

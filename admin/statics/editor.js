@@ -180,7 +180,11 @@ class FilesManager {
 		this._post_id = +id;
 	}
 	connect() {
-		this._ws = new WebSocket(`/v3/posts/${this._post_id}/files`);
+		// 火狐官网文档异常小节明明写了 url 如果不是 ws:// 或者 wss:// 会有异常，结果火狐没抛，
+		// 谷歌浏览器抛了，真有你的🔥🦊！
+		// https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket#url
+		const prefix = (location.protocol == 'https:' ? 'wss://' : 'ws://') + location.host;
+		this._ws = new WebSocket(`${prefix}/v3/posts/${this._post_id}/files`);
 		return new Promise((resolve, reject) => {
 			this._ws.onclose = () => { console.log('ws closed'); reject("ws closed"); };
 			this._ws.onerror = (e) => { console.log(e); reject(e); };
@@ -288,8 +292,14 @@ formUI.drop(async files => {
 		return;
 	}
 
-	let fm = new FilesManager(+window._post_id);
-	await fm.connect();
+	let fm;
+	try {
+		fm = new FilesManager(+window._post_id);
+		await fm.connect();
+	} catch(e) {
+		alert(e);
+		return;
+	}
 	Array.from(files).forEach(async f => {
 		if (f.size > (1 << 20)) {
 			alert(`文件 "${f.name}" 太大，不予上传。`);
@@ -304,11 +314,16 @@ formUI.drop(async files => {
 			alert(`文件 ${f.name} 上传成功。`);
 		} catch(e) {
 			alert(`文件 ${f.name} 上传失败：${e}`);
+			return;
 		}
-		let list = await fm.list();
-		// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
-		// 导致我的不得不用 formUI，而不是 this。
-		formUI.files = list;
+		try {
+			let list = await fm.list();
+			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
+			// 导致我的不得不用 formUI，而不是 this。
+			formUI.files = list;
+		} catch(e) {
+			alert(e);
+		}
 		console.log(this);
 	});
 });
@@ -330,8 +345,12 @@ updatePreview(formUI.source);
 		return;
 	}
 	let fm = new FilesManager(+window._post_id);
-	await fm.connect();
-	let list = await fm.list();
-	formUI.files = list;
-	fm.close();
+	try {
+		await fm.connect();
+		let list = await fm.list();
+		formUI.files = list;
+		fm.close();
+	} catch(e) {
+		alert(e);
+	}
 })();

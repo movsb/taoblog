@@ -95,6 +95,10 @@ textarea {
 	padding: var(--textarea-padding);
 	line-height: inherit;
 }
+textarea, button {
+	font-family: inherit;
+	font-size: inherit;
+}
 
 input[type=text]:hover, input[type=password]:hover,input[type=email]:hover,input[type=url]:hover, input[type=submit]:hover, textarea:hover, button:hover {
     border: 1px solid var(--border-color-hover);

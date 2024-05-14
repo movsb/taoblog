@@ -71,7 +71,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 		options := []renderers.Option2{
 			renderers.WithPathResolver(s.PathResolver(postID)),
 			renderers.WithRemoveTitleHeading(true),
-			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindExternal),
+			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		}
 		if !secure {
 			options = append(options,
