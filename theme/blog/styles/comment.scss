@@ -1,6 +1,4 @@
 #comments {
-    overflow: hidden;
-
 	.pointer {
 		cursor: pointer;
 	}
@@ -13,8 +11,7 @@
 /* 评论标题 */
 #comment-title {
 	font-size: 1.4em;
-	margin: 2rem 0px 1rem;
-	padding-bottom: .1em;
+	margin: 1rem 0px;
 	border-bottom: 1px solid var(--border-color);
 	display: flex;
 	align-items: baseline;

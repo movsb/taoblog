@@ -21,8 +21,10 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    margin: 1.8rem 0px 1rem;
-    padding-bottom: 0.3em;
+	margin: 1.8rem 0px 1rem;
+}
+h2, h3, h4, h5, h6 {
+	padding-bottom: 0.3em;
 }
 
 h1 { font-size: 2.0em; }

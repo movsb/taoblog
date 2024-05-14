@@ -194,6 +194,6 @@ table.lntable {
 /* GenericDeleted */ .chroma .gd { color: #e06c75 }
 /* GenericInserted */ .chroma .gi { color: #98c379; font-weight: bold }
 
-.chroma .line.hl span {
+.chroma .line.hl > span {
 	text-decoration: var(--border-color) underline wavy;
 }

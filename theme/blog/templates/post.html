@@ -7,10 +7,7 @@
 {{- render "header" . -}}
 <article class="post">
 	{{ with .Post.Post }}
-	<!-- 这样做可以让 <article> 元素占满屏幕 -->
-	<div style="overflow: hidden;">
-		<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
-	</div>
+	<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
 	<div class="entry">
 	<div class="meta1">
 		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ $.Config.Site.Name }}</a>
