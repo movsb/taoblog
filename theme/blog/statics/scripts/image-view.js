@@ -1,7 +1,7 @@
 class ImageViewUI {
 	constructor(img) {
 		let html = `
-<div class="img-view" id="img-view">
+<div class="img-view" id="img-view" style="display: none">
 	<img />
 </div>
 `;
@@ -12,10 +12,12 @@ class ImageViewUI {
 		let div = document.createElement('div');
 		div.innerHTML = html;
 		document.body.appendChild(div.firstElementChild);
-	
+		
 		this.root = document.getElementById('img-view');
 		this.img = document.querySelector('#img-view img');
 
+		this.show(true);
+	
 		this._scale = 1;
 
 		this._initBindings();
@@ -25,6 +27,23 @@ class ImageViewUI {
 		if (!this._isMobileDevice()) {
 			this._boundKeyHandler = this._keyHandler.bind(this);
 			document.body.addEventListener('keydown', this._boundKeyHandler);
+		}
+	}
+	
+	show(yes) {
+		if (yes) {
+			if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeIn) {
+				TaoBlog.fn.fadeIn(this.root);
+			} else{
+				this.root.style.display = 'block';
+			}
+		} else {
+			if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeOut) {
+				TaoBlog.fn.fadeOut(this.root);
+			} else{
+				this.root.style.display = 'none';
+			}
+			this._hideImage();
 		}
 	}
 
@@ -46,12 +65,11 @@ class ImageViewUI {
 			body.style.overflow = 'auto';
 			body.removeEventListener('keydown', this._boundKeyHandler);
 		}
-		this.root.remove();
 	}
 
 	_keyHandler(e) {
 		if (e.keyCode == 27) {
-			this._hideImage();
+			this.show(false);
 			e.preventDefault();
 			e.stopPropagation();
 		}
@@ -124,7 +142,7 @@ class ImageViewUI {
 					if (this.mayBeDoubleTap) {
 						clearTimeout(this.mayBeDoubleTap);
 						this.mayBeDoubleTap = null;
-						this._hideImage();
+						this.show(false);
 						e.preventDefault();
 						e.stopPropagation();
 					} else {
@@ -218,7 +236,7 @@ class ImageViewUI {
 		}
 
 		if (smallMove) {
-			this._hideImage();
+			this.show(false);
 			console.log('hide because of small move');
 		}
 
@@ -247,7 +265,7 @@ class ImageViewUI {
 		return false;
 	}
 	_onDivClick(e) {
-		this._hideImage(null);
+		this.show(false);
 	}
 }
 
