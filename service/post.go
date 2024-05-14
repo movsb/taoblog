@@ -27,10 +27,6 @@ type _PostContentCacheKey struct {
 	Options string
 }
 
-const (
-	postUntitled = `Untitled`
-)
-
 func (s *Service) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{})
 }
@@ -449,7 +445,7 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 	}
 
 	if p.Title == "" {
-		p.Title = postUntitled
+		p.Title = models.Untitled
 	}
 
 	s.MustTxCall(func(txs *Service) error {
@@ -491,7 +487,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		case `title`:
 			m[path] = in.Post.Title
 			if in.Post.Title == `` {
-				m[path] = postUntitled
+				m[path] = models.Untitled
 			}
 		case `source_type`:
 			m[path] = in.Post.SourceType
@@ -725,6 +721,28 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 			}
 			p.Content = content
 		}
+		// 碎碎念没有标题，自动生成
+		if p.Type == `tweet` {
+			content, err := s.getPostContentCached(ctx, p.Id, &protocols.PostContentOptions{
+				WithContent:  true,
+				PrettifyHtml: true,
+			})
+			if err != nil {
+				return err
+			}
+			switch p.Title {
+			case ``, `Untitled`, models.Untitled:
+				p.Title = truncateTitle(content, 48)
+			}
+		}
 		return nil
 	}
+}
+
+// 可能把 [图片] 这种截断
+func truncateTitle(title string, length int) string {
+	runes := []rune(title)
+	maxLength := utils.IIF(length > len(runes), len(runes), length)
+	suffix := utils.IIF(len(runes) > maxLength, "...", "")
+	return string(runes[:maxLength]) + suffix
 }

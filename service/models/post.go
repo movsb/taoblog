@@ -9,6 +9,8 @@ import (
 	"github.com/movsb/taoblog/protocols"
 )
 
+const Untitled = `无标题`
+
 // 文章的种类。
 // 其实就是 type，准备换个名字。
 type Kind string

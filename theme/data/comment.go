@@ -19,7 +19,6 @@ func (c *Comment) Text() string {
 
 // LatestCommentsByPost ...
 type LatestCommentsByPost struct {
-	PostTitle string
-	PostID    int64
-	Comments  []*Comment
+	Post     *Post
+	Comments []*Comment
 }

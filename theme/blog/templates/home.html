@@ -23,10 +23,10 @@
 	<ul id=latest-comment-list>
 	{{range $comment := $comments}}
 		<li>
-			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
+			<a href="/{{.Post.ID}}/">{{.Post.Title}}</a>
 			<ul class="comment-list post-comment-list">
 			{{- range .Comments}}
-				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.PostID}}/#comment-{{.Id}}"> #</a></p></li>
+				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.Post.ID}}/#comment-{{.Id}}"> #</a></p></li>
 			{{- end }}
 			</ul>
 		</li>
@@ -53,10 +53,10 @@
 	<ul id=latest-tweet-list>
 	{{range $comment := $comments}}
 		<li>
-			<a href="/{{.PostID}}/">{{.PostTitle}}</a>
+			<a href="/{{.Post.ID}}/">{{.Post.Title}}</a>
 			<ul class="comment-list tweet-comment-list">
 			{{- range .Comments}}
-				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.PostID}}/#comment-{{.Id}}"> #</a></p></li>
+				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.Post.ID}}/#comment-{{.Id}}"> #</a></p></li>
 			{{- end }}
 			</ul>
 		</li>
