@@ -79,6 +79,10 @@ func (c *Client) CreatePost() error {
 	p.Type = cfg.Type
 	p.Metas = cfg.Metas.ToProtocols()
 
+	if p.Type == "" {
+		p.Type = `post`
+	}
+
 	var assets []string
 
 	p.SourceType, p.Source, assets = readSource(".")
@@ -180,6 +184,9 @@ func (c *Client) UpdatePost() error {
 	p.Modified = cfg.Modified
 	p.Type = cfg.Type
 	p.Metas = cfg.Metas.ToProtocols()
+	if p.Type == "" {
+		p.Type = `post`
+	}
 
 	var assets []string
 

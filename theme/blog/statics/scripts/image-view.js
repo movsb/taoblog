@@ -48,7 +48,16 @@ class ImageViewUI {
 	}
 
 	_viewImage(img) {
-		let src = img.src;
+		let src;
+		if (img.tagName == 'svg') {
+			// 找遍互联网没一个好用的 svg 转 base64，全 tm 用 btoa，用个非单字节 unicode 字符就挂！
+			// https://dev.to/benjaminblack/using-a-string-of-svg-as-an-image-source-8mo
+			let blob = new Blob([img.outerHTML], {type: 'image/svg+xml'});
+			src = URL.createObjectURL(blob);
+			this.img.addEventListener('load', () => URL.revokeObjectURL(src), {once: true});
+		} else {
+			src = img.src;
+		}
 		if (img.classList.contains('transparent')) {
 			this.img.classList.add('transparent');
 		}
@@ -273,6 +282,13 @@ class ImageView {
 	constructor() {
 		let images = document.querySelectorAll('.entry img');
 		images.forEach(img => img.addEventListener('click', e => this.show(e.target)));
+		let svgs = document.querySelectorAll('.entry svg');
+		svgs.forEach(img => img.addEventListener('click', e => {
+			// 仅点空白处才显示图片，否则可能是复制文本。
+			if (e.target.tagName == 'svg') {
+				this.show(e.currentTarget);
+			}
+		}));
 	}
 	
 	show(img) {

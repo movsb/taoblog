@@ -152,11 +152,9 @@ figure {
 	text-align: center;
 }
 
-img {
+img, svg {
 	max-width: 100%;
 	height: auto;
-	box-sizing: content-box;
-	border: 1px solid transparent;
 	border-radius: var(--border-radius);
 
 	&.f-r {
@@ -172,7 +170,7 @@ img {
 }
 
 @media (prefers-color-scheme: dark) {
-	img, video, iframe {
+	img, video, iframe, svg {
 		filter: brightness(0.7);
 	}
 }
