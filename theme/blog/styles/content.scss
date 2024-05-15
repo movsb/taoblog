@@ -93,17 +93,9 @@ body.wide #content {
         }
     }
 
-	img {
-		&:hover {
-			box-shadow: 0 0 5px gray;
-			cursor: zoom-in;
-		}
-	}
-
     p > img:only-child {
         display: block;
         margin: auto;
-        box-shadow: var(--box-shadow);
     }
 
 	.toc {

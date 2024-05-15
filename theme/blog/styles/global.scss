@@ -152,27 +152,19 @@ figure {
 	text-align: center;
 }
 
-img {
+img, svg {
 	max-width: 100%;
 	height: auto;
-	box-sizing: content-box;
-	border: 1px solid transparent;
 	border-radius: var(--border-radius);
 
 	&.f-r {
 		float: right;
 		margin-left: 1em !important;
 	}
-	@media (prefers-color-scheme: dark) {
-		&.transparent {
-			/* 从 Firefox 打开一张透明的 PNG 时抄过来的 */
-			background: hsl(0,0%,90%);
-		}
-	}
 }
 
 @media (prefers-color-scheme: dark) {
-	img, video, iframe {
+	img, video, iframe, svg {
 		filter: brightness(0.7);
 	}
 }
@@ -245,3 +237,13 @@ iframe {
 .fade-in-95 { animation-name: fadeIn95; }
 .fade-out { animation-name: fadeOut; }
 .fade-out-95 { animation-name: fadeOut95; }
+
+svg.plantuml {
+	&.transparent { background-color: unset !important; }
+	// 白天也能正常工作。
+	@media (prefers-color-scheme: dark) {
+		.stroke-fg { stroke: var(--color-fg) !important; }
+		.fill-fg { fill: var(--color-fg) !important; }
+		.fill-bg { fill: var(--color-bg) !important; }
+	}
+}

@@ -1,9 +1,6 @@
 class ImageViewUI {
 	constructor(img) {
-		let html = `
-<div class="img-view" id="img-view" style="display: none">
-	<img />
-</div>
+		let html = `<div class="img-view" id="img-view" style="display: none"></div>
 `;
 		
 		let old = document.getElementById('img-view');
@@ -14,15 +11,13 @@ class ImageViewUI {
 		document.body.appendChild(div.firstElementChild);
 		
 		this.root = document.getElementById('img-view');
-		this.img = document.querySelector('#img-view img');
 
 		this.show(true);
 	
 		this._scale = 1;
 
-		this._initBindings();
-		
 		this._viewImage(img);
+		this._initBindings();
 
 		if (!this._isMobileDevice()) {
 			this._boundKeyHandler = this._keyHandler.bind(this);
@@ -48,12 +43,27 @@ class ImageViewUI {
 	}
 
 	_viewImage(img) {
-		let src = img.src;
-		if (img.classList.contains('transparent')) {
-			this.img.classList.add('transparent');
+		// 对于 xhtml 来说保留原始大小写
+		// https://developer.mozilla.org/en-US/docs/Web/API/Element/tagName
+		if (img.tagName == 'svg') {
+			let svg = img.cloneNode(true);
+			if (img.classList.contains('transparent')) {
+				this.root.classList.add('transparent');
+			}
+			this.obj = svg;
+			this.root.appendChild(svg);
+			setTimeout(()=>this._onImgLoad(), 0);
+		} else {
+			if (img.classList.contains('transparent')) {
+				this.root.classList.add('transparent');
+			}
+			this.obj = document.createElement('img');
+			this.obj.addEventListener('load', this._onImgLoad.bind(this));
+			this.root.appendChild(this.obj);
+			this.obj.src = img.src;
 		}
-		this.img.src = src;	
 	}
+
 	_hideImage() {
 		if (this._isMobileDevice()) {
 			let wrapper = document.getElementById('wrapper');
@@ -75,8 +85,15 @@ class ImageViewUI {
 		}
 	}
 	_onImgLoad() {
-		let rawWidth = this.img.naturalWidth;
-		let rawHeight = this.img.naturalHeight;
+		let rawWidth, rawHeight;
+
+		if (this.obj.tagName == 'IMG') {
+			rawWidth = this.obj.naturalWidth;
+			rawHeight = this.obj.naturalHeight;
+		} else {
+			rawWidth = parseInt(this.obj.style.width);
+			rawHeight = parseInt(this.obj.style.height);
+		}
 
 		let initScale = 1;
 		let initWidth = rawWidth * initScale;
@@ -100,14 +117,14 @@ class ImageViewUI {
 			initHeight = rawHeight * initScale;
 		}
 
-		let style = this.img.style;
+		let style = this.obj.style;
 		style.left      = `${(this.root.clientWidth  - initWidth) /2}px`;
 		style.top       = `${(this.root.clientHeight - initHeight)/2}px`;
 		style.width     = `${initWidth}px`;
 		style.height    = `${initHeight}px`;
 
 		if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeIn) {
-			TaoBlog.fn.fadeIn(this.img);
+			TaoBlog.fn.fadeIn(this.obj);
 		} else {
 			style.display   = 'block';
 		}
@@ -129,10 +146,8 @@ class ImageViewUI {
 		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
 	}
 	_initBindings() {
-		this.img.addEventListener('load', this._onImgLoad.bind(this));
-
 		if (this._isMobileDevice()) {
-			let zoom = new Zoom(this.img, {
+			let zoom = new Zoom(this.obj, {
 				rotate: false,
 				// minZoom: 0.25,
 				// maxZoom: 5,
@@ -154,8 +169,15 @@ class ImageViewUI {
 			let moveHandler = this._onImgMouseMove.bind(this);
 			
 			// https://stackoverflow.com/a/52839734/3628322
-			this.img.addEventListener('mousedown', (e)=> {
+			this.obj.addEventListener('mousedown', (e)=> {
 				// console.log('down...');
+				// 点击 svg 的其它地方不要拖，方便复制文本。
+				if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
+					// this._onImgMouseDown(e);
+					this._offsetX = e.clientX;
+					this._offsetY = e.clientY;
+					return;
+				}
 				this._onImgMouseDown(e);
 				window.addEventListener('mousemove', moveHandler, true);
 				window.addEventListener('mouseup', (e) => {
@@ -170,7 +192,7 @@ class ImageViewUI {
 				'transitionend':    this._onTransitionEnd,
 			};
 			for (let key in imgHandlers) {
-				this.img.addEventListener(key, imgHandlers[key].bind(this), true);
+				this.obj.addEventListener(key, imgHandlers[key].bind(this), true);
 			}
 			
 			let divHandlers = {
@@ -183,7 +205,7 @@ class ImageViewUI {
 		}
 	}
 	_onImgMouseDown(e) {
-		if (this.img.getAttribute('data-busy') == '1') {
+		if (this.obj.getAttribute('data-busy') == '1') {
 			e.preventDefault();
 			return false;
 		}
@@ -193,8 +215,8 @@ class ImageViewUI {
 			this._offsetX = e.clientX;
 			this._offsetY = e.clientY;
 
-			this._coordX = parseInt(this.img.style.left);
-			this._coordY = parseInt(this.img.style.top);
+			this._coordX = parseInt(this.obj.style.left);
+			this._coordY = parseInt(this.obj.style.top);
 
 			this._dragging = true;
 		}
@@ -211,8 +233,8 @@ class ImageViewUI {
 		let left = this._coordX + e.clientX - this._offsetX + 'px';
 		let top = this._coordY + e.clientY - this._offsetY + 'px';
 		
-		this.img.style.left = left;
-		this.img.style.top = top;
+		this.obj.style.left = left;
+		this.obj.style.top = top;
 
 		e.preventDefault();
 		return false;
@@ -225,6 +247,12 @@ class ImageViewUI {
 	}
 	_onImgClick(e) {
 		console.log('img: click');
+		if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
+			console.log('clicking on text nodes.');
+			e.preventDefault();
+			e.stopPropagation();
+			return;
+		}
 		let smallMove = false;
 		{
 			let horz = Math.abs(e.clientX - this._offsetX);
@@ -245,11 +273,11 @@ class ImageViewUI {
 		return false;
 	}
 	_onTransitionEnd(e) {
-		this.img.style.transition = '';
-		this.img.setAttribute('data-busy', '');
+		this.obj.style.transition = '';
+		this.obj.setAttribute('data-busy', '');
 	}
 	_onDivMouseWheel(e) {
-		if (this.img.getAttribute('data-busy') == '1') {
+		if (this.obj.getAttribute('data-busy') == '1') {
 			e.preventDefault();
 			return false;
 		}
@@ -259,7 +287,7 @@ class ImageViewUI {
 		this._scale += e.deltaY * -0.01;
 		this._scale = Math.min(Math.max(.25, this._scale), 10);
 
-		this.img.style.transform = `scale(${this._scale})`;
+		this.obj.style.transform = `scale(${this._scale})`;
 
 		e.preventDefault();
 		return false;
@@ -273,6 +301,13 @@ class ImageView {
 	constructor() {
 		let images = document.querySelectorAll('.entry img');
 		images.forEach(img => img.addEventListener('click', e => this.show(e.target)));
+		let svgs = document.querySelectorAll('.entry svg');
+		svgs.forEach(img => img.addEventListener('click', e => {
+			// 仅点空白处才显示图片，否则可能是复制文本。
+			if (e.target.tagName == 'svg') {
+				this.show(e.currentTarget);
+			}
+		}));
 	}
 	
 	show(img) {

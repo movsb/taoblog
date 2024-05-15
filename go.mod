@@ -23,16 +23,20 @@ require (
 )
 
 require (
+	github.com/PuerkitoBio/goquery v1.9.2
+	github.com/alecthomas/chroma/v2 v2.13.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6
+	github.com/phuslu/lru v1.0.15
+	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	nhooyr.io/websocket v1.8.11
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/alecthomas/chroma/v2 v2.13.0 // indirect
+	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.6.0 // indirect
 	github.com/go-webauthn/x v0.1.9 // indirect
@@ -40,10 +44,8 @@ require (
 	github.com/google/go-tpm v0.9.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/phuslu/lru v1.0.15 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc // indirect
-	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
 )
 
 require (
@@ -73,8 +75,8 @@ require (
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/net v0.23.0
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/net v0.24.0
+	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -99,7 +99,7 @@ func (p *Post) StatusString() string {
 	case `public`:
 		return ``
 	case `draft`:
-		return `[未公开发表] `
+		return `[私密] `
 	default:
 		panic(`unknown post status`)
 	}

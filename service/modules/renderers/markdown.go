@@ -189,6 +189,7 @@ func (me *_Markdown) AddOptions(options ...any) {
 	if !me.testing {
 		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
 		me.opts = append(me.opts, WithLazyLoadingFrames())
+		me.opts = append(me.opts, WithPlantUMLRenderer())
 	}
 }
 
@@ -227,6 +228,12 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 				chromahtml.WithLineNumbers(true),
 			),
 		))
+	}
+
+	for _, opt := range me.opts {
+		if tr, ok := opt.(goldmark.Extender); ok {
+			extensions = append(extensions, tr)
+		}
 	}
 
 	md := goldmark.New(append(options, goldmark.WithExtensions(extensions...))...)
@@ -388,30 +395,36 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	return title, utils.IIF(prettified == "", string(htmlText), prettified), err
 }
 
+// TODO 找到 body 之前的全部东西会被丢掉，比如注释，没啥问题
 func renderHtmlDoc(doc *xnethtml.Node) ([]byte, error) {
-	if doc != nil {
-		if html := doc.FirstChild; html != nil {
-			if head := html.FirstChild; head != nil {
-				if body := head.NextSibling; body != nil {
-					buf := bytes.NewBuffer(nil)
-					for c := body.FirstChild; c != nil; c = c.NextSibling {
-						if err := xnethtml.Render(buf, c); err != nil {
-							return nil, err
-						}
-					}
-					return buf.Bytes(), nil
-					// // 真蛋疼，还要移除 <body></body>
-					// bytes := buf.Bytes()
-					// if len(bytes) >= 13 {
-					// 	bytes = bytes[len("<body>"):]
-					// 	bytes = bytes[:len(bytes)-len("</body>")]
-					// }
-					// return bytes, nil
+	body := func() (body *xnethtml.Node) {
+		defer func() { recover() }()
+		var walk func(node *xnethtml.Node)
+		walk = func(node *xnethtml.Node) {
+			switch node.Type {
+			case xnethtml.ElementNode:
+				if node.Data == `body` {
+					body = node
+					panic("found body")
 				}
 			}
+			for c := node.FirstChild; c != nil; c = c.NextSibling {
+				walk(c)
+			}
+		}
+		walk(doc)
+		return nil
+	}()
+	if body == nil {
+		return nil, errors.New(`empty html doc`)
+	}
+	buf := bytes.NewBuffer(nil)
+	for c := body.FirstChild; c != nil; c = c.NextSibling {
+		if err := xnethtml.Render(buf, c); err != nil {
+			return nil, err
 		}
 	}
-	return nil, errors.New(`empty html doc`)
+	return buf.Bytes(), nil
 }
 
 func (me *_Markdown) doOpenLinkInNewTab(doc ast.Node, source []byte) error {
