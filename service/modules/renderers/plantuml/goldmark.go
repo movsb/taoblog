@@ -61,9 +61,11 @@ func (p *_PlantUMLRenderer) Transform(node *ast.Document, reader text.Reader, pc
 	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering && n.Kind() == ast.KindFencedCodeBlock {
 			cb := n.(*ast.FencedCodeBlock)
-			info := string(cb.Info.Segment.Value(reader.Source()))
-			if info == `plantuml` {
-				puCodeBlocks = append(puCodeBlocks, cb)
+			if cb.Info != nil {
+				info := string(cb.Info.Segment.Value(reader.Source()))
+				if info == `plantuml` {
+					puCodeBlocks = append(puCodeBlocks, cb)
+				}
 			}
 		}
 		return ast.WalkContinue, nil
