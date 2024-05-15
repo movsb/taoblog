@@ -8,10 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"regexp"
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 func fetch(ctx context.Context, server, format, compressed string) ([]byte, error) {
@@ -62,4 +66,49 @@ var stripRe = regexp.MustCompile(`<\?(?U:.+)\?>|<!--SRC=(?U:.+)-->`)
 
 func strip(svg []byte) []byte {
 	return stripRe.ReplaceAllLiteral(svg, nil)
+}
+
+// 支持 light/dark 模式。
+// 尽量不要修改 SVG 本身的颜色，防止在未加载样式的阅读器上显示异常。
+func enabledDarkMode(svg []byte) []byte {
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(svg))
+	if err != nil {
+		log.Println(`解析 svg 出错：`, err)
+		return svg
+	}
+
+	if svg := doc.Find(`svg`); true {
+		svg.AddClass(`plantuml`, `transparent`)
+		if style, _ := svg.Attr(`style`); true {
+			style += `padding:1em;`
+			svg.SetAttr(`style`, style)
+		}
+	}
+
+	replacer := strings.NewReplacer(
+		`stroke-width:0.5`, `stroke-width:1`,
+	)
+
+	replaceStyles := func(_ int, s *goquery.Selection) {
+		if style, ok := s.Attr(`style`); ok {
+			s.SetAttr(`style`, replacer.Replace(style))
+			if strings.Contains(style, `stroke:#181818`) {
+				s.AddClass(`stroke-fg`)
+			}
+		}
+	}
+	replaceFills := func(_ int, s *goquery.Selection) {
+		switch current, _ := s.Attr(`fill`); current {
+		case `#000000`, `#181818`:
+			s.AddClass(`fill-fg`)
+		case `#E2E2F0`:
+			s.AddClass(`fill-bg`)
+		}
+	}
+
+	doc.Find(`[style]`).Each(replaceStyles)
+	doc.Find(`[fill]`).Each(replaceFills)
+	buf := bytes.NewBuffer(nil)
+	goquery.Render(buf, doc.Find(`body`).Children().First())
+	return buf.Bytes()
 }

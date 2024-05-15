@@ -2,19 +2,27 @@
 #img-view {
     position: fixed;
     z-index: 1000000;
-    background-color: rgba(0,0,0,0.85);
+    background-color: rgba(0,0,0,0.88);
+	&.transparent {
+		@media (prefers-color-scheme: light) {
+			background-color: rgba(white, 0.95);
+		}
+	}
     left: 0px;
     top: 0px;
     right: 0px;
     bottom: 0px;
     cursor: zoom-out;
 
-    > img {
+    > img, > svg {
         cursor: move;
         position: relative;
         left: 0px;
         top: 0px;
-        user-select:none;
 		display: none;
     }
+	svg text {
+		cursor: text;
+	}
+
 }

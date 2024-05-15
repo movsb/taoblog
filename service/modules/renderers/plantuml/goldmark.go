@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -109,5 +110,6 @@ func (p *_PlantUMLRenderer) asSvg(source []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return raw, nil
+	final := enabledDarkMode(strip(raw))
+	return final, nil
 }
