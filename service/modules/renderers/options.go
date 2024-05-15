@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/yuin/goldmark/ast"
 	"golang.org/x/net/html"
 )
@@ -283,4 +284,9 @@ func (m *_RootedPaths) FilterHtml(doc *html.Node) ([]byte, error) {
 	walk(doc)
 
 	return renderHtmlDoc(doc)
+}
+
+// PlantUML 渲染器
+func WithPlantUMLRenderer() Option2 {
+	return plantuml.New(`https://www.plantuml.com/plantuml`, `svg`)
 }
