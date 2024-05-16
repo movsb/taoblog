@@ -5,6 +5,8 @@
 <title>文章编辑</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 <link rel="stylesheet" type="text/css" href="/style.css" />
+<script src="/admin/tinymde.js"></script>
+<link rel="stylesheet" type="text/css" href="/admin/tinymde.css" />
 {{ apply_site_theme_customs }}
 </head>
 <body class="admin editor">
@@ -19,16 +21,10 @@
 {{ end }}
 <form>
 	<div id="container">
-	<div id="editor-container">
-{{ if $.Post }}
-	<textarea name="source">{{ $.Post.Source }}</textarea>
-{{ else }}
-	<textarea name="source"></textarea>
-{{ end }}
-	</div>
-	<div id="preview-container">
-
-	</div>
+		<div id="editor-container">
+			<textarea name="source" style="display: none;">{{with $.Post}}{{.Source}}{{end}}</textarea>
+		</div>
+		<div id="preview-container"></div>
 	</div>
 	<input type="datetime-local" name="time" value="" />
 	<br />
