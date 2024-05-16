@@ -165,7 +165,7 @@ func (a *Admin) loadTemplates() {
 			return template.HTML(applyCustomTheme())
 		},
 	}
-	a.templates = utils.NewTemplateLoader(a.tmplFS, funcs)
+	a.templates = utils.NewTemplateLoader(a.tmplFS, funcs, nil)
 }
 
 func (a *Admin) executeTemplate(w io.Writer, name string, data any) {

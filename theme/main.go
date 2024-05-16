@@ -49,6 +49,11 @@ type Theme struct {
 
 	templates *utils.TemplateLoader
 
+	// 主题的变化应该贡献给 304.
+	// Git 在本地是 head，但是会随时修改主题，
+	// 所以 git 不够用，或者说已经没作用。
+	themeChangedAt time.Time
+
 	specialMux *http.ServeMux
 }
 
@@ -74,6 +79,8 @@ func New(devMode bool, cfg *config.Config, service *service.Service, auth *auth.
 		service: service,
 		auth:    auth,
 		redir:   service,
+
+		themeChangedAt: time.Now(),
 
 		specialMux: http.NewServeMux(),
 	}
@@ -175,7 +182,9 @@ func (t *Theme) loadTemplates() {
 		},
 	}
 
-	t.templates = utils.NewTemplateLoader(t.tmplFS, funcs)
+	t.templates = utils.NewTemplateLoader(t.tmplFS, funcs, func() {
+		t.themeChangedAt = time.Now()
+	})
 }
 
 func (t *Theme) watchStyles(stylesFS fs.FS) {
@@ -280,7 +289,7 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *protocols.Post) bool {
 	h3 := handle304.New(
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, p.Modified, p.LastCommentedAt),
+		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
 	)
 	if h3.Match(w, r) {
 		return true
@@ -294,12 +303,16 @@ func (t *Theme) LastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
 	return t.LastPostTime304Handler(h)
 }
 
+func (t *Theme) ChangedAt() time.Time {
+	return t.themeChangedAt
+}
+
 func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		last := t.service.LastArticleUpdateTime()
 		h3 := handle304.New(
 			handle304.WithNotModified(last),
-			handle304.WithEntityTag(version.GitCommit, last),
+			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, last),
 		)
 		if h3.Match(w, r) {
 			return

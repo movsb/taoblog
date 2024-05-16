@@ -20,7 +20,8 @@ type TemplateLoader struct {
 	named   map[string]*template.Template
 }
 
-func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap) *TemplateLoader {
+// refreshed: 初次加载不会调用，后面刷新调用。
+func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *TemplateLoader {
 	l := TemplateLoader{
 		fsys:    fsys,
 		funcs:   funcs,
@@ -39,7 +40,12 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap) *TemplateLoader {
 	if changed, ok := fsys.(FsWithChangeNotify); ok {
 		log.Println(`Listening for template changes`)
 		go func() {
-			debouncer := NewDebouncer(time.Second, bundle)
+			debouncer := NewDebouncer(time.Second, func() {
+				bundle()
+				if refreshed != nil {
+					refreshed()
+				}
+			})
 			for event := range changed.Changed() {
 				switch event.Op {
 				case fsnotify.Create, fsnotify.Remove, fsnotify.Write:

@@ -82,6 +82,8 @@ func (cm EntityTag) format() string {
 		switch typed := v.(type) {
 		case time.Time:
 			val = fmt.Sprint(typed.Unix())
+		case func() time.Time:
+			val = fmt.Sprint(typed().Unix())
 		default:
 			val = fmt.Sprint(typed)
 		}

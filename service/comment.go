@@ -519,7 +519,6 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	return c.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
 		WithContent:       true,
 		RenderCodeBlocks:  true,
-		UseAbsolutePaths:  false,
 		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 	})), nil
 }
