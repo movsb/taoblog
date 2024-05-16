@@ -1,7 +1,6 @@
 class ImageViewUI {
 	constructor(img) {
-		let html = `<div class="img-view" id="img-view" style="display: none"></div>
-`;
+		let html = `<div class="img-view" id="img-view" style="display: none"></div>\n`;
 		
 		let old = document.getElementById('img-view');
 		if (old) { old.remove(); }
@@ -86,13 +85,15 @@ class ImageViewUI {
 	}
 	_onImgLoad() {
 		let rawWidth, rawHeight;
+		
+		const obj = this.obj;
 
-		if (this.obj.tagName == 'IMG') {
-			rawWidth = this.obj.naturalWidth;
-			rawHeight = this.obj.naturalHeight;
+		if (obj.tagName == 'IMG') {
+			rawWidth = obj.naturalWidth;
+			rawHeight = obj.naturalHeight;
 		} else {
-			rawWidth = parseInt(this.obj.style.width);
-			rawHeight = parseInt(this.obj.style.height);
+			rawWidth = (parseInt(obj.style.width) || parseInt(obj.getAttribute('width'))) ?? 100;
+			rawHeight = (parseInt(obj.style.height) || parseInt(obj.getAttribute('height'))) ?? 100;
 		}
 
 		let initScale = 1;
@@ -174,6 +175,7 @@ class ImageViewUI {
 				// 点击 svg 的其它地方不要拖，方便复制文本。
 				if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
 					// this._onImgMouseDown(e);
+					console.log('not clicking on svg root node.')
 					this._offsetX = e.clientX;
 					this._offsetY = e.clientY;
 					return;
@@ -233,6 +235,7 @@ class ImageViewUI {
 		let left = this._coordX + e.clientX - this._offsetX + 'px';
 		let top = this._coordY + e.clientY - this._offsetY + 'px';
 		
+		// console.log({left, top});
 		this.obj.style.left = left;
 		this.obj.style.top = top;
 
@@ -246,7 +249,7 @@ class ImageViewUI {
 		return false;
 	}
 	_onImgClick(e) {
-		console.log('img: click');
+		// console.log('img: click');
 		if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
 			console.log('clicking on text nodes.');
 			e.preventDefault();

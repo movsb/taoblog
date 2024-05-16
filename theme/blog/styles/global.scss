@@ -164,7 +164,7 @@ img, svg {
 }
 
 @media (prefers-color-scheme: dark) {
-	img, video, iframe, svg {
+	img, video, iframe, svg:not(.transparent) {
 		filter: brightness(0.7);
 	}
 }

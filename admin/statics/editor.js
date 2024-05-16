@@ -169,7 +169,7 @@ class PostFormUI {
 			clearTimeout(debouncing);
 			debouncing = setTimeout(() => {
 				callback(this.elemSource.value);
-			}, 500);
+			}, 1000);
 		});
 	}
 }

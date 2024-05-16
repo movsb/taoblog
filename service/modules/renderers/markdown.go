@@ -539,6 +539,13 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		return ast.WalkContinue, nil
 	}
 
+	// 看起来是文章内的相对链接？
+	// 如果是的话，需要 resolve 到相对应的目录。
+	pathRooted := url.Path
+	if url.Scheme == "" && url.Host == "" && me.pathResolver != nil {
+		pathRooted = me.pathResolver.Resolve(url.Path)
+	}
+
 	styles := map[string]string{}
 	classes := []string{}
 
@@ -553,6 +560,18 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		scale = n
 		q.Del(`scale`)
 	}
+	// 内嵌站内 SVG 图片。
+	// if q.Has(`embed`) && url.Scheme == "" && url.Host == "" && strings.EqualFold(path.Ext(pathRooted), `.svg`) {
+	// 	contents, err := ioutil.ReadFile(pathRooted)
+	// 	if err == nil {
+	// 		var removeXML = regexp.MustCompile(`<\?(?U:.+)\?>\s*`)
+	// 		contents = removeXML.ReplaceAllLiteral(contents, nil)
+	// 		w.Write(contents)
+	// 		return ast.WalkContinue, nil
+	// 	} else {
+	// 		log.Println(`svg 不存在：`, pathRooted, err)
+	// 	}
+	// }
 
 	url.RawQuery = q.Encode()
 
@@ -610,13 +629,7 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		w.WriteString(fmt.Sprintf(` class="%s"`, strings.Join(classes, " ")))
 	}
 
-	// 看起来是文章内的相对链接？
-	// 如果是的话，需要 resolve 到相对应的目录。
-	if url.Scheme == "" && url.Host == "" && me.pathResolver != nil {
-		pathRelative := me.pathResolver.Resolve(url.Path)
-		url.Path = pathRelative
-	}
-
+	url.Path = pathRooted
 	width, height := size(url)
 	if width > 0 && height > 0 {
 		widthScaled, heightScaled := int(float64(width)*scale), int(float64(height)*scale)

@@ -93,13 +93,20 @@ body.wide #content {
         }
     }
 
-    p > img:only-child {
-        display: block;
-        margin: auto;
-    }
-
 	.toc {
 		display: none;
+	}
+}
+
+// 非宽屏模式下图片居中（宽屏模式居中看着太不协调了）
+body:not(.wide) .entry {
+	p {
+		img, svg {
+			&:only-child {
+				display: block;
+				margin: auto;
+			}
+		}
 	}
 }
 
