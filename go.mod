@@ -6,7 +6,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
-	github.com/litao91/goldmark-mathjax v0.0.0-20191101121019-011def32b12f
+	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
 	github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c
