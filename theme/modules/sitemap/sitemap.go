@@ -47,6 +47,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		&protocols.ListPostsRequest{
 			Fields:  `id`,
 			OrderBy: `date DESC`,
+			Kind:    `all`,
 		},
 	)
 

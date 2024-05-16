@@ -49,6 +49,8 @@ func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequ
 	// 为了兼容，并不能列举碎碎念。
 	if in.Kind == "" {
 		stmt.Where(`(type=? OR type=?)`, `post`, `page`)
+	} else if in.Kind == `all` {
+
 	} else {
 		panic("不支持其它种类。")
 	}
@@ -160,7 +162,7 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protoc
 				return ``, 0, err
 			}
 			s.postCaches.Append(id, key)
-			return content, time.Minute * 10, nil
+			return content, time.Hour, nil
 		},
 	)
 	if err != nil {

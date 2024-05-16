@@ -17,7 +17,7 @@ func (s *Service) GetStringOption(name string) (string, error) {
 	val, err, _ := s.cache.GetOrLoad(context.TODO(), optionCacheKey(name),
 		func(ctx context.Context, _ string) (any, time.Duration, error) {
 			val, err := s._getOption(name)
-			return val, time.Minute * 10, err
+			return val, time.Hour, err
 		},
 	)
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *Service) GetIntegerOption(name string) (int64, error) {
 				return nil, 0, err
 			}
 			n, err := strconv.ParseInt(val, 10, 64)
-			return n, time.Minute * 10, err
+			return n, time.Hour, err
 		},
 	)
 	if err != nil {

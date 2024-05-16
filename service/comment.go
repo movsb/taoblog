@@ -35,7 +35,7 @@ func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceT
 				return ``, 0, err
 			}
 			s.commentCaches.Append(id, key)
-			return content, time.Minute * 10, nil
+			return content, time.Hour, nil
 		},
 	)
 	if err != nil {
