@@ -83,6 +83,9 @@ type Service struct {
 	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
 	commentCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
+	// PlantUML 图片缓存。
+	plantUMLCache *lru.TTLCache[string, any]
+
 	// 请求节流器。
 	throttler *utils.Throttler[_RequestThrottlerKey]
 
@@ -120,13 +123,15 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 		tdb:  taorm.NewDB(db),
 		auth: auther,
 
-		cache:                lru.NewTTLCache[string, any](1024),
-		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](1024),
+		cache:                lru.NewTTLCache[string, any](128),
+		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](128),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](1024),
+		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](128),
 		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-		throttler:            utils.NewThrottler[_RequestThrottlerKey](),
-		maintenance:          &utils.Maintenance{},
+		plantUMLCache:        lru.NewTTLCache[string, any](32),
+
+		throttler:   utils.NewThrottler[_RequestThrottlerKey](),
+		maintenance: &utils.Maintenance{},
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{

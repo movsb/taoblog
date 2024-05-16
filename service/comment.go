@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -50,6 +51,22 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 		s.commentContentCaches.Delete(second)
 		log.Println(`删除评论缓存：`, second)
 	})
+}
+
+func (s *Service) markdownWithPlantUMLRenderer() renderers.Option2 {
+	return plantuml.New(
+		`https://www.plantuml.com/plantuml`, `svg`,
+		plantuml.WithCache(func(key string, loader func() (any, error)) (any, error) {
+			cached, err, _ := s.plantUMLCache.GetOrLoad(
+				context.Background(), key,
+				func(_ context.Context, _ string) (any, time.Duration, error) {
+					any, err := loader()
+					return any, time.Hour * 24, err
+				},
+			)
+			return cached, err
+		}),
+	)
 }
 
 // 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
@@ -91,6 +108,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 		if co.PrettifyHtml {
 			options = append(options, renderers.WithHtmlPrettifier())
 		}
+		options = append(options, s.markdownWithPlantUMLRenderer())
 		tr = renderers.NewMarkdown(options...)
 	case `html`:
 		tr = &renderers.HTML{}

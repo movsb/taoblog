@@ -216,6 +216,7 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		if co.PrettifyHtml {
 			options = append(options, renderers.WithHtmlPrettifier())
 		}
+		options = append(options, s.markdownWithPlantUMLRenderer())
 		tr = renderers.NewMarkdown(options...)
 	case `html`:
 		tr = &renderers.HTML{}

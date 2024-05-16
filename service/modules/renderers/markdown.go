@@ -189,7 +189,6 @@ func (me *_Markdown) AddOptions(options ...any) {
 	if !me.testing {
 		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
 		me.opts = append(me.opts, WithLazyLoadingFrames())
-		me.opts = append(me.opts, WithPlantUMLRenderer())
 	}
 }
 

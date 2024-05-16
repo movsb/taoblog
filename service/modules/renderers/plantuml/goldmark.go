@@ -26,13 +26,26 @@ var _ interface {
 type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀
 	format string
+
+	cache func(key string, loader func() (any, error)) (any, error)
 }
 
-func New(server string, format string) *_PlantUMLRenderer {
-	return &_PlantUMLRenderer{
+func New(server string, format string, options ...Option) *_PlantUMLRenderer {
+	p := &_PlantUMLRenderer{
 		server: server,
 		format: format,
 	}
+	for _, opt := range options {
+		opt(p)
+	}
+
+	if p.cache == nil {
+		p.cache = func(key string, loader func() (any, error)) (any, error) {
+			return loader()
+		}
+	}
+
+	return p
 }
 
 func (p *_PlantUMLRenderer) Extend(m goldmark.Markdown) {
@@ -94,15 +107,28 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 	}
 	uml := b.Bytes()
 
-	light, dark, err := p.fetch(uml)
+	compressed, err := compress(uml)
 	if err != nil {
 		p.error(writer)
 		log.Println(`渲染失败`, err)
 		return ast.WalkContinue, nil
 	}
 
-	writer.Write(light)
-	writer.Write(dark)
+	got, err := p.cache(compressed, func() (any, error) {
+		light, dark, err := p.fetch(compressed)
+		log.Println(`no using cache for plantuml ...`)
+		return _Cache{light, dark}, err
+	})
+	if err != nil {
+		p.error(writer)
+		log.Println(`渲染失败`, err)
+		return ast.WalkContinue, nil
+	}
+
+	cache := got.(_Cache)
+
+	writer.Write(cache.light)
+	writer.Write(cache.dark)
 
 	return ast.WalkContinue, nil
 }
@@ -112,12 +138,7 @@ func (p *_PlantUMLRenderer) error(w util.BufWriter) {
 	fmt.Fprintln(w, `<p style="color:red">PlantUML 渲染失败。</p>`)
 }
 
-func (p *_PlantUMLRenderer) fetch(source []byte) ([]byte, []byte, error) {
-	compressed, err := compress(source)
-	if err != nil {
-		return nil, nil, err
-	}
-
+func (p *_PlantUMLRenderer) fetch(compressed string) ([]byte, []byte, error) {
 	var (
 		content1, content2 []byte
 		err1, err2         error
