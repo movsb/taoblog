@@ -13,16 +13,17 @@ import (
 	"net/url"
 	"path"
 	"regexp"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func fetch(ctx context.Context, server, format, compressed string) ([]byte, error) {
-	// TODO 看看能不能不 embed metadata。
+func fetch(ctx context.Context, server, format, compressed string, darkMode bool) ([]byte, error) {
 	u, err := url.Parse(server)
 	if err != nil {
 		return nil, err
+	}
+	if darkMode {
+		format = `d` + format
 	}
 	u.Path = path.Join(u.Path, format, compressed)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -68,46 +69,26 @@ func strip(svg []byte) []byte {
 	return stripRe.ReplaceAllLiteral(svg, nil)
 }
 
-// 支持 light/dark 模式。
-// 尽量不要修改 SVG 本身的颜色，防止在未加载样式的阅读器上显示异常。
-func enabledDarkMode(svg []byte) []byte {
+func style(svg []byte, darkMode bool) []byte {
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(svg))
 	if err != nil {
 		log.Println(`解析 svg 出错：`, err)
 		return svg
 	}
 
+	// 添加一些特定的类，用于识别
 	if svg := doc.Find(`svg`); true {
+		// 透明：为了使图片预览功能使用页面相同的背景色。
+		// NOTE：也可以包在 div 中，然后用 :nth-child(1/2) 来选择。
 		svg.AddClass(`plantuml`, `transparent`)
-		if style, _ := svg.Attr(`style`); true {
-			style += `padding:1em;`
-			svg.SetAttr(`style`, style)
+
+		if darkMode {
+			svg.AddClass(`dark`)
+			// 默认隐藏，防止在 RSS 不加载样式时显示两张图片。
+			svg.SetAttr(`style`, svg.AttrOr(`style`, ``)+`display:none;`)
 		}
 	}
 
-	replacer := strings.NewReplacer(
-		`stroke-width:0.5`, `stroke-width:1`,
-	)
-
-	replaceStyles := func(_ int, s *goquery.Selection) {
-		if style, ok := s.Attr(`style`); ok {
-			s.SetAttr(`style`, replacer.Replace(style))
-			if strings.Contains(style, `stroke:#181818`) {
-				s.AddClass(`stroke-fg`)
-			}
-		}
-	}
-	replaceFills := func(_ int, s *goquery.Selection) {
-		switch current, _ := s.Attr(`fill`); current {
-		case `#000000`, `#181818`:
-			s.AddClass(`fill-fg`)
-		case `#E2E2F0`:
-			s.AddClass(`fill-bg`)
-		}
-	}
-
-	doc.Find(`[style]`).Each(replaceStyles)
-	doc.Find(`[fill]`).Each(replaceFills)
 	buf := bytes.NewBuffer(nil)
 	goquery.Render(buf, doc.Find(`body`).Children().First())
 	return buf.Bytes()

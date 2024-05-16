@@ -3,8 +3,11 @@ package plantuml
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"sync"
+	"time"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -82,6 +85,7 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 	if !entering {
 		return ast.WalkContinue, nil
 	}
+
 	n = n.(*_PlantUMLRendererBlock).ref
 	b := bytes.NewBuffer(nil)
 	for i := 0; i < n.Lines().Len(); i++ {
@@ -89,29 +93,64 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 		b.Write(line.Value(source))
 	}
 	uml := b.Bytes()
-	if svg, err := p.asSvg(uml); err != nil {
+
+	light, dark, err := p.fetch(uml)
+	if err != nil {
 		p.error(writer)
-		log.Println(`渲染失败`)
-		return ast.WalkContinue, nil
-	} else {
-		writer.Write(svg)
+		log.Println(`渲染失败`, err)
 		return ast.WalkContinue, nil
 	}
+
+	writer.Write(light)
+	writer.Write(dark)
+
+	return ast.WalkContinue, nil
 }
 
+// TODO fallback 到用链接。
 func (p *_PlantUMLRenderer) error(w util.BufWriter) {
 	fmt.Fprintln(w, `<p style="color:red">PlantUML 渲染失败。</p>`)
 }
 
-func (p *_PlantUMLRenderer) asSvg(source []byte) ([]byte, error) {
-	compress, err := compress(source)
+func (p *_PlantUMLRenderer) fetch(source []byte) ([]byte, []byte, error) {
+	compressed, err := compress(source)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	raw, err := fetch(context.Background(), p.server, p.format, compress)
-	if err != nil {
-		return nil, err
+
+	var (
+		content1, content2 []byte
+		err1, err2         error
+	)
+
+	wg := &sync.WaitGroup{}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		content1, err1 = fetch(ctx, p.server, p.format, compressed, false)
+	}()
+	go func() {
+		defer wg.Done()
+		content2, err2 = fetch(ctx, p.server, p.format, compressed, true)
+	}()
+	wg.Wait()
+
+	// 全部错误才算错。
+	if err1 != nil && err2 != nil {
+		return nil, nil, errors.Join(err1, err2)
 	}
-	final := enabledDarkMode(strip(raw))
-	return final, nil
+
+	if len(content1) > 0 {
+		content1 = style(content1, false)
+	}
+	if len(content2) > 0 {
+		content2 = style(content2, true)
+	}
+
+	content1 = strip(content1)
+	content2 = strip(content2)
+
+	return content1, content2, nil
 }

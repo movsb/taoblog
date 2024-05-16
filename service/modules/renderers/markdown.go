@@ -683,6 +683,7 @@ func size(url *urlpkg.URL) (int, int) {
 	defer fp.Close()
 	imgConfig, _, err := image.DecodeConfig(fp)
 	if err != nil {
+		// TODO 支持网络图片的 seeker。
 		if sfp, ok := fp.(io.ReadSeeker); ok {
 			if _, err := sfp.Seek(0, io.SeekStart); err != nil {
 				panic(err)
