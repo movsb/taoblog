@@ -1,13 +1,23 @@
+::selection {
+	background-color: var(--selection-background-color);
+}
+
 body {
     color: var(--color-fg);
     background-color: var(--color-bg);
     margin: 0px auto;
     padding: 0px;
-    font: var(--font-size) "Trebuchet MS","Microsoft YaHei",'Noto Sans',sans-serif;
-	font-family: "LXGW WenKai";
+	font-size: var(--font-size);
+	font-family: "LXGW WenKai", "Trebuchet MS","Microsoft YaHei",'Noto Sans',sans-serif;
 	font-weight: normal;
 	transition: background-color .2s linear;
 	line-height: var(--line-height-tight);
+
+	// 类似 GitHub 固定链接的长链接会使 Safari 表现异常，
+	// 但是火狐不会。比如：https://blog.twofei.com/911/
+	// 这篇文章里面的脚注链接。
+	// 但是我也不太清楚放在 body 上是不是足够安全。
+	overflow-wrap: anywhere;
 }
 
 @media screen and (max-width: $max_width) {
@@ -212,6 +222,7 @@ ul, ol {
 
 iframe {
 	border-radius: var(--border-radius);
+	max-width: 100%;
 }
 
 @keyframes fadeIn {

@@ -51,6 +51,8 @@ type Data struct {
 
 	// 碎碎念、叽叽喳喳🦜
 	Tweets *TweetsData
+
+	Error *ErrorData
 }
 
 func (d *Data) Title() string {
@@ -87,4 +89,8 @@ func (d *Data) Author() string {
 // MetaData ...
 type MetaData struct {
 	Title string // 实际上应该为站点标题，但是好像成了文章标题？
+}
+
+type ErrorData struct {
+	Message string
 }

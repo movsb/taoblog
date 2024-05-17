@@ -237,12 +237,20 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
 			case codes.PermissionDenied:
-				w.WriteHeader(403)
-				t.executeTemplate(`403.html`, w, nil)
+				w.WriteHeader(http.StatusForbidden)
+				t.executeTemplate(`error.html`, w, &data.Data{
+					Error: &data.ErrorData{
+						Message: `你无权查看此内容。`,
+					},
+				})
 				return true
 			case codes.NotFound:
 				w.WriteHeader(http.StatusNotFound)
-				t.executeTemplate(`404.html`, w, nil)
+				t.executeTemplate(`error.html`, w, &data.Data{
+					Error: &data.ErrorData{
+						Message: `你查看的内容不存在。`,
+					},
+				})
 				return true
 			}
 		}
@@ -258,8 +266,12 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 					return true
 				}
 			}
-			w.WriteHeader(404)
-			t.executeTemplate(`404.html`, w, nil)
+			w.WriteHeader(http.StatusNotFound)
+			t.executeTemplate(`error.html`, w, &data.Data{
+				Error: &data.ErrorData{
+					Message: `你查看的内容不存在。`,
+				},
+			})
 			return true
 		}
 	}

@@ -26,3 +26,24 @@
 	}
 
 }
+
+body#error {
+	background-color: var(--code-bg);
+	@media (prefers-color-scheme: dark) {
+		background-color: var(--color-bg);
+	}
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	display: flex;
+	#wrapper {
+		background-color: var(--color-bg);
+		@media (prefers-color-scheme: dark) {
+			background-color: var(--code-bg);
+		}
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		padding: 2em;
+		margin: auto;
+	}
+}

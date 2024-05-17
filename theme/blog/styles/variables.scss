@@ -15,6 +15,9 @@
 --input-padding:            5px 7px;
 --button-padding:           var(--input-padding);
 --textarea-padding:         7px;
+
+// 其实我并不喜欢修改用户的选中色……
+--selection-background-color:   #4da7c7a7;
 }
 
 @media (prefers-color-scheme: light) {
