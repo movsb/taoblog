@@ -8,6 +8,62 @@ body.admin {
 	}
 }
 
+body.admin.login {
+	background-color: var(--code-bg);
+	@media (prefers-color-scheme: dark) {
+		background-color: var(--color-bg);
+	}
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	display: flex;
+	#wrapper {
+		background-color: var(--color-bg);
+		@media (prefers-color-scheme: dark) {
+			background-color: var(--code-bg);
+		}
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		margin: auto;
+		padding: 1em;
+		box-sizing: border-box;
+		min-width: 300px;
+		@media (min-width: 400px) {
+			width: 400px;
+		}
+		@media (max-width: 399px) {
+			width: 90%;
+		}
+		h1 {
+			margin: 0;
+			padding-bottom: .5em;
+			text-align: center;
+			border-bottom: 1px solid var(--border-color);
+			a {
+				color: inherit;
+				font-size: 90%;
+			}
+			flex: 1;
+		}
+		button {
+			cursor: pointer;
+			text-align: center;
+		}
+		.passkeys {
+			height: 100%;
+			padding-top: 2em;
+			text-align: center;
+			> button {
+				width: 220px;
+				line-height: 2.5em;
+			}
+		}
+		.alts {
+			padding-top: 2em;
+		}
+	}
+}
+
 body.admin.editor {
 	textarea {
 		display: block;

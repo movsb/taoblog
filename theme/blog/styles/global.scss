@@ -81,6 +81,15 @@ input[type=text],input[type=password],input[type=email],input[type=url], a, text
         outline: none;
     }
 }
+
+// 为什么默认有白色的背景色？
+input[type=password] {
+	background-color: inherit;
+}
+input[type=datetime-local] {
+	box-sizing: border-box;
+}
+
 @media (prefers-color-scheme: dark) {
 	input[type=text], input[type=password],input[type=email],input[type=url],input[type=datetime-local], textarea {
 		color: var(--color-fg);
@@ -119,13 +128,6 @@ input[type=text],input[type=password],input[type=email],input[type=url],textarea
 	&::placeholder {
 		opacity: .45;
 	}
-}
-// 为什么默认有白色的背景色？
-input[type=password] {
-	background-color: inherit;
-}
-input[type=datetime-local] {
-	box-sizing: border-box;
 }
 
 pre {
@@ -200,13 +202,13 @@ hr {
 	suffix: ") ";
 }
 ul, ol {
-	&.reset-list-style-type { list-style-type: initial;     }
 	&.marker-minus          { list-style-type: "- ";        }
 	&.marker-plus           { list-style-type: "+ ";        }
 	&.marker-asterisk       { list-style-type: "* ";        }
 	&.marker-period         { list-style-type: decimal;     }
 	&.marker-parenthesis    { list-style-type: parenthesis; }
 }
+.reset-list-style-type      { list-style-type: initial;     }
 
 iframe {
 	border-radius: var(--border-radius);

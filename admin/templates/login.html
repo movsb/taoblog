@@ -28,13 +28,14 @@ function redirect(to) {
 }
 </script>
 </head>
-<body class="admin">
+<body class="admin login">
 <div id="wrapper">
-<h1>{{ .Name }}</h1>
-<button onclick="location.href='/'">返回首页</button>
-<h2>通行密钥登录</h2>
-<div>
-	<button onclick="webauthn()">登录</button>
+<h1><a href="/">{{ .Name }} - 登录</a></h1>
+<div class="passkeys">
+	<button onclick="webauthn()">
+		通行密钥 / WebAuthn
+	</button>
+	<p><a style="color: inherit; font-size: 80%; cursor: pointer;" onclick="toggleOthers();">其它登录方式</a></p>
 	<script>
 		async function webauthn() {
 			let wa = new WebAuthn();
@@ -50,20 +51,82 @@ function redirect(to) {
 				alert(e);
 			}
 		}
+		function toggleOthers() {
+			let form = document.getElementsByClassName('alts')[0];
+			form.style.display = form.style.display == 'none' ? 'block' : 'none';
+			let passkeys = document.getElementsByClassName('passkeys')[0];
+			passkeys.style.display = passkeys.style.display == 'none' ? 'block' : 'none';
+			{{ with .GoogleClientID }}
+				if (!window._google_initialized) {
+					let gapisrc = document.getElementById('gapisrc');
+					gapisrc.src = gapisrc.getAttribute('data-src');
+					window._google_initialized = true;
+					gapisrc.onload = google;
+				}
+			{{ end }}
+		}
 	</script>
 </div>
+<div class="alts" style="display: none;">
+<form method="post" id="login-form" style="text-align: center;">
+	<div>
+		<input type="text" name="user" placeholder="用户名" required />
+		<br />
+		<input type="password" name="passwd" placeholder="密码" required />
+	</div>	
+	<div>
+		<input type="submit" value="登录" />
+	</div>
+	<script>
+		(function(){
+			let form = document.getElementById('login-form');
+			form.addEventListener('submit', async function(ev){
+				ev.stopPropagation();
+				ev.preventDefault();
+
+				let resp = await fetch(location.pathname + '/basic', {
+					method: 'POST',
+					credentials: "include",
+					body: JSON.stringify({
+						username: form.elements['user'].value,
+						password: form.elements['passwd'].value,
+					}),
+				});
+				if (resp.status == 200) {
+					redirect();
+				} else {
+					alert('Error: ' + await resp.text());
+				}
+
+				return true;
+			});
+		})();
+	</script>
+</form>
 {{ if .HasSocialLogins }}
-<h2>社交帐号登录</h2>
-<div>
+<hr style="margin: 1em auto; width: 80%;" />
+<div id="social-logins" style="text-align: center;">
+	{{ with .GitHubClientID }}
+	<div>
+	<button onclick="github()">
+		GitHub
+	</button>
+	<script>
+		function github() {
+			location.href = "https://github.com/login/oauth/authorize?client_id={{ . }}";
+		}
+	</script>
+	</div>
+	{{ end }}
 	{{ if .GoogleClientID }}
 	<div>
 	<button id="google-signin-button">
 		Google
 	</button>
 	<button style="display: none;" id="google-signin-button-hidden">hidden sign-in button</button>
-	<script src="https://apis.google.com/js/api:client.js"></script>
+	<script id="gapisrc" data-src="https://apis.google.com/js/api:client.js"></script>
 	<script>
-		setTimeout(function() {
+		let google = function() {
 			let btn = document.getElementById('google-signin-button');
 			let btnHidden = document.getElementById('google-signin-button-hidden');
 			btn.addEventListener('click', function(e) {
@@ -104,61 +167,19 @@ function redirect(to) {
 					}
 				);
 			});
-		}, 0);
+		};
+		// google();
 	</script>
 	</div>
 	{{end}}
-	{{ if .GitHubClientID }}
-	<div>
-	<button id="github-signin-button">
-		GitHub
-	</button>
-	<script>
-		var github = document.getElementById('github-signin-button');
-		github.addEventListener('click', function() {
-			location.href = "https://github.com/login/oauth/authorize?client_id={{ .GitHubClientID }}";
-		});
-	</script>
-	</div>
-	{{ end }}
 </div>
 {{ end }}
-<h2>用户名登录</h2>
-<form method="post" id="login-form">
-	<div>
-		<input type="text" name="user" placeholder="用户名" required />
-		<br />
-		<input type="password" name="passwd" placeholder="密码" required />
-	</div>	
-	<div>
-		<input type="submit" value="登录" />
-	</div>
-	<script>
-		(function(){
-			let form = document.getElementById('login-form');
-			form.addEventListener('submit', async function(ev){
-				ev.stopPropagation();
-				ev.preventDefault();
-
-				let resp = await fetch(location.pathname + '/basic', {
-					method: 'POST',
-					credentials: "include",
-					body: JSON.stringify({
-						username: form.elements['user'].value,
-						password: form.elements['passwd'].value,
-					}),
-				});
-				if (resp.status == 200) {
-					redirect();
-				} else {
-					alert('Error: ' + await resp.text());
-				}
-
-				return true;
-			});
-		})();
-	</script>
-</form>
+<p style="text-align: center;">
+	<a style="color: inherit; font-size: 80%; cursor: pointer;" onclick="toggleOthers()">
+		返回通行密钥登录
+	</a>
+</p>
+</div>
 </div>
 </body>
 </html>
