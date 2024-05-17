@@ -267,6 +267,7 @@ class CommentPreviewUI {
 	}
 	show(yes) {
 		this._toggleContent(!yes);
+		this.container.style.display = yes ? 'block' : 'none';
 		this.checkBox.checked = yes;
 	}
 }

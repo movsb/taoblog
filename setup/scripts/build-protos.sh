@@ -18,4 +18,5 @@ protoc \
 	protocols/service.proto \
 	protocols/comment.proto \
 	protocols/post.proto \
-	protocols/search.proto
+	protocols/search.proto \
+	protocols/config.proto

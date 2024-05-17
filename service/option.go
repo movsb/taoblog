@@ -5,8 +5,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
+	"gopkg.in/yaml.v2"
 )
 
 func optionCacheKey(name string) string {
@@ -104,4 +107,36 @@ func (s *Service) SetOption(name string, value interface{}) {
 		s.tdb.Model(&option).MustCreate()
 	}
 	s.cache.Set(optionCacheKey(name), value, time.Minute*10)
+}
+
+func (s *Service) GetConfig(ctx context.Context, req *protocols.GetConfigRequest) (*protocols.GetConfigResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	u := config.NewUpdater(s.cfg)
+	p := u.Find(req.Path)
+
+	y, err := yaml.Marshal(p)
+	if err != nil {
+		panic(err)
+	}
+
+	return &protocols.GetConfigResponse{
+		Yaml: string(y),
+	}, nil
+}
+
+func (s *Service) SetConfig(ctx context.Context, req *protocols.SetConfigRequest) (*protocols.SetConfigResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	u := config.NewUpdater(s.cfg)
+	u.MustApply(req.Path, req.Yaml)
+	return &protocols.SetConfigResponse{}, nil
+}
+
+func (s *Service) SaveConfig(ctx context.Context, req *protocols.SaveConfigRequest) (*protocols.SaveConfigResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	s.cfg.Save()
+
+	return &protocols.SaveConfigResponse{}, nil
 }

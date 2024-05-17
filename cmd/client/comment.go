@@ -1,12 +1,6 @@
 package client
 
 import (
-	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
-	"os/exec"
-
 	"github.com/movsb/taoblog/protocols"
 	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
@@ -38,63 +32,16 @@ func (c *Client) GetComment(cmdID int64) *protocols.Comment {
 // 非 Markdown 评论会被转换为 Markdown。
 func (c *Client) UpdateComment(cmtID int64) {
 	cmt := c.GetComment(cmtID)
-	editor, ok := os.LookupEnv(`EDITOR`)
+
+	value, ok := edit(cmt.Source, `.md`)
 	if !ok {
-		editor = `vim`
-	}
-
-	tmpFile, err := ioutil.TempFile(``, `taoblog-comment-`)
-	if err != nil {
-		panic(err)
-	}
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
-
-	source := cmt.Source
-	if source == `` || cmt.SourceType != `markdown` {
-		source = cmt.Content
-	}
-
-	if _, err := tmpFile.WriteString(source); err != nil {
-		panic(err)
-	}
-
-	oldInfo, err := tmpFile.Stat()
-	if err != nil {
-		panic(err)
-	}
-
-	tmpFile.Close()
-
-	fmt.Printf("Editing comment: %d, post: %d\n", cmt.Id, cmt.PostId)
-
-	cmd := exec.Command(editor, tmpFile.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		log.Fatalln(err)
-	}
-
-	newInfo, err := os.Stat(tmpFile.Name())
-	if err != nil {
-		panic(err)
-	}
-
-	if newInfo.ModTime() == oldInfo.ModTime() {
-		fmt.Println(`file not modified`)
 		return
 	}
 
-	bys, err := ioutil.ReadFile(tmpFile.Name())
-	if err != nil {
-		panic(err)
-	}
-
 	cmt.SourceType = `markdown`
-	cmt.Source = string(bys)
+	cmt.Source = string(value)
 
-	_, err = c.blog.UpdateComment(c.token(), &protocols.UpdateCommentRequest{
+	_, err := c.blog.UpdateComment(c.token(), &protocols.UpdateCommentRequest{
 		Comment: cmt,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: []string{

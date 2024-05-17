@@ -23,6 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ManagementClient interface {
+	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error)
+	SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error)
+	SaveConfig(ctx context.Context, in *SaveConfigRequest, opts ...grpc.CallOption) (*SaveConfigResponse, error)
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (Management_BackupClient, error)
 	BackupFiles(ctx context.Context, opts ...grpc.CallOption) (Management_BackupFilesClient, error)
 	SetRedirect(ctx context.Context, in *SetRedirectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -35,6 +38,33 @@ type managementClient struct {
 
 func NewManagementClient(cc grpc.ClientConnInterface) ManagementClient {
 	return &managementClient{cc}
+}
+
+func (c *managementClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error) {
+	out := new(GetConfigResponse)
+	err := c.cc.Invoke(ctx, "/protocols.Management/GetConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *managementClient) SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error) {
+	out := new(SetConfigResponse)
+	err := c.cc.Invoke(ctx, "/protocols.Management/SetConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *managementClient) SaveConfig(ctx context.Context, in *SaveConfigRequest, opts ...grpc.CallOption) (*SaveConfigResponse, error) {
+	out := new(SaveConfigResponse)
+	err := c.cc.Invoke(ctx, "/protocols.Management/SaveConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *managementClient) Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (Management_BackupClient, error) {
@@ -144,6 +174,9 @@ func (x *managementFileSystemClient) Recv() (*FileSystemResponse, error) {
 // All implementations must embed UnimplementedManagementServer
 // for forward compatibility
 type ManagementServer interface {
+	GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error)
+	SetConfig(context.Context, *SetConfigRequest) (*SetConfigResponse, error)
+	SaveConfig(context.Context, *SaveConfigRequest) (*SaveConfigResponse, error)
 	Backup(*BackupRequest, Management_BackupServer) error
 	BackupFiles(Management_BackupFilesServer) error
 	SetRedirect(context.Context, *SetRedirectRequest) (*emptypb.Empty, error)
@@ -155,6 +188,15 @@ type ManagementServer interface {
 type UnimplementedManagementServer struct {
 }
 
+func (UnimplementedManagementServer) GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (UnimplementedManagementServer) SetConfig(context.Context, *SetConfigRequest) (*SetConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetConfig not implemented")
+}
+func (UnimplementedManagementServer) SaveConfig(context.Context, *SaveConfigRequest) (*SaveConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveConfig not implemented")
+}
 func (UnimplementedManagementServer) Backup(*BackupRequest, Management_BackupServer) error {
 	return status.Errorf(codes.Unimplemented, "method Backup not implemented")
 }
@@ -178,6 +220,60 @@ type UnsafeManagementServer interface {
 
 func RegisterManagementServer(s grpc.ServiceRegistrar, srv ManagementServer) {
 	s.RegisterService(&Management_ServiceDesc, srv)
+}
+
+func _Management_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).GetConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.Management/GetConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).GetConfig(ctx, req.(*GetConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Management_SetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).SetConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.Management/SetConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).SetConfig(ctx, req.(*SetConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Management_SaveConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).SaveConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.Management/SaveConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).SaveConfig(ctx, req.(*SaveConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Management_Backup_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -278,6 +374,18 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "protocols.Management",
 	HandlerType: (*ManagementServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetConfig",
+			Handler:    _Management_GetConfig_Handler,
+		},
+		{
+			MethodName: "SetConfig",
+			Handler:    _Management_SetConfig_Handler,
+		},
+		{
+			MethodName: "SaveConfig",
+			Handler:    _Management_SaveConfig_Handler,
+		},
 		{
 			MethodName: "SetRedirect",
 			Handler:    _Management_SetRedirect_Handler,

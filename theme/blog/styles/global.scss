@@ -243,6 +243,7 @@ svg.plantuml {
 	&.transparent { background-color: unset !important; }
 
 	padding: 1em !important;
+	box-sizing: border-box;
 
 	// 不加会有奇怪的 margin-bottom，不知道哪里来的
 	display: block;

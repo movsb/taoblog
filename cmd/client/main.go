@@ -3,7 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -286,4 +289,111 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	backupCmd.AddCommand(backupFilesCmd)
+
+	configCmd := &cobra.Command{
+		Use:              `config`,
+		Short:            `get/set config`,
+		PersistentPreRun: preRun,
+	}
+	rootCmd.AddCommand(configCmd)
+	configGetCmd := &cobra.Command{
+		Use:   `get`,
+		Short: `get [path.to.config]`,
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			path := ""
+			if len(args) > 0 {
+				path = args[0]
+			}
+			value := client.GetConfig(path)
+			fmt.Println(value)
+		},
+	}
+	configCmd.AddCommand(configGetCmd)
+	configSetCmd := &cobra.Command{
+		Use:   `set`,
+		Short: `set <path.to.config> value`,
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			path, value := args[0], args[1]
+			client.SetConfig(path, value)
+		},
+	}
+	configCmd.AddCommand(configSetCmd)
+	configEditCmd := &cobra.Command{
+		Use:   `edit`,
+		Short: `edit [path.to.config]`,
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			path := ""
+			if len(args) > 0 {
+				path = args[0]
+			}
+			value := client.GetConfig(path)
+			if editedValue, edited := edit(value, `.yaml`); edited {
+				client.SetConfig(path, editedValue)
+			}
+		},
+	}
+	configCmd.AddCommand(configEditCmd)
+	configSaveCmd := &cobra.Command{
+		Use:  `save`,
+		Args: cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			client.SaveConfig()
+		},
+	}
+	configCmd.AddCommand(configSaveCmd)
+}
+
+func edit(value string, fileSuffix string) (string, bool) {
+	editor, ok := os.LookupEnv(`EDITOR`)
+	if !ok {
+		editor = `vim`
+	}
+
+	tmpFile, err := ioutil.TempFile(``, `taoblog-edit-*`+fileSuffix)
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	if _, err := tmpFile.WriteString(value); err != nil {
+		panic(err)
+	}
+
+	oldInfo, err := tmpFile.Stat()
+	if err != nil {
+		panic(err)
+	}
+
+	tmpFile.Close()
+
+	// fmt.Printf("Editing: %d, post: %d\n", cmt.Id, cmt.PostId)
+
+	cmd := exec.Command(editor, tmpFile.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatalln(err)
+	}
+
+	newInfo, err := os.Stat(tmpFile.Name())
+	if err != nil {
+		panic(err)
+	}
+
+	if newInfo.ModTime() == oldInfo.ModTime() {
+		fmt.Println(`file not modified`)
+		return value, false
+	}
+
+	bys, err := ioutil.ReadFile(tmpFile.Name())
+	if err != nil {
+		panic(err)
+	}
+
+	return string(bys), true
 }

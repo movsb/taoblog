@@ -1,0 +1,27 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/protocols";
+
+message GetConfigRequest {
+	string path = 1;
+}
+
+message GetConfigResponse {
+	string yaml = 1;
+}
+
+message SetConfigRequest {
+	string path = 1;
+	string yaml = 2;
+}
+
+message SetConfigResponse {
+
+}
+
+message SaveConfigRequest {
+}
+
+message SaveConfigResponse {
+
+}

@@ -6,11 +6,40 @@ import "protocols/backup.proto";
 import "protocols/post.proto";
 import "protocols/comment.proto";
 import "protocols/search.proto";
+import "protocols/config.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 
 service Management {
+	// Config
+
+	rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {
+		option (google.api.http) = {
+			get: "/v3/configs/{path}";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取配置。";
+		};
+	};
+	rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {
+		option (google.api.http) = {
+			post: "/v3/configs/{path}";
+			body: "yaml";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "设置配置。";
+		};
+	};
+	rpc SaveConfig (SaveConfigRequest) returns (SaveConfigResponse) {
+		option (google.api.http) = {
+			post: "/v3/configs:save";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "保存配置。";
+		};
+	};
+
 	// Backup
 
 	rpc Backup(BackupRequest) returns (stream BackupResponse) {

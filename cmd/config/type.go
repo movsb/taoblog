@@ -13,6 +13,15 @@ type Config struct {
 	Site        SiteConfig        `yaml:"site"`
 	Comment     CommentConfig     `yaml:"comment"`
 	Search      search.Config     `yaml:"search"`
+
+	originalFilePath string
+}
+
+func (c *Config) Save() {
+	if c.originalFilePath == "" {
+		panic(`empty config file path`)
+	}
+	SaveFile(c, c.originalFilePath)
 }
 
 // DefaultConfig ...
@@ -84,7 +93,6 @@ func DefaultFileDataConfig() FileDataConfig {
 
 // MaintenanceConfig ...
 type MaintenanceConfig struct {
-	SiteClosed   bool `yaml:"site_closed"`
 	DisableAdmin bool `yaml:"disable_admin"`
 	Webhook      struct {
 		ReloaderPath string `yaml:"reloader_path"`
@@ -97,7 +105,6 @@ type MaintenanceConfig struct {
 // DefaultMainMaintenanceConfig ...
 func DefaultMainMaintenanceConfig() MaintenanceConfig {
 	c := MaintenanceConfig{
-		SiteClosed:   false,
 		DisableAdmin: false,
 	}
 	c.Webhook.ReloaderPath = `/tmp/taoblog-reloader.sock`
