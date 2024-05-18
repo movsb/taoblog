@@ -12,7 +12,6 @@ import (
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -137,7 +136,8 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *protocols.PostC
 			c.Email = ""
 			c.Ip = ""
 		} else {
-			c.GeoLocation = s.geoLocation(c.Ip)
+			s.cmtgeo.Queue(c.Ip)
+			c.GeoLocation = s.cmtgeo.Get(c.Ip)
 		}
 
 		content, err := s.getCommentContentCached(ctx, c.Id, c.SourceType, c.Source, c.PostId, co)
@@ -172,10 +172,11 @@ func (s *Service) cacheAllCommenterData() {
 	for _, c := range comments {
 		_ = s.avatarCache.ID(c.Email)
 	}
-	if !strings.EqualFold(version.GitCommit, `head`) {
+	if !DevMode() {
 		go func() {
 			for _, c := range comments {
-				s.cmtgeo.Queue(c.IP, nil)
+				s.cmtgeo.Queue(c.IP)
+				time.Sleep(time.Second * 6) // 沸腾！
 			}
 		}()
 	}
@@ -361,15 +362,6 @@ func (s *Service) GetAllCommentsCount() int64 {
 	return count
 }
 
-func (s *Service) geoLocation(ip string) string {
-	go func() {
-		if err := s.cmtgeo.Queue(ip, nil); err != nil {
-			log.Println(`GeoLocation.Queue:`, ip, err)
-		}
-	}()
-	return s.cmtgeo.Get(ip)
-}
-
 const (
 	maxNicknameLen = 32
 	maxEmailLen    = 64
@@ -405,11 +397,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	ac := auth.Context(ctx)
 
 	// 尽早查询地理信息
-	go func() {
-		if err := s.cmtgeo.Queue(ac.RemoteAddr.String(), nil); err != nil {
-			log.Println(err)
-		}
-	}()
+	s.cmtgeo.Queue(ac.RemoteAddr.String())
 
 	now := time.Now()
 

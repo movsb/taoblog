@@ -4,33 +4,31 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/phuslu/lru"
 )
 
 type CommentGeo struct {
-	ctx context.Context
-	mu  sync.RWMutex
-	// 本身带锁的
-	lru *lru.Cache[string, *Resp]
+	ctx   context.Context
+	cache *lru.LRUCache[string, *Resp]
 }
 
-func NewCommentGeo(ctx context.Context) *CommentGeo {
-	cache, err := lru.New[string, *Resp](1 << 10)
-	if err != nil {
-		panic(err)
-	}
+func New(ctx context.Context) *CommentGeo {
 	geo := &CommentGeo{
-		ctx: ctx,
-		lru: cache,
+		ctx:   ctx,
+		cache: lru.NewLRUCache[string, *Resp](128),
 	}
-	go geo.clearBad()
 	return geo
+}
+
+func (cg *CommentGeo) Get(ip string) string {
+	if r, ok := cg.cache.Get(ip); ok {
+		return r.String()
+	}
+	return ""
 }
 
 // http://ip-api.com/json/8.8.8.8
@@ -74,70 +72,38 @@ func (r *Resp) String() string {
 		r.Country, r.RegionName, r.City, r.Isp)
 }
 
-func (cg *CommentGeo) Queue(ip string, fn func()) error {
-	defer func() {
-		if fn != nil {
-			fn()
-		}
-	}()
+// 异步入队列。
+func (cg *CommentGeo) Queue(ip string) {
+	go cg.cache.GetOrLoad(cg.ctx, ip, fetch)
+}
 
-	if cg.lru.Contains(ip) {
-		return nil
-	}
-
-	// log.Println(`GeoLocation queue:`, ip)
-
-	// 限流目标网站的请求量。
-	cg.mu.Lock()
-	defer cg.mu.Unlock()
-
-	if cg.lru.Contains(ip) {
-		return nil
-	}
-
-	ctx, cancel := context.WithTimeout(cg.ctx, time.Second*3)
+func fetch(ctx context.Context, ip string) (*Resp, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
 	u, err := url.Parse(`http://ip-api.com/json`)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	u = u.JoinPath(ip)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	rsp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if rsp.StatusCode != 200 {
-		return fmt.Errorf(`status code = %d != 200`, rsp.StatusCode)
+		return nil, fmt.Errorf(`status code = %d != 200`, rsp.StatusCode)
 	}
 
 	var r Resp
 	if err := json.NewDecoder(rsp.Body).Decode(&r); err != nil {
-		return fmt.Errorf(`decoding error: %v`, err)
+		return nil, fmt.Errorf(`decoding error: %v`, err)
 	}
 	if !r.valid() {
-		// return fmt.Errorf(`invalid ip response`)
-		log.Println(`GeoLocation: error:`, `invalid ip response`)
-		// 错的也保存，防止重复查。
-		cg.lru.Add(ip, &r)
-		return nil
+		return nil, fmt.Errorf(`geo: invalid response`)
 	}
-
-	cg.lru.Add(ip, &r)
-	return nil
-}
-
-func (cg *CommentGeo) Get(ip string) string {
-	if r, ok := cg.lru.Get(ip); ok {
-		return r.String()
-	}
-	return ""
-}
-
-func (cg *CommentGeo) clearBad() {
-
+	return &r, nil
 }

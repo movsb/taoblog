@@ -219,8 +219,9 @@ ul, ol {
 	&.marker-parenthesis    { list-style-type: parenthesis; }
 }
 .reset-list-style-type      { list-style-type: initial;     }
+li::marker                  { color: var(--accent-color);   }
 
-iframe {
+iframe, video, audio {
 	border-radius: var(--border-radius);
 	max-width: 100%;
 }

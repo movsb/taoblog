@@ -143,7 +143,7 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 	s.cmtntf.Init()
 
 	s.avatarCache = NewAvatarCache()
-	s.cmtgeo = commentgeo.NewCommentGeo(context.TODO())
+	s.cmtgeo = commentgeo.New(context.TODO())
 
 	s.cacheAllCommenterData()
 

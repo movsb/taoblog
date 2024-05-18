@@ -171,13 +171,9 @@ class ImageViewUI {
 			
 			// https://stackoverflow.com/a/52839734/3628322
 			this.obj.addEventListener('mousedown', (e)=> {
-				// console.log('down...');
 				// 点击 svg 的其它地方不要拖，方便复制文本。
 				if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
-					// this._onImgMouseDown(e);
 					console.log('not clicking on svg root node.')
-					this._offsetX = e.clientX;
-					this._offsetY = e.clientY;
 					return;
 				}
 				this._onImgMouseDown(e);

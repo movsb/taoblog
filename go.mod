@@ -27,7 +27,6 @@ require (
 	github.com/alecthomas/chroma/v2 v2.13.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-webauthn/webauthn v0.10.2
-	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6
 	github.com/phuslu/lru v1.0.15
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
