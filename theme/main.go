@@ -24,7 +24,6 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
-	"github.com/movsb/taoblog/theme/modules/canonical"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
@@ -38,11 +37,14 @@ type Theme struct {
 	rootFS fs.FS
 	tmplFS fs.FS
 
-	cfg     *config.Config
-	service *service.Service
-	auth    *auth.Auth
+	cfg *config.Config
 
-	redir canonical.RedirectFinder
+	// NOTE：这是进程内直接调用的。
+	// 如果改成连接，需要考虑 metadata 转发问题。
+	service  protocols.TaoBlogServer
+	impl     service.ToBeImplementedByRpc
+	searcher protocols.SearchServer
+	auth     *auth.Auth
 
 	rss     *rss.RSS
 	sitemap *sitemap.Sitemap
@@ -57,7 +59,7 @@ type Theme struct {
 	specialMux *http.ServeMux
 }
 
-func New(devMode bool, cfg *config.Config, service *service.Service, auth *auth.Auth) *Theme {
+func New(devMode bool, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher protocols.SearchServer, auth *auth.Auth) *Theme {
 	var rootFS, tmplFS, stylesFS fs.FS
 
 	if devMode {
@@ -75,10 +77,11 @@ func New(devMode bool, cfg *config.Config, service *service.Service, auth *auth.
 		rootFS: rootFS,
 		tmplFS: tmplFS,
 
-		cfg:     cfg,
-		service: service,
-		auth:    auth,
-		redir:   service,
+		cfg:      cfg,
+		service:  service,
+		impl:     impl,
+		searcher: searcher,
+		auth:     auth,
 
 		themeChangedAt: time.Now(),
 
@@ -88,11 +91,11 @@ func New(devMode bool, cfg *config.Config, service *service.Service, auth *auth.
 	m := t.specialMux
 
 	if r := cfg.Site.RSS; r.Enabled {
-		t.rss = rss.New(service, auth, rss.WithArticleCount(r.ArticleCount))
+		t.rss = rss.New(service, impl, auth, rss.WithArticleCount(r.ArticleCount))
 		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
 	}
 	if cfg.Site.Sitemap.Enabled {
-		t.sitemap = sitemap.New(service, auth)
+		t.sitemap = sitemap.New(service, impl, auth)
 		m.Handle(`GET /sitemap.xml`, t.LastPostTime304Handler(t.sitemap))
 	}
 
@@ -150,7 +153,7 @@ func createMenus(items []config.MenuItem, outer bool) string {
 func (t *Theme) loadTemplates() {
 	menustr := createMenus(t.cfg.Menus, false)
 
-	applyCustomTheme := t.service.CreateCustomThemeApplyFunc()
+	customTheme := t.cfg.Site.Theme.Stylesheets.Render()
 
 	funcs := template.FuncMap{
 		// https://githut.com/golang/go/issues/14256
@@ -178,7 +181,7 @@ func (t *Theme) loadTemplates() {
 			return nil
 		},
 		"apply_site_theme_customs": func() template.HTML {
-			return template.HTML(applyCustomTheme())
+			return template.HTML(customTheme)
 		},
 	}
 
@@ -255,17 +258,6 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 			}
 		}
 		if taorm.IsNotFoundError(err) {
-			if t.redir != nil {
-				target, err := t.redir.FindRedirect(req.URL.Path)
-				if err != nil {
-					log.Println(`FindRedirect failed. `, err)
-					// fallthrough
-				}
-				if target != `` {
-					http.Redirect(w, req, target, http.StatusPermanentRedirect)
-					return true
-				}
-			}
 			w.WriteHeader(http.StatusNotFound)
 			t.executeTemplate(`error.html`, w, &data.Data{
 				Error: &data.ErrorData{
@@ -288,13 +280,13 @@ func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, que
 }
 
 func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
-	d := data.NewDataForHome(req.Context(), t.cfg, t.service)
+	d := data.NewDataForHome(req.Context(), t.cfg, t.service, t.impl)
 	t.executeTemplate(`home.html`, w, d)
 	return nil
 }
 
 func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForSearch(t.cfg, t.auth.AuthRequest(r), t.service, r)
+	d := data.NewDataForSearch(t.cfg, t.auth.AuthRequest(r), t.service, t.searcher, r)
 	t.executeTemplate(`search.html`, w, d)
 }
 
@@ -321,7 +313,7 @@ func (t *Theme) ChangedAt() time.Time {
 
 func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		last := t.service.LastArticleUpdateTime()
+		last := t.impl.LastArticleUpdateTime()
 		h3 := handle304.New(
 			handle304.WithNotModified(last),
 			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, last),
@@ -336,33 +328,40 @@ func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 }
 
 func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForPosts(r.Context(), t.cfg, t.service, r)
+	d := data.NewDataForPosts(r.Context(), t.cfg, t.service, t.impl, r)
 	t.executeTemplate(`posts.html`, w, d)
 }
 
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTweets(r.Context(), t.service.Config(), t.service)
+	d := data.NewDataForTweets(r.Context(), t.impl.Config(), t.service, t.impl)
 	t.executeTemplate(`tweets.html`, w, d)
 }
 
 func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service)
+	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service, t.impl)
 	t.executeTemplate(`tags.html`, w, d)
 }
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
-	post := t.service.GetPostByID(req.Context(), id, &protocols.PostContentOptions{
-		WithContent:       true,
-		RenderCodeBlocks:  true,
-		UseAbsolutePaths:  false,
-		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
-	})
-	t.userMustCanSeePost(req, post)
+	post, err := t.service.GetPost(req.Context(),
+		&protocols.GetPostRequest{
+			Id: int32(id),
+			ContentOptions: &protocols.PostContentOptions{
+				WithContent:       true,
+				RenderCodeBlocks:  true,
+				UseAbsolutePaths:  false,
+				OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
 
 	if post.Type == `page` {
-		link := t.service.GetLink(id)
+		link := t.impl.GetLink(id)
 		// 因为只处理了一层页面路径，所以要判断一下。
-		if link != t.service.GetPlainLink(id) {
+		if link != t.impl.GetPlainLink(id) {
 			http.Redirect(w, req, link, http.StatusPermanentRedirect)
 			return nil
 		}
@@ -375,28 +374,24 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) er
 }
 
 func (t *Theme) incView(id int64) {
-	t.service.IncrementPostPageView(id)
+	t.impl.IncrementPostPageView(id)
 }
 
-func (t *Theme) QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) (int64, error) {
-	post := t.service.GetPostBySlug(req.Context(), tree, slug, &protocols.PostContentOptions{
-		WithContent:      true,
-		RenderCodeBlocks: true,
-		UseAbsolutePaths: false,
-	})
-	t.userMustCanSeePost(req, post)
-	t.incView(post.Id)
-	t.tempRenderPost(w, req, post)
-	return post.Id, nil
-}
+func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error) {
+	post, err := t.service.GetPost(req.Context(),
+		&protocols.GetPostRequest{
+			Page: path,
+			ContentOptions: &protocols.PostContentOptions{
+				WithContent:      true,
+				RenderCodeBlocks: true,
+				UseAbsolutePaths: false,
+			},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
 
-func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) (int64, error) {
-	post := t.service.GetPostByPage(req.Context(), parents, slug, &protocols.PostContentOptions{
-		WithContent:      true,
-		RenderCodeBlocks: true,
-		UseAbsolutePaths: false,
-	})
-	t.userMustCanSeePost(req, post)
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
 	return post.Id, nil
@@ -412,7 +407,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		panic(err)
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
+	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, t.impl, p, rsp.Comments)
 
 	var name string
 	if p.Type == `tweet` {
@@ -424,25 +419,18 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTag(req.Context(), t.cfg, t.service, tags)
+	d := data.NewDataForTag(req.Context(), t.cfg, t.service, t.impl, tags)
 	t.executeTemplate(`tag.html`, w, d)
 }
 
 // TODO 没限制不可访问文章的附件是否不可访问。
 // 毕竟，文章不可访问后，文件列表暂时拿不到。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
-	fs, err := t.service.FileSystemForPost(req.Context(), postID)
+	fs, err := t.impl.FileSystemForPost(req.Context(), postID)
 	if err != nil {
 		panic(err)
 	}
 	http.ServeFileFS(w, req, fs, file)
-}
-
-func (t *Theme) userMustCanSeePost(req *http.Request, post *protocols.Post) {
-	user := t.auth.AuthRequest(req)
-	if user.IsGuest() && post.Status != "public" {
-		panic(status.Error(codes.PermissionDenied, "你无权限查看此文章。"))
-	}
 }
 
 func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool {

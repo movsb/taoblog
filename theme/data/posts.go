@@ -23,7 +23,7 @@ type PostsData struct {
 }
 
 // NewDataForPosts ...
-func NewDataForPosts(ctx context.Context, cfg *config.Config, service *service.Service, r *http.Request) *Data {
+func NewDataForPosts(ctx context.Context, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   auth.Context(ctx).User,
@@ -31,9 +31,9 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service *service.S
 	}
 
 	postsData := &PostsData{
-		PostCount:    service.GetDefaultIntegerOption("post_count", 0),
-		PageCount:    service.GetDefaultIntegerOption("page_count", 0),
-		CommentCount: service.GetDefaultIntegerOption("comment_count", 0),
+		PostCount:    impl.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    impl.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
 
 	s := r.URL.Query().Get(`sort`)
@@ -52,19 +52,23 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service *service.S
 		sort[1] = "desc"
 	}
 
-	posts := service.MustListPosts(ctx,
+	posts, err := service.ListPosts(ctx,
 		&protocols.ListPostsRequest{
-			Fields:  "id,title,date,page_view,comments,status",
 			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
-		})
+			Kinds:   []string{`post`},
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
 
-	for _, p := range posts {
+	for _, p := range posts.Posts {
 		postsData.ViewCount += int64(p.PageView)
 	}
 
-	for _, p := range posts {
+	for _, p := range posts.Posts {
 		pp := newPost(p)
-		pp.link = service.GetLink(pp.ID)
+		pp.link = impl.GetLink(pp.ID)
 		postsData.Posts = append(postsData.Posts, pp)
 	}
 	d.Posts = postsData

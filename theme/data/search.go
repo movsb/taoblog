@@ -9,7 +9,6 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service"
 )
 
 // SearchData ...
@@ -35,7 +34,7 @@ func (p *SearchPost) Content() template.HTML {
 }
 
 // NewDataForSearch ...
-func NewDataForSearch(cfg *config.Config, user *auth.User, service *service.Service, r *http.Request) *Data {
+func NewDataForSearch(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, searcher protocols.SearchServer, r *http.Request) *Data {
 	q := r.URL.Query().Get(`q`)
 	d := &Data{
 		Config: cfg,
@@ -45,7 +44,7 @@ func NewDataForSearch(cfg *config.Config, user *auth.User, service *service.Serv
 		},
 	}
 
-	rsp, err := service.SearchPosts(context.TODO(), &protocols.SearchPostsRequest{Search: q})
+	rsp, err := searcher.SearchPosts(context.TODO(), &protocols.SearchPostsRequest{Search: q})
 	if err != nil {
 		panic(err)
 	}

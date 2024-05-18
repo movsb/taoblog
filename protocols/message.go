@@ -16,15 +16,5 @@ type GetAvatarRequest struct {
 type ListLatestPostsRequest struct {
 }
 
-type ListPostsRequest struct {
-	Fields  string
-	Limit   int64
-	OrderBy string
-
-	ContentOptions PostContentOptions
-
-	Kind string // models.Kind
-}
-
 type ListTagsWithCountRequest struct {
 }

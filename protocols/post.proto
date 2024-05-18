@@ -68,11 +68,11 @@ message Post {
 }
 
 message GetPostRequest {
+	// 选择其一。
 	int32 id = 1;
-	bool with_source = 2;
-	bool with_content = 3;
-	bool with_tags = 4;
-	bool with_metas = 5;
+	string page = 3;
+
+	PostContentOptions content_options = 100;
 }
 
 message UpdatePostRequest {
@@ -82,6 +82,17 @@ message UpdatePostRequest {
 
 message DeletePostRequest {
 	int32 id = 1;
+}
+
+message ListPostsRequest {
+	int32 limit = 1;
+	string order_by = 2;
+	PostContentOptions content_options = 3;
+	repeated string kinds = 4;
+}
+
+message ListPostsResponse {
+	repeated Post posts = 1;
 }
 
 message GetPostCommentsCountRequest {
@@ -102,12 +113,6 @@ message SetPostStatusRequest {
 
 message SetPostStatusResponse {
 
-}
-
-message SetRedirectRequest {
-	string source_path = 1;
-	string target_path = 2;
-	int32 status_code = 3;
 }
 
 // 获取某篇文章的全部评论。

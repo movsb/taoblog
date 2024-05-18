@@ -38,7 +38,8 @@ type RSS struct {
 	Articles    []*Article
 
 	tmpl *template.Template
-	svc  *service.Service
+	svc  protocols.TaoBlogServer
+	impl service.ToBeImplementedByRpc
 	auth *auth.Auth
 }
 
@@ -55,16 +56,17 @@ type _Config struct {
 }
 
 // New ...
-func New(svc *service.Service, auth *auth.Auth, options ...Option) *RSS {
+func New(svc protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, auth *auth.Auth, options ...Option) *RSS {
 	r := &RSS{
 		config: _Config{
 			articleCount: 10,
 		},
 
-		Name:        svc.Name(),
-		Description: svc.Description(),
-		Link:        svc.HomeURL(),
+		Name:        impl.Name(),
+		Description: impl.Description(),
+		Link:        impl.HomeURL(),
 		svc:         svc,
+		impl:        impl,
 		auth:        auth,
 	}
 
@@ -79,23 +81,26 @@ func New(svc *service.Service, auth *auth.Auth, options ...Option) *RSS {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	articles := r.svc.MustListPosts(req.Context(), &protocols.ListPostsRequest{
-		Fields:  "id,title,date",
-		Limit:   int64(r.config.articleCount),
+	rsp, err := r.svc.ListPosts(req.Context(), &protocols.ListPostsRequest{
+		Limit:   int32(r.config.articleCount),
 		OrderBy: `date desc`,
-		ContentOptions: protocols.PostContentOptions{
+		Kinds:   []string{`post`},
+		ContentOptions: &protocols.PostContentOptions{
 			WithContent:      true,
 			RenderCodeBlocks: false,
 		},
 	})
-
-	rssArticles := make([]*Article, 0, len(articles))
-	for _, article := range articles {
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rssArticles := make([]*Article, 0, len(rsp.Posts))
+	for _, article := range rsp.Posts {
 		rssArticle := Article{
 			Post:    article,
 			Date:    time.Unix(int64(article.Date), 0).Local().Format(time.RFC1123),
 			Content: template.HTML(cdata(article.Content)),
-			Link:    fmt.Sprintf("%s/%d/", r.svc.HomeURL(), article.Id),
+			Link:    fmt.Sprintf("%s/%d/", r.impl.HomeURL(), article.Id),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
 	}

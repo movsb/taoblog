@@ -57,12 +57,6 @@ service Management {
 		};
 	};
 
-	rpc SetRedirect (SetRedirectRequest) returns (google.protobuf.Empty) {
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "设置重定向。";
-		};
-	};
-
 	// 文件系统管理：期允许管理的对象：文章附件、评论附件、备份文件、根目录等。
 	// TODO：合并上述 BackupFiles 接口、Backup 接口。
 
@@ -128,6 +122,14 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "删除文章及其所有相关资源（评论、标签等）。";
+		};
+	}
+	rpc ListPosts (ListPostsRequest) returns (ListPostsResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "列举文章。";
 		};
 	}
 	rpc SetPostStatus (SetPostStatusRequest) returns (SetPostStatusResponse) {

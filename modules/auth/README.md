@@ -4,7 +4,7 @@
 
 - **Cookie**
 
-  Browser → Gateway → GrpcGateway → Grpc.
+  Browser → NGINX → Gateway → GrpcGateway → Grpc.
 
 - **Token**
 

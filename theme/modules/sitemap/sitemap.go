@@ -16,7 +16,6 @@ var tmpl string
 
 // Article ...
 type Article struct {
-	*protocols.Post
 	Link string
 }
 
@@ -25,15 +24,17 @@ type Sitemap struct {
 	Articles []*Article
 
 	tmpl *template.Template
-	svc  *service.Service
+	svc  protocols.TaoBlogServer
+	impl service.ToBeImplementedByRpc
 	auth *auth.Auth
 }
 
 // New ...
-func New(svc *service.Service, auth *auth.Auth) *Sitemap {
+func New(svc protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, auth *auth.Auth) *Sitemap {
 	s := &Sitemap{
 		svc:  svc,
 		auth: auth,
+		impl: impl,
 		tmpl: template.Must(template.New(`sitemap`).Parse(tmpl)),
 	}
 
@@ -42,20 +43,16 @@ func New(svc *service.Service, auth *auth.Auth) *Sitemap {
 
 // ServeHTTP ...
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	articles := s.svc.MustListPosts(
-		req.Context(),
-		&protocols.ListPostsRequest{
-			Fields:  `id`,
-			OrderBy: `date DESC`,
-			Kind:    `all`,
-		},
-	)
+	rsp, err := s.impl.ListAllPostsIds(req.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	rssArticles := make([]*Article, 0, len(articles))
-	for _, article := range articles {
+	rssArticles := make([]*Article, 0, len(rsp))
+	for _, article := range rsp {
 		rssArticle := Article{
-			Post: article,
-			Link: fmt.Sprintf("%s/%d/", s.svc.HomeURL(), article.Id),
+			Link: fmt.Sprintf("%s/%d/", s.impl.HomeURL(), article),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
 	}

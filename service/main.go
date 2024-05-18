@@ -1,12 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"database/sql"
 	"fmt"
-	"html/template"
 	"log"
 	"net"
 	"net/netip"
@@ -24,10 +22,12 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/search"
+	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
@@ -56,6 +56,22 @@ func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
 		IP:     ac.RemoteAddr,
 		Method: method,
 	}
+}
+
+type ToBeImplementedByRpc interface {
+	Name() string
+	Description() string
+	HomeURL() string
+	ListAllPostsIds(ctx context.Context) ([]int32, error)
+	GetDefaultIntegerOption(name string, def int64) int64
+	GetLink(ID int64) string
+	GetPlainLink(ID int64) string
+	LastArticleUpdateTime() time.Time
+	Config() *config.Config
+	ListTagsWithCount() []*models.TagWithCount
+	IncrementPostPageView(id int64)
+	GetRelatedPosts(id int64) []*models.PostForRelated
+	FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error)
 }
 
 // Service implements IServer.
@@ -303,19 +319,6 @@ func (s *Service) LastArticleUpdateTime() time.Time {
 		t = time.Unix(modified, 0)
 	}
 	return t
-}
-
-func (s *Service) CreateCustomThemeApplyFunc() func() string {
-	c := s.cfg.Site.Theme.Stylesheets
-	stylesheetTmpl := template.Must(template.New(`stylesheet`).Parse(c.Template))
-	return func() string {
-		w := bytes.NewBuffer(nil)
-		for _, ss := range c.Stylesheets {
-			stylesheetTmpl.Execute(w, ss)
-			fmt.Fprintln(w)
-		}
-		return w.String()
-	}
 }
 
 var methodThrottlerInfo = map[string]struct {

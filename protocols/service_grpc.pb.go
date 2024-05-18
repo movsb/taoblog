@@ -28,7 +28,6 @@ type ManagementClient interface {
 	SaveConfig(ctx context.Context, in *SaveConfigRequest, opts ...grpc.CallOption) (*SaveConfigResponse, error)
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (Management_BackupClient, error)
 	BackupFiles(ctx context.Context, opts ...grpc.CallOption) (Management_BackupFilesClient, error)
-	SetRedirect(ctx context.Context, in *SetRedirectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	FileSystem(ctx context.Context, opts ...grpc.CallOption) (Management_FileSystemClient, error)
 }
 
@@ -130,15 +129,6 @@ func (x *managementBackupFilesClient) Recv() (*BackupFilesResponse, error) {
 	return m, nil
 }
 
-func (c *managementClient) SetRedirect(ctx context.Context, in *SetRedirectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/protocols.Management/SetRedirect", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *managementClient) FileSystem(ctx context.Context, opts ...grpc.CallOption) (Management_FileSystemClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Management_ServiceDesc.Streams[2], "/protocols.Management/FileSystem", opts...)
 	if err != nil {
@@ -179,7 +169,6 @@ type ManagementServer interface {
 	SaveConfig(context.Context, *SaveConfigRequest) (*SaveConfigResponse, error)
 	Backup(*BackupRequest, Management_BackupServer) error
 	BackupFiles(Management_BackupFilesServer) error
-	SetRedirect(context.Context, *SetRedirectRequest) (*emptypb.Empty, error)
 	FileSystem(Management_FileSystemServer) error
 	mustEmbedUnimplementedManagementServer()
 }
@@ -202,9 +191,6 @@ func (UnimplementedManagementServer) Backup(*BackupRequest, Management_BackupSer
 }
 func (UnimplementedManagementServer) BackupFiles(Management_BackupFilesServer) error {
 	return status.Errorf(codes.Unimplemented, "method BackupFiles not implemented")
-}
-func (UnimplementedManagementServer) SetRedirect(context.Context, *SetRedirectRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetRedirect not implemented")
 }
 func (UnimplementedManagementServer) FileSystem(Management_FileSystemServer) error {
 	return status.Errorf(codes.Unimplemented, "method FileSystem not implemented")
@@ -323,24 +309,6 @@ func (x *managementBackupFilesServer) Recv() (*BackupFilesRequest, error) {
 	return m, nil
 }
 
-func _Management_SetRedirect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetRedirectRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).SetRedirect(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/protocols.Management/SetRedirect",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).SetRedirect(ctx, req.(*SetRedirectRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Management_FileSystem_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(ManagementServer).FileSystem(&managementFileSystemServer{stream})
 }
@@ -385,10 +353,6 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SaveConfig",
 			Handler:    _Management_SaveConfig_Handler,
-		},
-		{
-			MethodName: "SetRedirect",
-			Handler:    _Management_SetRedirect_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -508,6 +472,7 @@ type TaoBlogClient interface {
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*Post, error)
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*Post, error)
 	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsResponse, error)
 	SetPostStatus(ctx context.Context, in *SetPostStatusRequest, opts ...grpc.CallOption) (*SetPostStatusResponse, error)
 	GetPostComments(ctx context.Context, in *GetPostCommentsRequest, opts ...grpc.CallOption) (*GetPostCommentsResponse, error)
 	GetPostsByTags(ctx context.Context, in *GetPostsByTagsRequest, opts ...grpc.CallOption) (*GetPostsByTagsResponse, error)
@@ -569,6 +534,15 @@ func (c *taoBlogClient) UpdatePost(ctx context.Context, in *UpdatePostRequest, o
 func (c *taoBlogClient) DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/DeletePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taoBlogClient) ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsResponse, error) {
+	out := new(ListPostsResponse)
+	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/ListPosts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -692,6 +666,7 @@ type TaoBlogServer interface {
 	GetPost(context.Context, *GetPostRequest) (*Post, error)
 	UpdatePost(context.Context, *UpdatePostRequest) (*Post, error)
 	DeletePost(context.Context, *DeletePostRequest) (*emptypb.Empty, error)
+	ListPosts(context.Context, *ListPostsRequest) (*ListPostsResponse, error)
 	SetPostStatus(context.Context, *SetPostStatusRequest) (*SetPostStatusResponse, error)
 	GetPostComments(context.Context, *GetPostCommentsRequest) (*GetPostCommentsResponse, error)
 	GetPostsByTags(context.Context, *GetPostsByTagsRequest) (*GetPostsByTagsResponse, error)
@@ -725,6 +700,9 @@ func (UnimplementedTaoBlogServer) UpdatePost(context.Context, *UpdatePostRequest
 }
 func (UnimplementedTaoBlogServer) DeletePost(context.Context, *DeletePostRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePost not implemented")
+}
+func (UnimplementedTaoBlogServer) ListPosts(context.Context, *ListPostsRequest) (*ListPostsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPosts not implemented")
 }
 func (UnimplementedTaoBlogServer) SetPostStatus(context.Context, *SetPostStatusRequest) (*SetPostStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPostStatus not implemented")
@@ -861,6 +839,24 @@ func _TaoBlog_DeletePost_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaoBlogServer).DeletePost(ctx, req.(*DeletePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaoBlog_ListPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoBlogServer).ListPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.TaoBlog/ListPosts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoBlogServer).ListPosts(ctx, req.(*ListPostsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1107,6 +1103,10 @@ var TaoBlog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeletePost",
 			Handler:    _TaoBlog_DeletePost_Handler,
+		},
+		{
+			MethodName: "ListPosts",
+			Handler:    _TaoBlog_ListPosts_Handler,
 		},
 		{
 			MethodName: "SetPostStatus",

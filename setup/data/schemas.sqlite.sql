@@ -46,16 +46,6 @@ CREATE TABLE IF NOT EXISTS `comments` (
 -- https://sqlite.org/syntax/column-constraint.html
 CREATE INDEX `post_id` on `comments` (`post_id`);
 
--- 创建表 文章分类 categories
-CREATE TABLE IF NOT EXISTS categories (
-    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
-    `name` TEXT NOT NULL,
-    `slug` TEXT NOT NULL,
-    `parent_id` INTEGER NOT NULL,
-    `path` TEXT NOT NULL,
-    UNIQUE (`path`,`slug`)
-);
-
 -- 创建表 tag标签/post_tags
 CREATE TABLE IF NOT EXISTS tags (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,

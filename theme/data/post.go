@@ -50,7 +50,7 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 }
 
 // NewDataForPost ...
-func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Service, post *protocols.Post, comments []*protocols.Comment) *Data {
+func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, post *protocols.Post, comments []*protocols.Comment) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
@@ -63,10 +63,9 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service *service.Servic
 	}
 	d.Post = p
 	if cfg.Site.ShowRelatedPosts {
-		p.Post.Related = service.GetRelatedPosts(post.Id)
+		p.Post.Related = impl.GetRelatedPosts(post.Id)
 	}
-	p.Post.Tags = service.GetPostTags(p.Post.Id)
-	p.Post.link = service.GetLink(post.Id)
+	p.Post.link = impl.GetLink(post.Id)
 	p.Comments = comments
 	return d
 }

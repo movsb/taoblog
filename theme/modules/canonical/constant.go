@@ -6,7 +6,6 @@ var (
 	regexpHome   = regexp.MustCompile(`^/$`)
 	regexpByID   = regexp.MustCompile(`^/(\d+)(/?)$`)
 	regexpFile   = regexp.MustCompile(`^/(\d+)/(.+)$`)
-	regexpBySlug = regexp.MustCompile(`^(/.+)+/([^/]+)\.html$`)
 	regexpByTags = regexp.MustCompile(`^/tags/(.*)$`)
 	regexpByPage = regexp.MustCompile(`^((/[0-9a-zA-Z\-_]+)*)/([0-9a-zA-Z\-_]+)$`)
 )

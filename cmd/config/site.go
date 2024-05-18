@@ -1,6 +1,9 @@
 package config
 
 import (
+	"bytes"
+	"fmt"
+	"html/template"
 	"time"
 )
 
@@ -126,4 +129,14 @@ func DefaultThemeStylesheetsConfig() ThemeStylesheetsConfig {
 	return ThemeStylesheetsConfig{
 		Template: `<link rel="stylesheet" type="text/css" href="{{.Source}}" />`,
 	}
+}
+
+func (c *ThemeStylesheetsConfig) Render() string {
+	t := template.Must(template.New(`stylesheet`).Parse(c.Template))
+	w := bytes.NewBuffer(nil)
+	for _, ss := range c.Stylesheets {
+		t.Execute(w, ss)
+		fmt.Fprintln(w)
+	}
+	return w.String()
 }

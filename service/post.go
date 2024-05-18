@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -31,34 +32,41 @@ func (s *Service) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{})
 }
 
-// MustGetPost ...
-func (s *Service) MustGetPost(ctx context.Context, name int64, co *protocols.PostContentOptions) *protocols.Post {
-	var p models.Post
-	stmt := s.posts().Where("id = ?", name)
-	stmt.MustFind(&p)
-	return utils.Must(p.ToProtocols(s.setPostExtraFields(ctx, co)))
-}
-
-// 奇怪，为什么这个方法不是 protobuf 写的？🤔
-func (s *Service) MustListPosts(ctx context.Context, in *protocols.ListPostsRequest) []*protocols.Post {
+func (s *Service) ListPosts(ctx context.Context, in *protocols.ListPostsRequest) (*protocols.ListPostsResponse, error) {
 	ac := auth.Context(ctx)
 
 	var posts models.Posts
-	stmt := s.posts().Select(in.Fields).Limit(in.Limit).OrderBy(in.OrderBy)
+	stmt := s.posts().Limit(int64(in.Limit)).OrderBy(in.OrderBy)
 	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
-	// 为了兼容，并不能列举碎碎念。
-	if in.Kind == "" {
-		stmt.Where(`(type=? OR type=?)`, `post`, `page`)
-	} else if in.Kind == `all` {
-
-	} else {
-		panic("不支持其它种类。")
+	if len(in.Kinds) > 0 {
+		stmt.Where(`type in ?`, in.Kinds)
 	}
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}
 
-	return utils.Must(posts.ToProtocols(s.setPostExtraFields(ctx, &in.ContentOptions)))
+	out, err := posts.ToProtocols(s.setPostExtraFields(ctx, in.ContentOptions))
+	if err != nil {
+		return nil, err
+	}
+
+	return &protocols.ListPostsResponse{
+		Posts: out,
+	}, nil
+}
+
+func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
+	ac := auth.Context(ctx)
+	var posts models.Posts
+	if err := s.tdb.Model(models.Post{}).Select(`id`).
+		WhereIf(ac.User.IsGuest(), `status='public'`).Find(&posts); err != nil {
+		return nil, err
+	}
+	var ids []int32
+	for _, p := range posts {
+		ids = append(ids, int32(p.ID))
+	}
+	return ids, nil
 }
 
 // TODO：改成 grpc。
@@ -82,7 +90,10 @@ func (s *Service) MustListLatestTweets(ctx context.Context, limit int, co *proto
 
 // TODO 性能很差！
 func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
-	p := s.MustGetPost(ctx, id, nil)
+	p, err := s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(id)})
+	if err != nil {
+		return false
+	}
 	return p.Status == `public`
 }
 
@@ -93,31 +104,26 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	ac := auth.Context(ctx)
 
 	var p models.Post
-	if err := s.tdb.Where("id = ?", in.Id).Find(&p); err != nil {
-		panic(err)
+
+	stmt := s.tdb.Model(p)
+
+	if in.Id > 0 {
+		stmt = stmt.Where(`id=?`, in.Id)
+	} else if in.Page != "" {
+		dir, slug := path.Split(in.Page)
+		catID := s.getPageParentID(dir)
+		stmt = stmt.Where("slug=? AND category=?", slug, catID).
+			OrderBy("date DESC") // ???
 	}
 
-	if p.Status != `public` && !ac.User.IsAdmin() {
-		panic(codes.PermissionDenied)
-	}
-
-	out, err := p.ToProtocols(s.setPostExtraFields(ctx, &protocols.PostContentOptions{
-		WithContent:      in.WithContent,
-		RenderCodeBlocks: true,
-	}))
-	if err != nil {
+	stmt = stmt.WhereIf(ac.User.IsGuest(), `status='public'`)
+	if err := stmt.Find(&p); err != nil {
 		return nil, err
 	}
 
-	if !in.WithSource {
-		out.SourceType = ``
-		out.Source = ``
-	}
-	if in.WithTags {
-		out.Tags = s.GetPostTags(out.Id)
-	}
-	if !in.WithMetas {
-		out.Metas = nil
+	out, err := p.ToProtocols(s.setPostExtraFields(ctx, in.ContentOptions))
+	if err != nil {
+		return nil, err
 	}
 
 	return out, nil
@@ -169,6 +175,15 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protoc
 		return ``, err
 	}
 	return content, nil
+}
+
+func (s *Service) getPostTagsCached(ctx context.Context, id int64) ([]string, error) {
+	key := fmt.Sprintf(`post_tags:%d`, id)
+	tags, err, _ := s.cache.GetOrLoad(ctx, key, func(ctx context.Context, _ string) (any, time.Duration, error) {
+		tags := s.GetObjectTagNames(id)
+		return tags, time.Hour, nil
+	})
+	return tags.([]string), err
 }
 
 func (s *Service) deletePostContentCacheFor(id int64) {
@@ -250,25 +265,14 @@ func (s *Service) plainLink(id int64) string {
 	return fmt.Sprintf(`/%d/`, id)
 }
 
-func (s *Service) GetPostByID(ctx context.Context, id int64, co *protocols.PostContentOptions) *protocols.Post {
-	return s.MustGetPost(ctx, id, co)
-}
-
 func (s *Service) IncrementPostPageView(id int64) {
 	query := "UPDATE posts SET page_view=page_view+1 WHERE id=?"
 	s.tdb.MustExec(query, id)
 }
 
-func (s *Service) GetPostByPage(ctx context.Context, parents string, slug string, co *protocols.PostContentOptions) *protocols.Post {
-	return s.mustGetPostBySlugOrPage(ctx, true, parents, slug, co)
-}
-
-func (s *Service) GetPostBySlug(ctx context.Context, categories string, slug string, co *protocols.PostContentOptions) *protocols.Post {
-	return s.mustGetPostBySlugOrPage(ctx, false, categories, slug, co)
-}
-
 // GetPostsByTags gets tag posts.
 func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByTagsRequest) (*protocols.GetPostsByTagsResponse, error) {
+	ac := auth.Context(ctx)
 	var ids []int64
 	for _, tag := range req.Tags {
 		t := s.GetTagByName(tag)
@@ -279,6 +283,7 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByT
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
+		WhereIf(ac.User.IsGuest(), `posts.status='public'`).
 		GroupBy(`posts.id`).
 		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
@@ -287,50 +292,6 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByT
 		return nil, err
 	}
 	return &protocols.GetPostsByTagsResponse{Posts: outs}, nil
-}
-
-func (s *Service) mustGetPostBySlugOrPage(ctx context.Context, isPage bool, parents string, slug string, co *protocols.PostContentOptions) *protocols.Post {
-	var catID int64
-	if !isPage {
-		catID = s.parseCategoryTree(parents)
-	} else {
-		catID = s.getPageParentID(parents)
-	}
-	var p models.Post
-	stmt := s.tdb.Model(models.Post{}).
-		Where("slug=? AND category=?", slug, catID).
-		WhereIf(isPage, "type = 'page'").
-		OrderBy("date DESC")
-	if err := stmt.Find(&p); err != nil {
-		panic(err)
-	}
-	return utils.Must(p.ToProtocols(s.setPostExtraFields(ctx, co)))
-}
-
-// ParseTree parses category tree from URL to get last sub-category ID.
-// e.g. /folder/post.html, then tree is /folder
-// e.g. /path/to/folder/post.html, then tree is /path/to/folder
-// It will get the ID of folder.
-func (s *Service) parseCategoryTree(tree string) (id int64) {
-	if tree == "" {
-		return 0
-	}
-
-	p := strings.LastIndexByte(tree, '/')
-	if p == -1 {
-		panic(`invalid tree`)
-	}
-	path, slug := tree[:p], tree[p+1:]
-	if path == `` {
-		path = `/`
-	}
-
-	var cat models.Category
-	if err := s.tdb.Where("path=? AND slug=?", path, slug).Find(&cat); err != nil {
-		panic(err)
-	}
-
-	return cat.ID
 }
 
 func (s *Service) getPageParentID(parents string) int64 {
@@ -386,10 +347,6 @@ func (s *Service) GetRelatedPosts(id int64) []*models.PostForRelated {
 		Limit(9).
 		MustFind(&relates)
 	return relates
-}
-
-func (s *Service) GetPostTags(ID int64) []string {
-	return s.GetObjectTagNames(ID)
 }
 
 // t: last_commented_at 表示文章评论最后被操作的时间。不是最后被评论的时间。
@@ -565,19 +522,15 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 		}
 		if hasTags {
 			txs.UpdateObjectTags(p.ID, in.Post.Tags)
+			s.cache.Delete(fmt.Sprintf(`post_tags:%d`, in.Post.Id))
 		}
 		txs.updateLastPostTime(time.Now())
 		txs.deletePostContentCacheFor(p.ID)
 		return nil
 	})
 
-	// TODO 暂时没提供选项。
-	np := s.GetPostByID(ctx, p.ID, nil)
-	if hasTags {
-		np.Tags = s.GetPostTags(p.ID)
-	}
-
-	return np, nil
+	// TODO Update 接口没有 ContentOptions。
+	return s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(in.Post.Id)})
 }
 
 // 只是用来在创建文章和更新文章的时候从正文里面提取。
@@ -686,64 +639,6 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *protocols.GetPos
 	}, nil
 }
 
-func (s *Service) FindRedirect(sourcePath string) (string, error) {
-	r, err := s.findRedirect(context.TODO(), s, sourcePath)
-	if err != nil {
-		return "", err
-	}
-	return r.TargetPath, nil
-}
-
-func (s *Service) findRedirect(_ context.Context, txs *Service, sourcePath string) (*models.Redirect, error) {
-	var r models.Redirect
-	if err := txs.tdb.Where(`source_path=?`, sourcePath).Find(&r); err != nil {
-		return nil, err
-	}
-	return &r, nil
-}
-
-// 重定向并不止是只对文章链接有效，任何链接都可以。这里暂时先写在这里了。
-func (s *Service) SetRedirect(ctx context.Context, in *protocols.SetRedirectRequest) (*empty.Empty, error) {
-	return &empty.Empty{}, s.TxCall(func(txs *Service) error {
-		r, err := s.findRedirect(ctx, txs, in.SourcePath)
-		if err != nil {
-			if !errors.Is(err, sql.ErrNoRows) {
-				var te *taorm.Error
-				if errors.As(err, &te) {
-					if !errors.Is(te.Raw, sql.ErrNoRows) {
-						return err
-					}
-				}
-			}
-		}
-		if r != nil {
-			if r.TargetPath == in.TargetPath {
-				return nil
-			}
-			res, err := txs.tdb.Model(r).UpdateMap(taorm.M{
-				`target_path`: in.TargetPath,
-			})
-			if err != nil {
-				return err
-			}
-			n, err := res.RowsAffected()
-			if err != nil {
-				return err
-			}
-			if n != 1 {
-				return fmt.Errorf(`SetRedirect: affected rows not equal to 1, was %d`, n)
-			}
-			return nil
-		}
-		r = &models.Redirect{
-			CreatedAt:  int32(time.Now().Unix()),
-			SourcePath: in.SourcePath,
-			TargetPath: in.TargetPath,
-		}
-		return txs.tdb.Model(r).Create()
-	})
-}
-
 func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Post) error {
 	ac := auth.Context(ctx)
 
@@ -773,6 +668,13 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 				p.Title = truncateTitle(content, 48)
 			}
 		}
+
+		if tags, err := s.getPostTagsCached(ctx, p.Id); err != nil {
+			return err
+		} else {
+			p.Tags = tags
+		}
+
 		return nil
 	}
 }
@@ -780,7 +682,20 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 // TODO：可能把 [图片] 这种截断
 func truncateTitle(title string, length int) string {
 	runes := []rune(title)
+
+	// 不超过指定的字符串长度
 	maxLength := utils.IIF(length > len(runes), len(runes), length)
+
+	// 不包含回车
+	if p := slices.Index(runes, '\n'); p > 0 && p < maxLength { // 不可能第一个字符是回车吧？🤔
+		maxLength = p
+	}
+
+	// 不包含句号
+	if p := slices.Index(runes, '。'); p > 0 && p < maxLength {
+		maxLength = p
+	}
+
 	suffix := utils.IIF(len(runes) > maxLength, "...", "")
 	return string(runes[:maxLength]) + suffix
 }

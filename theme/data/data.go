@@ -8,12 +8,14 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
 // Data holds all data for rendering the site.
 type Data struct {
-	svc *service.Service
+	svc  protocols.TaoBlogServer
+	impl service.ToBeImplementedByRpc
 
 	// all configuration.
 	// It's not safe to export all configs outside.

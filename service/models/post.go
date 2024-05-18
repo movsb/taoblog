@@ -160,6 +160,7 @@ func (Post) TableName() string {
 // 以下字段由 setPostExtraFields 提供/清除。
 // - Metas.Geo
 // - Content
+// - Tags
 func (p *Post) ToProtocols(redact func(p *protocols.Post) error) (*protocols.Post, error) {
 	out := protocols.Post{
 		Id:            p.ID,

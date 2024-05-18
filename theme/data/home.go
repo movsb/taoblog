@@ -22,7 +22,7 @@ type HomeData struct {
 }
 
 // NewDataForHome ...
-func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Service) *Data {
+func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   auth.Context(ctx).User,
@@ -30,21 +30,24 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Se
 		svc:    service,
 	}
 	home := &HomeData{
-		PostCount:    service.GetDefaultIntegerOption("post_count", 0),
-		PageCount:    service.GetDefaultIntegerOption("page_count", 0),
-		CommentCount: service.GetDefaultIntegerOption("comment_count", 0),
+		PostCount:    impl.GetDefaultIntegerOption("post_count", 0),
+		PageCount:    impl.GetDefaultIntegerOption("page_count", 0),
+		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
-	posts := service.MustListPosts(ctx,
+	rsp, err := service.ListPosts(ctx,
 		&protocols.ListPostsRequest{
-			Fields:  "id,title,type,status,date",
 			Limit:   20,
 			OrderBy: "date DESC",
+			Kinds:   []string{`post`},
 		},
 	)
+	if err != nil {
+		panic(err)
+	}
 	// 太 hardcode shit 了。
-	for _, p := range posts {
+	for _, p := range rsp.Posts {
 		pp := newPost(p)
-		pp.link = service.GetLink(p.Id)
+		pp.link = impl.GetLink(p.Id)
 		home.Posts = append(home.Posts, pp)
 	}
 
@@ -66,13 +69,22 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Se
 	for _, c := range comments.Comments {
 		p, ok := postsMap[c.PostId]
 		if !ok {
+			post, err := d.svc.GetPost(ctx,
+				&protocols.GetPostRequest{
+					Id: int32(c.PostId),
+					ContentOptions: &protocols.PostContentOptions{
+						WithContent:       true,
+						RenderCodeBlocks:  true,
+						UseAbsolutePaths:  true,
+						OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+					},
+				},
+			)
+			if err != nil {
+				panic(err)
+			}
 			p = &LatestCommentsByPost{
-				Post: newPost(d.svc.MustGetPost(ctx, c.PostId, &protocols.PostContentOptions{
-					WithContent:       true,
-					RenderCodeBlocks:  true,
-					UseAbsolutePaths:  true,
-					OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
-				})),
+				Post: newPost(post),
 			}
 			postsMap[c.PostId] = p
 			home.PostComments = append(home.PostComments, p)
@@ -84,14 +96,24 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Se
 
 	// 最近碎碎念
 	{
-		tweets := service.MustListLatestTweets(ctx, 15, &protocols.PostContentOptions{
-			WithContent:  true,
-			PrettifyHtml: true,
-		})
+		tweets, err := service.ListPosts(ctx,
+			&protocols.ListPostsRequest{
+				Limit:   15,
+				OrderBy: `date desc`,
+				Kinds:   []string{`tweet`},
+				ContentOptions: &protocols.PostContentOptions{
+					WithContent:  true,
+					PrettifyHtml: true,
+				},
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
 		// 太 hardcode shit 了。
-		for _, p := range tweets {
+		for _, p := range tweets.Posts {
 			pp := newPost(p)
-			pp.link = service.GetLink(p.Id)
+			pp.link = impl.GetLink(p.Id)
 			home.Tweets = append(home.Tweets, pp)
 		}
 		comments, err := d.svc.ListComments(ctx,
@@ -113,13 +135,22 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service *service.Se
 		for _, c := range comments.Comments {
 			p, ok := postsMap[c.PostId]
 			if !ok {
+				post, err := d.svc.GetPost(ctx,
+					&protocols.GetPostRequest{
+						Id: int32(c.PostId),
+						ContentOptions: &protocols.PostContentOptions{
+							WithContent:       true,
+							RenderCodeBlocks:  true,
+							UseAbsolutePaths:  true,
+							OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+						},
+					},
+				)
+				if err != nil {
+					panic(err)
+				}
 				p = &LatestCommentsByPost{
-					Post: newPost(d.svc.MustGetPost(ctx, c.PostId, &protocols.PostContentOptions{
-						WithContent:       true,
-						RenderCodeBlocks:  true,
-						UseAbsolutePaths:  true,
-						OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
-					})),
+					Post: newPost(post),
 				}
 				postsMap[c.PostId] = p
 				home.TweetComments = append(home.TweetComments, p)

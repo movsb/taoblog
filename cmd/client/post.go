@@ -112,11 +112,10 @@ func (c *Client) GetPost() {
 		panic("must not be created")
 	}
 	post, err := c.blog.GetPost(c.token(), &protocols.GetPostRequest{
-		Id:          int32(cfg.ID),
-		WithSource:  true,
-		WithContent: true,
-		WithTags:    true,
-		WithMetas:   true,
+		Id: int32(cfg.ID),
+		ContentOptions: &protocols.PostContentOptions{
+			WithContent: false,
+		},
 	})
 	if err != nil {
 		panic(err)
@@ -457,14 +456,4 @@ func parseHtmlAssets(html string) ([]string, error) {
 	recurse(node)
 
 	return assets, nil
-}
-
-func (c *Client) SetRedirect(sourcePath, targetPath string) {
-	_, err := c.management.SetRedirect(c.token(), &protocols.SetRedirectRequest{
-		SourcePath: sourcePath,
-		TargetPath: targetPath,
-	})
-	if err != nil {
-		panic(err)
-	}
 }

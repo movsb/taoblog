@@ -16,7 +16,7 @@ type TagData struct {
 }
 
 // NewDataForTag ...
-func NewDataForTag(ctx context.Context, cfg *config.Config, service *service.Service, tags []string) *Data {
+func NewDataForTag(ctx context.Context, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, tags []string) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   auth.Context(ctx).User,
@@ -31,7 +31,7 @@ func NewDataForTag(ctx context.Context, cfg *config.Config, service *service.Ser
 	}
 	for _, p := range posts.Posts {
 		pp := newPost(p)
-		pp.link = service.GetLink(p.Id)
+		pp.link = impl.GetLink(p.Id)
 		td.Posts = append(td.Posts, pp)
 	}
 	d.Tag = td

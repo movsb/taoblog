@@ -3,6 +3,7 @@ package data
 import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
 )
@@ -13,13 +14,13 @@ type TagsData struct {
 }
 
 // NewDataForTags ...
-func NewDataForTags(cfg *config.Config, user *auth.User, service *service.Service) *Data {
+func NewDataForTags(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
 		Meta:   &MetaData{},
 	}
-	tags := service.ListTagsWithCount()
+	tags := impl.ListTagsWithCount()
 	td := &TagsData{
 		Tags: tags,
 	}

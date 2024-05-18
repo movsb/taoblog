@@ -421,3 +421,8 @@ func v26(tx *sql.Tx) {
 func v27(tx *sql.Tx) {
 	mustExec(tx, "UPDATE posts SET title='' WHERE title='无标题' OR title='Untitled'")
 }
+
+func v28(tx *sql.Tx) {
+	mustExec(tx, `DROP TABLE categories`)
+	mustExec(tx, `DROP TABLE redirects`)
+}

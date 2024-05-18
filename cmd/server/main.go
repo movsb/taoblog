@@ -75,12 +75,14 @@ func serve(ctx context.Context) {
 			panic(err)
 		}
 
-		a := admin.NewAdmin(service.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()})
+		a := admin.NewAdmin(service.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
+			admin.WithCustomThemes(&cfg.Site.Theme),
+		)
 		log.Println(`admin on`, prefix)
 		mux.Handle(prefix, a.Handler())
 	}
 
-	theme := theme.New(service.DevMode(), cfg, theService, theAuth)
+	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth)
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
 

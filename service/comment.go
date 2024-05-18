@@ -542,18 +542,22 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 		if cmt.Root != 0 {
 			panic(`不能转移子评论`)
 		}
-		post := txs.GetPostByID(ctx, in.PostId, nil)
-		if cmt.PostID == post.Id {
+		// 只是为了判断存在性。
+		_, err := s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(in.PostId)})
+		if err != nil {
+			return err
+		}
+		if cmt.PostID == in.PostId {
 			panic(`不能转移到相同的文章`)
 		}
 		txs.tdb.From(cmt).
 			Where(`post_id=?`, cmt.PostID).
 			Where(`id=? OR root=?`, cmt.ID, cmt.ID).
 			MustUpdateMap(map[string]interface{}{
-				`post_id`: post.Id,
+				`post_id`: in.PostId,
 			})
 		txs.updatePostCommentCount(cmt.PostID, time.Now())
-		txs.updatePostCommentCount(post.Id, time.Now())
+		txs.updatePostCommentCount(in.PostId, time.Now())
 		log.Printf("Transferred comments %d to post %d", cmt.ID, in.PostId)
 		return nil
 	})

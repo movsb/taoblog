@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
@@ -44,14 +45,18 @@ type Admin struct {
 	webAuthn  *auth.WebAuthn
 	canGoogle atomic.Bool
 
-	svc *service.Service
+	// NOTE：这是进程内直接调用的。
+	// 如果改成连接，需要考虑 metadata 转发问题。
+	svc protocols.TaoBlogServer
+
+	customTheme *config.ThemeConfig
 
 	templates *utils.TemplateLoader
 
 	displayName string
 }
 
-func NewAdmin(devMode bool, svc *service.Service, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string) *Admin {
+func NewAdmin(devMode bool, svc protocols.TaoBlogServer, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
@@ -76,6 +81,11 @@ func NewAdmin(devMode bool, svc *service.Service, auth1 *auth.Auth, prefix strin
 		displayName: displayName,
 		webAuthn:    auth.NewWebAuthn(auth1, domain, displayName, origins),
 	}
+
+	for _, opt := range options {
+		opt(a)
+	}
+
 	a.loadTemplates()
 	go a.detectNetwork()
 	return a
@@ -159,10 +169,13 @@ func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) loadTemplates() {
-	applyCustomTheme := a.svc.CreateCustomThemeApplyFunc()
+	var customTheme string
+	if a.customTheme != nil {
+		customTheme = a.customTheme.Stylesheets.Render()
+	}
 	funcs := template.FuncMap{
 		"apply_site_theme_customs": func() template.HTML {
-			return template.HTML(applyCustomTheme())
+			return template.HTML(customTheme)
 		},
 	}
 	a.templates = utils.NewTemplateLoader(a.tmplFS, funcs, nil)
@@ -243,8 +256,16 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		post := a.svc.MustGetPost(r.Context(), int64(pid), nil)
-		d.Post = post
+		rsp, err := a.svc.GetPost(r.Context(), &protocols.GetPostRequest{
+			Id: int32(pid),
+			ContentOptions: &protocols.PostContentOptions{
+				WithContent: false,
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+		d.Post = rsp
 	}
 	a.executeTemplate(w, `editor.html`, &d)
 }

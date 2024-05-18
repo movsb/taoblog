@@ -11,10 +11,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-type RedirectFinder interface {
-	FindRedirect(sourcePath string) (targetPath string, err error)
-}
-
 // Renderer ...
 type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool
@@ -23,8 +19,7 @@ type Renderer interface {
 	QueryByID(w http.ResponseWriter, req *http.Request, id int64) error
 	QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
 	QueryByTags(w http.ResponseWriter, req *http.Request, tags []string)
-	QueryBySlug(w http.ResponseWriter, req *http.Request, tree string, slug string) (int64, error)
-	QueryByPage(w http.ResponseWriter, req *http.Request, parents string, slug string) (int64, error)
+	QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error)
 	QueryStatic(w http.ResponseWriter, req *http.Request, file string)
 	QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool
 }
@@ -108,26 +103,9 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		if regexpBySlug.MatchString(path) && isCategoryPath(path) {
-			matches := regexpBySlug.FindStringSubmatch(path)
-			tree := matches[1]
-			slug := matches[2]
-			id, err := c.renderer.QueryBySlug(w, req, tree, slug)
-			if err == nil {
-				c.mr.CountPageView(id)
-				c.mr.UserAgent(req.UserAgent())
-			}
-			return
-		}
-
 		if regexpByPage.MatchString(path) && isCategoryPath(path) {
 			matches := regexpByPage.FindStringSubmatch(path)
-			parents := matches[1]
-			if parents != "" {
-				parents = parents[1:]
-			}
-			slug := matches[3]
-			id, err := c.renderer.QueryByPage(w, req, parents, slug)
+			id, err := c.renderer.QueryByPage(w, req, matches[0])
 			if err == nil {
 				c.mr.CountPageView(id)
 				c.mr.UserAgent(req.UserAgent())
