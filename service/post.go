@@ -184,7 +184,6 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		return ``, errors.New(`without content but get content`)
 	}
 
-	var content string
 	var tr renderers.Renderer
 	switch sourceType {
 	case `markdown`:
@@ -223,8 +222,7 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 	default:
 		return ``, fmt.Errorf(`unknown source type`)
 	}
-	_, content, err := tr.Render(source)
-	return content, err
+	return tr.Render(source)
 }
 
 func (s *Service) GetPostTitle(ID int64) string {
@@ -447,8 +445,17 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 		p.Type = `post`
 	}
 
-	if p.Title == "" {
-		p.Title = models.Untitled
+	title, err := s.parsePostTitle(in.SourceType, in.Source)
+	if err != nil {
+		return nil, err
+	}
+	if title != `` {
+		// 文章中的一级标题优先级大于参数。
+		p.Title = title
+	}
+	// 除碎碎念外，文章不允许空标题
+	if p.Type != `tweet` && p.Title == "" {
+		return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
 	}
 
 	s.MustTxCall(func(txs *Service) error {
@@ -484,14 +491,13 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 
 	var hasSourceType, hasSource bool
 	var hasTags, hasMetas bool
+	var hasTitle bool
 
 	for _, path := range in.UpdateMask.Paths {
 		switch path {
 		case `title`:
 			m[path] = in.Post.Title
-			if in.Post.Title == `` {
-				m[path] = models.Untitled
-			}
+			hasTitle = true
 		case `source_type`:
 			m[path] = in.Post.SourceType
 			hasSourceType = true
@@ -518,27 +524,33 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	if hasSource && hasSourceType {
-		var tr renderers.Renderer
-		switch in.Post.SourceType {
-		case "html":
-			tr = &renderers.HTML{}
-		case "markdown":
-			// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
-			tr = renderers.NewMarkdown()
-		default:
-			panic("no renderer was found")
-		}
-
-		title, _, err := tr.Render(in.Post.Source)
+		title, err := s.parsePostTitle(in.Post.SourceType, in.Post.Source)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-
-		// 有些旧文章 MD 没有标题，标题在 config 里面，此处不能强制替换。
+		// 有些旧文章 MD 内并没有写标题，标题在 config 里面，此处不能强制替换。
 		if title != `` {
+			// 文章中的一级标题优先级大于配置文件。
 			m[`title`] = title
 		}
 	}
+	if hasTitle || (hasSource && hasSourceType) {
+		var ty string
+		if t, ok := m[`type`].(string); ok {
+			ty = t
+		} else {
+			var p models.Post
+			if err := s.tdb.Select(`type`).Where(`id=?`, in.Post.Id).Find(&p); err != nil {
+				return nil, err
+			}
+			ty = p.Type
+		}
+		// 除碎碎念外，文章不允许空标题
+		if ty != `tweet` && p.Title == "" {
+			return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
+		}
+	}
+
 	if hasMetas {
 		m[`metas`] = models.PostMetaFrom(in.Post.Metas)
 	}
@@ -566,6 +578,29 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	}
 
 	return np, nil
+}
+
+// 只是用来在创建文章和更新文章的时候从正文里面提取。
+func (s *Service) parsePostTitle(sourceType, source string) (string, error) {
+	var tr renderers.Renderer
+	var title string
+	switch sourceType {
+	case "html":
+		tr = &renderers.HTML{}
+	case "markdown":
+		// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
+		tr = renderers.NewMarkdown(
+			renderers.WithoutRendering(),
+			renderers.WithTitle(&title),
+		)
+	default:
+		return "", status.Error(codes.InvalidArgument, "no renderer was found")
+	}
+	_, err := tr.Render(source)
+	if err != nil {
+		return "", status.Error(codes.InvalidArgument, err.Error())
+	}
+	return title, nil
 }
 
 // 用于删除一篇文章。
@@ -724,17 +759,17 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 			}
 			p.Content = content
 		}
-		// 碎碎念没有标题，自动生成
+		// 碎碎念可能没有标题，自动生成
 		if p.Type == `tweet` {
-			content, err := s.getPostContentCached(ctx, p.Id, &protocols.PostContentOptions{
-				WithContent:  true,
-				PrettifyHtml: true,
-			})
-			if err != nil {
-				return err
-			}
 			switch p.Title {
 			case ``, `Untitled`, models.Untitled:
+				content, err := s.getPostContentCached(ctx, p.Id, &protocols.PostContentOptions{
+					WithContent:  true,
+					PrettifyHtml: true,
+				})
+				if err != nil {
+					return err
+				}
 				p.Title = truncateTitle(content, 48)
 			}
 		}
@@ -742,7 +777,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 	}
 }
 
-// 可能把 [图片] 这种截断
+// TODO：可能把 [图片] 这种截断
 func truncateTitle(title string, length int) string {
 	runes := []rune(title)
 	maxLength := utils.IIF(length > len(runes), len(runes), length)

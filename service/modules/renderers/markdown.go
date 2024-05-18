@@ -46,6 +46,10 @@ type _Markdown struct {
 	opts    []Option2
 	testing bool
 
+	// 从内容中解析到的标题。
+	// 外部初始化，导出。
+	title *string
+
 	pathResolver       PathResolver
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
@@ -64,6 +68,7 @@ type _Markdown struct {
 // TODO 不要返回 error。
 // apply 的时候统一 catch 并返回初始化失败。
 type Option func(me *_Markdown) error
+type OptionNoError func(me *_Markdown)
 
 // 解析 Markdown 中的相对链接。
 func WithPathResolver(pathResolver PathResolver) Option {
@@ -182,6 +187,9 @@ func (me *_Markdown) AddOptions(options ...any) {
 				log.Println(err)
 			}
 		}
+		if v1, ok := option.(OptionNoError); ok {
+			v1(me)
+		}
 		me.opts = append(me.opts, option)
 	}
 
@@ -194,7 +202,7 @@ func (me *_Markdown) AddOptions(options ...any) {
 
 // TODO 只是不渲染的话，其实不需要加载插件？
 // TODO 把 parse、检查、渲染过程分开。
-func (me *_Markdown) Render(source string) (string, string, error) {
+func (me *_Markdown) Render(source string) (string, error) {
 	options := []goldmark.Option{
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
@@ -244,7 +252,6 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		parser.WithContext(pCtx),
 	)
 
-	var title string
 	maxDepth := 10000 // this is to avoid unwanted infinite loop.
 	n := 0
 	// TODO 移除这个循环，换 AstWalk
@@ -254,7 +261,6 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 			heading := p.(*ast.Heading)
 			switch heading.Level {
 			case 1:
-				title = string(heading.Text(sourceBytes))
 				if !me.disableHeadings && me.removeTitleHeading {
 					p = p.NextSibling()
 					parent := heading.Parent()
@@ -276,6 +282,14 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		if entering {
 			switch n.Kind() {
 			case ast.KindHeading:
+				heading := n.(*ast.Heading)
+				if me.title != nil && heading.Level == 1 {
+					// 不允许重复定义标题
+					if *me.title != "" {
+						return ast.WalkStop, status.Errorf(codes.InvalidArgument, "内容中多次出现主标题")
+					}
+					*me.title = string(heading.Text(sourceBytes))
+				}
 				if me.disableHeadings {
 					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含标题元素。`)
 				}
@@ -309,7 +323,7 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		}
 		return ast.WalkContinue, nil
 	}); err != nil {
-		return ``, ``, err
+		return ``, err
 	}
 
 	// 处理需要把 img 转换成 figure 的节点。
@@ -321,18 +335,14 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 
 	if me.useAbsolutePaths != "" {
 		if err := me.doUseAbsolutePaths(doc); err != nil {
-			return ``, ``, err
+			return ``, err
 		}
 	}
 
 	if me.openLinksInNewTab != OpenLinksInNewTabKindKeep {
 		if err := me.doOpenLinkInNewTab(doc, []byte(source)); err != nil {
-			return ``, ``, err
+			return ``, err
 		}
-	}
-
-	if me.noRendering {
-		return ``, ``, nil
 	}
 
 	for _, opt := range me.opts {
@@ -348,10 +358,14 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		}
 	}
 
+	if me.noRendering {
+		return ``, nil
+	}
+
 	buf := bytes.NewBuffer(nil)
 	err := md.Renderer().Render(buf, []byte(source), doc)
 	if err != nil {
-		return ``, ``, err
+		return ``, err
 	}
 
 	htmlText := buf.Bytes()
@@ -362,11 +376,11 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 		if filter, ok := opt.(HtmlFilter); ok {
 			htmlDoc, err := xnethtml.Parse(bytes.NewReader(htmlText))
 			if err != nil {
-				return ``, ``, err
+				return ``, err
 			}
 			filtered, err := filter.FilterHtml(htmlDoc)
 			if err != nil {
-				return ``, ``, err
+				return ``, err
 			}
 			htmlText = filtered
 		}
@@ -377,21 +391,21 @@ func (me *_Markdown) Render(source string) (string, string, error) {
 	for _, opt := range me.opts {
 		if filter, ok := opt.(HtmlPrettifier); ok {
 			if prettified != "" {
-				return ``, ``, errors.New(`不应有多个内容美化器`)
+				return ``, errors.New(`不应有多个内容美化器`)
 			}
 			htmlDoc, err := xnethtml.Parse(bytes.NewReader(htmlText))
 			if err != nil {
-				return ``, ``, err
+				return ``, err
 			}
 			filtered, err := filter.PrettifyHtml(htmlDoc)
 			if err != nil {
-				return ``, ``, err
+				return ``, err
 			}
 			prettified = string(filtered)
 		}
 	}
 
-	return title, utils.IIF(prettified == "", string(htmlText), prettified), err
+	return utils.IIF(prettified == "", string(htmlText), prettified), err
 }
 
 // TODO 找到 body 之前的全部东西会被丢掉，比如注释，没啥问题

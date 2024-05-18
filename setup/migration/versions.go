@@ -417,3 +417,7 @@ func v26(tx *sql.Tx) {
 	mustExec(tx, "UPDATE comments SET source=content WHERE source_type='plain' AND source=''")
 	mustExec(tx, "ALTER TABLE comments DROP COLUMN content")
 }
+
+func v27(tx *sql.Tx) {
+	mustExec(tx, "UPDATE posts SET title='' WHERE title='无标题' OR title='Untitled'")
+}

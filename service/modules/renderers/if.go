@@ -1,7 +1,7 @@
 package renderers
 
 type Renderer interface {
-	Render(source string) (string, string, error)
+	Render(source string) (string, error)
 }
 
 // 解析文件系统路径为进程的相对路径。

@@ -51,6 +51,15 @@ func Testing() Option {
 
 // -----------------------------------------------------------------------------
 
+// 获取从 Markdown 中解析得到的一级标题。
+func WithTitle(title *string) OptionNoError {
+	return func(me *_Markdown) {
+		me.title = title
+	}
+}
+
+// -----------------------------------------------------------------------------
+
 type _ReserveListItemMarkerStyle struct{}
 
 var knownListItemMarkers = map[byte]string{
@@ -225,6 +234,8 @@ func (m *_LazyLoadingFrames) FilterHtml(doc *html.Node) ([]byte, error) {
 
 	return renderHtmlDoc(doc)
 }
+
+// -----------------------------------------------------------------------------
 
 // 对 WithUseAbsolutePaths 的补充。
 // 其实含义相同，只是换了个更正确的名字。

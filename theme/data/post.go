@@ -160,7 +160,7 @@ func (p *Post) Wide() bool {
 
 func (d *Post) GeoString() string {
 	g := d.Metas.Geo
-	if g.Longitude > 0 && g.Latitude > 0 && g.Name != "" {
+	if g != nil && g.Longitude > 0 && g.Latitude > 0 && g.Name != "" {
 		return g.Name
 	}
 	return ""

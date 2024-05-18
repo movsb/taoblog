@@ -13,11 +13,11 @@ import (
 
 func TestMarkdown(t *testing.T) {
 	tr := renderers.NewMarkdown()
-	t2, s, err := tr.Render(`$$
+	s, err := tr.Render(`$$
 \sqrt{公式}
 $$
 `)
-	fmt.Println(t2, s, err)
+	fmt.Println(s, err)
 }
 
 func TestMarkdownAll(t *testing.T) {
@@ -156,7 +156,7 @@ func TestMarkdownAll(t *testing.T) {
 		}
 		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
 		md := renderers.NewMarkdown(options...)
-		_, html, err := md.Render(tc.Markdown)
+		html, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Fatal(tc.ID, err)
 		}
@@ -236,7 +236,7 @@ func TestPrettifier(t *testing.T) {
 		if tc.ID == 6.0 {
 			log.Println(`debug`)
 		}
-		_, text, err := md.Render(tc.Markdown)
+		text, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Fatal(err)
 		}

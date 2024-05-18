@@ -81,7 +81,6 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 	// if !co.WithContent {
 	// 	panic(`without content but get content`)
 	// }
-	var content string
 	var tr renderers.Renderer
 	switch sourceType {
 	case `markdown`:
@@ -117,8 +116,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 	default:
 		return ``, fmt.Errorf(`unknown source type`)
 	}
-	_, content, err := tr.Render(source)
-	return content, err
+	return tr.Render(source)
 }
 
 func (s *Service) setCommentExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Comment) {
@@ -547,6 +545,7 @@ func (s *Service) updateCommentsCount() {
 }
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
+// TODO：禁止转移内容中引用了当前文章资源的评论，或者处理这个问题。
 func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetCommentPostIDRequest) (*protocols.SetCommentPostIDResponse, error) {
 	s.MustBeAdmin(ctx)
 

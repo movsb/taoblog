@@ -34,6 +34,7 @@ type Post struct {
 	SourceType      string
 }
 
+// NOTE 如果要添加字段，记得同步 isEmpty 方法。
 type PostMeta struct {
 	Header   string `json:"header,omitempty" yaml:"header,omitempty"`
 	Footer   string `json:"footer,omitempty" yaml:"footer,omitempty"`
@@ -44,7 +45,7 @@ type PostMeta struct {
 
 	Sources map[string]*PostMetaSource `json:"sources,omitempty" yaml:"sources,omitempty"`
 
-	Geo Geo `json:"geo,omitempty" yaml:"geo,omitempty"`
+	Geo *Geo `json:"geo,omitempty" yaml:"geo,omitempty"`
 }
 
 type PostMetaSource struct {
@@ -101,7 +102,7 @@ func (m *PostMeta) ToProtocols() *protocols.Metas {
 			Time:        src.Time,
 		}
 	}
-	if g := m.Geo; g.Longitude != 0 && g.Latitude != 0 {
+	if g := m.Geo; g != nil && g.Longitude != 0 && g.Latitude != 0 {
 		p.Geo = &protocols.Metas_Geo{
 			Longitude: g.Longitude,
 			Latitude:  g.Latitude,
@@ -118,7 +119,7 @@ func (m *PostMeta) IsEmpty() bool {
 		!m.Wide &&
 		m.Weixin == "" &&
 		len(m.Sources) == 0 &&
-		m.Geo.Longitude == 0 && m.Geo.Latitude == 0
+		(m.Geo == nil || (m.Geo.Longitude == 0 && m.Geo.Latitude == 0))
 }
 
 func PostMetaFrom(p *protocols.Metas) *PostMeta {
@@ -142,9 +143,11 @@ func PostMetaFrom(p *protocols.Metas) *PostMeta {
 		}
 	}
 	if g := p.Geo; g != nil {
-		m.Geo.Longitude = g.Longitude
-		m.Geo.Latitude = g.Latitude
-		m.Geo.Name = g.Name
+		m.Geo = &Geo{
+			Longitude: g.Longitude,
+			Latitude:  g.Latitude,
+			Name:      g.Name,
+		}
 	}
 	return &m
 }
