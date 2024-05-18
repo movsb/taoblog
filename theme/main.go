@@ -428,28 +428,14 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 	t.executeTemplate(`tag.html`, w, d)
 }
 
+// TODO 没限制不可访问文章的附件是否不可访问。
+// 毕竟，文章不可访问后，文件列表暂时拿不到。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
 	fs, err := t.service.FileSystemForPost(req.Context(), postID)
 	if err != nil {
 		panic(err)
 	}
-	fp, err := fs.OpenFile(file)
-	if err != nil {
-		if os.IsNotExist(err) {
-			http.NotFound(w, req)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer fp.Close()
-	stat, err := fp.Stat()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// TODO: 改成 ServeFileFS
-	http.ServeContent(w, req, stat.Name(), stat.ModTime(), fp)
+	http.ServeFileFS(w, req, fs, file)
 }
 
 func (t *Theme) userMustCanSeePost(req *http.Request, post *protocols.Post) {

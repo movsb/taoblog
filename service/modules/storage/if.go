@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	fspkg "io/fs"
 	"os"
 	"path/filepath"
@@ -44,7 +45,10 @@ type Local struct {
 	maxFileSize int32
 }
 
-var _ FileSystem = (*Local)(nil)
+var _ interface {
+	FileSystem
+	fs.FS
+} = (*Local)(nil)
 
 type Option func(*Local)
 
@@ -93,6 +97,11 @@ func (fs *Local) DeleteFile(path string) error {
 func (fs *Local) OpenFile(path string) (File, error) {
 	path = fs.pathOf(path)
 	return os.Open(path)
+}
+
+func (fs *Local) Open(name string) (fspkg.File, error) {
+	return fs.OpenFile(name)
+
 }
 
 func (fs *Local) WriteFile(spec *protocols.FileSpec, r io.Reader) error {
