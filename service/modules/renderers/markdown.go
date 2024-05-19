@@ -569,9 +569,13 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		classes = append(classes, `f-r`)
 		q.Del(`float`)
 	}
-	if n, err := strconv.ParseFloat(url.Query().Get(`scale`), 64); err == nil && n > 0 {
+	if n, err := strconv.ParseFloat(q.Get(`scale`), 64); err == nil && n > 0 {
 		scale = n
 		q.Del(`scale`)
+	}
+	if q.Has(`t`) {
+		classes = append(classes, `transparent`)
+		q.Del(`t`)
 	}
 	// 内嵌站内 SVG 图片。
 	// if q.Has(`embed`) && url.Scheme == "" && url.Host == "" && strings.EqualFold(path.Ext(pathRooted), `.svg`) {

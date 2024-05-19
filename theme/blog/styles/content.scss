@@ -110,17 +110,6 @@ body:not(.wide) .entry {
 	}
 }
 
-a {
-    &.external::after {
-        content: "";
-        margin-left: 5px;
-        padding-left: 13px;
-        background-image: url($externalAnchor);
-        background-repeat: no-repeat;
-        background-position: left center;
-    }
-}
-
 blockquote {
 	margin: 0 .25em;
 	border-left: .25em solid var(--border-color);
