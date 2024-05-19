@@ -74,8 +74,8 @@ type Service struct {
 	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
 	commentCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
-	// PlantUML 图片缓存。
-	plantUMLCache *lru.TTLCache[string, any]
+	// 基本临时文件的缓存。
+	filesCache *cache.TmpFiles
 
 	// 请求节流器。
 	throttler *utils.Throttler[_RequestThrottlerKey]
@@ -119,7 +119,7 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](128),
 		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-		plantUMLCache:        lru.NewTTLCache[string, any](32),
+		filesCache:           cache.NewTmpFiles(".cache", time.Hour*24*7),
 
 		throttler:   utils.NewThrottler[_RequestThrottlerKey](),
 		maintenance: &utils.Maintenance{},

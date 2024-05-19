@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"slices"
@@ -55,15 +56,12 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 func (s *Service) markdownWithPlantUMLRenderer() renderers.Option2 {
 	return plantuml.New(
 		`https://www.plantuml.com/plantuml`, `svg`,
-		plantuml.WithCache(func(key string, loader func() (any, error)) (any, error) {
-			cached, err, _ := s.plantUMLCache.GetOrLoad(
-				context.Background(), key,
-				func(_ context.Context, _ string) (any, time.Duration, error) {
-					any, err := loader()
-					return any, time.Hour * 24, err
+		plantuml.WithCache(func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error) {
+			return s.filesCache.GetOrLoad(key,
+				func(_ string) (io.ReadCloser, error) {
+					return loader()
 				},
 			)
-			return cached, err
 		}),
 	)
 }

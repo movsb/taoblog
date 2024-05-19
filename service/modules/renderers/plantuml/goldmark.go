@@ -3,8 +3,10 @@ package plantuml
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"sync"
 	"time"
@@ -27,7 +29,7 @@ type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀
 	format string
 
-	cache func(key string, loader func() (any, error)) (any, error)
+	cache func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error)
 }
 
 func New(server string, format string, options ...Option) *_PlantUMLRenderer {
@@ -40,7 +42,7 @@ func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	}
 
 	if p.cache == nil {
-		p.cache = func(key string, loader func() (any, error)) (any, error) {
+		p.cache = func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error) {
 			return loader()
 		}
 	}
@@ -114,10 +116,17 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 		return ast.WalkContinue, nil
 	}
 
-	got, err := p.cache(compressed, func() (any, error) {
+	got, err := p.cache(compressed, func() (io.ReadCloser, error) {
 		light, dark, err := p.fetch(compressed)
+		if err != nil {
+			return nil, err
+		}
 		log.Println(`no using cache for plantuml ...`)
-		return _Cache{light, dark}, err
+		buf := bytes.NewBuffer(nil)
+		if err := json.NewEncoder(buf).Encode(_Cache{Light: light, Dark: dark}); err != nil {
+			return nil, err
+		}
+		return io.NopCloser(buf), nil
 	})
 	if err != nil {
 		p.error(writer)
@@ -125,10 +134,15 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 		return ast.WalkContinue, nil
 	}
 
-	cache := got.(_Cache)
+	defer got.Close()
 
-	writer.Write(cache.light)
-	writer.Write(cache.dark)
+	var cache _Cache
+	if err := json.NewDecoder(got).Decode(&cache); err != nil {
+		return ast.WalkStop, err
+	}
+
+	writer.Write(cache.Light)
+	writer.Write(cache.Dark)
 
 	return ast.WalkContinue, nil
 }
