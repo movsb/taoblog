@@ -54,8 +54,9 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service protocols.
 
 	posts, err := service.ListPosts(ctx,
 		&protocols.ListPostsRequest{
-			OrderBy: fmt.Sprintf(`%s %s`, sort[0], sort[1]),
-			Kinds:   []string{`post`},
+			OrderBy:  fmt.Sprintf(`%s %s`, sort[0], sort[1]),
+			Kinds:    []string{`post`},
+			WithLink: protocols.LinkKind_LinkKindRooted,
 		},
 	)
 	if err != nil {
@@ -68,7 +69,6 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service protocols.
 
 	for _, p := range posts.Posts {
 		pp := newPost(p)
-		pp.link = impl.GetLink(pp.ID)
 		postsData.Posts = append(postsData.Posts, pp)
 	}
 	d.Posts = postsData

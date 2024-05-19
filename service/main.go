@@ -52,6 +52,8 @@ type Service struct {
 	testing bool
 	addr    net.Addr // 服务器的监听地址
 
+	home *url.URL
+
 	cfg    *config.Config
 	db     *sql.DB
 	tdb    *taorm.DB
@@ -121,6 +123,12 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 
 		throttler:   utils.NewThrottler[_RequestThrottlerKey](),
 		maintenance: &utils.Maintenance{},
+	}
+
+	if u, err := url.Parse(cfg.Site.Home); err != nil {
+		panic(err)
+	} else {
+		s.home = u
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{

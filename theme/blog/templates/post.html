@@ -50,7 +50,7 @@
 		<div class="name">相关文章</div>
         <ul>
         {{ range $dot.Post.Post.Relates }}
-            <li><a href="/{{.Id}}/">{{.Title}}</a></li>
+            <li><a href="{{.Link}}">{{.Title}}</a></li>
         {{ end }}
         </ul>
     </div><!-- end related -->

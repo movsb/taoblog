@@ -36,9 +36,10 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 	}
 	rsp, err := service.ListPosts(ctx,
 		&protocols.ListPostsRequest{
-			Limit:   20,
-			OrderBy: "date DESC",
-			Kinds:   []string{`post`},
+			Limit:    20,
+			OrderBy:  "date DESC",
+			Kinds:    []string{`post`},
+			WithLink: protocols.LinkKind_LinkKindRooted,
 		},
 	)
 	if err != nil {
@@ -47,7 +48,6 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 	// 太 hardcode shit 了。
 	for _, p := range rsp.Posts {
 		pp := newPost(p)
-		pp.link = impl.GetLink(p.Id)
 		home.Posts = append(home.Posts, pp)
 	}
 
@@ -98,9 +98,10 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 	{
 		tweets, err := service.ListPosts(ctx,
 			&protocols.ListPostsRequest{
-				Limit:   15,
-				OrderBy: `date desc`,
-				Kinds:   []string{`tweet`},
+				Limit:    15,
+				OrderBy:  `date desc`,
+				Kinds:    []string{`tweet`},
+				WithLink: protocols.LinkKind_LinkKindRooted,
 				ContentOptions: &protocols.PostContentOptions{
 					WithContent:  true,
 					PrettifyHtml: true,
@@ -113,7 +114,6 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 		// 太 hardcode shit 了。
 		for _, p := range tweets.Posts {
 			pp := newPost(p)
-			pp.link = impl.GetLink(p.Id)
 			home.Tweets = append(home.Tweets, pp)
 		}
 		comments, err := d.svc.ListComments(ctx,

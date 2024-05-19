@@ -71,6 +71,15 @@ message Post {
 	// 仅在 GetPost 时指定选项后返回。
 	// 只有 id 和 title 有效。
 	repeated Post relates = 18;
+
+	// 文章的链接。
+	string link = 19;
+}
+
+enum LinkKind {
+	LinkKindNone = 0;
+	LinkKindRooted = 1;
+	LinkKindFull = 2;
 }
 
 message GetPostRequest {
@@ -81,6 +90,7 @@ message GetPostRequest {
 	// 是否包含“相关文章”。
 	bool with_relates = 99;
 	PostContentOptions content_options = 100;
+	LinkKind with_link = 101;
 }
 
 message UpdatePostRequest {
@@ -97,6 +107,7 @@ message ListPostsRequest {
 	string order_by = 2;
 	PostContentOptions content_options = 3;
 	repeated string kinds = 4;
+	LinkKind with_link = 5;
 }
 
 message ListPostsResponse {
@@ -134,6 +145,7 @@ message GetPostCommentsResponse {
 message GetPostsByTagsRequest {
 	repeated string tags = 1;
 	PostContentOptions content_options = 2;
+	LinkKind with_link = 3;
 }
 message GetPostsByTagsResponse {
 	repeated Post posts = 1;

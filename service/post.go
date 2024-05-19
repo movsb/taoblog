@@ -50,6 +50,12 @@ func (s *Service) ListPosts(ctx context.Context, in *protocols.ListPostsRequest)
 		return nil, err
 	}
 
+	if in.WithLink != protocols.LinkKind_LinkKindNone {
+		for _, p := range out {
+			s.setPostLink(p, in.WithLink)
+		}
+	}
+
 	return &protocols.ListPostsResponse{
 		Posts: out,
 	}, nil
@@ -107,6 +113,10 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 		return nil, err
 	}
 
+	if in.WithLink != protocols.LinkKind_LinkKindNone {
+		s.setPostLink(out, in.WithLink)
+	}
+
 	if in.WithRelates {
 		relates, err := s.getRelatedPosts(int64(in.Id))
 		if err != nil {
@@ -118,9 +128,25 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 				Title: r.Title,
 			})
 		}
+		if in.WithLink != protocols.LinkKind_LinkKindNone {
+			for _, p := range out.Relates {
+				s.setPostLink(p, in.WithLink)
+			}
+		}
 	}
 
 	return out, nil
+}
+
+func (s *Service) setPostLink(p *protocols.Post, k protocols.LinkKind) {
+	switch k {
+	case protocols.LinkKind_LinkKindRooted:
+		p.Link = s.GetPlainLink(p.Id)
+	case protocols.LinkKind_LinkKindFull:
+		p.Link = s.home.JoinPath(s.GetPlainLink(p.Id)).String()
+	default:
+		panic(`unknown link kind`)
+	}
 }
 
 func (s *Service) PathResolver(id int64) renderers.PathResolver {
@@ -284,6 +310,11 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByT
 	outs, err := posts.ToProtocols(s.setPostExtraFields(ctx, req.ContentOptions))
 	if err != nil {
 		return nil, err
+	}
+	if req.WithLink != protocols.LinkKind_LinkKindNone {
+		for _, p := range outs {
+			s.setPostLink(p, req.WithLink)
+		}
 	}
 	return &protocols.GetPostsByTagsResponse{Posts: outs}, nil
 }
@@ -510,8 +541,16 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 			}
 			ty = p.Type
 		}
+		title, err := s.parsePostTitle(in.Post.SourceType, in.Post.Source)
+		if err != nil {
+			return nil, err
+		}
+		if title != `` {
+			// 文章中的一级标题优先级大于参数。
+			m[`title`] = title
+		}
 		// 除碎碎念外，文章不允许空标题
-		if ty != `tweet` && p.Title == "" {
+		if ty != `tweet` && title == "" {
 			return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
 		}
 	}

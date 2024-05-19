@@ -12,8 +12,6 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service"
-	"github.com/movsb/taoblog/service/models"
 	"github.com/xeonx/timeago"
 )
 
@@ -50,7 +48,7 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 }
 
 // NewDataForPost ...
-func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, post *protocols.Post, comments []*protocols.Comment) *Data {
+func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, post *protocols.Post, comments []*protocols.Comment) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
@@ -62,7 +60,6 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBl
 		Post: newPost(post),
 	}
 	d.Post = p
-	p.Post.link = impl.GetLink(post.Id)
 	p.Comments = comments
 	return d
 }
@@ -72,8 +69,6 @@ type Post struct {
 	*protocols.Post
 	ID      int64
 	Content template.HTML
-	Metas   models.PostMeta
-	link    string
 }
 
 func newPost(post *protocols.Post) *Post {
@@ -81,7 +76,9 @@ func newPost(post *protocols.Post) *Post {
 		Post:    post,
 		ID:      post.Id,
 		Content: template.HTML(post.Content),
-		Metas:   *models.PostMetaFrom(post.Metas),
+	}
+	if p.Metas == nil {
+		p.Metas = &protocols.Metas{}
 	}
 	return p
 }
@@ -98,14 +95,6 @@ func (p *Post) StatusString() string {
 	default:
 		panic(`unknown post status`)
 	}
-}
-
-// Link ...
-func (p *Post) Link() string {
-	if p.link != "" {
-		return p.link
-	}
-	return fmt.Sprintf("/%d/", p.ID)
 }
 
 // DateString ...

@@ -8,7 +8,7 @@
 {{ if .Tag.Posts }}
 <ul>
 {{ range .Tag.Posts -}}
-	<li><a target="_blank" href="/{{ .ID }}/">{{ .Title }}</a></li>
+	<li><a target="_blank" href="{{ .Link }}">{{ .Title }}</a></li>
 {{ end -}}
 </ul>
 {{ end }}

@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 )
@@ -25,8 +24,6 @@ type Article struct {
 	*protocols.Post
 	Date    string
 	Content template.HTML
-	Link    string
-	GUID    string
 }
 
 // RSS ...
@@ -35,12 +32,11 @@ type RSS struct {
 
 	Name        string
 	Description string
-	Link        string
+	Home        string
 	Articles    []*Article
 
 	tmpl *template.Template
 	svc  protocols.TaoBlogServer
-	auth *auth.Auth
 }
 
 type Option func(r *RSS)
@@ -56,7 +52,7 @@ type _Config struct {
 }
 
 // New ...
-func New(svc protocols.TaoBlogServer, auth *auth.Auth, options ...Option) *RSS {
+func New(svc protocols.TaoBlogServer, options ...Option) *RSS {
 	info := utils.Must(svc.GetInfo(context.Background(), &protocols.GetInfoRequest{}))
 
 	r := &RSS{
@@ -66,9 +62,8 @@ func New(svc protocols.TaoBlogServer, auth *auth.Auth, options ...Option) *RSS {
 
 		Name:        info.Name,
 		Description: info.Description,
-		Link:        info.Home,
+		Home:        info.Home,
 		svc:         svc,
-		auth:        auth,
 	}
 
 	for _, opt := range options {
@@ -83,9 +78,10 @@ func New(svc protocols.TaoBlogServer, auth *auth.Auth, options ...Option) *RSS {
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	rsp, err := r.svc.ListPosts(req.Context(), &protocols.ListPostsRequest{
-		Limit:   int32(r.config.articleCount),
-		OrderBy: `date desc`,
-		Kinds:   []string{`post`},
+		Limit:    int32(r.config.articleCount),
+		OrderBy:  `date desc`,
+		Kinds:    []string{`post`},
+		WithLink: protocols.LinkKind_LinkKindFull,
 		ContentOptions: &protocols.PostContentOptions{
 			WithContent:      true,
 			RenderCodeBlocks: false,
@@ -101,7 +97,6 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			Post:    article,
 			Date:    time.Unix(int64(article.Date), 0).Local().Format(time.RFC1123),
 			Content: template.HTML(cdata(article.Content)),
-			Link:    fmt.Sprintf("%s/%d/", r.Link, article.Id),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
 	}

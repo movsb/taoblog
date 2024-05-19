@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
@@ -27,14 +26,12 @@ type Sitemap struct {
 	tmpl *template.Template
 	svc  protocols.TaoBlogServer
 	impl service.ToBeImplementedByRpc
-	auth *auth.Auth
 }
 
 // New ...
-func New(svc protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, auth *auth.Auth) *Sitemap {
+func New(svc protocols.TaoBlogServer, impl service.ToBeImplementedByRpc) *Sitemap {
 	s := &Sitemap{
 		svc:  svc,
-		auth: auth,
 		impl: impl,
 		tmpl: template.Must(template.New(`sitemap`).Parse(tmpl)),
 	}

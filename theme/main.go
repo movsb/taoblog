@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"strconv"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -91,11 +90,11 @@ func New(devMode bool, cfg *config.Config, service protocols.TaoBlogServer, impl
 	m := t.specialMux
 
 	if r := cfg.Site.RSS; r.Enabled {
-		t.rss = rss.New(service, auth, rss.WithArticleCount(r.ArticleCount))
+		t.rss = rss.New(service, rss.WithArticleCount(r.ArticleCount))
 		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
 	}
 	if cfg.Site.Sitemap.Enabled {
-		t.sitemap = sitemap.New(service, impl, auth)
+		t.sitemap = sitemap.New(service, impl)
 		m.Handle(`GET /sitemap.xml`, t.LastPostTime304Handler(t.sitemap))
 	}
 
@@ -271,11 +270,6 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{
 }
 
 func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool {
-	// 兼容非常早期的 p 查询参数。随时可以移除。
-	if id, err := strconv.Atoi(query.Get("p")); err == nil && id > 0 {
-		http.Redirect(w, req, fmt.Sprintf(`/%d/`, id), http.StatusPermanentRedirect)
-		return true
-	}
 	return false
 }
 
@@ -333,7 +327,7 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTweets(r.Context(), t.impl.Config(), t.service, t.impl)
+	d := data.NewDataForTweets(r.Context(), t.impl.Config(), t.service)
 	t.executeTemplate(`tweets.html`, w, d)
 }
 
@@ -347,6 +341,7 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) er
 		&protocols.GetPostRequest{
 			Id:          int32(id),
 			WithRelates: true,
+			WithLink:    protocols.LinkKind_LinkKindRooted,
 			ContentOptions: &protocols.PostContentOptions{
 				WithContent:       true,
 				RenderCodeBlocks:  true,
@@ -385,6 +380,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path strin
 		&protocols.GetPostRequest{
 			Page:        path,
 			WithRelates: false, // 页面总是不是显示相关文章。
+			WithLink:    protocols.LinkKind_LinkKindRooted,
 			ContentOptions: &protocols.PostContentOptions{
 				WithContent:      true,
 				RenderCodeBlocks: true,
@@ -411,7 +407,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		panic(err)
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, t.impl, p, rsp.Comments)
+	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
 
 	var name string
 	if p.Type == `tweet` {
@@ -423,7 +419,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTag(req.Context(), t.cfg, t.service, t.impl, tags)
+	d := data.NewDataForTag(req.Context(), t.cfg, t.service, tags)
 	t.executeTemplate(`tag.html`, w, d)
 }
 
