@@ -198,21 +198,3 @@ func (ps Posts) ToProtocols(redact func(p *protocols.Post) error) (posts []*prot
 	}
 	return
 }
-
-type PostForRelated struct {
-	ID        int64  `json:"id"`
-	Title     string `json:"title"`
-	Relevance uint   `json:"relevance"`
-}
-
-type Redirect struct {
-	ID         int64
-	CreatedAt  int32
-	SourcePath string
-	TargetPath string
-	StatusCode int
-}
-
-func (Redirect) TableName() string {
-	return `redirects`
-}

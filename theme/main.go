@@ -345,7 +345,8 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
 	post, err := t.service.GetPost(req.Context(),
 		&protocols.GetPostRequest{
-			Id: int32(id),
+			Id:          int32(id),
+			WithRelates: true,
 			ContentOptions: &protocols.PostContentOptions{
 				WithContent:       true,
 				RenderCodeBlocks:  true,
@@ -380,7 +381,8 @@ func (t *Theme) incView(id int64) {
 func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error) {
 	post, err := t.service.GetPost(req.Context(),
 		&protocols.GetPostRequest{
-			Page: path,
+			Page:        path,
+			WithRelates: false, // 页面总是不是显示相关文章。
 			ContentOptions: &protocols.PostContentOptions{
 				WithContent:      true,
 				RenderCodeBlocks: true,

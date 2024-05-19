@@ -107,6 +107,19 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 		return nil, err
 	}
 
+	if in.WithRelates {
+		relates, err := s.getRelatedPosts(int64(in.Id))
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range relates {
+			out.Relates = append(out.Relates, &protocols.Post{
+				Id:    r.ID,
+				Title: r.Title,
+			})
+		}
+	}
+
 	return out, nil
 }
 
@@ -312,12 +325,19 @@ func (s *Service) getPageParentID(parents string) int64 {
 	return parent
 }
 
-func (s *Service) GetRelatedPosts(id int64) []*models.PostForRelated {
+// TODO cache
+func (s *Service) getRelatedPosts(id int64) (models.Posts, error) {
 	tagIDs := s.getObjectTagIDs(id, true)
 	if len(tagIDs) == 0 {
-		return make([]*models.PostForRelated, 0)
+		return nil, nil
 	}
-	var relates []*models.PostForRelated
+	type _PostForRelated struct {
+		ID        int64  `json:"id"`
+		Title     string `json:"title"`
+		Relevance uint   `json:"relevance"`
+	}
+
+	var relates []_PostForRelated
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).
 		Select("posts.id,posts.title,COUNT(posts.id) relevance").
 		Where("post_tags.post_id != ?", id).
@@ -327,7 +347,14 @@ func (s *Service) GetRelatedPosts(id int64) []*models.PostForRelated {
 		OrderBy("relevance DESC").
 		Limit(9).
 		MustFind(&relates)
-	return relates
+	var posts models.Posts
+	for _, r := range relates {
+		posts = append(posts, &models.Post{
+			ID:    r.ID,
+			Title: r.Title,
+		})
+	}
+	return posts, nil
 }
 
 // t: last_commented_at 表示文章评论最后被操作的时间。不是最后被评论的时间。
@@ -620,6 +647,7 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *protocols.GetPos
 	}, nil
 }
 
+// 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
 func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Post) error {
 	ac := auth.Context(ctx)
 

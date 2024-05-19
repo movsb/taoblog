@@ -62,9 +62,6 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBl
 		Post: newPost(post),
 	}
 	d.Post = p
-	if cfg.Site.ShowRelatedPosts {
-		p.Post.Related = impl.GetRelatedPosts(post.Id)
-	}
 	p.Post.link = impl.GetLink(post.Id)
 	p.Comments = comments
 	return d
@@ -75,7 +72,6 @@ type Post struct {
 	*protocols.Post
 	ID      int64
 	Content template.HTML
-	Related []*models.PostForRelated
 	Metas   models.PostMeta
 	link    string
 }

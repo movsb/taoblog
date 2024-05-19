@@ -65,6 +65,12 @@ message Post {
 	// 这个值可以是空的，表示没有被评论过。（更新：也可能表示数据库升级开始后没有评论过）
 	// TODO 考虑换个名字了。
 	int32 last_commented_at = 17;
+
+	// 相关文章列表。
+	// 数量固定。
+	// 仅在 GetPost 时指定选项后返回。
+	// 只有 id 和 title 有效。
+	repeated Post relates = 18;
 }
 
 message GetPostRequest {
@@ -72,6 +78,8 @@ message GetPostRequest {
 	int32 id = 1;
 	string page = 3;
 
+	// 是否包含“相关文章”。
+	bool with_relates = 99;
 	PostContentOptions content_options = 100;
 }
 

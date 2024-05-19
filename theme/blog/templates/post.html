@@ -45,12 +45,12 @@
 
 	{{ end }}
 
-	{{ if and $dot.Config.Site.ShowRelatedPosts $dot.Post.Post.Related }}
+	{{ if and $dot.Config.Site.ShowRelatedPosts $dot.Post.Post.Relates }}
     <div class="related">
 		<div class="name">相关文章</div>
         <ul>
-        {{ range $dot.Post.Post.Related }}
-            <li><a href="/{{.ID}}/">{{.Title}}</a></li>
+        {{ range $dot.Post.Post.Relates }}
+            <li><a href="/{{.Id}}/">{{.Title}}</a></li>
         {{ end }}
         </ul>
     </div><!-- end related -->

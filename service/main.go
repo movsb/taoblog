@@ -48,7 +48,6 @@ type ToBeImplementedByRpc interface {
 	Config() *config.Config
 	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
-	GetRelatedPosts(id int64) []*models.PostForRelated
 	FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error)
 }
 
