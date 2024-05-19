@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/yuin/goldmark/ast"
@@ -90,7 +91,6 @@ func WithReserveListItemMarkerStyle() Option2 {
 // -----------------------------------------------------------------------------
 
 var prettifierStrings = map[string]string{
-	`a`:      `链接`,
 	`img`:    `图片`,
 	`table`:  `表格`,
 	`video`:  `视频`,
@@ -105,6 +105,17 @@ var prettifierStrings = map[string]string{
 }
 
 var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus{
+	`a`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		hrefIndex := slices.IndexFunc(node.Attr, func(attr html.Attribute) bool { return attr.Key == `href` })
+		if hrefIndex >= 0 && node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
+			if node.FirstChild.Data != node.Attr[hrefIndex].Val {
+				buf.WriteString(node.FirstChild.Data)
+				return ast.WalkSkipChildren
+			}
+		}
+		buf.WriteString(`[链接]`)
+		return ast.WalkSkipChildren
+	},
 	`div`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
 		for _, a := range node.Attr {
 			if strings.ToLower(a.Key) == `class` {

@@ -183,6 +183,16 @@ func TestPrettifier(t *testing.T) {
 		{
 			ID:       2,
 			Markdown: `[文本](链接)`,
+			Text:     `文本`,
+		},
+		{
+			ID:       2.1,
+			Markdown: `[https://a](https://a)`,
+			Text:     `[链接]`,
+		},
+		{
+			ID:       2.2,
+			Markdown: `<https://a>`,
 			Text:     `[链接]`,
 		},
 		{
