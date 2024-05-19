@@ -23,7 +23,7 @@ func (u *User) IsGuest() bool {
 
 // IsAdmin ...
 func (u *User) IsAdmin() bool {
-	return u.ID != 0
+	return u.ID == admin.ID
 }
 
 var _ webauthn.User = (*User)(nil)

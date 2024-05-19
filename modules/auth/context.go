@@ -41,6 +41,7 @@ func Context(ctx context.Context) *AuthContext {
 		return ac
 	}
 	// Context 可能包含当前请求相关的信息，所以是新建的。
+	// TODO：不应该走到这里来，应该 Panic，中间件一定会添加。
 	return &AuthContext{User: guest}
 }
 

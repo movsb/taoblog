@@ -69,25 +69,6 @@ func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
 	return ids, nil
 }
 
-// TODO：改成 grpc。
-func (s *Service) MustListLatestTweets(ctx context.Context, limit int, co *protocols.PostContentOptions) []*protocols.Post {
-	ac := auth.Context(ctx)
-
-	stmt := s.tdb.Select("*").OrderBy(`date desc`)
-	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
-	stmt.Where(`type=?`, `tweet`)
-	if limit > 0 {
-		stmt.Limit(int64(limit))
-	}
-
-	var posts models.Posts
-	if err := stmt.Find(&posts); err != nil {
-		panic(err)
-	}
-
-	return utils.Must(posts.ToProtocols(s.setPostExtraFields(ctx, co)))
-}
-
 // TODO 性能很差！
 func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
 	p, err := s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(id)})

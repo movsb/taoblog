@@ -36,28 +36,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// 请求节流器限流信息。
-// 由于没有用户系统，目前根据 IP 限流。
-// 这样会对网吧、办公网络非常不友好。
-type _RequestThrottlerKey struct {
-	UserID int
-	IP     netip.Addr
-	Method string // 指 RPC 方法，用路径代替。
-}
-
-func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
-	ac := auth.Context(ctx)
-	method, ok := grpc.Method(ctx)
-	if !ok {
-		panic(status.Error(codes.Internal, "没有找到调用方法。"))
-	}
-	return _RequestThrottlerKey{
-		UserID: int(ac.User.ID),
-		IP:     ac.RemoteAddr,
-		Method: method,
-	}
-}
-
 type ToBeImplementedByRpc interface {
 	Name() string
 	Description() string
@@ -328,6 +306,12 @@ var methodThrottlerInfo = map[string]struct {
 	// 仅节流返回正确错误码的接口。
 	// 如果接口返回错误，不更新。
 	OnSuccess bool
+
+	// 是否应该保留为内部调用接口。
+	// 限制接口应该尽量被内部调用。
+	// 如果不是，也不严重，无权限问题），只是没必要暴露。
+	// 主要是对外非管理员接口，管理员接口不受此限制。
+	Internal bool
 }{
 	`/protocols.TaoBlog/CreateComment`: {
 		Interval:  time.Second * 10,
@@ -339,17 +323,62 @@ var methodThrottlerInfo = map[string]struct {
 		Message:   `评论更新过于频繁，请稍等几秒后再试。`,
 		OnSuccess: true,
 	},
+	`/protocols.TaoBlog/ListComments`: {
+		Internal: true,
+	},
+	`/protocols.TaoBlog/GetPostComments`: {
+		Internal: true,
+	},
+	`/protocols.TaoBlog/GetPost`: {
+		Internal: true,
+	},
+	`/protocols.TaoBlog/ListPosts`: {
+		Internal: true,
+	},
+	`/protocols.TaoBlog/GetPostsByTags`: {
+		Internal: true,
+	},
+}
+
+// 请求节流器限流信息。
+// 由于没有用户系统，目前根据 IP 限流。
+// 这样会对网吧、办公网络非常不友好。
+type _RequestThrottlerKey struct {
+	UserID int
+	IP     netip.Addr
+	Method string // 指 RPC 方法，用路径代替。
+}
+
+func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
+	ac := auth.Context(ctx)
+	method, ok := grpc.Method(ctx)
+	if !ok {
+		panic(status.Error(codes.Internal, "没有找到调用方法。"))
+	}
+	return _RequestThrottlerKey{
+		UserID: int(ac.User.ID),
+		IP:     ac.RemoteAddr,
+		Method: method,
+	}
 }
 
 func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	ac := auth.Context(ctx)
 	key := throttlerKeyOf(ctx)
 	ti, ok := methodThrottlerInfo[info.FullMethod]
 	if ok {
-		if s.throttler.Throttled(key, ti.Interval, false) {
-			msg := utils.IIF(ti.Message != "", ti.Message, `你被节流了，请稍候再试。You've been throttled.`)
-			return nil, status.Error(codes.Aborted, msg)
+		if ti.Interval > 0 {
+			if s.throttler.Throttled(key, ti.Interval, false) {
+				msg := utils.IIF(ti.Message != "", ti.Message, `你被节流了，请稍候再试。You've been throttled.`)
+				return nil, status.Error(codes.Aborted, msg)
+			}
+		}
+		// TODO 只是限制了通过 HTTP 接口进行的调用，没限制 GRPC 接口。
+		if ti.Internal && !ac.User.IsAdmin() {
+			return nil, status.Error(codes.FailedPrecondition, `此接口限管理员或内部调用。`)
 		}
 	}
+
 	resp, err := handler(ctx, req)
 
 	if !ti.OnSuccess || err == nil {
