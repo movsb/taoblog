@@ -593,9 +593,11 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		return
 	}
 
+	info := utils.Must(s.GetInfo(context.Background(), &protocols.GetInfoRequest{}))
+
 	postTitle := s.GetPostTitle(c.PostID)
 	// TODO 修改链接。
-	postLink := fmt.Sprintf("%s/%d/#comment-%d", s.HomeURL(), c.PostID, c.ID)
+	postLink := fmt.Sprintf("%s/%d/#comment-%d", info.Home, c.PostID, c.ID)
 	adminEmails := s.cfg.Comment.Emails
 	if len(adminEmails) == 0 {
 		return

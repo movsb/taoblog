@@ -3,6 +3,7 @@ package rss
 // https://validator.w3.org/feed/check.cgi?url=https%3A%2F%2Fblog.twofei.com%2Frss#l9
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -12,8 +13,8 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service"
 )
 
 //go:embed rss.xml
@@ -39,7 +40,6 @@ type RSS struct {
 
 	tmpl *template.Template
 	svc  protocols.TaoBlogServer
-	impl service.ToBeImplementedByRpc
 	auth *auth.Auth
 }
 
@@ -56,17 +56,18 @@ type _Config struct {
 }
 
 // New ...
-func New(svc protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, auth *auth.Auth, options ...Option) *RSS {
+func New(svc protocols.TaoBlogServer, auth *auth.Auth, options ...Option) *RSS {
+	info := utils.Must(svc.GetInfo(context.Background(), &protocols.GetInfoRequest{}))
+
 	r := &RSS{
 		config: _Config{
 			articleCount: 10,
 		},
 
-		Name:        impl.Name(),
-		Description: impl.Description(),
-		Link:        impl.HomeURL(),
+		Name:        info.Name,
+		Description: info.Description,
+		Link:        info.Home,
 		svc:         svc,
-		impl:        impl,
 		auth:        auth,
 	}
 
@@ -100,7 +101,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			Post:    article,
 			Date:    time.Unix(int64(article.Date), 0).Local().Format(time.RFC1123),
 			Content: template.HTML(cdata(article.Content)),
-			Link:    fmt.Sprintf("%s/%d/", r.impl.HomeURL(), article.Id),
+			Link:    fmt.Sprintf("%s/%d/", r.Link, article.Id),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
 	}

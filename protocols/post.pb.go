@@ -155,6 +155,7 @@ type Post struct {
 	// 相关文章列表。
 	// 数量固定。
 	// 仅在 GetPost 时指定选项后返回。
+	// 只有 id 和 title 有效。
 	Relates []*Post `protobuf:"bytes,18,rep,name=relates,proto3" json:"relates,omitempty"`
 }
 

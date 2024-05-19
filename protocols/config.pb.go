@@ -283,6 +283,122 @@ func (*SaveConfigResponse) Descriptor() ([]byte, []int) {
 	return file_protocols_config_proto_rawDescGZIP(), []int{5}
 }
 
+type GetInfoRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *GetInfoRequest) Reset() {
+	*x = GetInfoRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_config_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInfoRequest) ProtoMessage() {}
+
+func (x *GetInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_config_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetInfoRequest) Descriptor() ([]byte, []int) {
+	return file_protocols_config_proto_rawDescGZIP(), []int{6}
+}
+
+type GetInfoResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// 站点名字
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// 站点描述
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// 站点主页地址。
+	// 形如：https://blog.twofei.com
+	// 不带最后的 /。
+	Home string `protobuf:"bytes,3,opt,name=home,proto3" json:"home,omitempty"`
+	// 最后更新时间。
+	// 主要包含：文章。
+	LastPostedAt int32 `protobuf:"varint,10,opt,name=last_posted_at,json=lastPostedAt,proto3" json:"last_posted_at,omitempty"`
+}
+
+func (x *GetInfoResponse) Reset() {
+	*x = GetInfoResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protocols_config_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInfoResponse) ProtoMessage() {}
+
+func (x *GetInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protocols_config_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetInfoResponse) Descriptor() ([]byte, []int) {
+	return file_protocols_config_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetInfoResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetInfoResponse) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *GetInfoResponse) GetHome() string {
+	if x != nil {
+		return x.Home
+	}
+	return ""
+}
+
+func (x *GetInfoResponse) GetLastPostedAt() int32 {
+	if x != nil {
+		return x.LastPostedAt
+	}
+	return 0
+}
+
 var File_protocols_config_proto protoreflect.FileDescriptor
 
 var file_protocols_config_proto_rawDesc = []byte{
@@ -301,9 +417,19 @@ var file_protocols_config_proto_rawDesc = []byte{
 	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x13, 0x0a, 0x11, 0x53, 0x61, 0x76, 0x65, 0x43, 0x6f, 0x6e,
 	0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x14, 0x0a, 0x12, 0x53, 0x61,
 	0x76, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d,
-	0x6f, 0x76, 0x73, 0x62, 0x2f, 0x74, 0x61, 0x6f, 0x62, 0x6c, 0x6f, 0x67, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x10, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x81, 0x01, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04,
+	0x68, 0x6f, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x6d, 0x65,
+	0x12, 0x24, 0x0a, 0x0e, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x70, 0x6f, 0x73, 0x74, 0x65, 0x64, 0x5f,
+	0x61, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x50, 0x6f,
+	0x73, 0x74, 0x65, 0x64, 0x41, 0x74, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x6f, 0x76, 0x73, 0x62, 0x2f, 0x74, 0x61, 0x6f, 0x62, 0x6c,
+	0x6f, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -318,7 +444,7 @@ func file_protocols_config_proto_rawDescGZIP() []byte {
 	return file_protocols_config_proto_rawDescData
 }
 
-var file_protocols_config_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_protocols_config_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_protocols_config_proto_goTypes = []interface{}{
 	(*GetConfigRequest)(nil),   // 0: protocols.GetConfigRequest
 	(*GetConfigResponse)(nil),  // 1: protocols.GetConfigResponse
@@ -326,6 +452,8 @@ var file_protocols_config_proto_goTypes = []interface{}{
 	(*SetConfigResponse)(nil),  // 3: protocols.SetConfigResponse
 	(*SaveConfigRequest)(nil),  // 4: protocols.SaveConfigRequest
 	(*SaveConfigResponse)(nil), // 5: protocols.SaveConfigResponse
+	(*GetInfoRequest)(nil),     // 6: protocols.GetInfoRequest
+	(*GetInfoResponse)(nil),    // 7: protocols.GetInfoResponse
 }
 var file_protocols_config_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -413,6 +541,30 @@ func file_protocols_config_proto_init() {
 				return nil
 			}
 		}
+		file_protocols_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetInfoRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protocols_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetInfoResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -420,7 +572,7 @@ func file_protocols_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_protocols_config_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

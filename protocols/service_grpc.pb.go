@@ -468,6 +468,7 @@ var Search_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaoBlogClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
 	CreatePost(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*Post, error)
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*Post, error)
@@ -498,6 +499,15 @@ func NewTaoBlogClient(cc grpc.ClientConnInterface) TaoBlogClient {
 func (c *taoBlogClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *taoBlogClient) GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error) {
+	out := new(GetInfoResponse)
+	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/GetInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -662,6 +672,7 @@ func (c *taoBlogClient) PreviewComment(ctx context.Context, in *PreviewCommentRe
 // for forward compatibility
 type TaoBlogServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
 	CreatePost(context.Context, *Post) (*Post, error)
 	GetPost(context.Context, *GetPostRequest) (*Post, error)
 	UpdatePost(context.Context, *UpdatePostRequest) (*Post, error)
@@ -688,6 +699,9 @@ type UnimplementedTaoBlogServer struct {
 
 func (UnimplementedTaoBlogServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedTaoBlogServer) GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
 }
 func (UnimplementedTaoBlogServer) CreatePost(context.Context, *Post) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
@@ -767,6 +781,24 @@ func _TaoBlog_Ping_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TaoBlogServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TaoBlog_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoBlogServer).GetInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.TaoBlog/GetInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoBlogServer).GetInfo(ctx, req.(*GetInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1087,6 +1119,10 @@ var TaoBlog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _TaoBlog_Ping_Handler,
+		},
+		{
+			MethodName: "GetInfo",
+			Handler:    _TaoBlog_GetInfo_Handler,
 		},
 		{
 			MethodName: "CreatePost",

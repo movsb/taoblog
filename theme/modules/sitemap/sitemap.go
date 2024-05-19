@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
@@ -49,10 +50,12 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	info := utils.Must(s.svc.GetInfo(req.Context(), &protocols.GetInfoRequest{}))
+
 	rssArticles := make([]*Article, 0, len(rsp))
 	for _, article := range rsp {
 		rssArticle := Article{
-			Link: fmt.Sprintf("%s/%d/", s.impl.HomeURL(), article),
+			Link: fmt.Sprintf("%s/%d/", info.Home, article),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
 	}

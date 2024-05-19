@@ -91,7 +91,7 @@ func New(devMode bool, cfg *config.Config, service protocols.TaoBlogServer, impl
 	m := t.specialMux
 
 	if r := cfg.Site.RSS; r.Enabled {
-		t.rss = rss.New(service, impl, auth, rss.WithArticleCount(r.ArticleCount))
+		t.rss = rss.New(service, auth, rss.WithArticleCount(r.ArticleCount))
 		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
 	}
 	if cfg.Site.Sitemap.Enabled {
@@ -313,10 +313,10 @@ func (t *Theme) ChangedAt() time.Time {
 
 func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		last := t.impl.LastArticleUpdateTime()
+		info := utils.Must(t.service.GetInfo(r.Context(), &protocols.GetInfoRequest{}))
 		h3 := handle304.New(
-			handle304.WithNotModified(last),
-			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, last),
+			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
+			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt),
 		)
 		if h3.Match(w, r) {
 			return
@@ -363,7 +363,9 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) er
 		link := t.impl.GetLink(id)
 		// 因为只处理了一层页面路径，所以要判断一下。
 		if link != t.impl.GetPlainLink(id) {
-			http.Redirect(w, req, link, http.StatusPermanentRedirect)
+			u := *req.URL
+			u.Path = link
+			http.Redirect(w, req, u.String(), http.StatusPermanentRedirect)
 			return nil
 		}
 		return nil

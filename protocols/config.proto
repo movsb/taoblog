@@ -25,3 +25,22 @@ message SaveConfigRequest {
 message SaveConfigResponse {
 
 }
+
+message GetInfoRequest {}
+
+message GetInfoResponse {
+	// 站点名字
+	string name = 1;
+
+	// 站点描述
+	string description =  2;
+
+	// 站点主页地址。
+	// 形如：https://blog.twofei.com
+	// 不带最后的 /。
+	string home = 3;
+
+	// 最后更新时间。
+	// 主要包含：文章。
+	int32 last_posted_at = 10;
+}

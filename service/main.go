@@ -37,14 +37,10 @@ import (
 )
 
 type ToBeImplementedByRpc interface {
-	Name() string
-	Description() string
-	HomeURL() string
 	ListAllPostsIds(ctx context.Context) ([]int32, error)
 	GetDefaultIntegerOption(name string, def int64) int64
 	GetLink(ID int64) string
 	GetPlainLink(ID int64) string
-	LastArticleUpdateTime() time.Time
 	Config() *config.Config
 	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
@@ -258,25 +254,6 @@ func (s *Service) TxCall(callback func(txs *Service) error) error {
 	})
 }
 
-// HomeURL returns the home URL of format https://localhost.
-func (s *Service) HomeURL() string {
-	return strings.TrimSuffix(s.cfg.Site.Home, "/")
-}
-
-func (s *Service) Name() string {
-	return s.cfg.Site.Name
-}
-
-func (s *Service) Description() string {
-	if b := s.cfg.Site.ShowDescription; !b {
-		return ""
-	}
-	if d := s.cfg.Site.Description; d != `` {
-		return d
-	}
-	return ``
-}
-
 func DevMode() bool {
 	return os.Getenv(`DEV`) != `0` && (version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`))
 }
@@ -287,15 +264,6 @@ func DevMode() bool {
 // https://github.com/movsb/taoblog/commit/c4428d7
 func (s *Service) MaintenanceMode() *utils.Maintenance {
 	return s.maintenance
-}
-
-// LastArticleUpdateTime ...
-func (s *Service) LastArticleUpdateTime() time.Time {
-	t := time.Now()
-	if modified := s.GetDefaultIntegerOption("last_post_time", 0); modified > 0 {
-		t = time.Unix(modified, 0)
-	}
-	return t
 }
 
 var methodThrottlerInfo = map[string]struct {
@@ -435,4 +403,20 @@ func (s *Service) monitorCert(chanify *notify.Chanify) {
 			check()
 		}
 	}()
+}
+
+func (s *Service) GetInfo(ctx context.Context, in *protocols.GetInfoRequest) (*protocols.GetInfoResponse, error) {
+	t := time.Now()
+	if modified := s.GetDefaultIntegerOption("last_post_time", 0); modified > 0 {
+		t = time.Unix(modified, 0)
+	}
+
+	out := &protocols.GetInfoResponse{
+		Name:         s.cfg.Site.Name,
+		Description:  s.cfg.Site.Description,
+		Home:         strings.TrimSuffix(s.cfg.Site.Home, "/"),
+		LastPostedAt: int32(t.Unix()),
+	}
+
+	return out, nil
 }

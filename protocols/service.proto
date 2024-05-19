@@ -87,6 +87,15 @@ service TaoBlog {
 			description: "Ping 服务器。";
 		};
 	}
+	
+	rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
+		option (google.api.http) = {
+			get: "/v3/info";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取基本信息。";
+		};
+	}
 
 	// POSTS
 
