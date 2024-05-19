@@ -18,8 +18,7 @@
 	{{ if not .Post }}
     <header id="header">
         <div class="content">
-            <div class="padding">
-                <div class="sitename"><a href="/">{{ $.SiteName }}</a></div>
+			<h1 class="sitename"><a href="/">{{ $.SiteName }}</a></h1>
 {{ if and .Config.Site.Search.Show }}
 <form name="search_box" class="search" action="/search">
 <input name="q" placeholder="Search"/>
@@ -40,12 +39,9 @@ if (search) {
 </script>
 </form>
 {{ end }}
-                <div class="nav">
-                    <ol>
-                    {{menus}}
-                    </ol>
-                </div>
-            </div>
+			<ol class="nav">
+				{{menus}}
+			</ol>
         </div>
 	</header>
 	{{ end }}

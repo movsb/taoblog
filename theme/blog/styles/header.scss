@@ -13,10 +13,7 @@ body.wide #header .content {
         margin: auto;
         padding: 2em 1em 0;
         overflow: hidden;
-
-        .padding {
-            position: relative;
-        }
+		position: relative;
 
         .sitename {
             margin: 0px;
@@ -36,6 +33,11 @@ body.wide #header .content {
         }
 
         .nav {
+			margin: 0;
+			padding-left: 0px;
+			list-style: none;
+			display: flex;
+			gap: .5em;
             a {
                 transition: all 0.2s;
                 text-decoration: none;
@@ -58,18 +60,10 @@ body.wide #header .content {
                 }
             }
 
-            > ol {
-                margin: 0px 0px 1px;
-                padding-left: 0px;
-                list-style: none;
-
-                > li {
-                    display: inline-block;
-                    margin-left: 0.5em;
-                    color: #A0A0A0;
-					line-height: 2;
-                }
-            }
+			> li {
+				color: #A0A0A0;
+				line-height: 2;
+			}
         }
 
         .search {
@@ -85,13 +79,21 @@ body.wide #header .content {
     }
 }
 
-@media screen and (max-width: $max_width) {
+@media screen and (max-width: 500px) {
     #header {
 		.content {
 			text-align: center;
 		}
 		.search {
 			margin: .5em;
+		}
+		.nav {
+			li:first-child {
+				margin-left: auto;
+			}
+			li:last-child {
+				margin-right: auto;
+			}
 		}
 	}
 }
@@ -102,20 +104,19 @@ body.wide #header .content {
 	}
 }
 
-@media screen and (min-width: $max_width+1) {
+@media screen and (min-width: 501px) {
     #header {
         .content {
-            .nav {
-                float: right;
-            }
             .search {
-                position: absolute;
-				right: 0;
-				top: 10px;
-				input {
-					position: relative;
-				}
+				position: absolute;
+				right: 1em;
+				top: 2.5em;
             }
+			.nav {
+				li:first-child {
+					margin-left: auto;
+				}
+			}
         }
     }
 }

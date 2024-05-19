@@ -5,6 +5,7 @@ __debug_bin*
 
 /tmp/
 /.tmp/
+/.cache/
 /.vscode/
 /files/
 /posts/
