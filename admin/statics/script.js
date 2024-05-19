@@ -11,14 +11,23 @@ class WebAuthnAPI {
 			throw new Error('开始注册失败：' + await rsp.text());
 		}
 		let options = await rsp.json();
-		options.publicKey.challenge = await this.base64decode(options.publicKey.challenge);
-		options.publicKey.user.id = await this.base64decode(options.publicKey.user.id);
+		let decoded = await this.base64decode(
+			options.publicKey.challenge,
+			options.publicKey.user.id,
+		);
+		options.publicKey.challenge = decoded[0];
+		options.publicKey.user.id = decoded[1];
 		return options;
 	}
 	async finishRegistration(options) {
-		options.rawId = await this.base64encode(options.rawId);
-		options.response.clientDataJSON = await this.base64encode(options.response.clientDataJSON);
-		options.response.attestationObject = await this.base64encode(options.response.attestationObject);
+		let encoded = await this.base64encode(
+			options.rawId,
+			options.response.clientDataJSON,
+			options.response.attestationObject,
+		);
+		options.rawId = encoded[0];
+		options.response.clientDataJSON = encoded[1];
+		options.response.attestationObject = encoded[2];
 
 		let path = `/admin/login/webauthn/register:finish`;
 		let rsp = await fetch(path, {
@@ -38,17 +47,28 @@ class WebAuthnAPI {
 			throw new Error('开始登录失败：' + await rsp.text());
 		}
 		let options = await rsp.json();
-		options.publicKey.challenge = await this.base64decode(options.publicKey.challenge);
+		let decoded = await this.base64decode(
+			options.publicKey.challenge,
+		);
+		options.publicKey.challenge = decoded[0];
 		return options;
 	}
 	// challenge: 只是用来查找 session 的，肯定不会用作服务端真实 challenge。想啥呢？
 	async finishLogin(options, challenge) {
-		let path = `/admin/login/webauthn/login:finish?challenge=${challenge}`;
-		options.rawId = await this.base64encode(options.rawId);
-		options.response.authenticatorData = await this.base64encode(options.response.authenticatorData);
-		options.response.clientDataJSON = await this.base64encode(options.response.clientDataJSON);
-		options.response.signature = await this.base64encode(options.response.signature);
-		options.response.userHandle = await this.base64encode(options.response.userHandle);
+		let encoded = await this.base64encode(
+			options.rawId,
+			options.response.authenticatorData,
+			options.response.clientDataJSON,
+			options.response.signature,
+			options.response.userHandle,
+			challenge,
+		);
+		options.rawId = encoded[0];
+		options.response.authenticatorData = encoded[1];
+		options.response.clientDataJSON = encoded[2];
+		options.response.signature = encoded[3];
+		options.response.userHandle = encoded[4];
+		let path = `/admin/login/webauthn/login:finish?challenge=${encoded[5]}`;
 		let rsp = await fetch(path, {
 			method: 'POST',
 			body: JSON.stringify(options),
@@ -58,16 +78,18 @@ class WebAuthnAPI {
 		}
 	}
 
-	async base64encode(arr) {
+	async base64encode() {
 		let path = '/admin/login/webauthn/base64:encode';
-		let body = JSON.stringify(Array.from(new Uint8Array(arr)));
-		let rsp = await fetch(path, { method: 'POST', body: body});
-		return await rsp.text();
+		let body = Array.from(arguments).map(a => Array.from(new Uint8Array(a)));
+		let rsp = await fetch(path, { method: 'POST', body: JSON.stringify(body)});
+		if (!rsp.ok) { throw new Error(await rsp.text()); }
+		return await rsp.json();
 	}
-	async base64decode(str) {
+	async base64decode() {
 		let path = '/admin/login/webauthn/base64:decode';
-		let rsp = await fetch(path, { method: 'POST', body: str});
-		return new Uint8Array(await rsp.json());
+		let rsp = await fetch(path, { method: 'POST', body: JSON.stringify(Array.from(arguments))});
+		if (!rsp.ok) { throw new Error(await rsp.text()); }
+		return (await rsp.json()).map(a => new Uint8Array(a));
 	}
 }
 
@@ -148,7 +170,7 @@ class WebAuthn {
 			},
 		};
 		console.log('结束登录参数：', finishLoginOptions);
-		await this.api.finishLogin(finishLoginOptions, await this.api.base64encode(publicKey.challenge));
+		await this.api.finishLogin(finishLoginOptions, publicKey.challenge);
 		console.log('登录成功。');
 	}
 }

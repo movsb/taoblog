@@ -66,41 +66,45 @@ func (a *WebAuthn) Handler(prefix string) http.Handler {
 	return http.StripPrefix(strings.TrimSuffix(prefix, "/"), mux)
 }
 
-// [1,2,3] => XXXXXX
+// [[1,2,3], ...] => ["XXXXXX", ...]
 // 官方的 protocol.URLEncodedBase64 会把结果把成 JSON 字符串，不好用。
-// TODO 支持批量转码。
 func (a *WebAuthn) base64Encode(w http.ResponseWriter, r *http.Request) {
-	var bs []byte
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&bs); err != nil {
+	var bss [][]byte
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&bss); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	str := base64.RawURLEncoding.EncodeToString(bs)
-	w.Write([]byte(str))
+	ss := make([]string, 0, len(bss))
+	for _, bs := range bss {
+		ss = append(ss, base64.RawURLEncoding.EncodeToString(bs))
+	}
+	json.NewEncoder(w).Encode(ss)
 }
 
-// XXXXXX => [1,2,3]
+// ["XXXXXX", ...] => [[1,2,3], ...]
 func (a *WebAuthn) base64Decode(w http.ResponseWriter, r *http.Request) {
-	var s string
-	if all, err := io.ReadAll(io.LimitReader(r.Body, 1<<20)); err != nil {
+	var ss []string
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&ss); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	} else {
-		s = string(all)
 	}
-	bs, err := base64.RawURLEncoding.DecodeString(s)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	bss := make([][]byte, 0, len(ss))
+	for _, s := range ss {
+		bs, err := base64.RawURLEncoding.DecodeString(s)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		bss = append(bss, bs)
 	}
-	ibs := make([]int, 0, len(bs))
-	for _, b := range bs {
-		ibs = append(ibs, int(b))
+	ibss := make([][]int, 0, len(bss))
+	for _, bs := range bss {
+		ibs := make([]int, 0, len(bs))
+		for _, b := range bs {
+			ibs = append(ibs, int(b))
+		}
+		ibss = append(ibss, ibs)
 	}
-	if err := json.NewEncoder(w).Encode(ibs); err != nil {
-		log.Println(err)
-		return
-	}
+	json.NewEncoder(w).Encode(ibss)
 }
 
 func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
@@ -180,7 +184,7 @@ func (a *WebAuthn) FinishLogin(w http.ResponseWriter, r *http.Request) {
 
 	credential, err := a.wa.FinishDiscoverableLogin(a.findUser(&user), *session, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
