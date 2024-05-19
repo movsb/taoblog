@@ -210,16 +210,20 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 		MaxAge:   0,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   !a.devMode,
+		Secure:   true,
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	})
 	// 只用于前端展示使用，不能用作凭证。
 	http.SetCookie(w, &http.Cookie{
-		Name:   CookieNameUserID,
-		Value:  fmt.Sprint(u.ID),
-		MaxAge: 0,
-		Path:   `/`,
-		Domain: ``,
+		Name:     CookieNameUserID,
+		Value:    fmt.Sprint(u.ID),
+		MaxAge:   0,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   true,
+		HttpOnly: false,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -231,15 +235,19 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 		MaxAge:   -1,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   !a.devMode,
+		Secure:   true,
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name:   CookieNameUserID,
-		Value:  ``,
-		MaxAge: -1,
-		Path:   `/`,
-		Domain: ``,
+		Name:     CookieNameUserID,
+		Value:    ``,
+		MaxAge:   -1,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   true,
+		HttpOnly: false,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
