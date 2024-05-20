@@ -87,7 +87,7 @@ func (c *Client) CreatePost() error {
 
 	p.SourceType, p.Source, assets = readSource(".")
 
-	rp, err := c.blog.CreatePost(c.token(), &p)
+	rp, err := c.Blog.CreatePost(c.Context(), &p)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (c *Client) GetPost() {
 	if cfg.Title != "" {
 		panic("must not be created")
 	}
-	post, err := c.blog.GetPost(c.token(), &protocols.GetPostRequest{
+	post, err := c.Blog.GetPost(c.Context(), &protocols.GetPostRequest{
 		Id: int32(cfg.ID),
 		ContentOptions: &protocols.PostContentOptions{
 			WithContent: false,
@@ -158,7 +158,7 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 		}
 		id = config.ID
 	}
-	_, err := c.blog.SetPostStatus(c.token(), &protocols.SetPostStatusRequest{
+	_, err := c.Blog.SetPostStatus(c.Context(), &protocols.SetPostStatusRequest{
 		Id:     id,
 		Public: public,
 		Touch:  touch,
@@ -206,7 +206,7 @@ func (c *Client) UpdatePost() error {
 		updateMasks = append(updateMasks, `metas`)
 	}
 
-	rp, err := c.blog.UpdatePost(c.token(), &protocols.UpdatePostRequest{
+	rp, err := c.Blog.UpdatePost(c.Context(), &protocols.UpdatePostRequest{
 		Post: &p,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: updateMasks,
@@ -231,7 +231,7 @@ func (c *Client) UpdatePost() error {
 
 // DeletePost ...
 func (c *Client) DeletePost(id int64) error {
-	_, err := c.blog.DeletePost(c.token(), &protocols.DeletePostRequest{
+	_, err := c.Blog.DeletePost(c.Context(), &protocols.DeletePostRequest{
 		Id: int32(id),
 	})
 	return err
@@ -250,7 +250,7 @@ func (c *Client) UploadPostFiles(id int64, files []string) {
 		return
 	}
 
-	client, err := c.management.FileSystem(c.token())
+	client, err := c.Management.FileSystem(c.Context())
 	if err != nil {
 		panic(err)
 	}

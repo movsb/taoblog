@@ -20,7 +20,7 @@ import (
 func (c *Client) BackupPosts(cmd *cobra.Command) {
 	compress := true
 
-	backupClient, err := c.management.Backup(c.token(), &protocols.BackupRequest{Compress: compress})
+	backupClient, err := c.Management.Backup(c.Context(), &protocols.BackupRequest{Compress: compress})
 	if err != nil {
 		panic(err)
 	}
@@ -126,7 +126,7 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 
 // Backup backups all blog database.
 func (c *Client) BackupFiles(cmd *cobra.Command) {
-	client, err := c.management.BackupFiles(c.token())
+	client, err := c.Management.BackupFiles(c.Context())
 	if err != nil {
 		panic(err)
 	}

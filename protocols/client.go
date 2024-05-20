@@ -1,14 +1,43 @@
-package client
+package protocols
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/url"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 )
 
+func NewProtoClient(cc *grpc.ClientConn, token string) *ProtoClient {
+	return &ProtoClient{
+		cc:         cc,
+		token:      token,
+		Blog:       NewTaoBlogClient(cc),
+		Management: NewManagementClient(cc),
+	}
+}
+
+type ProtoClient struct {
+	cc    *grpc.ClientConn
+	token string
+
+	Blog       TaoBlogClient
+	Management ManagementClient
+}
+
+func (c *ProtoClient) Context() context.Context {
+	return c.ContextFrom(context.Background())
+}
+
+func (c *ProtoClient) ContextFrom(parent context.Context) context.Context {
+	return metadata.NewOutgoingContext(parent, metadata.Pairs(auth.TokenName, c.token))
+}
+
+// grpcAddress 可以为空，表示使用 api 同一地址。
 func NewConn(api, grpcAddress string) *grpc.ClientConn {
 	secure := false
 	if grpcAddress == `` {

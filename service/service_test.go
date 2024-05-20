@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/auth"
@@ -36,7 +35,7 @@ func initService() {
 	theService := service.NewService(&cfg, db, theAuth)
 	theAuth.SetService(theService)
 
-	blog = protocols.NewTaoBlogClient(client.NewConn("", theService.Addr().String()))
+	blog = protocols.NewTaoBlogClient(protocols.NewConn("", theService.Addr().String()))
 	admin = auth.TestingAdminUserContext(theAuth, "go_test")
 	guest = context.Background()
 }

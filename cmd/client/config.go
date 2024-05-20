@@ -14,7 +14,7 @@ type HostConfig struct {
 }
 
 func (c *Client) GetConfig(path string) string {
-	rsp, err := c.management.GetConfig(c.token(), &protocols.GetConfigRequest{
+	rsp, err := c.Management.GetConfig(c.Context(), &protocols.GetConfigRequest{
 		Path: path,
 	})
 	if err != nil {
@@ -24,7 +24,7 @@ func (c *Client) GetConfig(path string) string {
 }
 
 func (c *Client) SetConfig(path string, value string) {
-	rsp, err := c.management.SetConfig(c.token(), &protocols.SetConfigRequest{
+	rsp, err := c.Management.SetConfig(c.Context(), &protocols.SetConfigRequest{
 		Path: path,
 		Yaml: value,
 	})
@@ -35,7 +35,7 @@ func (c *Client) SetConfig(path string, value string) {
 }
 
 func (c *Client) SaveConfig() {
-	rsp, err := c.management.SaveConfig(c.token(), &protocols.SaveConfigRequest{})
+	rsp, err := c.Management.SaveConfig(c.Context(), &protocols.SaveConfigRequest{})
 	if err != nil {
 		log.Fatalln(err)
 	}
