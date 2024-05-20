@@ -168,6 +168,7 @@ img, svg {
 	max-width: 100%;
 	height: auto;
 	border-radius: var(--border-radius);
+	cursor: zoom-in;
 
 	&.f-r {
 		float: right;
@@ -177,7 +178,10 @@ img, svg {
 
 @media (prefers-color-scheme: dark) {
 	img, video, iframe, svg {
-		filter: brightness(0.7);
+		filter: brightness(.7);
+	}
+	audio {
+		filter: brightness(.6);
 	}
 }
 
@@ -205,6 +209,7 @@ hr {
 	border-bottom: 1px dashed var(--border-color);
 }
 
+// https://blog.twofei.com/914/
 // https://developer.mozilla.org/en-US/docs/Web/CSS/@counter-style
 @counter-style parenthesis {
 	system: numeric;

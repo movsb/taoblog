@@ -39,6 +39,16 @@ pre, code {
 	}
 }
 
+// 因为现在代码没有背景和边框了，唯有等宽字体。
+// 所以为了和普通文字区分，加一个 hover 效果。
+:not(pre) > code:hover {
+	text-decoration: underline var(--accent-color) wavy;
+}
+// a 本身有下划线，不需要混合。
+a > code:hover {
+	text-decoration: none;
+}
+
 // 样式重置文章风格影响的表格。
 div.chroma {
 	table {
