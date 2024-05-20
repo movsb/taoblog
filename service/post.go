@@ -37,10 +37,12 @@ func (s *Service) ListPosts(ctx context.Context, in *protocols.ListPostsRequest)
 
 	var posts models.Posts
 	stmt := s.posts().Limit(int64(in.Limit)).OrderBy(in.OrderBy)
+
 	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
-	if len(in.Kinds) > 0 {
-		stmt.Where(`type in ?`, in.Kinds)
-	}
+	stmt.WhereIf(len(in.Kinds) > 0, `type in ?`, in.Kinds)
+	stmt.WhereIf(in.ModifiedNotBefore > 0, `modified >= ?`, in.ModifiedNotBefore)
+	stmt.WhereIf(in.ModifiedNotAfter > 0, `modified < ?`, in.ModifiedNotAfter)
+
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)
 	}

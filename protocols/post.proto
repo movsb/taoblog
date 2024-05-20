@@ -108,6 +108,11 @@ message ListPostsRequest {
 	PostContentOptions content_options = 3;
 	repeated string kinds = 4;
 	LinkKind with_link = 5;
+
+	// 如果 > 0，则只会列出从这个时间点开始、结束的文章。
+	// 以后有过更新的文章，适用于备份用。
+	int32 modified_not_before = 6;
+	int32 modified_not_after = 7;
 }
 
 message ListPostsResponse {

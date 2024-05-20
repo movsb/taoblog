@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -24,13 +25,6 @@ var (
 	errPostNotCreated = errors.New(`post not created, use create instead`)
 )
 
-var sourceNames = []string{
-	"README.md",
-	"index.md",
-	"README.html",
-	"index.html",
-}
-
 // PostConfig ...
 type PostConfig struct {
 	ID       int64           `json:"id" yaml:"id"`
@@ -42,6 +36,8 @@ type PostConfig struct {
 	Type     string          `json:"type" yaml:"type"`
 }
 
+const ConfigFileName = `config.yml`
+
 // InitPost ...
 func (c *Client) InitPost() error {
 	// 禁止意外在项目下创建。
@@ -49,7 +45,7 @@ func (c *Client) InitPost() error {
 		log.Fatalln(`不允许在项目根目录下创建文章。`)
 	}
 
-	fp, err := os.Open("config.yml")
+	fp, err := os.Open(ConfigFileName)
 	if err == nil {
 		fp.Close()
 		return errPostInited
@@ -244,7 +240,7 @@ func (c *Client) DeletePost(id int64) error {
 // NOTE 会自动去重本地文件。
 // NOTE 会自动排除 config.yml 文件。
 func (c *Client) UploadPostFiles(id int64, files []string) {
-	files = slices.DeleteFunc(files, func(f string) bool { return f == `config.yml` })
+	files = slices.DeleteFunc(files, func(f string) bool { return f == ConfigFileName })
 
 	if len(files) <= 0 {
 		return
@@ -269,45 +265,61 @@ func (c *Client) UploadPostFiles(id int64, files []string) {
 }
 
 func (c *Client) readPostConfig() *PostConfig {
-	config := PostConfig{}
-	file, err := os.Open("config.yml")
+	p, err := ReadPostConfig(ConfigFileName)
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
-	dec := yaml.NewDecoder(file)
-	if err := dec.Decode(&config); err != nil {
-		panic(err)
+	return p
+}
+
+func ReadPostConfig(path string) (*PostConfig, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
 	}
-	return &config
+	defer file.Close()
+	return ReadPostConfigReader(file)
+}
+func ReadPostConfigReader(r io.Reader) (*PostConfig, error) {
+	config := PostConfig{}
+	dec := yaml.NewDecoder(r)
+	if err := dec.Decode(&config); err != nil {
+		return nil, err
+	}
+	return &config, nil
 }
 
 func (c *Client) savePostConfig(config *PostConfig) {
-	file, err := os.Create("config.yml")
-	if err != nil {
+	if err := SavePostConfig(ConfigFileName, config); err != nil {
 		panic(err)
+	}
+}
+
+func SavePostConfig(path string, config *PostConfig) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
 	}
 	defer file.Close()
 	enc := yaml.NewEncoder(file)
 	if err := enc.Encode(config); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
+
+const IndexFileName = `README.md`
 
 func readSource(dir string) (string, string, []string) {
 	var source string
-	var theName string
 
-	for _, name := range sourceNames {
-		path := filepath.Join(dir, name)
-		bys, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		source = string(bys)
-		theName = name
-		break
+	path := filepath.Join(dir, IndexFileName)
+	bys, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
 	}
+	source = string(bys)
+
 	if source == "" {
 		panic("source cannot be found")
 	}
@@ -319,18 +331,11 @@ func readSource(dir string) (string, string, []string) {
 		panic("source cannot contain zero width characters")
 	}
 
-	typ := ""
 	var assets []string
-	var err error
-	switch filepath.Ext(theName) {
-	case ".md":
-		typ = "markdown"
-		assets, err = parsePostAssets(source)
-		if err != nil {
-			log.Println(err)
-		}
-	case ".html":
-		typ = "html"
+	typ := "markdown"
+	assets, err = parsePostAssets(source)
+	if err != nil {
+		log.Println(err)
 	}
 
 	return typ, source, assets
