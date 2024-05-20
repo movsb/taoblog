@@ -16,7 +16,7 @@ type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool
 	ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool
 	QueryHome(w http.ResponseWriter, req *http.Request) error
-	QueryByID(w http.ResponseWriter, req *http.Request, id int64) error
+	QueryByID(w http.ResponseWriter, req *http.Request, id int64)
 	QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
 	QueryByTags(w http.ResponseWriter, req *http.Request, tags []string)
 	QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error)

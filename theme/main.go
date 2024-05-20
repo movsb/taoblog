@@ -336,7 +336,7 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`tags.html`, w, d)
 }
 
-func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) error {
+func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 	post, err := t.service.GetPost(req.Context(),
 		&protocols.GetPostRequest{
 			Id:          int32(id),
@@ -351,7 +351,7 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) er
 		},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if post.Type == `page` {
@@ -361,14 +361,14 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) er
 			u := *req.URL
 			u.Path = link
 			http.Redirect(w, req, u.String(), http.StatusPermanentRedirect)
-			return nil
+			return
 		}
-		return nil
+		return
 	}
 
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
-	return nil
+	return
 }
 
 func (t *Theme) incView(id int64) {
