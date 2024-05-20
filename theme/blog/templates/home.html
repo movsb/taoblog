@@ -17,26 +17,7 @@
 	<li><a href="/posts">所有文章...</a></li>
 </ul>
 
-<h2>近期评论</h2>
-{{ $comments := .Home.PostComments}}
-{{ if $comments }}
-	<ul id=latest-comment-list>
-	{{range $comment := $comments}}
-		<li>
-			<a href="/{{.Post.ID}}/">{{.Post.Title}}</a>
-			<ul class="comment-list post-comment-list">
-			{{- range .Comments}}
-				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.Post.ID}}/#comment-{{.Id}}"> #</a></p></li>
-			{{- end }}
-			</ul>
-		</li>
-	{{end}}
-	</ul>
-{{ else }}
-	<ul>没有评论。</ul>
-{{ end }}
-
-<h2>近期碎碎念</h2>
+<h2>近期碎念</h2>
 <ul id=latest-tweet-list>
 {{- range .Home.Tweets}}
 	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
@@ -44,17 +25,17 @@
 </ul>
 
 <ul id="all-tweets">
-	<li><a href="/tweets">所有碎碎念...</a></li>
+	<li><a href="/tweets">所有碎念...</a></li>
 </ul>
 
-<h2>近期碎碎念评论</h2>
-{{ $comments := .Home.TweetComments}}
+<h2>近期评论</h2>
+{{ $comments := .Home.Comments}}
 {{ if $comments }}
-	<ul id=latest-tweet-list>
+	<ul id=latest-comment-list>
 	{{range $comment := $comments}}
 		<li>
 			<a href="/{{.Post.ID}}/">{{.Post.Title}}</a>
-			<ul class="comment-list tweet-comment-list">
+			<ul class="comment-list post-comment-list">
 			{{- range .Comments}}
 				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.Post.ID}}/#comment-{{.Id}}"> #</a></p></li>
 			{{- end }}

@@ -713,7 +713,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 				if err != nil {
 					return err
 				}
-				p.Title = truncateTitle(content, 48)
+				p.Title = truncateTitle(content, 36)
 			}
 		}
 
