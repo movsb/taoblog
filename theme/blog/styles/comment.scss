@@ -40,13 +40,18 @@
 	.sign-out   { display: none;    }
 	.delete-comment { display: none;    }
 }
-#comments.signed-in {
-	.sign-in { display: none; }
-	.sign-out { display: inline; }
-	.edit-comment { display: inline; }
-	.delete-comment { display: inline; }
+#comment-list {
+	.edit-comment { display: none; }
+	.edit-comment.can-edit { display: inline; }
 }
-
+body.signed-in {
+	#comments .sign-in { display: none; }
+	#comments .sign-out { display: inline; }
+	#comment-list {
+		.edit-comment { display: inline; }
+		.delete-comment { display: inline; }
+	}
+}
 
 /* 评论列表 */
 #comment-list {
@@ -121,15 +126,6 @@
             }
         }
     }
-}
-
-#comment-list {
-	.edit-comment {
-		display: none;
-	}
-	.edit-comment.can-edit {
-		display: inline;
-	}
 }
 
 /* 评论功能区 */

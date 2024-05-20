@@ -494,11 +494,6 @@ class Comment {
 
 		self.init_drag(document.getElementById('comment-form-div'));
 
-		if (TaoBlog.userID > 0) {
-			let root = document.getElementById('comments');
-			root.classList.add('signed-in');
-		}
-
 		let debouncing = undefined;
 		window.addEventListener('resize', () => {
 			clearTimeout(debouncing);
@@ -951,14 +946,16 @@ class Comment {
 			this.preview.setError('预览失败：' + e);
 		}
 	}
+	// TODO 登录功能从评论中移除。
+	// 因为文章也是可以在登录后展示编辑按钮的。
+	// 登录操作不再仅限于评论区。
 	async login() {
 		let wa = new WebAuthn();
 		try {
 			await wa.login();
-			let root = document.getElementById('comments');
-			root.classList.add('signed-in');
+			document.body.classList.add('signed-in');
 			TaoBlog.userID = TaoBlog.fn.getUserID();
-			alert('登录成功。');
+			// alert('登录成功。');
 		} catch(e) {
 			if (e instanceof DOMException && e.name == "AbortError") {
 				console.log('已取消登录。');
@@ -972,8 +969,7 @@ class Comment {
 			let path = `/admin/logout`;
 			let rsp = await fetch(path, { method: 'POST'});
 			if (!rsp.ok) { throw new Error(await rsp.text()); }
-			let root = document.getElementById('comments');
-			root.classList.remove('signed-in');
+			document.body.classList.remove('signed-in');
 		} catch (e) {
 			alert('登出失败：' + e);
 			return;

@@ -111,8 +111,8 @@
 }
 
 .TMLinkLabel {
-	font-family: monospace;
-	text-decoration: underline
+	/* font-family: monospace; */
+	/* text-decoration: underline */
 }
 
 .TMLinkLabel_Definition,

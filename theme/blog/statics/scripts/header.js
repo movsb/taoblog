@@ -93,3 +93,6 @@ TaoBlog.fn.getUserID = function() {
 };
 
 TaoBlog.userID = TaoBlog.fn.getUserID();
+if (TaoBlog.userID > 0) {
+	setTimeout(()=>document.body.classList.add('signed-in'), 0);
+}

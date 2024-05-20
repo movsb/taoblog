@@ -41,7 +41,7 @@ function redirect(to) {
 			let wa = new WebAuthn();
 			try {
 				await wa.login();
-				alert('登录成功。');
+				// alert('登录成功。');
 				redirect();
 			} catch(e) {
 				if (e instanceof DOMException && e.name == "AbortError") {
