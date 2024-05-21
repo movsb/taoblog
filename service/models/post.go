@@ -75,7 +75,7 @@ func (m PostMeta) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
-func (m *PostMeta) Scan(value interface{}) error {
+func (m *PostMeta) Scan(value any) error {
 	switch v := value.(type) {
 	case string:
 		return json.Unmarshal([]byte(v), m)

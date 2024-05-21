@@ -234,7 +234,7 @@ func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
 	}
 }
 
-func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool {
+func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool {
 	if err, ok := e.(error); ok {
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
@@ -368,7 +368,6 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 
 	t.incView(post.Id)
 	t.tempRenderPost(w, req, post)
-	return
 }
 
 func (t *Theme) incView(id int64) {
@@ -382,9 +381,10 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path strin
 			WithRelates: false, // 页面总是不是显示相关文章。
 			WithLink:    protocols.LinkKind_LinkKindRooted,
 			ContentOptions: &protocols.PostContentOptions{
-				WithContent:      true,
-				RenderCodeBlocks: true,
-				UseAbsolutePaths: false,
+				WithContent:       true,
+				RenderCodeBlocks:  true,
+				UseAbsolutePaths:  false,
+				OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
 			},
 		},
 	)

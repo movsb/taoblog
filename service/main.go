@@ -197,7 +197,7 @@ func (s *Service) GrpcAddress() string {
 	return s.cfg.Server.GRPCListen
 }
 
-func grpcLoggerUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func grpcLoggerUnary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	grpcLogger(ctx, info.FullMethod)
 	return handler(ctx, req)
 }
@@ -213,7 +213,7 @@ func grpcLogger(ctx context.Context, method string) {
 	log.Println(method, ac.UserAgent)
 }
 
-func exceptionRecoveryHandler(e interface{}) error {
+func exceptionRecoveryHandler(e any) error {
 	switch te := e.(type) {
 	case *taorm.Error:
 		switch typed := te.Err.(type) {
@@ -337,7 +337,7 @@ func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
 	}
 }
 
-func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	ac := auth.Context(ctx)
 	key := throttlerKeyOf(ctx)
 	ti, ok := methodThrottlerInfo[info.FullMethod]

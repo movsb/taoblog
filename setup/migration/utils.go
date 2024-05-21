@@ -7,7 +7,7 @@ func txCall(db *sql.DB, callback func(tx *sql.Tx)) {
 	if err != nil {
 		panic(err)
 	}
-	catchCall := func() (except interface{}) {
+	catchCall := func() (except any) {
 		defer func() {
 			except = recover()
 		}()
@@ -23,7 +23,7 @@ func txCall(db *sql.DB, callback func(tx *sql.Tx)) {
 	}
 }
 
-func mustExec(tx *sql.Tx, query string, args ...interface{}) {
+func mustExec(tx *sql.Tx, query string, args ...any) {
 	if _, err := tx.Exec(query, args...); err != nil {
 		panic(err)
 	}

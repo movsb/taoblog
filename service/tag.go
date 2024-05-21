@@ -60,7 +60,7 @@ func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 // GetObjectTagNames ...
 func (s *Service) GetObjectTagNames(postID int64) []string {
 	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
-	args := []interface{}{postID}
+	args := []any{postID}
 	rows, err := s.tdb.Query(query, args...)
 	if err != nil {
 		panic(err)

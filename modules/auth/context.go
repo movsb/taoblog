@@ -95,14 +95,14 @@ const (
 // 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (a *Auth) UserFromGatewayUnaryInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		ctx = a.addUserContextToInterceptorForGateway(ctx)
 		return handler(ctx, req)
 	}
 }
 
 func (a *Auth) UserFromGatewayStreamInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream:   ss,
 			WrappedContext: a.addUserContextToInterceptorForGateway(ss.Context()),
@@ -158,14 +158,14 @@ const TokenName = `token`
 // 把 Client 的 Token 转换成已登录用户。
 // 适用于服务端代码功能。
 func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		ctx = addUserContextToInterceptorForToken(ctx, a.cfg.Key)
 		return handler(ctx, req)
 	}
 }
 
 func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream:   ss,
 			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), a.cfg.Key),

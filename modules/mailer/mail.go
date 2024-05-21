@@ -70,7 +70,7 @@ func (m *Mailer) Send(subject string, body string) error {
 		return err
 	}
 
-	write := func(f string, a ...interface{}) {
+	write := func(f string, a ...any) {
 		if err != nil {
 			return
 		}

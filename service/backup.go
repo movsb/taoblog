@@ -147,7 +147,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 	}
 	defer dstConn.Close()
 
-	if err := dstConn.Raw(func(dstDC interface{}) error {
+	if err := dstConn.Raw(func(dstDC any) error {
 		rawDstConn := dstDC.(*sqlite3.SQLiteConn)
 
 		srcConn, err := s.db.Conn(ctx)
@@ -156,7 +156,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 		}
 		defer srcConn.Close()
 
-		return srcConn.Raw(func(srcDC interface{}) error {
+		return srcConn.Raw(func(srcDC any) error {
 			rawSrcConn := srcDC.(*sqlite3.SQLiteConn)
 			backup, err := rawDstConn.Backup(`main`, rawSrcConn, `main`)
 			if err != nil {

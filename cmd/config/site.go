@@ -14,7 +14,7 @@ type _Since time.Time
 // 	return t.Format(time.RFC3339), nil
 // }
 
-func (s *_Since) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (s *_Since) UnmarshalYAML(unmarshal func(any) error) error {
 	var str string
 	if err := unmarshal(&str); err != nil {
 		return err

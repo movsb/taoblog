@@ -13,7 +13,7 @@ import (
 
 // Renderer ...
 type Renderer interface {
-	Exception(w http.ResponseWriter, req *http.Request, e interface{}) bool
+	Exception(w http.ResponseWriter, req *http.Request, e any) bool
 	ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool
 	QueryHome(w http.ResponseWriter, req *http.Request) error
 	QueryByID(w http.ResponseWriter, req *http.Request, id int64)

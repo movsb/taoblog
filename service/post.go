@@ -483,7 +483,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 
 	now := time.Now().Unix()
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		`modified`: now,
 	}
 
@@ -663,7 +663,7 @@ func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatus
 			status = `draft`
 		}
 
-		m := map[string]interface{}{
+		m := map[string]any{
 			"status": status,
 		}
 

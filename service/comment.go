@@ -208,7 +208,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 	var comment models.Comment
 
 	if req.Comment != nil && req.UpdateMask != nil && req.UpdateMask.Paths != nil {
-		data := map[string]interface{}{}
+		data := map[string]any{}
 		var hasSourceType, hasSource bool
 		var hasModified bool
 		for _, mask := range req.UpdateMask.Paths {
@@ -551,7 +551,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 		txs.tdb.From(cmt).
 			Where(`post_id=?`, cmt.PostID).
 			Where(`id=? OR root=?`, cmt.ID, cmt.ID).
-			MustUpdateMap(map[string]interface{}{
+			MustUpdateMap(map[string]any{
 				`post_id`: in.PostId,
 			})
 		txs.updatePostCommentCount(cmt.PostID, time.Now())

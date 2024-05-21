@@ -58,7 +58,7 @@ func v3(tx *sql.Tx) {
 		if err := taorm.ScanRows(&pm, tx, query, meta.Tid); err != nil {
 			panic(err)
 		}
-		var m map[string]interface{}
+		var m map[string]any
 		if pm.Metas == "" {
 			pm.Metas = "{}"
 		}
@@ -313,7 +313,7 @@ func (m MapStr2Str) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
-func (m *MapStr2Str) Scan(value interface{}) error {
+func (m *MapStr2Str) Scan(value any) error {
 	switch v := value.(type) {
 	case string:
 		return json.Unmarshal([]byte(v), m)

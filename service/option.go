@@ -81,7 +81,7 @@ func (s *Service) _haveOption(name string) (have bool) {
 	return err == nil
 }
 
-func (s *Service) SetOption(name string, value interface{}) {
+func (s *Service) SetOption(name string, value any) {
 	var toSave string
 	switch v := value.(type) {
 	case string:
@@ -96,7 +96,7 @@ func (s *Service) SetOption(name string, value interface{}) {
 	}
 	if s._haveOption(name) {
 		stmt := s.tdb.From(models.Option{}).Where("name = ?", name)
-		stmt.MustUpdateMap(map[string]interface{}{
+		stmt.MustUpdateMap(map[string]any{
 			"value": toSave,
 		})
 	} else {
