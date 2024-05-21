@@ -37,8 +37,8 @@ func (Comment) TableName() string {
 // - CanEdit
 // - Avatar
 // - Content
-func (c *Comment) ToProtocols(redact func(c *protocols.Comment)) *protocols.Comment {
-	comment := protocols.Comment{
+func (c *Comment) ToProto(redact func(c *proto.Comment)) *proto.Comment {
+	comment := proto.Comment{
 		Id:         c.ID,
 		Parent:     c.Parent,
 		Root:       c.Root,
@@ -61,10 +61,10 @@ func (c *Comment) ToProtocols(redact func(c *protocols.Comment)) *protocols.Comm
 type Comments []*Comment
 
 // ToProtocols ...
-func (cs Comments) ToProtocols(redact func(c *protocols.Comment)) []*protocols.Comment {
-	comments := make([]*protocols.Comment, 0, len(cs))
+func (cs Comments) ToProto(redact func(c *proto.Comment)) []*proto.Comment {
+	comments := make([]*proto.Comment, 0, len(cs))
 	for _, comment := range cs {
-		comments = append(comments, comment.ToProtocols(redact))
+		comments = append(comments, comment.ToProto(redact))
 	}
 	return comments
 }

@@ -63,7 +63,7 @@ func (c *Client) InitPost() error {
 
 // CreatePost ...
 func (c *Client) CreatePost() error {
-	p := protocols.Post{}
+	p := proto.Post{}
 	cfg := *c.readPostConfig()
 	if cfg.ID > 0 {
 		return errPostCreated
@@ -73,7 +73,7 @@ func (c *Client) CreatePost() error {
 	p.Tags = cfg.Tags
 	p.Slug = cfg.Slug
 	p.Type = cfg.Type
-	p.Metas = cfg.Metas.ToProtocols()
+	p.Metas = cfg.Metas.ToProto()
 
 	if p.Type == "" {
 		p.Type = `post`
@@ -107,9 +107,9 @@ func (c *Client) GetPost() {
 	if cfg.Title != "" {
 		panic("must not be created")
 	}
-	post, err := c.Blog.GetPost(c.Context(), &protocols.GetPostRequest{
+	post, err := c.Blog.GetPost(c.Context(), &proto.GetPostRequest{
 		Id: int32(cfg.ID),
-		ContentOptions: &protocols.PostContentOptions{
+		ContentOptions: &proto.PostContentOptions{
 			WithContent: false,
 		},
 	})
@@ -154,7 +154,7 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 		}
 		id = config.ID
 	}
-	_, err := c.Blog.SetPostStatus(c.Context(), &protocols.SetPostStatusRequest{
+	_, err := c.Blog.SetPostStatus(c.Context(), &proto.SetPostStatusRequest{
 		Id:     id,
 		Public: public,
 		Touch:  touch,
@@ -166,7 +166,7 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 
 // UpdatePost ...
 func (c *Client) UpdatePost() error {
-	p := protocols.Post{}
+	p := proto.Post{}
 	cfg := *c.readPostConfig()
 	if cfg.ID == 0 {
 		return errPostNotCreated
@@ -178,7 +178,7 @@ func (c *Client) UpdatePost() error {
 	p.Slug = cfg.Slug
 	p.Modified = cfg.Modified
 	p.Type = cfg.Type
-	p.Metas = cfg.Metas.ToProtocols()
+	p.Metas = cfg.Metas.ToProto()
 	if p.Type == "" {
 		p.Type = `post`
 	}
@@ -202,7 +202,7 @@ func (c *Client) UpdatePost() error {
 		updateMasks = append(updateMasks, `metas`)
 	}
 
-	rp, err := c.Blog.UpdatePost(c.Context(), &protocols.UpdatePostRequest{
+	rp, err := c.Blog.UpdatePost(c.Context(), &proto.UpdatePostRequest{
 		Post: &p,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: updateMasks,
@@ -227,7 +227,7 @@ func (c *Client) UpdatePost() error {
 
 // DeletePost ...
 func (c *Client) DeletePost(id int64) error {
-	_, err := c.Blog.DeletePost(c.Context(), &protocols.DeletePostRequest{
+	_, err := c.Blog.DeletePost(c.Context(), &proto.DeletePostRequest{
 		Id: int32(id),
 	})
 	return err

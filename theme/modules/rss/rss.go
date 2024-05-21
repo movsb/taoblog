@@ -21,7 +21,7 @@ var tmpl string
 
 // Article ...
 type Article struct {
-	*protocols.Post
+	*proto.Post
 	Date    string
 	Content template.HTML
 }
@@ -36,7 +36,7 @@ type RSS struct {
 	Articles    []*Article
 
 	tmpl *template.Template
-	svc  protocols.TaoBlogServer
+	svc  proto.TaoBlogServer
 }
 
 type Option func(r *RSS)
@@ -52,8 +52,8 @@ type _Config struct {
 }
 
 // New ...
-func New(svc protocols.TaoBlogServer, options ...Option) *RSS {
-	info := utils.Must(svc.GetInfo(context.Background(), &protocols.GetInfoRequest{}))
+func New(svc proto.TaoBlogServer, options ...Option) *RSS {
+	info := utils.Must(svc.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	r := &RSS{
 		config: _Config{
@@ -77,12 +77,12 @@ func New(svc protocols.TaoBlogServer, options ...Option) *RSS {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := r.svc.ListPosts(req.Context(), &protocols.ListPostsRequest{
+	rsp, err := r.svc.ListPosts(req.Context(), &proto.ListPostsRequest{
 		Limit:    int32(r.config.articleCount),
 		OrderBy:  `date desc`,
 		Kinds:    []string{`post`},
-		WithLink: protocols.LinkKind_LinkKindFull,
-		ContentOptions: &protocols.PostContentOptions{
+		WithLink: proto.LinkKind_LinkKindFull,
+		ContentOptions: &proto.PostContentOptions{
 			WithContent:      true,
 			RenderCodeBlocks: false,
 		},

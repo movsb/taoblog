@@ -1,6 +1,6 @@
 syntax = "proto3";
 package protocols;
-option go_package = "github.com/movsb/taoblog/protocols";
+option go_package = "github.com/movsb/taoblog/proto";
 
 import "protocols/backup.proto";
 import "protocols/post.proto";

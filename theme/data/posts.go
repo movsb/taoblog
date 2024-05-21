@@ -23,7 +23,7 @@ type PostsData struct {
 }
 
 // NewDataForPosts ...
-func NewDataForPosts(ctx context.Context, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
+func NewDataForPosts(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   auth.Context(ctx).User,
@@ -53,10 +53,10 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service protocols.
 	}
 
 	posts, err := service.ListPosts(ctx,
-		&protocols.ListPostsRequest{
+		&proto.ListPostsRequest{
 			OrderBy:  fmt.Sprintf(`%s %s`, sort[0], sort[1]),
 			Kinds:    []string{`post`},
-			WithLink: protocols.LinkKind_LinkKindRooted,
+			WithLink: proto.LinkKind_LinkKindRooted,
 		},
 	)
 	if err != nil {

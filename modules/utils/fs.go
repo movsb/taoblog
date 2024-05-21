@@ -15,14 +15,14 @@ import (
 // Directories are omitted.
 // Returned paths are related to dir.
 // 返回的所有路径都是相对于 dir 而言的。
-func ListFiles(dir string) ([]*protocols.FileSpec, error) {
+func ListFiles(dir string) ([]*proto.FileSpec, error) {
 	bfs, err := ListBackupFiles(dir)
 	if err != nil {
 		return nil, err
 	}
-	fs := make([]*protocols.FileSpec, 0, len(bfs))
+	fs := make([]*proto.FileSpec, 0, len(bfs))
 	for _, f := range bfs {
-		fs = append(fs, &protocols.FileSpec{
+		fs = append(fs, &proto.FileSpec{
 			Path: f.Path,
 			Mode: f.Mode,
 			Size: f.Size,
@@ -33,7 +33,7 @@ func ListFiles(dir string) ([]*protocols.FileSpec, error) {
 }
 
 // Deprecated. 用 ListFiles。
-func ListBackupFiles(dir string) ([]*protocols.BackupFileSpec, error) {
+func ListBackupFiles(dir string) ([]*proto.BackupFileSpec, error) {
 	dir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func ListBackupFiles(dir string) ([]*protocols.BackupFileSpec, error) {
 		return nil, fmt.Errorf(`dir cannot be root`)
 	}
 
-	files := make([]*protocols.BackupFileSpec, 0, 1024)
+	files := make([]*proto.BackupFileSpec, 0, 1024)
 
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -56,7 +56,7 @@ func ListBackupFiles(dir string) ([]*protocols.BackupFileSpec, error) {
 			return err
 		}
 
-		file := &protocols.BackupFileSpec{
+		file := &proto.BackupFileSpec{
 			Path: rel,
 			Mode: uint32(info.Mode()),
 			Size: uint32(info.Size()),

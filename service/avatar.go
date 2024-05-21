@@ -75,7 +75,7 @@ func (c *AvatarCache) Email(id int) string {
 }
 
 // GetAvatar ...
-func (s *Service) GetAvatar(in *protocols.GetAvatarRequest) {
+func (s *Service) GetAvatar(in *proto.GetAvatarRequest) {
 	email := s.avatarCache.Email(in.Ephemeral)
 	if email == "" {
 		in.SetStatus(http.StatusNotFound)

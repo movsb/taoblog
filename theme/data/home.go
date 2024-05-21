@@ -21,7 +21,7 @@ type HomeData struct {
 }
 
 // NewDataForHome ...
-func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
+func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   auth.Context(ctx).User,
@@ -34,11 +34,11 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
 	rsp, err := service.ListPosts(ctx,
-		&protocols.ListPostsRequest{
+		&proto.ListPostsRequest{
 			Limit:    15,
 			OrderBy:  "date DESC",
 			Kinds:    []string{`post`},
-			WithLink: protocols.LinkKind_LinkKindRooted,
+			WithLink: proto.LinkKind_LinkKindRooted,
 		},
 	)
 	if err != nil {
@@ -52,12 +52,12 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 	// 最近碎碎念
 	{
 		tweets, err := service.ListPosts(ctx,
-			&protocols.ListPostsRequest{
+			&proto.ListPostsRequest{
 				Limit:    15,
 				OrderBy:  `date desc`,
 				Kinds:    []string{`tweet`},
-				WithLink: protocols.LinkKind_LinkKindRooted,
-				ContentOptions: &protocols.PostContentOptions{
+				WithLink: proto.LinkKind_LinkKindRooted,
+				ContentOptions: &proto.PostContentOptions{
 					WithContent:  true,
 					PrettifyHtml: true,
 				},
@@ -73,13 +73,13 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 	}
 
 	comments, err := d.svc.ListComments(ctx,
-		&protocols.ListCommentsRequest{
+		&proto.ListCommentsRequest{
 			Types:   []string{},
-			Mode:    protocols.ListCommentsRequest_Flat,
+			Mode:    proto.ListCommentsRequest_Flat,
 			Limit:   15,
 			OrderBy: "date DESC",
 
-			ContentOptions: &protocols.PostContentOptions{
+			ContentOptions: &proto.PostContentOptions{
 				WithContent:  true,
 				PrettifyHtml: true,
 			},
@@ -92,13 +92,13 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service protocols.T
 		p, ok := postsMap[c.PostId]
 		if !ok {
 			post, err := d.svc.GetPost(ctx,
-				&protocols.GetPostRequest{
+				&proto.GetPostRequest{
 					Id: int32(c.PostId),
-					ContentOptions: &protocols.PostContentOptions{
+					ContentOptions: &proto.PostContentOptions{
 						WithContent:       true,
 						RenderCodeBlocks:  true,
 						UseAbsolutePaths:  true,
-						OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+						OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 					},
 				},
 			)

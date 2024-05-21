@@ -18,12 +18,12 @@ import (
 // PostData ...
 type PostData struct {
 	Post     *Post
-	Comments []*protocols.Comment
+	Comments []*proto.Comment
 }
 
 func (d *PostData) CommentsAsJsonArray() template.JS {
 	if d.Comments == nil {
-		d.Comments = make([]*protocols.Comment, 0)
+		d.Comments = make([]*proto.Comment, 0)
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -48,7 +48,7 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 }
 
 // NewDataForPost ...
-func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, post *protocols.Post, comments []*protocols.Comment) *Data {
+func NewDataForPost(cfg *config.Config, user *auth.User, service proto.TaoBlogServer, post *proto.Post, comments []*proto.Comment) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,
@@ -66,19 +66,19 @@ func NewDataForPost(cfg *config.Config, user *auth.User, service protocols.TaoBl
 
 // Post ...
 type Post struct {
-	*protocols.Post
+	*proto.Post
 	ID      int64
 	Content template.HTML
 }
 
-func newPost(post *protocols.Post) *Post {
+func newPost(post *proto.Post) *Post {
 	p := &Post{
 		Post:    post,
 		ID:      post.Id,
 		Content: template.HTML(post.Content),
 	}
 	if p.Metas == nil {
-		p.Metas = &protocols.Metas{}
+		p.Metas = &proto.Metas{}
 	}
 	return p
 }

@@ -38,7 +38,7 @@ func NewFileSystemWrapper() *FileSystemWrapper {
 }
 
 // TODO 好像这是一个通用的 GRPC Stream <--> WebSocket 包装方法？🤔
-func (fs *FileSystemWrapper) fileServer(ctx context.Context, ws *websocket.Conn, fsc protocols.Management_FileSystemClient) {
+func (fs *FileSystemWrapper) fileServer(ctx context.Context, ws *websocket.Conn, fsc proto.Management_FileSystemClient) {
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 
@@ -55,7 +55,7 @@ func (fs *FileSystemWrapper) fileServer(ctx context.Context, ws *websocket.Conn,
 				log.Println(`invalid message type`)
 				return
 			}
-			req := protocols.FileSystemRequest{}
+			req := proto.FileSystemRequest{}
 			if err := fs.unmarshaler.UnmarshalNext(json.NewDecoder(r), &req); err != nil {
 				log.Println(err)
 				return

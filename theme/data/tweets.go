@@ -18,7 +18,7 @@ func (t *TweetsData) Last(i int) bool {
 	return i == t.Count-1
 }
 
-func NewDataForTweets(ctx context.Context, cfg *config.Config, svc protocols.TaoBlogServer) *Data {
+func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer) *Data {
 	d := &Data{
 		Meta: &MetaData{
 			Title: fmt.Sprintf(`%s的碎碎念`, cfg.Comment.Author),
@@ -30,16 +30,16 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc protocols.Tao
 	}
 
 	posts, err := svc.ListPosts(ctx,
-		&protocols.ListPostsRequest{
+		&proto.ListPostsRequest{
 			Limit:    1000,
 			Kinds:    []string{`tweet`},
 			OrderBy:  `date desc`,
-			WithLink: protocols.LinkKind_LinkKindRooted,
-			ContentOptions: &protocols.PostContentOptions{
+			WithLink: proto.LinkKind_LinkKindRooted,
+			ContentOptions: &proto.PostContentOptions{
 				WithContent:       true,
 				RenderCodeBlocks:  true,
 				UseAbsolutePaths:  true,
-				OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 			},
 		},
 	)

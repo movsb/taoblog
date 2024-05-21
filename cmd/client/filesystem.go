@@ -10,7 +10,7 @@ import (
 	"github.com/movsb/taoblog/protocols"
 )
 
-type SyncFileSpec protocols.FileSpec
+type SyncFileSpec proto.FileSpec
 
 func (s *SyncFileSpec) Less(than *SyncFileSpec) bool {
 	return s.Path < than.Path
@@ -30,20 +30,20 @@ func (s *SyncFileSpec) DeepEqual(to *SyncFileSpec) bool {
 }
 
 type FilesSyncer struct {
-	client protocols.Management_FileSystemClient
+	client proto.Management_FileSystemClient
 }
 
-func NewFilesSyncer(client protocols.Management_FileSystemClient) *FilesSyncer {
+func NewFilesSyncer(client proto.Management_FileSystemClient) *FilesSyncer {
 	s := &FilesSyncer{
 		client: client,
 	}
 	return s
 }
 
-func (s *FilesSyncer) SyncPostFiles(id int64, localFiles []*protocols.FileSpec) error {
-	if err := s.init(&protocols.FileSystemRequest_InitRequest{
-		For: &protocols.FileSystemRequest_InitRequest_Post_{
-			Post: &protocols.FileSystemRequest_InitRequest_Post{
+func (s *FilesSyncer) SyncPostFiles(id int64, localFiles []*proto.FileSpec) error {
+	if err := s.init(&proto.FileSystemRequest_InitRequest{
+		For: &proto.FileSystemRequest_InitRequest_Post_{
+			Post: &proto.FileSystemRequest_InitRequest_Post{
 				Id: id,
 			},
 		},
@@ -71,8 +71,8 @@ func (s *FilesSyncer) SyncPostFiles(id int64, localFiles []*protocols.FileSpec) 
 	return ss.Sync(wrappedLocalFiles, wrappedRemoteFiles, syncer.LocalToRemote)
 }
 
-func (s *FilesSyncer) init(req *protocols.FileSystemRequest_InitRequest) error {
-	if err := s.client.Send(&protocols.FileSystemRequest{
+func (s *FilesSyncer) init(req *proto.FileSystemRequest_InitRequest) error {
+	if err := s.client.Send(&proto.FileSystemRequest{
 		Init: req,
 	}); err != nil {
 		panic(err)
@@ -87,28 +87,28 @@ func (s *FilesSyncer) init(req *protocols.FileSystemRequest_InitRequest) error {
 	return nil
 }
 
-func (s *FilesSyncer) ListLocalFilesFromPaths(paths []string) ([]*protocols.FileSpec, error) {
-	var localFiles []*protocols.FileSpec
+func (s *FilesSyncer) ListLocalFilesFromPaths(paths []string) ([]*proto.FileSpec, error) {
+	var localFiles []*proto.FileSpec
 	for _, file := range paths {
 		stat, err := os.Stat(file)
 		if err != nil {
 			return nil, err
 		}
-		f := protocols.FileSpec{
+		f := proto.FileSpec{
 			Path: file,
 			Mode: uint32(stat.Mode()),
 			Size: uint32(stat.Size()),
 			Time: uint32(stat.ModTime().Unix()),
 		}
-		localFiles = append(localFiles, (*protocols.FileSpec)(&f))
+		localFiles = append(localFiles, (*proto.FileSpec)(&f))
 	}
 	return localFiles, nil
 }
 
 func (s *FilesSyncer) listRemoteFiles() ([]*SyncFileSpec, error) {
-	if err := s.client.Send(&protocols.FileSystemRequest{
-		Request: &protocols.FileSystemRequest_ListFiles{
-			ListFiles: &protocols.FileSystemRequest_ListFilesRequest{},
+	if err := s.client.Send(&proto.FileSystemRequest{
+		Request: &proto.FileSystemRequest_ListFiles{
+			ListFiles: &proto.FileSystemRequest_ListFilesRequest{},
 		},
 	}); err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (s *FilesSyncer) listRemoteFiles() ([]*SyncFileSpec, error) {
 	return s.wrapFileSpecs(remoteFiles), nil
 }
 
-func (s *FilesSyncer) wrapFileSpecs(list []*protocols.FileSpec) []*SyncFileSpec {
+func (s *FilesSyncer) wrapFileSpecs(list []*proto.FileSpec) []*SyncFileSpec {
 	sfs := make([]*SyncFileSpec, 0, len(list))
 	for _, l := range list {
 		sfs = append(sfs, (*SyncFileSpec)(l))
@@ -134,9 +134,9 @@ func (s *FilesSyncer) wrapFileSpecs(list []*protocols.FileSpec) []*SyncFileSpec 
 }
 
 func (s *FilesSyncer) deleteRemote(f *SyncFileSpec) error {
-	if err := s.client.Send(&protocols.FileSystemRequest{
-		Request: &protocols.FileSystemRequest_DeleteFile{
-			DeleteFile: &protocols.FileSystemRequest_DeleteFileRequest{
+	if err := s.client.Send(&proto.FileSystemRequest{
+		Request: &proto.FileSystemRequest_DeleteFile{
+			DeleteFile: &proto.FileSystemRequest_DeleteFileRequest{
 				Path: f.Path,
 			},
 		},
@@ -159,10 +159,10 @@ func (s *FilesSyncer) copyLocalToRemote(f *SyncFileSpec, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if err := s.client.Send(&protocols.FileSystemRequest{
-		Request: &protocols.FileSystemRequest_WriteFile{
-			WriteFile: &protocols.FileSystemRequest_WriteFileRequest{
-				Spec: (*protocols.FileSpec)(f),
+	if err := s.client.Send(&proto.FileSystemRequest{
+		Request: &proto.FileSystemRequest_WriteFile{
+			WriteFile: &proto.FileSystemRequest_WriteFileRequest{
+				Spec: (*proto.FileSpec)(f),
 				Data: data,
 			},
 		},

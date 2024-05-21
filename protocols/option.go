@@ -1,4 +1,4 @@
-package protocols
+package proto
 
 type Option struct {
 	ID    int64  `json:"id"`

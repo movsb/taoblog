@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
+func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 	// TODO 如果是评论，允许用户上传文件。
 	s.MustBeAdmin(srv.Context())
 
@@ -53,8 +53,8 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 			if fs == nil {
 				return status.Error(codes.InvalidArgument, "unknown file system to operate")
 			}
-			if err := srv.Send(&protocols.FileSystemResponse{
-				Init: &protocols.FileSystemResponse_InitResponse{},
+			if err := srv.Send(&proto.FileSystemResponse{
+				Init: &proto.FileSystemResponse_InitResponse{},
 			}); err != nil {
 				return err
 			}
@@ -70,9 +70,9 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 			if err != nil {
 				return err
 			}
-			if err = srv.Send(&protocols.FileSystemResponse{
-				Response: &protocols.FileSystemResponse_ListFiles{
-					ListFiles: &protocols.FileSystemResponse_ListFilesResponse{
+			if err = srv.Send(&proto.FileSystemResponse{
+				Response: &proto.FileSystemResponse_ListFiles{
+					ListFiles: &proto.FileSystemResponse_ListFilesResponse{
 						Files: files,
 					},
 				},
@@ -84,9 +84,9 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 				log.Println(err)
 				return err
 			}
-			if err = srv.Send(&protocols.FileSystemResponse{
-				Response: &protocols.FileSystemResponse_WriteFile{
-					WriteFile: &protocols.FileSystemResponse_WriteFileResponse{},
+			if err = srv.Send(&proto.FileSystemResponse{
+				Response: &proto.FileSystemResponse_WriteFile{
+					WriteFile: &proto.FileSystemResponse_WriteFileResponse{},
 				},
 			}); err != nil {
 				log.Println(err)
@@ -96,9 +96,9 @@ func (s *Service) FileSystem(srv protocols.Management_FileSystemServer) error {
 			if err := fs.DeleteFile(delete.Path); err != nil {
 				return err
 			}
-			if err = srv.Send(&protocols.FileSystemResponse{
-				Response: &protocols.FileSystemResponse_DeleteFile{
-					DeleteFile: &protocols.FileSystemResponse_DeleteFileResponse{},
+			if err = srv.Send(&proto.FileSystemResponse{
+				Response: &proto.FileSystemResponse_DeleteFile{
+					DeleteFile: &proto.FileSystemResponse_DeleteFileResponse{},
 				},
 			}); err != nil {
 				return err

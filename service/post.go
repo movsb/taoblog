@@ -32,7 +32,7 @@ func (s *Service) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{})
 }
 
-func (s *Service) ListPosts(ctx context.Context, in *protocols.ListPostsRequest) (*protocols.ListPostsResponse, error) {
+func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*proto.ListPostsResponse, error) {
 	ac := auth.Context(ctx)
 
 	var posts models.Posts
@@ -47,18 +47,18 @@ func (s *Service) ListPosts(ctx context.Context, in *protocols.ListPostsRequest)
 		panic(err)
 	}
 
-	out, err := posts.ToProtocols(s.setPostExtraFields(ctx, in.ContentOptions))
+	out, err := posts.ToProto(s.setPostExtraFields(ctx, in.ContentOptions))
 	if err != nil {
 		return nil, err
 	}
 
-	if in.WithLink != protocols.LinkKind_LinkKindNone {
+	if in.WithLink != proto.LinkKind_LinkKindNone {
 		for _, p := range out {
 			s.setPostLink(p, in.WithLink)
 		}
 	}
 
-	return &protocols.ListPostsResponse{
+	return &proto.ListPostsResponse{
 		Posts: out,
 	}, nil
 }
@@ -79,7 +79,7 @@ func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
 
 // TODO 性能很差！
 func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
-	p, err := s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(id)})
+	p, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
 	if err != nil {
 		return false
 	}
@@ -89,7 +89,7 @@ func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
 // 获取指定编号的文章。
 //
 // NOTE：如果是公开文章但是非管理员用户，会过滤掉敏感字段。
-func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*protocols.Post, error) {
+func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto.Post, error) {
 	ac := auth.Context(ctx)
 
 	var p models.Post
@@ -110,12 +110,12 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 		return nil, err
 	}
 
-	out, err := p.ToProtocols(s.setPostExtraFields(ctx, in.ContentOptions))
+	out, err := p.ToProto(s.setPostExtraFields(ctx, in.ContentOptions))
 	if err != nil {
 		return nil, err
 	}
 
-	if in.WithLink != protocols.LinkKind_LinkKindNone {
+	if in.WithLink != proto.LinkKind_LinkKindNone {
 		s.setPostLink(out, in.WithLink)
 	}
 
@@ -125,12 +125,12 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 			return nil, err
 		}
 		for _, r := range relates {
-			out.Relates = append(out.Relates, &protocols.Post{
+			out.Relates = append(out.Relates, &proto.Post{
 				Id:    r.ID,
 				Title: r.Title,
 			})
 		}
-		if in.WithLink != protocols.LinkKind_LinkKindNone {
+		if in.WithLink != proto.LinkKind_LinkKindNone {
 			for _, p := range out.Relates {
 				s.setPostLink(p, in.WithLink)
 			}
@@ -140,11 +140,11 @@ func (s *Service) GetPost(ctx context.Context, in *protocols.GetPostRequest) (*p
 	return out, nil
 }
 
-func (s *Service) setPostLink(p *protocols.Post, k protocols.LinkKind) {
+func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 	switch k {
-	case protocols.LinkKind_LinkKindRooted:
+	case proto.LinkKind_LinkKindRooted:
 		p.Link = s.GetPlainLink(p.Id)
-	case protocols.LinkKind_LinkKindFull:
+	case proto.LinkKind_LinkKindFull:
 		p.Link = s.home.JoinPath(s.GetPlainLink(p.Id)).String()
 	default:
 		panic(`unknown link kind`)
@@ -172,11 +172,11 @@ func (r *PathResolver) Resolve(path string) string {
 	return r.fs.Resolve(path)
 }
 
-func (s *Service) GetPostContentCached(ctx context.Context, id int64, co *protocols.PostContentOptions) (string, error) {
+func (s *Service) GetPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
 	return s.getPostContentCached(ctx, id, co)
 }
 
-func (s *Service) getPostContentCached(ctx context.Context, id int64, co *protocols.PostContentOptions) (string, error) {
+func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
 	key := _PostContentCacheKey{
 		ID:      id,
 		Options: co.String(),
@@ -216,7 +216,7 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 	})
 }
 
-func (s *Service) getPostContent(id int64, sourceType, source string, metas models.PostMeta, co *protocols.PostContentOptions) (string, error) {
+func (s *Service) getPostContent(id int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
 	if !co.WithContent {
 		return ``, errors.New(`without content but get content`)
 	}
@@ -293,7 +293,7 @@ func (s *Service) IncrementPostPageView(id int64) {
 }
 
 // GetPostsByTags gets tag posts.
-func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByTagsRequest) (*protocols.GetPostsByTagsResponse, error) {
+func (s *Service) GetPostsByTags(ctx context.Context, req *proto.GetPostsByTagsRequest) (*proto.GetPostsByTagsResponse, error) {
 	ac := auth.Context(ctx)
 	var ids []int64
 	for _, tag := range req.Tags {
@@ -309,16 +309,16 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *protocols.GetPostsByT
 		GroupBy(`posts.id`).
 		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
-	outs, err := posts.ToProtocols(s.setPostExtraFields(ctx, req.ContentOptions))
+	outs, err := posts.ToProto(s.setPostExtraFields(ctx, req.ContentOptions))
 	if err != nil {
 		return nil, err
 	}
-	if req.WithLink != protocols.LinkKind_LinkKindNone {
+	if req.WithLink != proto.LinkKind_LinkKindNone {
 		for _, p := range outs {
 			s.setPostLink(p, req.WithLink)
 		}
 	}
-	return &protocols.GetPostsByTagsResponse{Posts: outs}, nil
+	return &proto.GetPostsByTagsResponse{Posts: outs}, nil
 }
 
 func (s *Service) getPageParentID(parents string) int64 {
@@ -399,7 +399,7 @@ func (s *Service) updatePostCommentCount(pid int64, t time.Time) {
 }
 
 // CreatePost ...
-func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocols.Post, error) {
+func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, error) {
 	s.MustBeAdmin(ctx)
 
 	now := int32(time.Now().Unix())
@@ -466,11 +466,11 @@ func (s *Service) CreatePost(ctx context.Context, in *protocols.Post) (*protocol
 	})
 
 	// TODO 暂时没提供选项。
-	return p.ToProtocols(s.setPostExtraFields(ctx, nil))
+	return p.ToProto(s.setPostExtraFields(ctx, nil))
 }
 
 // UpdatePost ...
-func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostRequest) (*protocols.Post, error) {
+func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
 	s.MustBeAdmin(ctx)
 
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
@@ -579,7 +579,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *protocols.UpdatePostReques
 	})
 
 	// TODO Update 接口没有 ContentOptions。
-	return s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(in.Post.Id)})
+	return s.GetPost(ctx, &proto.GetPostRequest{Id: int32(in.Post.Id)})
 }
 
 // 只是用来在创建文章和更新文章的时候从正文里面提取。
@@ -607,7 +607,7 @@ func (s *Service) parsePostTitle(sourceType, source string) (string, error) {
 
 // 用于删除一篇文章。
 // 这个函数基本没怎么测试过，因为基本上只是设置为不公开。
-func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostRequest) (*empty.Empty, error) {
+func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (*empty.Empty, error) {
 	s.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
@@ -625,16 +625,16 @@ func (s *Service) DeletePost(ctx context.Context, in *protocols.DeletePostReques
 }
 
 // TODO 文章编号可能是 0️⃣
-func (s *Service) PreviewPost(ctx context.Context, in *protocols.PreviewPostRequest) (*protocols.PreviewPostResponse, error) {
+func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	s.MustBeAdmin(ctx)
 	// ac := auth.Context(ctx)
-	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, &protocols.PostContentOptions{
+	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, &proto.PostContentOptions{
 		WithContent:       true,
 		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 		UseAbsolutePaths:  true,
 	})
-	return &protocols.PreviewPostResponse{Html: content}, err
+	return &proto.PreviewPostResponse{Html: content}, err
 }
 
 // updateLastPostTime updates last_post_time in options.
@@ -651,7 +651,7 @@ func (s *Service) updatePostPageCount() {
 }
 
 // SetPostStatus sets post status.
-func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatusRequest) (*protocols.SetPostStatusResponse, error) {
+func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequest) (*proto.SetPostStatusResponse, error) {
 	s.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
@@ -676,23 +676,23 @@ func (s *Service) SetPostStatus(ctx context.Context, in *protocols.SetPostStatus
 		txs.tdb.Model(&post).MustUpdateMap(m)
 		return nil
 	})
-	return &protocols.SetPostStatusResponse{}, nil
+	return &proto.SetPostStatusResponse{}, nil
 }
 
 // GetPostCommentsCount ...
-func (s *Service) GetPostCommentsCount(ctx context.Context, in *protocols.GetPostCommentsCountRequest) (*protocols.GetPostCommentsCountResponse, error) {
+func (s *Service) GetPostCommentsCount(ctx context.Context, in *proto.GetPostCommentsCountRequest) (*proto.GetPostCommentsCountResponse, error) {
 	var post models.Post
 	s.posts().Select("comments").Where("id=?", in.PostId).MustFind(&post)
-	return &protocols.GetPostCommentsCountResponse{
+	return &proto.GetPostCommentsCountResponse{
 		Count: int64(post.Comments),
 	}, nil
 }
 
 // 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
-func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Post) error {
+func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Post) error {
 	ac := auth.Context(ctx)
 
-	return func(p *protocols.Post) error {
+	return func(p *proto.Post) error {
 		if !ac.User.IsAdmin() {
 			p.Metas.Geo = nil
 		}
@@ -708,7 +708,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *protocols.PostCont
 		if p.Type == `tweet` {
 			switch p.Title {
 			case ``, `Untitled`, models.Untitled:
-				content, err := s.getPostContentCached(ctx, p.Id, &protocols.PostContentOptions{
+				content, err := s.getPostContentCached(ctx, p.Id, &proto.PostContentOptions{
 					WithContent:  true,
 					PrettifyHtml: true,
 				})

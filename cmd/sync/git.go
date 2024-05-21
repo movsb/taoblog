@@ -20,13 +20,13 @@ import (
 )
 
 type GitSync struct {
-	proto *protocols.ProtoClient
+	proto *proto.ProtoClient
 	root  string
 }
 
 func New(config client.HostConfig, root string) *GitSync {
-	client := protocols.NewProtoClient(
-		protocols.NewConn(config.API, config.GRPC),
+	client := proto.NewProtoClient(
+		proto.NewConn(config.API, config.GRPC),
 		config.Token,
 	)
 	return &GitSync{
@@ -74,7 +74,7 @@ func (g *GitSync) createPostDir(t int32, id int64) (string, error) {
 	return dir, nil
 }
 
-func (g *GitSync) syncSingle(p *protocols.Post) error {
+func (g *GitSync) syncSingle(p *proto.Post) error {
 	path, config, err := findPostByID(os.DirFS(g.root), int32(p.Id))
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -133,7 +133,7 @@ func spawn(name string, args []string, dir string, input string) error {
 // 从服务器上获取指定周期内更新过的文章。
 // TODO 可选触发立即调用（比如强制归档保留版本的需求），而不是被动周期触发。
 // NOTE：时间范围是：
-func (g *GitSync) getUpdatedPosts() ([]*protocols.Post, error) {
+func (g *GitSync) getUpdatedPosts() ([]*proto.Post, error) {
 	// 去掉这个参数可以全量重新跑一遍，无伤。
 	notBefore := time.Now().Add(-time.Hour * 24).Unix()
 	// 最近一个小时内有修改可能表明正在编辑，不建议入库，稳定后再说。
@@ -141,7 +141,7 @@ func (g *GitSync) getUpdatedPosts() ([]*protocols.Post, error) {
 
 	rsp, err := g.proto.Blog.ListPosts(
 		g.proto.Context(),
-		&protocols.ListPostsRequest{
+		&proto.ListPostsRequest{
 			ModifiedNotBefore: int32(notBefore),
 			ModifiedNotAfter:  int32(notAfter),
 		},

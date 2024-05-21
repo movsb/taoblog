@@ -20,7 +20,7 @@ import (
 func (c *Client) BackupPosts(cmd *cobra.Command) {
 	compress := true
 
-	backupClient, err := c.Management.Backup(c.Context(), &protocols.BackupRequest{Compress: compress})
+	backupClient, err := c.Management.Backup(c.Context(), &proto.BackupRequest{Compress: compress})
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +90,7 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 }
 
 type _BackupProgressReader struct {
-	c         protocols.Management_BackupClient
+	c         proto.Management_BackupClient
 	d         []byte
 	preparing bool
 }
@@ -106,10 +106,10 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 			log.Fatalln(err)
 		}
 		switch typed := rsp.BackupResponseMessage.(type) {
-		case *protocols.BackupResponse_Preparing_:
+		case *proto.BackupResponse_Preparing_:
 			fmt.Printf("\r\033[KPreparing... %.2f%%", typed.Preparing.Progress*100)
 			r.preparing = true
-		case *protocols.BackupResponse_Transfering_:
+		case *proto.BackupResponse_Transfering_:
 			if r.preparing {
 				fmt.Println()
 				r.preparing = false
@@ -132,9 +132,9 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 	}
 	defer client.CloseSend()
 	log.Printf(`Remote: list files...`)
-	err = client.Send(&protocols.BackupFilesRequest{
-		BackupFilesMessage: &protocols.BackupFilesRequest_ListFiles{
-			ListFiles: &protocols.BackupFilesRequest_ListFilesRequest{},
+	err = client.Send(&proto.BackupFilesRequest{
+		BackupFilesMessage: &proto.BackupFilesRequest_ListFiles{
+			ListFiles: &proto.BackupFilesRequest_ListFilesRequest{},
 		},
 	})
 	if err != nil {
@@ -167,13 +167,13 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 	// yaml.NewEncoder(os.Stdout).Encode(remoteFiles)
 	// yaml.NewEncoder(os.Stdout).Encode(localFiles)
 
-	deleteLocal := func(f *protocols.BackupFileSpec) {
+	deleteLocal := func(f *proto.BackupFileSpec) {
 		path := filepath.Join(localDir, f.Path)
 		if err := os.Remove(path); err != nil {
 			panic(err)
 		}
 	}
-	copyRemote := func(f *protocols.BackupFileSpec) {
+	copyRemote := func(f *proto.BackupFileSpec) {
 		localPath := filepath.Join(localDir, f.Path)
 		mode := os.FileMode(f.Mode)
 		if mode.IsDir() {
@@ -186,9 +186,9 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			panic(err)
 		}
-		err := client.Send(&protocols.BackupFilesRequest{
-			BackupFilesMessage: &protocols.BackupFilesRequest_SendFile{
-				SendFile: &protocols.BackupFilesRequest_SendFileRequest{
+		err := client.Send(&proto.BackupFilesRequest{
+			BackupFilesMessage: &proto.BackupFilesRequest_SendFile{
+				SendFile: &proto.BackupFilesRequest_SendFileRequest{
 					Path: f.Path,
 				},
 			},

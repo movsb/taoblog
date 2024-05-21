@@ -14,7 +14,7 @@ type TagsData struct {
 }
 
 // NewDataForTags ...
-func NewDataForTags(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
+func NewDataForTags(cfg *config.Config, user *auth.User, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   user,

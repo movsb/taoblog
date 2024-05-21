@@ -140,7 +140,7 @@ func liveCheck(s *service.Service, cc *notify.Chanify) {
 	for range t.C {
 		for !func() bool {
 			now := time.Now()
-			s.GetPost(context.Background(), &protocols.GetPostRequest{Id: 1})
+			s.GetPost(context.Background(), &proto.GetPostRequest{Id: 1})
 			if elapsed := time.Since(now); elapsed > time.Second*10 {
 				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)

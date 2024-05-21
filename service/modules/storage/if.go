@@ -27,10 +27,10 @@ type File interface {
 // 所谓“子”，就是针对某篇文章。
 // TODO 应该用标准的接口。
 type FileSystem interface {
-	ListFiles() ([]*protocols.FileSpec, error)
+	ListFiles() ([]*proto.FileSpec, error)
 	DeleteFile(path string) error
 	OpenFile(path string) (File, error)
-	WriteFile(spec *protocols.FileSpec, r io.Reader) error
+	WriteFile(spec *proto.FileSpec, r io.Reader) error
 	Resolve(path string) string
 }
 
@@ -77,7 +77,7 @@ func (fs *Local) pathOf(path string) string {
 	return filepath.Join(fs.dir, filepath.Clean(path))
 }
 
-func (fs *Local) ListFiles() ([]*protocols.FileSpec, error) {
+func (fs *Local) ListFiles() ([]*proto.FileSpec, error) {
 	files, err := utils.ListFiles(fs.dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -104,7 +104,7 @@ func (fs *Local) Open(name string) (fspkg.File, error) {
 
 }
 
-func (fs *Local) WriteFile(spec *protocols.FileSpec, r io.Reader) error {
+func (fs *Local) WriteFile(spec *proto.FileSpec, r io.Reader) error {
 	if fs.maxFileSize > 0 && spec.Size > uint32(fs.maxFileSize) {
 		return fmt.Errorf(`文件太大（允许大小：%v 字节）。`, fs.maxFileSize)
 	}

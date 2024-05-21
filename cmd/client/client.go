@@ -8,15 +8,15 @@ import (
 // TODO: close client connection.
 type Client struct {
 	config HostConfig
-	*protocols.ProtoClient
+	*proto.ProtoClient
 }
 
 // NewClient creates a new client that interacts with server.
 func NewClient(config HostConfig) *Client {
 	c := &Client{
 		config: config,
-		ProtoClient: protocols.NewProtoClient(
-			protocols.NewConn(config.API, config.GRPC),
+		ProtoClient: proto.NewProtoClient(
+			proto.NewConn(config.API, config.GRPC),
 			config.Token,
 		),
 	}

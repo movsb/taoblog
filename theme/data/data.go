@@ -14,7 +14,7 @@ import (
 
 // Data holds all data for rendering the site.
 type Data struct {
-	svc  protocols.TaoBlogServer
+	svc  proto.TaoBlogServer
 	impl service.ToBeImplementedByRpc
 
 	// all configuration.

@@ -1,4 +1,4 @@
-package protocols
+package proto
 
 import (
 	"io"

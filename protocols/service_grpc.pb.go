@@ -4,7 +4,7 @@
 // - protoc             v3.21.9
 // source: protocols/service.proto
 
-package protocols
+package proto
 
 import (
 	context "context"

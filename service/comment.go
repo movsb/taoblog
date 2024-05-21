@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceType, source string, postID int64, co *protocols.PostContentOptions) (string, error) {
+func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceType, source string, postID int64, co *proto.PostContentOptions) (string, error) {
 	key := _PostContentCacheKey{
 		ID:      id,
 		Options: co.String(),
@@ -71,9 +71,9 @@ func (s *Service) markdownWithPlantUMLRenderer() renderers.Option2 {
 //
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
 // 前者用请求身份，后者不限身份。
-func (s *Service) getCommentContent(secure bool, sourceType, source string, postID int64, co *protocols.PostContentOptions) (string, error) {
+func (s *Service) getCommentContent(secure bool, sourceType, source string, postID int64, co *proto.PostContentOptions) (string, error) {
 	if co == nil {
-		co = &protocols.PostContentOptions{}
+		co = &proto.PostContentOptions{}
 	}
 	// if !co.WithContent {
 	// 	panic(`without content but get content`)
@@ -116,10 +116,10 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 	return tr.Render(source)
 }
 
-func (s *Service) setCommentExtraFields(ctx context.Context, co *protocols.PostContentOptions) func(c *protocols.Comment) {
+func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
 	ac := auth.Context(ctx)
 
-	return func(c *protocols.Comment) {
+	return func(c *proto.Comment) {
 		c.IsAdmin = s.isAdminEmail(c.Email)
 		c.Avatar = int32(s.avatarCache.ID(c.Email))
 
@@ -183,8 +183,8 @@ func (s *Service) cacheAllCommenterData() {
 // GetComment ...
 // TODO perm check
 // TODO remove email & user
-func (s *Service) GetComment(ctx context.Context, req *protocols.GetCommentRequest) (*protocols.Comment, error) {
-	return s.getComment2(req.Id).ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{})), nil
+func (s *Service) GetComment(ctx context.Context, req *proto.GetCommentRequest) (*proto.Comment, error) {
+	return s.getComment2(req.Id).ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{})), nil
 }
 
 func in5min(t int32) bool {
@@ -196,7 +196,7 @@ func in5min(t int32) bool {
 // NOTE：只支持更新评论内容。
 // NOTE：带上时间戳，防止异地多次更新的冲突（太严格了吧！）
 // NOTE：带节流。
-func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommentRequest) (*protocols.Comment, error) {
+func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentRequest) (*proto.Comment, error) {
 	ac := auth.Context(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
 	if !ac.User.IsAdmin() {
@@ -241,7 +241,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 			if req.Comment.SourceType != `markdown` {
 				return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
 			}
-			if _, err := s.getCommentContent(false, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &protocols.PostContentOptions{
+			if _, err := s.getCommentContent(false, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &proto.PostContentOptions{
 				WithContent: false,
 			}); err != nil {
 				return nil, err
@@ -258,34 +258,34 @@ func (s *Service) UpdateComment(ctx context.Context, req *protocols.UpdateCommen
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
+	return comment.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
 		WithContent:       true,
 		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 	})), nil
 }
 
 // DeleteComment ...
-func (s *Service) DeleteComment(ctx context.Context, in *protocols.DeleteCommentRequest) (*protocols.DeleteCommentResponse, error) {
+func (s *Service) DeleteComment(ctx context.Context, in *proto.DeleteCommentRequest) (*proto.DeleteCommentResponse, error) {
 	s.MustBeAdmin(ctx)
 	cmt := s.getComment2(int64(in.Id))
 	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
 	s.updatePostCommentCount(cmt.PostID, time.Now())
 	s.updateCommentsCount()
 	s.deleteCommentContentCacheFor(int64(in.Id))
-	return &protocols.DeleteCommentResponse{}, nil
+	return &proto.DeleteCommentResponse{}, nil
 }
 
 // ListComments ...
-func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRequest) (*protocols.ListCommentsResponse, error) {
+func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsRequest) (*proto.ListCommentsResponse, error) {
 	ac := auth.Context(ctx)
 
 	if in.Limit <= 0 || in.Limit > 100 {
 		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
 	}
 
-	if in.Mode == protocols.ListCommentsRequest_Unspecified {
-		in.Mode = protocols.ListCommentsRequest_Tree
+	if in.Mode == proto.ListCommentsRequest_Unspecified {
+		in.Mode = proto.ListCommentsRequest_Tree
 	}
 
 	var parents models.Comments
@@ -293,7 +293,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 		// TODO ensure that fields must include root etc to be used later.
 		// TODO verify fields that are sanitized.
 		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
-		stmt.WhereIf(in.Mode == protocols.ListCommentsRequest_Tree, "root = 0")
+		stmt.WhereIf(in.Mode == proto.ListCommentsRequest_Tree, "root = 0")
 		stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
 		// limit & offset apply to parent comments only
 		stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
@@ -309,7 +309,7 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	var children models.Comments
 
 	// 其实是可以合并这两段高度相似的代码的，不过，因为 limit/offset 只限制顶级评论不限制子评论的原因，SQL 语句不好写。
-	if in.Mode == protocols.ListCommentsRequest_Tree && len(parents) > 0 {
+	if in.Mode == proto.ListCommentsRequest_Tree && len(parents) > 0 {
 		parentIDs := make([]int64, 0, len(parents))
 		for _, parent := range parents {
 			parentIDs = append(parentIDs, parent.ID)
@@ -330,12 +330,12 @@ func (s *Service) ListComments(ctx context.Context, in *protocols.ListCommentsRe
 	comments = append(comments, parents...)
 	comments = append(comments, children...)
 
-	protoComments := comments.ToProtocols(s.setCommentExtraFields(ctx, in.ContentOptions))
+	protoComments := comments.ToProto(s.setCommentExtraFields(ctx, in.ContentOptions))
 
-	return &protocols.ListCommentsResponse{Comments: protoComments}, nil
+	return &proto.ListCommentsResponse{Comments: protoComments}, nil
 }
 
-func (s *Service) GetPostComments(ctx context.Context, req *protocols.GetPostCommentsRequest) (*protocols.GetPostCommentsResponse, error) {
+func (s *Service) GetPostComments(ctx context.Context, req *proto.GetPostCommentsRequest) (*proto.GetPostCommentsResponse, error) {
 	ac := auth.Context(ctx)
 	if !(ac.User.IsAdmin() || s.isPostPublic(ctx, req.Id)) {
 		return nil, status.Error(codes.PermissionDenied, `你无权查看此文章的评论。`)
@@ -344,12 +344,12 @@ func (s *Service) GetPostComments(ctx context.Context, req *protocols.GetPostCom
 	stmt := s.tdb.Select(`*`)
 	stmt.Where("post_id=?", req.Id)
 	stmt.MustFind(&comments)
-	return &protocols.GetPostCommentsResponse{
-		Comments: comments.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
+	return &proto.GetPostCommentsResponse{
+		Comments: comments.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
 			WithContent:       true,
 			RenderCodeBlocks:  true,
 			UseAbsolutePaths:  false,
-			OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+			OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 		})),
 	}, nil
 }
@@ -391,7 +391,7 @@ const (
 //
 // NOTE: 默认的 modified 修改时间为 0，表示从未被修改过。
 // NOTE: 带节流。
-func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*protocols.Comment, error) {
+func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.Comment, error) {
 	ac := auth.Context(ctx)
 
 	// 尽早查询地理信息
@@ -485,7 +485,7 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 	}
 
 	if c.SourceType == `markdown` {
-		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, &protocols.PostContentOptions{
+		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, &proto.PostContentOptions{
 			WithContent: false,
 		}); err != nil {
 			return nil, err
@@ -518,10 +518,10 @@ func (s *Service) CreateComment(ctx context.Context, in *protocols.Comment) (*pr
 
 	s.doCommentNotification(&c)
 
-	return c.ToProtocols(s.setCommentExtraFields(ctx, &protocols.PostContentOptions{
+	return c.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
 		WithContent:       true,
 		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 	})), nil
 }
 
@@ -532,7 +532,7 @@ func (s *Service) updateCommentsCount() {
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
 // TODO：禁止转移内容中引用了当前文章资源的评论，或者处理这个问题。
-func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetCommentPostIDRequest) (*protocols.SetCommentPostIDResponse, error) {
+func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPostIDRequest) (*proto.SetCommentPostIDResponse, error) {
 	s.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
@@ -541,7 +541,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 			panic(`不能转移子评论`)
 		}
 		// 只是为了判断存在性。
-		_, err := s.GetPost(ctx, &protocols.GetPostRequest{Id: int32(in.PostId)})
+		_, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(in.PostId)})
 		if err != nil {
 			return err
 		}
@@ -560,20 +560,20 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *protocols.SetComment
 		return nil
 	})
 
-	return &protocols.SetCommentPostIDResponse{}, nil
+	return &proto.SetCommentPostIDResponse{}, nil
 }
 
-func (s *Service) PreviewComment(ctx context.Context, in *protocols.PreviewCommentRequest) (*protocols.PreviewCommentResponse, error) {
+func (s *Service) PreviewComment(ctx context.Context, in *proto.PreviewCommentRequest) (*proto.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
 	content, err := s.getCommentContent(
 		ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId),
-		&protocols.PostContentOptions{
+		&proto.PostContentOptions{
 			WithContent:       true,
 			RenderCodeBlocks:  true,
-			OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+			OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 		},
 	)
-	return &protocols.PreviewCommentResponse{Html: content}, err
+	return &proto.PreviewCommentResponse{Html: content}, err
 }
 
 // 判断评论者的邮箱是否为管理员。
@@ -591,7 +591,7 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 		return
 	}
 
-	info := utils.Must(s.GetInfo(context.Background(), &protocols.GetInfoRequest{}))
+	info := utils.Must(s.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	postTitle := s.GetPostTitle(c.PostID)
 	// TODO 修改链接。

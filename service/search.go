@@ -12,10 +12,10 @@ import (
 )
 
 // TODO 权限
-func (s *Service) SearchPosts(ctx context.Context, in *protocols.SearchPostsRequest) (*protocols.SearchPostsResponse, error) {
+func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest) (*proto.SearchPostsResponse, error) {
 	searcher := s.searcher.Load()
 	if searcher == nil {
-		return &protocols.SearchPostsResponse{
+		return &proto.SearchPostsResponse{
 			Initialized: false,
 		}, nil
 	}
@@ -24,15 +24,15 @@ func (s *Service) SearchPosts(ctx context.Context, in *protocols.SearchPostsRequ
 		return nil, err
 	}
 	highlighter := highlight.NewHTMLHighlighterTags(`<b class="highlight">`, `</b>`)
-	rspPosts := []*protocols.SearchPostsResponse_Post{}
+	rspPosts := []*proto.SearchPostsResponse_Post{}
 	for _, post := range posts {
-		rspPosts = append(rspPosts, &protocols.SearchPostsResponse_Post{
+		rspPosts = append(rspPosts, &proto.SearchPostsResponse_Post{
 			Id:      int32(post.ID),
 			Title:   highlighter.BestFragment(post.Locations[`title`], []byte(post.Title)),
 			Content: highlighter.BestFragment(post.Locations[`content`], []byte(post.Content)),
 		})
 	}
-	return &protocols.SearchPostsResponse{
+	return &proto.SearchPostsResponse{
 		Posts:       rspPosts,
 		Initialized: true,
 	}, nil

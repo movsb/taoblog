@@ -12,7 +12,7 @@ import (
 	"github.com/movsb/taoblog/setup/migration"
 )
 
-var blog protocols.TaoBlogClient
+var blog proto.TaoBlogClient
 var admin context.Context
 var guest context.Context
 
@@ -35,7 +35,7 @@ func initService() {
 	theService := service.NewService(&cfg, db, theAuth)
 	theAuth.SetService(theService)
 
-	blog = protocols.NewTaoBlogClient(protocols.NewConn("", theService.Addr().String()))
+	blog = proto.NewTaoBlogClient(proto.NewConn("", theService.Addr().String()))
 	admin = auth.TestingAdminUserContext(theAuth, "go_test")
 	guest = context.Background()
 }

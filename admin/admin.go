@@ -47,7 +47,7 @@ type Admin struct {
 
 	// NOTE：这是进程内直接调用的。
 	// 如果改成连接，需要考虑 metadata 转发问题。
-	svc protocols.TaoBlogServer
+	svc proto.TaoBlogServer
 
 	customTheme *config.ThemeConfig
 
@@ -56,7 +56,7 @@ type Admin struct {
 	displayName string
 }
 
-func NewAdmin(devMode bool, svc protocols.TaoBlogServer, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string, options ...Option) *Admin {
+func NewAdmin(devMode bool, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
@@ -243,7 +243,7 @@ func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 
 type EditorData struct {
 	User *auth.User
-	Post *protocols.Post
+	Post *proto.Post
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
@@ -256,9 +256,9 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		rsp, err := a.svc.GetPost(r.Context(), &protocols.GetPostRequest{
+		rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
 			Id: int32(pid),
-			ContentOptions: &protocols.PostContentOptions{
+			ContentOptions: &proto.PostContentOptions{
 				WithContent: false,
 			},
 		})

@@ -88,9 +88,9 @@ type Service struct {
 
 	maintenance *utils.Maintenance
 
-	protocols.TaoBlogServer
-	protocols.ManagementServer
-	protocols.SearchServer
+	proto.TaoBlogServer
+	proto.ManagementServer
+	proto.SearchServer
 }
 
 func (s *Service) Addr() net.Addr {
@@ -160,9 +160,9 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 		),
 	)
 
-	protocols.RegisterTaoBlogServer(server, s)
-	protocols.RegisterManagementServer(server, s)
-	protocols.RegisterSearchServer(server, s)
+	proto.RegisterTaoBlogServer(server, s)
+	proto.RegisterManagementServer(server, s)
+	proto.RegisterSearchServer(server, s)
 
 	listener, err := net.Listen("tcp", cfg.Server.GRPCListen)
 	if err != nil {
@@ -235,8 +235,8 @@ func exceptionRecoveryHandler(e any) error {
 }
 
 // Ping ...
-func (s *Service) Ping(ctx context.Context, in *protocols.PingRequest) (*protocols.PingResponse, error) {
-	return &protocols.PingResponse{
+func (s *Service) Ping(ctx context.Context, in *proto.PingRequest) (*proto.PingResponse, error) {
+	return &proto.PingResponse{
 		Pong: `pong`,
 	}, nil
 }
@@ -413,13 +413,13 @@ func (s *Service) monitorCert(chanify *notify.Chanify) {
 	}()
 }
 
-func (s *Service) GetInfo(ctx context.Context, in *protocols.GetInfoRequest) (*protocols.GetInfoResponse, error) {
+func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto.GetInfoResponse, error) {
 	t := time.Now()
 	if modified := s.GetDefaultIntegerOption("last_post_time", 0); modified > 0 {
 		t = time.Unix(modified, 0)
 	}
 
-	out := &protocols.GetInfoResponse{
+	out := &proto.GetInfoResponse{
 		Name:         s.cfg.Site.Name,
 		Description:  s.cfg.Site.Description,
 		Home:         strings.TrimSuffix(s.cfg.Site.Home, "/"),

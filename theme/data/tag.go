@@ -15,7 +15,7 @@ type TagData struct {
 }
 
 // NewDataForTag ...
-func NewDataForTag(ctx context.Context, cfg *config.Config, service protocols.TaoBlogServer, tags []string) *Data {
+func NewDataForTag(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, tags []string) *Data {
 	d := &Data{
 		Config: cfg,
 		User:   auth.Context(ctx).User,
@@ -25,9 +25,9 @@ func NewDataForTag(ctx context.Context, cfg *config.Config, service protocols.Ta
 		Names: tags,
 	}
 	posts, err := service.GetPostsByTags(ctx,
-		&protocols.GetPostsByTagsRequest{
+		&proto.GetPostsByTagsRequest{
 			Tags:     tags,
-			WithLink: protocols.LinkKind_LinkKindRooted,
+			WithLink: proto.LinkKind_LinkKindRooted,
 		},
 	)
 	if err != nil {

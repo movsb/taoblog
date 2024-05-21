@@ -62,8 +62,8 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 }
 
 func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
-	protocols.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
-	protocols.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
+	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
+	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
 
 	mux2.HandlePath("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
 	mux2.HandlePath("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
@@ -111,21 +111,21 @@ func (g *Gateway) createFileManager(kind string) http.Handler {
 			return
 		}
 		defer conn.Close()
-		client := protocols.NewManagementClient(conn)
+		client := proto.NewManagementClient(conn)
 		fs, err := client.FileSystem(g.mimicGateway(r))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		initReq := protocols.FileSystemRequest_InitRequest{
-			For: &protocols.FileSystemRequest_InitRequest_Post_{
-				Post: &protocols.FileSystemRequest_InitRequest_Post{
+		initReq := proto.FileSystemRequest_InitRequest{
+			For: &proto.FileSystemRequest_InitRequest_Post_{
+				Post: &proto.FileSystemRequest_InitRequest_Post{
 					Id: id,
 				},
 			},
 		}
-		if err := fs.Send(&protocols.FileSystemRequest{Init: &initReq}); err != nil {
+		if err := fs.Send(&proto.FileSystemRequest{Init: &initReq}); err != nil {
 			log.Println(err)
 			return
 		}
@@ -163,7 +163,7 @@ func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map
 	if err != nil {
 		panic(err)
 	}
-	in := &protocols.GetAvatarRequest{
+	in := &proto.GetAvatarRequest{
 		Ephemeral:       ephemeral,
 		IfModifiedSince: req.Header.Get("If-Modified-Since"),
 		IfNoneMatch:     req.Header.Get("If-None-Match"),

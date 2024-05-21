@@ -85,17 +85,17 @@ func (m *PostMeta) Scan(value any) error {
 	return errors.New(`unsupported type`)
 }
 
-func (m *PostMeta) ToProtocols() *protocols.Metas {
-	p := &protocols.Metas{
+func (m *PostMeta) ToProto() *proto.Metas {
+	p := &proto.Metas{
 		Header:   m.Header,
 		Footer:   m.Footer,
 		Outdated: m.Outdated,
 		Wide:     m.Wide,
 		Weixin:   m.Weixin,
-		Sources:  make(map[string]*protocols.Metas_Source),
+		Sources:  make(map[string]*proto.Metas_Source),
 	}
 	for name, src := range m.Sources {
-		p.Sources[name] = &protocols.Metas_Source{
+		p.Sources[name] = &proto.Metas_Source{
 			Name:        src.Name,
 			Url:         src.URL,
 			Description: src.Description,
@@ -103,7 +103,7 @@ func (m *PostMeta) ToProtocols() *protocols.Metas {
 		}
 	}
 	if g := m.Geo; g != nil && g.Longitude != 0 && g.Latitude != 0 {
-		p.Geo = &protocols.Metas_Geo{
+		p.Geo = &proto.Metas_Geo{
 			Longitude: g.Longitude,
 			Latitude:  g.Latitude,
 			Name:      g.Name,
@@ -122,9 +122,9 @@ func (m *PostMeta) IsEmpty() bool {
 		(m.Geo == nil || (m.Geo.Longitude == 0 && m.Geo.Latitude == 0))
 }
 
-func PostMetaFrom(p *protocols.Metas) *PostMeta {
+func PostMetaFrom(p *proto.Metas) *PostMeta {
 	if p == nil {
-		p = &protocols.Metas{}
+		p = &proto.Metas{}
 	}
 	m := PostMeta{
 		Header:   p.Header,
@@ -161,8 +161,8 @@ func (Post) TableName() string {
 // - Metas.Geo
 // - Content
 // - Tags
-func (p *Post) ToProtocols(redact func(p *protocols.Post) error) (*protocols.Post, error) {
-	out := protocols.Post{
+func (p *Post) ToProto(redact func(p *proto.Post) error) (*proto.Post, error) {
+	out := proto.Post{
 		Id:            p.ID,
 		Date:          p.Date,
 		Modified:      p.Modified,
@@ -174,7 +174,7 @@ func (p *Post) ToProtocols(redact func(p *protocols.Post) error) (*protocols.Pos
 		PageView:      int64(p.PageView),
 		CommentStatus: p.CommentStatus > 0,
 		Comments:      int64(p.Comments),
-		Metas:         p.Metas.ToProtocols(),
+		Metas:         p.Metas.ToProto(),
 		Source:        p.Source,
 		SourceType:    p.SourceType,
 
@@ -188,9 +188,9 @@ func (p *Post) ToProtocols(redact func(p *protocols.Post) error) (*protocols.Pos
 type Posts []*Post
 
 // ToProtocols ...
-func (ps Posts) ToProtocols(redact func(p *protocols.Post) error) (posts []*protocols.Post, err error) {
+func (ps Posts) ToProto(redact func(p *proto.Post) error) (posts []*proto.Post, err error) {
 	for _, post := range ps {
-		if p, err := post.ToProtocols(redact); err != nil {
+		if p, err := post.ToProto(redact); err != nil {
 			return nil, err
 		} else {
 			posts = append(posts, p)

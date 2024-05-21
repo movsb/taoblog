@@ -9,7 +9,7 @@ import (
 
 func TestPreviewComment(t *testing.T) {
 	initService()
-	rsp, err := blog.PreviewComment(guest, &protocols.PreviewCommentRequest{
+	rsp, err := blog.PreviewComment(guest, &proto.PreviewCommentRequest{
 		Markdown: `<a>`,
 		PostId:   1,
 	})

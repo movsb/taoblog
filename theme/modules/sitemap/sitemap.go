@@ -24,12 +24,12 @@ type Sitemap struct {
 	Articles []*Article
 
 	tmpl *template.Template
-	svc  protocols.TaoBlogServer
+	svc  proto.TaoBlogServer
 	impl service.ToBeImplementedByRpc
 }
 
 // New ...
-func New(svc protocols.TaoBlogServer, impl service.ToBeImplementedByRpc) *Sitemap {
+func New(svc proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Sitemap {
 	s := &Sitemap{
 		svc:  svc,
 		impl: impl,
@@ -47,7 +47,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	info := utils.Must(s.svc.GetInfo(req.Context(), &protocols.GetInfoRequest{}))
+	info := utils.Must(s.svc.GetInfo(req.Context(), &proto.GetInfoRequest{}))
 
 	rssArticles := make([]*Article, 0, len(rsp))
 	for _, article := range rsp {

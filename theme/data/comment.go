@@ -6,7 +6,7 @@ import (
 
 // Comment ...
 type Comment struct {
-	*protocols.Comment
+	*proto.Comment
 }
 
 // Text ...

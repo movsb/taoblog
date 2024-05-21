@@ -7,7 +7,7 @@ import (
 
 // SetCommentPostID ...
 func (c *Client) SetCommentPostID(commentID int64, postID int64) {
-	req := protocols.SetCommentPostIDRequest{
+	req := proto.SetCommentPostIDRequest{
 		Id:     commentID,
 		PostId: postID,
 	}
@@ -18,8 +18,8 @@ func (c *Client) SetCommentPostID(commentID int64, postID int64) {
 	_ = resp
 }
 
-func (c *Client) GetComment(cmdID int64) *protocols.Comment {
-	cmt, err := c.Blog.GetComment(c.Context(), &protocols.GetCommentRequest{
+func (c *Client) GetComment(cmdID int64) *proto.Comment {
+	cmt, err := c.Blog.GetComment(c.Context(), &proto.GetCommentRequest{
 		Id: cmdID,
 	})
 	if err != nil {
@@ -41,7 +41,7 @@ func (c *Client) UpdateComment(cmtID int64) {
 	cmt.SourceType = `markdown`
 	cmt.Source = string(value)
 
-	_, err := c.Blog.UpdateComment(c.Context(), &protocols.UpdateCommentRequest{
+	_, err := c.Blog.UpdateComment(c.Context(), &proto.UpdateCommentRequest{
 		Comment: cmt,
 		UpdateMask: &field_mask.FieldMask{
 			Paths: []string{

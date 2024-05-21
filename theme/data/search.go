@@ -18,7 +18,7 @@ type SearchData struct {
 }
 
 type SearchPost struct {
-	p *protocols.SearchPostsResponse_Post
+	p *proto.SearchPostsResponse_Post
 }
 
 func (p *SearchPost) Id() int {
@@ -34,7 +34,7 @@ func (p *SearchPost) Content() template.HTML {
 }
 
 // NewDataForSearch ...
-func NewDataForSearch(cfg *config.Config, user *auth.User, service protocols.TaoBlogServer, searcher protocols.SearchServer, r *http.Request) *Data {
+func NewDataForSearch(cfg *config.Config, user *auth.User, service proto.TaoBlogServer, searcher proto.SearchServer, r *http.Request) *Data {
 	q := r.URL.Query().Get(`q`)
 	d := &Data{
 		Config: cfg,
@@ -44,7 +44,7 @@ func NewDataForSearch(cfg *config.Config, user *auth.User, service protocols.Tao
 		},
 	}
 
-	rsp, err := searcher.SearchPosts(context.TODO(), &protocols.SearchPostsRequest{Search: q})
+	rsp, err := searcher.SearchPosts(context.TODO(), &proto.SearchPostsRequest{Search: q})
 	if err != nil {
 		panic(err)
 	}

@@ -40,9 +40,9 @@ type Theme struct {
 
 	// NOTE：这是进程内直接调用的。
 	// 如果改成连接，需要考虑 metadata 转发问题。
-	service  protocols.TaoBlogServer
+	service  proto.TaoBlogServer
 	impl     service.ToBeImplementedByRpc
-	searcher protocols.SearchServer
+	searcher proto.SearchServer
 	auth     *auth.Auth
 
 	rss     *rss.RSS
@@ -58,7 +58,7 @@ type Theme struct {
 	specialMux *http.ServeMux
 }
 
-func New(devMode bool, cfg *config.Config, service protocols.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher protocols.SearchServer, auth *auth.Auth) *Theme {
+func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth) *Theme {
 	var rootFS, tmplFS, stylesFS fs.FS
 
 	if devMode {
@@ -284,7 +284,7 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`search.html`, w, d)
 }
 
-func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *protocols.Post) bool {
+func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *proto.Post) bool {
 	h3 := handle304.New(
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
 		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
@@ -307,7 +307,7 @@ func (t *Theme) ChangedAt() time.Time {
 
 func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		info := utils.Must(t.service.GetInfo(r.Context(), &protocols.GetInfoRequest{}))
+		info := utils.Must(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
 		h3 := handle304.New(
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt),
@@ -338,15 +338,15 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 	post, err := t.service.GetPost(req.Context(),
-		&protocols.GetPostRequest{
+		&proto.GetPostRequest{
 			Id:          int32(id),
 			WithRelates: true,
-			WithLink:    protocols.LinkKind_LinkKindRooted,
-			ContentOptions: &protocols.PostContentOptions{
+			WithLink:    proto.LinkKind_LinkKindRooted,
+			ContentOptions: &proto.PostContentOptions{
 				WithContent:       true,
 				RenderCodeBlocks:  true,
 				UseAbsolutePaths:  false,
-				OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 			},
 		},
 	)
@@ -376,15 +376,15 @@ func (t *Theme) incView(id int64) {
 
 func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error) {
 	post, err := t.service.GetPost(req.Context(),
-		&protocols.GetPostRequest{
+		&proto.GetPostRequest{
 			Page:        path,
 			WithRelates: false, // 页面总是不是显示相关文章。
-			WithLink:    protocols.LinkKind_LinkKindRooted,
-			ContentOptions: &protocols.PostContentOptions{
+			WithLink:    proto.LinkKind_LinkKindRooted,
+			ContentOptions: &proto.PostContentOptions{
 				WithContent:       true,
 				RenderCodeBlocks:  true,
 				UseAbsolutePaths:  false,
-				OpenLinksInNewTab: protocols.PostContentOptions_OpenLinkInNewTabKindAll,
+				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 			},
 		},
 	)
@@ -397,12 +397,12 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path strin
 	return post.Id, nil
 }
 
-func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *protocols.Post) {
+func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto.Post) {
 	if t.Post304Handler(w, req, p) {
 		return
 	}
 
-	rsp, err := t.service.GetPostComments(req.Context(), &protocols.GetPostCommentsRequest{Id: p.Id})
+	rsp, err := t.service.GetPostComments(req.Context(), &proto.GetPostCommentsRequest{Id: p.Id})
 	if err != nil {
 		panic(err)
 	}

@@ -109,7 +109,7 @@ func (s *Service) SetOption(name string, value any) {
 	s.cache.Set(optionCacheKey(name), value, time.Minute*10)
 }
 
-func (s *Service) GetConfig(ctx context.Context, req *protocols.GetConfigRequest) (*protocols.GetConfigResponse, error) {
+func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
 	u := config.NewUpdater(s.cfg)
@@ -120,23 +120,23 @@ func (s *Service) GetConfig(ctx context.Context, req *protocols.GetConfigRequest
 		panic(err)
 	}
 
-	return &protocols.GetConfigResponse{
+	return &proto.GetConfigResponse{
 		Yaml: string(y),
 	}, nil
 }
 
-func (s *Service) SetConfig(ctx context.Context, req *protocols.SetConfigRequest) (*protocols.SetConfigResponse, error) {
+func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*proto.SetConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
 	u := config.NewUpdater(s.cfg)
 	u.MustApply(req.Path, req.Yaml)
-	return &protocols.SetConfigResponse{}, nil
+	return &proto.SetConfigResponse{}, nil
 }
 
-func (s *Service) SaveConfig(ctx context.Context, req *protocols.SaveConfigRequest) (*protocols.SaveConfigResponse, error) {
+func (s *Service) SaveConfig(ctx context.Context, req *proto.SaveConfigRequest) (*proto.SaveConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
 	s.cfg.Save()
 
-	return &protocols.SaveConfigResponse{}, nil
+	return &proto.SaveConfigResponse{}, nil
 }

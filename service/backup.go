@@ -25,13 +25,13 @@ type _ReadCloseSizer struct {
 }
 
 // Backup ...
-func (s *Service) Backup(req *protocols.BackupRequest, srv protocols.Management_BackupServer) error {
+func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupServer) error {
 	s.MustBeAdmin(srv.Context())
 
 	sendPreparingProgress := func(progress float32) error {
-		return srv.Send(&protocols.BackupResponse{
-			BackupResponseMessage: &protocols.BackupResponse_Preparing_{
-				Preparing: &protocols.BackupResponse_Preparing{
+		return srv.Send(&proto.BackupResponse{
+			BackupResponseMessage: &proto.BackupResponse_Preparing_{
+				Preparing: &proto.BackupResponse_Preparing{
 					Progress: progress,
 				},
 			},
@@ -98,9 +98,9 @@ func (s *Service) Backup(req *protocols.BackupRequest, srv protocols.Management_
 	}
 
 	sendTransfer := func(data []byte, progress float32) error {
-		return srv.Send(&protocols.BackupResponse{
-			BackupResponseMessage: &protocols.BackupResponse_Transfering_{
-				Transfering: &protocols.BackupResponse_Transfering{
+		return srv.Send(&proto.BackupResponse{
+			BackupResponseMessage: &proto.BackupResponse_Transfering_{
+				Transfering: &proto.BackupResponse_Transfering{
 					Progress: progress,
 					Data:     data,
 				},
@@ -213,18 +213,18 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 	return tmpFile.Name(), nil
 }
 
-func (s *Service) BackupFiles(srv protocols.Management_BackupFilesServer) error {
+func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 	s.MustBeAdmin(srv.Context())
 
-	listFiles := func(req *protocols.BackupFilesRequest_ListFilesRequest) error {
+	listFiles := func(req *proto.BackupFilesRequest_ListFilesRequest) error {
 		files, err := utils.ListBackupFiles(s.cfg.Data.File.Path)
 		if err != nil {
 			log.Printf(`BackupFiles failed to list files: %v`, err)
 			return err
 		}
-		rsp := &protocols.BackupFilesResponse{
-			BackupFilesMessage: &protocols.BackupFilesResponse_ListFiles{
-				ListFiles: &protocols.BackupFilesResponse_ListFilesResponse{
+		rsp := &proto.BackupFilesResponse{
+			BackupFilesMessage: &proto.BackupFilesResponse_ListFiles{
+				ListFiles: &proto.BackupFilesResponse_ListFilesResponse{
 					Files: files,
 				},
 			},
@@ -236,16 +236,16 @@ func (s *Service) BackupFiles(srv protocols.Management_BackupFilesServer) error 
 		return nil
 	}
 
-	sendFile := func(req *protocols.BackupFilesRequest_SendFileRequest) error {
+	sendFile := func(req *proto.BackupFilesRequest_SendFileRequest) error {
 		log.Printf("send file: %s", req.Path)
 		localPath := filepath.Join(s.cfg.Data.File.Path, filepath.Clean(req.Path))
 		data, err := ioutil.ReadFile(localPath)
 		if err != nil {
 			return err
 		}
-		rsp := &protocols.BackupFilesResponse{
-			BackupFilesMessage: &protocols.BackupFilesResponse_SendFile{
-				SendFile: &protocols.BackupFilesResponse_SendFileResponse{
+		rsp := &proto.BackupFilesResponse{
+			BackupFilesMessage: &proto.BackupFilesResponse_SendFile{
+				SendFile: &proto.BackupFilesResponse_SendFileResponse{
 					Data: data,
 				},
 			},
