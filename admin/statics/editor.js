@@ -316,7 +316,7 @@ formUI.drop(async files => {
 		return;
 	}
 	Array.from(files).forEach(async f => {
-		if (f.size > (1 << 20)) {
+		if (f.size > (10 << 20)) {
 			alert(`文件 "${f.name}" 太大，不予上传。`);
 			return;
 		}

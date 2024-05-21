@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -335,6 +335,10 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	configCmd.AddCommand(configSaveCmd)
+
+	lfs := createLfsCommands()
+	lfs.PersistentPreRun = preRun
+	rootCmd.AddCommand(lfs)
 }
 
 func edit(value string, fileSuffix string) (string, bool) {

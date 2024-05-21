@@ -96,6 +96,10 @@ body.wide #content {
 	.toc {
 		display: none;
 	}
+
+	img, svg {
+		cursor: zoom-in;
+	}
 }
 
 // 非宽屏模式下图片居中（宽屏模式居中看着太不协调了）

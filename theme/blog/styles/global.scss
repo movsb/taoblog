@@ -168,7 +168,6 @@ img, svg {
 	max-width: 100%;
 	height: auto;
 	border-radius: var(--border-radius);
-	cursor: zoom-in;
 
 	&.f-r {
 		float: right;
@@ -229,6 +228,17 @@ li::marker                  { color: var(--accent-color);   }
 iframe, video, audio {
 	border-radius: var(--border-radius);
 	max-width: 100%;
+}
+
+details {
+	> summary {
+		cursor: s-resize;
+	}
+	&[open] {
+		> summary {
+			cursor: n-resize;
+		}
+	}
 }
 
 @keyframes fadeIn {
