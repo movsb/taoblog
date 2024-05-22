@@ -45,6 +45,14 @@ func Context(ctx context.Context) *AuthContext {
 	return &AuthContext{User: guest}
 }
 
+// 系统管理员身份。相当于后台任务执行者。拥有所有权限。
+// 不用 == Admin：一个是真人，一个是拟人。
+// 权限可以一样，也可以不一样。
+// 比如 System 不允许真实登录，只是后台操作。
+func SystemAdmin(ctx context.Context) context.Context {
+	return _NewContext(ctx, system, netip.AddrFrom4([4]byte{127, 0, 0, 1}), `system_admin`)
+}
+
 // 只获取不添加默认。
 func _Context(ctx context.Context) *AuthContext {
 	if value, ok := ctx.Value(ctxAuthKey{}).(*AuthContext); ok {

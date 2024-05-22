@@ -21,7 +21,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
@@ -186,7 +186,7 @@ func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	if ac == nil {
 		panic("AuthContext 不应为 nil")
 	}
-	if !ac.User.IsAdmin() {
+	if !ac.User.IsAdmin() && !ac.User.IsSystem() {
 		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
 	}
 	return ac

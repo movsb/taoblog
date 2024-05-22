@@ -14,7 +14,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/storage"
@@ -260,12 +260,6 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		return ``, fmt.Errorf(`unknown source type`)
 	}
 	return tr.Render(source)
-}
-
-func (s *Service) GetPostTitle(ID int64) string {
-	var p models.Post
-	s.posts().Select("title").Where("id = ?", ID).MustFind(&p)
-	return p.Title
 }
 
 // 临时放这儿。
@@ -693,7 +687,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentO
 	ac := auth.Context(ctx)
 
 	return func(p *proto.Post) error {
-		if !ac.User.IsAdmin() {
+		if !ac.User.IsAdmin() && !ac.User.IsSystem() {
 			p.Metas.Geo = nil
 		}
 

@@ -71,7 +71,13 @@ func (cn *CommentNotifier) sendMailAsync(
 	recipientName string, recipientAddress string,
 	subject string, body string,
 ) {
-	log.Printf("SendMail: %s[%s] - %s", recipientName, recipientAddress, subject)
+	log.Printf("SendMail: %s[%s] - %s\n\n%s\n\n", recipientName, recipientAddress, subject, body)
+
+	if !cn.Config.Notify {
+		log.Println(`邮件被禁用，将不发送。`)
+		return
+	}
+
 	go func() {
 		mc, err := mailer.DialTLS(cn.MailServer)
 		if err != nil {

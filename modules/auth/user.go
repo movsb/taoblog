@@ -26,6 +26,10 @@ func (u *User) IsAdmin() bool {
 	return u.ID == admin.ID
 }
 
+func (u *User) IsSystem() bool {
+	return u.ID == system.ID
+}
+
 var _ webauthn.User = (*User)(nil)
 
 func (u *User) WebAuthnID() []byte {
@@ -56,7 +60,10 @@ var (
 		DisplayName:         "未注册用户",
 		webAuthnCredentials: nil,
 	}
-	admin = &User{
+	system = &User{
 		ID: 1,
+	}
+	admin = &User{
+		ID: 2,
 	}
 )

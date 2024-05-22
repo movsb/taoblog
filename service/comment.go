@@ -130,7 +130,7 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostConte
 		// TODO：其实也允许/也已经支持编辑早期的 HTML 评论，但是在保存的时候已经被转换成 Markdown。
 		c.CanEdit = c.SourceType == `markdown` && (ac.RemoteAddr.String() == c.Ip && in5min(c.Date))
 
-		if !ac.User.IsAdmin() {
+		if !ac.User.IsAdmin() && !ac.User.IsSystem() {
 			c.Email = ""
 			c.Ip = ""
 		} else {
@@ -339,7 +339,7 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 
 func (s *Service) GetPostComments(ctx context.Context, req *proto.GetPostCommentsRequest) (*proto.GetPostCommentsResponse, error) {
 	ac := auth.Context(ctx)
-	if !(ac.User.IsAdmin() || s.isPostPublic(ctx, req.Id)) {
+	if !(ac.User.IsAdmin() || ac.User.IsSystem() || s.isPostPublic(ctx, req.Id)) {
 		return nil, status.Error(codes.PermissionDenied, `你无权查看此文章的评论。`)
 	}
 	var comments models.Comments
@@ -486,6 +486,20 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		}
 	}
 
+	// NOTE：这里是用后台管理员的身份获取。
+	// 所以为了不要 impersonate，应该提供系统帐号。
+	post, err := s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
+		Id:       int32(in.PostId),
+		WithLink: proto.LinkKind_LinkKindFull,
+		ContentOptions: &proto.PostContentOptions{
+			WithContent:  true,
+			PrettifyHtml: true,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	if c.SourceType == `markdown` {
 		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, &proto.PostContentOptions{
 			WithContent: false,
@@ -518,7 +532,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		return nil
 	})
 
-	s.doCommentNotification(&c)
+	s.doCommentNotification(ctx, post, &c)
 
 	return c.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
 		WithContent:       true,
@@ -587,17 +601,7 @@ func (s *Service) isAdminEmail(email string) bool {
 }
 
 // TODO 改成后台任务异步通知（因为可能失败，失败后应该重试）
-func (s *Service) doCommentNotification(c *models.Comment) {
-	if !s.cfg.Comment.Notify {
-		log.Printf(`comment notification is disabled. comment_id: %v, post_id: %v`, c.ID, c.PostID)
-		return
-	}
-
-	info := utils.Must(s.GetInfo(context.Background(), &proto.GetInfoRequest{}))
-
-	postTitle := s.GetPostTitle(c.PostID)
-	// TODO 修改链接。
-	postLink := fmt.Sprintf("%s/%d/#comment-%d", info.Home, c.PostID, c.ID)
+func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c *models.Comment) {
 	adminEmails := s.cfg.Comment.Emails
 	if len(adminEmails) == 0 {
 		return
@@ -605,8 +609,8 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 
 	if !s.isAdminEmail(c.Email) {
 		data := &comment_notify.AdminData{
-			Title:    postTitle,
-			Link:     postLink,
+			Title:    post.Title,
+			Link:     post.Link,
 			Date:     time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 			Author:   c.Author,
 			Content:  c.Source,
@@ -658,8 +662,8 @@ func (s *Service) doCommentNotification(c *models.Comment) {
 	}
 
 	guestData := comment_notify.GuestData{
-		Title:   postTitle,
-		Link:    postLink,
+		Title:   post.Title,
+		Link:    post.Link,
 		Date:    time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 		Author:  c.Author,
 		Content: c.Source,
