@@ -13,7 +13,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -241,7 +241,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 			if req.Comment.SourceType != `markdown` {
 				return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
 			}
-			if _, err := s.getCommentContent(false, req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &proto.PostContentOptions{
+			if _, err := s.getCommentContent(ac.User.IsAdmin(), req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &proto.PostContentOptions{
 				WithContent: false,
 			}); err != nil {
 				return nil, err
