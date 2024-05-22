@@ -11,7 +11,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/xeonx/timeago"
 )
 
@@ -148,4 +148,39 @@ func (d *Post) GeoString() string {
 		return g.Name
 	}
 	return ""
+}
+
+func (d *Post) OriginClass() string {
+	if o := d.Origin(); o != nil {
+		return fmt.Sprintf(`origin-%s`, strings.ToLower(o.PlatformString()))
+	}
+	return ""
+}
+
+type Origin proto.Metas_Origin
+
+func (o *Origin) PlatformString() string {
+	switch o.Platform {
+	case proto.Metas_Origin_Twitter:
+		return `Twitter`
+	}
+	return ""
+}
+func (o *Origin) URL() string {
+	switch o.Platform {
+	case proto.Metas_Origin_Twitter:
+		id := o.Slugs[0]
+		return fmt.Sprintf(`https://twitter.com/twitter/status/%v`, id)
+	}
+	return ""
+}
+
+func (d *Post) Origin() *Origin {
+	if d.Metas != nil && d.Metas.Origin != nil {
+		o := (*Origin)(d.Metas.Origin)
+		if o.PlatformString() != "" {
+			return o
+		}
+	}
+	return nil
 }

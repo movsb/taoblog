@@ -1,5 +1,5 @@
 {{ define "_tweet" }}
-<article class="post" id="{{.ID}}">
+<article class="post {{ .OriginClass }}" id="{{.ID}}">
 <div class="entry">
 	<div class="content">
 	{{ .Content }}
@@ -10,7 +10,7 @@
 		<span class="geo">{{ . }}</span>
 		{{ end }}
 		<span class="comments"><a href="{{ .Link }}">{{ .CommentString }}</a></span>
-		<span class="comments"><a href="/admin/editor?id={{.Id}}">编辑</a></span>
+		<span class="edit"><a href="/admin/editor?id={{.Id}}">编辑</a></span>
 		<a href="#content">页首</a>
 	</div>
 </div>

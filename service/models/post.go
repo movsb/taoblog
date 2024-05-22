@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 const Untitled = `无标题`
@@ -46,6 +46,8 @@ type PostMeta struct {
 	Sources map[string]*PostMetaSource `json:"sources,omitempty" yaml:"sources,omitempty"`
 
 	Geo *Geo `json:"geo,omitempty" yaml:"geo,omitempty"`
+
+	Origin *proto.Metas_Origin `json:"origin:omitempty" yaml:"origin,omitempty"`
 }
 
 type PostMetaSource struct {
@@ -109,6 +111,7 @@ func (m *PostMeta) ToProto() *proto.Metas {
 			Name:      g.Name,
 		}
 	}
+	p.Origin = m.Origin
 	return p
 }
 
@@ -149,6 +152,7 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 			Name:      g.Name,
 		}
 	}
+	m.Origin = p.Origin
 	return &m
 }
 

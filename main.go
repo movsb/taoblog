@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/movsb/taoblog/cmd/client"
+	"github.com/movsb/taoblog/cmd/imports"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/cmd/sync"
 	"github.com/movsb/taoblog/cmd/webhook"
@@ -25,6 +26,7 @@ func main() {
 	server.AddCommands(rootCmd)
 	webhook.AddCommands(rootCmd)
 	sync.AddCommands(rootCmd)
+	imports.AddCommands(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

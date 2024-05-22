@@ -17,6 +17,18 @@ message Metas {
 		float longitude = 2;
 		float latitude = 3;
 	}
+	message Origin {
+		enum Platform {
+			OriginUnspecified = 0;
+			Twitter = 1;
+		}
+		// 来源平台。
+		Platform platform = 1;
+		// 唯一ID编成部分。
+		repeated string slugs = 2;
+		// 描述。
+		string description = 3;
+	}
 	
 	// TODO：以下两者应该由 style.css 和 script.js 等独立文件实现。
 	// 置于 <head> 最后的。
@@ -37,7 +49,11 @@ message Metas {
 	// 地理位置信息。
 	Geo geo = 11;
 
+	// 文章原始来源信息
+	Origin origin = 12;
+
 	// 微信短链接。形如："-UWZEu5Z74DZgRzKksTBtw"。
+	// TODO 合并进 Origin。
 	string weixin = 100;
 }
 

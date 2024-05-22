@@ -3,11 +3,12 @@ package client
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 
 	"github.com/movsb/taoblog/modules/utils/syncer"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 type SyncFileSpec proto.FileSpec
@@ -40,7 +41,12 @@ func NewFilesSyncer(client proto.Management_FileSystemClient) *FilesSyncer {
 	return s
 }
 
-func (s *FilesSyncer) SyncPostFiles(id int64, localFiles []*proto.FileSpec) error {
+func (s *FilesSyncer) SyncPostFiles(id int64, root fs.FS, files []string) error {
+	localFiles, err := s.listLocalFilesFromPaths(root, files)
+	if err != nil {
+		return err
+	}
+
 	if err := s.init(&proto.FileSystemRequest_InitRequest{
 		For: &proto.FileSystemRequest_InitRequest_Post_{
 			Post: &proto.FileSystemRequest_InitRequest_Post{
@@ -59,7 +65,7 @@ func (s *FilesSyncer) SyncPostFiles(id int64, localFiles []*proto.FileSpec) erro
 
 	ss := syncer.New(
 		syncer.WithCopyLocalToRemote[[]*SyncFileSpec](func(f *SyncFileSpec) error {
-			fp, err := os.Open(f.Path)
+			fp, err := root.Open(f.Path)
 			if err != nil {
 				return err
 			}
@@ -87,10 +93,10 @@ func (s *FilesSyncer) init(req *proto.FileSystemRequest_InitRequest) error {
 	return nil
 }
 
-func (s *FilesSyncer) ListLocalFilesFromPaths(paths []string) ([]*proto.FileSpec, error) {
+func (s *FilesSyncer) listLocalFilesFromPaths(root fs.FS, paths []string) ([]*proto.FileSpec, error) {
 	var localFiles []*proto.FileSpec
 	for _, file := range paths {
-		stat, err := os.Stat(file)
+		stat, err := fs.Stat(root, file)
 		if err != nil {
 			return nil, err
 		}

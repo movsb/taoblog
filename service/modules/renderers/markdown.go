@@ -175,6 +175,13 @@ func NewMarkdown(options ...any) *_Markdown {
 
 	me.AddOptions(options...)
 
+	// 目前的默认选项。
+	if !me.testing {
+		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
+		me.opts = append(me.opts, WithLazyLoadingFrames())
+		me.opts = append(me.opts, WithMediaDimensionLimiter(350))
+	}
+
 	return me
 }
 
@@ -191,12 +198,6 @@ func (me *_Markdown) AddOptions(options ...any) {
 			v1(me)
 		}
 		me.opts = append(me.opts, option)
-	}
-
-	// 目前的默认选项。
-	if !me.testing {
-		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
-		me.opts = append(me.opts, WithLazyLoadingFrames())
 	}
 }
 
@@ -642,15 +643,15 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		w.WriteString(b.String())
 	}
 
-	if len(classes) > 0 {
-		w.WriteString(fmt.Sprintf(` class="%s"`, strings.Join(classes, " ")))
-	}
-
 	url.Path = pathRooted
 	width, height := size(url)
 	if width > 0 && height > 0 {
 		widthScaled, heightScaled := int(float64(width)*scale), int(float64(height)*scale)
 		w.WriteString(fmt.Sprintf(` width=%d height=%d`, widthScaled, heightScaled))
+	}
+
+	if len(classes) > 0 {
+		w.WriteString(fmt.Sprintf(` class="%s"`, strings.Join(classes, " ")))
 	}
 
 	_, _ = w.WriteString(" />")

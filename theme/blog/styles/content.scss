@@ -171,3 +171,25 @@ blockquote {
 		border-top: 1px solid var(--border-color);
 	}
 }
+.tweets, .tweet {
+	.tweet-media {
+		video, img {
+			max-width: 350px;
+		}
+		&.has-multiple-media {
+			> p {
+				display: flex;
+				flex-wrap: wrap;
+				img, video {
+					width: 200px;
+					height: 200px !important; // 跟 49 行冲突了
+					max-width: 200px;
+					max-height: 200px;
+					object-fit: cover;
+					margin: .5em;
+					border: 1px solid var(--border-color);
+				}
+			}
+		}
+	}
+}

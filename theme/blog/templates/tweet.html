@@ -18,7 +18,7 @@
 <!-- <h1>{{ $.Meta.Title }}</h1> -->
 <script>var _post_id = +{{.Post.Post.Id}};</script>
 <div class="tweet">
-	<article class="post">
+	<article class="post {{.Post.Post.OriginClass}}">
 	<div class="entry">
 		<div class="content">
 		{{ .Post.Post.Content }}
@@ -27,10 +27,13 @@
 			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
 			<span class="author">{{ $.Author }}</span>
 			<span class="date">{{ .Post.Post.ShortDateString }}</span>
-			{{ with .Post.Post.GeoString }}
+			{{- with .Post.Post.GeoString }}
 			<span class="geo">{{ . }}</span>
-			{{ end }}
-			<span class="comments"><a href="/admin/editor?id={{.Post.Post.Id}}">编辑</a></span>
+			{{- end }}
+			{{- with .Post.Post.Origin }}
+			<a class="origin" title="{{.Description}}" href="{{.URL}}" target="_blank">来源</a>
+			{{- end }}
+			<span class="edit"><a href="/admin/editor?id={{.Post.Post.Id}}">编辑</a></span>
 		</div>
 	</div>
 	<!-- comments begin -->

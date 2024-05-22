@@ -174,6 +174,18 @@ img, svg {
 		margin-left: 1em !important;
 	}
 }
+img, video {
+	&.too-high {
+		max-width: unset;
+		max-height: 350px;
+		width: unset;
+	}
+	&.too-wide {
+		max-width: 350px;
+		max-height: unset;
+		height: unset;
+	}
+}
 
 @media (prefers-color-scheme: dark) {
 	img, video, iframe, svg {
