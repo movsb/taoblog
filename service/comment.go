@@ -241,6 +241,8 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 			if req.Comment.SourceType != `markdown` {
 				return nil, status.Error(codes.InvalidArgument, `不再允许发表非 Markdown 评论。`)
 			}
+			// NOTE：管理员如果修改用户评论后如果带 HTML，则用户无法再提交保存。
+			// 是不是应该限制下呢？
 			if _, err := s.getCommentContent(ac.User.IsAdmin(), req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &proto.PostContentOptions{
 				WithContent: false,
 			}); err != nil {

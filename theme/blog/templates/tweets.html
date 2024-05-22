@@ -16,16 +16,13 @@
 <section id="main">
 <div id="content">
 <h1>{{ $.Meta.Title }}</h1>
-<div>
+<p>
+	<span class="go-home"><a href="/">{{ $.Config.Site.Name }}</a></span>
 	<span class="comments"><a href="/admin/editor">新建</a></span>
-</div>
-<hr/>
-<div class="tweets" style="margin-bottom: 3em;">
+</p>
+<div class="tweets">
 {{ range $i, $t := .Tweets.Tweets }}
 	{{ partial "_tweet" $ . }}
-	{{ if not ($.Tweets.Last $i)}}
-	<hr/>
-	{{ end }}
 {{ end }}
 </div>
 {{ render "footer" . }}

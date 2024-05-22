@@ -8,14 +8,12 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 // Data holds all data for rendering the site.
 type Data struct {
-	svc  proto.TaoBlogServer
-	impl service.ToBeImplementedByRpc
+	svc proto.TaoBlogServer
 
 	// all configuration.
 	// It's not safe to export all configs outside.
@@ -66,6 +64,10 @@ func (d *Data) Title() string {
 
 func (d *Data) SiteName() string {
 	return d.Config.Site.Name
+}
+
+func (d *Data) TweetName() string {
+	return fmt.Sprintf(`%s的%s`, d.Config.Comment.Author, TweetName)
 }
 
 func (d *Data) BodyClass() string {

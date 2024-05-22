@@ -2,32 +2,32 @@ package data
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 type TweetsData struct {
+	Name   string
 	Tweets []*Post
 	Count  int
 }
 
-func (t *TweetsData) Last(i int) bool {
-	return i == t.Count-1
-}
+const TweetName = `碎碎念`
 
 func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer) *Data {
 	d := &Data{
-		Meta: &MetaData{
-			Title: fmt.Sprintf(`%s的碎碎念`, cfg.Comment.Author),
-		},
+		Meta:   &MetaData{},
 		User:   auth.Context(ctx).User,
 		Config: cfg,
 		svc:    svc,
-		Tweets: &TweetsData{},
+		Tweets: &TweetsData{
+			Name: TweetName,
+		},
 	}
+
+	d.Meta.Title = d.TweetName()
 
 	posts, err := svc.ListPosts(ctx,
 		&proto.ListPostsRequest{

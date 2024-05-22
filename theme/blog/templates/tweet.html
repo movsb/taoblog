@@ -24,6 +24,8 @@
 		{{ .Post.Post.Content }}
 		</div>
 		<div class="meta2">
+			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
+			<span class="author">{{ $.Author }}</span>
 			<span class="date">{{ .Post.Post.ShortDateString }}</span>
 			{{ with .Post.Post.GeoString }}
 			<span class="geo">{{ . }}</span>
