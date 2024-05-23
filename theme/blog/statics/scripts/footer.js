@@ -41,26 +41,6 @@
 	}, 1000);
 })();
 
-// 代码高亮
-(function(){
-// e: div.chroma
-let scroll = (e) => {
-	let tr = e.querySelector(':scope .lntable tr');
-	let td =  e.querySelector(':scope .lntable .lntd:first-child');
-	tr.onscroll = e => td.style.top = `${-e.target.scrollTop}px`;
-	// console.log(`scroll:`, tr, td);
-};
-document.querySelectorAll('div.chroma').forEach(e => scroll(e));
-TaoBlog.events.add('comment', 'post', function(item, cmt) {
-	let pres = item.querySelectorAll(':scope > .comment-content div.chroma');
-	pres.forEach(e => scroll(e));
-});
-TaoBlog.events.add('comment', 'preview', function(div) {
-	let pres = div.querySelectorAll(':scope div.chroma');
-	pres.forEach(e => scroll(e));
-});
-})();
-
 // TODO 目前的 Markdown 在处理 @2x 图片时无法处理 HTML 标签使用的图片 <img>，只能处理 ![]() 这种。
 // 这里使用脚本临时处理一下，后续应该在 Markdown 里面统一处理。
 (function(){
@@ -204,3 +184,14 @@ class __Vim {
 }
 
 TaoBlog.vim = new __Vim();
+
+// 同步代码滚动
+// TODO admin 里面有一份重复，待合并。
+function syncCodeScroll(id) {
+	let img = document.getElementById(id);
+	let container = img.parentElement;
+	let tr = container.querySelector(':scope .lntable tr');
+	let td =  container.querySelector(':scope .lntable .lntd:first-child');
+	tr.onscroll = e => td.style.top = `${-tr.scrollTop}px`;
+	img.remove();
+}

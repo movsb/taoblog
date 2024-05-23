@@ -90,7 +90,7 @@ table.lntable {
 
 		> tr {
 			overflow: auto;
-			max-height: 60vh;
+			max-height: 50vh;
 			display: block;
 		}
 	}
@@ -111,6 +111,7 @@ table.lntable {
 			box-sizing: border-box;
 			text-align: right;
 			border-radius: unset;
+			overflow: hidden;
 		}
 	}
 }
