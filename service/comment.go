@@ -607,10 +607,12 @@ func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c
 		return
 	}
 
+	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
+
 	if !s.isAdminEmail(c.Email) {
 		data := &comment_notify.AdminData{
 			Title:    post.Title,
-			Link:     post.Link,
+			Link:     link,
 			Date:     time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 			Author:   c.Author,
 			Content:  c.Source,
@@ -663,7 +665,7 @@ func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c
 
 	guestData := comment_notify.GuestData{
 		Title:   post.Title,
-		Link:    post.Link,
+		Link:    link,
 		Date:    time.Unix(int64(c.Date), 0).Local().Format(time.RFC3339),
 		Author:  c.Author,
 		Content: c.Source,
