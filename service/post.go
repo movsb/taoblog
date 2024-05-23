@@ -103,6 +103,8 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto
 		catID := s.getPageParentID(dir)
 		stmt = stmt.Where("slug=? AND category=?", slug, catID).
 			OrderBy("date DESC") // ???
+	} else {
+		return nil, status.Error(codes.InvalidArgument, `需要指定文章查询条件。`)
 	}
 
 	stmt = stmt.WhereIf(ac.User.IsGuest(), `status='public'`)

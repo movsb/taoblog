@@ -9,6 +9,8 @@ import (
 
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Renderer ...
@@ -78,6 +80,9 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			id := utils.MustToInt64(matches[1])
+			if id <= 0 {
+				panic(status.Error(codes.NotFound, ""))
+			}
 			c.renderer.QueryByID(w, req, id)
 			c.mr.CountPageView(id)
 			c.mr.UserAgent(req.UserAgent())
