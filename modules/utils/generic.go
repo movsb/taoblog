@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"crypto/rand"
+	"fmt"
+)
+
 // 搁这套娃🪆🪆🪆？
 // P：Prototype
 func ChainFuncs[P func(H) H, H any](h H, ps ...P) H {
@@ -25,4 +30,10 @@ func IIF[Condition ~bool, Any any](cond Condition, first, second Any) Any {
 		return first
 	}
 	return second
+}
+
+func RandomString() string {
+	b := [4]byte{}
+	rand.Read(b[:])
+	return fmt.Sprintf(`xx-%x`, b)
 }

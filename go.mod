@@ -25,6 +25,7 @@ require (
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/alecthomas/chroma/v2 v2.13.0
+	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6

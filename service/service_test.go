@@ -7,7 +7,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 )
@@ -32,7 +32,7 @@ func initService() {
 	log.Println(`DevMode:`, service.DevMode())
 
 	theAuth := auth.New(cfg.Auth, service.DevMode())
-	theService := service.NewService(&cfg, db, theAuth)
+	theService := service.NewServiceForTesting(&cfg, db, theAuth)
 	theAuth.SetService(theService)
 
 	blog = proto.NewTaoBlogClient(proto.NewConn("", theService.Addr().String()))

@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
@@ -409,6 +410,38 @@ func (me *_Markdown) Render(source string) (string, error) {
 			}
 			htmlText = filtered
 		}
+	}
+
+	var docQuery *goquery.Document
+	for _, opt := range me.opts {
+		if tr, ok := opt.(HtmlTransformer); ok {
+			if docQuery == nil {
+				doc, err := goquery.NewDocumentFromReader(bytes.NewReader(htmlText))
+				if err != nil {
+					return "", err
+				}
+				docQuery = doc
+			}
+			if err := tr.TransformHtml(docQuery); err != nil {
+				return "", err
+			}
+		}
+	}
+	if docQuery != nil {
+		children := docQuery.Find(`body`).Children()
+		buf := bytes.NewBuffer(nil)
+		var outErr error
+		children.EachWithBreak(func(i int, s *goquery.Selection) bool {
+			if err := goquery.Render(buf, s); err != nil {
+				outErr = err
+				return false
+			}
+			return true
+		})
+		if outErr != nil {
+			return "", outErr
+		}
+		htmlText = buf.Bytes()
 	}
 
 	// TODO 和渲染分开，根本不是一个阶段的事

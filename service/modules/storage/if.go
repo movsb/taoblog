@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 // File ...
@@ -39,7 +39,6 @@ type FileSystem interface {
 // TODO 改成全局一个实例统一管理所有文章的文件。
 type Local struct {
 	root string
-	id   int64
 	dir  string
 
 	maxFileSize int32
@@ -58,11 +57,10 @@ func WithMaxFileSize(size int32) Option {
 	}
 }
 
-func NewLocal(root string, id int64, options ...Option) *Local {
+func NewLocal(root string, sub string, options ...Option) *Local {
 	l := &Local{
 		root: root,
-		id:   id,
-		dir:  filepath.Join(root, fmt.Sprint(id)),
+		dir:  filepath.Join(root, sub),
 	}
 	for _, opt := range options {
 		opt(l)

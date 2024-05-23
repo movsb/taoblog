@@ -45,6 +45,7 @@ type ToBeImplementedByRpc interface {
 	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
 	FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error)
+	ThemeChangedAt() time.Time
 }
 
 // Service implements IServer.
@@ -88,9 +89,17 @@ type Service struct {
 
 	maintenance *utils.Maintenance
 
+	// 服务内有插件的更新可能会影响到内容渲染。
+	themeChangedAt    time.Time
+	mediaTagsTemplate *utils.TemplateLoader
+
 	proto.TaoBlogServer
 	proto.ManagementServer
 	proto.SearchServer
+}
+
+func (s *Service) ThemeChangedAt() time.Time {
+	return s.themeChangedAt
 }
 
 func (s *Service) Addr() net.Addr {
@@ -123,6 +132,8 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 
 		throttler:   utils.NewThrottler[_RequestThrottlerKey](),
 		maintenance: &utils.Maintenance{},
+
+		themeChangedAt: time.Now(),
 	}
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
@@ -144,7 +155,19 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 
 	s.cacheAllCommenterData()
 
+	if DevMode() && !s.testing {
+		s.mediaTagsTemplate = utils.NewTemplateLoader(
+			utils.NewLocal(`service/modules/renderers/media_tags`), nil,
+			func() {
+				// TODO：可能有并发问题？
+				s.themeChangedAt = time.Now()
+			},
+		)
+	}
+
 	server := grpc.NewServer(
+		grpc.MaxRecvMsgSize(100<<20),
+		grpc.MaxSendMsgSize(100<<20),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
 			s.auth.UserFromGatewayUnaryInterceptor(),

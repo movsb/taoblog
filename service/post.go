@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"path"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
@@ -156,7 +158,7 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 func (s *Service) PathResolver(id int64) renderers.PathResolver {
 	return &PathResolver{
 		base: s.cfg.Data.File.Path,
-		fs:   storage.NewLocal(s.cfg.Data.File.Path, id),
+		fs:   storage.NewLocal(s.cfg.Data.File.Path, fmt.Sprint(id)),
 	}
 }
 
@@ -255,6 +257,18 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 			options = append(options, renderers.WithHtmlPrettifier())
 		}
 		options = append(options, s.markdownWithPlantUMLRenderer())
+
+		var fsForTags fs.FS
+		if co.UseAbsolutePaths {
+			fsForTags = s.fileSystemForRooted()
+		} else {
+			fsForTags = utils.Must(s.FileSystemForPost(auth.SystemAdmin(context.Background()), id))
+		}
+		options = append(options, media_tags.New(
+			fsForTags,
+			s.mediaTagsTemplate,
+		))
+
 		tr = renderers.NewMarkdown(options...)
 	case `html`:
 		tr = &renderers.HTML{}

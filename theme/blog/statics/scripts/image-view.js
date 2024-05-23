@@ -298,9 +298,9 @@ class ImageViewUI {
 
 class ImageView {
 	constructor() {
-		let images = document.querySelectorAll('.entry img');
+		let images = document.querySelectorAll('.entry img:not(.no-zoom)');
 		images.forEach(img => img.addEventListener('click', e => this.show(e.target)));
-		let svgs = document.querySelectorAll('.entry svg');
+		let svgs = document.querySelectorAll('.entry svg:not(.no-zoom)');
 		svgs.forEach(img => img.addEventListener('click', e => {
 			// 仅点空白处才显示图片，否则可能是复制文本。
 			if (e.target.tagName == 'svg') {

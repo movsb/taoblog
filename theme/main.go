@@ -19,7 +19,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
@@ -287,7 +287,7 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *proto.Post) bool {
 	h3 := handle304.New(
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
+		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
 	)
 	if h3.Match(w, r) {
 		return true
@@ -310,7 +310,7 @@ func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 		info := utils.Must(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
 		h3 := handle304.New(
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
-			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt),
+			handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, info.LastPostedAt),
 		)
 		if h3.Match(w, r) {
 			return

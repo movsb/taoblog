@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -116,7 +117,14 @@ func (s *Service) FileSystemForPost(ctx context.Context, id int64) (*storage.Loc
 	if ac := auth.Context(ctx); ac != nil && ac.User.IsAdmin() {
 		maxFileSize = 100 << 20
 	}
-	return storage.NewLocal(s.cfg.Data.File.Path, id,
+	return storage.NewLocal(s.cfg.Data.File.Path, fmt.Sprint(id),
 		storage.WithMaxFileSize(maxFileSize),
 	), nil
+}
+
+func (s *Service) fileSystemForRooted() *storage.Local {
+	if s.testing {
+		panic(`测试服务器不用于本地文件系统。`)
+	}
+	return storage.NewLocal(s.cfg.Data.File.Path, "")
 }

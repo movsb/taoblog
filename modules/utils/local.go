@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"io/fs"
 	"log"
 	"os"
@@ -35,6 +36,9 @@ func (l *Local) Changed() <-chan fsnotify.Event {
 }
 
 func (l *Local) watch() chan fsnotify.Event {
+	if _, err := os.Open(l.root); err != nil {
+		panic(err.Error() + fmt.Sprint(os.Getwd()))
+	}
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Println(err)

@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/yuin/goldmark/ast"
 	"golang.org/x/net/html"
 )
@@ -26,6 +27,10 @@ type HtmlFilter interface {
 }
 type HtmlPrettifier interface {
 	PrettifyHtml(doc *html.Node) ([]byte, error)
+}
+
+type HtmlTransformer interface {
+	TransformHtml(doc *goquery.Document) error
 }
 
 // -----------------------------------------------------------------------------
@@ -271,13 +276,14 @@ func (m *_RootedPaths) FilterHtml(doc *html.Node) ([]byte, error) {
 		}
 		return -1
 	}
-	modify := func(val *string) {
+	modify := func(val *string) bool {
 		if u, err := url.Parse(*val); err == nil {
 			if u.Scheme == "" && u.Host == "" && !filepath.IsAbs(u.Path) {
-				u.Path = path.Join(m.root, u.Path)
-				*val = u.String()
+				*val = path.Join(m.root, u.Path)
+				return true
 			}
 		}
+		return false
 	}
 
 	var walk func(node *html.Node)
@@ -293,7 +299,14 @@ func (m *_RootedPaths) FilterHtml(doc *html.Node) ([]byte, error) {
 			}
 			if name != "" {
 				if index := find(node, name); index >= 0 {
-					modify(&node.Attr[index].Val)
+					// old := node.Attr[index].Val
+					if modify(&node.Attr[index].Val) {
+						// // 修改后保留一份原始路径供其它地方使用。
+						// node.Attr = append(node.Attr, html.Attribute{
+						// 	Key: `data-path`,
+						// 	Val: old,
+						// })
+					}
 				}
 			}
 		}

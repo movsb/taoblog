@@ -129,7 +129,7 @@ a, input, textarea {
 	transition: all 0.2s ease-out;
 }
 
-input[type=checkbox] {
+input[type=checkbox], input[type=range] {
 	accent-color: var(--accent-color);
 }
 input[type=text],input[type=password],input[type=email],input[type=url],textarea {
@@ -299,5 +299,87 @@ svg.plantuml {
 	@media (prefers-color-scheme: dark) {
 		&:not(.dark) { display: none;}
 		&.dark { display: block !important; }
+	}
+}
+
+@keyframes spin {
+	from {transform:rotate(0deg);}
+	to {transform:rotate(360deg);}
+}
+.audio-player {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	padding: 1rem;
+	margin: 1rem 0;
+	width: 480px;
+	box-sizing: border-box;
+	display: flex;
+	gap: 1em;
+	.left {
+		width: 180px;
+		height: 180px;
+		min-width: 180px;
+		img, svg {
+			border-radius: 50%;
+			border: 1px solid var(--border-color);
+			animation-duration: 12s;
+			animation-iteration-count: infinite;
+			animation-timing-function: linear;
+			animation-play-state: paused;
+			animation-name: spin;
+		}
+	}
+	.right {
+		display: flex;
+		flex-direction: column;
+		border-left: 1px solid var(--border-color);
+		padding-left: 1em;
+		flex: 1;
+		audio {
+			margin-top: auto;
+		}
+		.info {
+			padding: .5em 0;
+			> p {
+				margin: 0;
+				display: flex;
+				> b {
+					min-width: 3em;
+				}
+			}
+		}
+	}
+	.pause { display: none;}
+	.play { display: inline-block; }
+	&.playing {
+		.left {
+			img, svg {
+				animation-play-state: running;
+			}
+		}
+		.play { display: none; }
+		.pause { display: inline-block; }
+	}
+	.controls {
+		display: flex;
+		align-items: center;
+		border-top: 1px solid var(--border-color);
+		padding: .5rem 0;
+		margin-top: auto;
+
+		.play, .pause {
+			width: 16px;
+			height: 16px;
+			margin-right: .5rem;
+			cursor: pointer;
+		}
+		.progress {
+			margin: 0;
+			width: 150px;
+			margin: auto;
+		}
+		.time {
+			margin-left: auto;
+		}
 	}
 }

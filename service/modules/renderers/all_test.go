@@ -136,6 +136,12 @@ func TestMarkdownAll(t *testing.T) {
 `,
 		},
 		{
+			ID:       7.2,
+			Markdown: `<audio><source src="中文.mp3"/></audio>`,
+			Options:  []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
+			Html:     `<p><audio><source src="/911/中文.mp3"/></audio></p>`,
+		},
+		{
 			ID:       8.0,
 			Markdown: `- item`,
 			Options:  []renderers.Option2{renderers.WithReserveListItemMarkerStyle()},

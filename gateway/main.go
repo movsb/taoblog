@@ -12,7 +12,7 @@ import (
 	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/webhooks"
@@ -62,8 +62,16 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 }
 
 func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
-	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
-	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), []grpc.DialOption{grpc.WithInsecure()})
+	dialOptions := []grpc.DialOption{
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(100<<20),
+			grpc.MaxCallSendMsgSize(100<<20),
+		),
+	}
+
+	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
+	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 
 	mux2.HandlePath("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
 	mux2.HandlePath("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
