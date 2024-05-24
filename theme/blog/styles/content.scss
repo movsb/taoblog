@@ -57,6 +57,7 @@ body.wide #content {
     display: block;
 	color: var(--post-fg);
     text-align: justify;
+	container-type: inline-size;
 
      pre {
         box-sizing: border-box;

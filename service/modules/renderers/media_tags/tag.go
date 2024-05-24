@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"net/url"
+	"path/filepath"
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
@@ -105,8 +106,9 @@ func (t *MediaTags) parse(src string) (tag.Metadata, error) {
 
 type Metadata struct {
 	tag.Metadata
-	Source string
-	Random string
+	Source   string
+	Random   string
+	FileName string
 }
 
 func (d *Metadata) PictureAsImage() template.HTML {
@@ -123,7 +125,8 @@ func (d *Metadata) PictureAsImage() template.HTML {
 
 func (t *MediaTags) render(s *goquery.Selection, md tag.Metadata, source string) error {
 	buf := bytes.NewBuffer(nil)
-	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, utils.RandomString()}); err != nil {
+	name := filepath.Base(source)
+	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, utils.RandomString(), name}); err != nil {
 		return err
 	}
 	s.ReplaceWithHtml(buf.String())

@@ -13,7 +13,11 @@
 	</div>
 	<div class="right {{with .Lyrics}}has-lyrics{{end}}">
 		<div class="info">
-			{{with .Title}}<p><b>标题：</b>{{.}}</p>{{end}}
+			{{with .Title}}
+				<p><b>标题：</b>{{.}}</p>
+			{{ else }}
+				<p><b>文件：</b>{{.FileName}}</p>
+			{{end}}
 			{{with .Album}}<p><b>专辑：</b>{{.}}</p>{{end}}
 			{{with .Artist}}<p><b>作者：</b>{{.}}</p>{{end}}
 			{{with .Composer}}<p><b>作曲：</b>{{.}}</p>{{end}}
@@ -27,7 +31,10 @@
 		<div class="controls">
 			<svg class="play no-zoom" title="播放" fill="var(--color-fg)" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64px" height="64px" viewBox="-16.39 -16.39 196.64 196.64" xml:space="preserve" stroke="#000000" stroke-width="0.00163861" transform="matrix(1, 0, 0, 1, 0, 0)rotate(0)"><g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="1.3108879999999998"></g><g> <g> <path d="M34.857,3.613C20.084-4.861,8.107,2.081,8.107,19.106v125.637c0,17.042,11.977,23.975,26.75,15.509L144.67,97.275 c14.778-8.477,14.778-22.211,0-30.686L34.857,3.613z"></path> </g> </g></svg>
 			<svg class="pause no-zoom" title="暂停" fill="var(--color-fg)" width="64px" height="64px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round"></g><g><path fill-rule="evenodd" clip-rule="evenodd" d="M5.163 3.819C5 4.139 5 4.559 5 5.4v13.2c0 .84 0 1.26.163 1.581a1.5 1.5 0 0 0 .656.655c.32.164.74.164 1.581.164h.2c.84 0 1.26 0 1.581-.163a1.5 1.5 0 0 0 .656-.656c.163-.32.163-.74.163-1.581V5.4c0-.84 0-1.26-.163-1.581a1.5 1.5 0 0 0-.656-.656C8.861 3 8.441 3 7.6 3h-.2c-.84 0-1.26 0-1.581.163a1.5 1.5 0 0 0-.656.656zm9 0C14 4.139 14 4.559 14 5.4v13.2c0 .84 0 1.26.164 1.581a1.5 1.5 0 0 0 .655.655c.32.164.74.164 1.581.164h.2c.84 0 1.26 0 1.581-.163a1.5 1.5 0 0 0 .655-.656c.164-.32.164-.74.164-1.581V5.4c0-.84 0-1.26-.163-1.581a1.5 1.5 0 0 0-.656-.656C17.861 3 17.441 3 16.6 3h-.2c-.84 0-1.26 0-1.581.163a1.5 1.5 0 0 0-.655.656z" ></path></g></svg>
-			<input class="progress" type=range min=0 max=100 value=0 autocomplete="off"/>
+			<span class="progress-container">
+				<!-- input[type=range] 大小无法自适应，用容器包起来并设置 max-width: 100%; -->
+				<input class="progress" type=range min=0 max=100 value=0 autocomplete="off"/>
+			</span>
 			<span class="time">00:00</span>
 		</div>
 	</div>

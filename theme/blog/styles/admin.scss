@@ -94,6 +94,7 @@ body.admin.editor {
 			border-radius: var(--border-radius);
 			box-sizing: border-box;
 			overflow: auto;
+			container: preview / inline-size;
 			// 为了使段落等元素预览时看起来高度和输入框一致。
 			> :first-child {
 				margin-top: 0;

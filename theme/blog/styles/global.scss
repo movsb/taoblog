@@ -297,19 +297,21 @@ svg.plantuml {
 .audio-player {
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
-	padding: 1rem;
 	margin: 1rem 0;
-	width: 480px;
-	box-sizing: border-box;
 	display: flex;
-	gap: 1em;
+	box-sizing: border-box;
+	container-type: normal;
 	.left {
 		width: 180px;
 		height: 180px;
 		min-width: 180px;
+		align-self: center;
+		padding: 1rem;
+		box-sizing: border-box;
 		img, svg {
 			border-radius: 50%;
 			border: 1px solid var(--border-color);
+			box-sizing: border-box;
 			animation-duration: 12s;
 			animation-iteration-count: infinite;
 			animation-timing-function: linear;
@@ -321,13 +323,13 @@ svg.plantuml {
 		display: flex;
 		flex-direction: column;
 		border-left: 1px solid var(--border-color);
-		padding-left: 1em;
+		padding: .5rem;
+		padding-bottom: 0;
 		flex: 1;
 		audio {
 			margin-top: auto;
 		}
 		.info {
-			padding: .5em 0;
 			> p {
 				margin: 0;
 				display: flex;
@@ -351,23 +353,59 @@ svg.plantuml {
 	.controls {
 		display: flex;
 		align-items: center;
+
 		border-top: 1px solid var(--border-color);
 		padding: .5rem 0;
+
+		// 向下对齐，上面可以自定义填充。
 		margin-top: auto;
 
 		.play, .pause {
 			width: 16px;
 			height: 16px;
-			margin-right: .5rem;
 			cursor: pointer;
 		}
-		.progress {
-			margin: 0;
-			width: 150px;
-			margin: auto;
+		.progress-container {
+			display: flex;
+			align-items: center;
+			flex: 1;
+			padding: 0 .5rem;
+			.progress {
+				margin: 0;      // 去掉自带的外边距
+				width: 100%;
+				max-width: unset;
+			}
 		}
 		.time {
-			margin-left: auto;
+			margin-left: auto;  // 右对齐
+		}
+	}
+}
+.audio-player { max-width: 500px; }
+@container (max-width: 300px) {
+	.audio-player {
+		flex-direction: column;
+	}
+}
+@container (max-width: 300px) {
+	.audio-player {
+		.right {
+			border-left: none;
+			border-top: 1px solid var(--border-color);
+			padding: .5rem;
+			padding-bottom: 0;
+		}
+		.info {
+			padding: .5rem 0;
+		}
+	}
+}
+@container (max-width: 400px) {
+	.audio-player {
+		.left {
+			width: 100px;
+			height: 100px;
+			min-width: 100px;
 		}
 	}
 }
