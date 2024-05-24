@@ -783,8 +783,9 @@ func size(url *urlpkg.URL) (int, int) {
 			}
 			if strings.EqualFold(filepath.Ext(url.Path), `.svg`) {
 				type _SvgSize struct {
-					Width  string `xml:"width,attr"`
-					Height string `xml:"height,attr"`
+					Width   string `xml:"width,attr"`
+					Height  string `xml:"height,attr"`
+					ViewBox string `xml:"viewBox,attr"`
 				}
 				ss := _SvgSize{}
 				if err := xml.NewDecoder(sfp).Decode(&ss); err != nil {
@@ -793,6 +794,12 @@ func size(url *urlpkg.URL) (int, int) {
 				var w, h int
 				fmt.Sscanf(ss.Width, `%d`, &w)
 				fmt.Sscanf(ss.Height, `%d`, &h)
+				if w == 0 && h == 0 && ss.ViewBox != "" {
+					var left, top, right, bottom float32
+					fmt.Sscanf(ss.ViewBox, "%f %f %f %f", &left, &top, &right, &bottom)
+					w = int(right - left)
+					h = int(bottom - top)
+				}
 				return w, h
 			}
 		}

@@ -50,6 +50,7 @@ class ImageViewUI {
 				this.root.classList.add('transparent');
 			}
 			this.obj = svg;
+			this.ref = img;
 			this.root.appendChild(svg);
 			setTimeout(()=>this._onImgLoad(), 0);
 		} else {
@@ -60,6 +61,7 @@ class ImageViewUI {
 			this.obj.addEventListener('load', this._onImgLoad.bind(this));
 			this.root.appendChild(this.obj);
 			this.obj.src = img.src;
+			this.ref = img;
 		}
 	}
 
@@ -89,11 +91,16 @@ class ImageViewUI {
 		const obj = this.obj;
 
 		if (obj.tagName == 'IMG') {
-			rawWidth = obj.naturalWidth;
-			rawHeight = obj.naturalHeight;
+			rawWidth = obj.naturalWidth || parseInt(this.ref.style.width) || parseInt(this.ref.getAttribute('width')) || 300;
+			rawHeight = obj.naturalHeight || parseInt(this.ref.style.height) || parseInt(this.ref.getAttribute('height')) || 300;
+		} else if (obj.tagName == 'svg') {
+			this.obj.style.opacity = .01;
+			this.obj.style.display = 'block';
+			let {width, height } = obj.getBBox();
+			rawWidth = width || 300;
+			rawHeight = height || 300;
 		} else {
-			rawWidth = (parseInt(obj.style.width) || parseInt(obj.getAttribute('width'))) ?? 100;
-			rawHeight = (parseInt(obj.style.height) || parseInt(obj.getAttribute('height'))) ?? 100;
+			console.error('未处理的类型。');
 		}
 
 		let initScale = 1;
@@ -172,7 +179,7 @@ class ImageViewUI {
 			// https://stackoverflow.com/a/52839734/3628322
 			this.obj.addEventListener('mousedown', (e)=> {
 				// 点击 svg 的其它地方不要拖，方便复制文本。
-				if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
+				if (this.obj.tagName == 'svg' && e.target.tagName == 'text') {
 					console.log('not clicking on svg root node.')
 					return;
 				}
@@ -246,7 +253,7 @@ class ImageViewUI {
 	}
 	_onImgClick(e) {
 		// console.log('img: click');
-		if (this.obj.tagName == 'svg' && e.target.tagName != 'svg') {
+		if (this.obj.tagName == 'svg' && e.target.tagName == 'text') {
 			console.log('clicking on text nodes.');
 			e.preventDefault();
 			e.stopPropagation();
@@ -303,7 +310,7 @@ class ImageView {
 		let svgs = document.querySelectorAll('.entry svg:not(.no-zoom)');
 		svgs.forEach(img => img.addEventListener('click', e => {
 			// 仅点空白处才显示图片，否则可能是复制文本。
-			if (e.target.tagName == 'svg') {
+			if (e.target.tagName != 'text') {
 				this.show(e.currentTarget);
 			}
 		}));
