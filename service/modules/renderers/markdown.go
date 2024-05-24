@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	stdhtml "html"
 	"image"
 	_ "image/gif" // shut up
 	_ "image/jpeg"
@@ -240,24 +241,37 @@ func (me *_Markdown) Render(source string) (string, error) {
 			),
 			highlighting.WithWrapperRenderer(func(w util.BufWriter, context highlighting.CodeBlockContext, entering bool) {
 				if entering {
-					w.WriteString(`<div class="code-scroll-synchronizer">`)
-					// 因为 innerHTML 插入的 script 不会被执行，所以用这个手段。
-					// 写别人的域名，不要给我留下日志。
-					// 另外，鉴于 window.event 是被 deprecated 的，所以也不用。
-					// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
-					// https://stackoverflow.com/q/12614862/3628322
-					w.WriteString(fmt.Sprintf(
-						`<img id="%[1]s" style="display:none;" src="not-found://" onerror="syncCodeScroll('%[1]s')"/>`,
-						func() string {
-							buf := [4]byte{}
-							rand.Read(buf[:])
-							return fmt.Sprintf(`%x`, buf)
-						}(),
-					))
-					w.WriteRune('\n')
+					if context.Highlighted() {
+						w.WriteString(`<div class="code-scroll-synchronizer">`)
+						// 因为 innerHTML 插入的 script 不会被执行，所以用这个手段。
+						// 写别人的域名，不要给我留下日志。
+						// 另外，鉴于 window.event 是被 deprecated 的，所以也不用。
+						// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
+						// https://stackoverflow.com/q/12614862/3628322
+						w.WriteString(fmt.Sprintf(
+							`<img id="%[1]s" style="display:none;" src="not-found://" onerror="syncCodeScroll('%[1]s')"/>`,
+							func() string {
+								buf := [4]byte{}
+								rand.Read(buf[:])
+								return fmt.Sprintf(`%x`, buf)
+							}(),
+						))
+						w.WriteRune('\n')
+					} else {
+						language := string(utils.DropLast1(context.Language()))
+						if language != "-" {
+							w.WriteString(fmt.Sprintf(`<pre><code class="language-%s">`, stdhtml.EscapeString(language)))
+						} else {
+							w.WriteString(`<pre><code>`)
+						}
+					}
 				} else {
-					w.WriteString(`</div>`)
-					w.WriteRune('\n')
+					if context.Highlighted() {
+						w.WriteString(`</div>`)
+						w.WriteRune('\n')
+					} else {
+						w.WriteString(`</code></pre>`)
+					}
 				}
 			}),
 		))

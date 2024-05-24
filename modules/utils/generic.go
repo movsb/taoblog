@@ -37,3 +37,7 @@ func RandomString() string {
 	rand.Read(b[:])
 	return fmt.Sprintf(`xx-%x`, b)
 }
+
+func DropLast1[First any, Last any](f First, l Last) First {
+	return f
+}
