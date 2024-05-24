@@ -51,17 +51,22 @@ func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
 			log.Println(`没有找到资源。`)
 			return true
 		}
-		if u, err := url.Parse(src); err != nil || u.IsAbs() {
-			log.Println(`路径解析错误或者不是相对路径。`)
+		u, err := url.Parse(src)
+		if err != nil {
+			log.Println(`路径解析错误：`, err)
 			return true
 		}
-		md, err := t.parse(src)
+		if u.IsAbs() {
+			log.Println(`不是相对路径不解析。`, u.String(), u.Path)
+			return true
+		}
+		md, err := t.parse(u.Path)
 		if err != nil {
 			// 忽略错误，继续
 			log.Println("解析数据出错：", err)
 			return true
 		}
-		if err := t.render(s, md, src); err != nil {
+		if err := t.render(s, md, u.Path); err != nil {
 			log.Println("渲染出错：", err)
 			return true
 		}

@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -445,7 +446,8 @@ func parseHtmlAssets(html string) ([]string, error) {
 		if wantedAttr != `` {
 			for _, attr := range node.Attr {
 				if strings.EqualFold(attr.Key, wantedAttr) {
-					path = attr.Val
+					// 不确定这里对不对。
+					path, err = url.PathUnescape(attr.Val)
 				}
 			}
 		}
@@ -460,5 +462,5 @@ func parseHtmlAssets(html string) ([]string, error) {
 
 	recurse(node)
 
-	return assets, nil
+	return assets, err
 }
