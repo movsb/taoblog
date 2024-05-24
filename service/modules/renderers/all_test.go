@@ -244,6 +244,11 @@ func TestPrettifier(t *testing.T) {
 [代码]
 `,
 		},
+		{
+			ID:       6,
+			Markdown: "一直用 `@media screen`，今天才知道有 [`@container`][mdn] 这么个神器\n\n[mdn]: http://mdn",
+			Text:     `一直用 @media screen，今天才知道有 @container 这么个神器`,
+		},
 	}
 	for _, tc := range cases {
 		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
@@ -257,7 +262,7 @@ func TestPrettifier(t *testing.T) {
 			t.Fatal(err)
 		}
 		if strings.TrimSpace(text) != strings.TrimSpace(tc.Text) {
-			t.Fatalf("not equal %v:\nMarkdown:%s\nExpected:%s\nGot:%s\n\n", tc.ID, tc.Markdown, tc.Text, text)
+			t.Fatalf("not equal %v:\nMarkdown:%s\nExpected:%s\nGot     :%s\n\n", tc.ID, tc.Markdown, tc.Text, text)
 		}
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/yuin/goldmark/ast"
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // 后面统一改成 Option。
@@ -112,10 +113,16 @@ var prettifierStrings = map[string]string{
 var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus{
 	`a`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
 		hrefIndex := slices.IndexFunc(node.Attr, func(attr html.Attribute) bool { return attr.Key == `href` })
-		if hrefIndex >= 0 && node.FirstChild != nil && node.FirstChild.Type == html.TextNode {
+		if hrefIndex >= 0 && node.FirstChild != nil {
+			var label string
+			if node.FirstChild.Type == html.TextNode {
+				label = node.FirstChild.Data
+			} else if node.FirstChild.DataAtom == atom.Code {
+				label = node.FirstChild.FirstChild.Data
+			}
 			// TODO 需要解 URL 码吗？
-			if node.FirstChild.Data != node.Attr[hrefIndex].Val {
-				buf.WriteString(node.FirstChild.Data)
+			if label != node.Attr[hrefIndex].Val {
+				buf.WriteString(label)
 				return ast.WalkSkipChildren
 			}
 		}
