@@ -428,10 +428,21 @@ func (me *_Markdown) Render(source string) (string, error) {
 		}
 	}
 	if docQuery != nil {
-		children := docQuery.Find(`body`).Children()
+		headChildren := docQuery.Find(`head`).Children()
+		bodyChildren := docQuery.Find(`body`).Children()
 		buf := bytes.NewBuffer(nil)
 		var outErr error
-		children.EachWithBreak(func(i int, s *goquery.Selection) bool {
+		headChildren.EachWithBreak(func(i int, s *goquery.Selection) bool {
+			if err := goquery.Render(buf, s); err != nil {
+				outErr = err
+				return false
+			}
+			return true
+		})
+		if outErr != nil {
+			return "", outErr
+		}
+		bodyChildren.EachWithBreak(func(i int, s *goquery.Selection) bool {
 			if err := goquery.Render(buf, s); err != nil {
 				outErr = err
 				return false
@@ -468,15 +479,17 @@ func (me *_Markdown) Render(source string) (string, error) {
 
 // TODO 找到 body 之前的全部东西会被丢掉，比如注释，没啥问题
 func renderHtmlDoc(doc *xnethtml.Node) ([]byte, error) {
-	body := func() (body *xnethtml.Node) {
-		defer func() { recover() }()
+	head, body := func() (head, body *xnethtml.Node) {
+		// defer func() { recover() }()
 		var walk func(node *xnethtml.Node)
 		walk = func(node *xnethtml.Node) {
 			switch node.Type {
 			case xnethtml.ElementNode:
 				if node.Data == `body` {
 					body = node
-					panic("found body")
+					// panic("found body")
+				} else if node.Data == `head` {
+					head = node
 				}
 			}
 			for c := node.FirstChild; c != nil; c = c.NextSibling {
@@ -484,12 +497,17 @@ func renderHtmlDoc(doc *xnethtml.Node) ([]byte, error) {
 			}
 		}
 		walk(doc)
-		return nil
+		return
 	}()
-	if body == nil {
+	if body == nil && head == nil {
 		return nil, errors.New(`empty html doc`)
 	}
 	buf := bytes.NewBuffer(nil)
+	for c := head.FirstChild; c != nil; c = c.NextSibling {
+		if err := xnethtml.Render(buf, c); err != nil {
+			return nil, err
+		}
+	}
 	for c := body.FirstChild; c != nil; c = c.NextSibling {
 		if err := xnethtml.Render(buf, c); err != nil {
 			return nil, err
