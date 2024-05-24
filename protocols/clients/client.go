@@ -1,4 +1,4 @@
-package proto
+package clients
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/movsb/taoblog/modules/auth"
+	proto "github.com/movsb/taoblog/protocols"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -16,8 +17,8 @@ func NewProtoClient(cc *grpc.ClientConn, token string) *ProtoClient {
 	return &ProtoClient{
 		cc:         cc,
 		token:      token,
-		Blog:       NewTaoBlogClient(cc),
-		Management: NewManagementClient(cc),
+		Blog:       proto.NewTaoBlogClient(cc),
+		Management: proto.NewManagementClient(cc),
 	}
 }
 
@@ -25,8 +26,8 @@ type ProtoClient struct {
 	cc    *grpc.ClientConn
 	token string
 
-	Blog       TaoBlogClient
-	Management ManagementClient
+	Blog       proto.TaoBlogClient
+	Management proto.ManagementClient
 }
 
 func (c *ProtoClient) Context() context.Context {

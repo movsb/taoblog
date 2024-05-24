@@ -1,18 +1,18 @@
 package config
 
-import "github.com/movsb/taoblog/service/modules/search"
+import search_config "github.com/movsb/taoblog/service/modules/search/config"
 
 // Config ...
 type Config struct {
-	Database    DatabaseConfig    `yaml:"database"`
-	Server      ServerConfig      `yaml:"server"`
-	Data        DataConfig        `yaml:"data"`
-	Maintenance MaintenanceConfig `yaml:"maintenance"`
-	Auth        AuthConfig        `yaml:"auth"`
-	Menus       []MenuItem        `yaml:"menus"`
-	Site        SiteConfig        `yaml:"site"`
-	Comment     CommentConfig     `yaml:"comment"`
-	Search      search.Config     `yaml:"search"`
+	Database    DatabaseConfig       `yaml:"database"`
+	Server      ServerConfig         `yaml:"server"`
+	Data        DataConfig           `yaml:"data"`
+	Maintenance MaintenanceConfig    `yaml:"maintenance"`
+	Auth        AuthConfig           `yaml:"auth"`
+	Menus       []MenuItem           `yaml:"menus"`
+	Site        SiteConfig           `yaml:"site"`
+	Comment     CommentConfig        `yaml:"comment"`
+	Search      search_config.Config `yaml:"search"`
 
 	originalFilePath string
 }
@@ -35,7 +35,7 @@ func DefaultConfig() Config {
 		Menus:       DefaultMenuConfig(),
 		Site:        DefaultSiteConfig(),
 		Comment:     DefaultCommentConfig(),
-		Search:      search.DefaultConfig(),
+		Search:      search_config.DefaultConfig(),
 	}
 }
 

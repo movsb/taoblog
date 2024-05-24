@@ -4,11 +4,11 @@ import (
 	"log"
 	"os"
 
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/spf13/cobra"
 )
 
-func CreateCommands(client func() *proto.ProtoClient) *cobra.Command {
+func CreateCommands(client func() *clients.ProtoClient) *cobra.Command {
 	twitterCmd := &cobra.Command{
 		Use:   `twitter`,
 		Short: `twitter <dir>`,

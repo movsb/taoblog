@@ -1,4 +1,4 @@
-package search
+package search_config
 
 import "time"
 

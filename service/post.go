@@ -743,13 +743,13 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentO
 func truncateTitle(title string, length int) string {
 	runes := []rune(title)
 
+	// 不包含回车
+	if p := slices.Index(runes, '\n'); p > 0 { // 不可能第一个字符是回车吧？🤔
+		runes = runes[:p]
+	}
+
 	// 不超过指定的字符串长度
 	maxLength := utils.IIF(length > len(runes), len(runes), length)
-
-	// 不包含回车
-	if p := slices.Index(runes, '\n'); p > 0 && p < maxLength { // 不可能第一个字符是回车吧？🤔
-		maxLength = p
-	}
 
 	// 不包含句号
 	if p := slices.Index(runes, '。'); p > 0 && p < maxLength {

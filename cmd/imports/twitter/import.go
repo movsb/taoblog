@@ -9,14 +9,15 @@ import (
 
 	"github.com/movsb/taoblog/cmd/client"
 	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/clients"
 )
 
 type Importer struct {
 	root   fs.FS
-	client *proto.ProtoClient
+	client *clients.ProtoClient
 }
 
-func New(root fs.FS, client *proto.ProtoClient) *Importer {
+func New(root fs.FS, client *clients.ProtoClient) *Importer {
 	return &Importer{
 		root:   root,
 		client: client,

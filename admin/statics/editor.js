@@ -175,7 +175,7 @@ class PostFormUI {
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
 					callback(e.content);
-				}, 500);
+				}, 1500);
 			});
 		} else {
 			this.elemSource.addEventListener('input', (e)=>{

@@ -1,22 +1,22 @@
 package client
 
 import (
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/clients"
 )
 
 // Client ...
 // TODO: close client connection.
 type Client struct {
 	config HostConfig
-	*proto.ProtoClient
+	*clients.ProtoClient
 }
 
 // NewClient creates a new client that interacts with server.
 func NewClient(config HostConfig) *Client {
 	c := &Client{
 		config: config,
-		ProtoClient: proto.NewProtoClient(
-			proto.NewConn(config.API, config.GRPC),
+		ProtoClient: clients.NewProtoClient(
+			clients.NewConn(config.API, config.GRPC),
 			config.Token,
 		),
 	}

@@ -9,27 +9,27 @@ import (
 
 	"github.com/blugelabs/bluge"
 	"github.com/blugelabs/bluge/search"
+	"github.com/movsb/taoblog/modules/auth"
+	proto "github.com/movsb/taoblog/protocols"
+	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
 
 type Engine struct {
-	cfg    *Config
+	cfg    *search_config.Config
 	writer *bluge.Writer
 	closed bool
 	mu     sync.RWMutex
 }
 
-func NewEngine(cfg *Config) (*Engine, error) {
+func NewEngine(cfg *search_config.Config) (*Engine, error) {
 	engine := &Engine{
 		cfg: cfg,
 	}
 	return engine, nil
 }
 
-// TODO: 私有文章不允许非登录用户搜索
-type Post struct {
-	ID        int64
-	Title     string
-	Content   string
+type SearchResult struct {
+	Post      proto.Post
 	Locations search.FieldTermLocationMap
 }
 
@@ -45,14 +45,14 @@ func (e *Engine) Close() error {
 	return nil
 }
 
-func (e *Engine) IndexPosts(ctx context.Context, posts []Post) (err error) {
+func (e *Engine) IndexPosts(ctx context.Context, posts []*proto.Post) (err error) {
 	writer, err := e.getWriter()
 	if err != nil {
 		return err
 	}
 	batch := bluge.NewBatch()
 	for _, post := range posts {
-		id := strconv.Itoa(int(post.ID))
+		id := fmt.Sprint(post.Id)
 		doc := bluge.NewDocument(id)
 		{
 			titleField := bluge.NewTextField(`title`, post.Title)
@@ -60,9 +60,14 @@ func (e *Engine) IndexPosts(ctx context.Context, posts []Post) (err error) {
 			doc.AddField(titleField)
 		}
 		{
-			contentField := bluge.NewTextField(`content`, post.Content)
+			contentField := bluge.NewTextField(`source`, post.Source)
 			contentField.FieldOptions = bluge.Index | bluge.Store | bluge.HighlightMatches
 			doc.AddField(contentField)
+		}
+		{
+			statusField := bluge.NewTextField(`status`, post.Status)
+			statusField.FieldOptions = bluge.Index | bluge.Store
+			doc.AddField(statusField)
 		}
 		batch.Update(doc.ID(), doc)
 	}
@@ -106,7 +111,7 @@ func (e *Engine) getWriter() (*bluge.Writer, error) {
 	return writer, nil
 }
 
-func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []Post, err error) {
+func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*SearchResult, err error) {
 	writer, err := e.getWriter()
 	if err != nil {
 		return nil, err
@@ -125,33 +130,41 @@ func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []Post, 
 	query.AddShould(matchTitle)
 
 	matchContent := bluge.NewMatchQuery(search)
-	matchContent.SetField(`content`)
+	matchContent.SetField(`source`)
 	query.AddShould(matchContent)
+
+	if user := auth.Context(ctx).User; !user.IsAdmin() && !user.IsSystem() {
+		matchStatus := bluge.NewTermQuery(`public`)
+		matchStatus.SetField(`status`)
+		query.AddMust(matchStatus)
+	}
 
 	searchRequest := bluge.NewTopNSearch(10, query).IncludeLocations()
 	dmi, err := reader.Search(ctx, searchRequest)
 	if err != nil {
 		return nil, err
 	}
-	var result []Post
+	var result []*SearchResult
 	next, err := dmi.Next()
 	for err == nil && next != nil {
-		var post Post
+		var post SearchResult
 		err = next.VisitStoredFields(func(field string, value []byte) bool {
 			switch field {
 			case `_id`:
 				id, _ := strconv.Atoi(string(value))
-				post.ID = int64(id)
+				post.Post.Id = int64(id)
 			case `title`:
-				post.Title = string(value)
-			case `content`:
-				post.Content = string(value)
+				post.Post.Title = string(value)
+			case `source`:
+				post.Post.Source = string(value)
+			case `status`:
+				post.Post.Status = string(value)
 			}
 			return true
 		})
 		if err == nil {
 			post.Locations = next.Locations
-			result = append(result, post)
+			result = append(result, &post)
 			next, err = dmi.Next()
 		}
 	}

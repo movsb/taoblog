@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/auth"
 	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 )
@@ -35,7 +36,7 @@ func initService() {
 	theService := service.NewServiceForTesting(&cfg, db, theAuth)
 	theAuth.SetService(theService)
 
-	blog = proto.NewTaoBlogClient(proto.NewConn("", theService.Addr().String()))
+	blog = proto.NewTaoBlogClient(clients.NewConn("", theService.Addr().String()))
 	admin = auth.TestingAdminUserContext(theAuth, "go_test")
 	guest = context.Background()
 }

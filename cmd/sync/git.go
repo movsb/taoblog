@@ -16,17 +16,18 @@ import (
 	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/modules/utils"
 	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/service/models"
 )
 
 type GitSync struct {
-	proto *proto.ProtoClient
+	proto *clients.ProtoClient
 	root  string
 }
 
 func New(config client.HostConfig, root string) *GitSync {
-	client := proto.NewProtoClient(
-		proto.NewConn(config.API, config.GRPC),
+	client := clients.NewProtoClient(
+		clients.NewConn(config.API, config.GRPC),
 		config.Token,
 	)
 	return &GitSync{

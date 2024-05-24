@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -245,7 +246,7 @@ func (c *Client) UploadPostFiles(id int64, files []string) {
 // TODO 由于评论中可能也带有图片引用，但是不会被算计到。所以远端的多余文件总是不会被删除。
 // NOTE 会自动去重本地文件。
 // NOTE 会自动排除 config.yml 文件。
-func UploadPostFiles(client *proto.ProtoClient, id int64, root fs.FS, files []string) {
+func UploadPostFiles(client *clients.ProtoClient, id int64, root fs.FS, files []string) {
 	files = slices.DeleteFunc(files, func(f string) bool { return f == ConfigFileName })
 
 	if len(files) <= 0 {

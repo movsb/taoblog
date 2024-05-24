@@ -6,16 +6,18 @@ import (
 	"testing"
 
 	"github.com/blugelabs/bluge/search/highlight"
+	proto "github.com/movsb/taoblog/protocols"
+	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
 
 func TestEngine(t *testing.T) {
-	cfg := DefaultConfig()
+	cfg := search_config.DefaultConfig()
 	engine, err := NewEngine(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := engine.IndexPosts(context.TODO(), []Post{
-		{ID: 1, Title: `标题`, Content: `昔我往矣，杨柳依依。今我来思，雨雪霏霏。`},
+	if err := engine.IndexPosts(context.TODO(), []*proto.Post{
+		{Id: 1, Title: `标题`, Source: `昔我往矣，杨柳依依。今我来思，雨雪霏霏。`},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -27,9 +29,9 @@ func TestEngine(t *testing.T) {
 
 	highlighter := highlight.NewHTMLHighlighter()
 	for _, post := range result {
-		s := highlighter.BestFragment(post.Locations[`title`], []byte(post.Title))
+		s := highlighter.BestFragment(post.Locations[`title`], []byte(post.Post.Title))
 		fmt.Println(s)
-		s = highlighter.BestFragment(post.Locations[`content`], []byte(post.Content))
+		s = highlighter.BestFragment(post.Locations[`content`], []byte(post.Post.Source))
 		fmt.Println(s)
 	}
 }

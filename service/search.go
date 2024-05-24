@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/blugelabs/bluge/search/highlight"
-	"github.com/movsb/taoblog/protocols"
-	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/modules/auth"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/modules/search"
 )
 
-// TODO 权限
 func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest) (*proto.SearchPostsResponse, error) {
 	searcher := s.searcher.Load()
 	if searcher == nil {
@@ -27,9 +26,9 @@ func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest)
 	rspPosts := []*proto.SearchPostsResponse_Post{}
 	for _, post := range posts {
 		rspPosts = append(rspPosts, &proto.SearchPostsResponse_Post{
-			Id:      int32(post.ID),
-			Title:   highlighter.BestFragment(post.Locations[`title`], []byte(post.Title)),
-			Content: highlighter.BestFragment(post.Locations[`content`], []byte(post.Content)),
+			Id:      int32(post.Post.Id),
+			Title:   highlighter.BestFragment(post.Locations[`title`], []byte(post.Post.Title)),
+			Content: highlighter.BestFragment(post.Locations[`source`], []byte(post.Post.Source)),
 		})
 	}
 	return &proto.SearchPostsResponse{
@@ -70,28 +69,26 @@ func (s *Service) RunSearchEngine(ctx context.Context) {
 
 func (s *Service) reIndex(ctx context.Context, engine *search.Engine, lastCheck *int64) {
 	now := time.Now()
-	var posts models.Posts
-	err := s.tdb.Model(posts).Where(`modified > ?`, *lastCheck).Find(&posts)
+	rsp, err := s.ListPosts(auth.SystemAdmin(ctx), &proto.ListPostsRequest{
+		ContentOptions: &proto.PostContentOptions{
+			WithContent: false,
+		},
+		WithLink:          proto.LinkKind_LinkKindRooted,
+		ModifiedNotBefore: int32(*lastCheck),
+	})
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	posts := rsp.Posts
 	if len(posts) <= 0 {
 		return
 	}
-	var posts2 []search.Post
-	for _, p := range posts {
-		posts2 = append(posts2, search.Post{
-			ID:      p.ID,
-			Title:   p.Title,
-			Content: p.Source,
-		})
-	}
-	err = engine.IndexPosts(ctx, posts2)
+	err = engine.IndexPosts(ctx, posts)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Printf("indexed %d posts\n", len(posts2))
+	log.Printf("indexed %d posts\n", len(posts))
 	*lastCheck = now.Unix()
 }
