@@ -174,7 +174,16 @@ blockquote {
 .tweets, .tweet {
 	.tweet-media {
 		video, img {
-			max-width: 350px;
+			&.too-high {
+				max-width: unset;
+				max-height: 350px;
+				width: unset;
+			}
+			&.too-wide {
+				max-width: 350px;
+				max-height: unset;
+				height: unset;
+			}
 		}
 		&.has-multiple-media {
 			> p {
