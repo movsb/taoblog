@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
+	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/search"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm"
@@ -157,7 +158,7 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 
 	if DevMode() && !s.testing {
 		s.mediaTagsTemplate = utils.NewTemplateLoader(
-			utils.NewLocal(`service/modules/renderers/media_tags`), nil,
+			utils.NewLocal(string(media_tags.SourceRelativeDir())), nil,
 			func() {
 				// TODO：可能有并发问题？
 				s.themeChangedAt = time.Now()

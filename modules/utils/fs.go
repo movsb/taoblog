@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 // walk returns the file list for a directory.

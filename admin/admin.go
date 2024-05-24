@@ -18,7 +18,8 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/modules/utils/dir"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 )
@@ -65,8 +66,9 @@ func NewAdmin(devMode bool, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix st
 	var tmplFS fs.FS
 
 	if devMode {
-		rootFS = os.DirFS(`admin/statics`)
-		tmplFS = utils.NewLocal(`admin/templates`)
+		dir := dir.SourceRelativeDir()
+		rootFS = os.DirFS(dir.Join(`statics`))
+		tmplFS = utils.NewLocal(dir.Join(`templates`))
 	} else {
 		rootFS = utils.Must(fs.Sub(root, `statics`))
 		tmplFS = utils.Must(fs.Sub(root, `templates`))

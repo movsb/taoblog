@@ -62,9 +62,10 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	var rootFS, tmplFS, stylesFS fs.FS
 
 	if devMode {
-		rootFS = os.DirFS(`theme/blog/statics`)
-		tmplFS = utils.NewLocal(`theme/blog/templates`)
-		stylesFS = utils.NewLocal(`theme/blog/styles`)
+		dir := blog.SourceRelativeDir()
+		rootFS = os.DirFS(dir.Join(`statics`))
+		tmplFS = utils.NewLocal(dir.Join(`templates`))
+		stylesFS = utils.NewLocal(dir.Join(`styles`))
 	} else {
 		// TODO 硬编码成 blog 了。
 		rootFS = utils.Must(fs.Sub(blog.Root, `statics`))

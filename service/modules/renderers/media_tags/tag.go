@@ -18,7 +18,12 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dhowden/tag"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
 )
+
+func SourceRelativeDir() dir.Dir {
+	return dir.SourceRelativeDir()
+}
 
 //go:embed player.html
 var _root embed.FS
