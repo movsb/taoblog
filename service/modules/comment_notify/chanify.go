@@ -28,7 +28,20 @@ func executeChanifyTemplate(data *AdminData) string {
 }
 
 // Chanify ...
-func Chanify(token string, data *AdminData) {
+func (cn *CommentNotifier) Chanify(data *AdminData) {
+	token := cn.Config.Push.Chanify.Token
+	if token == "" {
+		return
+	}
 	ch := notify.NewOfficialChanify(token)
 	ch.Send(data.Title, executeChanifyTemplate(data), true)
+}
+
+func (cn *CommentNotifier) ChanifyPlain(title, content string) {
+	token := cn.Config.Push.Chanify.Token
+	if token == "" {
+		return
+	}
+	ch := notify.NewOfficialChanify(token)
+	ch.Send(title, content, true)
 }

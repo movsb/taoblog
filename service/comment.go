@@ -620,10 +620,7 @@ func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c
 			HomePage: c.URL,
 		}
 		s.cmtntf.NotifyAdmin(data)
-
-		if config := s.cmtntf.Config.Push.Chanify; config.Token != "" {
-			comment_notify.Chanify(config.Token, data)
-		}
+		s.cmtntf.Chanify(data)
 	}
 
 	var parents []models.Comment
