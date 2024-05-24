@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"net/url"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dhowden/tag"
@@ -26,10 +27,14 @@ type MediaTags struct {
 	tmpl *utils.TemplateLoader
 }
 
-var _tmpl = utils.NewTemplateLoader(_root, nil, nil)
+var onceTmpl sync.Once
+var _tmpl *utils.TemplateLoader
 
 func New(root fs.FS, tmpl *utils.TemplateLoader) *MediaTags {
 	if tmpl == nil {
+		onceTmpl.Do(func() {
+			_tmpl = utils.NewTemplateLoader(_root, nil, nil)
+		})
 		tmpl = _tmpl
 	}
 	return &MediaTags{

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	rootCmd := &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: `TaoBlog client & server program.`,

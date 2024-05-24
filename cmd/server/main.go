@@ -21,7 +21,7 @@ import (
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
@@ -44,8 +44,6 @@ func AddCommands(rootCmd *cobra.Command) {
 }
 
 func serve(ctx context.Context) {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	cfg := config.LoadFile(`taoblog.yml`)
 
 	db := InitDatabase(`sqlite3`, cfg.Database.SQLite.Path)

@@ -15,7 +15,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 )
 
@@ -52,7 +52,8 @@ func (g *GitSync) Sync() error {
 	for _, post := range posts {
 		// log.Println(`处理：`, post.Id, post.Title)
 		if err := g.syncSingle(post); err != nil {
-			return err
+			log.Println(err)
+			continue
 		}
 	}
 
