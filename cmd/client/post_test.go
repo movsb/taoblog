@@ -15,8 +15,8 @@ func TestParsePostAssets(t *testing.T) {
 			Assets: []string{`a.jpg`},
 		},
 		{
-			Source: `a  <A href="a.jpg" /> adf`,
-			Assets: []string{`a.jpg`},
+			Source: `a  <A href="%E4%B8%AD%E6%96%87.mp3" /> adf`,
+			Assets: []string{`中文.mp3`},
 		},
 	}
 	for _, t1 := range tests {

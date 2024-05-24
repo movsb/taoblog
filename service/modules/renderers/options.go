@@ -280,7 +280,8 @@ func (m *_RootedPaths) FilterHtml(doc *html.Node) ([]byte, error) {
 	modify := func(val *string) bool {
 		if u, err := url.Parse(*val); err == nil {
 			if u.Scheme == "" && u.Host == "" && !filepath.IsAbs(u.Path) {
-				*val = url.PathEscape(path.Join(m.root, u.Path))
+				u.Path = path.Join(m.root, u.Path)
+				*val = u.EscapedPath()
 				return true
 			}
 		}

@@ -355,20 +355,24 @@ func parsePostAssets(source string) ([]string, error) {
 	// 用来保存所有的相对路径列表
 	var assets []string
 
-	tryAdd := func(asset string) {
-		if strings.Contains(asset, `://`) || !filepath.IsLocal(asset) {
-			if asset != "" && (!strings.Contains(asset, `://`) && !filepath.IsAbs(asset)) {
-				log.Println(`maybe an invalid asset presents in the post:`, asset)
-			}
+	tryAdd := func(theURL string) {
+		u, err := url.Parse(theURL)
+		if err != nil {
+			log.Println(err)
 			return
 		}
+		if u.Scheme != "" || u.Host != "" || strings.HasPrefix(u.Path, `/`) {
+			log.Println(`maybe an invalid asset presents in the post:`, theURL)
+			return
+		}
+		relative := u.Path
 		// 锚点儿
-		if strings.HasPrefix(asset, `#`) {
+		if strings.HasPrefix(relative, `#`) {
 			return
 		}
 		// TODO 简单方式去掉 ? 后面的查询参数，有 BUG，但是“够用”。
-		asset, _, _ = strings.Cut(asset, "?")
-		assets = append(assets, asset)
+		relative, _, _ = strings.Cut(relative, "?")
+		assets = append(assets, relative)
 	}
 
 	fromHTML := func(html string) {
@@ -433,8 +437,7 @@ func parseHtmlAssets(html string) ([]string, error) {
 			return
 		}
 
-		// log.Println("Data:", node.Data)
-		var path string
+		var theURL string
 		var wantedAttr string
 		switch strings.ToLower(node.Data) {
 		case `a`:
@@ -447,13 +450,12 @@ func parseHtmlAssets(html string) ([]string, error) {
 		if wantedAttr != `` {
 			for _, attr := range node.Attr {
 				if strings.EqualFold(attr.Key, wantedAttr) {
-					// 不确定这里对不对。
-					path, err = url.PathUnescape(attr.Val)
+					theURL = attr.Val
 				}
 			}
 		}
-		if path != `` {
-			assets = append(assets, path)
+		if theURL != `` {
+			assets = append(assets, theURL)
 		}
 
 		for child := node.FirstChild; child != nil; child = child.NextSibling {
