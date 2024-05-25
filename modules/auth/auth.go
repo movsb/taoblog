@@ -58,6 +58,7 @@ func (a *Auth) Config() *config.AuthConfig {
 }
 
 // 找不到返回空。
+// NOTE：系统管理员不允许查找。
 func (o *Auth) GetUserByID(id int64) *User {
 	if id == admin.ID {
 		return admin
@@ -67,7 +68,9 @@ func (o *Auth) GetUserByID(id int64) *User {
 
 func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
 	existed := slices.IndexFunc(user.webAuthnCredentials, func(c webauthn.Credential) bool {
-		return bytes.Equal(c.PublicKey, cred.PublicKey)
+		return bytes.Equal(c.PublicKey, cred.PublicKey) ||
+			// 不允许为同一认证器添加多个凭证。
+			bytes.Equal(c.Authenticator.AAGUID, cred.Authenticator.AAGUID)
 	})
 	if existed >= 0 {
 		user.webAuthnCredentials[existed] = *cred
