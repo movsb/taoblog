@@ -119,7 +119,7 @@ function redirect(to) {
 	</div>
 	{{ end }}
 	{{ if .GoogleClientID }}
-	<div>
+	<div id="google" style="display: none;">
 	<button id="google-signin-button">
 		Google
 	</button>
@@ -127,6 +127,7 @@ function redirect(to) {
 	<script id="gapisrc" data-src="https://apis.google.com/js/api:client.js"></script>
 	<script>
 		let google = function() {
+			document.getElementById('google').style.display = 'block';
 			let btn = document.getElementById('google-signin-button');
 			let btnHidden = document.getElementById('google-signin-button-hidden');
 			btn.addEventListener('click', function(e) {
