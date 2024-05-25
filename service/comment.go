@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
@@ -104,7 +105,10 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 		if co.PrettifyHtml {
 			options = append(options, renderers.WithHtmlPrettifier())
 		}
-		options = append(options, s.markdownWithPlantUMLRenderer())
+		options = append(options,
+			s.markdownWithPlantUMLRenderer(),
+			imaging.WithGallery(),
+		)
 		tr = renderers.NewMarkdown(options...)
 	case `html`:
 		tr = &renderers.HTML{}

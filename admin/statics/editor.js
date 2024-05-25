@@ -303,8 +303,8 @@ formUI.drop(async files => {
 	if (files.length <= 0) { return; }
 	if (files.length > 1) {
 		// TODO 其实接口完全允许多文件上传。
-		alert('目前仅支持单文件上传哦。');
-		return;
+		// alert('目前仅支持单文件上传哦。');
+		// return;
 	}
 
 	let fm;
@@ -331,16 +331,15 @@ formUI.drop(async files => {
 			alert(`文件 ${f.name} 上传失败：${e}`);
 			return;
 		}
-		try {
-			let list = await fm.list();
-			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
-			// 导致我的不得不用 formUI，而不是 this。
-			formUI.files = list;
-		} catch(e) {
-			alert(e);
-		}
-		console.log(this);
 	});
+	try {
+		let list = await fm.list();
+		// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
+		// 导致我的不得不用 formUI，而不是 this。
+		formUI.files = list;
+	} catch(e) {
+		alert(e);
+	}
 });
 let updatePreview = async (content) => {
 	try {

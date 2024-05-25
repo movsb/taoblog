@@ -18,6 +18,7 @@ import (
 	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm"
@@ -256,7 +257,6 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		if co.PrettifyHtml {
 			options = append(options, renderers.WithHtmlPrettifier())
 		}
-		options = append(options, s.markdownWithPlantUMLRenderer())
 
 		var fsForTags fs.FS
 		if co.UseAbsolutePaths {
@@ -268,6 +268,11 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 			fsForTags,
 			s.mediaTagsTemplate,
 		))
+
+		options = append(options,
+			s.markdownWithPlantUMLRenderer(),
+			imaging.WithGallery(),
+		)
 
 		tr = renderers.NewMarkdown(options...)
 	case `html`:

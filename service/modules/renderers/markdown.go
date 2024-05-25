@@ -698,6 +698,7 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 			defer w.WriteString("</figcaption>\n")
 			defer w.WriteString(fmt.Sprintf(
 				`<a href="%s" target="_blank" class="external">%s</a>`,
+				// TODO: srcURL | urlEscaper | attrEscaper
 				util.EscapeHTML([]byte(srcURL)),
 				util.EscapeHTML([]byte(srcName)),
 			))

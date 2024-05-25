@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 )
 
 func TestMarkdown(t *testing.T) {
@@ -155,9 +156,20 @@ func TestMarkdownAll(t *testing.T) {
 			Options:  []renderers.Option2{renderers.WithLazyLoadingFrames()},
 			Html:     `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="" loading="lazy"></iframe>`,
 		},
+		{
+			ID:      10.0,
+			Options: []renderers.Option2{imaging.WithGallery()},
+			Markdown: `<Gallery>
+
+![](1.jpg)
+![](2.jpg)
+
+</Gallery>`,
+			Html: `<div class="gallery"><img src="1.jpg" alt="" loading="lazy"/><img src="2.jpg" alt="" loading="lazy"/></div>`,
+		},
 	}
 	for _, tc := range cases {
-		if tc.ID == 7.1 {
+		if tc.ID == 10.0 {
 			log.Println(`debug`)
 		}
 		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
@@ -248,6 +260,16 @@ func TestPrettifier(t *testing.T) {
 			ID:       6,
 			Markdown: "一直用 `@media screen`，今天才知道有 [`@container`][mdn] 这么个神器\n\n[mdn]: http://mdn",
 			Text:     `一直用 @media screen，今天才知道有 @container 这么个神器`,
+		},
+		{
+			ID:       7.1,
+			Markdown: `[https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3](https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3)`,
+			Text:     `[链接]`,
+		},
+		{
+			ID:       7.2,
+			Markdown: `[万物死](https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3)`,
+			Text:     `万物死`,
 		},
 	}
 	for _, tc := range cases {

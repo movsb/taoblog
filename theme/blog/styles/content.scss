@@ -47,7 +47,7 @@ body.wide #content {
 
 @media screen and (max-width: $max_width) {
     .entry img {
-        height: unset !important;
+        height: unset !important; // TODO 去掉。
         max-width: 100%;
         max-height: 100%;
     }
@@ -191,15 +191,31 @@ blockquote {
 				display: flex;
 				flex-wrap: wrap;
 				img, video {
-					width: 200px;
-					height: 200px !important; // 跟 49 行冲突了
-					max-width: 200px;
-					max-height: 200px;
+					width: 150px;
+					height: 150px !important; // 跟 49 行冲突了
+					max-width: 150px;
+					max-height: 150px;
 					object-fit: cover;
-					margin: .5em;
+					margin: .1rem;
 					border: 1px solid var(--border-color);
 				}
 			}
 		}
+	}
+}
+
+.gallery {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 1rem 0;
+	img {
+		display: inline-block;
+		box-sizing: border-box;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		width: 150px;
+		height: 150px !important; // line:49
+		object-fit: cover;
+		margin: .1rem;
 	}
 }
