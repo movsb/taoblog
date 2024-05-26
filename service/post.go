@@ -230,7 +230,6 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 	switch sourceType {
 	case `markdown`:
 		options := []renderers.Option2{
-			renderers.WithRemoveTitleHeading(true),
 			renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
 				if src, ok := metas.Sources[path]; ok {
 					name = src.Name
@@ -256,6 +255,9 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		}
 		if co.PrettifyHtml {
 			options = append(options, renderers.WithHtmlPrettifier())
+		}
+		if !co.KeepTitleHeading {
+			options = append(options, renderers.WithRemoveTitleHeading())
 		}
 
 		var fsForTags fs.FS
@@ -645,6 +647,7 @@ func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest)
 	// ac := auth.Context(ctx)
 	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, &proto.PostContentOptions{
 		WithContent:       true,
+		KeepTitleHeading:  true,
 		RenderCodeBlocks:  true,
 		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 		UseAbsolutePaths:  true,

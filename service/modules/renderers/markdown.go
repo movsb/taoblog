@@ -83,9 +83,9 @@ func WithPathResolver(pathResolver PathResolver) Option {
 }
 
 // 移除 Markdown 中的标题（适用于文章）。
-func WithRemoveTitleHeading(remove bool) Option {
+func WithRemoveTitleHeading() Option {
 	return func(me *_Markdown) error {
-		me.removeTitleHeading = remove
+		me.removeTitleHeading = true
 		return nil
 	}
 }

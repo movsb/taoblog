@@ -84,7 +84,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 	case `markdown`:
 		options := []renderers.Option2{
 			renderers.WithPathResolver(s.PathResolver(postID)),
-			renderers.WithRemoveTitleHeading(true),
+			renderers.WithRemoveTitleHeading(),
 			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		}
 		if !secure {

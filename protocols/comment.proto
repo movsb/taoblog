@@ -9,14 +9,18 @@ message PostContentOptions {
 	// 要不要内容？
 	bool with_content = 1;
 
+	// 保留 #一级标题？
+	// 几乎只有在文章编辑预览的时候用得着，所以默认不保留。
+	bool keep_title_heading = 2;
+
 	// 要不要渲染代码 (成 HTML）？
-	bool render_code_blocks = 2;
+	bool render_code_blocks = 3;
 
 	// 文章中的相对链接改成使用绝对链接
-	bool use_absolute_paths = 3;
+	bool use_absolute_paths = 4;
 
 	// 要不要生成美化后的结果？
-	bool prettify_html = 4;
+	bool prettify_html = 5;
 
 	enum OpenLinkInNewTabKind {
 		OpenLinkInNewTabKindKeep = 0;
@@ -25,7 +29,7 @@ message PostContentOptions {
 		OpenLinkInNewTabKindExternal = 3;
 	}
 	// 新窗口打开链接？
-	OpenLinkInNewTabKind open_links_in_new_tab = 5;
+	OpenLinkInNewTabKind open_links_in_new_tab = 6;
 }
 
 message Comment {

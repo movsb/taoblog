@@ -138,6 +138,7 @@ type Metas struct {
 	// 文章原始来源信息
 	Origin *Metas_Origin `protobuf:"bytes,12,opt,name=origin,proto3" json:"origin,omitempty"`
 	// 微信短链接。形如："-UWZEu5Z74DZgRzKksTBtw"。
+	// TODO 合并进 Origin。
 	Weixin string `protobuf:"bytes,100,opt,name=weixin,proto3" json:"weixin,omitempty"`
 }
 
@@ -625,6 +626,7 @@ type ListPostsRequest struct {
 	WithLink       LinkKind            `protobuf:"varint,5,opt,name=with_link,json=withLink,proto3,enum=protocols.LinkKind" json:"with_link,omitempty"`
 	// 如果 > 0，则只会列出从这个时间点开始、结束的文章。
 	// 以后有过更新的文章，适用于备份用。
+	// 时间范围：[NotBefore, NotAfter)。
 	ModifiedNotBefore int32 `protobuf:"varint,6,opt,name=modified_not_before,json=modifiedNotBefore,proto3" json:"modified_not_before,omitempty"`
 	ModifiedNotAfter  int32 `protobuf:"varint,7,opt,name=modified_not_after,json=modifiedNotAfter,proto3" json:"modified_not_after,omitempty"`
 }
