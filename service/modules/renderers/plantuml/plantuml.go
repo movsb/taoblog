@@ -17,6 +17,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+func Fetch(ctx context.Context, server, format, compressed string, darkMode bool) ([]byte, error) {
+	return fetch(ctx, server, format, compressed, darkMode)
+}
+
 func fetch(ctx context.Context, server, format, compressed string, darkMode bool) ([]byte, error) {
 	u, err := url.Parse(server)
 	if err != nil {
@@ -42,6 +46,10 @@ func fetch(ctx context.Context, server, format, compressed string, darkMode bool
 }
 
 var brotli = base64.NewEncoding(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_`)
+
+func Compress(source []byte) (string, error) {
+	return compress(source)
+}
 
 // https://plantuml.com/en/text-encoding
 func compress(source []byte) (string, error) {

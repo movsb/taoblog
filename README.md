@@ -23,6 +23,16 @@
 
 如果你也有兴趣来编写一套你自己的（或是对大家的）博客系统，或任何与之相关的话题，非常高兴能与你讨论。
 
+## 如果你想试一下
+
+可以一句话就启动起来我的博客系统（需要 Docker 哦！）：
+
+```bash
+$ docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:amd64-latest
+```
+
+然后打开：<http://localhost:2564>。
+
 ## 文件说明
 
 文件名|文件描述
@@ -38,12 +48,9 @@ setup/      | 安装管理
 theme/      | 主题目录
 main.go     | 入口程序
 
-## 如果你想试一下
+## 功能列表（部分）
 
-可以一句话就启动起来我的博客系统（需要 Docker 哦！）：
-
-```bash
-$ docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:amd64-latest
-```
-
-然后打开：<http://localhost:2564>。
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="https://blog.twofei.com/v3/features/dark">
+<img src="https://blog.twofei.com/v3/features/light" alt="FEATURES.md" />
+</picture>

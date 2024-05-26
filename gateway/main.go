@@ -1,12 +1,16 @@
 package gateway
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
 	"io"
 	"log"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/pkg/notify"
@@ -15,12 +19,17 @@ import (
 	proto "github.com/movsb/taoblog/protocols"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/webhooks"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 	"nhooyr.io/websocket"
 )
+
+//go:embed FEATURES.md
+var featuresMd []byte
+var featuresTime = time.Now()
 
 type Gateway struct {
 	mux     *http.ServeMux
@@ -75,6 +84,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 
 	mux2.HandlePath("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
 	mux2.HandlePath("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
+	mux2.HandlePath(`GET`, `/v3/features/{theme}`, features)
 
 	mux2.HandlePath(`GET`, `/v3/avatar/{id}`, g.getAvatar)
 
@@ -203,5 +213,30 @@ func serveProtoDocsFile(path string) runtime.HandlerFunc {
 			panic(`bad embed file`)
 		}
 		http.ServeContent(w, req, name, stat.ModTime(), rs)
+	}
+}
+
+var reFeaturesPlantUML = regexp.MustCompile("```plantuml((?sU).+)```")
+
+func features(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	matches := reFeaturesPlantUML.FindSubmatch(featuresMd)
+	if len(matches) == 2 {
+		compressed, err := plantuml.Compress(matches[1])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		darkMode := false
+		if params[`theme`] == `dark` {
+			darkMode = true
+		}
+		content, err := plantuml.Fetch(r.Context(), `https://www.plantuml.com/plantuml`, `svg`, compressed, darkMode)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Add(`Content-Type`, `image/svg+xml`)
+		http.ServeContent(w, r, `features.svg`, featuresTime, bytes.NewReader(content))
+		return
 	}
 }
