@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -243,7 +244,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusForbidden)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Error: &data.ErrorData{
-						Message: `你无权查看此内容。`,
+						Message: "你无权查看此内容：" + st.Message(),
 					},
 				})
 				return true
@@ -427,6 +428,12 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 // TODO 没限制不可访问文章的附件是否不可访问。
 // 毕竟，文章不可访问后，文件列表暂时拿不到。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
+	// 所有人禁止访问特殊文件：以 . 或者 _ 开头。
+	switch path.Base(file)[0] {
+	case '.', '_':
+		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	}
+
 	fs, err := t.impl.FileSystemForPost(req.Context(), postID)
 	if err != nil {
 		panic(err)
@@ -443,7 +450,7 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 }
 
 // TODO 支持本地静态文件以临时存放临时文件。
-// TODO 没有处理错误（比较文件不存在）。
+// TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	if service.DevMode() {
 		handle304.MustRevalidate(w)
