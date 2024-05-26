@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/movsb/taoblog/cmd/client"
 )
@@ -14,7 +15,7 @@ func TestAll(t *testing.T) {
 		API:   `https://blog.home.twofei.com/v3`,
 		Token: `12345678`,
 	}, "/tmp/")
-	posts, err := g.getUpdatedPosts()
+	posts, err := g.getUpdatedPosts(time.Now(), time.Now())
 	log.Println(posts, err)
 }
 

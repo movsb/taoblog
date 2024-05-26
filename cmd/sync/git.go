@@ -20,9 +20,19 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
+// 多少时间范围内的更新不应该被检测到。或者说：
+// 停止更新多少时间后才算作修改过、才能保存。
+// 这样可以防止保存正在频繁编辑的文章。
+const skewedDurationForUpdating = time.Hour
+
 type GitSync struct {
 	proto *clients.ProtoClient
 	root  string
+
+	// 上一次获取更新的时间。
+	// 下一次获取时从此时间继续增量获取。
+	// NOTE：第一次的可以设置得很远，以纠正中途备份中断的缺失内容，如果有的话。
+	lastCheckedAt time.Time
 }
 
 func New(config client.HostConfig, root string) *GitSync {
@@ -31,13 +41,17 @@ func New(config client.HostConfig, root string) *GitSync {
 		config.Token,
 	)
 	return &GitSync{
-		proto: client,
-		root:  root,
+		proto:         client,
+		root:          root,
+		lastCheckedAt: time.Now().Add(-7 * time.Hour * 24),
 	}
 }
 
 func (g *GitSync) Sync() error {
-	posts, err := g.getUpdatedPosts()
+	notBefore := g.lastCheckedAt
+	notAfter := time.Now().Add(-skewedDurationForUpdating)
+
+	posts, err := g.getUpdatedPosts(notBefore, notAfter)
 	if err != nil {
 		return fmt.Errorf(`获取列表失败：%w`, err)
 	}
@@ -61,6 +75,9 @@ func (g *GitSync) Sync() error {
 	if err := spawn(`git`, []string{`push`}, g.root, ``); err != nil {
 		return err
 	}
+
+	// 仅在全部成功后更新上次检测的时间。
+	g.lastCheckedAt = notAfter
 
 	return nil
 }
@@ -135,17 +152,12 @@ func spawn(name string, args []string, dir string, input string) error {
 // 从服务器上获取指定周期内更新过的文章。
 // TODO 可选触发立即调用（比如强制归档保留版本的需求），而不是被动周期触发。
 // NOTE：时间范围是：
-func (g *GitSync) getUpdatedPosts() ([]*proto.Post, error) {
-	// 去掉这个参数可以全量重新跑一遍，无伤。
-	notBefore := time.Now().Add(-time.Hour * 24).Unix()
-	// 最近一个小时内有修改可能表明正在编辑，不建议入库，稳定后再说。
-	notAfter := time.Now().Add(-time.Hour).Unix()
-
+func (g *GitSync) getUpdatedPosts(notBefore, notAfter time.Time) ([]*proto.Post, error) {
 	rsp, err := g.proto.Blog.ListPosts(
 		g.proto.Context(),
 		&proto.ListPostsRequest{
-			ModifiedNotBefore: int32(notBefore),
-			ModifiedNotAfter:  int32(notAfter),
+			ModifiedNotBefore: int32(notBefore.Unix()),
+			ModifiedNotAfter:  int32(notAfter.Unix()),
 		},
 	)
 	if err != nil {
