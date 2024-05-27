@@ -31,7 +31,7 @@ func New(root fs.FS, client *clients.ProtoClient) *Importer {
 }
 
 // TODO 允许增量导入（对存在相同ID的推文只创建一条对应的碎碎念）。
-func (i *Importer) Execute() error {
+func (i *Importer) Execute(withoutAssets bool) error {
 	tweets, err := ParseTweets(i.root)
 	if err != nil {
 		return err
@@ -83,8 +83,9 @@ func (i *Importer) Execute() error {
 				Post: post,
 				UpdateMask: &fieldmaskpb.FieldMask{
 					Paths: []string{
-						`source_type`, // 只有原文需要更新吧？
+						`source_type`,
 						`source`,
+						`tags`,
 					},
 				},
 				DoNotTouch: true,
@@ -96,16 +97,18 @@ func (i *Importer) Execute() error {
 			log.Fatalln(err)
 		}
 
-		images, videos := tweet.Assets(true)
+		if !withoutAssets {
+			images, videos := tweet.Assets(true)
 
-		hi := HiResImages{backend: tweetsMedia, found: map[string]string{}}
-		client.UploadPostFiles(i.client, post.Id, &hi, images)
+			hi := HiResImages{backend: tweetsMedia, found: map[string]string{}}
+			client.UploadPostFiles(i.client, post.Id, &hi, images)
 
-		videoNames := make([]string, 0, len(videos))
-		for _, v := range videos {
-			videoNames = append(videoNames, v.FileName)
+			videoNames := make([]string, 0, len(videos))
+			for _, v := range videos {
+				videoNames = append(videoNames, v.FileName)
+			}
+			client.UploadPostFiles(i.client, post.Id, tweetsMedia, videoNames)
 		}
-		client.UploadPostFiles(i.client, post.Id, tweetsMedia, videoNames)
 	}
 
 	return nil

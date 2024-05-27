@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net/url"
 	"path"
 	"path/filepath"
 	"slices"
@@ -239,7 +240,6 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 				}
 				return
 			}),
-			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		}
 		if id > 0 {
 			options = append(options, renderers.WithPathResolver(s.PathResolver(id)))
@@ -274,6 +274,10 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		options = append(options,
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
+			renderers.WithHashTags(s.hashtagResolver, nil),
+			// 其它选项可能会插入链接，所以放后面。
+			// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
+			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		)
 
 		tr = renderers.NewMarkdown(options...)
@@ -283,6 +287,11 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		return ``, fmt.Errorf(`unknown source type`)
 	}
 	return tr.Render(source)
+}
+
+func (s *Service) hashtagResolver(tag string) string {
+	u := utils.Must(url.Parse(`/tags`))
+	return u.JoinPath(tag).String()
 }
 
 // 临时放这儿。
@@ -319,7 +328,7 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *proto.GetPostsByTagsR
 	}
 	tagIDs := s.getAliasTagsAll(ids)
 	var posts models.Posts
-	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.id,posts.title").
+	s.tdb.From(models.Post{}).From(models.ObjectTag{}).Select("posts.*").
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
 		WhereIf(ac.User.IsGuest(), `posts.status='public'`).
@@ -460,7 +469,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		p.Type = `post`
 	}
 
-	title, err := s.parsePostTitle(in.SourceType, in.Source)
+	title, hashtags, err := s.parsePostDerived(in.SourceType, in.Source)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +485,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	s.MustTxCall(func(txs *Service) error {
 		txs.tdb.Model(&p).MustCreate()
 		in.Id = p.ID
-		txs.UpdateObjectTags(p.ID, in.Tags)
+		txs.UpdateObjectTags(p.ID, append(hashtags, in.Tags...))
 		txs.updateLastPostTime(time.Unix(int64(p.Modified), 0))
 		txs.updatePostPageCount()
 		return nil
@@ -537,12 +546,17 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		}
 	}
 
+	if hasMetas {
+		m[`metas`] = models.PostMetaFrom(in.Post.Metas)
+	}
+
 	if hasSourceType != hasSource {
 		panic(`source type and source must be specified`)
 	}
 
+	var hashtags *[]string
 	if hasSource && hasSourceType {
-		title, err := s.parsePostTitle(in.Post.SourceType, in.Post.Source)
+		title, htags, err := s.parsePostDerived(in.Post.SourceType, in.Post.Source)
 		if err != nil {
 			return nil, err
 		}
@@ -551,6 +565,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			// 文章中的一级标题优先级大于配置文件。
 			m[`title`] = title
 		}
+		hashtags = &htags
 	}
 	if hasTitle || (hasSource && hasSourceType) {
 		var ty string
@@ -563,7 +578,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			}
 			ty = p.Type
 		}
-		title, err := s.parsePostTitle(in.Post.SourceType, in.Post.Source)
+		title, _, err := s.parsePostDerived(in.Post.SourceType, in.Post.Source)
 		if err != nil {
 			return nil, err
 		}
@@ -577,10 +592,6 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		}
 	}
 
-	if hasMetas {
-		m[`metas`] = models.PostMetaFrom(in.Post.Metas)
-	}
-
 	s.MustTxCall(func(txs *Service) error {
 		res := txs.tdb.Model(p).Where(`modified=?`, in.Post.Modified).MustUpdateMap(m)
 		rowsAffected, err := res.RowsAffected()
@@ -589,8 +600,17 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			txs.tdb.Model(&op).MustFind(&op)
 			return fmt.Errorf("update failed, modified conflict: %v (modified: %v)", err, op.Modified)
 		}
-		if hasTags {
-			txs.UpdateObjectTags(p.ID, in.Post.Tags)
+		if hasTags || hashtags != nil {
+			var newTags []string
+			if hasTags {
+				newTags = in.Post.Tags
+			} else {
+				newTags = txs.GetObjectTagNames(p.ID)
+			}
+			if hashtags != nil {
+				newTags = append(newTags, *hashtags...)
+			}
+			txs.UpdateObjectTags(p.ID, newTags)
 			s.cache.Delete(fmt.Sprintf(`post_tags:%d`, in.Post.Id))
 		}
 		txs.updateLastPostTime(time.Now())
@@ -603,26 +623,26 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 }
 
 // 只是用来在创建文章和更新文章的时候从正文里面提取。
-func (s *Service) parsePostTitle(sourceType, source string) (string, error) {
+// 返回：标题，话题列表。
+func (s *Service) parsePostDerived(sourceType, source string) (string, []string, error) {
 	var tr renderers.Renderer
 	var title string
+	var hashtags []string
 	switch sourceType {
-	case "html":
-		tr = &renderers.HTML{}
 	case "markdown":
-		// 这里只是用 title 的话，可以不考虑 Markdown 的初始化参数。
 		tr = renderers.NewMarkdown(
 			renderers.WithoutRendering(),
 			renderers.WithTitle(&title),
+			renderers.WithHashTags(s.hashtagResolver, &hashtags),
 		)
 	default:
-		return "", status.Error(codes.InvalidArgument, "no renderer was found")
+		return "", nil, status.Error(codes.InvalidArgument, "no renderer was found")
 	}
 	_, err := tr.Render(source)
 	if err != nil {
-		return "", status.Error(codes.InvalidArgument, err.Error())
+		return "", nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	return title, nil
+	return title, hashtags, nil
 }
 
 // 用于删除一篇文章。

@@ -263,9 +263,16 @@ func assets(t *Tweet) ([]string, []VideoAsset) {
 var reDimension = regexp.MustCompile(`/\d+x\d+/`)
 
 func (t *Tweet) TagNames() []string {
-	n := make([]string, 0, len(t.ExtendedEntities.HashTags))
+	names := map[string]struct{}{}
 	for _, t := range t.ExtendedEntities.HashTags {
-		n = append(n, t.Text)
+		names[t.Text] = struct{}{}
 	}
-	return n
+	for _, t := range t.Entities.HashTags {
+		names[t.Text] = struct{}{}
+	}
+	list := make([]string, 0, len(names))
+	for n := range names {
+		list = append(list, n)
+	}
+	return list
 }

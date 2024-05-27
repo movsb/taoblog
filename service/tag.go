@@ -125,8 +125,10 @@ func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 }
 
 // UpdateObjectTags ...
+// 会自动去重。
 func (s *Service) UpdateObjectTags(pid int64, tags []string) {
-	newTags := tags
+	slices.Sort(tags)
+	newTags := slices.Compact(tags)
 	oldTags := s.GetObjectTagNames(pid)
 
 	var (

@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 )
@@ -25,6 +27,9 @@ func TestMarkdownAll(t *testing.T) {
 	server := httptest.NewServer(http.FileServer(http.Dir("test_data")))
 	defer server.Close()
 	host := server.URL
+
+	// for hashtags test
+	var outputTags []string
 
 	cases := []struct {
 		ID          float32
@@ -166,6 +171,14 @@ func TestMarkdownAll(t *testing.T) {
 
 </Gallery>`,
 			Html: `<div class="gallery"><img src="1.jpg" alt="" loading="lazy"/><img src="2.jpg" alt="" loading="lazy"/></div>`,
+		},
+		{
+			ID: 11.0,
+			Options: []renderers.Option2{renderers.WithHashTags(func(tag string) string {
+				return utils.DropLast1(url.Parse(`http://localhost/tags`)).JoinPath(tag).String()
+			}, &outputTags)},
+			Markdown: `a #b c #桃子`,
+			Html:     `<p>a <span class="hashtag"><a href="http://localhost/tags/b">#b</a></span> c <span class="hashtag"><a href="http://localhost/tags/%E6%A1%83%E5%AD%90">#桃子</a></span></p>`,
 		},
 	}
 	for _, tc := range cases {

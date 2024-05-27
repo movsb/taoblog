@@ -20,12 +20,17 @@ func CreateCommands(client func() *clients.ProtoClient) *cobra.Command {
 			if root == "" {
 				log.Fatalln(`没指定数据根目录。`)
 			}
+			withoutAssets, err := cmd.Flags().GetBool(`no-assets`)
+			if err != nil {
+				log.Fatalln(err)
+			}
 			importer := New(os.DirFS(root), client())
-			if err := importer.Execute(); err != nil {
+			if err := importer.Execute(withoutAssets); err != nil {
 				log.Fatalln(err)
 			}
 		},
 	}
+	twitterCmd.Flags().Bool(`no-assets`, false, `不上传附件。`)
 	twitterCmd.Flags().StringP(`dir`, `d`, ``, `推特导出数据的根目录`)
 	return twitterCmd
 }
