@@ -112,6 +112,10 @@ message GetPostRequest {
 message UpdatePostRequest {
 	Post post = 1;
 	google.protobuf.FieldMask update_mask = 2;
+	// 默认 modified 已被用作防冲突的版本号。
+	// touch 可以用来控制是否更新 modified 为当前时间。
+	// 默认为 false，表示要更新。
+	bool do_not_touch = 3;
 }
 
 message DeletePostRequest {

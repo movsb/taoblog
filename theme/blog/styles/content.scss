@@ -219,3 +219,9 @@ blockquote {
 		margin: .1rem;
 	}
 }
+@container (max-width: 500px) {
+	.gallery img {
+		width: 100px;
+		height: 100px !important;
+	}
+}

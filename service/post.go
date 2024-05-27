@@ -500,8 +500,11 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 
 	now := time.Now().Unix()
 
-	m := map[string]any{
-		`modified`: now,
+	m := map[string]any{}
+
+	// 适用于导入三方数据的时候更新导入。
+	if !in.DoNotTouch {
+		m[`modified`] = now
 	}
 
 	var hasSourceType, hasSource bool

@@ -115,17 +115,24 @@ var replaceUserMention = regexp.MustCompile(`@\w+\b`)
 
 func (t *Tweet) Markdown() string {
 	s := reRemoveUrl.ReplaceAllStringFunc(string(t.FullText), func(s string) string {
+		expanded := ""
 		if p := slices.IndexFunc(t.ExtendedEntities.URLs, func(u EntityURL) bool {
 			return u.URL == s
 		}); p != -1 {
-			return fmt.Sprintf(`<%s>`, t.ExtendedEntities.URLs[p].Expanded)
+			expanded = t.ExtendedEntities.URLs[p].Expanded
 		}
 		if p := slices.IndexFunc(t.Entities.URLs, func(u EntityURL) bool {
 			return u.URL == s
 		}); p != -1 {
-			return fmt.Sprintf(`<%s>`, t.Entities.URLs[p].Expanded)
+			expanded = t.Entities.URLs[p].Expanded
 		}
-		return "" // 原本推文自身。
+		if expanded != "" {
+			// 粗暴判断不是站内链接。
+			if !strings.Contains(expanded, `/status/`) {
+				return fmt.Sprintf(`<%s>`, expanded)
+			}
+		}
+		return "" // 原本推文自身/转推/站内。
 	})
 	s = strings.ReplaceAll(s, "\n", "\n\n")
 	s = replaceUserMention.ReplaceAllStringFunc(s, func(s string) string {

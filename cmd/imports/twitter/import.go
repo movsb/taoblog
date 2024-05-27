@@ -2,14 +2,20 @@ package twitter
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
+	"net/http"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/movsb/taoblog/cmd/client"
 	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/protocols/clients"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type Importer struct {
@@ -31,6 +37,24 @@ func (i *Importer) Execute() error {
 		return err
 	}
 
+	// 整理线上已有的列表，防止重复创建。
+	// 为简单起见，检测逻辑不写在 CreatePost/UpdatePost 里面。
+	allPosts, err := i.client.Blog.ListPosts(i.client.Context(),
+		&proto.ListPostsRequest{},
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	tid2pid := map[string]int{}
+	for _, p := range allPosts.Posts {
+		if p.Metas != nil && p.Metas.Origin != nil && p.Metas.Origin.Platform == proto.Metas_Origin_Twitter {
+			if len(p.Metas.Origin.Slugs) != 1 {
+				log.Fatalln(`不正确的来源链接标识。`)
+			}
+			tid2pid[p.Metas.Origin.Slugs[0]] = int(p.Id)
+		}
+	}
+
 	// 为了上传附件，切到附件目录。
 	tweetsMedia, err := fs.Sub(i.root, `data/tweets_media`)
 	if err != nil {
@@ -47,13 +71,36 @@ func (i *Importer) Execute() error {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		post, err = i.client.Blog.CreatePost(i.client.Context(), post)
+
+		// 判断是要创建还是更新。
+		pid, ok := tid2pid[tweet.ID]
+		if ok {
+			// if pid != 944 {
+			// 	continue
+			// }
+			post.Id = int64(pid)
+			post, err = i.client.Blog.UpdatePost(i.client.Context(), &proto.UpdatePostRequest{
+				Post: post,
+				UpdateMask: &fieldmaskpb.FieldMask{
+					Paths: []string{
+						`source_type`, // 只有原文需要更新吧？
+						`source`,
+					},
+				},
+				DoNotTouch: true,
+			})
+		} else {
+			post, err = i.client.Blog.CreatePost(i.client.Context(), post)
+		}
 		if err != nil {
 			log.Fatalln(err)
 		}
 
 		images, videos := tweet.Assets(true)
-		client.UploadPostFiles(i.client, post.Id, tweetsMedia, images)
+
+		hi := HiResImages{backend: tweetsMedia, found: map[string]string{}}
+		client.UploadPostFiles(i.client, post.Id, &hi, images)
+
 		videoNames := make([]string, 0, len(videos))
 		for _, v := range videos {
 			videoNames = append(videoNames, v.FileName)
@@ -62,6 +109,66 @@ func (i *Importer) Execute() error {
 	}
 
 	return nil
+}
+
+// https://pbs.twimg.com/media/GA0Qq0DbYAEltfQ?format=jpg&name=4096x4096
+type HiResImages struct {
+	backend fs.FS
+	found   map[string]string
+}
+
+func (h *HiResImages) Open(name string) (fs.File, error) {
+	path, ok := h.found[name]
+	if ok && path != "" {
+		return os.Open(path)
+	}
+	if ok {
+		return h.backend.Open(name)
+	}
+	alt := h.fetch4K(name)
+	if alt != "" {
+		fp, err := os.Open(alt)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		h.found[name] = alt
+		log.Println(`有高清图片：`, name, alt)
+		return fp, nil
+	}
+	h.found[name] = ""
+	return h.backend.Open(name)
+}
+
+// 如果能获取到 4k 图片，返回临时文件路径。
+func (h *HiResImages) fetch4K(image string) string {
+	u := `https://pbs.twimg.com/media/%s?format=%s&name=4096x4096`
+	re := regexp.MustCompile(`^\d+-([^.]+)\.(\w+)$`)
+	matches := re.FindStringSubmatch(image)
+	if len(matches) == 0 {
+		log.Fatalln(`不合法的文件名：`, image)
+	}
+	name := matches[1]
+	format := matches[2]
+	fu := fmt.Sprintf(u, name, format)
+	rsp, err := http.Get(fu)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if rsp.StatusCode == 404 {
+		return ""
+	}
+	defer rsp.Body.Close()
+	tmp, err := os.CreateTemp("", "")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if n, err := io.Copy(tmp, io.LimitReader(rsp.Body, 20<<20)); err != nil || n == 20<<20 {
+		log.Fatalln(err, 20<<20)
+	}
+	if err := tmp.Close(); err != nil {
+		log.Fatalln(err)
+	}
+	return tmp.Name()
 }
 
 func convertToPost(t *Tweet) (*proto.Post, error) {
