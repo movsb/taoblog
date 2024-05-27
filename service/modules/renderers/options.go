@@ -371,12 +371,13 @@ func (m *_MediaDimensionLimiter) FilterHtml(doc *html.Node) ([]byte, error) {
 		var w, h int
 		fmt.Sscanf(*width, "%d", &w)
 		fmt.Sscanf(*height, "%d", &h)
-		if w > h {
+		// == 的情况也一起处理了。
+		if w >= h {
 			add(node, `landscape`)
 			if w > m.max {
 				add(node, `too-wide`)
 			}
-		} else if h > w {
+		} else {
 			add(node, `portrait`)
 			if h > m.max {
 				add(node, `too-high`)
