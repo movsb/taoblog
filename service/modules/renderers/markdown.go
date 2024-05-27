@@ -3,7 +3,6 @@ package renderers
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	_ "embed"
 	"encoding/xml"
 	"errors"
@@ -249,12 +248,8 @@ func (me *_Markdown) Render(source string) (string, error) {
 						// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
 						// https://stackoverflow.com/q/12614862/3628322
 						w.WriteString(fmt.Sprintf(
-							`<img id="%[1]s" style="display:none;" src="not-found://" onerror="syncCodeScroll('%[1]s')"/>`,
-							func() string {
-								buf := [4]byte{}
-								rand.Read(buf[:])
-								return fmt.Sprintf(`%x`, buf)
-							}(),
+							`<img id="%[1]s" style="display:none;" src="https://" onerror="syncCodeScroll('%[1]s')"/>`,
+							utils.RandomString(),
 						))
 						w.WriteRune('\n')
 					} else {

@@ -96,3 +96,15 @@ TaoBlog.userID = TaoBlog.fn.getUserID();
 if (TaoBlog.userID > 0) {
 	setTimeout(()=>document.body.classList.add('signed-in'), 0);
 }
+
+// 同步代码滚动
+// TODO admin 里面有一份重复，待合并。
+function syncCodeScroll(id) {
+	console.log('executing syncCodeScroll');
+	let img = document.getElementById(id);
+	let container = img.parentElement;
+	let tr = container.querySelector(':scope .lntable tr');
+	let td =  container.querySelector(':scope .lntable .lntd:first-child');
+	tr.onscroll = e => td.style.top = `${-tr.scrollTop}px`;
+	img.remove();
+}
