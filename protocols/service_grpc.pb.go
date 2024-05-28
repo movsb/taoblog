@@ -478,6 +478,7 @@ type TaoBlogClient interface {
 	GetPostComments(ctx context.Context, in *GetPostCommentsRequest, opts ...grpc.CallOption) (*GetPostCommentsResponse, error)
 	GetPostsByTags(ctx context.Context, in *GetPostsByTagsRequest, opts ...grpc.CallOption) (*GetPostsByTagsResponse, error)
 	PreviewPost(ctx context.Context, in *PreviewPostRequest, opts ...grpc.CallOption) (*PreviewPostResponse, error)
+	CheckPostTaskListItems(ctx context.Context, in *CheckPostTaskListItemsRequest, opts ...grpc.CallOption) (*CheckPostTaskListItemsResponse, error)
 	CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error)
 	GetComment(ctx context.Context, in *GetCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 	UpdateComment(ctx context.Context, in *UpdateCommentRequest, opts ...grpc.CallOption) (*Comment, error)
@@ -595,6 +596,15 @@ func (c *taoBlogClient) PreviewPost(ctx context.Context, in *PreviewPostRequest,
 	return out, nil
 }
 
+func (c *taoBlogClient) CheckPostTaskListItems(ctx context.Context, in *CheckPostTaskListItemsRequest, opts ...grpc.CallOption) (*CheckPostTaskListItemsResponse, error) {
+	out := new(CheckPostTaskListItemsResponse)
+	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/CheckPostTaskListItems", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *taoBlogClient) CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error) {
 	out := new(Comment)
 	err := c.cc.Invoke(ctx, "/protocols.TaoBlog/CreateComment", in, out, opts...)
@@ -682,6 +692,7 @@ type TaoBlogServer interface {
 	GetPostComments(context.Context, *GetPostCommentsRequest) (*GetPostCommentsResponse, error)
 	GetPostsByTags(context.Context, *GetPostsByTagsRequest) (*GetPostsByTagsResponse, error)
 	PreviewPost(context.Context, *PreviewPostRequest) (*PreviewPostResponse, error)
+	CheckPostTaskListItems(context.Context, *CheckPostTaskListItemsRequest) (*CheckPostTaskListItemsResponse, error)
 	CreateComment(context.Context, *Comment) (*Comment, error)
 	GetComment(context.Context, *GetCommentRequest) (*Comment, error)
 	UpdateComment(context.Context, *UpdateCommentRequest) (*Comment, error)
@@ -729,6 +740,9 @@ func (UnimplementedTaoBlogServer) GetPostsByTags(context.Context, *GetPostsByTag
 }
 func (UnimplementedTaoBlogServer) PreviewPost(context.Context, *PreviewPostRequest) (*PreviewPostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PreviewPost not implemented")
+}
+func (UnimplementedTaoBlogServer) CheckPostTaskListItems(context.Context, *CheckPostTaskListItemsRequest) (*CheckPostTaskListItemsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckPostTaskListItems not implemented")
 }
 func (UnimplementedTaoBlogServer) CreateComment(context.Context, *Comment) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
@@ -965,6 +979,24 @@ func _TaoBlog_PreviewPost_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaoBlog_CheckPostTaskListItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckPostTaskListItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaoBlogServer).CheckPostTaskListItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.TaoBlog/CheckPostTaskListItems",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaoBlogServer).CheckPostTaskListItems(ctx, req.(*CheckPostTaskListItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TaoBlog_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Comment)
 	if err := dec(in); err != nil {
@@ -1159,6 +1191,10 @@ var TaoBlog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PreviewPost",
 			Handler:    _TaoBlog_PreviewPost_Handler,
+		},
+		{
+			MethodName: "CheckPostTaskListItems",
+			Handler:    _TaoBlog_CheckPostTaskListItems_Handler,
 		},
 		{
 			MethodName: "CreateComment",

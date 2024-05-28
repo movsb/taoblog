@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type _PostContentCacheKey struct {
@@ -791,4 +792,72 @@ func truncateTitle(title string, length int) string {
 
 	suffix := utils.IIF(len(runes) > maxLength, "...", "")
 	return string(runes[:maxLength]) + suffix
+}
+
+func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPostTaskListItemsRequest) (*proto.CheckPostTaskListItemsResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	p, err := s.GetPost(ctx, &proto.GetPostRequest{Id: in.Id,
+		ContentOptions: &proto.PostContentOptions{WithContent: false},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if p.Modified != in.PostModificationTime {
+		return nil, status.Error(codes.Aborted, `文章修改时间不匹配。`)
+	}
+
+	if p.SourceType != `markdown` {
+		return nil, status.Error(codes.FailedPrecondition, `文章类型不支持任务列表。`)
+	}
+
+	source := []byte(p.Source)
+
+	apply := func(pos int32, check bool) {
+		if pos <= 0 || int(pos) >= len(source)-1 {
+			panic(`无效任务。`)
+		}
+		if (source)[pos-1] != '[' || source[pos+1] != ']' {
+			panic(`无效任务。`)
+		}
+		checked := source[pos] == 'x' || source[pos] == 'X'
+		if checked == check {
+			panic(`任务状态一致，不能变更。`)
+		}
+		source[pos] = utils.IIF[bool, byte](check, 'X', ' ')
+	}
+
+	if err := (func() (err error) {
+		defer utils.CatchAsError(&err)
+		for _, item := range in.Checks {
+			apply(item, true)
+		}
+		for _, item := range in.Unchecks {
+			apply(item, false)
+		}
+		return nil
+	})(); err != nil {
+		return nil, err
+	}
+
+	p.Source = string(source)
+
+	updateRequest := proto.UpdatePostRequest{
+		Post: p,
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				`source_type`,
+				`source`,
+			},
+		},
+	}
+	updated, err := s.UpdatePost(ctx, &updateRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.CheckPostTaskListItemsResponse{
+		Post: updated,
+	}, nil
 }

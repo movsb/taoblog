@@ -19,7 +19,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
-	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -109,7 +108,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 		options = append(options,
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
-			task_list.New(),
+			// task_list.New(),
 		)
 		tr = renderers.NewMarkdown(options...)
 	case `html`:

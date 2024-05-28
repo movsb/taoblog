@@ -41,3 +41,13 @@ func RandomString() string {
 func DropLast1[First any, Last any](f First, l Last) First {
 	return f
 }
+
+func CatchAsError(err *error) {
+	if er := recover(); er != nil {
+		if er2, ok := er.(error); ok {
+			*err = er2
+			return
+		}
+		*err = fmt.Errorf(`%v`, er)
+	}
+}
