@@ -89,6 +89,7 @@ body.admin.editor {
 			max-height: 80vh;
 		}
 		#editor-container {
+			font-family: var(--mono-font);
 		}
 		#preview-container {
 			padding: var(--textarea-padding);

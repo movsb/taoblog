@@ -54,6 +54,29 @@ var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*TaskList\s*-->\
 // ... implements parser.ASTTransformer.
 // TODO 只处理第一层任务。
 func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
+	recurse := func(list *ast.List) {
+		gold_utils.AddClass(list, `task-list`)
+		for c := list.FirstChild(); c != nil; c = c.NextSibling() {
+			item, ok := c.(*ast.ListItem)
+			if !ok {
+				continue
+			}
+			if item.FirstChild().Kind() == ast.KindTextBlock {
+				tb := item.FirstChild().(*ast.TextBlock)
+				if tb.FirstChild() == nil || tb.FirstChild().Kind() != extast.KindTaskCheckBox {
+					continue
+				}
+				checkBox := tb.FirstChild().(*extast.TaskCheckBox)
+				classes := []string{`task-list-item`}
+				if checkBox.IsChecked {
+					classes = append(classes, `checked`)
+				}
+				gold_utils.AddClass(item, classes...)
+				item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			}
+		}
+	}
+
 	ast.Walk(node, func(n ast.Node, entering bool) (status ast.WalkStatus, err error) {
 		status = ast.WalkContinue
 		if !entering {
@@ -80,30 +103,7 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 		}
 		// List -> Item -> TextBlock -> CheckBox
 		list := hb.NextSibling().(*ast.List)
-		gold_utils.AddClass(list, `task-list`)
-		for c := list.FirstChild(); c != nil; c = c.NextSibling() {
-			item, ok := c.(*ast.ListItem)
-			if !ok {
-				continue
-			}
-			// if item.ChildCount() != 1 {
-			// 	continue
-			// }
-			if item.FirstChild().Kind() != ast.KindTextBlock {
-				continue
-			}
-			tb := item.FirstChild().(*ast.TextBlock)
-			if tb.FirstChild() == nil || tb.FirstChild().Kind() != extast.KindTaskCheckBox {
-				continue
-			}
-			checkBox := tb.FirstChild().(*extast.TaskCheckBox)
-			classes := []string{`task-list-item`}
-			if checkBox.IsChecked {
-				classes = append(classes, `checked`)
-			}
-			gold_utils.AddClass(item, classes...)
-			item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
-		}
+		recurse(list)
 		return
 	})
 }
@@ -136,9 +136,12 @@ func (e *TaskList) renderTaskCheckBox(
 			}
 		}
 	}
-	if !isTaskListItem {
-		w.WriteString(` disabled`)
+	if isTaskListItem {
+		n.SetAttributeString(`autocomplete`, `off`) // for firefox
 	}
+	// if !isTaskListItem {
+	w.WriteString(` disabled`)
+	// }
 
 	if n.Attributes() != nil {
 		html.RenderAttributes(w, n, nil)

@@ -152,6 +152,7 @@
 .TMHTMLBlock {
 	color: #e06c75;
 	font-family: monospace;
+	font-family: var(--mono-font);
 	/* font-size: .9em */
 }
 

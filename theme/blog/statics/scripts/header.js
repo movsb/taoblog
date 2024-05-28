@@ -36,7 +36,8 @@ function __TaoBlog()
 
     return {
         events: new EventDispatcher(),
-        fn: {}
+        fn: {},
+		posts: {},
     };
 }
 
@@ -94,7 +95,9 @@ TaoBlog.fn.getUserID = function() {
 
 TaoBlog.userID = TaoBlog.fn.getUserID();
 if (TaoBlog.userID > 0) {
-	setTimeout(()=>document.body.classList.add('signed-in'), 0);
+	document.addEventListener('DOMContentLoaded', ()=>{
+		document.body.classList.add('signed-in');
+	});
 }
 
 // 同步代码滚动

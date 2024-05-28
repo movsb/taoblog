@@ -5,20 +5,21 @@
 <title>文章编辑</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 <link rel="stylesheet" type="text/css" href="/style.css" />
+<script src="/scripts/header.js"></script>
 <script src="/admin/tinymde.js"></script>
+<script src="/admin/script.js"></script>
 <link rel="stylesheet" type="text/css" href="/admin/tinymde.css" />
 {{ apply_site_theme_customs }}
 </head>
 <body class="admin editor">
-{{ if not $.Post }}
-<script>var _post_id = 0;</script>
-{{ else }}
 <script>
-	var _post_id = {{ $.Post.Id }};
-	var _modified = {{ $.Post.Modified }};
-	var _created = {{ $.Post.Date }};
-</script>
+{{ if not $.Post }}
+	TaoBlog.post_id =  0;
+{{ else }}
+	TaoBlog.post_id = +"{{$.Post.Id}}";
+	TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 {{ end }}
+</script>
 <form>
 	<div id="container">
 		<div id="editor-container">

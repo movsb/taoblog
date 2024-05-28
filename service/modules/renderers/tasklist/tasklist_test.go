@@ -30,8 +30,8 @@ func TestTaskList(t *testing.T) {
 			Markdown: "<!-- TaskList -->\n\n- [ ] Task1\n- [x] Task2",
 			HTML: `<!-- TaskList -->
 <ul class="task-list">
-<li class="task-list-item" data-source-position="22"><input type=checkbox> Task1</li>
-<li class="checked task-list-item" data-source-position="34"><input type=checkbox checked> Task2</li>
+<li class="task-list-item" data-source-position="22"><input type=checkbox disabled autocomplete="off"> Task1</li>
+<li class="checked task-list-item" data-source-position="34"><input type=checkbox checked disabled autocomplete="off"> Task2</li>
 </ul>
 `,
 		},

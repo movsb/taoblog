@@ -176,7 +176,7 @@ func (t *Theme) loadTemplates() {
 		},
 		"partial": func(name string, data *data.Data, data2 any) error {
 			if t := t.templates.GetPartial(name); t != nil {
-				return t.Execute(data.Writer, data2)
+				return data.ExecutePartial(t, data2)
 			}
 			// TODO 找不到应该报错。
 			return nil
@@ -232,7 +232,7 @@ func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
 	d.Template = t2
 	d.Writer = w
 	if err := t2.Execute(w, d); err != nil {
-		log.Println(err)
+		log.Println("\033[38m;", err, "\033[m")
 	}
 }
 

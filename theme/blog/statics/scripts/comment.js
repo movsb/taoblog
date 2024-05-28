@@ -977,5 +977,5 @@ class Comment {
 	}
 }
 
-let comment = new Comment(+_post_id);
+let comment = new Comment(TaoBlog.post_id);
 comment.init();

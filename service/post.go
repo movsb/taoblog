@@ -601,7 +601,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		if err != nil || rowsAffected != 1 {
 			op := models.Post{ID: in.Post.Id}
 			txs.tdb.Model(&op).MustFind(&op)
-			return fmt.Errorf("update failed, modified conflict: %v (modified: %v)", err, op.Modified)
+			return status.Errorf(codes.Aborted, "update failed, modified conflict: %v (modified: %v)", err, op.Modified)
 		}
 		if hasTags || hashtags != nil {
 			var newTags []string
@@ -777,8 +777,12 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentO
 func truncateTitle(title string, length int) string {
 	runes := []rune(title)
 
+	for len(runes) > 0 && runes[0] == '\n' {
+		runes = runes[1:]
+	}
+
 	// 不包含回车
-	if p := slices.Index(runes, '\n'); p > 0 { // 不可能第一个字符是回车吧？🤔
+	if p := slices.Index(runes, '\n'); p > 0 {
 		runes = runes[:p]
 	}
 
@@ -791,7 +795,7 @@ func truncateTitle(title string, length int) string {
 	}
 
 	suffix := utils.IIF(len(runes) > maxLength, "...", "")
-	return string(runes[:maxLength]) + suffix
+	return strings.TrimSpace(string(runes[:maxLength]) + suffix)
 }
 
 func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPostTaskListItemsRequest) (*proto.CheckPostTaskListItemsResponse, error) {
