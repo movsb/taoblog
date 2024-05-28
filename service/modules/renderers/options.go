@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -40,19 +41,6 @@ type HtmlTransformer interface {
 }
 
 // -----------------------------------------------------------------------------
-
-func appendClass(node ast.Node, name string) {
-	any, found := node.AttributeString(name)
-	if list, ok := any.(string); !found || ok {
-		if list == "" {
-			list = name
-		} else {
-			list += " "
-			list += name
-		}
-		node.SetAttributeString(`class`, list)
-	}
-}
 
 func Testing() Option {
 	return func(me *_Markdown) error {
@@ -86,7 +74,7 @@ func (*_ReserveListItemMarkerStyle) WalkEntering(n ast.Node) (ast.WalkStatus, er
 	switch typed := n.(type) {
 	case *ast.List:
 		if class, ok := knownListItemMarkers[typed.Marker]; ok {
-			appendClass(typed, `marker-`+class)
+			gold_utils.AddClass(typed, `marker-`+class)
 		}
 	}
 	return ast.WalkContinue, nil

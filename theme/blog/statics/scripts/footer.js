@@ -184,3 +184,58 @@ class __Vim {
 }
 
 TaoBlog.vim = new __Vim();
+
+// 任务列表处理。
+// 文章编号目前来自于两个地方：
+// <article id="xxx">
+// TaoBlog.post_id = 1;
+(async function() {
+	let taskLists = document.querySelectorAll('ul.task-list');
+	taskLists.forEach(list=>{
+		list.querySelectorAll('.task-list-item > input[type=checkbox]').forEach(e => e.disabled = "");
+	});
+	taskLists.forEach(list =>list.addEventListener('click', async e => {
+		let checkBox = e.target;
+		if (checkBox.tagName != 'INPUT' || checkBox.type != 'checkbox') { return; }
+		let listItem = checkBox.parentElement;
+		if (!listItem.classList.contains('task-list-item')) { return; }
+		let position = listItem.getAttribute('data-source-position');
+		position = parseInt(position);
+		if (!position) { return; }
+		let postID = TaoBlog.post_id;
+		if (!postID) {
+			let node = listItem;
+			while (node && node.tagName != 'ARTICLE') {
+				node = node.parentElement;
+			}
+			if (node) {
+				postID = parseInt(node.getAttribute('id'));
+			}
+		}
+		if (!postID) {
+			alert('没有找到对应的文章编号，不可操作任务。');
+			return;
+		}
+
+		// 禁止父级任务列表响应事件。
+		e.stopPropagation();
+
+		let post = TaoBlog.posts[postID];
+		const api = new PostManagementAPI();
+		let checks = [], unchecks = [];
+		checkBox.checked ? checks.push(position) : unchecks.push(position);
+		try {
+			let updated = await api.checkPostTaskListItems(postID, post.modified, checks, unchecks);
+			post.modified = updated.post.modified;
+			if (checkBox.checked) {
+				listItem.classList.add('checked');
+			} else {
+				listItem.classList.remove('checked');
+			}
+		} catch(e) {
+			alert('任务更新失败：' + e.message ?? e);
+			checkBox.checked = !checkBox.checked;
+		} finally {
+		}
+	}));
+})();

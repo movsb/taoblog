@@ -1,10 +1,12 @@
 body.admin {
 	margin: 1em;
 	
-	input, button {
-		width: 100%;
-		margin: 4px 0 4px;
-		max-width: 250px;
+	&.login, &.profile {
+		input, button {
+			width: 100%;
+				margin: 4px 0 4px;
+			max-width: 250px;
+		}
 	}
 }
 
@@ -87,6 +89,7 @@ body.admin.editor {
 			max-height: 80vh;
 		}
 		#editor-container {
+			font-family: var(--mono-font);
 		}
 		#preview-container {
 			padding: var(--textarea-padding);

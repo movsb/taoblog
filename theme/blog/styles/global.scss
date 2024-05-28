@@ -412,3 +412,13 @@ svg.plantuml {
 
 // SVG
 text { cursor: text; }
+
+ul, ol {
+	&.task-list {
+		padding-left: 1em;
+		list-style-type: none;
+		.task-list-item.checked {
+			text-decoration: line-through var(--accent-color) solid;
+		}
+	}
+}

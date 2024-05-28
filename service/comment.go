@@ -108,6 +108,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 		options = append(options,
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
+			// task_list.New(),
 		)
 		tr = renderers.NewMarkdown(options...)
 	case `html`:

@@ -21,10 +21,12 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type _PostContentCacheKey struct {
@@ -274,6 +276,7 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		options = append(options,
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
+			task_list.New(),
 			renderers.WithHashTags(s.hashtagResolver, nil),
 			// 其它选项可能会插入链接，所以放后面。
 			// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
@@ -598,7 +601,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		if err != nil || rowsAffected != 1 {
 			op := models.Post{ID: in.Post.Id}
 			txs.tdb.Model(&op).MustFind(&op)
-			return fmt.Errorf("update failed, modified conflict: %v (modified: %v)", err, op.Modified)
+			return status.Errorf(codes.Aborted, "update failed, modified conflict: %v (modified: %v)", err, op.Modified)
 		}
 		if hasTags || hashtags != nil {
 			var newTags []string
@@ -774,8 +777,12 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentO
 func truncateTitle(title string, length int) string {
 	runes := []rune(title)
 
+	for len(runes) > 0 && runes[0] == '\n' {
+		runes = runes[1:]
+	}
+
 	// 不包含回车
-	if p := slices.Index(runes, '\n'); p > 0 { // 不可能第一个字符是回车吧？🤔
+	if p := slices.Index(runes, '\n'); p > 0 {
 		runes = runes[:p]
 	}
 
@@ -788,5 +795,73 @@ func truncateTitle(title string, length int) string {
 	}
 
 	suffix := utils.IIF(len(runes) > maxLength, "...", "")
-	return string(runes[:maxLength]) + suffix
+	return strings.TrimSpace(string(runes[:maxLength]) + suffix)
+}
+
+func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPostTaskListItemsRequest) (*proto.CheckPostTaskListItemsResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	p, err := s.GetPost(ctx, &proto.GetPostRequest{Id: in.Id,
+		ContentOptions: &proto.PostContentOptions{WithContent: false},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if p.Modified != in.PostModificationTime {
+		return nil, status.Error(codes.Aborted, `文章修改时间不匹配。`)
+	}
+
+	if p.SourceType != `markdown` {
+		return nil, status.Error(codes.FailedPrecondition, `文章类型不支持任务列表。`)
+	}
+
+	source := []byte(p.Source)
+
+	apply := func(pos int32, check bool) {
+		if pos <= 0 || int(pos) >= len(source)-1 {
+			panic(`无效任务。`)
+		}
+		if (source)[pos-1] != '[' || source[pos+1] != ']' {
+			panic(`无效任务。`)
+		}
+		checked := source[pos] == 'x' || source[pos] == 'X'
+		if checked == check {
+			panic(`任务状态一致，不能变更。`)
+		}
+		source[pos] = utils.IIF[bool, byte](check, 'X', ' ')
+	}
+
+	if err := (func() (err error) {
+		defer utils.CatchAsError(&err)
+		for _, item := range in.Checks {
+			apply(item, true)
+		}
+		for _, item := range in.Unchecks {
+			apply(item, false)
+		}
+		return nil
+	})(); err != nil {
+		return nil, err
+	}
+
+	p.Source = string(source)
+
+	updateRequest := proto.UpdatePostRequest{
+		Post: p,
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				`source_type`,
+				`source`,
+			},
+		},
+	}
+	updated, err := s.UpdatePost(ctx, &updateRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.CheckPostTaskListItemsResponse{
+		Post: updated,
+	}, nil
 }

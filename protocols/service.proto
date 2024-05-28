@@ -175,6 +175,15 @@ service TaoBlog {
 			description: "文章预览。";
 		};
 	}
+	rpc CheckPostTaskListItems (CheckPostTaskListItemsRequest) returns (CheckPostTaskListItemsResponse) {
+		option (google.api.http) = {
+			patch: "/v3/posts/{id=*}/tasks:check";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "完成/取消完成任务。";
+		};
+	}
 
 	// Comments
 

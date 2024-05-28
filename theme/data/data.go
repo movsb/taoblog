@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"reflect"
 	"strings"
 
 	"github.com/movsb/taoblog/cmd/config"
@@ -53,6 +54,23 @@ type Data struct {
 	Tweets *TweetsData
 
 	Error *ErrorData
+
+	Partials []any
+}
+
+func (d *Data) ExecutePartial(t *template.Template, partial any) error {
+	d.Partials = append(d.Partials, partial)
+	defer func() {
+		d.Partials = d.Partials[:len(d.Partials)-1]
+	}()
+	return t.Execute(d.Writer, d)
+}
+
+func (d *Data) Partial() (any, error) {
+	if len(d.Partials) > 0 {
+		return d.Partials[len(d.Partials)-1], nil
+	}
+	return nil, fmt.Errorf(`没有部分模板的数据可用。`)
 }
 
 func (d *Data) Title() string {
@@ -97,4 +115,20 @@ type MetaData struct {
 
 type ErrorData struct {
 	Message string
+}
+
+func (d *Data) Strip(obj any) (any, error) {
+	isAdmin := d.User.IsAdmin()
+	switch typed := obj.(type) {
+	case *Post:
+		if isAdmin {
+			return typed.Post, nil
+		}
+		return &proto.Post{
+			Id:       typed.Id,
+			Date:     typed.Date,
+			Modified: typed.Modified,
+		}, nil
+	}
+	return "", fmt.Errorf(`不知道如何列集：%v`, reflect.TypeOf(obj).String())
 }

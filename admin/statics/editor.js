@@ -1,79 +1,3 @@
-class PostManagementAPI
-{
-	constructor() { }
-
-	// 创建一条文章。
-	async createPost(source, time) {
-		let path = `/v3/posts`;
-		let rsp = await fetch(path, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				date: time,
-				type: 'tweet',
-				status: 'public',
-				source: source,
-				source_type: 'markdown',
-				status: 'public',
-			}),
-		});
-		if (!rsp.ok) {
-			throw new Error('发表失败：' + await rsp.text());
-		}
-		let c = await rsp.json();
-		console.log(c);
-		return c;
-	}
-
-	// 更新/“编辑”一条已有评论。
-	// 返回更新后的评论项。
-	// 参数：id        - 评论编号
-	// 参数：source    - 评论 markdown 原文
-	async updatePost(id, modified, source, created) {
-		let path = `/v3/posts/${id}`;
-		let rsp = await fetch(path, {
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				post: {
-					source_type: 'markdown',
-					source: source,
-					date: created,
-					modified: modified,
-				},
-				update_mask: 'source,sourceType,created'
-			})
-		});
-		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }
-		let c = await rsp.json();
-		console.log(c);
-		return c;
-	}
-
-	// 文章预览
-	async previewPost(id, source) {
-		let path = `/v3/posts:preview`;
-		let rsp = await fetch(path, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				id: id,
-				markdown: source,
-			})
-		});
-		if (!rsp.ok) {
-			throw new Error(await rsp.text());
-		}
-		return await rsp.json();
-	}
-}
-
 class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('form');
@@ -281,8 +205,8 @@ let formUI = new PostFormUI();
 formUI.submit(async () => {
 	try {
 		let post = undefined;
-		if (window._post_id > 0) {
-			post = await postAPI.updatePost(window._post_id, _modified, formUI.source, formUI.time);
+		if (TaoBlog.post_id > 0) {
+			post = await postAPI.updatePost(TaoBlog.post_id, TaoBlog.posts[TaoBlog.post_id].modified, formUI.source, formUI.time);
 		} else {
 			post = await postAPI.createPost(formUI.source, formUI.time);
 		}
@@ -292,11 +216,11 @@ formUI.submit(async () => {
 		alert(e);
 	}
 });
-if (typeof _created == 'number') {
-	formUI.time = _created*1000;
+if (TaoBlog.post_id > 0) {
+	formUI.time = TaoBlog.posts[TaoBlog.post_id].date * 1000;
 }
 formUI.drop(async files => {
-	if (!window._post_id) {
+	if (!TaoBlog.post_id) {
 		alert('新建文章暂不支持上传文件，请先发表。');
 		return;
 	}
@@ -309,7 +233,7 @@ formUI.drop(async files => {
 
 	let fm;
 	try {
-		fm = new FilesManager(+window._post_id);
+		fm = new FilesManager(TaoBlog.post_id);
 		await fm.connect();
 	} catch(e) {
 		alert(e);
@@ -343,7 +267,7 @@ formUI.drop(async files => {
 });
 let updatePreview = async (content) => {
 	try {
-		let rsp = await postAPI.previewPost(+window._post_id, content);
+		let rsp = await postAPI.previewPost(TaoBlog.post_id, content);
 		formUI.setPreview(rsp.html, true);
 	} catch (e) {
 		formUI.setPreview(e, false);
@@ -354,11 +278,11 @@ formUI.sourceChanged(async (content) => {
 });
 updatePreview(formUI.source);
 (async function() {
-	if (!window._post_id) {
+	if (!TaoBlog.post_id) {
 		console.log('新建文章不支持查询文件列表。');
 		return;
 	}
-	let fm = new FilesManager(+window._post_id);
+	let fm = new FilesManager(TaoBlog.post_id);
 	try {
 		await fm.connect();
 		let list = await fm.list();

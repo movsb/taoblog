@@ -204,6 +204,8 @@ github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJ
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
+github.com/movsb/goldmark v1.4.1-0.20240528100946-32a63fedc159 h1:rZ899zqA7vvks0PiZKbvrSi0303rUSra89lK40WLmXA=
+github.com/movsb/goldmark v1.4.1-0.20240528100946-32a63fedc159/go.mod h1:uzxRWxtg69N339t3louHJ7+O03ezfj6PlliRlaOzY1E=
 github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575 h1:pMe8efqpxJsiUMDwn2wPDqmuvuH8yrnuq3lDZl3JVOE=
 github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575/go.mod h1:qryy4AEogyw8d+zR2jGs4QnN4OFIsAVmoe6dglyjjJM=
 github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:eeMZo/pDQ2Vdmq7jFlb3JMYDLHtQWELZIw+oeEevh4A=
