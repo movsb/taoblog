@@ -89,3 +89,4 @@ go 1.22
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
 
 // replace github.com/yuin/goldmark => /Users/tao/code/goldmark
+replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20240528100946-32a63fedc159

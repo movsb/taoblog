@@ -412,3 +412,7 @@ svg.plantuml {
 
 // SVG
 text { cursor: text; }
+
+.task-list-item.checked {
+	text-decoration: line-through var(--accent-color) solid;
+}
