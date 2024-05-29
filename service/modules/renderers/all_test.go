@@ -284,6 +284,11 @@ func TestPrettifier(t *testing.T) {
 			Markdown: `[万物死](https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3)`,
 			Text:     `万物死`,
 		},
+		{
+			ID:       8.0,
+			Markdown: "用 `<script>` 嵌入 JSON 的正规做法[^1]：\n\n[^1]: https://",
+			Text:     `用 <script> 嵌入 JSON 的正规做法：`,
+		},
 	}
 	for _, tc := range cases {
 		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)

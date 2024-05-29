@@ -154,6 +154,12 @@ var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.Wa
 		buf.WriteString(`[页面]`)
 		return ast.WalkSkipChildren
 	},
+	`sub`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		return ast.WalkSkipChildren
+	},
+	`sup`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		return ast.WalkSkipChildren
+	},
 }
 
 type _ContentPrettifier struct{}
