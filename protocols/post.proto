@@ -208,6 +208,11 @@ message FileSpec {
 	uint32 mode = 2;
 	uint32 size = 3;
 	uint32 time = 4;
+
+	// 文件内容类型。
+	// 仅在 list 的时候返回，其它时候不使用。
+	// 仅通过后缀名判断，可能为空。
+	string type = 5;
 }
 
 message FileSystemRequest {

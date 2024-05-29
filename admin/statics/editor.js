@@ -2,6 +2,7 @@ class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('form');
 		this._previewCallbackReturned = true;
+		this._files = this._form.querySelector('#files');
 
 		this.editor = new TinyMDE.Editor({
 			element: document.querySelector('#editor-container'),
@@ -22,6 +23,19 @@ class PostFormUI {
 						editor.paste(formatted);
 					},
 				},
+				{
+					name: `insertImage`,
+					title: `上传图片/视频/文件`,
+					innerHTML: `⏫`,
+					action: editor => {
+						if (!TaoBlog.post_id) {
+							alert('新建文章暂不支持上传文件，请先发表。');
+							return;
+						}
+						let files = document.getElementById('files');
+						files.click();
+					},
+				}
 			],
 		});
 	}
@@ -70,12 +84,63 @@ class PostFormUI {
 		console.log(list);
 		let ol = this._form.querySelector('.files .list');
 		ol.innerHTML = '';
+		
+		/**
+		 * @param {string} s
+		 */
+		const encodePathAsURL = s => {
+			// https://en.wikipedia.org/wiki/Percent-encoding
+			// 只是尽量简单地编码必要的字符，不然会在 Markdown 里面很难看。
+			// ! # $ & ' ( ) * + , / : ; = ? @ [ ]
+			// 外加 % 空格
+			const re = /!|#|\$|&|'|\(|\)|\*|\+|,|\/|:|;|=|\?|@|\[|\]|%| /g;
+			return s.replace(re, c => '%' + c.codePointAt(0).toString(16).toUpperCase());
+		};
+		
+		const h2a = (h) => {
+			const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
+			return h.replace(/[&'"]/g, c => map[c]);
+		};
+
 		list.files.forEach(f => {
 			let li = document.createElement('li');
+
 			let name = document.createElement('span');
 			name.innerText = f.path;
 			li.appendChild(name);
+
+			let insertButton = document.createElement('button');
+			let text = '';
+			let editor = this.editor;
+			let insert = '';
+			if (/^image\//.test(f.type)) {
+				text = '🏞️';
+				insert = `![${f.path}](${encodePathAsURL(f.path)})`;
+			} else if (/^video\//.test(f.type)) {
+				text = '🎬';
+				insert = `<video controls src="${h2a(encodePathAsURL(f.path))}"></video>`;
+			} else if (/^audio\//.test(f.type)) {
+				text = '🎵';
+				insert = `<audio controls src="${h2a(encodePathAsURL(f.path))}"></audio>`;
+			} else {
+				text = '🔗';
+				insert = `[${f.path}](${encodePathAsURL(f.path)})`;
+			}
+			insertButton.innerText = text;
+			insertButton.addEventListener('click', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				editor.paste(insert);
+			});
+			li.appendChild(insertButton);
+
 			ol.appendChild(li);
+		});
+	}
+	filesChanged(callback) {
+		this._files.addEventListener('change', (e)=> {
+			console.log('选中文件列表：', this._files.files);
+			callback(this._files.files);
 		});
 	}
 
@@ -86,25 +151,6 @@ class PostFormUI {
 			e.stopPropagation();
 			callback();
 		});
-	}
-
-	drop(callback) {
-		window.addEventListener('dragenter', e => {
-			e.stopPropagation();
-			e.preventDefault();
-		}, false);
-		window.addEventListener('dragover', e => {
-			e.stopPropagation();
-			e.preventDefault();
-			e.dataTransfer.dropEffect = 'copy';
-		}, false);
-		window.addEventListener('drop', e => {
-			e.stopPropagation();
-			e.preventDefault();
-			// TODO 换 items，可以知道是否为目录。
-			console.log(e.dataTransfer.files);
-			callback(e.dataTransfer.files);
-		}, false);
 	}
 
 	// debounced
@@ -236,26 +282,8 @@ formUI.submit(async () => {
 if (TaoBlog.post_id > 0) {
 	formUI.time = TaoBlog.posts[TaoBlog.post_id].date * 1000;
 }
-formUI.drop(async files => {
-	if (!TaoBlog.post_id) {
-		alert('新建文章暂不支持上传文件，请先发表。');
-		return;
-	}
+formUI.filesChanged(async files => {
 	if (files.length <= 0) { return; }
-	if (files.length > 1) {
-		// TODO 其实接口完全允许多文件上传。
-		// alert('目前仅支持单文件上传哦。');
-		// return;
-	}
-
-	let fm;
-	try {
-		fm = new FilesManager(TaoBlog.post_id);
-		await fm.connect();
-	} catch(e) {
-		alert(e);
-		return;
-	}
 	Array.from(files).forEach(async f => {
 		if (f.size > (10 << 20)) {
 			alert(`文件 "${f.name}" 太大，不予上传。`);
@@ -266,21 +294,25 @@ formUI.drop(async files => {
 			return;
 		}
 		try {
+			let fm = undefined;
+			try {
+				fm = new FilesManager(TaoBlog.post_id);
+				await fm.connect();
+			} catch(e) {
+				alert(e);
+				return;
+			}
 			await fm.create(f);
 			alert(`文件 ${f.name} 上传成功。`);
+			let list = await fm.list();
+			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
+			// 导致我的不得不用 formUI，而不是 this。
+			formUI.files = list;
 		} catch(e) {
 			alert(`文件 ${f.name} 上传失败：${e}`);
 			return;
 		}
 	});
-	try {
-		let list = await fm.list();
-		// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
-		// 导致我的不得不用 formUI，而不是 this。
-		formUI.files = list;
-	} catch(e) {
-		alert(e);
-	}
 });
 let updatePreview = async (content) => {
 	try {

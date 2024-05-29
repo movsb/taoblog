@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"mime"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,6 +28,7 @@ func ListFiles(dir string) ([]*proto.FileSpec, error) {
 			Mode: f.Mode,
 			Size: f.Size,
 			Time: f.Time,
+			Type: mime.TypeByExtension(filepath.Ext(f.Path)),
 		})
 	}
 	return fs, nil

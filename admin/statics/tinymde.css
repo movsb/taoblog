@@ -158,8 +158,8 @@
 
 .TMCommandBar {
 	-ms-overflow-style: none;
-	background-color: #f8f8f8;
-	border: 4px solid #f8f8f8;
+	/* background-color: #f8f8f8; */
+	/* border: 4px solid #f8f8f8; */
 	box-sizing: content-box;
 	display: flex;
 	height: 24px;
@@ -203,13 +203,13 @@
 
 .TMCommandButton_Active {
 	fill: navy;
-	background-color: #c0c0ff;
+	/* background-color: #c0c0ff; */
 	color: navy;
 	font-weight: 700
 }
 
 .TMCommandButton_Inactive {
-	background-color: #f8f8f8
+	/* background-color: #f8f8f8 */
 }
 
 .TMCommandButton_Disabled {
@@ -223,7 +223,7 @@
 	.TMCommandButton_Disabled:hover,
 	.TMCommandButton_Inactive:hover {
 		fill: #000;
-		background-color: #e0e0ff
+		/* background-color: #e0e0ff */
 	}
 }
 
