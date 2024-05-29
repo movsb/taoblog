@@ -7,6 +7,23 @@ class PostFormUI {
 			element: document.querySelector('#editor-container'),
 			textarea: document.querySelector('#editor-container textarea'),
 		});
+		this.editorCommands = new TinyMDE.CommandBar({
+			element: document.getElementById('command-container'),
+			editor: this.editor,
+			commands: [
+				{
+					name: `divider`,
+					title: `插入当时时间分割线`,
+					innerHTML: `✂️`,
+					action: editor => {
+						const date = new Date();
+						let formatted = date.toLocaleString().replaceAll('/', '-');
+						formatted = `\n\n--- ${formatted} ---\n\n`;
+						editor.paste(formatted);
+					},
+				},
+			],
+		});
 	}
 
 	get elemSource()    { return this._form['source'];  }

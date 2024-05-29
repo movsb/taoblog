@@ -218,7 +218,6 @@ func (me *_Markdown) Render(source string) (string, error) {
 
 	extensions := []goldmark.Extender{
 		extension.GFM,
-		extension.DefinitionList,
 		extension.Footnote,
 		mathjax.NewMathJax(
 			mathjax.WithInlineDelim(`$`, `$`),
@@ -813,7 +812,7 @@ func size(url *urlpkg.URL) (int, int) {
 				return w, h
 			}
 		}
-		log.Println(err)
+		log.Println(err, url.String())
 		return 0, 0
 	}
 	width, height := imgConfig.Width, imgConfig.Height

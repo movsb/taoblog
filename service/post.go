@@ -19,6 +19,7 @@ import (
 	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
@@ -278,6 +279,7 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 			imaging.WithGallery(),
 			task_list.New(),
 			renderers.WithHashTags(s.hashtagResolver, nil),
+			custom_break.New(),
 			// 其它选项可能会插入链接，所以放后面。
 			// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
 			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),

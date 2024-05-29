@@ -11,7 +11,6 @@
      * CommonMark
      * GitHub Flavored Markdown
 ***** 方言
-     * PHP Markdown Extra Definition Lists
      * 脚注（Footnotes）
 ***** 扩展
      * Gallery（类似微信九宫格图片展览）
@@ -20,6 +19,7 @@
       * 格式：SVG
       * 样式：日间&夜间自动切换
      * 数学公式
+     * 自定义分割线🧵
 **** HTML
 *** 渲染
 **** 延迟加载
