@@ -3,6 +3,10 @@
 .DS_Store
 __debug_bin*
 
+# https://stackoverflow.com/a/13953560/3628322
+# https://stackoverflow.com/a/53039267/3628322
+xcuserdata
+
 /tmp/
 /.tmp/
 /.cache/
