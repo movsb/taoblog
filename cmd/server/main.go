@@ -44,6 +44,9 @@ func AddCommands(rootCmd *cobra.Command) {
 }
 
 func serve(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	cfg := config.LoadFile(`taoblog.yml`)
 
 	db := InitDatabase(`sqlite3`, cfg.Database.SQLite.Path)
@@ -58,7 +61,7 @@ func serve(ctx context.Context) {
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
 
 	theAuth := auth.New(cfg.Auth, service.DevMode())
-	theService := service.NewService(cfg, db, theAuth)
+	theService := service.NewService(ctx, cancel, cfg, db, theAuth)
 	theAuth.SetService(theService)
 
 	theAuth.SetAdminWebAuthnCredentials(theService.GetDefaultStringOption(`admin_webauthn_credentials`, "[]"))

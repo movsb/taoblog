@@ -35,8 +35,10 @@ func (c *Client) SetConfig(path string, value string) {
 	_ = rsp
 }
 
-func (c *Client) SaveConfig() {
-	rsp, err := c.Management.SaveConfig(c.Context(), &proto.SaveConfigRequest{})
+func (c *Client) Restart() {
+	rsp, err := c.Management.Restart(c.Context(), &proto.RestartRequest{
+		Reason: `客户端命令手动重启。`,
+	})
 	if err != nil {
 		log.Fatalln(err)
 	}

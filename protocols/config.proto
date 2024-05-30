@@ -19,13 +19,6 @@ message SetConfigResponse {
 
 }
 
-message SaveConfigRequest {
-}
-
-message SaveConfigResponse {
-
-}
-
 message GetInfoRequest {}
 
 message GetInfoResponse {
@@ -43,4 +36,12 @@ message GetInfoResponse {
 	// 最后更新时间。
 	// 主要包含：文章。
 	int32 last_posted_at = 10;
+}
+
+message RestartRequest {
+	string reason = 1;
+}
+
+message RestartResponse {
+
 }

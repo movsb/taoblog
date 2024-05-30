@@ -334,14 +334,16 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	configCmd.AddCommand(configEditCmd)
-	configSaveCmd := &cobra.Command{
-		Use:  `save`,
-		Args: cobra.NoArgs,
+
+	restartCmd := &cobra.Command{
+		Use:    `restart`,
+		Args:   cobra.NoArgs,
+		PreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.SaveConfig()
+			client.Restart()
 		},
 	}
-	configCmd.AddCommand(configSaveCmd)
+	rootCmd.AddCommand(restartCmd)
 
 	lfs := createLfsCommands()
 	lfs.PersistentPreRun = preRun

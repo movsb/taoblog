@@ -10,8 +10,6 @@ import (
 	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 )
 
@@ -139,8 +137,12 @@ func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*
 	return &proto.SetConfigResponse{}, nil
 }
 
-func (s *Service) SaveConfig(ctx context.Context, req *proto.SaveConfigRequest) (*proto.SaveConfigResponse, error) {
+func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*proto.RestartResponse, error) {
 	s.MustBeAdmin(ctx)
 
-	return &proto.SaveConfigResponse{}, status.Error(codes.Unimplemented, "已废弃的接口。")
+	s.maintenance.Enter(req.Reason, time.Second*10)
+
+	go s.cancel()
+
+	return &proto.RestartResponse{}, nil
 }

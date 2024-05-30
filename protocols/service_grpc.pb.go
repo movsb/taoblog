@@ -25,10 +25,10 @@ const _ = grpc.SupportPackageIsVersion7
 type ManagementClient interface {
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error)
 	SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error)
-	SaveConfig(ctx context.Context, in *SaveConfigRequest, opts ...grpc.CallOption) (*SaveConfigResponse, error)
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (Management_BackupClient, error)
 	BackupFiles(ctx context.Context, opts ...grpc.CallOption) (Management_BackupFilesClient, error)
 	FileSystem(ctx context.Context, opts ...grpc.CallOption) (Management_FileSystemClient, error)
+	Restart(ctx context.Context, in *RestartRequest, opts ...grpc.CallOption) (*RestartResponse, error)
 }
 
 type managementClient struct {
@@ -51,15 +51,6 @@ func (c *managementClient) GetConfig(ctx context.Context, in *GetConfigRequest, 
 func (c *managementClient) SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error) {
 	out := new(SetConfigResponse)
 	err := c.cc.Invoke(ctx, "/protocols.Management/SetConfig", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *managementClient) SaveConfig(ctx context.Context, in *SaveConfigRequest, opts ...grpc.CallOption) (*SaveConfigResponse, error) {
-	out := new(SaveConfigResponse)
-	err := c.cc.Invoke(ctx, "/protocols.Management/SaveConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -160,16 +151,25 @@ func (x *managementFileSystemClient) Recv() (*FileSystemResponse, error) {
 	return m, nil
 }
 
+func (c *managementClient) Restart(ctx context.Context, in *RestartRequest, opts ...grpc.CallOption) (*RestartResponse, error) {
+	out := new(RestartResponse)
+	err := c.cc.Invoke(ctx, "/protocols.Management/Restart", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ManagementServer is the server API for Management service.
 // All implementations must embed UnimplementedManagementServer
 // for forward compatibility
 type ManagementServer interface {
 	GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error)
 	SetConfig(context.Context, *SetConfigRequest) (*SetConfigResponse, error)
-	SaveConfig(context.Context, *SaveConfigRequest) (*SaveConfigResponse, error)
 	Backup(*BackupRequest, Management_BackupServer) error
 	BackupFiles(Management_BackupFilesServer) error
 	FileSystem(Management_FileSystemServer) error
+	Restart(context.Context, *RestartRequest) (*RestartResponse, error)
 	mustEmbedUnimplementedManagementServer()
 }
 
@@ -183,9 +183,6 @@ func (UnimplementedManagementServer) GetConfig(context.Context, *GetConfigReques
 func (UnimplementedManagementServer) SetConfig(context.Context, *SetConfigRequest) (*SetConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetConfig not implemented")
 }
-func (UnimplementedManagementServer) SaveConfig(context.Context, *SaveConfigRequest) (*SaveConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SaveConfig not implemented")
-}
 func (UnimplementedManagementServer) Backup(*BackupRequest, Management_BackupServer) error {
 	return status.Errorf(codes.Unimplemented, "method Backup not implemented")
 }
@@ -194,6 +191,9 @@ func (UnimplementedManagementServer) BackupFiles(Management_BackupFilesServer) e
 }
 func (UnimplementedManagementServer) FileSystem(Management_FileSystemServer) error {
 	return status.Errorf(codes.Unimplemented, "method FileSystem not implemented")
+}
+func (UnimplementedManagementServer) Restart(context.Context, *RestartRequest) (*RestartResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Restart not implemented")
 }
 func (UnimplementedManagementServer) mustEmbedUnimplementedManagementServer() {}
 
@@ -240,24 +240,6 @@ func _Management_SetConfig_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ManagementServer).SetConfig(ctx, req.(*SetConfigRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_SaveConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveConfigRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).SaveConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/protocols.Management/SaveConfig",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).SaveConfig(ctx, req.(*SaveConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -335,6 +317,24 @@ func (x *managementFileSystemServer) Recv() (*FileSystemRequest, error) {
 	return m, nil
 }
 
+func _Management_Restart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).Restart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protocols.Management/Restart",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).Restart(ctx, req.(*RestartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Management_ServiceDesc is the grpc.ServiceDesc for Management service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -351,8 +351,8 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Management_SetConfig_Handler,
 		},
 		{
-			MethodName: "SaveConfig",
-			Handler:    _Management_SaveConfig_Handler,
+			MethodName: "Restart",
+			Handler:    _Management_Restart_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -31,14 +31,6 @@ service Management {
 			description: "设置配置。";
 		};
 	};
-	rpc SaveConfig (SaveConfigRequest) returns (SaveConfigResponse) {
-		option (google.api.http) = {
-			post: "/v3/configs:save";
-		};
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "保存配置。";
-		};
-	};
 
 	// Backup
 
@@ -65,6 +57,8 @@ service Management {
 			description: "文件管理。";
 		};
 	}
+
+	rpc Restart(RestartRequest) returns (RestartResponse) {}
 }
 
 service Search {
