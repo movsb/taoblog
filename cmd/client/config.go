@@ -3,7 +3,8 @@ package client
 import (
 	"log"
 
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
+	"google.golang.org/grpc/status"
 )
 
 // HostConfig is a per host config.
@@ -29,7 +30,7 @@ func (c *Client) SetConfig(path string, value string) {
 		Yaml: value,
 	})
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(status.Convert(err).Message())
 	}
 	_ = rsp
 }

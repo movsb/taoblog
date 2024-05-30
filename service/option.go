@@ -2,13 +2,16 @@ package service
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 )
 
@@ -129,14 +132,15 @@ func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*
 	s.MustBeAdmin(ctx)
 
 	u := config.NewUpdater(s.cfg)
-	u.MustApply(req.Path, req.Yaml)
+	u.MustApply(req.Path, req.Yaml, func(path, value string) {
+		s.SetOption(path, value)
+		log.Println(`保存：`, path, value)
+	})
 	return &proto.SetConfigResponse{}, nil
 }
 
 func (s *Service) SaveConfig(ctx context.Context, req *proto.SaveConfigRequest) (*proto.SaveConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
-	s.cfg.Save()
-
-	return &proto.SaveConfigResponse{}, nil
+	return &proto.SaveConfigResponse{}, status.Error(codes.Unimplemented, "已废弃的接口。")
 }

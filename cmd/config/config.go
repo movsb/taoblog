@@ -17,7 +17,6 @@ func LoadFile(path string) *Config {
 	}
 	defer fp.Close()
 	c := load(fp)
-	c.originalFilePath = path
 	return c
 }
 

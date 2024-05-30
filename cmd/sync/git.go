@@ -167,6 +167,7 @@ func (g *GitSync) getUpdatedPosts(notBefore, notAfter time.Time) ([]*proto.Post,
 }
 
 // 根据 ID 找到在本地仓库的路径。
+// TODO：创建索引。
 func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *client.PostConfig, outErr error) {
 	err := fs.WalkDir(fsys, `.`, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {

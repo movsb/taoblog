@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -136,6 +137,22 @@ func newService(cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool)
 
 		themeChangedAt: time.Now(),
 	}
+
+	// 在此之前不能读配置！！！
+	updater := config.NewUpdater(cfg)
+	updater.EachSaver(func(path string, obj any) {
+		j, err := s._getOption(path)
+		if err != nil {
+			if !taorm.IsNotFoundError(err) {
+				panic(err)
+			}
+			return
+		}
+		if err := json.Unmarshal([]byte(j), obj); err != nil {
+			panic(err)
+		}
+		log.Println(`加载配置：`, path)
+	})
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
 		panic(err)

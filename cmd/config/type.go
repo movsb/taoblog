@@ -13,15 +13,7 @@ type Config struct {
 	Site        SiteConfig           `yaml:"site"`
 	Comment     CommentConfig        `yaml:"comment"`
 	Search      search_config.Config `yaml:"search"`
-
-	originalFilePath string
-}
-
-func (c *Config) Save() {
-	if c.originalFilePath == "" {
-		panic(`empty config file path`)
-	}
-	SaveFile(c, c.originalFilePath)
+	Others      OthersConfig         `json:"others" yaml:"others"`
 }
 
 // DefaultConfig ...

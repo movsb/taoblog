@@ -1,9 +1,13 @@
-package config
+package config_test
 
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"reflect"
 	"testing"
+
+	"github.com/movsb/taoblog/cmd/config"
 )
 
 func assert(conditions ...any) {
@@ -31,14 +35,14 @@ func TestUpdate(t *testing.T) {
 		Key   string
 		Value string
 	}
-	c1, c2 := DefaultConfig(), DefaultConfig()
-	u := NewUpdater(&c2)
+	c1, c2 := config.DefaultConfig(), config.DefaultConfig()
+	u := config.NewUpdater(&c2)
 	for _, s := range []_kv{
 		{"database.engine", "mysql"},
 		{"database.sqlite", "{}"},
 		{`menus[1]`, `{"name":"后台"}`},
 	} {
-		u.MustApply(s.Key, s.Value)
+		u.MustApply(s.Key, s.Value, func(path, value string) {})
 	}
 	assert(
 		c1.Database.Engine, `sqlite`,
@@ -48,4 +52,48 @@ func TestUpdate(t *testing.T) {
 		jsonOf(c1.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"管理后台","Link":"/admin/","Blank":false,"Items":null}]`,
 		jsonOf(c2.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"后台","Link":"","Blank":false,"Items":null}]`,
 	)
+}
+
+type Config struct {
+	A A `json:"a" yaml:"a"`
+	B B `json:"b" yaml:"b"`
+}
+
+type A struct {
+	AA int `json:"aa" yaml:"aa"`
+}
+
+func (A) CanSave() {}
+
+type B struct {
+	C C `json:"c" yaml:"c"`
+}
+
+type C struct {
+	CC string `json:"cc" yaml:"cc"`
+}
+
+func (C) CanSave() {}
+
+func TestSaver(t *testing.T) {
+	var c Config
+	updater := config.NewUpdater(&c)
+
+	var c2 Config
+	updater2 := config.NewUpdater(&c2)
+
+	updater.MustApply("a.aa", "123", func(path, value string) {
+		t.Logf("save: %s: %s", path, value)
+		updater2.MustApply(path, value, func(path, value string) {})
+	})
+	updater.MustApply("b.c.cc", "123", func(path, value string) {
+		t.Logf("save: %s: %s", path, value)
+		updater2.MustApply(path, value, func(path, value string) {})
+	})
+	if !reflect.DeepEqual(c, c2) {
+		t.Errorf(`不相等。`)
+	}
+	updater2.EachSaver(func(path string, obj any) {
+		log.Println(`将会保存：`, path, obj)
+	})
 }
