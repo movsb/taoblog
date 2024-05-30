@@ -2,6 +2,7 @@ package data
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html"
 	"html/template"
@@ -48,8 +49,9 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 }
 
 // NewDataForPost ...
-func NewDataForPost(cfg *config.Config, user *auth.User, service proto.TaoBlogServer, post *proto.Post, comments []*proto.Comment) *Data {
+func NewDataForPost(ctx context.Context, cfg *config.Config, user *auth.User, service proto.TaoBlogServer, post *proto.Post, comments []*proto.Comment) *Data {
 	d := &Data{
+		ctx:    ctx,
 		Config: cfg,
 		User:   user,
 		Meta: &MetaData{

@@ -55,6 +55,17 @@
 		{{ with .Home }}
 		<li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
 		{{ end }}
+		{{ with .Info }}
+		<li>运维状态：
+			{{ if gt .CertDaysLeft -1 }}
+				证书有效期剩余 {{ .CertDaysLeft }} 天
+			{{ end }}
+			{{ if gt .DomainDaysLeft -1 }}
+				，域名有效期剩余 {{ .DomainDaysLeft }} 天
+			{{ end }}
+			。
+		</li>
+		{{ end }}
 	</ul>
 </div>
 {{ end }}

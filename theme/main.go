@@ -227,12 +227,15 @@ func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
 		panic(`未找到模板：` + name)
 	}
 	if d == nil {
-		d = &data.Data{}
+		d = &data.Data{
+			// TODO
+			// ctx: context.TODO(),
+		}
 	}
 	d.Template = t2
 	d.Writer = w
 	if err := t2.Execute(w, d); err != nil {
-		log.Println("\033[38m;", err, "\033[m")
+		log.Println("\033[31m", err, "\033[m")
 	}
 }
 
@@ -282,7 +285,7 @@ func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
 }
 
 func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForSearch(t.cfg, t.auth.AuthRequest(r), t.service, t.searcher, r)
+	d := data.NewDataForSearch(r.Context(), t.cfg, t.auth.AuthRequest(r), t.service, t.searcher, r)
 	t.executeTemplate(`search.html`, w, d)
 }
 
@@ -334,7 +337,7 @@ func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTags(t.cfg, t.auth.AuthRequest(r), t.service, t.impl)
+	d := data.NewDataForTags(r.Context(), t.cfg, t.auth.AuthRequest(r), t.service, t.impl)
 	t.executeTemplate(`tags.html`, w, d)
 }
 
@@ -409,7 +412,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		panic(err)
 	}
 
-	d := data.NewDataForPost(t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
+	d := data.NewDataForPost(req.Context(), t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
 
 	var name string
 	if p.Type == `tweet` {

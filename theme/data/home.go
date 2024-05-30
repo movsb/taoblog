@@ -5,7 +5,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
@@ -23,6 +23,7 @@ type HomeData struct {
 // NewDataForHome ...
 func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
+		ctx:    ctx,
 		Config: cfg,
 		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},

@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -14,6 +15,7 @@ import (
 
 // Data holds all data for rendering the site.
 type Data struct {
+	ctx context.Context
 	svc proto.TaoBlogServer
 
 	// all configuration.
@@ -56,6 +58,14 @@ type Data struct {
 	Error *ErrorData
 
 	Partials []any
+}
+
+func (d *Data) Info() (*proto.GetInfoResponse, error) {
+	if d.ctx == nil {
+		// TODO
+		d.ctx = context.TODO()
+	}
+	return d.svc.GetInfo(d.ctx, &proto.GetInfoRequest{})
 }
 
 func (d *Data) ExecutePartial(t *template.Template, partial any) error {

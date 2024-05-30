@@ -36,6 +36,12 @@ message GetInfoResponse {
 	// 最后更新时间。
 	// 主要包含：文章。
 	int32 last_posted_at = 10;
+
+	// 域名证书有效时间剩余天数。大于 >= 0 有效。
+	int32 cert_days_left = 11;
+
+	// 域名有效时间剩余天数。大于 >= 0 有效。
+	int32 domain_days_left = 12;
 }
 
 message RestartRequest {

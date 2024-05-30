@@ -9,7 +9,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/service"
 )
 
@@ -25,6 +25,7 @@ type PostsData struct {
 // NewDataForPosts ...
 func NewDataForPosts(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
+		ctx:    ctx,
 		Config: cfg,
 		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},

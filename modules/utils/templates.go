@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,8 +73,10 @@ func (l *TemplateLoader) GetPartial(name string) *template.Template {
 func (l *TemplateLoader) parsePartial() {
 	t2, err := template.New(`partial`).Funcs(l.funcs).ParseFS(l.fsys, `_*.html`)
 	if err != nil {
-		log.Println(err)
-		return
+		if !strings.Contains(err.Error(), `matches no files`) {
+			log.Println("\033[31m", err, "\033[m")
+			return
+		}
 	}
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -89,7 +92,7 @@ func (l *TemplateLoader) parseNamed() {
 		// NOTE: name 如果包含 pattern 字符的话，这里大概率会出错。奇怪为什么没有按 name parse 的。
 		t2, err := template.New(name).Funcs(l.funcs).ParseFS(l.fsys, name)
 		if err != nil {
-			log.Println(err)
+			log.Println("\033[31m", err, "\033[m")
 			continue
 		}
 		l.named[name] = t2

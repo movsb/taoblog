@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -98,6 +97,13 @@ type Service struct {
 	themeChangedAt    time.Time
 	mediaTagsTemplate *utils.TemplateLoader
 
+	// 证书剩余天数。
+	// >= 0 表示值有效。
+	certDaysLeft atomic.Int32
+	// 域名有效期
+	// >= 0 表示值有效。
+	domainExpirationDaysLeft atomic.Int32
+
 	proto.TaoBlogServer
 	proto.ManagementServer
 	proto.SearchServer
@@ -189,6 +195,9 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		)
 	}
 
+	s.certDaysLeft.Store(-1)
+	s.domainExpirationDaysLeft.Store(-1)
+
 	server := grpc.NewServer(
 		grpc.MaxRecvMsgSize(100<<20),
 		grpc.MaxSendMsgSize(100<<20),
@@ -222,6 +231,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 	if !testing {
 		go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
+		go s.monitorDomain(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
 	}
 
 	return s
@@ -410,56 +420,6 @@ func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req any, info
 	return resp, err
 }
 
-// 监控证书过期的剩余时间。
-func (s *Service) monitorCert(chanify *notify.Chanify) {
-	home := s.cfg.Site.Home
-	u, err := url.Parse(home)
-	if err != nil {
-		panic(err)
-	}
-	if u.Scheme != `https` {
-		return
-	}
-	port := utils.IIF(u.Port() == "", "443", u.Port())
-	addr := net.JoinHostPort(u.Hostname(), port)
-	check := func() {
-		conn, err := tls.Dial(`tcp`, addr, &tls.Config{})
-		if err != nil {
-			log.Println(err)
-			if chanify != nil {
-				chanify.Send(`错误`, err.Error(), true)
-			}
-			return
-		}
-		defer conn.Close()
-		cert := conn.ConnectionState().PeerCertificates[0]
-		left := time.Until(cert.NotAfter)
-		if left <= 0 {
-			log.Println(`已过期`)
-			if chanify != nil {
-				chanify.Send(`证书`, `已经过期。`, true)
-			}
-			return
-		}
-		daysLeft := int(left.Hours() / 24)
-		if daysLeft >= 15 {
-			return
-		}
-		log.Println(`剩余天数：`, daysLeft)
-		if chanify != nil {
-			chanify.Send(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft), true)
-		}
-	}
-	check()
-	go func() {
-		ticker := time.NewTicker(time.Hour * 24)
-		defer ticker.Stop()
-		for range ticker.C {
-			check()
-		}
-	}()
-}
-
 func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto.GetInfoResponse, error) {
 	t := time.Now()
 	if modified := s.GetDefaultIntegerOption("last_post_time", 0); modified > 0 {
@@ -471,6 +431,9 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 		Description:  s.cfg.Site.Description,
 		Home:         strings.TrimSuffix(s.cfg.Site.Home, "/"),
 		LastPostedAt: int32(t.Unix()),
+
+		CertDaysLeft:   s.certDaysLeft.Load(),
+		DomainDaysLeft: s.domainExpirationDaysLeft.Load(),
 	}
 
 	return out, nil

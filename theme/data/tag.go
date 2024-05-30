@@ -5,7 +5,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols"
+	proto "github.com/movsb/taoblog/protocols"
 )
 
 // TagData ...
@@ -17,6 +17,7 @@ type TagData struct {
 // NewDataForTag ...
 func NewDataForTag(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, tags []string) *Data {
 	d := &Data{
+		ctx:    ctx,
 		Config: cfg,
 		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},
