@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -90,14 +91,14 @@ func (s *Service) monitorDomain(chanify *notify.Chanify) {
 
 	domainSuffix := strings.Join(suffix, ".")
 
-	check := func() {
+	check := func() error {
 		// curl --request GET \
 		// --url 'https://api.apilayer.com/whois/query?domain=apilayer.com' \
 		// --header 'apikey: YOUR API KEY HERE'
 		u, err := url.Parse(`https://api.apilayer.com/whois/query?domain=`)
 		if err != nil {
 			log.Println(err)
-			return
+			return err
 		}
 		q := u.Query()
 		q.Set(`domain`, domainSuffix)
@@ -106,25 +107,25 @@ func (s *Service) monitorDomain(chanify *notify.Chanify) {
 			http.MethodGet, u.String(), nil)
 		if err != nil {
 			log.Println(err)
-			return
+			return err
 		}
 
 		// 可以线上更改，所以总是重新取值。
 		key := s.cfg.Others.Whois.ApiLayer.Key
 		if key == "" {
-			return
+			return errors.New(`no key specified`)
 		}
 
 		req.Header.Add(`apikey`, key)
 		rsp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Println(err)
-			return
+			return err
 		}
 		defer rsp.Body.Close()
 		if rsp.StatusCode != 200 {
 			log.Println(`Status != 200`, rsp.StatusCode)
-			return
+			return err
 		}
 		var result struct {
 			Result struct {
@@ -134,13 +135,13 @@ func (s *Service) monitorDomain(chanify *notify.Chanify) {
 		}
 		if err := json.NewDecoder(rsp.Body).Decode(&result); err != nil {
 			log.Println(err)
-			return
+			return err
 		}
 		// TODO 不知道时区。
 		t, err := time.Parse(time.DateTime, result.Result.ExpirationDate)
 		if err != nil {
 			log.Println(err)
-			return
+			return err
 		}
 
 		daysLeft := time.Until(t) / time.Hour / 24
@@ -149,16 +150,21 @@ func (s *Service) monitorDomain(chanify *notify.Chanify) {
 		if chanify != nil && daysLeft < 15 {
 			chanify.Send(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft), true)
 		}
+
+		return nil
 	}
 	// ApiLayer 限制是一个月 3000 次，这样可以做到
 	// 即便不断重启，也会不超过限制。
 	time.Sleep(time.Minute * 15)
 	check()
+	time.Sleep(time.Minute * 15)
 	go func() {
-		ticker := time.NewTicker(time.Hour * 24)
-		defer ticker.Stop()
-		for range ticker.C {
-			check()
+		for {
+			if check() == nil {
+				time.Sleep(time.Hour * 24)
+			} else {
+				time.Sleep(time.Minute * 15)
+			}
 		}
 	}()
 }

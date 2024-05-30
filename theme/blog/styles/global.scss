@@ -306,7 +306,7 @@ svg.plantuml {
 		height: 180px;
 		min-width: 180px;
 		align-self: center;
-		padding: 1rem;
+		padding: .5rem;
 		box-sizing: border-box;
 		img, svg {
 			border-radius: 50%;
@@ -403,9 +403,9 @@ svg.plantuml {
 @container (max-width: 400px) {
 	.audio-player {
 		.left {
-			width: 100px;
-			height: 100px;
-			min-width: 100px;
+			width: 120px;
+			height: 120px;
+			min-width: 120px;
 		}
 	}
 }
