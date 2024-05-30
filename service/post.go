@@ -783,8 +783,15 @@ func truncateTitle(title string, length int) string {
 		runes = runes[1:]
 	}
 
-	// 不包含回车
-	if p := slices.Index(runes, '\n'); p > 0 {
+	// 不包含回车、省略号
+	if p := slices.IndexFunc(runes, func(r rune) bool {
+		switch r {
+		case '。', '…', '！':
+			return true
+		default:
+			return false
+		}
+	}); p > 0 {
 		runes = runes[:p]
 	}
 

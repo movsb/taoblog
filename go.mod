@@ -31,6 +31,7 @@ require (
 	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6
 	github.com/phuslu/lru v1.0.15
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
+	go.abhg.dev/goldmark/hashtag v0.3.1
 	nhooyr.io/websocket v1.8.11
 )
 
@@ -47,7 +48,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.abhg.dev/goldmark/hashtag v0.3.1 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 )
 
