@@ -72,6 +72,13 @@ func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
 			log.Println("解析数据出错：", err)
 			return true
 		}
+
+		// 仅当是唯一子元素（即 block）时，才渲染。
+		if s.Parent().Contents().Length() != 1 {
+			log.Println(`不是 block 级别的 audio，不处理。`)
+			return true
+		}
+
 		if err := t.render(s, md, u.Path); err != nil {
 			log.Println("渲染出错：", err)
 			return true
@@ -134,6 +141,8 @@ func (t *MediaTags) render(s *goquery.Selection, md tag.Metadata, source string)
 	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, utils.RandomString(), name}); err != nil {
 		return err
 	}
-	s.ReplaceWithHtml(buf.String())
+	rendered := buf.String()
+	// 由于渲染结果是 div，并且 audio 属于 inline 元素，所以需要去掉父元素。
+	s.Parent().ReplaceWithHtml(rendered)
 	return nil
 }
