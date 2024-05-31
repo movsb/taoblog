@@ -11,8 +11,8 @@ import (
 	"slices"
 	"strings"
 
-	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/protocols/clients"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"

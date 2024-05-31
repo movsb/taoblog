@@ -3,7 +3,7 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/proto";
 
 import "google/protobuf/field_mask.proto";
-import "protocols/comment.proto";
+import "comment.proto";
 
 message Metas {
 	message Source {

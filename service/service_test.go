@@ -7,8 +7,8 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/auth"
-	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/protocols/clients"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 )

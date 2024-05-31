@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/spf13/cobra"
 )
 

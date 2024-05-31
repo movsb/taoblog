@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/movsb/taoblog/modules/utils/syncer"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 type SyncFileSpec proto.FileSpec

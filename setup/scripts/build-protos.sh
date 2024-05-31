@@ -4,21 +4,23 @@ set -eu
 
 GOPATH=${GOPATH:-$(go env GOPATH)}
 
+cd protocols
+
 protoc \
 	-I. \
 	-I/usr/local/include \
 	-I"$GOPATH/pkg/mod" \
 	-I"$GOPATH/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.16.0/third_party/googleapis" \
 	-I"$GOPATH/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.16.0" \
-	--go_out=. --go_opt=paths=source_relative \
-	--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-	--grpc-gateway_out=logtostderr=true,paths=source_relative:. \
-	--swagger_out=allow_merge=true,merge_file_name="protocols/docs/taoblog",logtostderr=true:. \
-	--swift_out=. \
-	--grpc-swift_out=Visibility=Internal,Server=false,Client=true,TestClient=false:. \
-	protocols/backup.proto \
-	protocols/service.proto \
-	protocols/comment.proto \
-	protocols/post.proto \
-	protocols/search.proto \
-	protocols/config.proto
+	--go_out=paths=source_relative:go/proto \
+	--go-grpc_out=paths=source_relative:go/proto \
+	--grpc-gateway_out=paths=source_relative:go/proto \
+	--swagger_out=allow_merge=true,merge_file_name="docs/taoblog",logtostderr=true:. \
+	--swift_out=swift \
+	--grpc-swift_out=Visibility=Internal,Server=false,Client=true,TestClient=false:swift \
+	backup.proto \
+	service.proto \
+	comment.proto \
+	post.proto \
+	search.proto \
+	config.proto

@@ -13,8 +13,8 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/cmd/client"
-	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/protocols/clients"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 

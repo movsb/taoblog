@@ -1,4 +1,4 @@
-package proto
+package handy
 
 import (
 	"io"

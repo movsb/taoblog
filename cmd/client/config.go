@@ -3,7 +3,7 @@ package client
 import (
 	"log"
 
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/status"
 )
 

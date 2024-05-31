@@ -1,7 +1,7 @@
 package data
 
 import (
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 // Comment ...

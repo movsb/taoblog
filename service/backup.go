@@ -14,7 +14,7 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

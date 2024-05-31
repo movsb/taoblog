@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )

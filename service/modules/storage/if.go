@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 // File ...

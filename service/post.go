@@ -16,7 +16,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"

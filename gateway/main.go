@@ -16,8 +16,9 @@ import (
 	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	proto "github.com/movsb/taoblog/protocols"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
+	"github.com/movsb/taoblog/protocols/go/handy"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/webhooks"
@@ -181,7 +182,7 @@ func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map
 	if err != nil {
 		panic(err)
 	}
-	in := &proto.GetAvatarRequest{
+	in := &handy.GetAvatarRequest{
 		Ephemeral:       ephemeral,
 		IfModifiedSince: req.Header.Get("If-Modified-Since"),
 		IfNoneMatch:     req.Header.Get("If-None-Match"),

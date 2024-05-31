@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/blugelabs/bluge/search/highlight"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
 

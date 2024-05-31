@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 // walk returns the file list for a directory.

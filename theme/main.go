@@ -20,7 +20,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"

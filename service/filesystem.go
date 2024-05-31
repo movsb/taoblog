@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"github.com/movsb/taoblog/modules/auth"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

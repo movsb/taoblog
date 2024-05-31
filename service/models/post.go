@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 const Untitled = `无标题`

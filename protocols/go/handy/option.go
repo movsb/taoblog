@@ -1,4 +1,4 @@
-package proto
+package handy
 
 type Option struct {
 	ID    int64  `json:"id"`

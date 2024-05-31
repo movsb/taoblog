@@ -10,7 +10,7 @@ import (
 	"github.com/blugelabs/bluge"
 	"github.com/blugelabs/bluge/search"
 	"github.com/movsb/taoblog/modules/auth"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
 

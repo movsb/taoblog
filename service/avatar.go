@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/handy"
 	"github.com/movsb/taoblog/service/modules/avatar"
 )
 
@@ -75,7 +75,7 @@ func (c *AvatarCache) Email(id int) string {
 }
 
 // GetAvatar ...
-func (s *Service) GetAvatar(in *proto.GetAvatarRequest) {
+func (s *Service) GetAvatar(in *handy.GetAvatarRequest) {
 	email := s.avatarCache.Email(in.Ephemeral)
 	if email == "" {
 		in.SetStatus(http.StatusNotFound)

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 )
 

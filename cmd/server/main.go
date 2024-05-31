@@ -21,7 +21,7 @@ import (
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"

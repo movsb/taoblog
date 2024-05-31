@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
 	"gopkg.in/yaml.v2"

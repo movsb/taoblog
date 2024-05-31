@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/movsb/taoblog/modules/auth"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"

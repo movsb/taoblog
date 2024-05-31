@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/xeonx/timeago"
 )
 

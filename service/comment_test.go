@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 func TestPreviewComment(t *testing.T) {

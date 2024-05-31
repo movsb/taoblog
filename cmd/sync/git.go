@@ -15,8 +15,8 @@ import (
 
 	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/modules/utils"
-	proto "github.com/movsb/taoblog/protocols"
 	"github.com/movsb/taoblog/protocols/clients"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 )
 

@@ -21,7 +21,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	proto "github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"

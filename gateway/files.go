@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"nhooyr.io/websocket"
 )
 

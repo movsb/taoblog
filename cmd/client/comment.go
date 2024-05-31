@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/movsb/taoblog/protocols"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
