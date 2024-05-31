@@ -2,6 +2,7 @@
 *.swp
 .DS_Store
 __debug_bin*
+/root
 
 # https://stackoverflow.com/a/13953560/3628322
 # https://stackoverflow.com/a/53039267/3628322

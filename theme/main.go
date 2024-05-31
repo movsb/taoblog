@@ -34,8 +34,9 @@ import (
 
 // Theme ...
 type Theme struct {
-	rootFS fs.FS
-	tmplFS fs.FS
+	localRootFS fs.FS
+	rootFS      fs.FS
+	tmplFS      fs.FS
 
 	cfg *config.Config
 
@@ -77,6 +78,9 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	t := &Theme{
 		rootFS: rootFS,
 		tmplFS: tmplFS,
+
+		//始终相对于运行目录下的 root 目录。
+		localRootFS: os.DirFS("./root"),
 
 		cfg:      cfg,
 		service:  service,
@@ -452,7 +456,6 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 	return false
 }
 
-// TODO 支持本地静态文件以临时存放临时文件。
 // TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	if service.DevMode() {
@@ -460,5 +463,16 @@ func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file strin
 	} else {
 		handle304.CacheShortly(w)
 	}
-	http.ServeFileFS(w, req, t.rootFS, file)
+
+	// fs.FS 要求不能以 / 开头。
+	// http 包会自动去除。
+	file = file[1:]
+
+	fs := t.localRootFS
+	if fp, err := t.rootFS.Open(file); err == nil {
+		fp.Close()
+		fs = t.rootFS
+	}
+
+	http.ServeFileFS(w, req, fs, file)
 }
