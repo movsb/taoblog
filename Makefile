@@ -1,6 +1,3 @@
-.PHONY: all
-all: protos theme test main
-
 .PHONY: protos
 protos:
 	./setup/scripts/build-protos.sh
@@ -13,8 +10,8 @@ theme:
 test:
 	go test ./...
 
-.PHONY: main
-main:
+.PHONY: build
+build:
 	./setup/scripts/cross-build.sh
 
 .PHONY: build-image

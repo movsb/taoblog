@@ -14,6 +14,8 @@ protoc \
 	--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	--grpc-gateway_out=logtostderr=true,paths=source_relative:. \
 	--swagger_out=allow_merge=true,merge_file_name="protocols/docs/taoblog",logtostderr=true:. \
+	--swift_out=. \
+	--grpc-swift_out=Visibility=Internal,Server=false,Client=true,TestClient=false:. \
 	protocols/backup.proto \
 	protocols/service.proto \
 	protocols/comment.proto \

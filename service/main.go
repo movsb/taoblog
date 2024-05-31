@@ -229,7 +229,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 	go s.RunSearchEngine(context.TODO())
 
-	if !testing {
+	if !testing && !DevMode() {
 		go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
 		go s.monitorDomain(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
 	}

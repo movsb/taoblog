@@ -1,0 +1,450 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2B364F3B2C096CBA005FC0AE /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B364F3A2C096CBA005FC0AE /* Client.swift */; };
+		2B647A7E2C094B280089BFB9 /* TaoBlogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B647A7D2C094B280089BFB9 /* TaoBlogApp.swift */; };
+		2B647A802C094B280089BFB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B647A7F2C094B280089BFB9 /* ContentView.swift */; };
+		2B647A822C094B290089BFB9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B647A812C094B290089BFB9 /* Assets.xcassets */; };
+		2B647A852C094B290089BFB9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B647A842C094B290089BFB9 /* Preview Assets.xcassets */; };
+		2B647A8D2C094D5B0089BFB9 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = 2B647A8C2C094D5B0089BFB9 /* GRPC */; };
+		2B647A8F2C094D5B0089BFB9 /* protoc-gen-grpc-swift in Frameworks */ = {isa = PBXBuildFile; productRef = 2B647A8E2C094D5B0089BFB9 /* protoc-gen-grpc-swift */; };
+		2B647A922C094EB60089BFB9 /* SwiftDown in Frameworks */ = {isa = PBXBuildFile; productRef = 2B647A912C094EB60089BFB9 /* SwiftDown */; };
+		2BD333992C09835E0093EDFB /* service.grpc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333922C09835E0093EDFB /* service.grpc.swift */; };
+		2BD3339A2C09835E0093EDFB /* config.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333932C09835E0093EDFB /* config.pb.swift */; };
+		2BD3339B2C09835E0093EDFB /* comment.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333942C09835E0093EDFB /* comment.pb.swift */; };
+		2BD3339C2C09835E0093EDFB /* search.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333952C09835E0093EDFB /* search.pb.swift */; };
+		2BD3339D2C09835E0093EDFB /* service.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333962C09835E0093EDFB /* service.pb.swift */; };
+		2BD3339E2C09835E0093EDFB /* backup.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333972C09835E0093EDFB /* backup.pb.swift */; };
+		2BD3339F2C09835E0093EDFB /* post.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD333982C09835E0093EDFB /* post.pb.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2B364F3A2C096CBA005FC0AE /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
+		2B647A7A2C094B280089BFB9 /* TaoBlog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaoBlog.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2B647A7D2C094B280089BFB9 /* TaoBlogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaoBlogApp.swift; sourceTree = "<group>"; };
+		2B647A7F2C094B280089BFB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2B647A812C094B290089BFB9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2B647A842C094B290089BFB9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		2BD333922C09835E0093EDFB /* service.grpc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = service.grpc.swift; path = ../../protocols/service.grpc.swift; sourceTree = "<group>"; };
+		2BD333932C09835E0093EDFB /* config.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = config.pb.swift; path = ../../protocols/config.pb.swift; sourceTree = "<group>"; };
+		2BD333942C09835E0093EDFB /* comment.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = comment.pb.swift; path = ../../protocols/comment.pb.swift; sourceTree = "<group>"; };
+		2BD333952C09835E0093EDFB /* search.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = search.pb.swift; path = ../../protocols/search.pb.swift; sourceTree = "<group>"; };
+		2BD333962C09835E0093EDFB /* service.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = service.pb.swift; path = ../../protocols/service.pb.swift; sourceTree = "<group>"; };
+		2BD333972C09835E0093EDFB /* backup.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = backup.pb.swift; path = ../../protocols/backup.pb.swift; sourceTree = "<group>"; };
+		2BD333982C09835E0093EDFB /* post.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = post.pb.swift; path = ../../protocols/post.pb.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2B647A772C094B280089BFB9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2B647A8F2C094D5B0089BFB9 /* protoc-gen-grpc-swift in Frameworks */,
+				2B647A8D2C094D5B0089BFB9 /* GRPC in Frameworks */,
+				2B647A922C094EB60089BFB9 /* SwiftDown in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2B647A712C094B280089BFB9 = {
+			isa = PBXGroup;
+			children = (
+				2BD333A02C0983740093EDFB /* Proto */,
+				2B647A7C2C094B280089BFB9 /* iOS */,
+				2B647A7B2C094B280089BFB9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2B647A7B2C094B280089BFB9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2B647A7A2C094B280089BFB9 /* TaoBlog.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2B647A7C2C094B280089BFB9 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				2B647A7D2C094B280089BFB9 /* TaoBlogApp.swift */,
+				2B647A7F2C094B280089BFB9 /* ContentView.swift */,
+				2B647A812C094B290089BFB9 /* Assets.xcassets */,
+				2B647A832C094B290089BFB9 /* Preview Content */,
+				2B364F3A2C096CBA005FC0AE /* Client.swift */,
+			);
+			path = iOS;
+			sourceTree = "<group>";
+		};
+		2B647A832C094B290089BFB9 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				2B647A842C094B290089BFB9 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		2BD333A02C0983740093EDFB /* Proto */ = {
+			isa = PBXGroup;
+			children = (
+				2BD333972C09835E0093EDFB /* backup.pb.swift */,
+				2BD333942C09835E0093EDFB /* comment.pb.swift */,
+				2BD333932C09835E0093EDFB /* config.pb.swift */,
+				2BD333982C09835E0093EDFB /* post.pb.swift */,
+				2BD333952C09835E0093EDFB /* search.pb.swift */,
+				2BD333922C09835E0093EDFB /* service.grpc.swift */,
+				2BD333962C09835E0093EDFB /* service.pb.swift */,
+			);
+			name = Proto;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2B647A792C094B280089BFB9 /* TaoBlog */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2B647A882C094B290089BFB9 /* Build configuration list for PBXNativeTarget "TaoBlog" */;
+			buildPhases = (
+				2B647A762C094B280089BFB9 /* Sources */,
+				2B647A772C094B280089BFB9 /* Frameworks */,
+				2B647A782C094B280089BFB9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TaoBlog;
+			packageProductDependencies = (
+				2B647A8C2C094D5B0089BFB9 /* GRPC */,
+				2B647A8E2C094D5B0089BFB9 /* protoc-gen-grpc-swift */,
+				2B647A912C094EB60089BFB9 /* SwiftDown */,
+			);
+			productName = TaoBlog;
+			productReference = 2B647A7A2C094B280089BFB9 /* TaoBlog.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2B647A722C094B280089BFB9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					2B647A792C094B280089BFB9 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = 2B647A752C094B280089BFB9 /* Build configuration list for PBXProject "TaoBlog" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2B647A712C094B280089BFB9;
+			packageReferences = (
+				2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */,
+				2B647A902C094EB60089BFB9 /* XCRemoteSwiftPackageReference "SwiftDown" */,
+				2B364EFF2C096048005FC0AE /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+			);
+			productRefGroup = 2B647A7B2C094B280089BFB9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2B647A792C094B280089BFB9 /* TaoBlog */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2B647A782C094B280089BFB9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2B647A852C094B290089BFB9 /* Preview Assets.xcassets in Resources */,
+				2B647A822C094B290089BFB9 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2B647A762C094B280089BFB9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2BD3339E2C09835E0093EDFB /* backup.pb.swift in Sources */,
+				2BD3339B2C09835E0093EDFB /* comment.pb.swift in Sources */,
+				2BD333992C09835E0093EDFB /* service.grpc.swift in Sources */,
+				2BD3339A2C09835E0093EDFB /* config.pb.swift in Sources */,
+				2B647A802C094B280089BFB9 /* ContentView.swift in Sources */,
+				2BD3339D2C09835E0093EDFB /* service.pb.swift in Sources */,
+				2BD3339F2C09835E0093EDFB /* post.pb.swift in Sources */,
+				2BD3339C2C09835E0093EDFB /* search.pb.swift in Sources */,
+				2B647A7E2C094B280089BFB9 /* TaoBlogApp.swift in Sources */,
+				2B364F3B2C096CBA005FC0AE /* Client.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2B647A862C094B290089BFB9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		2B647A872C094B290089BFB9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		2B647A892C094B290089BFB9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"iOS/Preview Content\"";
+				DEVELOPMENT_TEAM = U7W7348666;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twofei.mac.TaoBlog;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2B647A8A2C094B290089BFB9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"iOS/Preview Content\"";
+				DEVELOPMENT_TEAM = U7W7348666;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twofei.mac.TaoBlog;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2B647A752C094B280089BFB9 /* Build configuration list for PBXProject "TaoBlog" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2B647A862C094B290089BFB9 /* Debug */,
+				2B647A872C094B290089BFB9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2B647A882C094B290089BFB9 /* Build configuration list for PBXNativeTarget "TaoBlog" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2B647A892C094B290089BFB9 /* Debug */,
+				2B647A8A2C094B290089BFB9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2B364EFF2C096048005FC0AE /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.0;
+			};
+		};
+		2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/grpc/grpc-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.23.0;
+			};
+		};
+		2B647A902C094EB60089BFB9 /* XCRemoteSwiftPackageReference "SwiftDown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/qeude/SwiftDown.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2B647A8C2C094D5B0089BFB9 /* GRPC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */;
+			productName = GRPC;
+		};
+		2B647A8E2C094D5B0089BFB9 /* protoc-gen-grpc-swift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */;
+			productName = "protoc-gen-grpc-swift";
+		};
+		2B647A912C094EB60089BFB9 /* SwiftDown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2B647A902C094EB60089BFB9 /* XCRemoteSwiftPackageReference "SwiftDown" */;
+			productName = SwiftDown;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 2B647A722C094B280089BFB9 /* Project object */;
+}
