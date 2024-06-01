@@ -25,7 +25,7 @@ func Must[A any](a A, e error) A {
 // 是谁当初说不需要三元运算符的？我打断他的 🐶 腿。
 // https://en.wikipedia.org/wiki/IIf
 // https://blog.twofei.com/716/#没有条件运算符
-func IIF[Condition ~bool, Any any](cond Condition, first, second Any) Any {
+func IIF[Any any](cond bool, first, second Any) Any {
 	if cond {
 		return first
 	}

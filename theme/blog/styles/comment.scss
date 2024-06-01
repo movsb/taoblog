@@ -83,7 +83,7 @@ body.signed-in {
             margin-bottom: 6px;
         }
 
-        @media screen and (min-width: 601px) {
+        @media screen and (min-width: 551px) {
             .comment-replies {
                 margin-left: 1em;
             }
@@ -162,26 +162,12 @@ body.signed-in {
 	top: 0px;
 	padding: 10px;
 	padding-top: 0;
-	border: 1px solid grey;
+	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 	box-sizing: border-box;
 	display: none;
 	resize: both;
 	overflow: auto; /* this is to enable resize area */
-
-	@media screen and (min-width: 601px) {
-		width: 550px;
-		height: 350px;
-		min-width: 400px;
-		min-height: 190px;
-		max-width: 90%;
-		max-height: 90%;
-	}
-
-	@media screen and (max-width: 600px) {
-		width: 90%;
-		height: 65%;
-	}
 
 	.nc {
 		height: 38px;
@@ -210,7 +196,7 @@ body.signed-in {
 		height: 100%;
 		padding-top: 7px;
 		box-sizing: border-box;
-		@media screen and (min-width: 601px) {
+		@media screen and (min-width: 551px) {
 			margin-right: 150px;
 		}
 	}
@@ -224,18 +210,19 @@ body.signed-in {
 		right: 10px;
 		bottom: 10px;
 
-		@media screen and (max-width: 600px) {
+		@media screen and (max-width: 500px) {
 			flex-direction: column;
 		}
 
 		.fields {
-			@media screen and (min-width: 601px) {
+			overflow: auto;
+			@media screen and (min-width: 501px) {
 				width: 150px;
 				max-width: 150px;
 				padding: 0px 0px 0px 10px;
 				box-sizing: border-box;
 			}
-			@media screen and (max-width: 600px) {
+			@media screen and (max-width: 500px) {
 				padding-top: 10px;
 				box-sizing: border-box;
 			}
@@ -251,11 +238,39 @@ body.signed-in {
 	}
 }
 
+#comment-form-div {
+	width: 550px;
+	height: 350px;
+}
+@media screen and (max-width: 570px) {
+	#comment-form-div {
+		left: 0 !important;
+		width: 100%;
+	}
+}
+@media screen and (max-height: 450px) {
+	#comment-form-div {
+		top: 0 !important;
+		height: 100%;
+	}
+}
+@media screen and ((max-width: 570px) and (max-height: 450px)) {
+	#comment-form-div {
+		left: 0 !important;
+		top: 0 !important;
+		width: 100%;
+		height: 100%;
+		padding: 0;
+		border: none;
+	}
+}
+
 #comment-form {
 	.content-area {
 		flex: 1;
 		min-width: 50px;
-		overflow: hidden;
+		min-height: 100px;
+		overflow: auto;
 		.overlay, .TinyMDE {
 			width: 100%;
 			height: 100%;

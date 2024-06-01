@@ -838,7 +838,7 @@ func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPos
 		if checked == check {
 			panic(`任务状态一致，不能变更。`)
 		}
-		source[pos] = utils.IIF[bool, byte](check, 'X', ' ')
+		source[pos] = utils.IIF[byte](check, 'X', ' ')
 	}
 
 	if err := (func() (err error) {

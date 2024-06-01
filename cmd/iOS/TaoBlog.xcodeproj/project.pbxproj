@@ -14,7 +14,6 @@
 		2B647A852C094B290089BFB9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B647A842C094B290089BFB9 /* Preview Assets.xcassets */; };
 		2B647A8D2C094D5B0089BFB9 /* GRPC in Frameworks */ = {isa = PBXBuildFile; productRef = 2B647A8C2C094D5B0089BFB9 /* GRPC */; };
 		2B647A8F2C094D5B0089BFB9 /* protoc-gen-grpc-swift in Frameworks */ = {isa = PBXBuildFile; productRef = 2B647A8E2C094D5B0089BFB9 /* protoc-gen-grpc-swift */; };
-		2B647A922C094EB60089BFB9 /* SwiftDown in Frameworks */ = {isa = PBXBuildFile; productRef = 2B647A912C094EB60089BFB9 /* SwiftDown */; };
 		2BA2D8032C099DDA006CD20F /* service.grpc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA2D7FC2C099DDA006CD20F /* service.grpc.swift */; };
 		2BA2D8042C099DDA006CD20F /* search.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA2D7FD2C099DDA006CD20F /* search.pb.swift */; };
 		2BA2D8052C099DDA006CD20F /* post.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA2D7FE2C099DDA006CD20F /* post.pb.swift */; };
@@ -22,6 +21,14 @@
 		2BA2D8072C099DDA006CD20F /* comment.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA2D8002C099DDA006CD20F /* comment.pb.swift */; };
 		2BA2D8082C099DDA006CD20F /* service.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA2D8012C099DDA006CD20F /* service.pb.swift */; };
 		2BA2D8092C099DDA006CD20F /* backup.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA2D8022C099DDA006CD20F /* backup.pb.swift */; };
+		2BD3A74E2C0A4E6D00DC38D7 /* Passkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD3A74D2C0A4E6D00DC38D7 /* Passkeys.swift */; };
+		2BD3A7502C0A503F00DC38D7 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD3A74F2C0A503F00DC38D7 /* LoginView.swift */; };
+		2BD3A7522C0A690500DC38D7 /* auth.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD3A7512C0A690500DC38D7 /* auth.pb.swift */; };
+		2BD3A7552C0B4FB200DC38D7 /* PostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD3A7542C0B4FB200DC38D7 /* PostsView.swift */; };
+		2BD3A7572C0B6CB100DC38D7 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD3A7562C0B6CB100DC38D7 /* WebView.swift */; };
+		2BF6FE2C2C09F1930075AC1E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF6FE2B2C09F1930075AC1E /* HomeView.swift */; };
+		2BF6FE2E2C09F2470075AC1E /* EditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF6FE2D2C09F2470075AC1E /* EditorView.swift */; };
+		2BF6FE302C09F2560075AC1E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF6FE2F2C09F2560075AC1E /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +45,15 @@
 		2BA2D8002C099DDA006CD20F /* comment.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = comment.pb.swift; path = ../../protocols/swift/comment.pb.swift; sourceTree = "<group>"; };
 		2BA2D8012C099DDA006CD20F /* service.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = service.pb.swift; path = ../../protocols/swift/service.pb.swift; sourceTree = "<group>"; };
 		2BA2D8022C099DDA006CD20F /* backup.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = backup.pb.swift; path = ../../protocols/swift/backup.pb.swift; sourceTree = "<group>"; };
+		2BD3A74D2C0A4E6D00DC38D7 /* Passkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Passkeys.swift; sourceTree = "<group>"; };
+		2BD3A74F2C0A503F00DC38D7 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		2BD3A7512C0A690500DC38D7 /* auth.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = auth.pb.swift; path = ../../protocols/swift/auth.pb.swift; sourceTree = "<group>"; };
+		2BD3A7532C0A6BD300DC38D7 /* TaoBlog.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaoBlog.entitlements; sourceTree = "<group>"; };
+		2BD3A7542C0B4FB200DC38D7 /* PostsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostsView.swift; sourceTree = "<group>"; };
+		2BD3A7562C0B6CB100DC38D7 /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
+		2BF6FE2B2C09F1930075AC1E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		2BF6FE2D2C09F2470075AC1E /* EditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorView.swift; sourceTree = "<group>"; };
+		2BF6FE2F2C09F2560075AC1E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,7 +63,6 @@
 			files = (
 				2B647A8F2C094D5B0089BFB9 /* protoc-gen-grpc-swift in Frameworks */,
 				2B647A8D2C094D5B0089BFB9 /* GRPC in Frameworks */,
-				2B647A922C094EB60089BFB9 /* SwiftDown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,6 +72,7 @@
 		2B647A712C094B280089BFB9 = {
 			isa = PBXGroup;
 			children = (
+				2BD3A7532C0A6BD300DC38D7 /* TaoBlog.entitlements */,
 				2BD333A02C0983740093EDFB /* Proto */,
 				2B647A7C2C094B280089BFB9 /* iOS */,
 				2B647A7B2C094B280089BFB9 /* Products */,
@@ -74,11 +90,14 @@
 		2B647A7C2C094B280089BFB9 /* iOS */ = {
 			isa = PBXGroup;
 			children = (
+				2BF6FE282C09F1310075AC1E /* Home */,
 				2B647A7D2C094B280089BFB9 /* TaoBlogApp.swift */,
 				2B647A7F2C094B280089BFB9 /* ContentView.swift */,
 				2B647A812C094B290089BFB9 /* Assets.xcassets */,
 				2B647A832C094B290089BFB9 /* Preview Content */,
 				2B364F3A2C096CBA005FC0AE /* Client.swift */,
+				2BD3A74D2C0A4E6D00DC38D7 /* Passkeys.swift */,
+				2BD3A74F2C0A503F00DC38D7 /* LoginView.swift */,
 			);
 			path = iOS;
 			sourceTree = "<group>";
@@ -94,6 +113,7 @@
 		2BD333A02C0983740093EDFB /* Proto */ = {
 			isa = PBXGroup;
 			children = (
+				2BD3A7512C0A690500DC38D7 /* auth.pb.swift */,
 				2BA2D8022C099DDA006CD20F /* backup.pb.swift */,
 				2BA2D8002C099DDA006CD20F /* comment.pb.swift */,
 				2BA2D7FF2C099DDA006CD20F /* config.pb.swift */,
@@ -103,6 +123,18 @@
 				2BA2D8012C099DDA006CD20F /* service.pb.swift */,
 			);
 			name = Proto;
+			sourceTree = "<group>";
+		};
+		2BF6FE282C09F1310075AC1E /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				2BF6FE2B2C09F1930075AC1E /* HomeView.swift */,
+				2BF6FE2D2C09F2470075AC1E /* EditorView.swift */,
+				2BF6FE2F2C09F2560075AC1E /* SettingsView.swift */,
+				2BD3A7542C0B4FB200DC38D7 /* PostsView.swift */,
+				2BD3A7562C0B6CB100DC38D7 /* WebView.swift */,
+			);
+			path = Home;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -124,7 +156,6 @@
 			packageProductDependencies = (
 				2B647A8C2C094D5B0089BFB9 /* GRPC */,
 				2B647A8E2C094D5B0089BFB9 /* protoc-gen-grpc-swift */,
-				2B647A912C094EB60089BFB9 /* SwiftDown */,
 			);
 			productName = TaoBlog;
 			productReference = 2B647A7A2C094B280089BFB9 /* TaoBlog.app */;
@@ -147,17 +178,16 @@
 			};
 			buildConfigurationList = 2B647A752C094B280089BFB9 /* Build configuration list for PBXProject "TaoBlog" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = 2B647A712C094B280089BFB9;
 			packageReferences = (
 				2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */,
-				2B647A902C094EB60089BFB9 /* XCRemoteSwiftPackageReference "SwiftDown" */,
-				2B364EFF2C096048005FC0AE /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			productRefGroup = 2B647A7B2C094B280089BFB9 /* Products */;
 			projectDirPath = "";
@@ -185,16 +215,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2BD3A7502C0A503F00DC38D7 /* LoginView.swift in Sources */,
 				2BA2D8092C099DDA006CD20F /* backup.pb.swift in Sources */,
 				2BA2D8052C099DDA006CD20F /* post.pb.swift in Sources */,
 				2BA2D8032C099DDA006CD20F /* service.grpc.swift in Sources */,
+				2BD3A7552C0B4FB200DC38D7 /* PostsView.swift in Sources */,
 				2B647A802C094B280089BFB9 /* ContentView.swift in Sources */,
 				2B647A7E2C094B280089BFB9 /* TaoBlogApp.swift in Sources */,
+				2BF6FE2C2C09F1930075AC1E /* HomeView.swift in Sources */,
 				2B364F3B2C096CBA005FC0AE /* Client.swift in Sources */,
 				2BA2D8062C099DDA006CD20F /* config.pb.swift in Sources */,
 				2BA2D8072C099DDA006CD20F /* comment.pb.swift in Sources */,
+				2BD3A7522C0A690500DC38D7 /* auth.pb.swift in Sources */,
+				2BF6FE2E2C09F2470075AC1E /* EditorView.swift in Sources */,
 				2BA2D8042C099DDA006CD20F /* search.pb.swift in Sources */,
 				2BA2D8082C099DDA006CD20F /* service.pb.swift in Sources */,
+				2BD3A7572C0B6CB100DC38D7 /* WebView.swift in Sources */,
+				2BF6FE302C09F2560075AC1E /* SettingsView.swift in Sources */,
+				2BD3A74E2C0A4E6D00DC38D7 /* Passkeys.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +363,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TaoBlog.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"iOS/Preview Content\"";
@@ -341,11 +380,15 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.twofei.mac.TaoBlog;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twofei.taoblog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -354,6 +397,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TaoBlog.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"iOS/Preview Content\"";
@@ -370,11 +414,15 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.twofei.mac.TaoBlog;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twofei.taoblog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -402,28 +450,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		2B364EFF2C096048005FC0AE /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.0;
-			};
-		};
 		2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/grpc/grpc-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.23.0;
-			};
-		};
-		2B647A902C094EB60089BFB9 /* XCRemoteSwiftPackageReference "SwiftDown" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/qeude/SwiftDown.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.4.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -438,11 +470,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2B647A8B2C094D5B0089BFB9 /* XCRemoteSwiftPackageReference "grpc-swift" */;
 			productName = "protoc-gen-grpc-swift";
-		};
-		2B647A912C094EB60089BFB9 /* SwiftDown */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2B647A902C094EB60089BFB9 /* XCRemoteSwiftPackageReference "SwiftDown" */;
-			productName = SwiftDown;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

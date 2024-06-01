@@ -6,47 +6,30 @@
 //
 
 import SwiftUI
-import SwiftDown
 
 extension Protocols_Post : Identifiable { }
 
-struct PostView : View {
-	@State private var _post: Protocols_Post
-	
-	init(_ _post: Protocols_Post) {
-		self._post = _post
-	}
-	
-	var body: some View {
-		SwiftDownEditor(text: $_post.source)
-			.theme(.BuiltIn.defaultLight.theme())
-	}
-}
-
 struct ContentView: View {
-	@State private var _client = Client()
-	@State private var _posts = [Protocols_Post]()
+	@EnvironmentObject var states : GlobalState
 	
 	var body: some View {
-		VStack {
-			NavigationView {
-				Group {
-					List {
-						ForEach(_posts) { _post in
-							NavigationLink {
-								PostView(_post)
-							} label: {
-								Text(_post.title)
-							}
-						}
+		if states.signedIn {
+			TabView {
+				HomeView()
+					.tabItem {
+						Label("首页", systemImage: "house")
 					}
-				}
+				PostsView()
+					.tabItem {
+						Label("文章", systemImage: "square.and.pencil")
+					}
+				SettingsView()
+					.tabItem {
+						Label("设置", systemImage: "gear")
+					}
 			}
-		}
-		.onAppear {
-			try? self._client.listPosts {
-				_posts = $0
-			}
+		} else {
+			LoginView()
 		}
 	}
 }
