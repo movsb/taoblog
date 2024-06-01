@@ -6,6 +6,8 @@ GOPATH=${GOPATH:-$(go env GOPATH)}
 
 cd protocols
 
+SWIFT_OPTIONS=$(type protoc-gen-swift > /dev/null 2>&1 && echo "--swift_out=swift --grpc-swift_out=Visibility=Internal,Server=false,Client=true,TestClient=false:swift" || echo "")
+
 protoc \
 	-I. \
 	-I/usr/local/include \
@@ -16,8 +18,8 @@ protoc \
 	--go-grpc_out=paths=source_relative:go/proto \
 	--grpc-gateway_out=paths=source_relative:go/proto \
 	--swagger_out=allow_merge=true,merge_file_name="docs/taoblog",logtostderr=true:. \
-	--swift_out=swift \
-	--grpc-swift_out=Visibility=Internal,Server=false,Client=true,TestClient=false:swift \
+	$SWIFT_OPTIONS \
+	 \
 	auth.proto \
 	backup.proto \
 	service.proto \
