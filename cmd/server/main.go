@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"database/sql"
+	"encoding/binary"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/admin"
@@ -81,6 +84,29 @@ func serve(ctx context.Context) {
 		)
 		log.Println(`admin on`, prefix)
 		mux.Handle(prefix, a.Handler())
+
+		config := &webauthn.Config{
+			RPID:          u.Hostname(),
+			RPDisplayName: cfg.Site.Name,
+			RPOrigins:     []string{u.String()},
+		}
+		wa, err := webauthn.New(config)
+		if err != nil {
+			panic(err)
+		}
+		theService.AuthServer = auth.NewPasskeys(
+			wa,
+			func(userHandler []byte) (*auth.User, string, error) {
+				id := binary.LittleEndian.Uint32(userHandler)
+				u := theAuth.GetUserByID(int64(id))
+				if u.IsAdmin() {
+					return u, cfg.Auth.Key, nil
+				}
+
+				return u, "", errors.New(`no such user`)
+			},
+			theAuth.GenCookieForPasskeys,
+		)
 	}
 
 	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth)

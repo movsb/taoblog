@@ -2,6 +2,7 @@ syntax = "proto3";
 package protocols;
 option go_package = "github.com/movsb/taoblog/proto";
 
+import "auth.proto";
 import "backup.proto";
 import "post.proto";
 import "comment.proto";
@@ -10,6 +11,11 @@ import "config.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
+
+service Auth {
+	rpc BeginPasskeysLogin (BeginPasskeysLoginRequest) returns (BeginPasskeysLoginResponse);
+	rpc FinishPasskeysLogin (FinishPasskeysLoginRequest) returns (FinishPasskeysLoginResponse);
+}
 
 service Management {
 	// Config
