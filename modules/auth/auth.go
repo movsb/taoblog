@@ -14,6 +14,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -85,14 +86,18 @@ func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
 }
 
 func (o *Auth) Login() string {
+	return login(o.cfg.Basic.Username, o.cfg.Basic.Password)
+}
+
+func login(username, password string) string {
 	return fmt.Sprintf(
 		`%s:%s`,
-		o.cfg.Basic.Username,
-		o.sha1(o.cfg.Basic.Password),
+		username,
+		shasum(password),
 	)
 }
 
-func (*Auth) sha1(in string) string {
+func shasum(in string) string {
 	h := sha1.Sum([]byte(in))
 	return fmt.Sprintf("%x", h)
 }
@@ -128,7 +133,7 @@ func (o *Auth) AuthCookie(login string, userAgent string) *User {
 		return guest
 	}
 
-	if o.sha1(userAgent+o.Login()) == login {
+	if shasum(userAgent+o.Login()) == login {
 		return admin
 	}
 
@@ -203,10 +208,14 @@ const (
 	CookieNameUserID = `taoblog.user_id`
 )
 
+func cookieValue(userAgent, username, password string) string {
+	return shasum(userAgent + login(username, password))
+}
+
 // MakeCookie ...
 func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	agent := r.Header.Get("User-Agent")
-	cookie := a.sha1(agent + a.Login())
+	cookie := cookieValue(agent, a.cfg.Basic.Username, a.cfg.Basic.Password)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    cookie,
@@ -228,6 +237,22 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func (a *Auth) GenCookieForPasskeys(u *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie {
+	cookie := shasum(agent + a.Login())
+	return []*proto.FinishPasskeysLoginResponse_Cookie{
+		{
+			Name:     CookieNameLogin,
+			Value:    cookie,
+			HttpOnly: true,
+		},
+		{
+			Name:     CookieNameUserID,
+			Value:    fmt.Sprint(u.ID),
+			HttpOnly: false,
+		},
+	}
 }
 
 // RemoveCookie ...
@@ -257,7 +282,7 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 // 仅用于测试的帐号。
 func TestingAdminUserContext(a *Auth, userAgent string) context.Context {
 	md := metadata.Pairs(`request_from_gateway`, `1`)
-	md.Append(GatewayCookie, a.sha1(userAgent+a.Login()))
+	md.Append(GatewayCookie, shasum(userAgent+a.Login()))
 	md.Append(GatewayUserAgent, userAgent)
 	return metadata.NewOutgoingContext(context.TODO(), md)
 }

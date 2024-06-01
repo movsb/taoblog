@@ -18,6 +18,7 @@ protoc \
 	--swagger_out=allow_merge=true,merge_file_name="docs/taoblog",logtostderr=true:. \
 	--swift_out=swift \
 	--grpc-swift_out=Visibility=Internal,Server=false,Client=true,TestClient=false:swift \
+	auth.proto \
 	backup.proto \
 	service.proto \
 	comment.proto \

@@ -104,6 +104,7 @@ type Service struct {
 	// >= 0 表示值有效。
 	domainExpirationDaysLeft atomic.Int32
 
+	proto.AuthServer
 	proto.TaoBlogServer
 	proto.ManagementServer
 	proto.SearchServer
@@ -216,6 +217,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		),
 	)
 
+	proto.RegisterAuthServer(server, s)
 	proto.RegisterTaoBlogServer(server, s)
 	proto.RegisterManagementServer(server, s)
 	proto.RegisterSearchServer(server, s)

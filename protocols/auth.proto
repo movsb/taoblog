@@ -1,0 +1,51 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/proto";
+
+// 开始使用 Passkeys 登录的请求。
+message BeginPasskeysLoginRequest {}
+
+// 返回挑战数据。
+message BeginPasskeysLoginResponse {
+	bytes challenge = 1;
+}
+
+// 完成登录。
+message FinishPasskeysLoginRequest {
+	// 只是用来查找会话的，需要移除这个方案。
+	bytes challenge = 1;
+	
+	// 凭证ID
+	bytes id = 2;
+	
+	// 用户编号。
+	bytes user_id = 3;
+
+	// 签名数据。
+	bytes signature = 4;
+
+	// 认证端数据。
+	string client_data_json = 5;
+	
+	int32 attachment = 6;
+	
+	bytes authenticator_data = 7;
+
+	// 用户代理 Use-Agent，用于辅助生成 Cookies。
+	string user_agent = 100;
+}
+
+// 返回临时 token。
+message FinishPasskeysLoginResponse {
+	// 用来发起 GRPC 请求。
+	string token = 1;
+	
+	message Cookie {
+		string name = 1;
+		string value = 2;
+		bool http_only = 4;
+	}
+
+	// 登录成功后生成的 Cookies，用来 Web 浏览时注入。
+	repeated Cookie cookies = 2;
+}
