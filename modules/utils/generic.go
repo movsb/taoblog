@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
+	"io"
 )
 
 // 搁这套娃🪆🪆🪆？
@@ -50,4 +52,39 @@ func CatchAsError(err *error) {
 		}
 		*err = fmt.Errorf(`%v`, er)
 	}
+}
+
+// 基于内存实现的可重复读的 Reader。
+// https://blog.twofei.com/1072/
+func MemDupReader(r io.Reader) func() io.Reader {
+	b := bytes.NewBuffer(nil)
+	t := io.TeeReader(r, b)
+
+	return func() io.Reader {
+		br := bytes.NewReader(b.Bytes())
+		return io.MultiReader(br, t)
+	}
+}
+
+func Filter[S []E, E any](s S, predicate func(e E) bool) []E {
+	r := make([]E, 0, len(s))
+	for _, a := range s {
+		if predicate(a) {
+			r = append(r, a)
+		}
+	}
+	return r
+}
+
+func Implements[T any](a any) bool {
+	_, ok := a.(T)
+	return ok
+}
+
+func Map[T any, S []E, E any](s S, mapper func(e E) T) []T {
+	t := make([]T, 0, len(s))
+	for _, a := range s {
+		t = append(t, mapper(a))
+	}
+	return t
 }

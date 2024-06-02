@@ -18,6 +18,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
+	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
@@ -83,7 +84,6 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 	switch sourceType {
 	case `markdown`:
 		options := []renderers.Option2{
-			renderers.WithPathResolver(s.PathResolver(postID)),
 			renderers.WithRemoveTitleHeading(),
 			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		}
@@ -108,6 +108,7 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 		options = append(options,
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
+			media_size.New(s.OpenAsset(postID), true),
 			// task_list.New(),
 		)
 		tr = renderers.NewMarkdown(options...)

@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
+	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 )
 
 func TestMarkdown(t *testing.T) {
@@ -31,6 +34,8 @@ func TestMarkdownAll(t *testing.T) {
 	// for hashtags test
 	var outputTags []string
 
+	testDataURL, _ := url.Parse(`/`)
+
 	cases := []struct {
 		ID          float32
 		Options     []renderers.Option2
@@ -40,28 +45,32 @@ func TestMarkdownAll(t *testing.T) {
 	}{
 		{
 			ID:       1,
-			Markdown: `![avatar](test_data/avatar.jpg?scale=0.3)`,
-			Html:     `<p><img src="test_data/avatar.jpg" alt="avatar" loading="lazy" width=138 height=138 /></p>`,
+			Markdown: `![avatar](avatar.jpg?scale=0.3)`,
+			Options:  []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), true)},
+			Html:     `<p><img src="avatar.jpg" alt="avatar" loading="lazy" width="138" height="138"/></p>`,
 		},
 		{
 			ID:       2,
-			Markdown: `- ![avatar](test_data/avatar.jpg?scale=0.3)`,
+			Markdown: `- ![avatar](avatar.jpg?scale=0.3)`,
+			Options:  []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), true)},
 			Html: `<ul>
-<li><img src="test_data/avatar.jpg" alt="avatar" loading="lazy" width=138 height=138 /></li>
+<li><img src="avatar.jpg" alt="avatar" loading="lazy" width="138" height="138"/></li>
 </ul>`,
 		},
 		{
 			ID:       2.1,
-			Markdown: `- ![avatar](test_data/中文.jpg?scale=0.3)`,
+			Markdown: `- ![avatar](中文.jpg?scale=0.3)`,
+			Options:  []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), true)},
 			Html: `<ul>
-<li><img src="test_data/%E4%B8%AD%E6%96%87.jpg" alt="avatar" loading="lazy" width=138 height=138 /></li>
+<li><img src="%E4%B8%AD%E6%96%87.jpg" alt="avatar" loading="lazy" width="138" height="138"/></li>
 </ul>`,
 		},
 		{
 			ID:          3,
 			Description: `支持网络图片的缩放`,
 			Markdown:    fmt.Sprintf(`![](%s/avatar.jpg?scale=0.1)`, host),
-			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" loading="lazy" width=46 height=46 /></p>`, host),
+			Options:     []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), false)},
+			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" loading="lazy" width="46" height="46"/></p>`, host),
 		},
 		{
 			ID:          4,
@@ -117,15 +126,15 @@ func TestMarkdownAll(t *testing.T) {
 ![样式1](1.jpg "样式1")
 ![样式2](2.jpg "样式2")
 ![样式3](3.jpg '样式3"><a>"')`,
-			Html: `<p><img src="1.jpg" alt="样式1" title="样式1" loading="lazy" />
-<img src="2.jpg" alt="样式2" title="样式2" loading="lazy" />
-<img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;" loading="lazy" /></p>`,
+			Html: `<p><img src="1.jpg" alt="样式1" title="样式1" loading="lazy"/>
+<img src="2.jpg" alt="样式2" title="样式2" loading="lazy"/>
+<img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;" loading="lazy"/></p>`,
 		},
 		{
 			ID:       7.0,
 			Markdown: `![](1.png?scale=.3)`,
 			Options:  []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
-			Html:     `<p><img src="/911/1.png" alt="" loading="lazy"/></p>`,
+			Html:     `<p><img src="/911/1.png?scale=.3" alt="" loading="lazy"/></p>`,
 		},
 		{
 			ID: 7.1,

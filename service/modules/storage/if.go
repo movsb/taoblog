@@ -31,7 +31,6 @@ type FileSystem interface {
 	DeleteFile(path string) error
 	OpenFile(path string) (File, error)
 	WriteFile(spec *proto.FileSpec, r io.Reader) error
-	Resolve(path string) string
 }
 
 // 针对某篇文章的文件系统实现类。
@@ -119,8 +118,4 @@ func (fs *Local) WriteFile(spec *proto.FileSpec, r io.Reader) error {
 	}
 
 	return utils.WriteFile(path, mode, time.Unix(int64(spec.Time), 0), int64(spec.Size), r)
-}
-
-func (fs *Local) Resolve(path string) string {
-	return fs.pathOf(path)
 }

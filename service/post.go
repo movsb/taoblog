@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"log"
 	"net/url"
+	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -20,10 +20,11 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
+	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
+	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
-	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -160,25 +161,12 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 	}
 }
 
-func (s *Service) PathResolver(id int64) renderers.PathResolver {
-	return &PathResolver{
-		base: s.cfg.Data.File.Path,
-		fs:   storage.NewLocal(s.cfg.Data.File.Path, fmt.Sprint(id)),
-	}
-}
-
-type PathResolver struct {
-	base string
-	fs   storage.FileSystem
-}
-
-// 1.jpg -> files/{id}/1.jpg
-// /{Id}/1.jpg -> files/{id}/1.jpg
-func (r *PathResolver) Resolve(path string) string {
-	if strings.HasPrefix(path, `/`) {
-		return filepath.Join(r.base, path)
-	}
-	return r.fs.Resolve(path)
+func (s *Service) OpenAsset(id int64) gold_utils.URLReferenceFileSystem {
+	u := utils.Must(url.Parse(s.cfg.Site.Home))
+	return gold_utils.NewURLReferenceFileSystem(
+		os.DirFS(s.cfg.Data.File.Path),
+		u.JoinPath(fmt.Sprintf("/%d/", id)),
+	)
 }
 
 func (s *Service) GetPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
@@ -245,7 +233,6 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 			}),
 		}
 		if id > 0 {
-			options = append(options, renderers.WithPathResolver(s.PathResolver(id)))
 			if link := s.GetLink(id); link != s.plainLink(id) {
 				options = append(options, renderers.WithModifiedAnchorReference(link))
 			}
@@ -277,6 +264,7 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 		options = append(options,
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
+			media_size.New(s.OpenAsset(id), true),
 			task_list.New(),
 			renderers.WithHashTags(s.hashtagResolver, nil),
 			custom_break.New(),

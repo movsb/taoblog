@@ -2,34 +2,21 @@ package renderers
 
 import (
 	"bytes"
-	"context"
 	_ "embed"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	stdhtml "html"
-	"image"
-	_ "image/gif" // shut up
-	_ "image/jpeg"
-	_ "image/png"
-	"io"
 	"log"
-	"log/slog"
-	"net/http"
 	"net/url"
-	urlpkg "net/url"
-	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/utils"
+	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
@@ -53,7 +40,6 @@ type _Markdown struct {
 	// 外部初始化，导出。
 	title *string
 
-	pathResolver       PathResolver
 	removeTitleHeading bool // 是否移除 H1
 	disableHeadings    bool // 评论中不允许标题
 	disableHTML        bool // 禁止 HTML 元素
@@ -72,14 +58,6 @@ type _Markdown struct {
 // apply 的时候统一 catch 并返回初始化失败。
 type Option func(me *_Markdown) error
 type OptionNoError func(me *_Markdown)
-
-// 解析 Markdown 中的相对链接。
-func WithPathResolver(pathResolver PathResolver) Option {
-	return func(me *_Markdown) error {
-		me.pathResolver = pathResolver
-		return nil
-	}
-}
 
 // 移除 Markdown 中的标题（适用于文章）。
 func WithRemoveTitleHeading() Option {
@@ -180,9 +158,11 @@ func NewMarkdown(options ...any) *_Markdown {
 
 	// 目前的默认选项。
 	if !me.testing {
-		me.opts = append(me.opts, WithReserveListItemMarkerStyle())
-		me.opts = append(me.opts, WithLazyLoadingFrames())
-		me.opts = append(me.opts, WithMediaDimensionLimiter(350))
+		me.opts = append(me.opts,
+			WithReserveListItemMarkerStyle(),
+			WithLazyLoadingFrames(),
+			WithMediaDimensionLimiter(350),
+		)
 	}
 
 	return me
@@ -420,47 +400,16 @@ func (me *_Markdown) Render(source string) (string, error) {
 		}
 	}
 
-	var docQuery *goquery.Document
-	for _, opt := range me.opts {
-		if tr, ok := opt.(HtmlTransformer); ok {
-			if docQuery == nil {
-				doc, err := goquery.NewDocumentFromReader(bytes.NewReader(htmlText))
-				if err != nil {
-					return "", err
-				}
-				docQuery = doc
-			}
-			if err := tr.TransformHtml(docQuery); err != nil {
-				return "", err
-			}
-		}
-	}
-	if docQuery != nil {
-		headChildren := docQuery.Find(`head`).Children()
-		bodyChildren := docQuery.Find(`body`).Children()
-		buf := bytes.NewBuffer(nil)
-		var outErr error
-		headChildren.EachWithBreak(func(i int, s *goquery.Selection) bool {
-			if err := goquery.Render(buf, s); err != nil {
-				outErr = err
-				return false
-			}
-			return true
-		})
-		if outErr != nil {
-			return "", outErr
-		}
-		bodyChildren.EachWithBreak(func(i int, s *goquery.Selection) bool {
-			if err := goquery.Render(buf, s); err != nil {
-				outErr = err
-				return false
-			}
-			return true
-		})
-		if outErr != nil {
-			return "", outErr
-		}
-		htmlText = buf.Bytes()
+	if h2, err := gold_utils.ApplyHtmlTransformers(
+		htmlText,
+		utils.Map(
+			utils.Filter(me.opts, func(o Option2) bool { return utils.Implements[gold_utils.HtmlTransformer](o) }),
+			func(o Option2) gold_utils.HtmlTransformer { return o.(gold_utils.HtmlTransformer) },
+		)...,
+	); err != nil {
+		return "", err
+	} else {
+		htmlText = h2
 	}
 
 	// TODO 和渲染分开，根本不是一个阶段的事
@@ -631,48 +580,24 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 	// 不是很严格，可能有转义错误。
 	url, _ := url.Parse(string(n.Destination))
 	if url == nil {
-		w.WriteString(`<img />`)
+		w.WriteString(`<img>`)
 		log.Println(`图片地址解析失败：`, string(n.Destination))
 		return ast.WalkContinue, nil
-	}
-
-	// 看起来是文章内的相对链接？
-	// 如果是的话，需要 resolve 到相对应的目录。
-	pathRooted := url.Path
-	if url.Scheme == "" && url.Host == "" && me.pathResolver != nil {
-		pathRooted = me.pathResolver.Resolve(url.Path)
 	}
 
 	styles := map[string]string{}
 	classes := []string{}
 
 	q := url.Query()
-	scale := 1.0
 	if q.Has(`float`) {
 		styles[`float`] = `right`
 		classes = append(classes, `f-r`)
 		q.Del(`float`)
 	}
-	if n, err := strconv.ParseFloat(q.Get(`scale`), 64); err == nil && n > 0 {
-		scale = n
-		q.Del(`scale`)
-	}
 	if q.Has(`t`) {
 		classes = append(classes, `transparent`)
 		q.Del(`t`)
 	}
-	// 内嵌站内 SVG 图片。
-	// if q.Has(`embed`) && url.Scheme == "" && url.Host == "" && strings.EqualFold(path.Ext(pathRooted), `.svg`) {
-	// 	contents, err := ioutil.ReadFile(pathRooted)
-	// 	if err == nil {
-	// 		var removeXML = regexp.MustCompile(`<\?(?U:.+)\?>\s*`)
-	// 		contents = removeXML.ReplaceAllLiteral(contents, nil)
-	// 		w.Write(contents)
-	// 		return ast.WalkContinue, nil
-	// 	} else {
-	// 		log.Println(`svg 不存在：`, pathRooted, err)
-	// 	}
-	// }
 
 	url.RawQuery = q.Encode()
 
@@ -727,18 +652,11 @@ func (me *_Markdown) renderImage(w util.BufWriter, source []byte, node ast.Node,
 		w.WriteString(b.String())
 	}
 
-	url.Path = pathRooted
-	width, height := size(url)
-	if width > 0 && height > 0 {
-		widthScaled, heightScaled := int(float64(width)*scale), int(float64(height)*scale)
-		w.WriteString(fmt.Sprintf(` width=%d height=%d`, widthScaled, heightScaled))
-	}
-
 	if len(classes) > 0 {
 		w.WriteString(fmt.Sprintf(` class="%s"`, strings.Join(classes, " ")))
 	}
 
-	_, _ = w.WriteString(" />")
+	_, _ = w.WriteString("/>")
 	return ast.WalkSkipChildren, nil
 }
 
@@ -754,78 +672,4 @@ func nodeToHTMLText(n ast.Node, source []byte) []byte {
 		}
 	}
 	return buf.Bytes()
-}
-
-func size(url *urlpkg.URL) (int, int) {
-	var fp io.ReadCloser
-	switch strings.ToLower(url.Scheme) {
-	case `http`, `https`:
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
-		if err != nil {
-			return 0, 0
-		}
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			slog.Debug("无法获取图片大小：", slog.String(`url`, url.String()))
-			return 0, 0
-		}
-		fp = resp.Body
-	default:
-		// 有可能是引用别的文章的链接，这样会是以 / 开头的绝对路径。
-		// 只是相对于站点，而不是相对于文件系统，所以要去除。
-		f, err := os.Open(url.Path)
-		if err != nil {
-			// panic(err)
-			return 0, 0
-		}
-		fp = f
-	}
-	defer fp.Close()
-	imgConfig, _, err := image.DecodeConfig(fp)
-	if err != nil {
-		// TODO 支持网络图片的 seeker。
-		if sfp, ok := fp.(io.ReadSeeker); ok {
-			if _, err := sfp.Seek(0, io.SeekStart); err != nil {
-				panic(err)
-			}
-			if strings.EqualFold(filepath.Ext(url.Path), `.svg`) {
-				type _SvgSize struct {
-					Width   string `xml:"width,attr"`
-					Height  string `xml:"height,attr"`
-					ViewBox string `xml:"viewBox,attr"`
-				}
-				ss := _SvgSize{}
-				if err := xml.NewDecoder(sfp).Decode(&ss); err != nil {
-					panic(err)
-				}
-				var w, h int
-				fmt.Sscanf(ss.Width, `%d`, &w)
-				fmt.Sscanf(ss.Height, `%d`, &h)
-				if w == 0 && h == 0 && ss.ViewBox != "" {
-					var left, top, right, bottom float32
-					fmt.Sscanf(ss.ViewBox, "%f %f %f %f", &left, &top, &right, &bottom)
-					w = int(right - left)
-					h = int(bottom - top)
-				}
-				return w, h
-			}
-		}
-		log.Println(err, url.String())
-		return 0, 0
-	}
-	width, height := imgConfig.Width, imgConfig.Height
-
-	// TODO 移除通过 @2x 类似的图片缩放支持。
-	for i := 1; i <= 10; i++ {
-		scaleFmt := fmt.Sprintf(`@%dx.`, i)
-		if strings.Contains(filepath.Base(url.Path), scaleFmt) {
-			width /= i
-			height /= i
-			break
-		}
-	}
-
-	return width, height
 }

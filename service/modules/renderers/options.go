@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -34,10 +33,6 @@ type HtmlFilter interface {
 }
 type HtmlPrettifier interface {
 	PrettifyHtml(doc *html.Node) ([]byte, error)
-}
-
-type HtmlTransformer interface {
-	TransformHtml(doc *goquery.Document) error
 }
 
 // -----------------------------------------------------------------------------
