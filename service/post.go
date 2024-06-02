@@ -697,6 +697,7 @@ func (s *Service) updatePostPageCount() {
 }
 
 // SetPostStatus sets post status.
+// 会总是更新 LastCommentedAt 时间。
 func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequest) (*proto.SetPostStatusResponse, error) {
 	s.MustBeAdmin(ctx)
 
@@ -713,11 +714,14 @@ func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequ
 			"status": status,
 		}
 
+		now := time.Now().Unix()
+
 		if in.Touch {
-			now := time.Now().Unix()
 			m[`date`] = now
 			m[`modified`] = now
 		}
+
+		m[`last_commented_at`] = now
 
 		txs.tdb.Model(&post).MustUpdateMap(m)
 		return nil
