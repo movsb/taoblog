@@ -89,7 +89,7 @@ func (b *CustomBreakParser) Close(node ast.Node, reader text.Reader, pc parser.C
 }
 
 func (b *CustomBreakParser) CanInterruptParagraph() bool {
-	return true
+	return false
 }
 
 func (b *CustomBreakParser) CanAcceptIndentedLine() bool {
