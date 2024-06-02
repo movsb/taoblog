@@ -137,14 +137,18 @@ func (s *Service) UpdateObjectTags(pid int64, tags []string) {
 	)
 
 	for _, t := range oldTags {
-		if !slices.Contains(newTags, t) {
+		if !slices.ContainsFunc(newTags, func(old string) bool {
+			return strings.EqualFold(old, t)
+		}) {
 			toBeDeled = append(toBeDeled, t)
 		}
 	}
 
 	for _, t := range newTags {
 		t = strings.TrimSpace(t)
-		if t != "" && !slices.Contains(oldTags, t) {
+		if t != "" && !slices.ContainsFunc(oldTags, func(new string) bool {
+			return strings.EqualFold(new, t)
+		}) {
 			toBeAdded = append(toBeAdded, t)
 		}
 	}
