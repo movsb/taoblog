@@ -13,6 +13,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -189,6 +190,7 @@ func (s *Service) cacheAllCommenterData() {
 // GetComment ...
 // TODO perm check
 // TODO remove email & user
+// 这个接口好像没使用。
 func (s *Service) GetComment(ctx context.Context, req *proto.GetCommentRequest) (*proto.Comment, error) {
 	return s.getComment2(req.Id).ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{})), nil
 }
@@ -249,9 +251,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 			}
 			// NOTE：管理员如果修改用户评论后如果带 HTML，则用户无法再提交保存。
 			// 是不是应该限制下呢？
-			if _, err := s.getCommentContent(ac.User.IsAdmin(), req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, &proto.PostContentOptions{
-				WithContent: false,
-			}); err != nil {
+			if _, err := s.getCommentContent(ac.User.IsAdmin(), req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, co.For(co.UpdateCommentCheck)); err != nil {
 				return nil, err
 			}
 		}
@@ -266,11 +266,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 		s.tdb.Where(`id=?`, req.Comment.Id).MustFind(&comment)
 	}
 
-	return comment.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
-		WithContent:       true,
-		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-	})), nil
+	return comment.ToProto(s.setCommentExtraFields(ctx, co.For(co.UpdateCommentReturn))), nil
 }
 
 // DeleteComment ...
@@ -353,12 +349,7 @@ func (s *Service) GetPostComments(ctx context.Context, req *proto.GetPostComment
 	stmt.Where("post_id=?", req.Id)
 	stmt.MustFind(&comments)
 	return &proto.GetPostCommentsResponse{
-		Comments: comments.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
-			WithContent:       true,
-			RenderCodeBlocks:  true,
-			UseAbsolutePaths:  false,
-			OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-		})),
+		Comments: comments.ToProto(s.setCommentExtraFields(ctx, co.For(co.GetPostComments))),
 	}, nil
 }
 
@@ -495,21 +486,16 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	// NOTE：这里是用后台管理员的身份获取。
 	// 所以为了不要 impersonate，应该提供系统帐号。
 	post, err := s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
-		Id:       int32(in.PostId),
-		WithLink: proto.LinkKind_LinkKindFull,
-		ContentOptions: &proto.PostContentOptions{
-			WithContent:  true,
-			PrettifyHtml: true,
-		},
+		Id:             int32(in.PostId),
+		WithLink:       proto.LinkKind_LinkKindFull,
+		ContentOptions: co.For(co.CreateCommentGetPost),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	if c.SourceType == `markdown` {
-		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, &proto.PostContentOptions{
-			WithContent: false,
-		}); err != nil {
+		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, co.For(co.CreateCommentCheck)); err != nil {
 			return nil, err
 		}
 	}
@@ -540,11 +526,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 
 	s.doCommentNotification(ctx, post, &c)
 
-	return c.ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{
-		WithContent:       true,
-		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-	})), nil
+	return c.ToProto(s.setCommentExtraFields(ctx, co.For(co.CreateCommentReturn))), nil
 }
 
 func (s *Service) updateCommentsCount() {
@@ -587,14 +569,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPost
 
 func (s *Service) PreviewComment(ctx context.Context, in *proto.PreviewCommentRequest) (*proto.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
-	content, err := s.getCommentContent(
-		ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId),
-		&proto.PostContentOptions{
-			WithContent:       true,
-			RenderCodeBlocks:  true,
-			OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-		},
-	)
+	content, err := s.getCommentContent(ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId), co.For(co.PreviewComment))
 	return &proto.PreviewCommentResponse{Html: content}, err
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/modules/handle304"
@@ -259,10 +260,8 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
-			Id: int32(pid),
-			ContentOptions: &proto.PostContentOptions{
-				WithContent: false,
-			},
+			Id:             int32(pid),
+			ContentOptions: co.For(co.Editor),
 		})
 		if err != nil {
 			panic(err)

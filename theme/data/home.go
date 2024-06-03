@@ -5,6 +5,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 )
@@ -36,10 +37,11 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 	}
 	rsp, err := service.ListPosts(ctx,
 		&proto.ListPostsRequest{
-			Limit:    15,
-			OrderBy:  "date DESC",
-			Kinds:    []string{`post`},
-			WithLink: proto.LinkKind_LinkKindRooted,
+			Limit:          15,
+			OrderBy:        "date DESC",
+			Kinds:          []string{`post`},
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.HomeLatestPosts),
 		},
 	)
 	if err != nil {
@@ -54,14 +56,11 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 	{
 		tweets, err := service.ListPosts(ctx,
 			&proto.ListPostsRequest{
-				Limit:    15,
-				OrderBy:  `date desc`,
-				Kinds:    []string{`tweet`},
-				WithLink: proto.LinkKind_LinkKindRooted,
-				ContentOptions: &proto.PostContentOptions{
-					WithContent:  true,
-					PrettifyHtml: true,
-				},
+				Limit:          15,
+				OrderBy:        `date desc`,
+				Kinds:          []string{`tweet`},
+				WithLink:       proto.LinkKind_LinkKindRooted,
+				ContentOptions: co.For(co.HomeLatestTweets),
 			},
 		)
 		if err != nil {
@@ -80,10 +79,7 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 			Limit:   15,
 			OrderBy: "date DESC",
 
-			ContentOptions: &proto.PostContentOptions{
-				WithContent:  true,
-				PrettifyHtml: true,
-			},
+			ContentOptions: co.For(co.HomeLatestComments),
 		})
 	if err != nil {
 		panic(err)
@@ -94,13 +90,8 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 		if !ok {
 			post, err := d.svc.GetPost(ctx,
 				&proto.GetPostRequest{
-					Id: int32(c.PostId),
-					ContentOptions: &proto.PostContentOptions{
-						WithContent:       true,
-						RenderCodeBlocks:  true,
-						UseAbsolutePaths:  true,
-						OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-					},
+					Id:             int32(c.PostId),
+					ContentOptions: co.For(co.HomeLatestCommentsPosts),
 				},
 			)
 			if err != nil {

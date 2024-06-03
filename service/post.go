@@ -16,6 +16,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -661,13 +662,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	s.MustBeAdmin(ctx)
 	// ac := auth.Context(ctx)
-	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, &proto.PostContentOptions{
-		WithContent:       true,
-		KeepTitleHeading:  true,
-		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-		UseAbsolutePaths:  true,
-	})
+	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
 	return &proto.PreviewPostResponse{Html: content}, err
 }
 
@@ -727,7 +722,7 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *proto.GetPostCom
 }
 
 // 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
-func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Post) error {
+func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostContentOptions) func(c *proto.Post) error {
 	ac := auth.Context(ctx)
 
 	return func(p *proto.Post) error {
@@ -735,21 +730,22 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentO
 			p.Metas.Geo = nil
 		}
 
-		if co != nil && co.WithContent {
-			content, err := s.getPostContentCached(ctx, p.Id, co)
+		if copt != nil && copt.WithContent {
+			content, err := s.getPostContentCached(ctx, p.Id, copt)
 			if err != nil {
 				return err
 			}
 			p.Content = content
 		}
+
 		// 碎碎念可能没有标题，自动生成
+		//
+		// 关于为什么没有在创建/更新的时候生成标题？
+		// - 生成算法在变化，而如果保存起来的话，算法变化后不能及时更新，除非全盘重新扫描
 		if p.Type == `tweet` {
 			switch p.Title {
 			case ``, `Untitled`, models.Untitled:
-				content, err := s.getPostContentCached(ctx, p.Id, &proto.PostContentOptions{
-					WithContent:  true,
-					PrettifyHtml: true,
-				})
+				content, err := s.getPostContentCached(ctx, p.Id, co.For(co.GenerateTweetTitle))
 				if err != nil {
 					return err
 				}
@@ -802,9 +798,12 @@ func truncateTitle(title string, length int) string {
 func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPostTaskListItemsRequest) (*proto.CheckPostTaskListItemsResponse, error) {
 	s.MustBeAdmin(ctx)
 
-	p, err := s.GetPost(ctx, &proto.GetPostRequest{Id: in.Id,
-		ContentOptions: &proto.PostContentOptions{WithContent: false},
-	})
+	p, err := s.GetPost(ctx,
+		&proto.GetPostRequest{
+			Id:             in.Id,
+			ContentOptions: co.For(co.CheckPostTaskListItems),
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

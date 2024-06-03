@@ -20,6 +20,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/blog"
@@ -348,15 +349,10 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 	post, err := t.service.GetPost(req.Context(),
 		&proto.GetPostRequest{
-			Id:          int32(id),
-			WithRelates: true,
-			WithLink:    proto.LinkKind_LinkKindRooted,
-			ContentOptions: &proto.PostContentOptions{
-				WithContent:       true,
-				RenderCodeBlocks:  true,
-				UseAbsolutePaths:  false,
-				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-			},
+			Id:             int32(id),
+			WithRelates:    true,
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.QueryByID),
 		},
 	)
 	if err != nil {
@@ -386,15 +382,10 @@ func (t *Theme) incView(id int64) {
 func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error) {
 	post, err := t.service.GetPost(req.Context(),
 		&proto.GetPostRequest{
-			Page:        path,
-			WithRelates: false, // 页面总是不是显示相关文章。
-			WithLink:    proto.LinkKind_LinkKindRooted,
-			ContentOptions: &proto.PostContentOptions{
-				WithContent:       true,
-				RenderCodeBlocks:  true,
-				UseAbsolutePaths:  false,
-				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-			},
+			Page:           path,
+			WithRelates:    false, // 页面总是不是显示相关文章。
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.QueryByPage),
 		},
 	)
 	if err != nil {
