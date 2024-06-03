@@ -35,6 +35,10 @@ func New(fs gold_utils.URLReferenceFileSystem, localOnly bool) *MediaSize {
 func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`img`).Each(func(i int, s *goquery.Selection) {
 		url := s.AttrOr(`src`, ``)
+		if url == "" {
+			return
+		}
+
 		parsedURL, err := urlpkg.Parse(url)
 		if err != nil {
 			log.Println(err)
@@ -57,7 +61,8 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		md, err := size(ms.fs, parsedURL, ms.localOnly)
 		if err != nil {
-			log.Println(url, err)
+			// 不要打印 URL，可能是 data: URL，很长。
+			log.Println(err)
 			return
 		}
 
