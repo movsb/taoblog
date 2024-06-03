@@ -269,6 +269,9 @@ func (s *Service) getPostContent(id int64, sourceType, source string, metas mode
 			task_list.New(),
 			renderers.WithHashTags(s.hashtagResolver, nil),
 			custom_break.New(),
+			renderers.WithReserveListItemMarkerStyle(),
+			renderers.WithLazyLoadingFrames(),
+			renderers.WithMediaDimensionLimiter(350),
 			// 其它选项可能会插入链接，所以放后面。
 			// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
 			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),

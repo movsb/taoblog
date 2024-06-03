@@ -110,6 +110,9 @@ func (s *Service) getCommentContent(secure bool, sourceType, source string, post
 			s.markdownWithPlantUMLRenderer(),
 			imaging.WithGallery(),
 			media_size.New(s.OpenAsset(postID), true),
+			renderers.WithReserveListItemMarkerStyle(),
+			renderers.WithLazyLoadingFrames(),
+			renderers.WithMediaDimensionLimiter(350),
 			// task_list.New(),
 		)
 		tr = renderers.NewMarkdown(options...)

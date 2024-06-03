@@ -37,15 +37,6 @@ type HtmlPrettifier interface {
 
 // -----------------------------------------------------------------------------
 
-func Testing() Option {
-	return func(me *_Markdown) error {
-		me.testing = true
-		return nil
-	}
-}
-
-// -----------------------------------------------------------------------------
-
 // 获取从 Markdown 中解析得到的一级标题。
 func WithTitle(title *string) OptionNoError {
 	return func(me *_Markdown) {

@@ -194,8 +194,7 @@ func TestMarkdownAll(t *testing.T) {
 		if tc.ID == 10.0 {
 			log.Println(`debug`)
 		}
-		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
-		md := renderers.NewMarkdown(options...)
+		md := renderers.NewMarkdown(tc.Options...)
 		html, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Fatal(tc.ID, err)
@@ -300,8 +299,7 @@ func TestPrettifier(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
-		options = append(options, renderers.WithHtmlPrettifier())
+		options := append(tc.Options, renderers.WithHtmlPrettifier())
 		md := renderers.NewMarkdown(options...)
 		if tc.ID == 6.0 {
 			log.Println(`debug`)

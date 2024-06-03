@@ -33,8 +33,7 @@ import (
 
 // Markdown ...
 type _Markdown struct {
-	opts    []Option2
-	testing bool
+	opts []Option2
 
 	// 从内容中解析到的标题。
 	// 外部初始化，导出。
@@ -155,15 +154,6 @@ func NewMarkdown(options ...any) *_Markdown {
 	me := &_Markdown{}
 
 	me.AddOptions(options...)
-
-	// 目前的默认选项。
-	if !me.testing {
-		me.opts = append(me.opts,
-			WithReserveListItemMarkerStyle(),
-			WithLazyLoadingFrames(),
-			WithMediaDimensionLimiter(350),
-		)
-	}
 
 	return me
 }
