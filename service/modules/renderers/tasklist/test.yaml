@@ -2,9 +2,9 @@
     - [ ] Task1
     - [ ] Task2
   html: |
-    <ul>
-    <li><input type=checkbox disabled> Task1</li>
-    <li><input type=checkbox disabled> Task2</li>
+    <ul class="task-list">
+    <li class="task-list-item"><input type=checkbox disabled> Task1</li>
+    <li class="task-list-item"><input type=checkbox disabled> Task2</li>
     </ul>
 - markdown: |
     <!-- TaskList -->
@@ -13,7 +13,7 @@
     - [x] Task2
   html: |
     <!-- TaskList -->
-    <ul class="task-list">
+    <ul class="task-list with-source-positions">
     <li class="task-list-item" data-source-position="22"><input type=checkbox disabled autocomplete="off"> Task1</li>
     <li class="checked task-list-item" data-source-position="34"><input type=checkbox checked disabled autocomplete="off"> Task2</li>
     </ul>
@@ -26,7 +26,7 @@
   id: 3.0
   html: |
     <!-- TaskList -->
-    <ul class="task-list">
+    <ul class="task-list with-source-positions">
     <li class="task-list-item" data-source-position="22">
     <p><input type=checkbox disabled autocomplete="off"> Task1</p>
     <p>p</p>

@@ -298,21 +298,10 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 	)
 
-	var hasTaskLists bool
-	if !secure {
-		options = append(options, task_list.Disallow(&hasTaskLists))
-	}
-
 	tr = renderers.NewMarkdown(options...)
 	rendered, err := tr.Render(source)
 	if err != nil {
 		return "", err
-	}
-
-	if !secure {
-		if hasTaskLists {
-			return "", fmt.Errorf(`你不可以使用带状态的任务列表。`)
-		}
 	}
 
 	return rendered, nil
@@ -525,6 +514,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 }
 
 // UpdatePost ...
+// 需要携带版本号，像评论一样。
 func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
 	s.MustBeAdmin(ctx)
 
@@ -830,7 +820,8 @@ func truncateTitle(title string, length int) string {
 	return strings.TrimSpace(string(runes[:maxLength]) + suffix)
 }
 
-func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPostTaskListItemsRequest) (*proto.CheckPostTaskListItemsResponse, error) {
+// 请保持文章和评论的代码同步。
+func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckTaskListItemsRequest) (*proto.CheckTaskListItemsResponse, error) {
 	s.MustBeAdmin(ctx)
 
 	p, err := s.GetPost(ctx,
@@ -843,15 +834,41 @@ func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPos
 		return nil, err
 	}
 
-	if p.Modified != in.PostModificationTime {
-		return nil, status.Error(codes.Aborted, `文章修改时间不匹配。`)
+	updated, err := s.applyTaskChecks(p.Modified, p.SourceType, p.Source, in)
+	if err != nil {
+		return nil, err
 	}
 
-	if p.SourceType != `markdown` {
-		return nil, status.Error(codes.FailedPrecondition, `文章类型不支持任务列表。`)
+	p.Source = string(updated)
+
+	updateRequest := proto.UpdatePostRequest{
+		Post: p,
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				`source_type`,
+				`source`,
+			},
+		},
+	}
+	updatedPost, err := s.UpdatePost(ctx, &updateRequest)
+	if err != nil {
+		return nil, err
 	}
 
-	source := []byte(p.Source)
+	return &proto.CheckTaskListItemsResponse{
+		ModificationTime: updatedPost.Modified,
+	}, nil
+}
+
+func (s *Service) applyTaskChecks(modified int32, sourceType, rawSource string, in *proto.CheckTaskListItemsRequest) (string, error) {
+	if modified != in.ModificationTime {
+		return "", status.Error(codes.Aborted, `内容的修改时间不匹配。`)
+	}
+	if sourceType != `markdown` {
+		return "", status.Error(codes.FailedPrecondition, `内容的类型不支持任务列表。`)
+	}
+
+	source := []byte(rawSource)
 
 	apply := func(pos int32, check bool) {
 		if pos <= 0 || int(pos) >= len(source)-1 {
@@ -877,26 +894,8 @@ func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPos
 		}
 		return nil
 	})(); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	p.Source = string(source)
-
-	updateRequest := proto.UpdatePostRequest{
-		Post: p,
-		UpdateMask: &fieldmaskpb.FieldMask{
-			Paths: []string{
-				`source_type`,
-				`source`,
-			},
-		},
-	}
-	updated, err := s.UpdatePost(ctx, &updateRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	return &proto.CheckPostTaskListItemsResponse{
-		Post: updated,
-	}, nil
+	return string(source), nil
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceType, source string, postID int64, co *proto.PostContentOptions) (string, error) {
@@ -135,8 +136,6 @@ func (s *Service) cacheAllCommenterData() {
 
 // GetComment ...
 // TODO perm check
-// TODO remove email & user
-// 这个接口好像没使用。
 func (s *Service) GetComment(ctx context.Context, req *proto.GetCommentRequest) (*proto.Comment, error) {
 	return s.getComment2(req.Id).ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{})), nil
 }
@@ -600,4 +599,44 @@ func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c
 
 func (s *Service) deletePostComments(_ context.Context, postID int64) {
 	s.tdb.From(models.Comment{}).Where(`post_id=?`, postID).MustDelete()
+}
+
+// 请保持文章和评论的代码同步。
+// NOTE：评论不需要检测权限，UpdateComment 会检测。
+func (s *Service) CheckCommentTaskListItems(ctx context.Context, in *proto.CheckTaskListItemsRequest) (*proto.CheckTaskListItemsResponse, error) {
+	// s.MustBeAdmin(ctx)
+	p, err := s.GetComment(ctx,
+		&proto.GetCommentRequest{
+			Id: int64(in.Id),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	updated, err := s.applyTaskChecks(p.Modified, p.SourceType, p.Source, in)
+	if err != nil {
+		return nil, err
+	}
+
+	p.Source = string(updated)
+
+	updateRequest := proto.UpdateCommentRequest{
+		Comment: p,
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				`source_type`,
+				`source`,
+				`modified`,
+			},
+		},
+	}
+	updatedComment, err := s.UpdateComment(ctx, &updateRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.CheckTaskListItemsResponse{
+		ModificationTime: updatedComment.Modified,
+	}, nil
 }

@@ -358,11 +358,19 @@ var methodThrottlerInfo = map[string]struct {
 		Message:   `评论更新过于频繁，请稍等几秒后再试。`,
 		OnSuccess: true,
 	},
+	`/protocols.TaoBlog/GetComment`: {
+		Internal: true,
+	},
 	`/protocols.TaoBlog/ListComments`: {
 		Internal: true,
 	},
 	`/protocols.TaoBlog/GetPostComments`: {
 		Internal: true,
+	},
+	`/protocols.TaoBlog/CheckCommentTaskListItems`: {
+		Interval:  time.Second * 5,
+		Message:   `任务完成得过于频繁？`,
+		OnSuccess: false,
 	},
 	`/protocols.TaoBlog/GetPost`: {
 		Internal: true,

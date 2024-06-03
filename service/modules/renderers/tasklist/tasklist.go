@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -58,7 +57,7 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 	recurse := func(list *ast.List, preserveSource bool) {
 		gold_utils.AddClass(list, `task-list`)
 		if preserveSource {
-			gold_utils.AddClass(list, `with-source-position`)
+			gold_utils.AddClass(list, `with-source-positions`)
 		}
 		for c := list.FirstChild(); c != nil; c = c.NextSibling() {
 			item, ok := c.(*ast.ListItem)
@@ -78,7 +77,9 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 				classes = append(classes, `checked`)
 			}
 			gold_utils.AddClass(item, classes...)
-			item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			if preserveSource {
+				item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			}
 		}
 	}
 
@@ -140,19 +141,20 @@ func (e *TaskList) renderTaskCheckBox(
 		w.WriteString(` checked`)
 	}
 
-	// List -> Item -> TextBlock -> CheckBox
-	isTaskListItem := false
-	if n.Parent() != nil && n.Parent().Parent() != nil {
-		item := n.Parent().Parent().(*ast.ListItem)
-		if any, ok := item.AttributeString(`class`); ok {
+	// List -> Item -> TextBlock/Paragraph -> CheckBox
+	isTaskList := false
+	if n.Parent() != nil && n.Parent().Parent() != nil && n.Parent().Parent().Parent() != nil {
+		list := n.Parent().Parent().Parent().(*ast.List)
+		if any, ok := list.AttributeString(`class`); ok {
 			if str, ok := any.(string); ok {
-				isTaskListItem = strings.Contains(str, `task-list-item`) // not accurate
+				isTaskList = strings.Contains(str, `with-source-positions`) // not accurate
 			}
 		}
 	}
-	if isTaskListItem {
+	if isTaskList {
 		n.SetAttributeString(`autocomplete`, `off`) // for firefox
 	}
+	// footer 里面有脚本，防止在预览文章的时候没加载脚本也可点击完成任务。
 	// if !isTaskListItem {
 	w.WriteString(` disabled`)
 	// }
@@ -195,22 +197,22 @@ func (e *TaskList) renderTaskCheckBox(
 // 	return doc.Selection, nil
 // }
 
-type _Disallow struct {
-	has *bool
-}
+// type _Disallow struct {
+// 	has *bool
+// }
 
-func Disallow(has *bool) *_Disallow {
-	return &_Disallow{
-		has: has,
-	}
-}
+// func Disallow(has *bool) *_Disallow {
+// 	return &_Disallow{
+// 		has: has,
+// 	}
+// }
 
-var _ gold_utils.HtmlTransformer = (*_Disallow)(nil)
+// var _ gold_utils.HtmlTransformer = (*_Disallow)(nil)
 
-// TransformHtml implements gold_utils.HtmlTransformer.
-func (d *_Disallow) TransformHtml(doc *goquery.Document) error {
-	if doc.Find(`.task-list.with-source-position`).Length() > 0 {
-		*d.has = true
-	}
-	return nil
-}
+// // TransformHtml implements gold_utils.HtmlTransformer.
+// func (d *_Disallow) TransformHtml(doc *goquery.Document) error {
+// 	if doc.Find(`.task-list.with-source-positions`).Length() > 0 {
+// 		*d.has = true
+// 	}
+// 	return nil
+// }
