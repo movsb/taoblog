@@ -192,12 +192,13 @@ TaoBlog.vim = new __Vim();
 (async function() {
 	let taskLists = document.querySelectorAll('ul.task-list');
 	taskLists.forEach(list=>{
-		list.querySelectorAll('.task-list-item > input[type=checkbox]').forEach(e => e.disabled = "");
+		list.querySelectorAll('.task-list-item > input[type=checkbox], .task-list-item > p > input[type=checkbox]').forEach(e => e.disabled = "");
 	});
 	taskLists.forEach(list =>list.addEventListener('click', async e => {
 		let checkBox = e.target;
 		if (checkBox.tagName != 'INPUT' || checkBox.type != 'checkbox') { return; }
 		let listItem = checkBox.parentElement;
+		if (listItem.tagName == 'P') listItem = listItem.parentElement;
 		if (!listItem.classList.contains('task-list-item')) { return; }
 		let position = listItem.getAttribute('data-source-position');
 		position = parseInt(position);
@@ -219,6 +220,10 @@ TaoBlog.vim = new __Vim();
 
 		// 禁止父级任务列表响应事件。
 		e.stopPropagation();
+		
+		if (!confirm(`确认 ${checkBox.checked ? "" : "取消"} 完成任务？`)) {
+			return;
+		}
 
 		let post = TaoBlog.posts[postID];
 		const api = new PostManagementAPI();

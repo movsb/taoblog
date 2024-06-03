@@ -61,19 +61,20 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 			if !ok {
 				continue
 			}
-			if item.FirstChild().Kind() == ast.KindTextBlock {
-				tb := item.FirstChild().(*ast.TextBlock)
-				if tb.FirstChild() == nil || tb.FirstChild().Kind() != extast.KindTaskCheckBox {
-					continue
-				}
-				checkBox := tb.FirstChild().(*extast.TaskCheckBox)
-				classes := []string{`task-list-item`}
-				if checkBox.IsChecked {
-					classes = append(classes, `checked`)
-				}
-				gold_utils.AddClass(item, classes...)
-				item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			if item.FirstChild() == nil || item.FirstChild().Kind() != ast.KindTextBlock && item.FirstChild().Kind() != ast.KindParagraph {
+				continue
 			}
+			first := item.FirstChild()
+			if first.FirstChild() == nil || first.FirstChild().Kind() != extast.KindTaskCheckBox {
+				continue
+			}
+			checkBox := first.FirstChild().(*extast.TaskCheckBox)
+			classes := []string{`task-list-item`}
+			if checkBox.IsChecked {
+				classes = append(classes, `checked`)
+			}
+			gold_utils.AddClass(item, classes...)
+			item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
 		}
 	}
 

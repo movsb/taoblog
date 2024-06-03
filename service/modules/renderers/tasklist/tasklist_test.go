@@ -5,39 +5,25 @@ import (
 	"strings"
 	"testing"
 
+	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/renderer/html"
 )
 
 func TestTaskList(t *testing.T) {
-	testCases := []struct {
+	type TC struct {
 		ID       float32
 		Markdown string
 		HTML     string
-	}{
-		{
-			ID:       1.0,
-			Markdown: "- [ ] Task1\n- [ ] Task2",
-			HTML: `<ul>
-<li><input type=checkbox disabled> Task1</li>
-<li><input type=checkbox disabled> Task2</li>
-</ul>
-`,
-		},
-		{
-			ID:       2.0,
-			Markdown: "<!-- TaskList -->\n\n- [ ] Task1\n- [x] Task2",
-			HTML: `<!-- TaskList -->
-<ul class="task-list">
-<li class="task-list-item" data-source-position="22"><input type=checkbox disabled autocomplete="off"> Task1</li>
-<li class="checked task-list-item" data-source-position="34"><input type=checkbox checked disabled autocomplete="off"> Task2</li>
-</ul>
-`,
-		},
 	}
 
-	for _, tc := range testCases {
+	tcs := test_utils.MustLoadCasesFromYaml[TC](`test.yaml`)
+
+	for _, tc := range tcs {
+		if tc.ID != 3.0 {
+			// continue
+		}
 		md := goldmark.New(
 			goldmark.WithExtensions(task_list.New()),
 			goldmark.WithRendererOptions(html.WithUnsafe()),
