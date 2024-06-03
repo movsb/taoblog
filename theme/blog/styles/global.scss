@@ -2,6 +2,26 @@
 	background-color: var(--selection-background-color);
 }
 
+// 在优雅解决 https://blog.twofei.com/1060/#comment-1469 之前不能启用。
+// 用户喜欢日间模式并且网站设置为自动。
+@media (prefers-color-scheme: light) {
+	:root:not(.dark):not(.light) {
+		background-color: white;
+	}
+}
+:root.light {
+	background-color: white;
+}
+// 用户喜欢夜间模式并且网站设置为自动。
+@media (prefers-color-scheme: dark) {
+	:root:not(.light):not(.dark) {
+		background-color: black;
+	}
+}
+:root.dark {
+	background-color: black;
+}
+
 body {
     color: var(--color-fg);
     background-color: var(--color-bg);
