@@ -18,8 +18,6 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers"
-	"github.com/movsb/taoblog/service/modules/renderers/imaging"
-	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
@@ -34,7 +32,7 @@ func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceT
 	content, err, _ := s.commentContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			// NOTE：带缓存的，默认认识总是安全的
-			content, err := s.getCommentContent(true, sourceType, source, postID, co)
+			content, err := s.renderMarkdown(true, postID, id, sourceType, source, models.PostMeta{}, co)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -69,63 +67,6 @@ func (s *Service) markdownWithPlantUMLRenderer() renderers.Option2 {
 	)
 }
 
-// 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
-// 一旦发表/更新成功：始终认为评论是合法的。
-//
-// 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
-// 前者用请求身份，后者不限身份。
-func (s *Service) getCommentContent(secure bool, sourceType, source string, postID int64, co *proto.PostContentOptions) (string, error) {
-	if co == nil {
-		co = &proto.PostContentOptions{}
-	}
-	// if !co.WithContent {
-	// 	panic(`without content but get content`)
-	// }
-	var tr renderers.Renderer
-	switch sourceType {
-	case `markdown`:
-		options := []renderers.Option2{
-			renderers.WithRemoveTitleHeading(),
-			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
-		}
-		if !secure {
-			options = append(options,
-				renderers.WithDisableHeadings(true),
-				renderers.WithDisableHTML(true),
-			)
-		}
-		if link := s.GetLink(postID); link != s.plainLink(postID) {
-			options = append(options, renderers.WithModifiedAnchorReference(link))
-		}
-		if co.UseAbsolutePaths {
-			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(postID)))
-		}
-		if co.RenderCodeBlocks {
-			options = append(options, renderers.WithRenderCodeAsHTML())
-		}
-		if co.PrettifyHtml {
-			options = append(options, renderers.WithHtmlPrettifier())
-		}
-		options = append(options,
-			s.markdownWithPlantUMLRenderer(),
-			imaging.WithGallery(),
-			media_size.New(s.OpenAsset(postID), true),
-			renderers.WithReserveListItemMarkerStyle(),
-			renderers.WithLazyLoadingFrames(),
-			renderers.WithMediaDimensionLimiter(350),
-			// task_list.New(),
-		)
-		tr = renderers.NewMarkdown(options...)
-	case `html`:
-		tr = &renderers.HTML{}
-	case `plain`:
-		return source, nil
-	default:
-		return ``, fmt.Errorf(`unknown source type`)
-	}
-	return tr.Render(source)
-}
-
 func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
 	ac := auth.Context(ctx)
 
@@ -148,13 +89,15 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostConte
 			c.GeoLocation = s.cmtgeo.Get(c.Ip)
 		}
 
-		content, err := s.getCommentContentCached(ctx, c.Id, c.SourceType, c.Source, c.PostId, co)
-		if err != nil {
-			slog.Error("转换评论时出错：", slog.String(`error`, err.Error()))
-			// 也不能干啥……
-			// fallthrough
+		if co.WithContent {
+			content, err := s.getCommentContentCached(ctx, c.Id, c.SourceType, c.Source, c.PostId, co)
+			if err != nil {
+				slog.Error("转换评论时出错：", slog.String(`error`, err.Error()))
+				// 也不能干啥……
+				// fallthrough
+			}
+			c.Content = content
 		}
-		c.Content = content
 	}
 }
 
@@ -254,7 +197,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 			}
 			// NOTE：管理员如果修改用户评论后如果带 HTML，则用户无法再提交保存。
 			// 是不是应该限制下呢？
-			if _, err := s.getCommentContent(ac.User.IsAdmin(), req.Comment.SourceType, req.Comment.Source, cmtOld.PostID, co.For(co.UpdateCommentCheck)); err != nil {
+			if _, err := s.renderMarkdown(ac.User.IsAdmin(), cmtOld.PostID, comment.ID, req.Comment.SourceType, req.Comment.Source, models.PostMeta{}, co.For(co.UpdateCommentCheck)); err != nil {
 				return nil, err
 			}
 		}
@@ -498,7 +441,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	}
 
 	if c.SourceType == `markdown` {
-		if _, err := s.getCommentContent(ac.User.IsAdmin(), c.SourceType, c.Source, c.PostID, co.For(co.CreateCommentCheck)); err != nil {
+		if _, err := s.renderMarkdown(ac.User.IsAdmin(), c.PostID, 0, c.SourceType, c.Source, models.PostMeta{}, co.For(co.CreateCommentCheck)); err != nil {
 			return nil, err
 		}
 	}
@@ -572,7 +515,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPost
 
 func (s *Service) PreviewComment(ctx context.Context, in *proto.PreviewCommentRequest) (*proto.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
-	content, err := s.getCommentContent(ac.User.IsAdmin(), `markdown`, in.Markdown, int64(in.PostId), co.For(co.PreviewComment))
+	content, err := s.renderMarkdown(ac.User.IsAdmin(), int64(in.PostId), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewComment))
 	return &proto.PreviewCommentResponse{Html: content}, err
 }
 

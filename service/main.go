@@ -290,6 +290,7 @@ func exceptionRecoveryHandler(e any) error {
 			return st.Err()
 		}
 	}
+	log.Println("未处理的内部错误：", e)
 	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }
 

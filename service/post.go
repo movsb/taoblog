@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -183,7 +182,7 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			var p models.Post
 			s.posts().Where("id = ?", id).MustFind(&p)
-			content, err := s.getPostContent(id, p.SourceType, p.Source, p.Metas, co)
+			content, err := s.renderMarkdown(true, id, 0, p.SourceType, p.Source, p.Metas, co)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -214,76 +213,109 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 	})
 }
 
-func (s *Service) getPostContent(id int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
-	if !co.WithContent {
-		return ``, errors.New(`without content but get content`)
-	}
-
+// 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
+// 一旦发表/更新成功：始终认为评论是合法的。
+//
+// 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
+// 前者用请求身份，后者不限身份。
+func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
 	var tr renderers.Renderer
 	switch sourceType {
-	case `markdown`:
-		options := []renderers.Option2{
-			renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
-				if src, ok := metas.Sources[path]; ok {
-					name = src.Name
-					url = src.URL
-					description = src.Description
-					found = true
-				}
-				return
-			}),
+	case `html`:
+		tr = &renderers.HTML{}
+		return tr.Render(source)
+	case `plain`:
+		return source, nil
+	}
+
+	if sourceType != `markdown` {
+		return ``, fmt.Errorf(`unknown source type`)
+	}
+
+	options := []renderers.Option2{}
+	if postId > 0 {
+		if link := s.GetLink(postId); link != s.plainLink(postId) {
+			options = append(options, renderers.WithModifiedAnchorReference(link))
 		}
-		if id > 0 {
-			if link := s.GetLink(id); link != s.plainLink(id) {
-				options = append(options, renderers.WithModifiedAnchorReference(link))
-			}
-			if co.UseAbsolutePaths {
-				options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
-			}
-		}
-		if co.RenderCodeBlocks {
-			options = append(options, renderers.WithRenderCodeAsHTML())
-		}
-		if co.PrettifyHtml {
-			options = append(options, renderers.WithHtmlPrettifier())
+		if co.UseAbsolutePaths {
+			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(postId)))
 		}
 		if !co.KeepTitleHeading {
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
-
-		var fsForTags fs.FS
-		if co.UseAbsolutePaths {
-			fsForTags = s.fileSystemForRooted()
-		} else {
-			fsForTags = utils.Must(s.FileSystemForPost(auth.SystemAdmin(context.Background()), id))
+		options = append(options, media_size.New(s.OpenAsset(postId), true))
+	}
+	if commentId > 0 {
+		if !secure {
+			options = append(options,
+				renderers.WithDisableHeadings(true),
+				renderers.WithDisableHTML(true),
+			)
 		}
-		options = append(options, media_tags.New(
-			fsForTags,
-			s.mediaTagsTemplate,
-		))
-
 		options = append(options,
-			s.markdownWithPlantUMLRenderer(),
-			imaging.WithGallery(),
-			media_size.New(s.OpenAsset(id), true),
-			task_list.New(),
-			renderers.WithHashTags(s.hashtagResolver, nil),
-			custom_break.New(),
-			renderers.WithReserveListItemMarkerStyle(),
-			renderers.WithLazyLoadingFrames(),
-			renderers.WithMediaDimensionLimiter(350),
-			// 其它选项可能会插入链接，所以放后面。
-			// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
+			renderers.WithRemoveTitleHeading(),
 			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		)
-
-		tr = renderers.NewMarkdown(options...)
-	case `html`:
-		tr = &renderers.HTML{}
-	default:
-		return ``, fmt.Errorf(`unknown source type`)
 	}
-	return tr.Render(source)
+	if co.RenderCodeBlocks {
+		options = append(options, renderers.WithRenderCodeAsHTML())
+	}
+	if co.PrettifyHtml {
+		options = append(options, renderers.WithHtmlPrettifier())
+	}
+
+	var fsForTags fs.FS
+	if co.UseAbsolutePaths {
+		fsForTags = s.fileSystemForRooted()
+	} else {
+		fsForTags = utils.Must(s.FileSystemForPost(auth.SystemAdmin(context.Background()), postId))
+	}
+	options = append(options, media_tags.New(
+		fsForTags,
+		s.mediaTagsTemplate,
+	))
+
+	options = append(options,
+		renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
+			if src, ok := metas.Sources[path]; ok {
+				name = src.Name
+				url = src.URL
+				description = src.Description
+				found = true
+			}
+			return
+		}),
+		s.markdownWithPlantUMLRenderer(),
+		imaging.WithGallery(),
+		task_list.New(),
+		renderers.WithHashTags(s.hashtagResolver, nil),
+		custom_break.New(),
+		renderers.WithReserveListItemMarkerStyle(),
+		renderers.WithLazyLoadingFrames(),
+		renderers.WithMediaDimensionLimiter(350),
+		// 其它选项可能会插入链接，所以放后面。
+		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
+		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
+	)
+
+	var hasTaskLists bool
+	if !secure {
+		options = append(options, task_list.Disallow(&hasTaskLists))
+	}
+
+	tr = renderers.NewMarkdown(options...)
+	rendered, err := tr.Render(source)
+	if err != nil {
+		return "", err
+	}
+
+	if !secure {
+		if hasTaskLists {
+			return "", fmt.Errorf(`你不可以使用带状态的任务列表。`)
+		}
+	}
+
+	return rendered, nil
 }
 
 func (s *Service) hashtagResolver(tag string) string {
@@ -665,7 +697,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	s.MustBeAdmin(ctx)
 	// ac := auth.Context(ctx)
-	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
+	content, err := s.renderMarkdown(true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
 	return &proto.PreviewPostResponse{Html: content}, err
 }
 
