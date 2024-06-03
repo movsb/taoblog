@@ -51,16 +51,10 @@ func NewRequestLogger(path string) *RequestLogger {
 	return l
 }
 
-// TODO：Go 的内嵌接口不支持展开，
-// 比如 http.ResponseWriter 如果实现了 Hijacker，
-// _ResponseWriter 虽然内嵌了 http.ResponseWriter，
-// 但是不会自动实现这个 Hijacker 接口。有点儿无解。即便换成 any 也不行。
-// 所以暂时不处理 WebSocket 的返回码。
-// 更新：先内嵌部分已知的接口以缓解这个问题。
 // https://blog.twofei.com/909/
 type _ResponseWriter struct {
 	http.ResponseWriter
-	http.Hijacker
+	*http.ResponseController
 	code int
 }
 
@@ -72,12 +66,12 @@ func (w *_ResponseWriter) WriteHeader(statusCode int) {
 func (l *RequestLogger) Handler(h http.Handler) http.Handler {
 	tz := time.FixedZone(`China`, 8*60*60)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var hijacker http.Hijacker
-		if h, ok := w.(http.Hijacker); ok {
-			hijacker = h
+		takeOver := &_ResponseWriter{
+			ResponseWriter:     w,
+			ResponseController: http.NewResponseController(w),
+			code:               200,
 		}
-		ww := &_ResponseWriter{w, hijacker, 200}
-		h.ServeHTTP(ww, r)
+		h.ServeHTTP(takeOver, r)
 		l.counter.Store(0)
 		l.lock.Lock()
 		defer l.lock.Unlock()
@@ -85,7 +79,7 @@ func (l *RequestLogger) Handler(h http.Handler) http.Handler {
 		ac := auth.Context(r.Context())
 		fmt.Fprintf(l.f,
 			"%s %-15s %3d %-8s %-32s %-32s %-32s\n",
-			now, ac.RemoteAddr.String(), ww.code, r.Method, r.RequestURI, r.Referer(), r.Header.Get(`User-Agent`),
+			now, ac.RemoteAddr.String(), takeOver.code, r.Method, r.RequestURI, r.Referer(), r.Header.Get(`User-Agent`),
 		)
 	})
 }
