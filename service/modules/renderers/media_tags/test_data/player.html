@@ -1,0 +1,11 @@
+<div class="audio-player" id="{{.Random}}">
+{{with .Title}}
+<p><b>标题：</b>{{.}}</p>
+{{ else }}
+<p><b>文件：</b>{{.FileName}}</p>
+{{end}}
+{{with .Album}}<p><b>专辑：</b>{{.}}</p>{{end}}
+{{with .Artist}}<p><b>作者：</b>{{.}}</p>{{end}}
+{{with .Composer}}<p><b>作曲：</b>{{.}}</p>{{end}}
+{{with .Year}}<p><b>年代：</b>{{.}}</p>{{end}}
+</div>

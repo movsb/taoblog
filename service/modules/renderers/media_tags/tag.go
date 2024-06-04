@@ -9,7 +9,6 @@ import (
 	"html"
 	"html/template"
 	"io"
-	"io/fs"
 	"log"
 	"net/url"
 	"path/filepath"
@@ -19,6 +18,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 )
 
 func SourceRelativeDir() dir.Dir {
@@ -29,23 +29,47 @@ func SourceRelativeDir() dir.Dir {
 var _root embed.FS
 
 type MediaTags struct {
-	root fs.FS
+	web  gold_utils.WebFileSystem
 	tmpl *utils.TemplateLoader
+
+	devMode      bool
+	themeChanged func()
 }
 
-var onceTmpl sync.Once
-var _tmpl *utils.TemplateLoader
+var _gOnceTmpl sync.Once
+var _gTmpl *utils.TemplateLoader
 
-func New(root fs.FS, tmpl *utils.TemplateLoader) *MediaTags {
-	if tmpl == nil {
-		onceTmpl.Do(func() {
-			_tmpl = utils.NewTemplateLoader(_root, nil, nil)
-		})
-		tmpl = _tmpl
+type Option func(*MediaTags)
+
+func WithDevMode(themeChanged func()) Option {
+	return func(mt *MediaTags) {
+		mt.themeChanged = themeChanged
 	}
+}
+
+func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
+	tag := &MediaTags{
+		web: web,
+	}
+
+	for _, opt := range options {
+		opt(tag)
+	}
+
+	// 判断为空的目的是测试里面可能会预初始化。
+	if _gTmpl == nil && !tag.devMode {
+		_gOnceTmpl.Do(func() {
+			_gTmpl = utils.NewTemplateLoader(_root, nil, nil)
+		})
+	}
+
+	if tag.devMode {
+		_gTmpl = utils.NewTemplateLoader(SourceRelativeDir().FS(), nil, tag.themeChanged)
+	}
+
 	return &MediaTags{
-		root: root,
-		tmpl: tmpl,
+		web:  web,
+		tmpl: _gTmpl,
 	}
 }
 
@@ -57,29 +81,31 @@ func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
 			log.Println(`没有找到资源。`)
 			return true
 		}
-		u, err := url.Parse(src)
-		if err != nil {
-			log.Println(`路径解析错误：`, err)
-			return true
-		}
-		if u.IsAbs() {
-			log.Println(`不是相对路径不解析。`, u.String(), u.Path)
-			return true
-		}
-		md, err := t.parse(u.Path)
+		md, err := t.parse(src)
 		if err != nil {
 			// 忽略错误，继续
 			log.Println("解析数据出错：", err)
 			return true
 		}
 
+		// 类似下面这样的 audio 是 block 级别元素。
+		//
+		// <audio>
+		//   <source>
+		// </audio>
+		//
+		// 而类似下面却是 inline 元素。
+		//
+		// <audio></audio>
+		//
+		// 所以目前处理所以类型的 audio，而不仅是 block 级别。
 		// 仅当是唯一子元素（即 block）时，才渲染。
-		if s.Parent().Contents().Length() != 1 {
-			log.Println(`不是 block 级别的 audio，不处理。`)
-			return true
-		}
+		// if s.Parent().Contents().Length() != 1 {
+		// 	log.Println(`不是 block 级别的 audio，不处理。`)
+		// 	return true
+		// }
 
-		if err := t.render(s, md, u.Path); err != nil {
+		if err := t.render(s, md, src); err != nil {
 			log.Println("渲染出错：", err)
 			return true
 		}
@@ -103,7 +129,7 @@ func (t *MediaTags) getSrc(s *goquery.Selection) string {
 }
 
 func (t *MediaTags) parse(src string) (tag.Metadata, error) {
-	fp, err := t.root.Open(src)
+	fp, err := t.web.OpenURL(src)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +163,10 @@ func (d *Metadata) PictureAsImage() template.HTML {
 
 func (t *MediaTags) render(s *goquery.Selection, md tag.Metadata, source string) error {
 	buf := bytes.NewBuffer(nil)
-	name := filepath.Base(source)
+	var name string
+	if u, err := url.Parse(source); err == nil {
+		name = filepath.Base(u.Path)
+	}
 	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, utils.RandomString(), name}); err != nil {
 		return err
 	}

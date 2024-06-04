@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	mr "math/rand"
 )
 
 // 搁这套娃🪆🪆🪆？
@@ -38,6 +39,10 @@ func RandomString() string {
 	b := [4]byte{}
 	rand.Read(b[:])
 	return fmt.Sprintf(`xx-%x`, b)
+}
+
+func ReInitTestRandomSeed() {
+	rand.Reader = mr.New(mr.NewSource(0))
 }
 
 func DropLast1[First any, Last any](f First, l Last) First {

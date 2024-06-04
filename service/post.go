@@ -243,7 +243,12 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		if !co.KeepTitleHeading {
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
-		options = append(options, media_size.New(s.OpenAsset(postId), true))
+		options = append(options,
+			media_size.New(s.OpenAsset(postId), true),
+			media_tags.New(s.OpenAsset(postId), media_tags.WithDevMode(func() {
+				s.themeChangedAt = time.Now()
+			})),
+		)
 	}
 	if commentId > 0 {
 		if !secure {
