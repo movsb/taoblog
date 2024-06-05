@@ -19,17 +19,37 @@ import (
 )
 
 type MediaSize struct {
-	web       gold_utils.WebFileSystem
+	web gold_utils.WebFileSystem
+
 	localOnly bool
+	sizeLimit int
+}
+
+type Option func(*MediaSize)
+
+func WithLocalOnly() Option {
+	return func(ms *MediaSize) {
+		ms.localOnly = true
+	}
+}
+
+// 图片/视频/大小限制器。
+func WithDimensionLimiter(size int) Option {
+	return func(ms *MediaSize) {
+		ms.sizeLimit = size
+	}
 }
 
 // localOnly: 只处理本地图片，不处理网络图片。
 // NOTE: 本地文件直接用相对路径指定，不要用 file://。
-func New(web gold_utils.WebFileSystem, localOnly bool) *MediaSize {
-	return &MediaSize{
-		web:       web,
-		localOnly: localOnly,
+func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
+	ms := &MediaSize{
+		web: web,
 	}
+	for _, opt := range options {
+		opt(ms)
+	}
+	return ms
 }
 
 func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
@@ -82,6 +102,21 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		s.SetAttr(`width`, fmt.Sprint(w))
 		s.SetAttr(`height`, fmt.Sprint(h))
+
+		if ms.sizeLimit > 0 {
+			// == 的情况也一起处理了。
+			if w >= h {
+				s.AddClass(`landscape`)
+				if w > ms.sizeLimit {
+					s.AddClass(`too-wide`)
+				}
+			} else {
+				s.AddClass(`portrait`)
+				if h > ms.sizeLimit {
+					s.AddClass(`too-high`)
+				}
+			}
+		}
 	})
 	return nil
 }

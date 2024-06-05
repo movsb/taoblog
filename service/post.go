@@ -258,7 +258,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		options = append(options, media_tags.New(s.OpenAsset(postId), mediaTagOptions...))
 
 		options = append(options,
-			media_size.New(s.OpenAsset(postId), true),
+			media_size.New(s.OpenAsset(postId), media_size.WithLocalOnly(), media_size.WithDimensionLimiter(350)),
 		)
 	}
 	if commentId > 0 {
@@ -297,7 +297,6 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		custom_break.New(),
 		renderers.WithReserveListItemMarkerStyle(),
 		renderers.WithLazyLoadingFrames(),
-		renderers.WithMediaDimensionLimiter(350),
 
 		// 其它选项可能会插入链接，所以放后面。
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
