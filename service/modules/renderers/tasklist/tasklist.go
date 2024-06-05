@@ -27,6 +27,13 @@ import (
 //
 // - [ ] Task1
 // - [x] Task2
+//
+// 或者：
+//
+//	<!-- TODO -->
+//
+// - [ ] Task1
+// - [x] Task2
 func New() *TaskList {
 	return &TaskList{}
 }
@@ -49,7 +56,7 @@ func (e *TaskList) Extend(m goldmark.Markdown) {
 	))
 }
 
-var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*TaskList\s*-->\s*$)`)
+var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*(?:TaskList|TODO)\s*-->\s*$)`)
 
 // ... implements parser.ASTTransformer.
 // TODO 只处理第一层任务。
@@ -165,54 +172,3 @@ func (e *TaskList) renderTaskCheckBox(
 	_, _ = w.WriteString("> ")
 	return ast.WalkContinue, nil
 }
-
-// func (e *TaskList) TransformHtml(doc *goquery.Document) error {
-// 	doc.Find(`TaskList`).Each(func(i int, s *goquery.Selection) {
-// 		replaced, err := e.single(s)
-// 		if err != nil {
-// 			log.Println(err)
-// 			return
-// 		}
-// 		s.ReplaceWithSelection(replaced)
-// 	})
-// 	return nil
-// }
-
-// func (e *TaskList) single(s *goquery.Selection) (*goquery.Selection, error) {
-// 	div := xhtml.Node{
-// 		Type:     xhtml.ElementNode,
-// 		DataAtom: atom.Div,
-// 		Data:     `div`,
-// 		Attr: []xhtml.Attribute{
-// 			{
-// 				Key: `class`,
-// 				Val: `task-list`,
-// 			},
-// 		},
-// 	}
-
-// 	doc := goquery.NewDocumentFromNode(&div)
-// 	doc.AppendSelection(s.Children())
-
-// 	return doc.Selection, nil
-// }
-
-// type _Disallow struct {
-// 	has *bool
-// }
-
-// func Disallow(has *bool) *_Disallow {
-// 	return &_Disallow{
-// 		has: has,
-// 	}
-// }
-
-// var _ gold_utils.HtmlTransformer = (*_Disallow)(nil)
-
-// // TransformHtml implements gold_utils.HtmlTransformer.
-// func (d *_Disallow) TransformHtml(doc *goquery.Document) error {
-// 	if doc.Find(`.task-list.with-source-positions`).Length() > 0 {
-// 		*d.has = true
-// 	}
-// 	return nil
-// }

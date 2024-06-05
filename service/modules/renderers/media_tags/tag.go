@@ -21,9 +21,7 @@ import (
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 )
 
-func SourceRelativeDir() dir.Dir {
-	return dir.SourceRelativeDir()
-}
+var SourceRelativeDir = dir.SourceRelativeDir()
 
 //go:embed player.html
 var _root embed.FS
@@ -43,6 +41,7 @@ type Option func(*MediaTags)
 
 func WithDevMode(themeChanged func()) Option {
 	return func(mt *MediaTags) {
+		mt.devMode = true
 		mt.themeChanged = themeChanged
 	}
 }
@@ -64,7 +63,7 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 	}
 
 	if tag.devMode {
-		_gTmpl = utils.NewTemplateLoader(SourceRelativeDir().FS(), nil, tag.themeChanged)
+		_gTmpl = utils.NewTemplateLoader(utils.NewDirFSWithNotify(string(SourceRelativeDir)), nil, tag.themeChanged)
 	}
 
 	return &MediaTags{

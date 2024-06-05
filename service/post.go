@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/url"
 	"os"
@@ -161,9 +160,15 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 	}
 }
 
-func (s *Service) OpenAsset(id int64) gold_utils.URLReferenceFileSystem {
+func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
+	if s.testing {
+		panic(`测试服务器不用于本地文件系统。`)
+	}
 	u := utils.Must(url.Parse(s.cfg.Site.Home))
-	return gold_utils.NewURLReferenceFileSystem(
+	if u.Path == "" {
+		u.Path = "/"
+	}
+	return gold_utils.NewWebFileSystem(
 		os.DirFS(s.cfg.Data.File.Path),
 		u.JoinPath(fmt.Sprintf("/%d/", id)),
 	)
@@ -243,11 +248,17 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		if !co.KeepTitleHeading {
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
+
+		var mediaTagOptions []media_tags.Option
+		if DevMode() {
+			mediaTagOptions = append(mediaTagOptions,
+				media_tags.WithDevMode(func() { s.themeChangedAt = time.Now() }),
+			)
+		}
+		options = append(options, media_tags.New(s.OpenAsset(postId), mediaTagOptions...))
+
 		options = append(options,
 			media_size.New(s.OpenAsset(postId), true),
-			media_tags.New(s.OpenAsset(postId), media_tags.WithDevMode(func() {
-				s.themeChangedAt = time.Now()
-			})),
 		)
 	}
 	if commentId > 0 {
@@ -269,17 +280,6 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		options = append(options, renderers.WithHtmlPrettifier())
 	}
 
-	var fsForTags fs.FS
-	if co.UseAbsolutePaths {
-		fsForTags = s.fileSystemForRooted()
-	} else {
-		fsForTags = utils.Must(s.FileSystemForPost(auth.SystemAdmin(context.Background()), postId))
-	}
-	options = append(options, media_tags.New(
-		fsForTags,
-		s.mediaTagsTemplate,
-	))
-
 	options = append(options,
 		renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
 			if src, ok := metas.Sources[path]; ok {
@@ -298,6 +298,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		renderers.WithReserveListItemMarkerStyle(),
 		renderers.WithLazyLoadingFrames(),
 		renderers.WithMediaDimensionLimiter(350),
+
 		// 其它选项可能会插入链接，所以放后面。
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
 		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),

@@ -2,15 +2,13 @@ package service
 
 import (
 	"bytes"
-	"context"
 	"errors"
-	"fmt"
 	"io"
+	"io/fs"
 	"log"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taoblog/service/modules/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -21,7 +19,7 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 
 	initialized := false
 
-	var fs storage.FileSystem
+	var pfs fs.FS
 
 	for {
 		req, err := srv.Recv()
@@ -46,12 +44,15 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 		} else if initReq != nil {
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
-				fs, err = s.FileSystemForPost(srv.Context(), init.Id)
+				if s.postDataFS == nil {
+					return errors.New(`对此编号的文件系统不可用。`)
+				}
+				pfs, err = s.postDataFS.ForPost(int(init.Id))
 			}
 			if err != nil {
 				return status.Error(codes.Internal, err.Error())
 			}
-			if fs == nil {
+			if pfs == nil {
 				return status.Error(codes.InvalidArgument, "unknown file system to operate")
 			}
 			if err := srv.Send(&proto.FileSystemResponse{
@@ -62,12 +63,12 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 			continue
 		}
 
-		if fs == nil {
+		if pfs == nil {
 			return status.Error(codes.Internal, "not init")
 		}
 
 		if list := req.GetListFiles(); list != nil {
-			files, err := fs.ListFiles()
+			files, err := utils.ListFiles(pfs, ".")
 			if err != nil {
 				return err
 			}
@@ -81,7 +82,7 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 				return err
 			}
 		} else if write := req.GetWriteFile(); write != nil {
-			if err := fs.WriteFile(write.Spec, bytes.NewReader(write.Data)); err != nil {
+			if err := utils.Write(pfs, write.Spec, bytes.NewReader(write.Data)); err != nil {
 				log.Println(err)
 				return err
 			}
@@ -94,7 +95,7 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 				return err
 			}
 		} else if delete := req.GetDeleteFile(); delete != nil {
-			if err := fs.DeleteFile(delete.Path); err != nil {
+			if err := utils.Delete(pfs, delete.Path); err != nil {
 				return err
 			}
 			if err = srv.Send(&proto.FileSystemResponse{
@@ -106,25 +107,4 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 			}
 		}
 	}
-}
-
-func (s *Service) FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error) {
-	if s.testing {
-		panic(`测试服务器不用于本地文件系统。`)
-	}
-	// _ = s.MustGetPost(id)
-	maxFileSize := int32(1 << 20)
-	if ac := auth.Context(ctx); ac != nil && ac.User.IsAdmin() {
-		maxFileSize = 100 << 20
-	}
-	return storage.NewLocal(s.cfg.Data.File.Path, fmt.Sprint(id),
-		storage.WithMaxFileSize(maxFileSize),
-	), nil
-}
-
-func (s *Service) fileSystemForRooted() *storage.Local {
-	if s.testing {
-		panic(`测试服务器不用于本地文件系统。`)
-	}
-	return storage.NewLocal(s.cfg.Data.File.Path, "")
 }

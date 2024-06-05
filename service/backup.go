@@ -217,7 +217,11 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 	s.MustBeAdmin(srv.Context())
 
 	listFiles := func(req *proto.BackupFilesRequest_ListFilesRequest) error {
-		files, err := utils.ListBackupFiles(s.cfg.Data.File.Path)
+		root, err := s.postDataFS.Root()
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		files, err := utils.ListBackupFiles(root, ".")
 		if err != nil {
 			log.Printf(`BackupFiles failed to list files: %v`, err)
 			return err

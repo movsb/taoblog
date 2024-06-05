@@ -27,9 +27,8 @@ import (
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
-	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/search"
-	"github.com/movsb/taoblog/service/modules/storage"
+	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
@@ -46,7 +45,6 @@ type ToBeImplementedByRpc interface {
 	Config() *config.Config
 	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
-	FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error)
 	ThemeChangedAt() time.Time
 }
 
@@ -60,7 +58,10 @@ type Service struct {
 
 	home *url.URL
 
-	cfg    *config.Config
+	cfg *config.Config
+
+	postDataFS theme_fs.FS
+
 	db     *sql.DB
 	tdb    *taorm.DB
 	auth   *auth.Auth
@@ -96,8 +97,7 @@ type Service struct {
 	maintenance *utils.Maintenance
 
 	// 服务内有插件的更新可能会影响到内容渲染。
-	themeChangedAt    time.Time
-	mediaTagsTemplate *utils.TemplateLoader
+	themeChangedAt time.Time
 
 	// 证书剩余天数。
 	// >= 0 表示值有效。
@@ -125,17 +125,19 @@ func NewServiceForTesting(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Se
 	return newService(ctx, cancel, cfg, db, auther, true)
 }
 
-func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
-	return newService(ctx, cancel, cfg, db, auther, false)
+func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
+	return newService(ctx, cancel, cfg, db, auther, false, options...)
 }
 
-func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool) *Service {
+func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
 	s := &Service{
 		ctx:     ctx,
 		cancel:  cancel,
 		testing: testing,
 
-		cfg:  cfg,
+		cfg:        cfg,
+		postDataFS: nil,
+
 		db:   db,
 		tdb:  taorm.NewDB(db),
 		auth: auther,
@@ -151,6 +153,10 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		maintenance: &utils.Maintenance{},
 
 		themeChangedAt: time.Now(),
+	}
+
+	for _, opt := range options {
+		opt(s)
 	}
 
 	// 在此之前不能读配置！！！
@@ -187,16 +193,6 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	s.cmtgeo = commentgeo.New(context.TODO())
 
 	s.cacheAllCommenterData()
-
-	if DevMode() && !s.testing {
-		s.mediaTagsTemplate = utils.NewTemplateLoader(
-			utils.NewLocal(string(media_tags.SourceRelativeDir())), nil,
-			func() {
-				// TODO：可能有并发问题？
-				s.themeChangedAt = time.Now()
-			},
-		)
-	}
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)

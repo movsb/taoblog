@@ -1,7 +1,6 @@
 package dir
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -23,10 +22,6 @@ type Dir string
 
 func (d Dir) Join(components ...string) string {
 	return filepath.Join(append([]string{string(d)}, components...)...)
-}
-
-func (d Dir) FS() fs.FS {
-	return os.DirFS(string(d))
 }
 
 func SourceRelativeDir() Dir {

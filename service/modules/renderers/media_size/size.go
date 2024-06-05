@@ -19,15 +19,15 @@ import (
 )
 
 type MediaSize struct {
-	fs        gold_utils.URLReferenceFileSystem
+	web       gold_utils.WebFileSystem
 	localOnly bool
 }
 
 // localOnly: 只处理本地图片，不处理网络图片。
 // NOTE: 本地文件直接用相对路径指定，不要用 file://。
-func New(fs gold_utils.URLReferenceFileSystem, localOnly bool) *MediaSize {
+func New(web gold_utils.WebFileSystem, localOnly bool) *MediaSize {
 	return &MediaSize{
-		fs:        fs,
+		web:       web,
 		localOnly: localOnly,
 	}
 }
@@ -59,7 +59,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		parsedURL.RawQuery = q.Encode()
 		s.SetAttr(`src`, parsedURL.String())
 
-		md, err := size(ms.fs, parsedURL, ms.localOnly)
+		md, err := size(ms.web, parsedURL, ms.localOnly)
 		if err != nil {
 			// 不要打印 URL，可能是 data: URL，很长。
 			log.Println(err)
@@ -87,7 +87,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 }
 
 // root: 如果 url 是相对路径，用于指定根文件系统。
-func size(fs gold_utils.URLReferenceFileSystem, parsedURL *url.URL, localOnly bool) (*Metadata, error) {
+func size(fs gold_utils.WebFileSystem, parsedURL *url.URL, localOnly bool) (*Metadata, error) {
 	if (parsedURL.Scheme != "" || parsedURL.Host != "") && localOnly {
 		return nil, errors.New(`not for network images`)
 	}
@@ -95,7 +95,7 @@ func size(fs gold_utils.URLReferenceFileSystem, parsedURL *url.URL, localOnly bo
 	var r io.Reader
 
 	if parsedURL.Scheme == "" && parsedURL.Host == "" {
-		f, err := fs.OpenReference(parsedURL.String())
+		f, err := fs.OpenURL(parsedURL.String())
 		if err != nil {
 			return nil, err
 		}
@@ -127,6 +127,8 @@ func size(fs gold_utils.URLReferenceFileSystem, parsedURL *url.URL, localOnly bo
 func all(r io.Reader) (*Metadata, error) {
 	dup := utils.MemDupReader(r)
 
+	var errs []error
+
 	for _, d := range []func(r io.Reader) (*Metadata, error){
 		normal,
 		svg,
@@ -136,7 +138,7 @@ func all(r io.Reader) (*Metadata, error) {
 		if err == nil {
 			return md, nil
 		}
-		log.Println(err)
+		errs = append(errs, err)
 	}
-	return nil, errors.New(`no decoder applicable`)
+	return nil, fmt.Errorf(`no decoder applicable: %w`, errors.Join(errs...))
 }
