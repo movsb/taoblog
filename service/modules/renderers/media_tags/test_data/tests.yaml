@@ -1,0 +1,27 @@
+- markdown: |
+    <audio src="杨晚晚%20-%20片片相思赋予谁.mp3"></audio>
+  html: |
+    <div class="audio-player" id="xx-0194fdc2">
+
+    <p><b>标题：</b>片片相思赋予谁</p>
+
+    <p><b>专辑：</b>片片相思赋予谁</p>
+    <p><b>作者：</b>杨晚晚</p>
+
+
+    </div>
+
+- markdown: |
+    <audio controls>
+      <source src="杨晚晚%20-%20片片相思赋予谁.mp3" />
+    </audio>
+  html: |
+    <div class="audio-player" id="xx-0194fdc2">
+
+    <p><b>标题：</b>片片相思赋予谁</p>
+
+    <p><b>专辑：</b>片片相思赋予谁</p>
+    <p><b>作者：</b>杨晚晚</p>
+
+
+    </div>

@@ -33,7 +33,6 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 	bundle := func() {
 		l.parsePartial()
 		l.parseNamed()
-		log.Println(`Re-parsed all partial and named templates`)
 	}
 
 	bundle()
@@ -43,6 +42,7 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 		go func() {
 			debouncer := NewDebouncer(time.Second, func() {
 				bundle()
+				log.Println(`Re-parsed all partial and named templates`)
 				if refreshed != nil {
 					refreshed()
 				}

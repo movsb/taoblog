@@ -7,6 +7,7 @@ import (
 
 	"github.com/blugelabs/bluge/search/highlight"
 	"github.com/movsb/taoblog/modules/auth"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/search"
 )
@@ -14,10 +15,27 @@ import (
 func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest) (*proto.SearchPostsResponse, error) {
 	searcher := s.searcher.Load()
 	if searcher == nil {
-		return &proto.SearchPostsResponse{
-			Initialized: false,
-		}, nil
+		// 首次搜索时初始化搜索引擎。
+		s.onceInitSearcher.Do(func() {
+			ch := make(chan struct{})
+			go s.runSearchEngine(s.ctx, ch)
+			for i := 0; i < 10; i++ {
+				select {
+				case <-time.After(time.Second):
+					log.Println(`等待搜索引擎初始化完成：`, i+1)
+				case <-ch:
+					return
+				}
+			}
+		})
+		searcher = s.searcher.Load()
+		if searcher == nil {
+			return &proto.SearchPostsResponse{
+				Initialized: false,
+			}, nil
+		}
 	}
+
 	posts, err := searcher.SearchPosts(ctx, in.Search)
 	if err != nil {
 		return nil, err
@@ -37,9 +55,7 @@ func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest)
 	}, nil
 }
 
-func (s *Service) RunSearchEngine(ctx context.Context) {
-	time.Sleep(s.cfg.Search.InitialDelay)
-
+func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 	engine, err := search.NewEngine(&s.cfg.Search)
 	if err != nil {
 		log.Fatalln(err)
@@ -53,6 +69,8 @@ func (s *Service) RunSearchEngine(ctx context.Context) {
 
 	var lastCheck int64
 	s.reIndex(ctx, engine, &lastCheck)
+
+	ch <- struct{}{}
 
 	ticker := time.NewTicker(s.cfg.Search.ScanInterval)
 	defer ticker.Stop()
@@ -70,9 +88,7 @@ func (s *Service) RunSearchEngine(ctx context.Context) {
 func (s *Service) reIndex(ctx context.Context, engine *search.Engine, lastCheck *int64) {
 	now := time.Now()
 	rsp, err := s.ListPosts(auth.SystemAdmin(ctx), &proto.ListPostsRequest{
-		ContentOptions: &proto.PostContentOptions{
-			WithContent: false,
-		},
+		ContentOptions:    co.For(co.SearchIndex),
 		WithLink:          proto.LinkKind_LinkKindRooted,
 		ModifiedNotBefore: int32(*lastCheck),
 	})

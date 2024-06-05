@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/url"
 	"os"
@@ -16,6 +14,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -161,9 +160,15 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 	}
 }
 
-func (s *Service) OpenAsset(id int64) gold_utils.URLReferenceFileSystem {
+func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
+	if s.testing {
+		panic(`测试服务器不用于本地文件系统。`)
+	}
 	u := utils.Must(url.Parse(s.cfg.Site.Home))
-	return gold_utils.NewURLReferenceFileSystem(
+	if u.Path == "" {
+		u.Path = "/"
+	}
+	return gold_utils.NewWebFileSystem(
 		os.DirFS(s.cfg.Data.File.Path),
 		u.JoinPath(fmt.Sprintf("/%d/", id)),
 	)
@@ -182,7 +187,7 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			var p models.Post
 			s.posts().Where("id = ?", id).MustFind(&p)
-			content, err := s.getPostContent(id, p.SourceType, p.Source, p.Metas, co)
+			content, err := s.renderMarkdown(true, id, 0, p.SourceType, p.Source, p.Metas, co)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -213,73 +218,99 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 	})
 }
 
-func (s *Service) getPostContent(id int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
-	if !co.WithContent {
-		return ``, errors.New(`without content but get content`)
-	}
-
+// 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
+// 一旦发表/更新成功：始终认为评论是合法的。
+//
+// 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
+// 前者用请求身份，后者不限身份。
+func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
 	var tr renderers.Renderer
 	switch sourceType {
-	case `markdown`:
-		options := []renderers.Option2{
-			renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
-				if src, ok := metas.Sources[path]; ok {
-					name = src.Name
-					url = src.URL
-					description = src.Description
-					found = true
-				}
-				return
-			}),
+	case `html`:
+		tr = &renderers.HTML{}
+		return tr.Render(source)
+	case `plain`:
+		return source, nil
+	}
+
+	if sourceType != `markdown` {
+		return ``, fmt.Errorf(`unknown source type`)
+	}
+
+	options := []renderers.Option2{}
+	if postId > 0 {
+		if link := s.GetLink(postId); link != s.plainLink(postId) {
+			options = append(options, renderers.WithModifiedAnchorReference(link))
 		}
-		if id > 0 {
-			if link := s.GetLink(id); link != s.plainLink(id) {
-				options = append(options, renderers.WithModifiedAnchorReference(link))
-			}
-			if co.UseAbsolutePaths {
-				options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(id)))
-			}
-		}
-		if co.RenderCodeBlocks {
-			options = append(options, renderers.WithRenderCodeAsHTML())
-		}
-		if co.PrettifyHtml {
-			options = append(options, renderers.WithHtmlPrettifier())
+		if co.UseAbsolutePaths {
+			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(postId)))
 		}
 		if !co.KeepTitleHeading {
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
 
-		var fsForTags fs.FS
-		if co.UseAbsolutePaths {
-			fsForTags = s.fileSystemForRooted()
-		} else {
-			fsForTags = utils.Must(s.FileSystemForPost(auth.SystemAdmin(context.Background()), id))
+		var mediaTagOptions []media_tags.Option
+		if DevMode() {
+			mediaTagOptions = append(mediaTagOptions,
+				media_tags.WithDevMode(func() { s.themeChangedAt = time.Now() }),
+			)
 		}
-		options = append(options, media_tags.New(
-			fsForTags,
-			s.mediaTagsTemplate,
-		))
+		options = append(options, media_tags.New(s.OpenAsset(postId), mediaTagOptions...))
 
 		options = append(options,
-			s.markdownWithPlantUMLRenderer(),
-			imaging.WithGallery(),
-			media_size.New(s.OpenAsset(id), true),
-			task_list.New(),
-			renderers.WithHashTags(s.hashtagResolver, nil),
-			custom_break.New(),
-			// 其它选项可能会插入链接，所以放后面。
-			// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
+			media_size.New(s.OpenAsset(postId), true),
+		)
+	}
+	if commentId > 0 {
+		if !secure {
+			options = append(options,
+				renderers.WithDisableHeadings(true),
+				renderers.WithDisableHTML(true),
+			)
+		}
+		options = append(options,
+			renderers.WithRemoveTitleHeading(),
 			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 		)
-
-		tr = renderers.NewMarkdown(options...)
-	case `html`:
-		tr = &renderers.HTML{}
-	default:
-		return ``, fmt.Errorf(`unknown source type`)
 	}
-	return tr.Render(source)
+	if co.RenderCodeBlocks {
+		options = append(options, renderers.WithRenderCodeAsHTML())
+	}
+	if co.PrettifyHtml {
+		options = append(options, renderers.WithHtmlPrettifier())
+	}
+
+	options = append(options,
+		renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
+			if src, ok := metas.Sources[path]; ok {
+				name = src.Name
+				url = src.URL
+				description = src.Description
+				found = true
+			}
+			return
+		}),
+		s.markdownWithPlantUMLRenderer(),
+		imaging.WithGallery(),
+		task_list.New(),
+		renderers.WithHashTags(s.hashtagResolver, nil),
+		custom_break.New(),
+		renderers.WithReserveListItemMarkerStyle(),
+		renderers.WithLazyLoadingFrames(),
+		renderers.WithMediaDimensionLimiter(350),
+
+		// 其它选项可能会插入链接，所以放后面。
+		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
+		renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
+	)
+
+	tr = renderers.NewMarkdown(options...)
+	rendered, err := tr.Render(source)
+	if err != nil {
+		return "", err
+	}
+
+	return rendered, nil
 }
 
 func (s *Service) hashtagResolver(tag string) string {
@@ -489,6 +520,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 }
 
 // UpdatePost ...
+// 需要携带版本号，像评论一样。
 func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
 	s.MustBeAdmin(ctx)
 
@@ -661,13 +693,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	s.MustBeAdmin(ctx)
 	// ac := auth.Context(ctx)
-	content, err := s.getPostContent(int64(in.Id), `markdown`, in.Markdown, models.PostMeta{}, &proto.PostContentOptions{
-		WithContent:       true,
-		KeepTitleHeading:  true,
-		RenderCodeBlocks:  true,
-		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-		UseAbsolutePaths:  true,
-	})
+	content, err := s.renderMarkdown(true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
 	return &proto.PreviewPostResponse{Html: content}, err
 }
 
@@ -727,7 +753,7 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *proto.GetPostCom
 }
 
 // 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
-func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Post) error {
+func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostContentOptions) func(c *proto.Post) error {
 	ac := auth.Context(ctx)
 
 	return func(p *proto.Post) error {
@@ -735,21 +761,22 @@ func (s *Service) setPostExtraFields(ctx context.Context, co *proto.PostContentO
 			p.Metas.Geo = nil
 		}
 
-		if co != nil && co.WithContent {
-			content, err := s.getPostContentCached(ctx, p.Id, co)
+		if copt != nil && copt.WithContent {
+			content, err := s.getPostContentCached(ctx, p.Id, copt)
 			if err != nil {
 				return err
 			}
 			p.Content = content
 		}
+
 		// 碎碎念可能没有标题，自动生成
+		//
+		// 关于为什么没有在创建/更新的时候生成标题？
+		// - 生成算法在变化，而如果保存起来的话，算法变化后不能及时更新，除非全盘重新扫描
 		if p.Type == `tweet` {
 			switch p.Title {
 			case ``, `Untitled`, models.Untitled:
-				content, err := s.getPostContentCached(ctx, p.Id, &proto.PostContentOptions{
-					WithContent:  true,
-					PrettifyHtml: true,
-				})
+				content, err := s.getPostContentCached(ctx, p.Id, co.For(co.GenerateTweetTitle))
 				if err != nil {
 					return err
 				}
@@ -799,25 +826,55 @@ func truncateTitle(title string, length int) string {
 	return strings.TrimSpace(string(runes[:maxLength]) + suffix)
 }
 
-func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPostTaskListItemsRequest) (*proto.CheckPostTaskListItemsResponse, error) {
+// 请保持文章和评论的代码同步。
+func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckTaskListItemsRequest) (*proto.CheckTaskListItemsResponse, error) {
 	s.MustBeAdmin(ctx)
 
-	p, err := s.GetPost(ctx, &proto.GetPostRequest{Id: in.Id,
-		ContentOptions: &proto.PostContentOptions{WithContent: false},
-	})
+	p, err := s.GetPost(ctx,
+		&proto.GetPostRequest{
+			Id:             in.Id,
+			ContentOptions: co.For(co.CheckPostTaskListItems),
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if p.Modified != in.PostModificationTime {
-		return nil, status.Error(codes.Aborted, `文章修改时间不匹配。`)
+	updated, err := s.applyTaskChecks(p.Modified, p.SourceType, p.Source, in)
+	if err != nil {
+		return nil, err
 	}
 
-	if p.SourceType != `markdown` {
-		return nil, status.Error(codes.FailedPrecondition, `文章类型不支持任务列表。`)
+	p.Source = string(updated)
+
+	updateRequest := proto.UpdatePostRequest{
+		Post: p,
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				`source_type`,
+				`source`,
+			},
+		},
+	}
+	updatedPost, err := s.UpdatePost(ctx, &updateRequest)
+	if err != nil {
+		return nil, err
 	}
 
-	source := []byte(p.Source)
+	return &proto.CheckTaskListItemsResponse{
+		ModificationTime: updatedPost.Modified,
+	}, nil
+}
+
+func (s *Service) applyTaskChecks(modified int32, sourceType, rawSource string, in *proto.CheckTaskListItemsRequest) (string, error) {
+	if modified != in.ModificationTime {
+		return "", status.Error(codes.Aborted, `内容的修改时间不匹配。`)
+	}
+	if sourceType != `markdown` {
+		return "", status.Error(codes.FailedPrecondition, `内容的类型不支持任务列表。`)
+	}
+
+	source := []byte(rawSource)
 
 	apply := func(pos int32, check bool) {
 		if pos <= 0 || int(pos) >= len(source)-1 {
@@ -843,26 +900,8 @@ func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckPos
 		}
 		return nil
 	})(); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	p.Source = string(source)
-
-	updateRequest := proto.UpdatePostRequest{
-		Post: p,
-		UpdateMask: &fieldmaskpb.FieldMask{
-			Paths: []string{
-				`source_type`,
-				`source`,
-			},
-		},
-	}
-	updated, err := s.UpdatePost(ctx, &updateRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	return &proto.CheckPostTaskListItemsResponse{
-		Post: updated,
-	}, nil
+	return string(source), nil
 }

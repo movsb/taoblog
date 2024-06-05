@@ -57,7 +57,9 @@
 			};
 			audio.addEventListener('loadedmetadata', e => {
 				console.log(audio.duration);
-				time.setAttribute('title', `总时长：${displaySeconds(audio.duration)}`);
+				const value = displaySeconds(audio.duration);
+				time.innerText = value;
+				time.setAttribute('title', `总时长：${value}`);
 			});
 			let progress = player.querySelector('.progress');
 			let capturing = false;

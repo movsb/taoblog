@@ -46,13 +46,13 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       1,
 			Markdown: `![avatar](avatar.jpg?scale=0.3)`,
-			Options:  []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), true)},
+			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL), true)},
 			Html:     `<p><img src="avatar.jpg" alt="avatar" loading="lazy" width="138" height="138"/></p>`,
 		},
 		{
 			ID:       2,
 			Markdown: `- ![avatar](avatar.jpg?scale=0.3)`,
-			Options:  []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), true)},
+			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL), true)},
 			Html: `<ul>
 <li><img src="avatar.jpg" alt="avatar" loading="lazy" width="138" height="138"/></li>
 </ul>`,
@@ -60,7 +60,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       2.1,
 			Markdown: `- ![avatar](中文.jpg?scale=0.3)`,
-			Options:  []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), true)},
+			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL), true)},
 			Html: `<ul>
 <li><img src="%E4%B8%AD%E6%96%87.jpg" alt="avatar" loading="lazy" width="138" height="138"/></li>
 </ul>`,
@@ -69,7 +69,7 @@ func TestMarkdownAll(t *testing.T) {
 			ID:          3,
 			Description: `支持网络图片的缩放`,
 			Markdown:    fmt.Sprintf(`![](%s/avatar.jpg?scale=0.1)`, host),
-			Options:     []renderers.Option2{media_size.New(gold_utils.NewURLReferenceFileSystem(os.DirFS("test_data"), testDataURL), false)},
+			Options:     []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL), false)},
 			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" loading="lazy" width="46" height="46"/></p>`, host),
 		},
 		{
@@ -194,8 +194,7 @@ func TestMarkdownAll(t *testing.T) {
 		if tc.ID == 10.0 {
 			log.Println(`debug`)
 		}
-		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
-		md := renderers.NewMarkdown(options...)
+		md := renderers.NewMarkdown(tc.Options...)
 		html, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Fatal(tc.ID, err)
@@ -300,8 +299,7 @@ func TestPrettifier(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		options := append([]renderers.Option2{renderers.Testing()}, tc.Options...)
-		options = append(options, renderers.WithHtmlPrettifier())
+		options := append(tc.Options, renderers.WithHtmlPrettifier())
 		md := renderers.NewMarkdown(options...)
 		if tc.ID == 6.0 {
 			log.Println(`debug`)

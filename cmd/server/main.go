@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
 	"github.com/movsb/taoblog/theme/modules/canonical"
@@ -63,8 +64,10 @@ func serve(ctx context.Context) {
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
 
+	storage := storage.NewLocal(cfg.Data.File.Path)
+
 	theAuth := auth.New(cfg.Auth, service.DevMode())
-	theService := service.NewService(ctx, cancel, cfg, db, theAuth)
+	theService := service.NewService(ctx, cancel, cfg, db, theAuth, service.WithPostDataFileSystem(storage))
 	theAuth.SetService(theService)
 
 	theAuth.SetAdminWebAuthnCredentials(theService.GetDefaultStringOption(`admin_webauthn_credentials`, "[]"))
@@ -109,7 +112,7 @@ func serve(ctx context.Context) {
 		)
 	}
 
-	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth)
+	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth, storage)
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
 

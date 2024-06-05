@@ -27,6 +27,13 @@ import (
 //
 // - [ ] Task1
 // - [x] Task2
+//
+// 或者：
+//
+//	<!-- TODO -->
+//
+// - [ ] Task1
+// - [x] Task2
 func New() *TaskList {
 	return &TaskList{}
 }
@@ -49,13 +56,16 @@ func (e *TaskList) Extend(m goldmark.Markdown) {
 	))
 }
 
-var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*TaskList\s*-->\s*$)`)
+var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*(?:TaskList|TODO)\s*-->\s*$)`)
 
 // ... implements parser.ASTTransformer.
 // TODO 只处理第一层任务。
 func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
-	recurse := func(list *ast.List) {
+	recurse := func(list *ast.List, preserveSource bool) {
 		gold_utils.AddClass(list, `task-list`)
+		if preserveSource {
+			gold_utils.AddClass(list, `with-source-positions`)
+		}
 		for c := list.FirstChild(); c != nil; c = c.NextSibling() {
 			item, ok := c.(*ast.ListItem)
 			if !ok {
@@ -74,7 +84,9 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 				classes = append(classes, `checked`)
 			}
 			gold_utils.AddClass(item, classes...)
-			item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			if preserveSource {
+				item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			}
 		}
 	}
 
@@ -83,28 +95,37 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 		if !entering {
 			return
 		}
-		if n.Kind() != ast.KindHTMLBlock {
+
+		if n.Kind() != ast.KindList {
 			return
 		}
-		hb := n.(*ast.HTMLBlock)
-		// https://spec.commonmark.org/0.31.2/#html-block
-		if hb.HTMLBlockType != ast.HTMLBlockType2 {
-			return
-		}
-		if hb.Lines().Len() != 1 {
-			return
-		}
-		firstLineSegment := hb.Lines().At(0)
-		firstLine := firstLineSegment.Value(reader.Source())
-		if !reIsTaskListComment.Match(firstLine) {
-			return
-		}
-		if next := hb.NextSibling(); next == nil || next.Kind() != ast.KindList {
-			return
-		}
+
+		prevIsComment := func(n ast.Node) (yes bool) {
+			if n == nil {
+				return
+			}
+			if n.Kind() != ast.KindHTMLBlock {
+				return
+			}
+			hb := n.(*ast.HTMLBlock)
+			// https://spec.commonmark.org/0.31.2/#html-block
+			if hb.HTMLBlockType != ast.HTMLBlockType2 {
+				return
+			}
+			if hb.Lines().Len() != 1 {
+				return
+			}
+			firstLineSegment := hb.Lines().At(0)
+			firstLine := firstLineSegment.Value(reader.Source())
+			if !reIsTaskListComment.Match(firstLine) {
+				return
+			}
+			return true
+		}(n.PreviousSibling())
+
 		// List -> Item -> TextBlock -> CheckBox
-		list := hb.NextSibling().(*ast.List)
-		recurse(list)
+		// List -> Item -> Paragraph -> CheckBox
+		recurse(n.(*ast.List), prevIsComment)
 		return
 	})
 }
@@ -127,19 +148,20 @@ func (e *TaskList) renderTaskCheckBox(
 		w.WriteString(` checked`)
 	}
 
-	// List -> Item -> TextBlock -> CheckBox
-	isTaskListItem := false
-	if n.Parent() != nil && n.Parent().Parent() != nil {
-		item := n.Parent().Parent().(*ast.ListItem)
-		if any, ok := item.AttributeString(`class`); ok {
+	// List -> Item -> TextBlock/Paragraph -> CheckBox
+	isTaskList := false
+	if n.Parent() != nil && n.Parent().Parent() != nil && n.Parent().Parent().Parent() != nil {
+		list := n.Parent().Parent().Parent().(*ast.List)
+		if any, ok := list.AttributeString(`class`); ok {
 			if str, ok := any.(string); ok {
-				isTaskListItem = strings.Contains(str, `task-list-item`) // not accurate
+				isTaskList = strings.Contains(str, `with-source-positions`) // not accurate
 			}
 		}
 	}
-	if isTaskListItem {
+	if isTaskList {
 		n.SetAttributeString(`autocomplete`, `off`) // for firefox
 	}
+	// footer 里面有脚本，防止在预览文章的时候没加载脚本也可点击完成任务。
 	// if !isTaskListItem {
 	w.WriteString(` disabled`)
 	// }
@@ -150,34 +172,3 @@ func (e *TaskList) renderTaskCheckBox(
 	_, _ = w.WriteString("> ")
 	return ast.WalkContinue, nil
 }
-
-// func (e *TaskList) TransformHtml(doc *goquery.Document) error {
-// 	doc.Find(`TaskList`).Each(func(i int, s *goquery.Selection) {
-// 		replaced, err := e.single(s)
-// 		if err != nil {
-// 			log.Println(err)
-// 			return
-// 		}
-// 		s.ReplaceWithSelection(replaced)
-// 	})
-// 	return nil
-// }
-
-// func (e *TaskList) single(s *goquery.Selection) (*goquery.Selection, error) {
-// 	div := xhtml.Node{
-// 		Type:     xhtml.ElementNode,
-// 		DataAtom: atom.Div,
-// 		Data:     `div`,
-// 		Attr: []xhtml.Attribute{
-// 			{
-// 				Key: `class`,
-// 				Val: `task-list`,
-// 			},
-// 		},
-// 	}
-
-// 	doc := goquery.NewDocumentFromNode(&div)
-// 	doc.AppendSelection(s.Children())
-
-// 	return doc.Selection, nil
-// }

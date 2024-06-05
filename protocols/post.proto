@@ -186,21 +186,20 @@ message PreviewPostResponse {
 	string html = 1;
 }
 
-message CheckPostTaskListItemsRequest {
-	// 文章编号
+message CheckTaskListItemsRequest {
+	// 文章/评论编号
 	int32 id = 1;
 
 	// 文章修改时间，用于版本同步。
-	int32 post_modification_time = 2;
+	int32 modification_time = 2;
 
 	// 任务列表。
 	repeated int32 checks = 10;
 	repeated int32 unchecks = 11;
 }
 
-message CheckPostTaskListItemsResponse {
-	// 只会返回基础信息。
-	Post post = 1;
+message CheckTaskListItemsResponse {
+	int32 modification_time = 1;
 }
 
 message FileSpec {

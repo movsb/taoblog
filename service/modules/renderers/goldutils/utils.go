@@ -2,7 +2,7 @@ package gold_utils
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"io/fs"
 	"net/url"
 	"slices"
@@ -31,36 +31,39 @@ func AddClass(node ast.Node, classes ...string) {
 //
 // 场景：前端相对路径链接。
 //
-// 比如湔页面地址是：/page/
+// 比如页面地址是：/page/
 // 如果 url 是：1.txt，则打开 /page/1.txt
 // 如果 url 是：/other/2.txt，则打开 /other/2.txt
-type URLReferenceFileSystem interface {
-	OpenReference(url string) (fs.File, error)
+type WebFileSystem interface {
+	OpenURL(url string) (fs.File, error)
 }
 
-func NewURLReferenceFileSystem(root fs.FS, base *url.URL) URLReferenceFileSystem {
-	return &_URLReferenceFileSystem{
+func NewWebFileSystem(root fs.FS, base *url.URL) WebFileSystem {
+	return &_WebFileSystem{
 		root: root,
 		base: base,
 	}
 }
 
-type _URLReferenceFileSystem struct {
+type _WebFileSystem struct {
 	root fs.FS
 	base *url.URL
 }
 
-func (fs *_URLReferenceFileSystem) OpenReference(url_ string) (fs.File, error) {
+func (fs *_WebFileSystem) OpenURL(url_ string) (fs.File, error) {
 	u, err := url.Parse(url_)
 	if err != nil {
 		return nil, err
 	}
 	ref := fs.base.ResolveReference(u)
 	if !strings.EqualFold(fs.base.Host, ref.Host) {
-		return nil, fmt.Errorf(`external url: <%s>`, url_)
+		return nil, ErrCrossOrigin
 	}
+	// fs.FS 不能以 / 开头。
 	return fs.root.Open(ref.Path[1:])
 }
+
+var ErrCrossOrigin = errors.New(`file is from another origin, cannot be opened`)
 
 type HtmlTransformer interface {
 	TransformHtml(doc *goquery.Document) error

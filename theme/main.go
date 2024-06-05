@@ -20,10 +20,12 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
+	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
@@ -37,6 +39,7 @@ type Theme struct {
 	localRootFS fs.FS
 	rootFS      fs.FS
 	tmplFS      fs.FS
+	postFS      theme_fs.FS
 
 	cfg *config.Config
 
@@ -60,14 +63,14 @@ type Theme struct {
 	specialMux *http.ServeMux
 }
 
-func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth) *Theme {
+func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, fsys theme_fs.FS) *Theme {
 	var rootFS, tmplFS, stylesFS fs.FS
 
 	if devMode {
 		dir := blog.SourceRelativeDir()
 		rootFS = os.DirFS(dir.Join(`statics`))
-		tmplFS = utils.NewLocal(dir.Join(`templates`))
-		stylesFS = utils.NewLocal(dir.Join(`styles`))
+		tmplFS = utils.NewDirFSWithNotify(dir.Join(`templates`))
+		stylesFS = utils.NewDirFSWithNotify(dir.Join(`styles`))
 	} else {
 		// TODO 硬编码成 blog 了。
 		rootFS = utils.Must(fs.Sub(blog.Root, `statics`))
@@ -78,6 +81,8 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	t := &Theme{
 		rootFS: rootFS,
 		tmplFS: tmplFS,
+
+		postFS: fsys,
 
 		//始终相对于运行目录下的 root 目录。
 		localRootFS: os.DirFS("./root"),
@@ -348,15 +353,10 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 	post, err := t.service.GetPost(req.Context(),
 		&proto.GetPostRequest{
-			Id:          int32(id),
-			WithRelates: true,
-			WithLink:    proto.LinkKind_LinkKindRooted,
-			ContentOptions: &proto.PostContentOptions{
-				WithContent:       true,
-				RenderCodeBlocks:  true,
-				UseAbsolutePaths:  false,
-				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-			},
+			Id:             int32(id),
+			WithRelates:    true,
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.QueryByID),
 		},
 	)
 	if err != nil {
@@ -386,15 +386,10 @@ func (t *Theme) incView(id int64) {
 func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error) {
 	post, err := t.service.GetPost(req.Context(),
 		&proto.GetPostRequest{
-			Page:        path,
-			WithRelates: false, // 页面总是不是显示相关文章。
-			WithLink:    proto.LinkKind_LinkKindRooted,
-			ContentOptions: &proto.PostContentOptions{
-				WithContent:       true,
-				RenderCodeBlocks:  true,
-				UseAbsolutePaths:  false,
-				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-			},
+			Page:           path,
+			WithRelates:    false, // 页面总是不是显示相关文章。
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.QueryByPage),
 		},
 	)
 	if err != nil {
@@ -434,17 +429,21 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 
 // TODO 没限制不可访问文章的附件是否不可访问。
 // 毕竟，文章不可访问后，文件列表暂时拿不到。
+// 不一定，比如，文件很可能是形如：IMG_XXXX.JPG，暴力遍历一下就能拿到。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
 	// 所有人禁止访问特殊文件：以 . 或者 _ 开头。
+	// TODO：以及 config.yaml | README.md
 	switch path.Base(file)[0] {
 	case '.', '_':
 		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
 	}
 
-	fs, err := t.impl.FileSystemForPost(req.Context(), postID)
+	fs, err := t.postFS.ForPost(int(postID))
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
 	http.ServeFileFS(w, req, fs, file)
 }
 

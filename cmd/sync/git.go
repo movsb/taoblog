@@ -71,6 +71,7 @@ func (g *GitSync) Sync() error {
 			continue
 		}
 	}
+	log.Println(`共有`, len(posts), `篇文章被处理。`)
 
 	if err := spawn(`git`, []string{`push`}, g.root, ``); err != nil {
 		return err

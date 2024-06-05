@@ -175,7 +175,7 @@ service TaoBlog {
 			description: "文章预览。";
 		};
 	}
-	rpc CheckPostTaskListItems (CheckPostTaskListItemsRequest) returns (CheckPostTaskListItemsResponse) {
+	rpc CheckPostTaskListItems (CheckTaskListItemsRequest) returns (CheckTaskListItemsResponse) {
 		option (google.api.http) = {
 			patch: "/v3/posts/{id=*}/tasks:check";
 			body: "*";
@@ -253,6 +253,15 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "评论预览。";
+		};
+	}
+	rpc CheckCommentTaskListItems (CheckTaskListItemsRequest) returns (CheckTaskListItemsResponse) {
+		option (google.api.http) = {
+			patch: "/v3/comments/{id=*}/tasks:check";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "完成/取消完成任务。";
 		};
 	}
 }

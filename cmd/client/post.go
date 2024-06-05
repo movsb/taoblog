@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/protocols/clients"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/yuin/goldmark"
@@ -111,10 +112,8 @@ func (c *Client) GetPost() {
 		panic("must not be created")
 	}
 	post, err := c.Blog.GetPost(c.Context(), &proto.GetPostRequest{
-		Id: int32(cfg.ID),
-		ContentOptions: &proto.PostContentOptions{
-			WithContent: false,
-		},
+		Id:             int32(cfg.ID),
+		ContentOptions: co.For(co.ClientGetPost),
 	})
 	if err != nil {
 		panic(err)

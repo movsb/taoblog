@@ -255,10 +255,11 @@ class PostManagementAPI
 	// modified 文章修改时间
 	// checks   待标记为“完成”的任务列表
 	// unchecks 待标记为“未完成”的任务列表
-	async checkPostTaskListItems(id, modified, checks, unchecks) {
-		let path = `/v3/posts/${id}/tasks:check`;
+	// NOTE：同时支持评论和文章——加速合并进程。
+	async checkTaskListItems(id, isPost, modified, checks, unchecks) {
+		let path = `/v3/${isPost?'posts':'comments'}/${id}/tasks:check`;
 		let body = {
-			post_modification_time: modified,
+			modification_time: modified,
 			checks: checks,
 			unchecks: unchecks,
 		};

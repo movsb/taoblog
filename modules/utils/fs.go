@@ -1,14 +1,17 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"mime"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -16,8 +19,8 @@ import (
 // Directories are omitted.
 // Returned paths are related to dir.
 // 返回的所有路径都是相对于 dir 而言的。
-func ListFiles(dir string) ([]*proto.FileSpec, error) {
-	bfs, err := ListBackupFiles(dir)
+func ListFiles(fsys fs.FS, dir string) ([]*proto.FileSpec, error) {
+	bfs, err := ListBackupFiles(fsys, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -35,22 +38,14 @@ func ListFiles(dir string) ([]*proto.FileSpec, error) {
 }
 
 // Deprecated. 用 ListFiles。
-func ListBackupFiles(dir string) ([]*proto.BackupFileSpec, error) {
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, err
-	}
-	if len(dir) == 1 {
-		return nil, fmt.Errorf(`dir cannot be root`)
-	}
+func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
+	files := make([]*proto.BackupFileSpec, 0, 32)
 
-	files := make([]*proto.BackupFileSpec, 0, 1024)
-
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err := fs.WalkDir(fsys, dir, func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !info.Mode().IsRegular() || info.Mode().IsDir() {
+		if !info.Type().IsRegular() {
 			return nil
 		}
 		rel, err := filepath.Rel(dir, path)
@@ -58,11 +53,16 @@ func ListBackupFiles(dir string) ([]*proto.BackupFileSpec, error) {
 			return err
 		}
 
+		info2, err := info.Info()
+		if err != nil {
+			return err
+		}
+
 		file := &proto.BackupFileSpec{
 			Path: rel,
-			Mode: uint32(info.Mode()),
-			Size: uint32(info.Size()),
-			Time: uint32(info.ModTime().Unix()),
+			Mode: uint32(info.Type()),
+			Size: uint32(info2.Size()),
+			Time: uint32(info2.ModTime().Unix()),
 		}
 
 		files = append(files, file)
@@ -108,4 +108,90 @@ func WriteFile(path string, mode fs.FileMode, modified time.Time, size int64, r 
 	}
 
 	return nil
+}
+
+type FsWithChangeNotify interface {
+	fs.FS
+	Changed() <-chan fsnotify.Event
+}
+
+type DirFSWithNotify struct {
+	root string
+	fs.FS
+	ch chan fsnotify.Event
+}
+
+var _ FsWithChangeNotify = (*DirFSWithNotify)(nil)
+
+func NewDirFSWithNotify(root string) fs.FS {
+	l := &DirFSWithNotify{
+		root: root,
+		FS:   os.DirFS(root),
+	}
+	l.ch = l.watch()
+	return l
+}
+
+func (l *DirFSWithNotify) Changed() <-chan fsnotify.Event {
+	return l.ch
+}
+
+func (l *DirFSWithNotify) watch() chan fsnotify.Event {
+	if _, err := l.FS.Open("."); err != nil {
+		panic(err.Error() + fmt.Sprint(os.Getwd()))
+	}
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	// defer watcher.Close()
+
+	ch := make(chan fsnotify.Event)
+
+	go func() {
+		for {
+			select {
+			case err := <-watcher.Errors:
+				log.Println(err)
+				return
+			case event := <-watcher.Events:
+				// log.Println(event)
+				ch <- event
+			}
+		}
+	}()
+
+	if err := watcher.Add(l.root); err != nil {
+		panic(err)
+	} else {
+		log.Println(`Started watching`, l.root)
+	}
+
+	return ch
+}
+
+// 作为对 fs.FS 的补充。
+// 官方标准化了我就删。
+type DeleteFS interface {
+	fs.FS
+	Delete(name string) error
+}
+
+func Delete(fsys fs.FS, name string) error {
+	if dfs, ok := fsys.(DeleteFS); ok {
+		return dfs.Delete(name)
+	}
+	return errors.New(`fs.Delete: unimplemented`)
+}
+
+type WriteFS interface {
+	Write(spec *proto.FileSpec, r io.Reader) error
+}
+
+func Write(fsys fs.FS, spec *proto.FileSpec, r io.Reader) error {
+	if wfs, ok := fsys.(WriteFS); ok {
+		return wfs.Write(spec, r)
+	}
+	return errors.New(`fs.Write: unimplemented`)
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -78,14 +79,11 @@ func New(svc proto.TaoBlogServer, options ...Option) *RSS {
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	rsp, err := r.svc.ListPosts(req.Context(), &proto.ListPostsRequest{
-		Limit:    int32(r.config.articleCount),
-		OrderBy:  `date desc`,
-		Kinds:    []string{`post`},
-		WithLink: proto.LinkKind_LinkKindFull,
-		ContentOptions: &proto.PostContentOptions{
-			WithContent:      true,
-			RenderCodeBlocks: false,
-		},
+		Limit:          int32(r.config.articleCount),
+		OrderBy:        `date desc`,
+		Kinds:          []string{`post`},
+		WithLink:       proto.LinkKind_LinkKindFull,
+		ContentOptions: co.For(co.Rss),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -32,16 +33,11 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlog
 
 	posts, err := svc.ListPosts(ctx,
 		&proto.ListPostsRequest{
-			Limit:    1000,
-			Kinds:    []string{`tweet`},
-			OrderBy:  `date desc`,
-			WithLink: proto.LinkKind_LinkKindRooted,
-			ContentOptions: &proto.PostContentOptions{
-				WithContent:       true,
-				RenderCodeBlocks:  true,
-				UseAbsolutePaths:  true,
-				OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
-			},
+			Limit:          1000,
+			Kinds:          []string{`tweet`},
+			OrderBy:        `date desc`,
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.Tweets),
 		},
 	)
 	if err != nil {

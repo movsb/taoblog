@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -26,9 +27,8 @@ import (
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
-	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/search"
-	"github.com/movsb/taoblog/service/modules/storage"
+	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
@@ -45,7 +45,6 @@ type ToBeImplementedByRpc interface {
 	Config() *config.Config
 	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
-	FileSystemForPost(ctx context.Context, id int64) (*storage.Local, error)
 	ThemeChangedAt() time.Time
 }
 
@@ -59,7 +58,10 @@ type Service struct {
 
 	home *url.URL
 
-	cfg    *config.Config
+	cfg *config.Config
+
+	postDataFS theme_fs.FS
+
 	db     *sql.DB
 	tdb    *taorm.DB
 	auth   *auth.Auth
@@ -89,13 +91,13 @@ type Service struct {
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
-	searcher atomic.Pointer[search.Engine]
+	searcher         atomic.Pointer[search.Engine]
+	onceInitSearcher sync.Once
 
 	maintenance *utils.Maintenance
 
 	// 服务内有插件的更新可能会影响到内容渲染。
-	themeChangedAt    time.Time
-	mediaTagsTemplate *utils.TemplateLoader
+	themeChangedAt time.Time
 
 	// 证书剩余天数。
 	// >= 0 表示值有效。
@@ -123,17 +125,19 @@ func NewServiceForTesting(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Se
 	return newService(ctx, cancel, cfg, db, auther, true)
 }
 
-func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
-	return newService(ctx, cancel, cfg, db, auther, false)
+func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
+	return newService(ctx, cancel, cfg, db, auther, false, options...)
 }
 
-func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool) *Service {
+func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
 	s := &Service{
 		ctx:     ctx,
 		cancel:  cancel,
 		testing: testing,
 
-		cfg:  cfg,
+		cfg:        cfg,
+		postDataFS: nil,
+
 		db:   db,
 		tdb:  taorm.NewDB(db),
 		auth: auther,
@@ -149,6 +153,10 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		maintenance: &utils.Maintenance{},
 
 		themeChangedAt: time.Now(),
+	}
+
+	for _, opt := range options {
+		opt(s)
 	}
 
 	// 在此之前不能读配置！！！
@@ -186,16 +194,6 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 	s.cacheAllCommenterData()
 
-	if DevMode() && !s.testing {
-		s.mediaTagsTemplate = utils.NewTemplateLoader(
-			utils.NewLocal(string(media_tags.SourceRelativeDir())), nil,
-			func() {
-				// TODO：可能有并发问题？
-				s.themeChangedAt = time.Now()
-			},
-		)
-	}
-
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)
 
@@ -228,8 +226,6 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	}
 	s.addr = listener.Addr()
 	go server.Serve(listener)
-
-	go s.RunSearchEngine(context.TODO())
 
 	if !testing && !DevMode() {
 		go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
@@ -290,6 +286,7 @@ func exceptionRecoveryHandler(e any) error {
 			return st.Err()
 		}
 	}
+	log.Println("未处理的内部错误：", e)
 	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }
 
@@ -357,11 +354,19 @@ var methodThrottlerInfo = map[string]struct {
 		Message:   `评论更新过于频繁，请稍等几秒后再试。`,
 		OnSuccess: true,
 	},
+	`/protocols.TaoBlog/GetComment`: {
+		Internal: true,
+	},
 	`/protocols.TaoBlog/ListComments`: {
 		Internal: true,
 	},
 	`/protocols.TaoBlog/GetPostComments`: {
 		Internal: true,
+	},
+	`/protocols.TaoBlog/CheckCommentTaskListItems`: {
+		Interval:  time.Second * 5,
+		Message:   `任务完成得过于频繁？`,
+		OnSuccess: false,
 	},
 	`/protocols.TaoBlog/GetPost`: {
 		Internal: true,

@@ -13,6 +13,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -150,8 +151,11 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 	remoteFiles := rsp.GetListFiles().Files
 
 	log.Printf(`Local: list files...`)
-	localDir := `./files`
-	localFiles, err := utils.ListBackupFiles(localDir)
+
+	localDir := "files"
+	localFS := storage.NewLocal("files")
+
+	localFiles, err := utils.ListBackupFiles(localFS, ".")
 	if err != nil {
 		panic(err)
 	}
