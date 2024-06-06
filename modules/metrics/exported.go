@@ -46,6 +46,16 @@ func (r *Registry) init() {
 		[]string{`bot`, `browser_name`, `browser_version`, `mobile`, `os_name`, `os_version`, `platform`},
 	)
 	r.r.MustRegister(r.userAgentCounter)
+
+	r.sentBytesCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      `bytes_sent`,
+		},
+		[]string{`ip`},
+	)
+	r.r.MustRegister(r.sentBytesCounter)
 }
 
 func (r *Registry) startUptimeCounterAsync(interval time.Duration) {

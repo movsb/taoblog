@@ -22,6 +22,7 @@ type Registry struct {
 	homeCounter      prometheus.Counter
 	pageViewCounter  *prometheus.CounterVec
 	userAgentCounter *prometheus.CounterVec
+	sentBytesCounter *prometheus.CounterVec
 }
 
 // NewRegistry ...
@@ -62,4 +63,8 @@ func (r *Registry) UserAgent(s string) {
 		strings.ToLower(os.Name), os.Version,
 		strings.ToLower(ua.Platform()),
 	).Inc()
+}
+
+func (r *Registry) CountSentBytes(ip string, bytes int) {
+	r.sentBytesCounter.WithLabelValues(ip).Add(float64(bytes))
 }

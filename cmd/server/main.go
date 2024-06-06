@@ -121,7 +121,7 @@ func serve(ctx context.Context) {
 		Handler: utils.ChainFuncs(
 			http.Handler(mux),
 			theAuth.UserFromCookieHandler,
-			logs.NewRequestLoggerHandler(`access.log`),
+			logs.NewRequestLoggerHandler(`access.log`, logs.WithSentBytesCounter(r)),
 			theService.MaintenanceMode().Handler(func(ctx context.Context) bool {
 				return auth.Context(ctx).User.IsAdmin()
 			}),

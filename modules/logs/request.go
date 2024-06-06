@@ -11,19 +11,29 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 )
 
+type Option func(*RequestLogger)
+
+func WithSentBytesCounter(a SentBytesCounter) Option {
+	return func(rl *RequestLogger) {
+		rl.sentBytes = a
+	}
+}
+
 type RequestLogger struct {
 	f *os.File
 
 	// 每隔几秒手动 sync 一下。
 	lock    sync.Mutex
 	counter atomic.Int32
+
+	sentBytes SentBytesCounter
 }
 
-func NewRequestLoggerHandler(path string) func(http.Handler) http.Handler {
-	return NewRequestLogger(path).Handler
+func NewRequestLoggerHandler(path string, options ...Option) func(http.Handler) http.Handler {
+	return NewRequestLogger(path, options...).Handler
 }
 
-func NewRequestLogger(path string) *RequestLogger {
+func NewRequestLogger(path string, options ...Option) *RequestLogger {
 	fp, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		panic(err)
@@ -31,6 +41,10 @@ func NewRequestLogger(path string) *RequestLogger {
 
 	l := &RequestLogger{
 		f: fp,
+	}
+
+	for _, opt := range options {
+		opt(l)
 	}
 
 	go func() {
@@ -51,16 +65,29 @@ func NewRequestLogger(path string) *RequestLogger {
 	return l
 }
 
+type SentBytesCounter interface {
+	CountSentBytes(ip string, sentBytes int)
+}
+
 // https://blog.twofei.com/909/
 type _ResponseWriter struct {
 	http.ResponseWriter
 	*http.ResponseController
-	code int
+
+	code      int
+	sentBytes int // 服务端 → 客户端
 }
 
 func (w *_ResponseWriter) WriteHeader(statusCode int) {
 	w.code = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *_ResponseWriter) Write(b []byte) (int, error) {
+	// 写没写成功都算。
+	w.sentBytes += len(b)
+
+	return w.ResponseWriter.Write(b)
 }
 
 func (l *RequestLogger) Handler(h http.Handler) http.Handler {
@@ -81,5 +108,9 @@ func (l *RequestLogger) Handler(h http.Handler) http.Handler {
 			"%s %-15s %3d %-8s %-32s %-32s %-32s\n",
 			now, ac.RemoteAddr.String(), takeOver.code, r.Method, r.RequestURI, r.Referer(), r.Header.Get(`User-Agent`),
 		)
+		// 仅统计非管理员用户。
+		if l.sentBytes != nil && !ac.User.IsAdmin() {
+			l.sentBytes.CountSentBytes(ac.RemoteAddr.String(), takeOver.sentBytes)
+		}
 	})
 }
