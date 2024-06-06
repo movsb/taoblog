@@ -70,7 +70,9 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 		if list := req.GetListFiles(); list != nil {
 			files, err := utils.ListFiles(pfs, ".")
 			if err != nil {
-				return err
+				if !errors.Is(err, fs.ErrNotExist) {
+					return err
+				}
 			}
 			if err = srv.Send(&proto.FileSystemResponse{
 				Response: &proto.FileSystemResponse_ListFiles{

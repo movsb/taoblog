@@ -261,7 +261,7 @@ func UploadPostFiles(client *clients.ProtoClient, id int64, root fs.FS, files []
 	fsync := NewFilesSyncer(manage)
 
 	if err := fsync.SyncPostFiles(id, root, files); err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 }
 
