@@ -720,7 +720,7 @@ class Comment {
 	<div class="comment-meta">
 		<span class="${cmt.is_admin ? "author" : "nickname"}">${h2t(cmt.author)}</span>
 		${urlContent}
-		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}">${cmt.date_fuzzy}</time>
+		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}" data-unix="${Math.floor(date.getTime()/1000)}">${cmt.date_fuzzy}</time>
 	</div>
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content reset-list-style-type">${cmt.content}</div>`

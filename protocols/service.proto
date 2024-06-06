@@ -8,9 +8,19 @@ import "post.proto";
 import "comment.proto";
 import "search.proto";
 import "config.proto";
+import "utils.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
+
+service Utils {
+	rpc FormatTime (FormatTimeRequest) returns (FormatTimeResponse) {
+		option (google.api.http) = {
+			post: "/v3/utils/time/format";
+			body: "*";
+		};
+	};
+}
 
 service Auth {
 	rpc BeginPasskeysLogin (BeginPasskeysLoginRequest) returns (BeginPasskeysLoginResponse);

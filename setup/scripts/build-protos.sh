@@ -20,6 +20,7 @@ protoc \
 	--swagger_out=allow_merge=true,merge_file_name="docs/taoblog",logtostderr=true:. \
 	$SWIFT_OPTIONS \
 	 \
+	utils.proto \
 	auth.proto \
 	backup.proto \
 	service.proto \

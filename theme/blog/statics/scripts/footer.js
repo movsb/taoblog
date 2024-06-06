@@ -270,3 +270,54 @@ TaoBlog.vim = new __Vim();
 		}
 	}));
 })();
+
+// 自动更新时间相对时间。
+(function() {
+
+function all() {
+	let times = document.querySelectorAll('time[data-unix]');
+	let stamps = Array.from(times).map(t => parseInt(t.getAttribute('data-unix')));
+	let latest = 0;
+	stamps.forEach(t => { if (t > latest) latest = t; });
+	return { times, stamps, latest };
+}
+
+async function format(stamps) {
+	let path = '/v3/utils/time/format';
+	let formatted = undefined;
+	try {
+		let rsp = await fetch(path, {
+			method: 'POST',
+			body: JSON.stringify({
+				unix: stamps,
+			}),
+		});
+		if (!rsp.ok) {
+			console.log(rsp.statusText);
+			return;
+		}
+		rsp = await rsp.json();
+		formatted = rsp.formatted;
+	} catch (e) { console.log(e); return }
+	if (!formatted) { return; }
+	return formatted;
+}
+
+let update = async function() {
+	let { times, stamps, latest } = all();
+	let formatted = await format(stamps);
+	if (!formatted) { return; }
+	times.forEach((t, i) => {
+		t.innerText = formatted[i].friendly;
+	});
+	let current =  Math.floor(new Date().getTime()/1000);
+	let diff = current - latest;
+	if (diff < 60) { setTimeout(update, 3000); return; }
+	setTimeout(update, 60000);
+}
+
+update();
+
+TaoBlog.events.add('comment', 'post', () => { update(); });
+
+})();

@@ -80,6 +80,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 		),
 	}
 
+	proto.RegisterUtilsHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 

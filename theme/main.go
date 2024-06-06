@@ -31,6 +31,7 @@ import (
 	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taoblog/theme/modules/sitemap"
 	"github.com/movsb/taorm"
+	"github.com/xeonx/timeago"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -165,6 +166,7 @@ func (t *Theme) loadTemplates() {
 	menustr := createMenus(t.cfg.Menus, false)
 
 	customTheme := t.cfg.Site.Theme.Stylesheets.Render()
+	fixedZone := time.FixedZone(`+8`, 8*60*60)
 
 	funcs := template.FuncMap{
 		// https://githut.com/golang/go/issues/14256
@@ -193,6 +195,16 @@ func (t *Theme) loadTemplates() {
 		},
 		"apply_site_theme_customs": func() template.HTML {
 			return template.HTML(customTheme)
+		},
+		// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
+		"friendlyDateTime": func(s int32) template.HTML {
+			t := time.Unix(int64(s), 0).In(fixedZone)
+			r := t.Format(time.RFC3339)
+			f := timeago.Chinese.Format(t)
+			return template.HTML(fmt.Sprintf(
+				`<time class="date" datetime="%s" title="%s" data-unix="%d">%s</time>`,
+				r, r, s, f,
+			))
 		},
 	}
 

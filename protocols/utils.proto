@@ -1,0 +1,15 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/proto";
+
+message FormatTimeRequest {
+	repeated int32 unix = 1;
+}
+
+message FormatTimeResponse {
+	message Formatted {
+		string friendly = 1;
+		string rfc3339 = 2;
+	}
+	repeated Formatted formatted = 1;
+}

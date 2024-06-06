@@ -29,7 +29,7 @@ TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};
 		<div class="meta2">
 			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
 			<span class="author">{{ $.Author }}</span>
-			<span class="date">{{ .Post.Post.ShortDateString }}</span>
+			{{ friendlyDateTime .Post.Post.Date }}
 			{{- with .Post.Post.GeoString }}
 			<span class="geo">{{ . }}</span>
 			{{- end }}

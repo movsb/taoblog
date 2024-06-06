@@ -215,6 +215,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		),
 	)
 
+	proto.RegisterUtilsServer(server, &Utils{})
 	proto.RegisterAuthServer(server, s)
 	proto.RegisterTaoBlogServer(server, s)
 	proto.RegisterManagementServer(server, s)
