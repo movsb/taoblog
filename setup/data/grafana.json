@@ -115,6 +115,317 @@
     },
     {
       "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 34,
+      "panels": [],
+      "title": "流量",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "o1J7POZnk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "mappings": [],
+          "max": 157286400,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 104857600
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 6
+      },
+      "id": 36,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "o1J7POZnk"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum (increase(taoblog_bytes_sent[5m]))",
+          "instant": false,
+          "interval": "60",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "流量总计（每5分钟）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "o1J7POZnk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 6,
+        "y": 6
+      },
+      "id": 35,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "o1J7POZnk"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "topk(10, sum by(ip) (increase(taoblog_bytes_sent[5m])))",
+          "instant": false,
+          "interval": "30",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "按IP的流量总计（B/5分钟）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "o1J7POZnk"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 11,
+        "y": 6
+      },
+      "id": 33,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "o1J7POZnk"
+          },
+          "editorMode": "code",
+          "expr": "topk(10, sum by(ip) (rate(taoblog_bytes_sent[5m])))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "按IP的流量速度(B/s)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
       "datasource": {
         "type": "prometheus",
         "uid": "o1J7POZnk"
@@ -123,7 +434,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 13
       },
       "id": 17,
       "panels": [],
@@ -169,7 +480,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 6
+        "y": 14
       },
       "hideTimeOverride": true,
       "id": 19,
@@ -301,7 +612,7 @@
         "h": 12,
         "w": 4,
         "x": 4,
-        "y": 6
+        "y": 14
       },
       "hideTimeOverride": true,
       "id": 22,
@@ -382,7 +693,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 6
+        "y": 14
       },
       "hideTimeOverride": true,
       "id": 11,
@@ -514,7 +825,7 @@
         "h": 12,
         "w": 4,
         "x": 12,
-        "y": 6
+        "y": 14
       },
       "hideTimeOverride": true,
       "id": 15,
@@ -595,7 +906,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 10
+        "y": 18
       },
       "hideTimeOverride": true,
       "id": 20,
@@ -662,7 +973,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 10
+        "y": 18
       },
       "hideTimeOverride": true,
       "id": 13,
@@ -729,7 +1040,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 14
+        "y": 22
       },
       "hideTimeOverride": true,
       "id": 21,
@@ -796,7 +1107,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 14
+        "y": 22
       },
       "hideTimeOverride": true,
       "id": 12,
@@ -884,8 +1195,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -897,7 +1207,7 @@
         "h": 9,
         "w": 16,
         "x": 0,
-        "y": 18
+        "y": 26
       },
       "hideTimeOverride": true,
       "id": 25,
@@ -955,7 +1265,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 35
       },
       "id": 27,
       "panels": [],
@@ -996,7 +1306,7 @@
         "h": 17,
         "w": 8,
         "x": 0,
-        "y": 28
+        "y": 36
       },
       "id": 32,
       "options": {
@@ -1065,7 +1375,7 @@
         "h": 17,
         "w": 8,
         "x": 8,
-        "y": 28
+        "y": 36
       },
       "id": 31,
       "options": {
@@ -1119,7 +1429,7 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -1139,6 +1449,6 @@
   "timezone": "",
   "title": "陪她去流浪",
   "uid": "_2g5VpWnz",
-  "version": 24,
+  "version": 35,
   "weekStart": ""
 }
