@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -430,11 +431,21 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 // TODO 没限制不可访问文章的附件是否不可访问。
 // 毕竟，文章不可访问后，文件列表暂时拿不到。
 // 不一定，比如，文件很可能是形如：IMG_XXXX.JPG，暴力遍历一下就能拿到。
+// file 不以 / 开头。
+// TODO 添加测试用例。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
-	// 所有人禁止访问特殊文件：以 . 或者 _ 开头。
+	// 所有人禁止访问特殊文件：以 . 或者 _ 开头的文件或目录。
 	// TODO：以及 config.yaml | README.md
+	switch file[0] {
+	case '.', '_':
+		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	}
 	switch path.Base(file)[0] {
 	case '.', '_':
+		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	}
+	// 为了不区分大小写，所以没有用 switch。
+	if strings.EqualFold(file, `config.yml`) || strings.EqualFold(file, `config.yaml`) || strings.EqualFold(file, `README.md`) {
 		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
 	}
 
