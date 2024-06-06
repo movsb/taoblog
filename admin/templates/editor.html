@@ -28,9 +28,26 @@
 		<div id="preview-container"></div>
 	</div>
 	<div id="command-container"></div>
-	<input type="datetime-local" name="time" value="" />
-	<br />
-	<input type="submit" value="提交" />
+	<p><input type="datetime-local" name="time" value="" /></p>
+	<p>
+		<label>
+			类型：
+			<select name="type">
+				<option value="tweet">碎碎念</option>
+				<option value="post">文章</option>
+			</select>
+		</label>
+	</p>
+	<p>
+		<label>
+			状态：
+			<select name="status">
+				<option value="draft">草稿</option>
+				<option value="public">公开</option>
+			</select>
+		</label>
+	</p>
+	<p><input type="submit" value="提交" /></p>
 	<div class="files">
 		<ol class="list"></ol>
 	</div>

@@ -563,8 +563,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			hasMetas = true
 		case `type`:
 			m[path] = in.Post.Type
-		case `created`:
+		case `date`:
 			m[`date`] = in.Post.Date
+		case `status`:
+			m[`status`] = in.Post.Status
 		default:
 			panic(`unknown update mask:` + path)
 		}

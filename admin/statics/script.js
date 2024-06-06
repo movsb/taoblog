@@ -180,7 +180,7 @@ class PostManagementAPI
 	constructor() { }
 
 	// 创建一条文章。
-	async createPost(source, time) {
+	async createPost(p) {
 		let path = `/v3/posts`;
 		let rsp = await fetch(path, {
 			method: 'POST',
@@ -188,12 +188,11 @@ class PostManagementAPI
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
-				date: time,
-				type: 'tweet',
-				status: 'public',
-				source: source,
+				date: p.date,
+				type: p.type ?? 'tweet',
+				status: p.status ?? 'public',
+				source: p.source,
 				source_type: 'markdown',
-				status: 'public',
 			}),
 		});
 		if (!rsp.ok) {
@@ -204,12 +203,10 @@ class PostManagementAPI
 		return c;
 	}
 
-	// 更新/“编辑”一条已有评论。
-	// 返回更新后的评论项。
-	// 参数：id        - 评论编号
-	// 参数：source    - 评论 markdown 原文
-	async updatePost(id, modified, source, created) {
-		let path = `/v3/posts/${id}`;
+	// 更新/“编辑”文章。
+	// 返回更新后的。
+	async updatePost(p) {
+		let path = `/v3/posts/${p.id}`;
 		let rsp = await fetch(path, {
 			method: 'PATCH',
 			headers: {
@@ -217,12 +214,14 @@ class PostManagementAPI
 			},
 			body: JSON.stringify({
 				post: {
+					date: p.date,
+					modified: p.modified,
+					type: p.type ?? 'tweet',
+					status: p.status ?? 'public',
+					source: p.source,
 					source_type: 'markdown',
-					source: source,
-					date: created,
-					modified: modified,
 				},
-				update_mask: 'source,sourceType,created'
+				update_mask: 'source,sourceType,date,type,status'
 			})
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }

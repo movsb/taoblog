@@ -57,13 +57,13 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 
 	// 判断为空的目的是测试里面可能会预初始化。
 	if _gTmpl == nil {
-		if tag.devMode {
-			_gOnceTmpl.Do(func() {
+		_gOnceTmpl.Do(func() {
+			if tag.devMode {
+				_gTmpl = utils.NewTemplateLoader(utils.NewDirFSWithNotify(string(SourceRelativeDir)), nil, tag.themeChanged)
+			} else {
 				_gTmpl = utils.NewTemplateLoader(_root, nil, nil)
-			})
-		} else {
-			_gTmpl = utils.NewTemplateLoader(utils.NewDirFSWithNotify(string(SourceRelativeDir)), nil, tag.themeChanged)
-		}
+			}
+		})
 	}
 
 	return &MediaTags{

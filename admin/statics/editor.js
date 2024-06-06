@@ -43,6 +43,8 @@ class PostFormUI {
 	get elemSource()    { return this._form['source'];  }
 	get elemTime()      { return this._form['time'];    }
 	get elemPreviewContainer() { return this._form.querySelector('#preview-container'); }
+	get elemType()          { return this._form['type'];    }
+	get elemStatus()        { return this._form['status'];  }
 
 	get source()    { return this.elemSource.value;     }
 	get time()      {
@@ -66,6 +68,11 @@ class PostFormUI {
 		};
 		this.elemTime.value = convertToDateTimeLocalString(new Date(t));
 	}
+	get type() { return this.elemType.value; }
+	set type(t) { this.elemType.value = t; }
+	get status() { return this.elemStatus.value; }
+	set status(s) { this.elemStatus.value = s; }
+
 
 	set source(v)   { this.elemSource.value = v;        }
 	setPreview(v, ok)  {
@@ -269,9 +276,22 @@ formUI.submit(async () => {
 	try {
 		let post = undefined;
 		if (TaoBlog.post_id > 0) {
-			post = await postAPI.updatePost(TaoBlog.post_id, TaoBlog.posts[TaoBlog.post_id].modified, formUI.source, formUI.time);
+			let p = TaoBlog.posts[TaoBlog.post_id];
+			post = await postAPI.updatePost({
+				id: TaoBlog.post_id,
+				date: formUI.time,
+				modified: p.modified,
+				type: formUI.type,
+				status: formUI.status,
+				source: formUI.source,
+			});
 		} else {
-			post = await postAPI.createPost(formUI.source, formUI.time);
+			post = await postAPI.createPost({
+				date: formUI.time,
+				type: formUI.type,
+				status: formUI.status,
+				source: formUI.source,
+			});
 		}
 		alert('成功。');
 		window.location = `/${post.id}/`;
@@ -280,7 +300,10 @@ formUI.submit(async () => {
 	}
 });
 if (TaoBlog.post_id > 0) {
-	formUI.time = TaoBlog.posts[TaoBlog.post_id].date * 1000;
+	let p = TaoBlog.posts[TaoBlog.post_id];
+	formUI.time = p.date * 1000;
+	formUI.status = p.status;
+	formUI.type = p.type;
 }
 formUI.filesChanged(async files => {
 	if (files.length <= 0) { return; }
