@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"strconv"
 	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -130,8 +131,7 @@ func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) contex
 		panic(status.Error(codes.InvalidArgument, "需要 Metadata。"))
 	}
 
-	// TODO 这是一个手写的常量。
-	if len(md.Get(`request_from_gateway`)) <= 0 {
+	if len(md.Get(`Authorization`)) > 0 {
 		return ctx
 	}
 
@@ -167,7 +167,7 @@ const TokenName = `token`
 // 适用于服务端代码功能。
 func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = addUserContextToInterceptorForToken(ctx, a.cfg.Key)
+		ctx = addUserContextToInterceptorForToken(ctx, a.userByKey)
 		return handler(ctx, req)
 	}
 }
@@ -176,13 +176,28 @@ func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerIntercept
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream:   ss,
-			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), a.cfg.Key),
+			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), a.userByKey),
 		}
 		return handler(srv, &wss)
 	}
 }
 
-func addUserContextToInterceptorForToken(ctx context.Context, key string) context.Context {
+func (a *Auth) userByKey(id int, key string) *User {
+	if key == "" {
+		return guest
+	}
+
+	if id == AdminID && key == a.cfg.Key {
+		return admin
+	}
+	if id == int(Notify.ID) && key == a.cfg.NotifyKey {
+		return Notify
+	}
+
+	return guest
+}
+
+func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id int, key string) *User) context.Context {
 	if ac := _Context(ctx); ac != nil {
 		return ctx
 	}
@@ -192,12 +207,26 @@ func addUserContextToInterceptorForToken(ctx context.Context, key string) contex
 		panic(status.Error(codes.InvalidArgument, "需要 Metadata。"))
 	}
 
-	user := guest
-	if tokens, ok := md[TokenName]; ok && len(tokens) > 0 {
-		if tokens[0] == key {
-			user = admin
-		}
+	authorizations := (md.Get(`Authorization`))
+	if len(authorizations) <= 0 {
+		return ctx
 	}
+
+	splits := strings.Fields(authorizations[0])
+	if len(splits) != 2 {
+		return ctx
+	}
+	if splits[0] != TokenName {
+		return ctx
+	}
+	splits = strings.Split(splits[1], `:`)
+	if len(splits) != 2 {
+		return ctx
+	}
+
+	id, _ := strconv.Atoi(splits[0])
+
+	user := userByKey(id, splits[1])
 
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
 

@@ -35,7 +35,7 @@ func (c *ProtoClient) Context() context.Context {
 }
 
 func (c *ProtoClient) ContextFrom(parent context.Context) context.Context {
-	return metadata.NewOutgoingContext(parent, metadata.Pairs(auth.TokenName, c.token))
+	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, fmt.Sprintf("%s %d:%s", auth.TokenName, auth.AdminID, c.token)))
 }
 
 // grpcAddress 可以为空，表示使用 api 同一地址。

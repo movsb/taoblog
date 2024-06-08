@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -17,9 +16,9 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -62,11 +61,13 @@ type Service struct {
 
 	postDataFS theme_fs.FS
 
-	db     *sql.DB
-	tdb    *taorm.DB
-	auth   *auth.Auth
-	cmtntf *comment_notify.CommentNotifier
-	cmtgeo *commentgeo.CommentGeo
+	db   *sql.DB
+	tdb  *taorm.DB
+	auth *auth.Auth
+
+	instantNotifier notify.InstantNotifier
+	cmtntf          *comment_notify.CommentNotifier
+	cmtgeo          *commentgeo.CommentGeo
 
 	// 通用缓存
 	cache *lru.TTLCache[string, any]
@@ -159,21 +160,9 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		opt(s)
 	}
 
-	// 在此之前不能读配置！！！
-	updater := config.NewUpdater(cfg)
-	updater.EachSaver(func(path string, obj any) {
-		j, err := s._getOption(path)
-		if err != nil {
-			if !taorm.IsNotFoundError(err) {
-				panic(err)
-			}
-			return
-		}
-		if err := json.Unmarshal([]byte(j), obj); err != nil {
-			panic(err)
-		}
-		log.Println(`加载配置：`, path)
-	})
+	if s.instantNotifier == nil {
+		s.instantNotifier = notify.NewConsoleNotify()
+	}
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
 		panic(err)
@@ -186,6 +175,8 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		Username:   s.cfg.Server.Mailer.Account,
 		Password:   s.cfg.Server.Mailer.Password,
 		Config:     &s.cfg.Comment,
+
+		InstantNotifier: s.instantNotifier,
 	}
 	s.cmtntf.Init()
 
@@ -215,7 +206,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		),
 	)
 
-	proto.RegisterUtilsServer(server, &Utils{})
+	proto.RegisterUtilsServer(server, NewUtils(s.instantNotifier))
 	proto.RegisterAuthServer(server, s)
 	proto.RegisterTaoBlogServer(server, s)
 	proto.RegisterManagementServer(server, s)
@@ -229,8 +220,8 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	go server.Serve(listener)
 
 	if !testing && !DevMode() {
-		go s.monitorCert(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
-		go s.monitorDomain(notify.NewOfficialChanify(s.cfg.Comment.Push.Chanify.Token))
+		go s.monitorCert(s.instantNotifier)
+		go s.monitorDomain(s.instantNotifier)
 	}
 
 	return s

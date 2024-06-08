@@ -14,6 +14,8 @@ type Config struct {
 	Comment     CommentConfig        `yaml:"comment"`
 	Search      search_config.Config `yaml:"search"`
 	Others      OthersConfig         `json:"others" yaml:"others"`
+
+	Notify NotificationConfig `json:"notify" yaml:"notify"`
 }
 
 // DefaultConfig ...

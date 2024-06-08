@@ -281,7 +281,7 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 
 // 仅用于测试的帐号。
 func TestingAdminUserContext(a *Auth, userAgent string) context.Context {
-	md := metadata.Pairs(`request_from_gateway`, `1`)
+	md := metadata.Pairs()
 	md.Append(GatewayCookie, shasum(userAgent+a.Login()))
 	md.Append(GatewayUserAgent, userAgent)
 	return metadata.NewOutgoingContext(context.TODO(), md)

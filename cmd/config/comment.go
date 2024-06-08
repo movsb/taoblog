@@ -1,5 +1,7 @@
 package config
 
+import "fmt"
+
 // CommentConfig ...
 type CommentConfig struct {
 	Author            string                 `yaml:"author"`
@@ -8,14 +10,12 @@ type CommentConfig struct {
 	NotAllowedEmails  []string               `yaml:"not_allowed_emails"`
 	NotAllowedAuthors []string               `yaml:"not_allowed_authors"`
 	Templates         CommentTemplatesConfig `yaml:"templates"`
-	Push              CommentPushConfig      `yaml:"push"`
 }
 
 // DefaultCommentConfig ...
 func DefaultCommentConfig() CommentConfig {
 	return CommentConfig{
 		Templates: DefaultCommentTemplatesConfig(),
-		Push:      DefaultCommentPushConfig(),
 	}
 }
 
@@ -58,24 +58,20 @@ func DefaultCommentTemplatesConfig() CommentTemplatesConfig {
 	}
 }
 
-// CommentPushConfig ...
-type CommentPushConfig struct {
-	Chanify CommentChanifyPushConfig `yaml:"chanify"`
+type NotificationConfig struct {
+	Chanify NotificationChanifyConfig `json:"chanify" yaml:"chanify"`
 }
 
-// DefaultCommentPushConfig ...
-func DefaultCommentPushConfig() CommentPushConfig {
-	return CommentPushConfig{
-		Chanify: DefaultCommentChanifyPushConfig(),
+type NotificationChanifyConfig struct {
+	Token string `json:"token" yaml:"token"`
+}
+
+func (NotificationChanifyConfig) CanSave() {}
+
+func (c *NotificationChanifyConfig) BeforeSet(paths Segments, obj any) error {
+	switch paths.At(0).Key {
+	case `token`:
+		return nil
 	}
-}
-
-// CommentChanifyPushConfig ...
-type CommentChanifyPushConfig struct {
-	Token string `yaml:"token"`
-}
-
-// DefaultCommentChanifyPushConfig ...
-func DefaultCommentChanifyPushConfig() CommentChanifyPushConfig {
-	return CommentChanifyPushConfig{}
+	return fmt.Errorf(`不存在的设置字段：%s`, paths)
 }

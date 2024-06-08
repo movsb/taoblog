@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/protocols/go/handy"
@@ -36,13 +36,17 @@ type Gateway struct {
 	mux     *http.ServeMux
 	service *service.Service
 	auther  *auth.Auth
+
+	instantNotifier notify.InstantNotifier
 }
 
-func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux) *Gateway {
+func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.InstantNotifier) *Gateway {
 	g := &Gateway{
 		mux:     mux,
 		service: service,
 		auther:  auther,
+
+		instantNotifier: instantNotifier,
 	}
 
 	mux2 := runtime.NewServeMux(
@@ -55,11 +59,6 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux)
 				},
 			},
 		),
-		// service 的 rpc 请求可能来自 Gateway 或者 client。
-		// 添加一个头部以示区分。不同的来源有不同的 auth 附加方法。
-		runtime.WithMetadata(func(ctx context.Context, r *http.Request) metadata.MD {
-			return metadata.Pairs(`request_from_gateway`, `true`)
-		}),
 	)
 
 	mux.Handle(`/v3/`, mux2)
@@ -98,7 +97,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 }
 
 func (g *Gateway) mimicGateway(r *http.Request) context.Context {
-	md := metadata.Pairs(`request_from_gateway`, `1`)
+	md := metadata.Pairs()
 	for _, cookie := range r.Header.Values(`cookie`) {
 		md.Append(auth.GatewayCookie, cookie)
 	}
@@ -168,9 +167,7 @@ func (g *Gateway) githubWebhook() runtime.HandlerFunc {
 		g.service.Config().Maintenance.Webhook.GitHub.Secret,
 		g.service.Config().Maintenance.Webhook.ReloaderPath,
 		func(content string) {
-			tk := g.service.Config().Comment.Push.Chanify.Token
-			ch := notify.NewOfficialChanify(tk)
-			ch.Send("博客更新", content, true)
+			g.instantNotifier.InstantNotify("博客更新", content)
 		},
 	)
 	return func(w http.ResponseWriter, req *http.Request, params map[string]string) {

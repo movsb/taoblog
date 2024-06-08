@@ -2,7 +2,9 @@ package config
 
 // AuthConfig ...
 type AuthConfig struct {
-	Key    string           `yaml:"key"`
+	Key       string `yaml:"key"`
+	NotifyKey string `yaml:"notify_key"`
+
 	Basic  BasicAuthConfig  `yaml:"basic"`
 	Github GithubAuthConfig `yaml:"github"`
 	Google GoogleAuthConfig `yaml:"google"`

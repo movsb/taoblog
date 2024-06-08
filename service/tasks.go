@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/pkg/notify"
+	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 )
 
 // 监控证书过期的剩余时间。
-func (s *Service) monitorCert(chanify *notify.Chanify) {
+func (s *Service) monitorCert(notifier notify.InstantNotifier) {
 	home := s.cfg.Site.Home
 	u, err := url.Parse(home)
 	if err != nil {
@@ -33,9 +33,7 @@ func (s *Service) monitorCert(chanify *notify.Chanify) {
 		conn, err := tls.Dial(`tcp`, addr, &tls.Config{})
 		if err != nil {
 			log.Println(err)
-			if chanify != nil {
-				chanify.Send(`错误`, err.Error(), true)
-			}
+			notifier.InstantNotify(`错误`, err.Error())
 			return
 		}
 		defer conn.Close()
@@ -43,9 +41,7 @@ func (s *Service) monitorCert(chanify *notify.Chanify) {
 		left := time.Until(cert.NotAfter)
 		if left <= 0 {
 			log.Println(`已过期`)
-			if chanify != nil {
-				chanify.Send(`证书`, `已经过期。`, true)
-			}
+			notifier.InstantNotify(`证书`, `已经过期。`)
 			return
 		}
 		daysLeft := int(left.Hours() / 24)
@@ -54,9 +50,7 @@ func (s *Service) monitorCert(chanify *notify.Chanify) {
 			return
 		}
 		log.Println(`剩余天数：`, daysLeft)
-		if chanify != nil {
-			chanify.Send(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft), true)
-		}
+		notifier.InstantNotify(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
 	}
 	check()
 	go func() {
@@ -69,7 +63,7 @@ func (s *Service) monitorCert(chanify *notify.Chanify) {
 }
 
 // 监控域名过期的剩余时间。
-func (s *Service) monitorDomain(chanify *notify.Chanify) {
+func (s *Service) monitorDomain(notifier notify.InstantNotifier) {
 	home := s.cfg.Site.Home
 	u, err := url.Parse(home)
 	if err != nil {
@@ -147,8 +141,8 @@ func (s *Service) monitorDomain(chanify *notify.Chanify) {
 		daysLeft := time.Until(t) / time.Hour / 24
 		s.domainExpirationDaysLeft.Store(int32(daysLeft))
 		log.Println(`剩余天数：`, daysLeft)
-		if chanify != nil && daysLeft < 15 {
-			chanify.Send(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft), true)
+		if daysLeft < 15 {
+			notifier.InstantNotify(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
 		}
 
 		return nil

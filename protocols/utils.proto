@@ -13,3 +13,12 @@ message FormatTimeResponse {
 	}
 	repeated Formatted formatted = 1;
 }
+
+message InstantNotifyRequest {
+	string title = 1;
+	string message = 2;
+}
+
+message InstantNotifyResponse {
+
+}

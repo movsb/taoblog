@@ -7,6 +7,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/mailer"
+	"github.com/movsb/taoblog/modules/notify"
 )
 
 var adminTmpl *template.Template
@@ -38,6 +39,8 @@ type CommentNotifier struct {
 	Username   string
 	Password   string
 	Config     *config.CommentConfig
+
+	InstantNotifier notify.InstantNotifier
 }
 
 func (cn *CommentNotifier) Init() {

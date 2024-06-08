@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"log"
 	"text/template"
-
-	"github.com/movsb/pkg/notify"
 )
 
 var _chanifyTemplate = template.Must(template.New(`chanify`).Parse(`
@@ -29,19 +27,9 @@ func executeChanifyTemplate(data *AdminData) string {
 
 // Chanify ...
 func (cn *CommentNotifier) Chanify(data *AdminData) {
-	token := cn.Config.Push.Chanify.Token
-	if token == "" {
-		return
-	}
-	ch := notify.NewOfficialChanify(token)
-	ch.Send(data.Title, executeChanifyTemplate(data), true)
+	cn.InstantNotifier.InstantNotify(data.Title, executeChanifyTemplate(data))
 }
 
 func (cn *CommentNotifier) ChanifyPlain(title, content string) {
-	token := cn.Config.Push.Chanify.Token
-	if token == "" {
-		return
-	}
-	ch := notify.NewOfficialChanify(token)
-	ch.Send(title, content, true)
+	cn.InstantNotifier.InstantNotify(title, content)
 }

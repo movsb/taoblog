@@ -20,6 +20,12 @@ service Utils {
 			body: "*";
 		};
 	};
+	rpc InstantNotify (InstantNotifyRequest) returns (InstantNotifyResponse) {
+		option (google.api.http) = {
+			post: "/v3/utils/notify/instant";
+			body: "*";
+		};
+	}
 }
 
 service Auth {

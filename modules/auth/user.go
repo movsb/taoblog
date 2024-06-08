@@ -63,7 +63,11 @@ var (
 	system = &User{
 		ID: 1,
 	}
-	admin = &User{
-		ID: 2,
+	AdminID = 2
+	admin   = &User{
+		ID: int64(AdminID),
+	}
+	Notify = &User{
+		ID: 3,
 	}
 )
