@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -90,6 +91,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	mux2.HandlePath(`GET`, `/v3/avatar/{id}`, g.getAvatar)
 
 	mux2.HandlePath(`POST`, `/v3/webhooks/github`, g.githubWebhook())
+	mux2.HandlePath(`POST`, `/v3/webhooks/grafana/notify`, g.grafanaNotify)
 
 	mux.Handle(`GET /v3/posts/{id}/files`, g.createFileManager(`post`))
 
@@ -173,6 +175,21 @@ func (g *Gateway) githubWebhook() runtime.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request, params map[string]string) {
 		h(w, req)
 	}
+}
+
+func (g *Gateway) grafanaNotify(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	body := utils.DropLast1(io.ReadAll(io.LimitReader(req.Body, 1<<20)))
+	var m map[string]any
+	json.Unmarshal(body, &m)
+	var message string
+	if x, ok := m[`message`]; ok {
+		message, _ = x.(string)
+	}
+	g.service.UtilsServer.InstantNotify(g.auther.NewContextForRequest(req), &proto.InstantNotifyRequest{
+		Title: `监控告警`,
+		// https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/
+		Message: message,
+	})
 }
 
 func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {

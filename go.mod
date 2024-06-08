@@ -28,7 +28,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-webauthn/webauthn v0.10.2
-	github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6
+	github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4
 	github.com/phuslu/lru v1.0.15
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/hashtag v0.3.1

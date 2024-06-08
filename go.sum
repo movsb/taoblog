@@ -212,6 +212,8 @@ github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:e
 github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316/go.mod h1:yZbOV1cKd0igi4wBBcVrs4G2ooTWhjxUT9pYV5RDN44=
 github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6 h1:vDusal4I65KBQ/ArtEXfj/iS6OIbStdpcc47tWeRyOY=
 github.com/movsb/pkg v0.0.0-20230529040743-ec54d414c1e6/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
+github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4 h1:kuMEW9vTjkCF0lUu36IjIY/iXV+/1KBtLVSzof6vhQY=
+github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
 github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c h1:2jPnw/yLpx6P5J9mDkWzwzEph1Lk8MklSZvbZmoGDvM=
 github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c/go.mod h1:gWYI7w8tEhmbDtRb6h5iqzoEs+/jHEhwxSy+Vlwn3dg=
 github.com/mschoch/smat v0.2.0 h1:8imxQsjDm8yFEAVBe7azKmKSgzSkZXDuKkSq9374khM=

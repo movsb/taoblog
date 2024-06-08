@@ -120,15 +120,22 @@ func (o *Auth) AuthLogin(username string, password string) *User {
 func (o *Auth) AuthRequest(req *http.Request) *User {
 	loginCookie, err := req.Cookie(CookieNameLogin)
 	if err != nil {
+		if a := req.Header.Get(`Authorization`); a != "" {
+			if id, token, ok := parseAuthorization(a); ok {
+				if u := o.userByKey(id, token); u != nil {
+					return u
+				}
+			}
+		}
 		return guest
 	}
 
 	login := loginCookie.Value
 	userAgent := req.Header.Get(`User-Agent`)
-	return o.AuthCookie(login, userAgent)
+	return o.authCookie(login, userAgent)
 }
 
-func (o *Auth) AuthCookie(login string, userAgent string) *User {
+func (o *Auth) authCookie(login string, userAgent string) *User {
 	if userAgent == "" {
 		return guest
 	}

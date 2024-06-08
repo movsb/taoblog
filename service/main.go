@@ -111,6 +111,7 @@ type Service struct {
 	proto.TaoBlogServer
 	proto.ManagementServer
 	proto.SearchServer
+	proto.UtilsServer
 }
 
 func (s *Service) ThemeChangedAt() time.Time {
@@ -163,6 +164,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	if s.instantNotifier == nil {
 		s.instantNotifier = notify.NewConsoleNotify()
 	}
+	s.UtilsServer = NewUtils(s.instantNotifier)
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
 		panic(err)
@@ -206,7 +208,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		),
 	)
 
-	proto.RegisterUtilsServer(server, NewUtils(s.instantNotifier))
+	proto.RegisterUtilsServer(server, s)
 	proto.RegisterAuthServer(server, s)
 	proto.RegisterTaoBlogServer(server, s)
 	proto.RegisterManagementServer(server, s)

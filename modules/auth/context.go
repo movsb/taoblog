@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -83,12 +84,16 @@ func _NewContext(parent context.Context, user *User, remoteAddr netip.Addr, user
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := a.AuthRequest(r)
-		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
-		userAgent := r.Header.Get(`User-Agent`)
-		ac := _NewContext(r.Context(), user, remoteAddr, userAgent)
+		ac := a.NewContextForRequest(r)
 		h.ServeHTTP(w, r.WithContext(ac))
 	})
+}
+
+func (a *Auth) NewContextForRequest(r *http.Request) context.Context {
+	user := a.AuthRequest(r)
+	remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
+	userAgent := r.Header.Get(`User-Agent`)
+	return _NewContext(r.Context(), user, remoteAddr, userAgent)
 }
 
 const (
@@ -154,7 +159,7 @@ func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) contex
 		userAgent = userAgents[0]
 	}
 
-	user := a.AuthCookie(login, userAgent)
+	user := a.authCookie(login, userAgent)
 
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
 
@@ -212,21 +217,12 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id 
 		return ctx
 	}
 
-	splits := strings.Fields(authorizations[0])
-	if len(splits) != 2 {
-		return ctx
-	}
-	if splits[0] != TokenName {
-		return ctx
-	}
-	splits = strings.Split(splits[1], `:`)
-	if len(splits) != 2 {
+	id, token, ok := parseAuthorization(authorizations[0])
+	if !ok {
 		return ctx
 	}
 
-	id, _ := strconv.Atoi(splits[0])
-
-	user := userByKey(id, splits[1])
+	user := userByKey(id, token)
 
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
 
@@ -236,6 +232,28 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id 
 	}
 
 	return _NewContext(ctx, user, remoteAddr, userAgent)
+}
+
+func parseAuthorization(a string) (int, string, bool) {
+	splits := strings.Fields(a)
+	if len(splits) != 2 {
+		return 0, "", false
+	}
+	if splits[0] != TokenName {
+		return 0, "", false
+	}
+	splits = strings.Split(splits[1], `:`)
+	if len(splits) != 2 {
+		return 0, "", false
+	}
+
+	id, err := strconv.Atoi(splits[0])
+	if err != nil {
+		log.Println(err)
+		return 0, "", false
+	}
+
+	return id, splits[1], true
 }
 
 // grpc 服务是被代理过的，所以从 peer.Peer 拿到的是错误的。
