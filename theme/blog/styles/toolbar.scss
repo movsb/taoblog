@@ -20,6 +20,8 @@
         left: 0px;
         top: 0px;
 		display: none;
+		max-width: unset;
+		max-height: unset;
     }
 	svg text {
 		cursor: text;

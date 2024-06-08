@@ -95,11 +95,6 @@ body.signed-in {
             &:not(.html-content) {
 				white-space: pre-wrap;
 			}
-
-			img {
-				max-width: 100%;
-				height: auto;
-			}
 		}
 
 		.comment-replies > li {

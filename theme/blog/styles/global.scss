@@ -165,10 +165,6 @@ figure {
 }
 
 img, svg {
-	max-width: 100%;
-	height: auto;
-	border-radius: var(--border-radius);
-
 	&.f-r {
 		float: right;
 		margin-left: 1em !important;
@@ -181,6 +177,22 @@ img, svg {
 	}
 	audio {
 		filter: brightness(.6);
+	}
+}
+
+video, img, svg {
+	max-width: 500px;
+	height: unset;
+	border-radius: var(--border-radius);
+	&.too-high {
+		max-width: unset;
+		max-height: 500px;
+		width: unset;
+	}
+	&.too-wide {
+		max-width: 500px;
+		max-height: unset;
+		height: unset;
 	}
 }
 
@@ -227,7 +239,6 @@ li::marker                  { color: var(--accent-color);   }
 
 iframe, video, audio {
 	border-radius: var(--border-radius);
-	max-width: 100%;
 }
 
 details {
