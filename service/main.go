@@ -100,6 +100,7 @@ type Service struct {
 	// 服务内有插件的更新可能会影响到内容渲染。
 	themeChangedAt time.Time
 
+	exporter *_Exporter
 	// 证书剩余天数。
 	// >= 0 表示值有效。
 	certDaysLeft atomic.Int32
@@ -189,6 +190,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)
+	s.exporter = _NewExporter(s)
 
 	server := grpc.NewServer(
 		grpc.MaxRecvMsgSize(100<<20),

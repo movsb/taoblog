@@ -46,14 +46,17 @@ func NewUpdater(ptr any) *Updater {
 func (u *Updater) MustApply(path string, value string, save func(path string, value string)) {
 	segments := u.parse(path)
 	saver, saveSegmentIndex, settable, settableSegments, p := u.find(u.obj, nil, -1, nil, -1, segments, 0)
+
+	// 创建值的副本，在设置之前先检查是否合法。
+	new := reflect.New(reflect.TypeOf(p).Elem())
+	u.set(new.Interface(), value)
+
 	if settable != nil {
-		// 创建值的副本，在设置之前先检查是否合法。
-		new := reflect.New(reflect.TypeOf(p).Elem())
-		u.set(new.Interface(), value)
 		if err := settable.BeforeSet(segments[settableSegments+1:], new.Elem().Interface()); err != nil {
 			panic(err)
 		}
 	}
+
 	if saver == nil {
 		panic("尝试修改的值找不到存储者。")
 	}

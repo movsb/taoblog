@@ -11,11 +11,58 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+type _Exporter struct {
+	certDaysLeft   prometheus.Gauge
+	domainDaysLeft prometheus.Gauge
+	lock           sync.Mutex
+	s              *Service
+}
+
+func (e *_Exporter) Describe(w chan<- *prometheus.Desc) {
+	e.certDaysLeft.Describe(w)
+	e.domainDaysLeft.Describe(w)
+}
+
+func (e *_Exporter) Collect(w chan<- prometheus.Metric) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	e.certDaysLeft.Collect(w)
+	e.domainDaysLeft.Collect(w)
+}
+
+func _NewExporter(s *Service) *_Exporter {
+	e := &_Exporter{s: s}
+	e.certDaysLeft = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: `taoblog`,
+			Subsystem: `domain`,
+			Name:      `cert_days_left`,
+		},
+	)
+	e.certDaysLeft.Set(float64(s.certDaysLeft.Load()))
+	e.domainDaysLeft = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: `taoblog`,
+			Subsystem: `domain`,
+			Name:      `domain_days_left`,
+		},
+	)
+	e.domainDaysLeft.Set(float64(s.domainExpirationDaysLeft.Load()))
+	return e
+}
+
+func (s *Service) Exporter() prometheus.Collector {
+	return s.exporter
+}
 
 // 监控证书过期的剩余时间。
 func (s *Service) monitorCert(notifier notify.InstantNotifier) {
@@ -46,6 +93,7 @@ func (s *Service) monitorCert(notifier notify.InstantNotifier) {
 		}
 		daysLeft := int(left.Hours() / 24)
 		s.certDaysLeft.Store(int32(daysLeft))
+		s.exporter.certDaysLeft.Set(float64(daysLeft))
 		if daysLeft >= 15 {
 			return
 		}
@@ -140,6 +188,7 @@ func (s *Service) monitorDomain(notifier notify.InstantNotifier) {
 
 		daysLeft := time.Until(t) / time.Hour / 24
 		s.domainExpirationDaysLeft.Store(int32(daysLeft))
+		s.exporter.domainDaysLeft.Set(float64(daysLeft))
 		log.Println(`剩余天数：`, daysLeft)
 		if daysLeft < 15 {
 			notifier.InstantNotify(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft))

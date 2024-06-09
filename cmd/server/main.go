@@ -107,6 +107,7 @@ func serve(ctx context.Context) {
 		service.WithPostDataFileSystem(storage),
 		service.WithInstantNotifier(instantNotifier),
 	)
+	r.MustRegister(theService.Exporter())
 	theAuth.SetService(theService)
 
 	theAuth.SetAdminWebAuthnCredentials(theService.GetDefaultStringOption(`admin_webauthn_credentials`, "[]"))
