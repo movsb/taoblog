@@ -320,6 +320,7 @@ svg.plantuml {
 		padding: .5rem;
 		box-sizing: border-box;
 		img, svg {
+			max-width: 100%;
 			border-radius: 50%;
 			border: 1px solid var(--border-color);
 			box-sizing: border-box;

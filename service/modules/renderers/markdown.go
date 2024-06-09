@@ -188,7 +188,7 @@ func (me *_Markdown) Render(source string) (string, error) {
 
 	extensions := []goldmark.Extender{
 		extension.GFM,
-		extension.Footnote,
+		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
 		mathjax.NewMathJax(
 			mathjax.WithInlineDelim(`$`, `$`),
 			mathjax.WithBlockDelim(`$$`, `$$`),
