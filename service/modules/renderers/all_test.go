@@ -131,32 +131,6 @@ func TestMarkdownAll(t *testing.T) {
 <img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;" loading="lazy"/></p>`,
 		},
 		{
-			ID:       7.0,
-			Markdown: `![](1.png?scale=.3)`,
-			Options:  []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
-			Html:     `<p><img src="/911/1.png?scale=.3" alt="" loading="lazy"/></p>`,
-		},
-		{
-			ID: 7.1,
-			Markdown: `<audio><source src="1.mp3"/></audio>
-<video><source src="1.mp4"/></video>
-<iframe src="1.html"></iframe>
-<object data="1.pdf"></object>
-`,
-			Options: []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
-			Html: `<p><audio><source src="/911/1.mp3"/></audio>
-<video><source src="/911/1.mp4"/></video></p>
-<iframe src="/911/1.html"></iframe>
-<object data="/911/1.pdf"></object>
-`,
-		},
-		{
-			ID:       7.2,
-			Markdown: `<audio><source src="中文.mp3"/></audio>`,
-			Options:  []renderers.Option2{renderers.WithUseAbsolutePaths(`/911/`)},
-			Html:     `<p><audio><source src="/911/%E4%B8%AD%E6%96%87.mp3"/></audio></p>`,
-		},
-		{
 			ID:       8.0,
 			Markdown: `- item`,
 			Options:  []renderers.Option2{renderers.WithReserveListItemMarkerStyle()},

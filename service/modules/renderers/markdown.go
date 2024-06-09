@@ -8,8 +8,6 @@ import (
 	stdhtml "html"
 	"log"
 	"net/url"
-	"path"
-	"path/filepath"
 	"strings"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
@@ -48,7 +46,6 @@ type _Markdown struct {
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
 
-	useAbsolutePaths string
 	noRendering      bool
 	renderCodeAsHtml bool
 }
@@ -125,19 +122,6 @@ type AssetFinder func(path string) (name, url, description string, found bool)
 func WithAssetSources(fn AssetFinder) Option {
 	return func(me *_Markdown) error {
 		me.assetSourceFinder = fn
-		return nil
-	}
-}
-
-// 在 Tweets 页面下展示不止一篇文章的时候，文章内引用的资源的链接不能是相对链接（找不到），
-// 必须修改成引用相对于文章的路径。
-// 好希望有多个 <base> 支持啊，比如每个 <article> 下面有自己的 <base>。
-// TODO：暂时只支持 <img>, <a>。
-// 参考 doc 中的 附件自动上传。
-func WithUseAbsolutePaths(base string) Option {
-	return func(me *_Markdown) error {
-		me.useAbsolutePaths = base
-		me.AddOptions(WithRootedPaths(base))
 		return nil
 	}
 }
@@ -337,12 +321,6 @@ func (me *_Markdown) Render(source string) (string, error) {
 		pp.ReplaceChild(pp, p, node)
 	}
 
-	if me.useAbsolutePaths != "" {
-		if err := me.doUseAbsolutePaths(doc); err != nil {
-			return ``, err
-		}
-	}
-
 	if me.openLinksInNewTab != OpenLinksInNewTabKindKeep {
 		if err := me.doOpenLinkInNewTab(doc, []byte(source)); err != nil {
 			return ``, err
@@ -519,36 +497,6 @@ func (me *_Markdown) doOpenLinkInNewTab(doc ast.Node, source []byte) error {
 			switch n.Kind() {
 			case ast.KindAutoLink, ast.KindLink:
 				modify(n)
-			}
-		}
-		return ast.WalkContinue, nil
-	})
-}
-
-func (me *_Markdown) doUseAbsolutePaths(doc ast.Node) error {
-	base, _ := url.Parse(me.useAbsolutePaths)
-
-	modify := func(u string) string {
-		if u, err := url.Parse(u); err == nil {
-			if u.Scheme == "" && u.Host == "" && !filepath.IsAbs(u.Path) {
-				// 会丢失原 u 的查询参数。
-				// return base.JoinPath(u.Path).String()
-				u.Path = path.Join(base.Path, u.Path)
-				return u.String()
-			}
-		}
-		return u
-	}
-
-	return ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if entering {
-			switch n.Kind() {
-			case ast.KindImage:
-				img := n.(*ast.Image)
-				img.Destination = []byte(modify(string(img.Destination)))
-			case ast.KindLink:
-				link := n.(*ast.Link)
-				link.Destination = []byte(modify(string(link.Destination)))
 			}
 		}
 		return ast.WalkContinue, nil

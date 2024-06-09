@@ -30,12 +30,13 @@ func AddClass(node ast.Node, classes ...string) {
 // URL 引用文件系统。
 //
 // 场景：前端相对路径链接。
-//
-// 比如页面地址是：/page/
-// 如果 url 是：1.txt，则打开 /page/1.txt
-// 如果 url 是：/other/2.txt，则打开 /other/2.txt
 type WebFileSystem interface {
+	// 比如页面地址是：/page/
+	// 如果 url 是：1.txt，则打开 /page/1.txt
+	// 如果 url 是：/other/2.txt，则打开 /other/2.txt
 	OpenURL(url string) (fs.File, error)
+	// relative: 结果是否只保留相对路径（前提是同源的情况下）。
+	Resolve(url string, relative bool) (*url.URL, error)
 }
 
 func NewWebFileSystem(root fs.FS, base *url.URL) WebFileSystem {
@@ -50,12 +51,27 @@ type _WebFileSystem struct {
 	base *url.URL
 }
 
-func (fs *_WebFileSystem) OpenURL(url_ string) (fs.File, error) {
+func (fs *_WebFileSystem) Resolve(url_ string, relative bool) (*url.URL, error) {
 	u, err := url.Parse(url_)
 	if err != nil {
 		return nil, err
 	}
 	ref := fs.base.ResolveReference(u)
+	if relative && ref.Host == fs.base.Host {
+		ref = &url.URL{
+			Path:     ref.Path,
+			RawQuery: ref.RawQuery,
+		}
+	}
+	return ref, nil
+}
+
+func (fs *_WebFileSystem) OpenURL(url_ string) (fs.File, error) {
+	ref, err := fs.Resolve(url_, false)
+	if err != nil {
+		return nil, err
+	}
+	// 即使 base 不包含 host 也满足。
 	if !strings.EqualFold(fs.base.Host, ref.Host) {
 		return nil, ErrCrossOrigin
 	}

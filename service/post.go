@@ -23,6 +23,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
@@ -243,7 +244,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			options = append(options, renderers.WithModifiedAnchorReference(link))
 		}
 		if co.UseAbsolutePaths {
-			options = append(options, renderers.WithUseAbsolutePaths(s.plainLink(postId)))
+			options = append(options, rooted_path.New(s.OpenAsset(postId)))
 		}
 		if !co.KeepTitleHeading {
 			options = append(options, renderers.WithRemoveTitleHeading())
