@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"golang.org/x/net/html/atom"
 )
 
 var SourceRelativeDir = dir.SourceRelativeDir()
@@ -96,18 +97,35 @@ func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
 		// 而类似下面却是 inline 元素。
 		//
 		// <audio></audio>
+		// 或
+		// AAA <audio></audio> ZZZ
 		//
 		// 所以目前处理所以类型的 audio，而不仅是 block 级别。
 		// 仅当是唯一子元素（即 block）时，才渲染。
-		// if s.Parent().Contents().Length() != 1 {
-		// 	log.Println(`不是 block 级别的 audio，不处理。`)
-		// 	return true
-		// }
+		//
+		// https://spec.commonmark.org/dingus/?text=123%0A%0A%3Caudio%20controls%3E%3C%2Faudio%3E%0A%0A%3Caudio%20controls%3E%0A%3C%2Faudio%3E%0A%0Aasdf
+		//
+		// 如果父元素是 p 且只有一个子元素且是 audio，则认为是 block，
+		// 或者：html.Parse 会默认 parse 到 body 下，如果父元素是 body，则也认为是 block。
+		isParentBody := s.Parent().Nodes[0].DataAtom == atom.Body
+		isOnlyChild := s.Parent().Nodes[0].DataAtom == atom.P && s.Parent().Contents().Length() == 1
+		if !isParentBody && !isOnlyChild {
+			log.Println(`不是 block 级别的 audio，不处理。`)
+			return true
+		}
 
-		if err := t.render(s, md, src); err != nil {
+		content, err := t.render(md, src)
+		if err != nil {
 			log.Println("渲染出错：", err)
 			return true
 		}
+
+		if isParentBody {
+			s.ReplaceWithHtml(content)
+		} else if isOnlyChild {
+			s.Parent().ReplaceWithHtml(content)
+		}
+
 		return true
 	})
 	return outErr
@@ -160,17 +178,14 @@ func (d *Metadata) PictureAsImage() template.HTML {
 	return ""
 }
 
-func (t *MediaTags) render(s *goquery.Selection, md tag.Metadata, source string) error {
+func (t *MediaTags) render(md tag.Metadata, source string) (string, error) {
 	buf := bytes.NewBuffer(nil)
 	var name string
 	if u, err := url.Parse(source); err == nil {
 		name = filepath.Base(u.Path)
 	}
 	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, utils.RandomString(), name}); err != nil {
-		return err
+		return "", err
 	}
-	rendered := buf.String()
-	// 由于渲染结果是 div，并且 audio 属于 inline 元素，所以需要去掉父元素。
-	s.Parent().ReplaceWithHtml(rendered)
-	return nil
+	return buf.String(), nil
 }

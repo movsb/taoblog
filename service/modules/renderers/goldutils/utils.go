@@ -123,6 +123,7 @@ func ApplyHtmlTransformers(raw []byte, trs ...HtmlTransformer) ([]byte, error) {
 			outErr = err
 			return false
 		}
+		buf.WriteRune('\n')
 		return true
 	})
 	if outErr != nil {
