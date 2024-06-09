@@ -62,7 +62,7 @@ func (u *Updater) MustApply(path string, value string, save func(path string, va
 	}
 	var saverPath string
 	for i := 0; i <= saveSegmentIndex; i++ {
-		if segments[i].Index != nil {
+		if i != saveSegmentIndex && segments[i].Index != nil {
 			panic(`数组或对象必须整体存储。`)
 		}
 		if saverPath != "" {
@@ -202,15 +202,19 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 		panic(`invalid field: ` + seg.Key)
 	}
 
+	var ownerField reflect.Value
+
 	if index, ok := seg.Index.(int); ok {
 		if field.Kind() != reflect.Slice {
 			panic(`not slice`)
 		}
+		ownerField = field
 		field = field.Index(index)
 	} else if index, ok := seg.Index.(string); ok {
 		if field.Kind() != reflect.Map {
 			panic(`not map`)
 		}
+		ownerField = field
 		field = field.MapIndex(reflect.ValueOf(index))
 	}
 
@@ -218,6 +222,19 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 		panic(`invalid field: ` + seg.Key)
 	}
 
+	if ownerField.IsValid() {
+		if reflect.PointerTo(ownerField.Type()).Implements(reflect.TypeOf((*Settable)(nil)).Elem()) {
+			reflect.ValueOf(&settable).Elem().Set(ownerField.Addr())
+			settableSegments = index
+		}
+		if reflect.PointerTo(ownerField.Type()).Implements(reflect.TypeOf((*Saver)(nil)).Elem()) {
+			if saver != nil {
+				panic(`发现上级可保存。`)
+			}
+			reflect.ValueOf(&saver).Elem().Set(ownerField.Addr())
+			saverSegment = index
+		}
+	}
 	if reflect.PointerTo(field.Type()).Implements(reflect.TypeOf((*Settable)(nil)).Elem()) {
 		reflect.ValueOf(&settable).Elem().Set(field.Addr())
 		settableSegments = index

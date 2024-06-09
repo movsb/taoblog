@@ -1,11 +1,15 @@
 package config
 
+type Menus []MenuItem
+
+func (m *Menus) CanSave() {}
+
 // MenuItem ...
 type MenuItem struct {
-	Name  string     `yaml:"name"`
-	Link  string     `yaml:"link"`
-	Blank bool       `yaml:"blank"`
-	Items []MenuItem `yaml:"items"`
+	Name  string     `json:"name" yaml:"name"`
+	Link  string     `json:"link" yaml:"link"`
+	Blank bool       `json:"blank" yaml:"blank"`
+	Items []MenuItem `json:"items" yaml:"items"`
 }
 
 // DefaultMenuConfig ...

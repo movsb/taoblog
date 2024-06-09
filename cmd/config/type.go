@@ -9,7 +9,7 @@ type Config struct {
 	Data        DataConfig           `yaml:"data"`
 	Maintenance MaintenanceConfig    `yaml:"maintenance"`
 	Auth        AuthConfig           `yaml:"auth"`
-	Menus       []MenuItem           `yaml:"menus"`
+	Menus       Menus                `json:"menus" yaml:"menus"`
 	Site        SiteConfig           `yaml:"site"`
 	Comment     CommentConfig        `yaml:"comment"`
 	Search      search_config.Config `yaml:"search"`
