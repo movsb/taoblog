@@ -30,3 +30,14 @@ func (c *WhoisApiLayerConfig) BeforeSet(paths Segments, obj any) error {
 	}
 	return nil
 }
+
+type VpsConfig struct {
+	Hostdare HostdareVpsConfig `json:"hostdare" yaml:"hostdare"`
+}
+
+type HostdareVpsConfig struct {
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
+}
+
+func (HostdareVpsConfig) CanSave() {}

@@ -23,6 +23,7 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
+	"github.com/movsb/taoblog/modules/metrics/exporters/hostdare"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -89,6 +90,15 @@ func serve(ctx context.Context) {
 	var mux = http.NewServeMux()
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
+	if hd := cfg.VPS.Hostdare; hd.Username != "" && hd.Password != "" {
+		exporter, err := hostdare.New(hd.Username, hd.Password)
+		if err != nil {
+			log.Println(err)
+		} else {
+			r.MustRegister(exporter)
+			log.Println(`注册 hostdare 指标`)
+		}
+	}
 
 	storage := storage.NewLocal(cfg.Data.File.Path)
 

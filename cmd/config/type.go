@@ -15,6 +15,7 @@ type Config struct {
 	Search      search_config.Config `yaml:"search"`
 	Others      OthersConfig         `json:"others" yaml:"others"`
 
+	VPS    VpsConfig          `json:"vps" yaml:"vps"`
 	Notify NotificationConfig `json:"notify" yaml:"notify"`
 }
 

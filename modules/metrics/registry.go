@@ -25,6 +25,10 @@ type Registry struct {
 	sentBytesCounter *prometheus.CounterVec
 }
 
+var _ interface {
+	MustRegister(...prometheus.Collector)
+} = (*Registry)(nil)
+
 // NewRegistry ...
 func NewRegistry(ctx context.Context) *Registry {
 	r := &Registry{
@@ -33,6 +37,10 @@ func NewRegistry(ctx context.Context) *Registry {
 	}
 	r.init()
 	return r
+}
+
+func (r *Registry) MustRegister(cs ...prometheus.Collector) {
+	r.r.MustRegister(cs...)
 }
 
 // Handler ...

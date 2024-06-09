@@ -10,6 +10,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 func verifyIntegrity(content []byte, secret string, expected string) bool {
@@ -70,11 +72,13 @@ func CreateHandler(secret string, reloaderPath string, sendNotify func(content s
 						log.Println(err)
 						return
 					}
+					defer rsp.Body.Close()
 					if rsp.StatusCode == http.StatusOK {
 						log.Println("已成功触发重启。")
 						return
 					}
 					log.Println("未处理的重启失败。", rsp.Status)
+					sendNotify(string(utils.DropLast1(io.ReadAll(io.LimitReader(rsp.Body, 1<<10)))))
 				}()
 				return
 			default:
