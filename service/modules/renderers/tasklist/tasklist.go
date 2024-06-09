@@ -62,10 +62,7 @@ var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*(?:TaskList|TOD
 // TODO 只处理第一层任务。
 func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
 	recurse := func(list *ast.List, preserveSource bool) {
-		gold_utils.AddClass(list, `task-list`)
-		if preserveSource {
-			gold_utils.AddClass(list, `with-source-positions`)
-		}
+		hasTaskItem := false
 		for c := list.FirstChild(); c != nil; c = c.NextSibling() {
 			item, ok := c.(*ast.ListItem)
 			if !ok {
@@ -86,6 +83,13 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 			gold_utils.AddClass(item, classes...)
 			if preserveSource {
 				item.SetAttributeString(`data-source-position`, fmt.Sprint(checkBox.Segment.Start))
+			}
+			hasTaskItem = true
+		}
+		if hasTaskItem {
+			gold_utils.AddClass(list, `task-list`)
+			if preserveSource {
+				gold_utils.AddClass(list, `with-source-positions`)
 			}
 		}
 	}
