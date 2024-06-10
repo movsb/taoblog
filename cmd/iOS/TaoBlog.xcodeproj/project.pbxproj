@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2B364F3B2C096CBA005FC0AE /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B364F3A2C096CBA005FC0AE /* Client.swift */; };
+		2B52E6E92C17654200A91DF5 /* utils.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B52E6E82C17654200A91DF5 /* utils.pb.swift */; };
 		2B647A7E2C094B280089BFB9 /* TaoBlogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B647A7D2C094B280089BFB9 /* TaoBlogApp.swift */; };
 		2B647A802C094B280089BFB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B647A7F2C094B280089BFB9 /* ContentView.swift */; };
 		2B647A822C094B290089BFB9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B647A812C094B290089BFB9 /* Assets.xcassets */; };
@@ -33,6 +34,7 @@
 
 /* Begin PBXFileReference section */
 		2B364F3A2C096CBA005FC0AE /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
+		2B52E6E82C17654200A91DF5 /* utils.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = utils.pb.swift; path = ../../protocols/swift/utils.pb.swift; sourceTree = "<group>"; };
 		2B647A7A2C094B280089BFB9 /* TaoBlog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaoBlog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2B647A7D2C094B280089BFB9 /* TaoBlogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaoBlogApp.swift; sourceTree = "<group>"; };
 		2B647A7F2C094B280089BFB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -113,6 +115,7 @@
 		2BD333A02C0983740093EDFB /* Proto */ = {
 			isa = PBXGroup;
 			children = (
+				2B52E6E82C17654200A91DF5 /* utils.pb.swift */,
 				2BD3A7512C0A690500DC38D7 /* auth.pb.swift */,
 				2BA2D8022C099DDA006CD20F /* backup.pb.swift */,
 				2BA2D8002C099DDA006CD20F /* comment.pb.swift */,
@@ -227,6 +230,7 @@
 				2BA2D8062C099DDA006CD20F /* config.pb.swift in Sources */,
 				2BA2D8072C099DDA006CD20F /* comment.pb.swift in Sources */,
 				2BD3A7522C0A690500DC38D7 /* auth.pb.swift in Sources */,
+				2B52E6E92C17654200A91DF5 /* utils.pb.swift in Sources */,
 				2BF6FE2E2C09F2470075AC1E /* EditorView.swift in Sources */,
 				2BA2D8042C099DDA006CD20F /* search.pb.swift in Sources */,
 				2BA2D8082C099DDA006CD20F /* service.pb.swift in Sources */,

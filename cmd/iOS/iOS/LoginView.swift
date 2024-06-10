@@ -25,7 +25,7 @@ var portals = [
 	Portal(
 		id: "https://blog.mac.twofei.com",
 		rsp: Protocols_FinishPasskeysLoginResponse.with {
-			$0.token = "12345678"
+			$0.token = "2:12345678"
 			$0.cookies = [
 				Protocols_FinishPasskeysLoginResponse.Cookie.with {
 					$0.name = "taoblog.login"

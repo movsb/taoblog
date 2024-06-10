@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -143,7 +144,7 @@ func serve(ctx context.Context) {
 				id := binary.LittleEndian.Uint32(userHandler)
 				u := theAuth.GetUserByID(int64(id))
 				if u.IsAdmin() {
-					return u, cfg.Auth.Key, nil
+					return u, fmt.Sprintf("%d:%s", u.ID, cfg.Auth.Key), nil
 				}
 
 				return u, "", errors.New(`no such user`)

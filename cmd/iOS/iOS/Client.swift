@@ -85,7 +85,7 @@ public class Client : ObservableObject {
 			channel: channel.channel(),
 			defaultCallOptions: .init(
 				customMetadata: .init([
-					("token", token)
+					("Authorization", "token \(token)")
 				])
 			)
 		)
@@ -93,7 +93,7 @@ public class Client : ObservableObject {
 			channel: channel.channel(),
 			defaultCallOptions: .init(
 				customMetadata: .init([
-					("token", token)
+					("Authorization", "token \(token)")
 				])
 			)
 		)
