@@ -3,7 +3,6 @@ package sync
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -187,29 +186,6 @@ func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *client.PostC
 			if c.ID == int64(id) {
 				outPath = path
 				outConfig = c
-				outErr = nil
-				return fs.SkipAll
-			}
-		} else if d.Name() == `metas` {
-			fp := utils.Must(fsys.Open(path))
-			defer fp.Close()
-			all, err := io.ReadAll(fp)
-			if err != nil {
-				return err
-			}
-			var id2 int
-			if n, err := fmt.Sscanf(string(all), "id:%d", &id2); err != nil || n != 1 {
-				return fmt.Errorf("错误的元文件：%s", path)
-			}
-			if id2 == int(id) {
-				// return fmt.Errorf(`旧元数据文件，不知道如何处理: %v`, path)
-				// TODO 没有用 fs
-				outPath = path
-				outConfig = &client.PostConfig{ID: int64(id2)}
-				if err := client.SavePostConfig(path, outConfig); err != nil {
-					outErr = err
-					return fs.SkipAll
-				}
 				outErr = nil
 				return fs.SkipAll
 			}
