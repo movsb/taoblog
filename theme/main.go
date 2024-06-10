@@ -106,10 +106,8 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 		t.rss = rss.New(service, rss.WithArticleCount(r.ArticleCount))
 		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
 	}
-	if cfg.Site.Sitemap.Enabled {
-		t.sitemap = sitemap.New(service, impl)
-		m.Handle(`GET /sitemap.xml`, t.LastPostTime304Handler(t.sitemap))
-	}
+	t.sitemap = sitemap.New(service, impl)
+	m.Handle(`GET /sitemap.xml`, t.LastPostTime304Handler(t.sitemap))
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
@@ -165,7 +163,7 @@ func createMenus(items []config.MenuItem, outer bool) string {
 func (t *Theme) loadTemplates() {
 	menustr := createMenus(t.cfg.Menus, false)
 
-	customTheme := t.cfg.Site.Theme.Stylesheets.Render()
+	customTheme := t.cfg.Theme.Stylesheets.Render()
 	fixedZone := time.FixedZone(`+8`, 8*60*60)
 
 	funcs := template.FuncMap{

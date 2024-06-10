@@ -15,6 +15,10 @@ type Config struct {
 	Search      search_config.Config `yaml:"search"`
 	Others      OthersConfig         `json:"others" yaml:"others"`
 
+	// 尽管站点字体应该由各主题提供，但是为了能跨主题共享字体（减少配置麻烦），
+	// 所以我就在这里定义了针对所有站点适用的自定义样式表（或主题）集合。
+	Theme ThemeConfig `json:"theme" yaml:"theme"`
+
 	VPS    VpsConfig          `json:"vps" yaml:"vps"`
 	Notify NotificationConfig `json:"notify" yaml:"notify"`
 }
@@ -31,14 +35,14 @@ func DefaultConfig() Config {
 		Site:        DefaultSiteConfig(),
 		Comment:     DefaultCommentConfig(),
 		Search:      search_config.DefaultConfig(),
+		Theme:       DefaultThemeConfig(),
 	}
 }
 
 // ServerConfig ...
 type ServerConfig struct {
-	HTTPListen string             `yaml:"http_listen"`
-	GRPCListen string             `yaml:"grpc_listen"`
-	Mailer     MailerServerConfig `yaml:"mailer"`
+	HTTPListen string `yaml:"http_listen"`
+	GRPCListen string `yaml:"grpc_listen"`
 }
 
 // DefaultServerConfig ...
@@ -46,20 +50,7 @@ func DefaultServerConfig() ServerConfig {
 	return ServerConfig{
 		HTTPListen: `0.0.0.0:2564`,
 		GRPCListen: `0.0.0.0:2563`,
-		Mailer:     DefaultMaiMailerServerConfig(),
 	}
-}
-
-// MailerServerConfig ...
-type MailerServerConfig struct {
-	Server   string `yaml:"server"`
-	Account  string `yaml:"account"`
-	Password string `yaml:"password"`
-}
-
-// DefaultMaiMailerServerConfig ...
-func DefaultMaiMailerServerConfig() MailerServerConfig {
-	return MailerServerConfig{}
 }
 
 // DataConfig ...

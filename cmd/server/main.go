@@ -57,7 +57,7 @@ func serve(ctx context.Context) {
 
 	cfg := config.LoadFile(`taoblog.yml`)
 
-	db := InitDatabase(`sqlite3`, cfg.Database.SQLite.Path)
+	db := InitDatabase(cfg.Database.Path)
 	defer db.Close()
 
 	migration.Migrate(db)
@@ -123,7 +123,7 @@ func serve(ctx context.Context) {
 		}
 
 		a := admin.NewAdmin(service.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
-			admin.WithCustomThemes(&cfg.Site.Theme),
+			admin.WithCustomThemes(&cfg.Theme),
 		)
 		log.Println(`admin on`, prefix)
 		mux.Handle(prefix, a.Handler())
@@ -221,10 +221,7 @@ func liveCheck(s *service.Service, cc notify.InstantNotifier) {
 	}
 }
 
-func InitDatabase(engine string, path string) *sql.DB {
-	if engine != `sqlite3` {
-		panic(`unknown database engine`)
-	}
+func InitDatabase(path string) *sql.DB {
 	var db *sql.DB
 	var err error
 

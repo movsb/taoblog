@@ -49,11 +49,11 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 
 	{{ end }}
 
-	{{ if and $dot.Config.Site.ShowRelatedPosts $dot.Post.Post.Relates }}
+	{{ with $dot.Post.Post.Relates }}
     <div class="related">
 		<div class="name">相关文章</div>
         <ul>
-        {{ range $dot.Post.Post.Relates }}
+        {{ range . }}
             <li><a href="{{.Link}}">{{.Title}}</a></li>
         {{ end }}
         </ul>

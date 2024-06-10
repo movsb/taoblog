@@ -174,9 +174,9 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	}
 
 	s.cmtntf = &comment_notify.CommentNotifier{
-		MailServer: s.cfg.Server.Mailer.Server,
-		Username:   s.cfg.Server.Mailer.Account,
-		Password:   s.cfg.Server.Mailer.Password,
+		MailServer: s.cfg.Notify.Mailer.Server,
+		Username:   s.cfg.Notify.Mailer.Account,
+		Password:   s.cfg.Notify.Mailer.Password,
 		Config:     &s.cfg.Comment,
 
 		InstantNotifier: s.instantNotifier,

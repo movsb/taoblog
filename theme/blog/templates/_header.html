@@ -19,7 +19,6 @@
     <header id="header">
         <div class="content">
 			<h1 class="sitename"><a href="/">{{ $.SiteName }}</a></h1>
-{{ if and .Config.Site.Search.Show }}
 <form name="search_box" class="search" action="/search">
 <input name="q" placeholder="Search"/>
 <script>
@@ -38,7 +37,6 @@ if (search) {
 }
 </script>
 </form>
-{{ end }}
 			<ol class="nav">
 				{{menus}}
 			</ol>

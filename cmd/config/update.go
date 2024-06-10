@@ -12,6 +12,16 @@ import (
 )
 
 type Settable interface {
+	// 设置之前进行校验。
+	// paths：如果为空，则表示整体设置。
+	//        如果不为空，则表示设置对应名称的字段的值。
+	// obj：对象到具体的值（非值的指针）。
+	//
+	// 注意：
+	// - 具体的校验方式自己决定。如果 key 之前不相互依赖/影响，则可以单独判断。
+	// - 无需判断 path.Index 是否会对应到普通字段类型（非 struct、map）。
+	// - 无需判断值的类型，只要 path 对应，类型一定可强制断言且赋值。
+	// - 无需判断 path 是否存在。
 	BeforeSet(paths Segments, obj any) error
 }
 

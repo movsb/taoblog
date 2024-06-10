@@ -40,24 +40,19 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 
 	var rcs _ReadCloseSizer
 
-	switch s.cfg.Database.Engine {
-	default:
-		panic(`engine not supported`)
-	case `sqlite`:
-		path, err := s.backupSQLite3(srv.Context(), sendPreparingProgress)
-		if err != nil {
-			return err
-		}
-		defer os.Remove(path)
-		fp, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		rcs.ReadCloser = fp
-		rcs.Size = func() int {
-			stat, _ := fp.Stat()
-			return int(stat.Size())
-		}
+	path, err := s.backupSQLite3(srv.Context(), sendPreparingProgress)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(path)
+	fp, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	rcs.ReadCloser = fp
+	rcs.Size = func() int {
+		stat, _ := fp.Stat()
+		return int(stat.Size())
 	}
 
 	defer rcs.Close()

@@ -21,11 +21,11 @@ func initService() {
 	cfg := config.DefaultConfig()
 	cfg.Auth.Basic.Username = `test`
 	cfg.Auth.Basic.Password = `test`
-	cfg.Database.SQLite.Path = "" // 使用内存
+	cfg.Database.Path = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
 	cfg.Server.GRPCListen = `localhost:0`
 
-	db := server.InitDatabase(`sqlite3`, ``)
+	db := server.InitDatabase(``)
 	// defer db.Close()
 
 	migration.Migrate(db)

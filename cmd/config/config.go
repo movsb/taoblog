@@ -3,7 +3,6 @@ package config
 import (
 	"io"
 	"os"
-	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -18,22 +17,6 @@ func LoadFile(path string) *Config {
 	defer fp.Close()
 	c := load(fp)
 	return c
-}
-
-func SaveFile(config *Config, path string) {
-	fp, err := os.CreateTemp(filepath.Dir(path), `taoblog-config-*.yaml`)
-	if err != nil {
-		panic(err)
-	}
-	if err := yaml.NewEncoder(fp).Encode(config); err != nil {
-		fp.Close()
-		os.Remove(fp.Name())
-		panic(err)
-	}
-	fp.Close()
-	if err := os.Rename(fp.Name(), path); err != nil {
-		panic(err)
-	}
 }
 
 // Load ...

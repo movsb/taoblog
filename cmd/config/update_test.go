@@ -39,17 +39,11 @@ func TestUpdate(t *testing.T) {
 	c1, c2 := config.DefaultConfig(), config.DefaultConfig()
 	u := config.NewUpdater(&c2)
 	for _, s := range []_kv{
-		{"database.engine", "mysql"},
-		{"database.sqlite", "{}"},
 		{`menus[1]`, `{"name":"后台"}`},
 	} {
 		u.MustApply(s.Key, s.Value, func(path, value string) {})
 	}
 	assert(
-		c1.Database.Engine, `sqlite`,
-		c2.Database.Engine, `mysql`,
-		c1.Database.SQLite.Path, `taoblog.db`,
-		c2.Database.SQLite.Path, "",
 		jsonOf(c1.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"管理后台","Link":"/admin/","Blank":false,"Items":null}]`,
 		jsonOf(c2.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"后台","Link":"","Blank":false,"Items":null}]`,
 	)

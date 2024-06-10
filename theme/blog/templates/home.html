@@ -47,7 +47,6 @@
 	<ul>没有评论。</ul>
 {{ end }}
 
-{{ if .Config.Site.ShowStatus }}
 <div class="status">
 	<h2>服务状态</h2>
 	<ul id="status-list">
@@ -68,6 +67,5 @@
 		{{ end }}
 	</ul>
 </div>
-{{ end }}
 
 {{ render "footer" . }}
