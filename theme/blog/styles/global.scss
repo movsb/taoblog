@@ -195,6 +195,11 @@ video, img, svg {
 		height: unset;
 	}
 }
+@media screen and (max-width: 500px) {
+	video, img, svg {
+		max-width: 100% !important;
+	}
+}
 
 table {
 	border-collapse: collapse;
