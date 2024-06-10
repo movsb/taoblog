@@ -252,6 +252,15 @@ details {
 	}
 }
 
+// 只是为了自定义夜间默认（默认没有）。
+// 只有在 Firefox 上看起来比较顺眼，Safari 上和默认的差异比较大。
+select {
+	color: var(--color-fg);
+	background-color: var(--code-bg);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+}
+
 @keyframes fadeIn {
 	0% { opacity: 0; display: block; }
 	100% { opacity: 1;}
@@ -428,12 +437,28 @@ text { cursor: text; }
 // 任务列表扩展
 ul, ol {
 	&.task-list {
-		padding-left: 1em;
+		// 见下面的 margin-left 说明。
+		padding-left: 21.5px;
 		list-style-type: none;
 		.task-list-item.checked {
 			text-decoration: line-through var(--accent-color) solid;
 		}
+		li {
+			> p > input[type=checkbox], > input[type=checkbox] {
+				// 目的：使任务列表的复选框✅向前对齐，内容纵向对齐
+				// 从 vscode markdown 编辑器那里抄来的写法，
+				// 但感觉也只是按当前字体大小凑巧的写法。
+				margin-left: -21.5px;
+			}
+		}
 	}
+}
+:not(.task-list) > .task-list {
+	// 这个来自 w3c 默认。
+	padding-left: 40px;
+}
+.task-list .task-list {
+	padding-left: 21.5px;
 }
 
 // 分割线扩展
