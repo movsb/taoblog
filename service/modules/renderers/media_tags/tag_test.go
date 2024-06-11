@@ -19,7 +19,7 @@ var player embed.FS
 
 func TestRender(t *testing.T) {
 
-	_gTmpl = utils.NewTemplateLoader(utils.Must(fs.Sub(player, `test_data`)), nil, nil)
+	_gTmpl = utils.NewTemplateLoader(utils.Must1(fs.Sub(player, `test_data`)), nil, nil)
 
 	type _TestCase struct {
 		Markdown string `yaml:"markdown"`
@@ -32,7 +32,7 @@ func TestRender(t *testing.T) {
 		utils.ReInitTestRandomSeed()
 		tag := New(gold_utils.NewWebFileSystem(
 			os.DirFS("test_data"),
-			utils.Must(url.Parse(`/`)),
+			utils.Must1(url.Parse(`/`)),
 		))
 		md := renderers.NewMarkdown(tag)
 		html, err := md.Render(tc.Markdown)

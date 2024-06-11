@@ -17,11 +17,16 @@ func ChainFuncs[P func(H) H, H any](h H, ps ...P) H {
 	return h
 }
 
-func Must[A any](a A, e error) A {
+func Must1[A any](a A, e error) A {
 	if e != nil {
 		panic(e)
 	}
 	return a
+}
+func Must(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
 
 // Go 语言多少有点儿大病，以至于我需要写这种东西。

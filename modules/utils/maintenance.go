@@ -52,7 +52,7 @@ func (m *Maintenance) EstimatedString() string {
 
 func (m *Maintenance) Handler(exception func(ctx context.Context) bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
-		tmpl := Must(template.New("").Parse(`网站不可用，请稍候再试。
+		tmpl := Must1(template.New("").Parse(`网站不可用，请稍候再试。
 
 原因：{{.MessageString}}
 时间：{{.EstimatedString}}

@@ -70,7 +70,7 @@ func TestRender(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		ext := rooted_path.New(gold_utils.NewWebFileSystem(nil, utils.Must(url.Parse(tc.Base))))
+		ext := rooted_path.New(gold_utils.NewWebFileSystem(nil, utils.Must1(url.Parse(tc.Base))))
 		md := renderers.NewMarkdown(ext)
 		html, err := md.Render(tc.Markdown)
 		if err != nil {

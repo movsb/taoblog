@@ -26,7 +26,7 @@ func TestFetch(t *testing.T) {
 Bob -> Alice : hello
 @enduml
 `
-	compressed := utils.Must(compress([]byte(uml)))
-	svg := utils.Must(fetch(context.Background(), `https://www.plantuml.com/plantuml`, `svg`, compressed, false))
+	compressed := utils.Must1(compress([]byte(uml)))
+	svg := utils.Must1(fetch(context.Background(), `https://www.plantuml.com/plantuml`, `svg`, compressed, false))
 	t.Log(string(svg))
 }

@@ -54,7 +54,7 @@ type _Config struct {
 
 // New ...
 func New(svc proto.TaoBlogServer, options ...Option) *RSS {
-	info := utils.Must(svc.GetInfo(context.Background(), &proto.GetInfoRequest{}))
+	info := utils.Must1(svc.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	r := &RSS{
 		config: _Config{

@@ -75,9 +75,9 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 		stylesFS = utils.NewDirFSWithNotify(dir.Join(`styles`))
 	} else {
 		// TODO 硬编码成 blog 了。
-		rootFS = utils.Must(fs.Sub(blog.Root, `statics`))
-		tmplFS = utils.Must(fs.Sub(blog.Root, `templates`))
-		stylesFS = utils.Must(fs.Sub(blog.Root, `styles`))
+		rootFS = utils.Must1(fs.Sub(blog.Root, `statics`))
+		tmplFS = utils.Must1(fs.Sub(blog.Root, `templates`))
+		stylesFS = utils.Must1(fs.Sub(blog.Root, `styles`))
 	}
 
 	t := &Theme{
@@ -332,7 +332,7 @@ func (t *Theme) ChangedAt() time.Time {
 
 func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		info := utils.Must(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
+		info := utils.Must1(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
 		h3 := handle304.New(
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, info.LastPostedAt),

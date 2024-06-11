@@ -47,7 +47,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	info := utils.Must(s.svc.GetInfo(req.Context(), &proto.GetInfoRequest{}))
+	info := utils.Must1(s.svc.GetInfo(req.Context(), &proto.GetInfoRequest{}))
 
 	rssArticles := make([]*Article, 0, len(rsp))
 	for _, article := range rsp {

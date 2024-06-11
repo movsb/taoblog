@@ -177,7 +177,7 @@ func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *client.PostC
 			return nil
 		}
 		if d.Name() == client.ConfigFileName {
-			fp := utils.Must(fsys.Open(path))
+			fp := utils.Must1(fsys.Open(path))
 			defer fp.Close()
 			c, err := client.ReadPostConfigReader(fp)
 			if err != nil {

@@ -165,7 +165,7 @@ func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
 	if s.testing {
 		panic(`测试服务器不用于本地文件系统。`)
 	}
-	u := utils.Must(url.Parse(s.cfg.Site.Home))
+	u := utils.Must1(url.Parse(s.cfg.Site.Home))
 	if u.Path == "" {
 		u.Path = "/"
 	}
@@ -314,7 +314,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 }
 
 func (s *Service) hashtagResolver(tag string) string {
-	u := utils.Must(url.Parse(`/tags`))
+	u := utils.Must1(url.Parse(`/tags`))
 	return u.JoinPath(tag).String()
 }
 

@@ -43,10 +43,10 @@ func TestAvif(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		fp := utils.Must(os.Open(tc.path))
+		fp := utils.Must1(os.Open(tc.path))
 		defer fp.Close()
 
-		md := utils.Must(avif(fp))
+		md := utils.Must1(avif(fp))
 		if md.Width != tc.width || md.Height != tc.height {
 			t.Errorf(`avif not equal: %d`, i)
 		}
