@@ -60,7 +60,7 @@ func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
 
 		file := &proto.BackupFileSpec{
 			Path: rel,
-			Mode: uint32(info.Type()),
+			Mode: uint32(info2.Mode().Perm()),
 			Size: uint32(info2.Size()),
 			Time: uint32(info2.ModTime().Unix()),
 		}

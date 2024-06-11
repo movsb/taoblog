@@ -81,8 +81,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		md, err := size(ms.web, parsedURL, ms.localOnly)
 		if err != nil {
-			// 不要打印 URL，可能是 data: URL，很长。
-			log.Println(err)
+			log.Println(err, utils.IIF(parsedURL.Scheme == `data`, `(data: url)`, url))
 			return
 		}
 
