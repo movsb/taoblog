@@ -492,3 +492,15 @@ div.divider {
 		}
 	}
 }
+
+// 脚注
+.footnotes {
+	li > p {
+		position: relative;
+		padding-left: 1em;
+		.footnote-backref {
+			position: absolute;
+			left: 0;
+		}
+	}
+}
