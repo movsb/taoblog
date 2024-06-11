@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,7 +11,10 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -62,6 +66,83 @@ func AddCommands(rootCmd *cobra.Command) {
 		config = InitHostConfigs()
 		client = NewClient(config)
 	}
+
+	createCmd := &cobra.Command{
+		Use:              `create`,
+		Short:            `快速通过文件创建文章。`,
+		PersistentPreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			file := utils.Must(cmd.Flags().GetString(`file`))
+			root := os.DirFS(".")
+			file = strings.TrimPrefix(file, "./")
+
+			// 取文件的创建时间
+			// 如果形如 年-月-日.md
+			//   如果修改时间也在这个日期内，则用修改日期
+			//   否则用文件路径日期。
+			// 几种格式：
+			info := utils.Must(fs.Stat(root, file))
+			fileTime := time.Now()
+			var year, month, day, week int
+			var nameTime time.Time
+			if n, err := fmt.Sscanf(filepath.Base(file), "%d-%d-%d.md", &year, &month, &day); err == nil && n == 3 {
+				// 2022/01/2022-01-01.md 表示日期
+				nameTime = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
+				fileTime = nameTime
+			} else if n, err := fmt.Sscanf(file, "%d/%d/%d.md", &year, &month, &day); err == nil && n == 3 {
+				// 2022/01/01.md 表示日期
+				nameTime = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
+				fileTime = nameTime
+			} else if n, err := fmt.Sscanf(file, "%d/%d.md", &year, &week); err == nil && n == 2 {
+				// 2022/01.md 表示周
+				nameTime = time.Date(year, time.January, 1, 0, 0, 0, 0, time.Local)
+				foundWeek := false
+				for i := 0; i < 366; i++ {
+					_, w := nameTime.ISOWeek()
+					if w == week {
+						foundWeek = true
+						break
+					}
+					nameTime = nameTime.Add(time.Hour * 24)
+				}
+				if !foundWeek {
+					panic("没找到对应的周。")
+				}
+				fileTime = nameTime
+			} else {
+				// 从 git 拿
+				cmd := exec.Command(`bash`, `-c`, fmt.Sprintf(`git log --follow --format=%%ad --date default "%s" | tail -1`, file))
+				out, err := cmd.Output()
+				if err != nil {
+					panic(err.Error() + cmd.String())
+				}
+				// Wed Sep 20 23:06:36 2023 +0800
+				t, err := time.Parse(`Mon Jan 2 15:04:05 2006 -0700`, strings.TrimSpace(string(out)))
+				if err != nil {
+					panic(err.Error() + cmd.String())
+				}
+				nameTime = t
+				fileTime = nameTime
+			}
+			if nameTime.IsZero() {
+				fileTime = info.ModTime()
+				// } else if info.ModTime().Sub(nameTime) < time.Hour*24*7 {
+				// 	fileTime = info.ModTime()
+			}
+			utils.Must(client.Blog.CreatePost(client.Context(), &proto.Post{
+				Date:       int32(fileTime.Unix()),
+				Modified:   int32(fileTime.Unix()),
+				Title:      filepath.Base(file), // 如果文章里面有标题，会自动覆盖
+				SourceType: `markdown`,
+				Source:     string(utils.Must(os.ReadFile(file))),
+				Status:     utils.Must(cmd.Flags().GetString(`status`)),
+				Type:       `tweet`,
+			}))
+		},
+	}
+	createCmd.Flags().StringP(`file`, `f`, ``, `文章对应的文件（README.md）`)
+	createCmd.Flags().StringP(`status`, `s`, `draft`, `状态（public、draft）`)
+	rootCmd.AddCommand(createCmd)
 
 	pingCmd := &cobra.Command{
 		Use:    `ping`,
