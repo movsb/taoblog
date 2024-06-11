@@ -1,6 +1,7 @@
 package media_size
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -102,22 +103,68 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		s.SetAttr(`width`, fmt.Sprint(w))
 		s.SetAttr(`height`, fmt.Sprint(h))
 
-		if ms.sizeLimit > 0 {
-			// == 的情况也一起处理了。
-			if w >= h {
-				s.AddClass(`landscape`)
-				if w > ms.sizeLimit {
-					s.AddClass(`too-wide`)
-				}
-			} else {
-				s.AddClass(`portrait`)
-				if h > ms.sizeLimit {
-					s.AddClass(`too-high`)
-				}
-			}
+		limit(s, ms.sizeLimit, w, h)
+	})
+	doc.Find(`svg`).Each(func(i int, s *goquery.Selection) {
+		buf := bytes.NewBuffer(nil)
+		goquery.Render(buf, s)
+		md, err := svg(buf)
+		if err != nil {
+			log.Println(err)
+			return
 		}
+		if _, ok := s.Attr(`width`); !ok {
+			s.SetAttr(`width`, fmt.Sprintf(`%d`, md.Width))
+		}
+		if _, ok := s.Attr(`height`); !ok {
+			s.SetAttr(`height`, fmt.Sprintf(`%d`, md.Height))
+		}
+		var width, height int
+		fmt.Sscanf(s.AttrOr(`width`, `0`), "%d", &width)
+		fmt.Sscanf(s.AttrOr(`height`, `0`), "%d", &height)
+		limit(s, ms.sizeLimit, width, height)
+	})
+	doc.Find(`iframe`).Each(func(i int, s *goquery.Selection) {
+		// 目前只能处理这种大小：<iframe width="560" height="315" ...
+		width := utils.DropLast1(strconv.Atoi(s.AttrOr(`width`, `0`)))
+		height := utils.DropLast1(strconv.Atoi(s.AttrOr(`height`, `0`)))
+		if width <= 0 || height <= 0 {
+			return
+		}
+		style := s.AttrOr(`style`, ``)
+		style += `aspect-ratio:` + ratio(width, height)
+		s.SetAttr(`style`, style)
+		limit(s, ms.sizeLimit, width, height)
 	})
 	return nil
+}
+
+func ratio(width, height int) string {
+	// 欧几里德法求最大公约数
+	gcd := func(a, b int) int {
+		for b != 0 {
+			a, b = b, a%b
+		}
+		return a
+	}(width, height)
+	return fmt.Sprintf(`%d/%d;`, width/gcd, height/gcd)
+}
+
+func limit(s *goquery.Selection, limit, width, height int) {
+	if limit > 0 {
+		// == 的情况也一起处理了。
+		if width >= height {
+			s.AddClass(`landscape`)
+			if width > limit {
+				s.AddClass(`too-wide`)
+			}
+		} else {
+			s.AddClass(`portrait`)
+			if height > limit {
+				s.AddClass(`too-high`)
+			}
+		}
+	}
 }
 
 // root: 如果 url 是相对路径，用于指定根文件系统。

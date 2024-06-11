@@ -98,12 +98,16 @@ body.wide #content {
 // 非宽屏模式下图片居中（宽屏模式居中看着太不协调了）
 body:not(.wide) .entry {
 	p {
-		img, svg {
+		img, svg, video {
 			&:only-child {
 				display: block;
 				margin: auto;
 			}
 		}
+	}
+	iframe {
+		display: block;
+		margin: auto;
 	}
 }
 

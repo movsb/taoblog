@@ -11,3 +11,7 @@
 
 SVG 的 ViewBox 只是描述原始默认的大小尺寸，其会根据 ViewPort（Container）自动缩放。
 所以用 ViewBox 作为大小其实是不合适的，还应该加上 scale 参数。
+
+## iframe
+
+iframe 没法自动响应式大小，需要手动根据 size 计算 aspect-ratio。

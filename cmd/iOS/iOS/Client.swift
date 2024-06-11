@@ -151,7 +151,7 @@ public class Client : ObservableObject {
 		self._blog.listPosts(.with {
 			$0.kinds = ["post", "tweet"]
 			$0.orderBy = "date desc"
-			$0.limit = 18
+			$0.limit = 1000
 		}).response.whenComplete { result in
 			switch result {
 			case .success(let success):

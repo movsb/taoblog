@@ -164,6 +164,10 @@ figure {
 	text-align: center;
 }
 
+iframe {
+	display: block;
+}
+
 img, svg {
 	&.f-r {
 		float: right;
@@ -172,7 +176,7 @@ img, svg {
 }
 
 @media (prefers-color-scheme: dark) {
-	img, video, iframe, svg {
+	iframe, img, svg, video {
 		filter: brightness(.7);
 	}
 	audio {
@@ -180,23 +184,25 @@ img, svg {
 	}
 }
 
-video, img, svg {
+// 限制图片、视频等的最大大小。
+// 注意：iframe 没法自动响应式大小，需要手动根据 size 计算 aspect-ratio。
+// 参考：service/modules/renderers/media_size
+iframe, img, svg, video {
 	max-width: 500px;
 	height: unset;
-	border-radius: var(--border-radius);
 	&.too-high {
 		max-width: unset;
 		max-height: 500px;
-		width: unset;
+		width: unset !important;
 	}
 	&.too-wide {
 		max-width: 500px;
 		max-height: unset;
-		height: unset;
+		height: unset !important;
 	}
 }
 @container (max-width: 500px) {
-	video, img, svg {
+	iframe, img, svg, video {
 		max-width: 100% !important;
 	}
 }
@@ -242,7 +248,7 @@ ul, ol {
 .reset-list-style-type      { list-style-type: initial;     }
 li::marker                  { color: var(--accent-color);   }
 
-iframe, video, audio {
+audio, iframe, img, svg, video {
 	border-radius: var(--border-radius);
 }
 
