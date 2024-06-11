@@ -16,6 +16,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -72,7 +73,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short:            `快速通过文件创建文章。`,
 		PersistentPreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			file := utils.Must(cmd.Flags().GetString(`file`))
+			file := utils.Must1(cmd.Flags().GetString(`file`))
 			root := os.DirFS(".")
 			file = strings.TrimPrefix(file, "./")
 
@@ -81,8 +82,10 @@ func AddCommands(rootCmd *cobra.Command) {
 			//   如果修改时间也在这个日期内，则用修改日期
 			//   否则用文件路径日期。
 			// 几种格式：
-			info := utils.Must(fs.Stat(root, file))
+			info := utils.Must1(fs.Stat(root, file))
 			fileTime := time.Now()
+			// 是否有自己独立的目录名。
+			ownDir := false
 			var year, month, day, week int
 			var nameTime time.Time
 			if n, err := fmt.Sscanf(filepath.Base(file), "%d-%d-%d.md", &year, &month, &day); err == nil && n == 3 {
@@ -123,21 +126,45 @@ func AddCommands(rootCmd *cobra.Command) {
 				}
 				nameTime = t
 				fileTime = nameTime
+				ownDir = true
 			}
 			if nameTime.IsZero() {
 				fileTime = info.ModTime()
 				// } else if info.ModTime().Sub(nameTime) < time.Hour*24*7 {
 				// 	fileTime = info.ModTime()
 			}
-			utils.Must(client.Blog.CreatePost(client.Context(), &proto.Post{
+			post := utils.Must1(client.Blog.CreatePost(client.Context(), &proto.Post{
 				Date:       int32(fileTime.Unix()),
 				Modified:   int32(fileTime.Unix()),
 				Title:      filepath.Base(file), // 如果文章里面有标题，会自动覆盖
 				SourceType: `markdown`,
-				Source:     string(utils.Must(os.ReadFile(file))),
-				Status:     utils.Must(cmd.Flags().GetString(`status`)),
+				Source:     string(utils.Must1(os.ReadFile(file))),
+				Status:     utils.Must1(cmd.Flags().GetString(`status`)),
 				Type:       `tweet`,
 			}))
+			var dir string
+			if ownDir {
+				dir = filepath.Dir(file)
+				if dir == "" || dir == "." {
+					dir = fileTime.Format(`2006/01/02`)
+				}
+				dir += "/" + strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
+			} else {
+				dir = fileTime.Format(`2006/01/02`)
+				dir += fmt.Sprintf("/%d", post.Id)
+			}
+			utils.Must(os.MkdirAll(dir, 0755))
+			utils.Must(SavePostConfig(filepath.Join(dir, ConfigFileName), &PostConfig{
+				ID:       post.Id,
+				Title:    post.Title,
+				Modified: post.Modified,
+				Tags:     post.Tags,
+				Metas:    *models.PostMetaFrom(post.Metas),
+				Slug:     post.Slug,
+				Type:     post.Type,
+			}))
+			mvCmd := exec.Command(`git`, `mv`, file, filepath.Join(dir, `README.md`))
+			utils.Must(mvCmd.Run())
 		},
 	}
 	createCmd.Flags().StringP(`file`, `f`, ``, `文章对应的文件（README.md）`)
