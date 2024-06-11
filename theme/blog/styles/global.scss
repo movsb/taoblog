@@ -445,9 +445,14 @@ ul, ol {
 		// 见下面的 margin-left 说明。
 		padding-left: 21.5px;
 		list-style-type: none;
-		.task-list-item.checked {
-			text-decoration: line-through var(--accent-color) solid;
-		}
+		// 划掉已经完成的任务
+		// 为什么注释了？
+		// 导入的日记里面没有特别标记（<!-- todo -->），所有任务都是任务列表，
+		// 为了避免写 <!-- todo -->，太麻烦了。
+		// 有些任务列表只是列出已经完成的功能，标记了看起来反而不舒服，还以为是去掉了这个功能。
+		// .task-list-item.checked {
+		// 	text-decoration: line-through var(--accent-color) solid;
+		// }
 		li {
 			> p > input[type=checkbox], > input[type=checkbox] {
 				// 目的：使任务列表的复选框✅向前对齐，内容纵向对齐

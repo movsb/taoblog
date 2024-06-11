@@ -2,7 +2,6 @@ package task_list
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
@@ -22,15 +21,6 @@ import (
 // 支持标记任务在原文中的位置，以方便在页面上点击后直接修改任务状态。
 //
 // 格式：
-//
-//	<!-- TaskList -->
-//
-// - [ ] Task1
-// - [x] Task2
-//
-// 或者：
-//
-//	<!-- TODO -->
 //
 // - [ ] Task1
 // - [x] Task2
@@ -56,7 +46,7 @@ func (e *TaskList) Extend(m goldmark.Markdown) {
 	))
 }
 
-var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*(?:TaskList|TODO)\s*-->\s*$)`)
+// var reIsTaskListComment = regexp.MustCompile(`(?i:^\s{0,3}<!--\s*(?:TaskList|TODO)\s*-->\s*$)`)
 
 // ... implements parser.ASTTransformer.
 // TODO 只处理第一层任务。
@@ -104,32 +94,32 @@ func (e *TaskList) Transform(node *ast.Document, reader text.Reader, pc parser.C
 			return
 		}
 
-		prevIsComment := func(n ast.Node) (yes bool) {
-			if n == nil {
-				return
-			}
-			if n.Kind() != ast.KindHTMLBlock {
-				return
-			}
-			hb := n.(*ast.HTMLBlock)
-			// https://spec.commonmark.org/0.31.2/#html-block
-			if hb.HTMLBlockType != ast.HTMLBlockType2 {
-				return
-			}
-			if hb.Lines().Len() != 1 {
-				return
-			}
-			firstLineSegment := hb.Lines().At(0)
-			firstLine := firstLineSegment.Value(reader.Source())
-			if !reIsTaskListComment.Match(firstLine) {
-				return
-			}
-			return true
-		}(n.PreviousSibling())
+		// prevIsComment := func(n ast.Node) (yes bool) {
+		// 	if n == nil {
+		// 		return
+		// 	}
+		// 	if n.Kind() != ast.KindHTMLBlock {
+		// 		return
+		// 	}
+		// 	hb := n.(*ast.HTMLBlock)
+		// 	// https://spec.commonmark.org/0.31.2/#html-block
+		// 	if hb.HTMLBlockType != ast.HTMLBlockType2 {
+		// 		return
+		// 	}
+		// 	if hb.Lines().Len() != 1 {
+		// 		return
+		// 	}
+		// 	firstLineSegment := hb.Lines().At(0)
+		// 	firstLine := firstLineSegment.Value(reader.Source())
+		// 	if !reIsTaskListComment.Match(firstLine) {
+		// 		return
+		// 	}
+		// 	return true
+		// }(n.PreviousSibling())
 
 		// List -> Item -> TextBlock -> CheckBox
 		// List -> Item -> Paragraph -> CheckBox
-		recurse(n.(*ast.List), prevIsComment)
+		recurse(n.(*ast.List), true)
 		return
 	})
 }
