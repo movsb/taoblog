@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
+	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
@@ -298,6 +299,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		custom_break.New(),
 		renderers.WithReserveListItemMarkerStyle(),
 		renderers.WithLazyLoadingFrames(),
+		friends.New(),
 
 		// 其它选项可能会插入链接，所以放后面。
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。

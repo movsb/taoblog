@@ -111,8 +111,8 @@ func (s *Service) GetAvatar(in *handy.GetAvatarRequest) {
 		}
 	}
 
-	// 客户端缓存一天，失效了也可以继续用，后台慢慢刷新就行。
-	in.SetHeader(`Cache-Control`, `max-age=259200, stale-while-revalidate=86400`)
+	// 客户端缓存失效了也可以继续用，后台慢慢刷新就行。
+	in.SetHeader(`Cache-Control`, `max-age=604800, stale-while-revalidate=604800`)
 
 	in.SetStatus(resp.StatusCode)
 
