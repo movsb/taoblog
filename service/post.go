@@ -492,6 +492,9 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	if p.Type == `` {
 		p.Type = `post`
 	}
+	if p.Type == `page` && p.Slug == `` {
+		return nil, status.Error(codes.InvalidArgument, `页面必须要有路径名（slug）。`)
+	}
 
 	title, hashtags, err := s.parsePostDerived(in.SourceType, in.Source)
 	if err != nil {
@@ -519,6 +522,11 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	return p.ToProto(s.setPostExtraFields(ctx, nil))
 }
 
+func (s *Service) getPost(id int) (*models.Post, error) {
+	var post models.Post
+	return &post, s.tdb.Where(`id=?`, id).Find(&post)
+}
+
 // UpdatePost ...
 // 需要携带版本号，像评论一样。
 func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
@@ -528,8 +536,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		return nil, status.Error(codes.InvalidArgument, "无效文章编号、更新字段")
 	}
 
-	p := models.Post{
-		ID: in.Post.Id,
+	// TODO：放事务中。
+	oldPost, err := s.getPost(int(in.Post.Id))
+	if err != nil {
+		return nil, err
 	}
 
 	now := time.Now().Unix()
@@ -544,6 +554,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	var hasSourceType, hasSource bool
 	var hasTags, hasMetas bool
 	var hasTitle bool
+	var hasType bool
+	var hasSlug bool
 
 	for _, path := range in.UpdateMask.Paths {
 		switch path {
@@ -558,12 +570,14 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			hasSource = true
 		case `slug`:
 			m[path] = in.Post.Slug
+			hasSlug = true
 		case `tags`:
 			hasTags = true
 		case `metas`:
 			hasMetas = true
 		case `type`:
 			m[path] = in.Post.Type
+			hasType = true
 		case `date`:
 			m[`date`] = in.Post.Date
 		case `status`:
@@ -618,8 +632,12 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
 		}
 	}
+	if hasType && in.Post.Type == `page` && (hasSlug && in.Post.Slug == `` || oldPost.Slug == ``) {
+		return nil, status.Error(codes.InvalidArgument, `页面必须要有路径名（slug）。`)
+	}
 
 	s.MustTxCall(func(txs *Service) error {
+		p := models.Post{ID: in.Post.Id}
 		res := txs.tdb.Model(p).Where(`modified=?`, in.Post.Modified).MustUpdateMap(m)
 		rowsAffected, err := res.RowsAffected()
 		if err != nil || rowsAffected != 1 {
