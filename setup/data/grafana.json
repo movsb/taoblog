@@ -200,12 +200,12 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "green",
+                "value": 15
               }
             ]
           },
@@ -245,11 +245,11 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "vps_bandwidth_used",
+          "expr": "vps_bandwidth_quota-vps_bandwidth_used",
           "hide": false,
-          "instant": false,
+          "instant": true,
           "legendFormat": "{{name}}",
-          "range": true,
+          "range": false,
           "refId": "A"
         },
         {
@@ -267,7 +267,7 @@
           "refId": "B"
         }
       ],
-      "title": "已使用流量",
+      "title": "流量剩余",
       "transformations": [
         {
           "id": "configFromData",
@@ -426,6 +426,118 @@
       ],
       "title": "证书有效期剩余天数",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "o1J7POZnk"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 15
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 5
+      },
+      "id": 43,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {}
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "o1J7POZnk"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "node_filesystem_avail_bytes{mountpoint=\"/\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "可用：{{mountpoint}}",
+          "range": false,
+          "refId": "A",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "o1J7POZnk"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "node_filesystem_size_bytes{mountpoint=\"/\"}",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "总共：{{mountpoint}}",
+          "range": false,
+          "refId": "B",
+          "useBackend": false
+        }
+      ],
+      "title": "磁盘剩余",
+      "transformations": [
+        {
+          "id": "configFromData",
+          "options": {
+            "applyTo": {
+              "id": "byType",
+              "options": "number"
+            },
+            "configRefId": "B",
+            "mappings": [
+              {
+                "fieldName": "总共：/",
+                "handlerKey": "max"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "gauge"
     },
     {
       "collapsed": false,
@@ -1380,8 +1492,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1452,8 +1563,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1560,8 +1670,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1803,7 +1912,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timeRangeUpdatedDuringEditOrView": false,
@@ -1824,6 +1933,6 @@
   "timezone": "",
   "title": "陪她去流浪",
   "uid": "_2g5VpWnz",
-  "version": 49,
+  "version": 52,
   "weekStart": ""
 }
