@@ -17,8 +17,10 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 		{{ if $.Author }}
 		<span class="author">{{ $.Author }}</span>
 		{{ end }}
+		{{ if ne .Type `page` }}
 		<span class="date" title="发表时间：{{.DateString}}
 修改时间：{{.ModifiedString}}">{{ .DateString }}</span>
+		{{ end }}
 		<span class="edit-button"><a href="/admin/editor?id={{.Id}}">编辑</a></span>
 		{{ with .Metas.Weixin }}
 			<span>在<span class="weixin"><a class="no-external" href="https://mp.weixin.qq.com/s/{{.}}" target="_blank">微信</a></span>上查看</span>
