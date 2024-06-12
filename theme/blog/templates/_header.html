@@ -6,14 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 <title>{{ $.Title }}</title>
 <link rel="stylesheet" type="text/css" href="/style.css" />
-<!-- <script src="/admin/tinymde.js"></script>
-<link rel="stylesheet" type="text/css" href="/admin/tinymde.css" /> -->
 {{ apply_site_theme_customs }}
 <script src="/scripts/header.js"></script>
 {{ render "custom_header" . }}
 </head>
 <body class="{{ $.BodyClass }}">
 <div id="wrapper">
+	<!-- 用来移除头部的 margin -->
+	<div style="height: 1px;"></div>
     <!-- 头部开始 -->
 	{{ if not .Post }}
     <header id="header">
@@ -45,6 +45,5 @@ if (search) {
 	{{ end }}
 
 	<!-- 头部结束 -->
-	<section id="main">
-		<div id="content">
+	<div id="content">
 {{end}}

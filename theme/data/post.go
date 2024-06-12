@@ -138,9 +138,6 @@ func (p *Post) Outdated() bool {
 
 // 是否开启宽屏？
 func (p *Post) Wide() bool {
-	if p.Type == `tweet` {
-		return true
-	}
 	return p.Metas.Wide
 }
 

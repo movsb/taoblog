@@ -104,9 +104,12 @@ func (d *Data) BodyClass() string {
 		if d.Post.Post.Wide() {
 			c = append(c, `wide`)
 		}
+		if d.Post.Post.Type == `tweet` {
+			c = append(c, `tweet`)
+		}
 	}
 	if d.Tweets != nil {
-		c = append(c, `wide`)
+		c = append(c, `tweets`)
 	}
 	return strings.Join(c, ` `)
 }

@@ -1,15 +1,23 @@
 /* 内容 */
 
 #content {
+    min-width: 200px;
 	max-width: var(--max-width);
 }
-
 body.wide #content {
 	max-width: unset;
 }
+body:not(.wide) {
+	&.tweet, &.tweets {
+		#content {
+			// 按照 Gallery 一行四张图片估：
+			// 150px*4 + (gap:1px)*3 + (content padding:1em)*2 + (article padding: 1px)*2
+			max-width: calc(150px*4 + 1px*3 + 1em*2 + 1px*2);
+		}
+	}
+}
 
 #content {
-    min-width: 200px;
     margin: auto;
     padding: 0 1em;
 }
@@ -162,12 +170,23 @@ blockquote {
 	}
 }
 
-.tweets {
+.tweet, .tweets {
 	article {
-		// padding: 1em 0;
-		border-top: 1px solid var(--border-color);
+		background-color: var(--color-bg);
+		padding: 0 1em;
+		margin: 1em 0;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
 	}
 }
+@media (prefers-color-scheme: dark) {
+	.tweet, .tweets {
+		article {
+			background-color: var(--code-bg);
+		}
+	}
+}
+
 .tweets, .tweet {
 	.tweet-media {
 		&.has-multiple-media {
@@ -191,21 +210,21 @@ blockquote {
 .gallery {
 	display: flex;
 	flex-wrap: wrap;
+	gap: 1px;
 	margin: 1rem 0;
 	img {
 		display: inline-block;
 		box-sizing: border-box;
 		border: 1px solid var(--border-color);
 		border-radius: var(--border-radius);
-		width: 150px;
-		height: 150px !important; // line:49
+		width: 150px !important;
+		height: 150px !important;
 		object-fit: cover;
-		margin: .1rem;
 	}
 }
 @container (max-width: 500px) {
 	.gallery img {
-		width: 100px;
+		width: 100px !important;
 		height: 100px !important;
 	}
 }

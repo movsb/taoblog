@@ -20,6 +20,15 @@ body {
 	overflow-wrap: anywhere;
 }
 
+body.tweet, body.tweets {
+	background-color: var(--code-bg);
+}
+@media (prefers-color-scheme: dark) {
+	body.tweet, body.tweets {
+		background-color: var(--color-bg);
+	}
+}
+
 @media screen and (max-width: $max_width) {
     body {
         text-shadow: 0 0 1px rgba(0,0,0,0.22);
@@ -493,6 +502,11 @@ div.divider {
 	text-shadow: none;
 	font-weight: bold;
 	border-radius: var(--border-radius);
+}
+@media (prefers-color-scheme: dark) {
+	.divider span {
+		background-color: var(--code-bg);
+	}
 }
 @container (min-width: 850px) {
 	div.divider {

@@ -1,4 +1,3 @@
-{{- $dot:=. -}}
 <!DOCTYPE html> 
 <html lang="zh-CN">
 <head>
@@ -6,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 <title>{{ $.Title }}</title>
 <link rel="stylesheet" type="text/css" href="/style.css" />
-<!-- <script src="/admin/tinymde.js"></script>
-<link rel="stylesheet" type="text/css" href="/admin/tinymde.css" /> -->
 {{ apply_site_theme_customs }}
 <script src="/scripts/header.js"></script>
 </head>
 <body class="{{ $.BodyClass }}">
 <div id="wrapper">
-<section id="main">
+	<!-- 用来移除头部的 margin -->
+	<div style="height: 1px;"></div>
 <div id="content">
 <h1>{{ $.Meta.Title }}</h1>
 <p>
