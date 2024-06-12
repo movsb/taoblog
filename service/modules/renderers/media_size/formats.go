@@ -93,9 +93,8 @@ func avif(r io.Reader) (*Metadata, error) {
 	sniff = sniff[index-4:]
 	index = 0
 
-	var bo = binary.BigEndian
-
 	var (
+		bo      = binary.BigEndian
 		size    = bo.Uint32(sniff[index+0:])
 		version = bo.Uint32(sniff[index+8:])
 		width   = bo.Uint32(sniff[index+12:])
@@ -111,5 +110,5 @@ func avif(r io.Reader) (*Metadata, error) {
 		}, nil
 	}
 
-	return nil, errors.New(`not valid avif`)
+	return nil, errors.New(`not avif`)
 }
