@@ -22,6 +22,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
+	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
@@ -300,6 +301,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		renderers.WithReserveListItemMarkerStyle(),
 		renderers.WithLazyLoadingFrames(),
 		friends.New(),
+		katex.New(),
 
 		// 其它选项可能会插入链接，所以放后面。
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
