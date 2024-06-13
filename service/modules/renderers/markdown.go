@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
-	mathjax "github.com/litao91/goldmark-mathjax"
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/utils"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
@@ -173,10 +172,6 @@ func (me *_Markdown) Render(source string) (string, error) {
 	extensions := []goldmark.Extender{
 		extension.GFM,
 		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
-		mathjax.NewMathJax(
-			mathjax.WithInlineDelim(`$`, `$`),
-			mathjax.WithBlockDelim(`$$`, `$$`),
-		),
 		wikitable.New(),
 	}
 

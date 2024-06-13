@@ -21,6 +21,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/handy"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/webhooks"
 	"google.golang.org/grpc"
@@ -94,6 +95,8 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	mux2.HandlePath(`POST`, `/v3/webhooks/grafana/notify`, g.grafanaNotify)
 
 	mux.Handle(`GET /v3/posts/{id}/files`, g.createFileManager(`post`))
+
+	mux.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
 
 	return nil
 }
