@@ -26,7 +26,7 @@
 			<!-- {{with .Lyrics}}<p class="lyrics">{{.}}</p>{{end}} -->
 		</div>
 		<audio src="{{.Source}}">
-			<img id="img-{{.Random}}" style="display: none;" src="https://" onerror=" let script = document.querySelector('#script-{{.Random}}'); let parent = script.parentElement; let s = document.createElement('script'); s.innerHTML = script.innerHTML; script.remove(); parent.appendChild(s); handleAudio({{.Random}});" />
+			<img id="img-{{.Random}}" style="display: none;" src="https://" onerror="handleAudio({{.Random}});" />
 		</audio>
 		<div class="controls">
 			<svg class="play no-zoom" title="播放" fill="var(--color-fg)" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64px" height="64px" viewBox="-16.39 -16.39 196.64 196.64" xml:space="preserve" stroke="#000000" stroke-width="0.00163861" transform="matrix(1, 0, 0, 1, 0, 0)rotate(0)"><g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="1.3108879999999998"></g><g> <g> <path d="M34.857,3.613C20.084-4.861,8.107,2.081,8.107,19.106v125.637c0,17.042,11.977,23.975,26.75,15.509L144.67,97.275 c14.778-8.477,14.778-22.211,0-30.686L34.857,3.613z"></path> </g> </g></svg>
@@ -38,57 +38,4 @@
 			<span class="time">00:00</span>
 		</div>
 	</div>
-	<script id="script-{{.Random}}">
-		function handleAudio(r) {
-			let player = document.querySelector(`#${r}`);
-			let audio = player.querySelector(':scope audio');
-			let time = player.querySelector('.time');
-			audio.addEventListener('play', e => {
-				player.classList.add('playing');
-			});
-			audio.addEventListener('pause', e => {
-				player.classList.remove('playing');
-			});
-			let displaySeconds = t => {
-				let seconds = Math.floor(t+.5);
-				let minutes = Math.floor(seconds / 60);
-				seconds = Math.floor(seconds % 60);
-				return `${minutes<10?'0'+minutes:minutes}:${seconds<10?'0'+seconds:seconds}`;
-			};
-			audio.addEventListener('loadedmetadata', e => {
-				console.log(audio.duration);
-				const value = displaySeconds(audio.duration);
-				time.innerText = value;
-				time.setAttribute('title', `总时长：${value}`);
-			});
-			let progress = player.querySelector('.progress');
-			let capturing = false;
-			progress.addEventListener('mousedown', e=>{
-				capturing = true;
-			}, true);
-			progress.addEventListener('mouseup', e=>{
-				capturing = false;
-				audio.play();
-			}, true);
-			let progressDebouncing = undefined;
-			progress.addEventListener('input', e=> {
-				let tracking = +progress.value / +progress.max * audio.duration;
-				time.innerText = displaySeconds(tracking);
-				let set = () => audio.currentTime = tracking;
-				if (audio.paused) { set(); return; }
-				clearTimeout(progressDebouncing);
-				progressDebouncing = setTimeout(set, 250);
-			});
-			audio.addEventListener('timeupdate', e => {
-				if (!capturing) {
-					progress.value = audio.currentTime / audio.duration * 100;
-					time.innerText = displaySeconds(audio.currentTime);
-				}
-			});
-			let play =player.querySelector('.play');
-			let pause = player.querySelector('.pause');
-			play.addEventListener('click', e=>{ audio.play(); })
-			pause.addEventListener('click', e=>{ audio.pause(); })
-		}
-	</script>
 </div>

@@ -18,14 +18,28 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"golang.org/x/net/html/atom"
 )
 
 var SourceRelativeDir = dir.SourceRelativeDir()
 
-//go:embed player.html
+//go:embed player.html script.js style.css style.css.map
 var _root embed.FS
+
+//go:generate sass --style compressed style.scss style.css
+
+func init() {
+	dynamic.Dynamic[`media_tags`] = dynamic.Content{
+		Styles: []string{
+			string(utils.Must1(_root.ReadFile(`style.css`))),
+		},
+		Scripts: []string{
+			string(utils.Must1(_root.ReadFile(`script.js`))),
+		},
+	}
+}
 
 type MediaTags struct {
 	web  gold_utils.WebFileSystem
