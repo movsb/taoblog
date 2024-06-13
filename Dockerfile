@@ -14,7 +14,7 @@ RUN apk add sqlite
 RUN apk add mailcap
 
 WORKDIR /workspace
-COPY --from=katex /katex/a.out /bin/katex
+COPY --from=katex /katex/a.out katex
 
 ADD taoblog taoblog
 ENTRYPOINT ["./taoblog"]

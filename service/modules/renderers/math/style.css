@@ -2,3 +2,10 @@
 .katex-display {
 	overflow: auto hidden;
 }
+
+/* 图片查看器的冲突 */
+.katex svg {
+	cursor: inherit;
+	/* 夜间模式的 brightness: 0.7 冲突了。 */
+	filter: unset !important;
+}
