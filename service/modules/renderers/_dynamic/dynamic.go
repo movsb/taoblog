@@ -10,14 +10,16 @@ import (
 )
 
 type Content struct {
-	Styles []string
-	Root   fs.FS
+	Styles  []string
+	Scripts []string
+	Root    fs.FS
 }
 
 var Dynamic = map[string]Content{}
 
 var once sync.Once
 var style string
+var script string
 var files []fs.FS
 var mod = time.Now()
 
@@ -31,6 +33,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			style += strings.Join(d.Styles, "\n")
 			style += "\n\n"
 
+			script += fmt.Sprintf("// %s\n", name)
+			script += strings.Join(d.Scripts, "\n")
+			script += "\n\n"
+
 			if d.Root != nil {
 				files = append(files, d.Root)
 			}
@@ -42,6 +48,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch path {
 	case `style`:
 		http.ServeContent(w, r, `style.css`, mod, strings.NewReader(style))
+		return
+	case `script`:
+		http.ServeContent(w, r, `script.js`, mod, strings.NewReader(script))
 		return
 	}
 

@@ -21,6 +21,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/movsb/taoblog/service/modules/renderers/highlight"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
@@ -277,7 +278,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		)
 	}
 	if co.RenderCodeBlocks {
-		options = append(options, renderers.WithRenderCodeAsHTML())
+		options = append(options, highlight.New())
 	}
 	if co.PrettifyHtml {
 		options = append(options, renderers.WithHtmlPrettifier())

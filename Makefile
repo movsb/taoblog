@@ -10,6 +10,10 @@ theme:
 test:
 	go test ./...
 
+.PHONY: generate
+generate:
+	go generate ./...
+
 .PHONY: build
 build:
 	./setup/scripts/cross-build.sh

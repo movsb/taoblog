@@ -5,17 +5,14 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	stdhtml "html"
 	"log"
 	"net/url"
 	"strings"
 
-	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/utils"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
-	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -45,8 +42,7 @@ type _Markdown struct {
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
 
-	noRendering      bool
-	renderCodeAsHtml bool
+	noRendering bool
 }
 
 // TODO 不要返回 error。
@@ -125,14 +121,6 @@ func WithAssetSources(fn AssetFinder) Option {
 	}
 }
 
-// 渲染代码。
-func WithRenderCodeAsHTML() Option {
-	return func(me *_Markdown) error {
-		me.renderCodeAsHtml = true
-		return nil
-	}
-}
-
 func NewMarkdown(options ...any) *_Markdown {
 	me := &_Markdown{}
 
@@ -173,51 +161,6 @@ func (me *_Markdown) Render(source string) (string, error) {
 		extension.GFM,
 		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
 		wikitable.New(),
-	}
-
-	if me.renderCodeAsHtml {
-		extensions = append(extensions, highlighting.NewHighlighting(
-			// highlighting.WithCSSWriter(os.Stdout),
-			highlighting.WithStyle(`onedark`),
-			highlighting.WithFormatOptions(
-				chromahtml.LineNumbersInTable(true),
-				// 博客主题默认，不需要额外配置。
-				// chromahtml.TabWidth(4),
-				chromahtml.WithClasses(true),
-				chromahtml.WithLineNumbers(true),
-			),
-			highlighting.WithWrapperRenderer(func(w util.BufWriter, context highlighting.CodeBlockContext, entering bool) {
-				if entering {
-					if context.Highlighted() {
-						w.WriteString(`<div class="code-scroll-synchronizer">`)
-						// 因为 innerHTML 插入的 script 不会被执行，所以用这个手段。
-						// 写别人的域名，不要给我留下日志。
-						// 另外，鉴于 window.event 是被 deprecated 的，所以也不用。
-						// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
-						// https://stackoverflow.com/q/12614862/3628322
-						w.WriteString(fmt.Sprintf(
-							`<img id="%[1]s" style="display:none;" src="https://" onerror="syncCodeScroll('%[1]s')"/>`,
-							utils.RandomString(),
-						))
-						w.WriteRune('\n')
-					} else {
-						language := string(utils.DropLast1(context.Language()))
-						if language != "-" {
-							w.WriteString(fmt.Sprintf(`<pre><code class="language-%s">`, stdhtml.EscapeString(language)))
-						} else {
-							w.WriteString(`<pre><code>`)
-						}
-					}
-				} else {
-					if context.Highlighted() {
-						w.WriteString(`</div>`)
-						w.WriteRune('\n')
-					} else {
-						w.WriteString(`</code></pre>`)
-					}
-				}
-			}),
-		))
 	}
 
 	for _, opt := range me.opts {
