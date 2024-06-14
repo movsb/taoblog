@@ -226,12 +226,12 @@ table {
 		border-top: var(--table-border);
 	}
 
-	thead {
-		position: relative;
-		tr {
-			position: sticky;
-			top: 0;
-		}
+	// 维斯百科的表格没有 <thead>，所以这里的判断并不是很严格。
+	// https://blog.twofei.com/1419/
+	// https://blog.twofei.com/1418/
+	tr:first-of-type:has(th) {
+		position: sticky;
+		top: 0;
 	}
 
 	th {
