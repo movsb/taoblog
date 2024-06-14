@@ -217,41 +217,35 @@ iframe, img, svg, video {
 }
 
 table {
-	border-collapse: separate;
-	border-spacing: 0;
+	border-collapse: collapse;
 	margin: 1em 0px;
 	overflow: auto;
 	
-	&:not(:has(th)) {
-		border-top: var(--table-border);
-	}
-
 	// 维斯百科的表格没有 <thead>，所以这里的判断并不是很严格。
 	// https://blog.twofei.com/1419/
 	// https://blog.twofei.com/1418/
-	tr:first-of-type:has(th) {
+	tr:first-of-type:has(th):not(:has(td)) {
 		position: sticky;
 		top: 0;
+		th {
+			// 这两条语句看起来非常优雅地解决了， sticky th 没有 border 的问题。
+			// 但是我不知道为什么要设置 offset（就算 th 没有 border 也要设置）。
+			// 我也不知道为什么是 border 的一半，但是看起来在 Firefox/Chrome/Safari 上都工作得很好。
+			outline: var(--table-border);
+			outline-offset: -.5px;
+		}
 	}
 
 	th {
 		background-color: var(--table-head-color);
-		border-top: var(--table-border);
-		border-right: var(--table-border);
-		border-bottom: var(--table-border);
 		transition: background-color .2s linear;
 	}
-	
-	td {
-		border-right: var(--table-border);
-		border-bottom: var(--table-border);
-	}
 
-	td, th {
+	th, td {
 		padding: 4px 8px;
-		&:first-child {
-			border-left: var(--table-border);
-		}
+	}
+	&, th, td {
+		border: var(--table-border);
 	}
 
 	&.no-border, &.no-border td {
