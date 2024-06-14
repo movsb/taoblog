@@ -162,8 +162,7 @@ func (s *Service) UpdateObjectTags(pid int64, tags []string) {
 		if !s.hasTagName(t) {
 			tid = s.addTag(t)
 		} else {
-			tag := s.getRootTag(t)
-			tid = tag.ID
+			tid = s.GetTagByName(t).ID
 		}
 		s.addObjectTag(pid, tid)
 	}
@@ -213,20 +212,4 @@ func (s *Service) addTag(tagName string) int64 {
 	}
 	s.tdb.Model(&tagObj).MustCreate()
 	return tagObj.ID
-}
-
-func (s *Service) getRootTag(tagName string) models.Tag {
-	tagObj := s.GetTagByName(tagName)
-	if tagObj.Alias == 0 {
-		return *tagObj
-	}
-	ID := tagObj.Alias
-	for {
-		var tagObj models.Tag
-		s.tdb.Where("id=?", ID).MustFind(&tagObj)
-		if tagObj.Alias == 0 {
-			return tagObj
-		}
-		ID = tagObj.Alias
-	}
 }
