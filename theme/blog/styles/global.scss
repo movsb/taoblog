@@ -217,17 +217,41 @@ iframe, img, svg, video {
 }
 
 table {
-	border-collapse: collapse;
+	border-collapse: separate;
+	border-spacing: 0;
 	margin: 1em 0px;
 	overflow: auto;
+	
+	&:not(:has(th)) {
+		border-top: var(--table-border);
+	}
+
+	thead {
+		position: relative;
+		tr {
+			position: sticky;
+			top: 0;
+		}
+	}
 
 	th {
 		background-color: var(--table-head-color);
+		border-top: var(--table-border);
+		border-right: var(--table-border);
+		border-bottom: var(--table-border);
+		transition: background-color .2s linear;
+	}
+	
+	td {
+		border-right: var(--table-border);
+		border-bottom: var(--table-border);
 	}
 
 	td, th {
-		border: var(--table-border);
-		padding: 0.2em 0.8em;
+		padding: 4px 8px;
+		&:first-child {
+			border-left: var(--table-border);
+		}
 	}
 
 	&.no-border, &.no-border td {

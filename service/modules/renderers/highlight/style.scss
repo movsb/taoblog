@@ -1,6 +1,7 @@
 // 样式重置文章风格影响的表格。
 div.chroma {
 	table {
+		border: none;
 		tr, th, td {
 			border: none;
 			padding: 0;
