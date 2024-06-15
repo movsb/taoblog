@@ -29,6 +29,9 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 	</div>
 {{ if .Outdated }}
 <div class="content-wrap outdated">
+	<div class="disclaimer">
+		<p>⚠️ 这篇文章的内容已被作者标记为“已过时/需要更新/不具参考意义”。</p>
+	</div>
 {{ else }}
 <div class="content-wrap">
 {{ end }}
@@ -36,10 +39,6 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 {{raw `<!--article begins here-->`}}
 {{ .Content }}
 {{raw `<!--article ends here-->`}}
-</div>
-<div class="disclaimer" style="display: none;">
-	<p>这篇文章的内容已被作者标记为“过时”/“需要更新”/“不具参考意义”。</p>
-	<button onclick="document.getElementsByClassName('content-wrap')[0].classList.remove('outdated');">仍然查看</button>
 </div>
 </div>
 	</div><!-- end entry -->

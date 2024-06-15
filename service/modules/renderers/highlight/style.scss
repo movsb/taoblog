@@ -33,14 +33,14 @@ table.lntable {
 	overflow: hidden;
 	> tbody {
 		display: block;
-		margin-left: 3em;
-		padding-left: 1em;
+		margin-left: calc(40px - .5em);
+		padding-left: .5em;
 		border-left: 1px solid var(--border-color);
 		box-sizing: border-box;
 
 		> tr {
 			overflow: auto;
-			max-height: 50vh;
+			max-height: 23em;
 			display: block;
 		}
 	}
@@ -54,10 +54,9 @@ table.lntable {
 		user-select: none;
 		position: absolute;
 		left: 0;
-		width: 4em;
+		width: calc(40px - .5em);
 		pre.chroma {
-			margin-right: 1em;
-			padding-right: 8px;
+			padding-right: .5em;
 			box-sizing: border-box;
 			text-align: right;
 			border-radius: unset;

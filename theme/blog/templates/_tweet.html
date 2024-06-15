@@ -9,6 +9,9 @@ TaoBlog.posts["{{$p.ID}}"] = {{ $.Strip $p }};
 	{{ $p.Content }}
 	</div>
 	<div class="meta2">
+		{{ if ne $p.Status "public" }}
+			<span class="status">🔒 私密</span>
+		{{ end }}
 		{{ friendlyDateTime $p.Date }}
 		{{ with $p.GeoString }}
 		<span class="geo">{{ . }}</span>

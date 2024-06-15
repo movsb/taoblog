@@ -422,13 +422,21 @@ div.divider {
 
 // 脚注
 .footnotes {
-	li > p {
-		position: relative;
-		padding-left: 1em;
-		.footnote-backref {
-			position: absolute;
-			left: 0;
-			top: 0;
+	font-size: 80%;
+	li {
+		&::marker {
+			color: inherit;
+		}
+		p {
+			position: relative;
+			margin: 0;
+			padding-left: 1em;
+			// 学维斯百科放前面
+			.footnote-backref {
+				position: absolute;
+				left: 0;
+				top: 0;
+			}
 		}
 	}
 }

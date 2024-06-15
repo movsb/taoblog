@@ -158,14 +158,10 @@ blockquote {
 
 .content-wrap {
 	&.outdated {
-		> .content {
-			display: none;
-		}
 		> .disclaimer {
-			display: block;
-			text-align: center;
-			line-height: 4;
-			font-size: 1.3em;
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius);
+			padding: 0 1em;
 		}
 	}
 }
