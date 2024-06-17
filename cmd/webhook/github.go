@@ -59,6 +59,6 @@ func AddCommands(parent *cobra.Command) {
 	}
 	reloadCmd.Flags().BoolVarP(&immediately, `immediately`, `r`, false, `立即执行。`)
 	reloadCmd.Flags().StringVarP(&listen, `listen`, `l`, `/tmp/taoblog-reloader.sock`, `监控 /reload 等待执行。`)
-	reloadCmd.Flags().StringVarP(&script, `script`, `s`, `docker-compose pull taoblog && docker-compose up -d taoblog`, `拉取新镜像并重启 TaoBlog。`)
+	reloadCmd.Flags().StringVarP(&script, `script`, `s`, `docker compose pull taoblog && docker compose up -d taoblog`, `拉取新镜像并重启 TaoBlog。`)
 	parent.AddCommand(reloadCmd)
 }
