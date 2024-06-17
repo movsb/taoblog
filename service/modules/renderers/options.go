@@ -144,6 +144,15 @@ var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.Wa
 	`sup`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
 		return ast.WalkSkipChildren
 	},
+	`span`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		for _, a := range node.Attr {
+			if a.Key == `class` && strings.Contains(a.Val, `katex`) {
+				buf.WriteString(`[公式]`)
+				return ast.WalkSkipChildren
+			}
+		}
+		return ast.WalkContinue
+	},
 }
 
 type _ContentPrettifier struct{}

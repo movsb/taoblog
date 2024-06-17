@@ -271,11 +271,18 @@ func TestPrettifier(t *testing.T) {
 			Markdown: "用 `<script>` 嵌入 JSON 的正规做法[^1]：\n\n[^1]: https://",
 			Text:     `用 <script> 嵌入 JSON 的正规做法：`,
 		},
+		// TODO: 测试的时候 katex 还没 build 出来，暂时跑不了。
+		// {
+		// 	ID:       9.0,
+		// 	Options:  []renderers.Option2{katex.New()},
+		// 	Markdown: `$a$`,
+		// 	Text:     `[公式]`,
+		// },
 	}
 	for _, tc := range cases {
 		options := append(tc.Options, renderers.WithHtmlPrettifier())
 		md := renderers.NewMarkdown(options...)
-		if tc.ID == 6.0 {
+		if tc.ID == 9.0 {
 			log.Println(`debug`)
 		}
 		text, err := md.Render(tc.Markdown)
