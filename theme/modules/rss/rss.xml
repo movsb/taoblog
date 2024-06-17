@@ -3,6 +3,7 @@
 	<title>{{ .Name }}</title>
 	<link>{{ .Home }}</link>
 	<description>{{ .Description }}</description>
+	<lastBuildDate>{{ .LastBuildDate }}</lastBuildDate>
 	{{- range .Articles }}
 	<item>
 		<title>{{ .Title }}</title>

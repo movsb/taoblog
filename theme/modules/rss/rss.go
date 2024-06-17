@@ -23,8 +23,14 @@ var tmpl string
 // Article ...
 type Article struct {
 	*proto.Post
-	Date    string
+	Date    Date
 	Content template.HTML
+}
+
+type Date int
+
+func (d Date) String() string {
+	return time.Unix(int64(d), 0).Local().Format(time.RFC1123)
 }
 
 // RSS ...
@@ -35,6 +41,8 @@ type RSS struct {
 	Description string
 	Home        string
 	Articles    []*Article
+
+	LastBuildDate Date
 
 	tmpl *template.Template
 	svc  proto.TaoBlogServer
@@ -61,10 +69,12 @@ func New(svc proto.TaoBlogServer, options ...Option) *RSS {
 			articleCount: 10,
 		},
 
-		Name:        info.Name,
-		Description: info.Description,
-		Home:        info.Home,
-		svc:         svc,
+		Name:          info.Name,
+		Description:   info.Description,
+		Home:          info.Home,
+		LastBuildDate: Date(info.LastPostedAt),
+
+		svc: svc,
 	}
 
 	for _, opt := range options {
@@ -93,7 +103,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for _, article := range rsp.Posts {
 		rssArticle := Article{
 			Post:    article,
-			Date:    time.Unix(int64(article.Date), 0).Local().Format(time.RFC1123),
+			Date:    Date(article.Date),
 			Content: template.HTML(cdata(article.Content)),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
