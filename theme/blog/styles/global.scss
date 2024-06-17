@@ -427,6 +427,18 @@ div.divider {
 		&::marker {
 			color: inherit;
 		}
+		&:target {
+			position: relative;
+			&::before {
+				content: "";
+				background-color: yellow;
+				position: absolute;
+				left: -3px;
+				bottom: 0;
+				right: 0;
+				top: 0;
+			}
+		}
 		p {
 			position: relative;
 			margin: 0;
