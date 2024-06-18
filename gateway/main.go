@@ -79,6 +79,8 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux,
 }
 
 func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
+	mc := utils.ServeMuxChain{ServeMux: mux}
+
 	dialOptions := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(
@@ -107,10 +109,10 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
 
 	// 站点地图：sitemap.xml
-	utils.ChainHandlers(mux, `GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
+	mc.Handle(`GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
 
 	// 订阅：rss
-	utils.ChainHandlers(mux, `GET /rss`, rss.New(g.service, rss.WithArticleCount(10)), g.lastPostTimeHandler)
+	mc.Handle(`GET /rss`, rss.New(g.service, rss.WithArticleCount(10)), g.lastPostTimeHandler)
 
 	// 机器人控制：robots.txt
 	sitemapFullURL := utils.Must1(url.Parse(info.Home)).JoinPath(`sitemap.xml`).String()

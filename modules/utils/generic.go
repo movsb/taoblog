@@ -18,8 +18,12 @@ func ChainFuncs[P func(H) H, H any](h H, ps ...P) H {
 	return h
 }
 
-func ChainHandlers(mux *http.ServeMux, pattern string, base http.Handler, middlewares ...func(http.Handler) http.Handler) {
-	mux.Handle(pattern, ChainFuncs(base, middlewares...))
+type ServeMuxChain struct {
+	*http.ServeMux
+}
+
+func (m *ServeMuxChain) Handle(pattern string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) {
+	m.ServeMux.Handle(pattern, ChainFuncs(handler, middlewares...))
 }
 
 func Must1[A any](a A, e error) A {
