@@ -2,5 +2,5 @@ package proto_docs
 
 import "embed"
 
-//go:embed index.html taoblog.swagger.json
+//go:embed taoblog.swagger.json
 var Root embed.FS

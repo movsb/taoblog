@@ -195,3 +195,20 @@ func Write(fsys fs.FS, spec *proto.FileSpec, r io.Reader) error {
 	}
 	return errors.New(`fs.Write: unimplemented`)
 }
+
+type _OverlayFS struct {
+	layers []fs.FS
+}
+
+func (fsys *_OverlayFS) Open(name string) (fs.File, error) {
+	for _, layer := range fsys.layers {
+		if fp, err := layer.Open(name); err == nil {
+			return fp, nil
+		}
+	}
+	return nil, &fs.PathError{Op: `open`, Path: name, Err: fs.ErrNotExist}
+}
+
+func NewOverlayFS(layers ...fs.FS) fs.FS {
+	return &_OverlayFS{layers: layers}
+}

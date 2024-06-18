@@ -8,12 +8,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/taoblog/gateway/handlers/apidoc"
 	"github.com/movsb/taoblog/gateway/handlers/assets"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
@@ -22,7 +22,6 @@ import (
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/protocols/go/handy"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
@@ -92,8 +91,6 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 
-	mux2.HandlePath("GET", `/v3/api`, serveProtoDocsFile(`index.html`))
-	mux2.HandlePath("GET", `/v3/api/swagger`, serveProtoDocsFile(`taoblog.swagger.json`))
 	mux2.HandlePath(`GET`, `/v3/features/{theme}`, features)
 
 	mux2.HandlePath(`GET`, `/v3/avatar/{id}`, g.getAvatar)
@@ -104,6 +101,9 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	mux.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
 
 	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
+
+	// API 文档
+	mc.Handle(`GET /v3/api/`, http.StripPrefix(`/v3/api`, apidoc.New()))
 
 	// 文件服务：/123/a.txt
 	mc.Handle(`GET /v3/posts/{id}/files`, assets.New(`post`, g.service.GrpcAddress()), g.mimicGateway)
@@ -191,26 +191,6 @@ func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map
 		W: w,
 	}
 	g.service.GetAvatar(in)
-}
-
-func serveProtoDocsFile(path string) runtime.HandlerFunc {
-	_, name := filepath.Split(path)
-	return func(w http.ResponseWriter, req *http.Request, params map[string]string) {
-		fp, err := proto_docs.Root.Open(path)
-		if err != nil {
-			panic(err)
-		}
-		defer fp.Close()
-		stat, err := fp.Stat()
-		if err != nil {
-			panic(err)
-		}
-		rs, ok := fp.(io.ReadSeeker)
-		if !ok {
-			panic(`bad embed file`)
-		}
-		http.ServeContent(w, req, name, stat.ModTime(), rs)
-	}
 }
 
 var reFeaturesPlantUML = regexp.MustCompile("```plantuml((?sU).+)```")
