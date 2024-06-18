@@ -16,6 +16,8 @@ var tmpl string
 
 // Article ...
 type Article struct {
+	// https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap#general-guidelines
+	// 使用绝对链接。
 	Link string
 }
 
@@ -29,7 +31,7 @@ type Sitemap struct {
 }
 
 // New ...
-func New(svc proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Sitemap {
+func New(svc proto.TaoBlogServer, impl service.ToBeImplementedByRpc) http.Handler {
 	s := &Sitemap{
 		svc:  svc,
 		impl: impl,

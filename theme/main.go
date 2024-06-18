@@ -29,7 +29,6 @@ import (
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/rss"
-	"github.com/movsb/taoblog/theme/modules/sitemap"
 	"github.com/movsb/taorm"
 	"github.com/xeonx/timeago"
 	"google.golang.org/grpc/codes"
@@ -52,8 +51,7 @@ type Theme struct {
 	searcher proto.SearchServer
 	auth     *auth.Auth
 
-	rss     *rss.RSS
-	sitemap *sitemap.Sitemap
+	rss *rss.RSS
 
 	templates *utils.TemplateLoader
 
@@ -106,8 +104,6 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 		t.rss = rss.New(service, rss.WithArticleCount(r.ArticleCount))
 		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
 	}
-	t.sitemap = sitemap.New(service, impl)
-	m.Handle(`GET /sitemap.xml`, t.LastPostTime304Handler(t.sitemap))
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
@@ -309,19 +305,6 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`search.html`, w, d)
 }
 
-func (t *Theme) Post304Handler(w http.ResponseWriter, r *http.Request, p *proto.Post) bool {
-	h3 := handle304.New(
-		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
-	)
-	if h3.Match(w, r) {
-		return true
-	}
-	h3.Response(w)
-	handle304.MustRevalidate(w)
-	return false
-}
-
 func (t *Theme) LastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
 	return t.LastPostTime304Handler(h)
 }
@@ -333,14 +316,14 @@ func (t *Theme) ChangedAt() time.Time {
 func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		info := utils.Must1(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
-		h3 := handle304.New(
+		h3 := handle304.New(nil,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, info.LastPostedAt),
 		)
 		if h3.Match(w, r) {
 			return
 		}
-		h3.Response(w)
+		h3.Respond(w)
 		handle304.MustRevalidate(w)
 		h.ServeHTTP(w, r)
 	})
@@ -361,8 +344,8 @@ func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`tags.html`, w, d)
 }
 
-func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
-	post, err := t.service.GetPost(req.Context(),
+func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
+	p, err := t.service.GetPost(r.Context(),
 		&proto.GetPostRequest{
 			Id:             int32(id),
 			WithRelates:    true,
@@ -374,28 +357,35 @@ func (t *Theme) QueryByID(w http.ResponseWriter, req *http.Request, id int64) {
 		panic(err)
 	}
 
-	if post.Type == `page` {
+	if p.Type == `page` {
 		link := t.impl.GetLink(id)
 		// 因为只处理了一层页面路径，所以要判断一下。
 		if link != t.impl.GetPlainLink(id) {
-			u := *req.URL
+			u := *r.URL
 			u.Path = link
-			http.Redirect(w, req, u.String(), http.StatusPermanentRedirect)
+			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
 			return
 		}
 		return
 	}
 
-	t.incView(post.Id)
-	t.tempRenderPost(w, req, post)
+	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.incView(p.Id)
+		t.tempRenderPost(w, r, p)
+	})
+
+	handle304.New(real,
+		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
+		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
+	).ServeHTTP(w, r)
 }
 
 func (t *Theme) incView(id int64) {
 	t.impl.IncrementPostPageView(id)
 }
 
-func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error) {
-	post, err := t.service.GetPost(req.Context(),
+func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string) (int64, error) {
+	p, err := t.service.GetPost(r.Context(),
 		&proto.GetPostRequest{
 			Page:           path,
 			WithRelates:    false, // 页面总是不是显示相关文章。
@@ -407,16 +397,21 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, req *http.Request, path strin
 		return 0, err
 	}
 
-	t.incView(post.Id)
-	t.tempRenderPost(w, req, post)
-	return post.Id, nil
+	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.incView(p.Id)
+		t.tempRenderPost(w, r, p)
+	})
+
+	handle304.New(real,
+		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
+		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
+	).ServeHTTP(w, r)
+
+	return p.Id, nil
 }
 
+// TODO 304 不要放这里处理。
 func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto.Post) {
-	if t.Post304Handler(w, req, p) {
-		return
-	}
-
 	rsp, err := t.service.GetPostComments(req.Context(), &proto.GetPostCommentsRequest{Id: p.Id})
 	if err != nil {
 		panic(err)

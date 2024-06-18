@@ -18,7 +18,7 @@ func CacheShortly(w http.ResponseWriter) {
 
 type Handler interface {
 	Match(w http.ResponseWriter, r *http.Request) bool
-	Response(w http.ResponseWriter)
+	Respond(w http.ResponseWriter)
 }
 
 func WithNotModified(t time.Time) Handler {
@@ -31,6 +31,7 @@ func WithEntityTag(fields ...any) Handler {
 }
 
 type _Bundle struct {
+	h        http.Handler
 	handlers []Handler
 }
 
@@ -43,14 +44,33 @@ func (b *_Bundle) Match(w http.ResponseWriter, r *http.Request) bool {
 	w.WriteHeader(http.StatusNotModified)
 	return true
 }
-func (b *_Bundle) Response(w http.ResponseWriter) {
+func (b *_Bundle) Respond(w http.ResponseWriter) {
 	for _, h := range b.handlers {
-		h.Response(w)
+		h.Respond(w)
 	}
 }
 
-func New(handlers ...Handler) Handler {
-	return &_Bundle{handlers: handlers}
+func (b *_Bundle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if b.Match(w, r) {
+		return
+	}
+	b.Respond(w)
+	// TODO 移除到独立的缓存处理器中。
+	MustRevalidate(w)
+	// NOTE: 调用此方法必须 h 不为空。
+	b.h.ServeHTTP(w, r)
+}
+
+type BundleHandler interface {
+	Handler
+	http.Handler
+}
+
+func New(h http.Handler, handlers ...Handler) BundleHandler {
+	return &_Bundle{
+		h:        h,
+		handlers: handlers,
+	}
 }
 
 // NotModified ...
@@ -64,7 +84,7 @@ func (nm NotModified) Match(w http.ResponseWriter, r *http.Request) bool {
 	return t.Equal(nm.Modified)
 }
 
-func (nm NotModified) Response(w http.ResponseWriter) {
+func (nm NotModified) Respond(w http.ResponseWriter) {
 	w.Header().Add(`Last-Modified`, nm.Modified.UTC().Format(http.TimeFormat))
 }
 
@@ -97,6 +117,6 @@ func (cm EntityTag) Match(w http.ResponseWriter, r *http.Request) bool {
 	return haystack == cm.format()
 }
 
-func (cm EntityTag) Response(w http.ResponseWriter) {
+func (cm EntityTag) Respond(w http.ResponseWriter) {
 	w.Header().Add(`ETag`, cm.format())
 }

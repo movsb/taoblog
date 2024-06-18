@@ -37,7 +37,7 @@ $ docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:a
 
 文件名|文件描述
 ------|--------
-admin/      | 后台目录（仅登录）
+admin/      | 后台目录
 cmd/        | 客户端/服务端命令/配置
 docker/     | 容器镜像
 gateway/    | 网关接口层

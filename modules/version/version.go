@@ -3,20 +3,20 @@ package version
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
+// 运行起始时间。
+var Time = time.Now()
+
+// 在编译脚本里面被注入进来。
 var (
-	// BuiltOn ...
-	BuiltOn string
-	// BuiltAt ...
-	BuiltAt string
-	// GoVersion ...
+	BuiltOn   string
+	BuiltAt   string
 	GoVersion string
-	// GitAuthor ...
 	GitAuthor string
-	// GitCommit ...
 	GitCommit string
 )
 

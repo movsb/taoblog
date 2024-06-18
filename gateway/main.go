@@ -8,15 +8,19 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/taoblog/gateway/handlers/robots"
+	"github.com/movsb/taoblog/gateway/handlers/sitemap"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	proto_docs "github.com/movsb/taoblog/protocols/docs"
 	"github.com/movsb/taoblog/protocols/go/handy"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -24,6 +28,7 @@ import (
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/webhooks"
+	"github.com/movsb/taoblog/theme/modules/handle304"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -98,7 +103,29 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 
 	mux.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
 
+	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
+
+	mux.Handle(`GET /sitemap.xml`,
+		utils.ChainFuncs(
+			sitemap.New(g.service, g.service),
+			g.lastPostTimeHandler,
+		),
+	)
+
+	sitemapFullURL := utils.Must1(url.Parse(info.Home)).JoinPath(`sitemap.xml`).String()
+	mux.Handle(`GET /robots.txt`, robots.NewDefaults(sitemapFullURL))
+
 	return nil
+}
+
+func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		info := utils.Must1(g.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
+		handle304.New(h,
+			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
+			handle304.WithEntityTag(version.GitCommit, version.Time, info.LastPostedAt),
+		).ServeHTTP(w, r)
+	})
 }
 
 func (g *Gateway) mimicGateway(r *http.Request) context.Context {

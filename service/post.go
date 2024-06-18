@@ -37,6 +37,11 @@ import (
 type _PostContentCacheKey struct {
 	ID      int64
 	Options string
+
+	// 除开最基本的文章编号和渲染选项的不同之外，
+	// 可能还有其它的 Vary 特性，比如：如果同一篇文章，管理员和访客看到的内容不一样（角色），
+	// 这部分就属于 Vary 应该标记出来的。暂时不使用相关标记。只是备用。
+	Vary struct{}
 }
 
 func (s *Service) posts() *taorm.Stmt {
