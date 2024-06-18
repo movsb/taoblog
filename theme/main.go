@@ -28,7 +28,6 @@ import (
 	"github.com/movsb/taoblog/theme/data"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
-	"github.com/movsb/taoblog/theme/modules/rss"
 	"github.com/movsb/taorm"
 	"github.com/xeonx/timeago"
 	"google.golang.org/grpc/codes"
@@ -50,8 +49,6 @@ type Theme struct {
 	impl     service.ToBeImplementedByRpc
 	searcher proto.SearchServer
 	auth     *auth.Auth
-
-	rss *rss.RSS
 
 	templates *utils.TemplateLoader
 
@@ -99,11 +96,6 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	}
 
 	m := t.specialMux
-
-	if r := cfg.Site.RSS; r.Enabled {
-		t.rss = rss.New(service, rss.WithArticleCount(r.ArticleCount))
-		m.Handle(`GET /rss`, t.LastPostTime304Handler(t.rss))
-	}
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))

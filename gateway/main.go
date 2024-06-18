@@ -16,6 +16,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
+	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/notify"
@@ -105,13 +106,13 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 
 	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
 
-	mux.Handle(`GET /sitemap.xml`,
-		utils.ChainFuncs(
-			sitemap.New(g.service, g.service),
-			g.lastPostTimeHandler,
-		),
-	)
+	// 站点地图：sitemap.xml
+	utils.ChainHandlers(mux, `GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
 
+	// 订阅：rss
+	utils.ChainHandlers(mux, `GET /rss`, rss.New(g.service, rss.WithArticleCount(10)), g.lastPostTimeHandler)
+
+	// 机器人控制：robots.txt
 	sitemapFullURL := utils.Must1(url.Parse(info.Home)).JoinPath(`sitemap.xml`).String()
 	mux.Handle(`GET /robots.txt`, robots.NewDefaults(sitemapFullURL))
 

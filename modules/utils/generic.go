@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	mr "math/rand"
+	"net/http"
 )
 
 // 搁这套娃🪆🪆🪆？
@@ -15,6 +16,10 @@ func ChainFuncs[P func(H) H, H any](h H, ps ...P) H {
 		h = ps[i](h)
 	}
 	return h
+}
+
+func ChainHandlers(mux *http.ServeMux, pattern string, base http.Handler, middlewares ...func(http.Handler) http.Handler) {
+	mux.Handle(pattern, ChainFuncs(base, middlewares...))
 }
 
 func Must1[A any](a A, e error) A {

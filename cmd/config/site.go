@@ -33,11 +33,10 @@ func (s _Since) Days() int {
 
 // SiteConfig ...
 type SiteConfig struct {
-	Home        string    `yaml:"home"`
-	Name        string    `yaml:"name"`
-	Description string    `yaml:"description"`
-	Since       _Since    `yaml:"since,omitempty"`
-	RSS         RSSConfig `yaml:"rss"`
+	Home        string `yaml:"home"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+	Since       _Since `yaml:"since,omitempty"`
 }
 
 // DefaultSiteConfig ...
@@ -48,21 +47,6 @@ func DefaultSiteConfig() SiteConfig {
 		Name:        `未命名`,
 		Description: ``,
 		Since:       since,
-		RSS:         DefaultRSSConfig(),
-	}
-}
-
-// RSSConfig ...
-type RSSConfig struct {
-	Enabled      bool `yaml:"enabled"`
-	ArticleCount int  `yaml:"article_count"`
-}
-
-// DefaultRSSConfig ...
-func DefaultRSSConfig() RSSConfig {
-	return RSSConfig{
-		Enabled:      true,
-		ArticleCount: 10,
 	}
 }
 

@@ -60,8 +60,7 @@ type _Config struct {
 	articleCount int
 }
 
-// New ...
-func New(svc proto.TaoBlogServer, options ...Option) *RSS {
+func New(svc proto.TaoBlogServer, options ...Option) http.Handler {
 	info := utils.Must1(svc.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	r := &RSS{
