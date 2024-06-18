@@ -1,20 +1,19 @@
 package gateway
 
 import (
-	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
 	"github.com/movsb/taoblog/gateway/handlers/assets"
+	"github.com/movsb/taoblog/gateway/handlers/features"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
@@ -26,17 +25,12 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/webhooks"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 )
-
-//go:embed FEATURES.md
-var featuresMd []byte
-var featuresTime = time.Now()
 
 type Gateway struct {
 	mux     *http.ServeMux
@@ -91,8 +85,6 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
 
-	mux2.HandlePath(`GET`, `/v3/features/{theme}`, features)
-
 	mux2.HandlePath(`GET`, `/v3/avatar/{id}`, g.getAvatar)
 
 	mux2.HandlePath(`POST`, `/v3/webhooks/github`, g.githubWebhook())
@@ -101,6 +93,9 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	mux.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
 
 	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
+
+	// 博客功能集
+	mc.Handle(`GET /v3/features/{theme}`, features.New())
 
 	// API 文档
 	mc.Handle(`GET /v3/api/`, http.StripPrefix(`/v3/api`, apidoc.New()))
@@ -191,29 +186,4 @@ func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map
 		W: w,
 	}
 	g.service.GetAvatar(in)
-}
-
-var reFeaturesPlantUML = regexp.MustCompile("```plantuml((?sU).+)```")
-
-func features(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	matches := reFeaturesPlantUML.FindSubmatch(featuresMd)
-	if len(matches) == 2 {
-		compressed, err := plantuml.Compress(matches[1])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		darkMode := false
-		if params[`theme`] == `dark` {
-			darkMode = true
-		}
-		content, err := plantuml.Fetch(r.Context(), `https://www.plantuml.com/plantuml`, `svg`, compressed, darkMode)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Add(`Content-Type`, `image/svg+xml`)
-		http.ServeContent(w, r, `features.svg`, featuresTime, bytes.NewReader(content))
-		return
-	}
 }
