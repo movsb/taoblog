@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/taoblog/gateway/handlers/assets"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
@@ -33,7 +33,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
-	"nhooyr.io/websocket"
 )
 
 //go:embed FEATURES.md
@@ -102,11 +101,12 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtim
 	mux2.HandlePath(`POST`, `/v3/webhooks/github`, g.githubWebhook())
 	mux2.HandlePath(`POST`, `/v3/webhooks/grafana/notify`, g.grafanaNotify)
 
-	mux.Handle(`GET /v3/posts/{id}/files`, g.createFileManager(`post`))
-
 	mux.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
 
 	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
+
+	// 文件服务：/123/a.txt
+	mc.Handle(`GET /v3/posts/{id}/files`, assets.New(`post`, g.service.GrpcAddress()), g.mimicGateway)
 
 	// 站点地图：sitemap.xml
 	mc.Handle(`GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
@@ -131,69 +131,17 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (g *Gateway) mimicGateway(r *http.Request) context.Context {
-	md := metadata.Pairs()
-	for _, cookie := range r.Header.Values(`cookie`) {
-		md.Append(auth.GatewayCookie, cookie)
-	}
-	for _, userAgent := range r.Header.Values(`user-agent`) {
-		md.Append(auth.GatewayUserAgent, userAgent)
-	}
-	return metadata.NewOutgoingContext(r.Context(), md)
-}
-
-func (g *Gateway) createFileManager(kind string) http.Handler {
-	if kind != `post` {
-		panic(`only for post currently`)
-	}
+func (g *Gateway) mimicGateway(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 这里没鉴权，后端会鉴权。
-		// 鉴权了会比较好，可以少打开一个到后端的连接。
-		ws, err := websocket.Accept(w, r, nil)
-		if err != nil {
-			log.Println(err)
-			return
+		md := metadata.Pairs()
+		for _, cookie := range r.Header.Values(`cookie`) {
+			md.Append(auth.GatewayCookie, cookie)
 		}
-		defer ws.CloseNow()
-		ws.SetReadLimit(-1)
-
-		id := utils.MustToInt64(r.PathValue(`id`))
-
-		conn, err := grpc.DialContext(r.Context(), g.service.GrpcAddress(), grpc.WithInsecure())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		for _, userAgent := range r.Header.Values(`user-agent`) {
+			md.Append(auth.GatewayUserAgent, userAgent)
 		}
-		defer conn.Close()
-		client := proto.NewManagementClient(conn)
-		fs, err := client.FileSystem(g.mimicGateway(r))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		initReq := proto.FileSystemRequest_InitRequest{
-			For: &proto.FileSystemRequest_InitRequest_Post_{
-				Post: &proto.FileSystemRequest_InitRequest_Post{
-					Id: id,
-				},
-			},
-		}
-		if err := fs.Send(&proto.FileSystemRequest{Init: &initReq}); err != nil {
-			log.Println(err)
-			return
-		}
-		initRsp, err := fs.Recv()
-		if err != nil {
-			log.Println("init failed:", err)
-			return
-		}
-		if initRsp.GetInit() == nil {
-			log.Println(`init error`)
-			return
-		}
-
-		NewFileSystemWrapper().fileServer(r.Context(), ws, fs)
+		ctx := metadata.NewOutgoingContext(r.Context(), md)
+		h.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
