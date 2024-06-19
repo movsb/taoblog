@@ -5,12 +5,12 @@ import (
 	"net/http"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"google.golang.org/grpc"
 	"nhooyr.io/websocket"
 )
 
-func New(kind string, addr string) http.Handler {
+func New(kind string, client clients.Client) http.Handler {
 	if kind != `post` {
 		panic(`only for post currently`)
 	}
@@ -27,13 +27,6 @@ func New(kind string, addr string) http.Handler {
 
 		id := utils.MustToInt64(r.PathValue(`id`))
 
-		conn, err := grpc.DialContext(r.Context(), addr, grpc.WithInsecure())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer conn.Close()
-		client := proto.NewManagementClient(conn)
 		fs, err := client.FileSystem(r.Context())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

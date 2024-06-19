@@ -88,7 +88,7 @@ type Service struct {
 	// 请求节流器。
 	throttler *utils.Throttler[_RequestThrottlerKey]
 
-	avatarCache *AvatarCache
+	avatarCache *cache.AvatarHash
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
@@ -183,7 +183,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	}
 	s.cmtntf.Init()
 
-	s.avatarCache = NewAvatarCache()
+	s.avatarCache = cache.NewAvatarHash()
 	s.cmtgeo = commentgeo.New(context.TODO())
 
 	s.cacheAllCommenterData()
@@ -231,7 +231,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	return s
 }
 
-// 从 Context 中取出用户并且必须为 Admin，否则 panic。
+// 从 Context 中取出用户并且必须为 Admin/System，否则 panic。
 func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	ac := auth.Context(ctx)
 	if ac == nil {

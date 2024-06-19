@@ -1,4 +1,4 @@
-package webhooks
+package github
 
 import (
 	"crypto/hmac"
@@ -47,8 +47,8 @@ func decode(r io.Reader, secret string, sum string) (*Payload, error) {
 	return &p, nil
 }
 
-func CreateHandler(secret string, reloaderPath string, sendNotify func(content string)) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+func handler(secret string, reloaderPath string, sendNotify func(content string)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sum := strings.TrimPrefix(r.Header.Get(`X-Hub-Signature-256`), `sha256=`)
 		payload, err := decode(r.Body, secret, sum)
 		if err != nil {
@@ -85,5 +85,5 @@ func CreateHandler(secret string, reloaderPath string, sendNotify func(content s
 				sendNotify(fmt.Sprintf("结果未知：%s", w.Conclusion))
 			}
 		}
-	}
+	})
 }

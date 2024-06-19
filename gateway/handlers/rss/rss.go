@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/clients"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -44,8 +45,8 @@ type RSS struct {
 
 	LastBuildDate Date
 
-	tmpl *template.Template
-	svc  proto.TaoBlogServer
+	tmpl   *template.Template
+	client clients.Client
 }
 
 type Option func(r *RSS)
@@ -60,8 +61,8 @@ type _Config struct {
 	articleCount int
 }
 
-func New(svc proto.TaoBlogServer, options ...Option) http.Handler {
-	info := utils.Must1(svc.GetInfo(context.Background(), &proto.GetInfoRequest{}))
+func New(client clients.Client, options ...Option) http.Handler {
+	info := utils.Must1(client.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	r := &RSS{
 		config: _Config{
@@ -73,7 +74,7 @@ func New(svc proto.TaoBlogServer, options ...Option) http.Handler {
 		Home:          info.Home,
 		LastBuildDate: Date(info.LastPostedAt),
 
-		svc: svc,
+		client: client,
 	}
 
 	for _, opt := range options {
@@ -87,7 +88,7 @@ func New(svc proto.TaoBlogServer, options ...Option) http.Handler {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := r.svc.ListPosts(req.Context(), &proto.ListPostsRequest{
+	rsp, err := r.client.ListPosts(req.Context(), &proto.ListPostsRequest{
 		Limit:          int32(r.config.articleCount),
 		OrderBy:        `date desc`,
 		Kinds:          []string{`post`},

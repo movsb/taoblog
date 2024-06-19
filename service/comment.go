@@ -428,8 +428,6 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		}
 	}
 
-	// NOTE：这里是用后台管理员的身份获取。
-	// 所以为了不要 impersonate，应该提供系统帐号。
 	post, err := s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
 		Id:             int32(in.PostId),
 		WithLink:       proto.LinkKind_LinkKindFull,
@@ -639,4 +637,15 @@ func (s *Service) CheckCommentTaskListItems(ctx context.Context, in *proto.Check
 	return &proto.CheckTaskListItemsResponse{
 		ModificationTime: updatedComment.Modified,
 	}, nil
+}
+
+func (s *Service) GetCommentEmailById(ctx context.Context, in *proto.GetCommentEmailByIdRequest) (*proto.GetCommentEmailByIdResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	email := s.avatarCache.Email(int(in.Id))
+	if email == "" {
+		return nil, status.Error(codes.NotFound, `找不到对应的邮箱地址。`)
+	}
+
+	return &proto.GetCommentEmailByIdResponse{Email: email}, nil
 }

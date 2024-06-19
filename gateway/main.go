@@ -2,34 +2,32 @@ package gateway
 
 import (
 	"context"
-	_ "embed"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	_ "embed"
+
+	"github.com/movsb/taoblog/gateway/handlers/api"
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
 	"github.com/movsb/taoblog/gateway/handlers/assets"
+	"github.com/movsb/taoblog/gateway/handlers/avatar"
 	"github.com/movsb/taoblog/gateway/handlers/features"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
+	"github.com/movsb/taoblog/gateway/handlers/webhooks/github"
+	"github.com/movsb/taoblog/gateway/handlers/webhooks/grafana"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	"github.com/movsb/taoblog/protocols/go/handy"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	"github.com/movsb/taoblog/service/modules/webhooks"
 	"github.com/movsb/taoblog/theme/modules/handle304"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/encoding/protojson"
+
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 )
 
 type Gateway struct {
@@ -37,7 +35,15 @@ type Gateway struct {
 	service *service.Service
 	auther  *auth.Auth
 
+	client clients.Client
+	server _Server
+
 	instantNotifier notify.InstantNotifier
+}
+
+type _Server interface {
+	proto.UtilsServer
+	proto.TaoBlogServer
 }
 
 func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.InstantNotifier) *Gateway {
@@ -46,144 +52,102 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux,
 		service: service,
 		auther:  auther,
 
+		client: clients.NewFromGrpcAddr(service.GrpcAddress()),
+		server: service,
+
 		instantNotifier: instantNotifier,
 	}
 
-	mux2 := runtime.NewServeMux(
-		runtime.WithMarshalerOption(
-			runtime.MIMEWildcard,
-			&runtime.JSONPb{
-				MarshalOptions: protojson.MarshalOptions{
-					UseProtoNames:   true,
-					EmitUnpopulated: true,
-				},
-			},
-		),
-	)
-
-	mux.Handle(`/v3/`, mux2)
-
-	if err := g.register(context.TODO(), mux, mux2); err != nil {
+	if err := g.register(context.TODO(), mux); err != nil {
 		panic(err)
 	}
 
 	return g
 }
 
-func (g *Gateway) register(ctx context.Context, mux *http.ServeMux, mux2 *runtime.ServeMux) error {
+func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 	mc := utils.ServeMuxChain{ServeMux: mux}
 
-	dialOptions := []grpc.DialOption{
-		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(100<<20),
-			grpc.MaxCallSendMsgSize(100<<20),
-		),
+	info := utils.Must1(g.client.GetInfo(ctx, &proto.GetInfoRequest{}))
+
+	// 无需鉴权的部分
+	// 可跨进程使用。
+	{
+		// 扩展功能动态生成的样式、脚本、文件。
+		mc.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
+
+		// 博客功能集
+		mc.Handle(`GET /v3/features/{theme}`, features.New())
+
+		// API 文档
+		mc.Handle(`GET /v3/api/`, http.StripPrefix(`/v3/api`, apidoc.New()))
+
+		// 机器人控制：robots.txt
+		sitemapFullURL := utils.Must1(url.Parse(info.Home)).JoinPath(`sitemap.xml`).String()
+		mux.Handle(`GET /robots.txt`, robots.NewDefaults(sitemapFullURL))
 	}
 
-	proto.RegisterUtilsHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
-	proto.RegisterTaoBlogHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
-	proto.RegisterSearchHandlerFromEndpoint(ctx, mux2, g.service.GrpcAddress(), dialOptions)
+	// 无需鉴权但本身自带鉴权的部分
+	{
+		// GitHub Workflow 完成回调。
+		mc.Handle(`POST /v3/webhooks/github`, github.New(
+			g.service.Config().Maintenance.Webhook.GitHub.Secret,
+			g.service.Config().Maintenance.Webhook.ReloaderPath,
+			func(content string) {
+				g.instantNotifier.InstantNotify(`GitHub Webhooks`, content)
+			},
+		))
 
-	mux2.HandlePath(`GET`, `/v3/avatar/{id}`, g.getAvatar)
+		// Grafana 监控告警通知。
+		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.server), g.localAuthenticate)
+	}
 
-	mux2.HandlePath(`POST`, `/v3/webhooks/github`, g.githubWebhook())
-	mux2.HandlePath(`POST`, `/v3/webhooks/grafana/notify`, g.grafanaNotify)
+	// 使用系统帐号鉴权的部分
+	// 只能在进程内使用。
+	{
+		// 头像服务
+		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(g.server), g.systemAdmin)
+	}
 
-	mux.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, &dynamic.Handler{}))
+	// 使用登录身份鉴权的部分
+	// 可跨进程使用。
+	{
+		// GRPC API 转接层
+		mc.Handle(`/v3/`, api.New(ctx, g.client))
 
-	info := utils.Must1(g.service.GetInfo(ctx, &proto.GetInfoRequest{}))
+		// 文件服务：/123/a.txt
+		mc.Handle(`GET /v3/posts/{id}/files`, assets.New(`post`, g.client))
 
-	// 博客功能集
-	mc.Handle(`GET /v3/features/{theme}`, features.New())
+		// 站点地图：sitemap.xml
+		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
 
-	// API 文档
-	mc.Handle(`GET /v3/api/`, http.StripPrefix(`/v3/api`, apidoc.New()))
-
-	// 文件服务：/123/a.txt
-	mc.Handle(`GET /v3/posts/{id}/files`, assets.New(`post`, g.service.GrpcAddress()), g.mimicGateway)
-
-	// 站点地图：sitemap.xml
-	mc.Handle(`GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
-
-	// 订阅：rss
-	mc.Handle(`GET /rss`, rss.New(g.service, rss.WithArticleCount(10)), g.lastPostTimeHandler)
-
-	// 机器人控制：robots.txt
-	sitemapFullURL := utils.Must1(url.Parse(info.Home)).JoinPath(`sitemap.xml`).String()
-	mux.Handle(`GET /robots.txt`, robots.NewDefaults(sitemapFullURL))
+		// 订阅：rss
+		mc.Handle(`GET /rss`, rss.New(g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
+	}
 
 	return nil
 }
 
+func (g *Gateway) localAuthenticate(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(g.auther.NewContextForRequest(r))
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (g *Gateway) systemAdmin(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := auth.SystemAdmin(r.Context())
+		h.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		info := utils.Must1(g.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
+		info := utils.Must1(g.client.GetInfo(r.Context(), &proto.GetInfoRequest{}))
 		handle304.New(h,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, version.Time, info.LastPostedAt),
 		).ServeHTTP(w, r)
 	})
-}
-
-func (g *Gateway) mimicGateway(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		md := metadata.Pairs()
-		for _, cookie := range r.Header.Values(`cookie`) {
-			md.Append(auth.GatewayCookie, cookie)
-		}
-		for _, userAgent := range r.Header.Values(`user-agent`) {
-			md.Append(auth.GatewayUserAgent, userAgent)
-		}
-		ctx := metadata.NewOutgoingContext(r.Context(), md)
-		h.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func (g *Gateway) githubWebhook() runtime.HandlerFunc {
-	h := webhooks.CreateHandler(
-		g.service.Config().Maintenance.Webhook.GitHub.Secret,
-		g.service.Config().Maintenance.Webhook.ReloaderPath,
-		func(content string) {
-			g.instantNotifier.InstantNotify("博客更新", content)
-		},
-	)
-	return func(w http.ResponseWriter, req *http.Request, params map[string]string) {
-		h(w, req)
-	}
-}
-
-func (g *Gateway) grafanaNotify(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	body := utils.DropLast1(io.ReadAll(io.LimitReader(req.Body, 1<<20)))
-	var m map[string]any
-	json.Unmarshal(body, &m)
-	var message string
-	if x, ok := m[`message`]; ok {
-		message, _ = x.(string)
-	}
-	g.service.UtilsServer.InstantNotify(g.auther.NewContextForRequest(req), &proto.InstantNotifyRequest{
-		Title: `监控告警`,
-		// https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/
-		Message: message,
-	})
-}
-
-func (g *Gateway) getAvatar(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	ephemeral, err := strconv.Atoi(params[`id`])
-	if err != nil {
-		panic(err)
-	}
-	in := &handy.GetAvatarRequest{
-		Ephemeral:       ephemeral,
-		IfModifiedSince: req.Header.Get("If-Modified-Since"),
-		IfNoneMatch:     req.Header.Get("If-None-Match"),
-		SetStatus: func(statusCode int) {
-			w.WriteHeader(statusCode)
-		},
-		SetHeader: func(name string, value string) {
-			w.Header().Add(name, value)
-		},
-		W: w,
-	}
-	g.service.GetAvatar(in)
 }

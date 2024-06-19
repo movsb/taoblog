@@ -123,3 +123,11 @@ message PreviewCommentRequest {
 message PreviewCommentResponse {
 	string html = 1;
 }
+
+message GetCommentEmailByIdRequest {
+	int32 id = 1;
+}
+
+message GetCommentEmailByIdResponse {
+	string email = 1;
+}

@@ -280,6 +280,14 @@ service TaoBlog {
 			description: "完成/取消完成任务。";
 		};
 	}
+	rpc GetCommentEmailById (GetCommentEmailByIdRequest) returns (GetCommentEmailByIdResponse) {
+		option (google.api.http) = {
+			get: "/v3/comments/{id=*}/email";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取某条评论的评论者邮箱";
+		};
+	}
 }
 
 message PingRequest {

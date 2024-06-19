@@ -7,18 +7,47 @@ import (
 	"net/url"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
+
+type Client interface {
+	proto.UtilsClient
+	proto.TaoBlogClient
+	proto.ManagementClient
+	proto.SearchClient
+}
+
+type _Client struct {
+	proto.UtilsClient
+	proto.TaoBlogClient
+	proto.ManagementClient
+	proto.SearchClient
+}
+
+func NewFromGrpcAddr(addr string) Client {
+	cc := NewConn("", addr)
+	pc := NewProtoClient(cc, "")
+	return &_Client{
+		UtilsClient:      pc.Utils,
+		TaoBlogClient:    pc.Blog,
+		ManagementClient: pc.Management,
+		SearchClient:     pc.Search,
+	}
+}
 
 func NewProtoClient(cc *grpc.ClientConn, token string) *ProtoClient {
 	return &ProtoClient{
 		cc:         cc,
 		token:      token,
+		Utils:      proto.NewUtilsClient(cc),
 		Blog:       proto.NewTaoBlogClient(cc),
 		Management: proto.NewManagementClient(cc),
+		Search:     proto.NewSearchClient(cc),
 	}
 }
 
@@ -26,19 +55,25 @@ type ProtoClient struct {
 	cc    *grpc.ClientConn
 	token string
 
+	Utils      proto.UtilsClient
 	Blog       proto.TaoBlogClient
 	Management proto.ManagementClient
+	Search     proto.SearchClient
 }
 
 func (c *ProtoClient) Context() context.Context {
-	return c.ContextFrom(context.Background())
+	return c.contextFrom(context.Background())
 }
 
-func (c *ProtoClient) ContextFrom(parent context.Context) context.Context {
+func (c *ProtoClient) contextFrom(parent context.Context) context.Context {
+	if c.token == "" {
+		return parent
+	}
 	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, fmt.Sprintf("%s %d:%s", auth.TokenName, auth.AdminID, c.token)))
 }
 
 // grpcAddress 可以为空，表示使用 api 同一地址。
+// TODO 私有化，并把 token 设置到 default call options
 func NewConn(api, grpcAddress string) *grpc.ClientConn {
 	secure := false
 	if grpcAddress == `` {
@@ -60,24 +95,17 @@ func NewConn(api, grpcAddress string) *grpc.ClientConn {
 		grpcAddress = fmt.Sprintf(`%s:%s`, grpcAddress, grpcPort)
 	}
 
-	var conn *grpc.ClientConn
-	var err error
-	if secure {
-		if conn, err = grpc.Dial(
-			grpcAddress,
-			grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
-			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(100<<20)),
-		); err != nil {
-			panic(err)
-		}
-	} else {
-		if conn, err = grpc.Dial(
-			grpcAddress,
-			grpc.WithInsecure(),
-			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(100<<20)),
-		); err != nil {
-			panic(err)
-		}
+	options := []grpc.DialOption{
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(100<<20),
+			grpc.MaxCallSendMsgSize(100<<20),
+		),
+		grpc.WithTransportCredentials(utils.IIF(secure, credentials.NewTLS(&tls.Config{}), insecure.NewCredentials())),
+	}
+
+	conn, err := grpc.Dial(grpcAddress, options...)
+	if err != nil {
+		panic(err)
 	}
 
 	return conn

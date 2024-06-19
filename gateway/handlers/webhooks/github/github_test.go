@@ -1,4 +1,4 @@
-package webhooks
+package github
 
 import "testing"
 

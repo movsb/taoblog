@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -177,7 +176,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:   cobra.NoArgs,
 		PreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			resp, err := client.Blog.Ping(context.Background(), &proto.PingRequest{})
+			resp, err := client.Blog.Ping(client.Context(), &proto.PingRequest{})
 			if err != nil {
 				panic(err)
 			}
