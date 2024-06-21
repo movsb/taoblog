@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"html"
 	"log"
 	"net/url"
 	"os"
@@ -234,7 +235,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		tr = &renderers.HTML{}
 		return tr.Render(source)
 	case `plain`:
-		return source, nil
+		return html.EscapeString(source), nil
 	}
 
 	if sourceType != `markdown` {
@@ -265,16 +266,10 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			media_size.New(s.OpenAsset(postId), media_size.WithLocalOnly(), media_size.WithDimensionLimiter(350)),
 		)
 	}
-	if commentId > 0 {
-		if !secure {
-			options = append(options,
-				renderers.WithDisableHeadings(true),
-				renderers.WithDisableHTML(true),
-			)
-		}
+	if !secure {
 		options = append(options,
-			renderers.WithRemoveTitleHeading(),
-			renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
+			renderers.WithDisableHeadings(true),
+			renderers.WithDisableHTML(true),
 		)
 	}
 	if co.RenderCodeBlocks {
