@@ -251,9 +251,6 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		if link := s.GetLink(postId); link != s.plainLink(postId) {
 			options = append(options, renderers.WithModifiedAnchorReference(link))
 		}
-		if co.UseAbsolutePaths {
-			options = append(options, rooted_path.New(s.OpenAsset(postId)))
-		}
 		if !co.KeepTitleHeading {
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
@@ -265,10 +262,6 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			)
 		}
 		options = append(options, media_tags.New(s.OpenAsset(postId), mediaTagOptions...))
-
-		options = append(options,
-			media_size.New(s.OpenAsset(postId), media_size.WithLocalOnly(), media_size.WithDimensionLimiter(350)),
-		)
 	}
 	if !secure {
 		options = append(options,
@@ -282,8 +275,11 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 	if co.PrettifyHtml {
 		options = append(options, renderers.WithHtmlPrettifier())
 	}
-
+	if co.UseAbsolutePaths {
+		options = append(options, rooted_path.New(s.OpenAsset(postId)))
+	}
 	options = append(options,
+		media_size.New(s.OpenAsset(postId), media_size.WithLocalOnly(), media_size.WithDimensionLimiter(350)),
 		renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
 			if src, ok := metas.Sources[path]; ok {
 				name = src.Name
