@@ -35,15 +35,8 @@ type Gateway struct {
 	service *service.Service
 	auther  *auth.Auth
 
-	client clients.Client
-	server _Server
-
+	client          clients.Client
 	instantNotifier notify.InstantNotifier
-}
-
-type _Server interface {
-	proto.UtilsServer
-	proto.TaoBlogServer
 }
 
 func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.InstantNotifier) *Gateway {
@@ -52,9 +45,7 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux,
 		service: service,
 		auther:  auther,
 
-		client: clients.NewFromGrpcAddr(service.GrpcAddress()),
-		server: service,
-
+		client:          clients.NewFromGrpcAddr(service.GrpcAddress()),
 		instantNotifier: instantNotifier,
 	}
 
@@ -106,7 +97,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 	// 只能在进程内使用。
 	{
 		// 头像服务
-		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(g.auther, g.client))
+		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(g.auther, g.service))
 	}
 
 	// 使用登录身份鉴权的部分

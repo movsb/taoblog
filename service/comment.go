@@ -639,13 +639,7 @@ func (s *Service) CheckCommentTaskListItems(ctx context.Context, in *proto.Check
 	}, nil
 }
 
-func (s *Service) GetCommentEmailById(ctx context.Context, in *proto.GetCommentEmailByIdRequest) (*proto.GetCommentEmailByIdResponse, error) {
-	s.MustBeAdmin(ctx)
-
-	email := s.avatarCache.Email(int(in.Id))
-	if email == "" {
-		return nil, status.Error(codes.NotFound, `找不到对应的邮箱地址。`)
-	}
-
-	return &proto.GetCommentEmailByIdResponse{Email: email}, nil
+// TODO 改个名字，这个 ID 实际上是 ephemeral。
+func (s *Service) GetCommentEmailById(id int) string {
+	return s.avatarCache.Email(id)
 }

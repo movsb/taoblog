@@ -45,6 +45,7 @@ type ToBeImplementedByRpc interface {
 	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
 	ThemeChangedAt() time.Time
+	GetCommentEmailById(id int) string
 }
 
 // Service implements IServer.

@@ -5,24 +5,21 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols/clients"
-	"github.com/movsb/taoblog/protocols/go/proto"
-	"google.golang.org/grpc/status"
+	"github.com/movsb/taoblog/service"
 )
 
-func New(auther *auth.Auth, client clients.Client) http.Handler {
+func New(auther *auth.Auth, impl service.ToBeImplementedByRpc) http.Handler {
 	return &_Avatar{
 		auther: auther,
-		client: client,
+		impl:   impl,
 	}
 }
 
 type _Avatar struct {
 	auther *auth.Auth
-	client clients.Client
+	impl   service.ToBeImplementedByRpc
 }
 
 // Params ...
@@ -32,14 +29,9 @@ type Params struct {
 
 func (h *_Avatar) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// ctx := h.auther.NewContextForRequestAsGateway(r)
-	emailRsp, err := h.client.GetCommentEmailById(
-		auth.SystemAdminForGateway(r.Context()),
-		&proto.GetCommentEmailByIdRequest{
-			Id: int32(utils.MustToInt64(r.PathValue(`id`))),
-		},
-	)
-	if err != nil {
-		http.Error(w, err.Error(), runtime.HTTPStatusFromCode(status.Code(err)))
+	email := h.impl.GetCommentEmailById(int(utils.MustToInt64(r.PathValue(`id`))))
+	if email == "" {
+		http.Error(w, `找不到对应的邮箱。`, http.StatusNotFound)
 		return
 	}
 
@@ -57,9 +49,9 @@ func (h *_Avatar) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO 并没有限制获取未公开发表文章的评论。
-	rsp, err := github(context.TODO(), emailRsp.Email, &p)
+	rsp, err := github(context.TODO(), email, &p)
 	if err != nil {
-		rsp, err = gravatar(context.TODO(), emailRsp.Email, &p)
+		rsp, err = gravatar(context.TODO(), email, &p)
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
