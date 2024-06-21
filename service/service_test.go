@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
@@ -18,6 +19,9 @@ var admin context.Context
 var guest context.Context
 
 func initService() {
+	// 测试环境应该不依赖本地系统。
+	os.Setenv(`DEV`, `0`)
+
 	cfg := config.DefaultConfig()
 	cfg.Auth.Basic.Username = `test`
 	cfg.Auth.Basic.Password = `test`

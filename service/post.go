@@ -6,7 +6,6 @@ import (
 	"html"
 	"log"
 	"net/url"
-	"os"
 	"path"
 	"slices"
 	"strings"
@@ -166,15 +165,12 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 }
 
 func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
-	if s.testing {
-		panic(`测试服务器不用于本地文件系统。`)
-	}
 	u := utils.Must1(url.Parse(s.cfg.Site.Home))
 	if u.Path == "" {
 		u.Path = "/"
 	}
 	return gold_utils.NewWebFileSystem(
-		os.DirFS(s.cfg.Data.File.Path),
+		utils.Must1(s.postDataFS.Root()),
 		u.JoinPath(fmt.Sprintf("/%d/", id)),
 	)
 }

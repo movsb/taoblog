@@ -8,7 +8,6 @@ import (
 )
 
 func TestPreviewComment(t *testing.T) {
-	t.SkipNow()
 	initService()
 	rsp, err := blog.PreviewComment(guest, &proto.PreviewCommentRequest{
 		Markdown: `<a>`,
@@ -16,5 +15,15 @@ func TestPreviewComment(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "不能包含") {
 		t.Fatal(rsp, err)
+	}
+	rsp2, err := blog.CreateComment(guest, &proto.Comment{
+		PostId:     1,
+		Author:     `昵称`,
+		Email:      `fake@twofei.com`,
+		SourceType: `markdown`,
+		Source:     `<marquee style="max-width: 100px;">（🏃逃……</marquee>`,
+	})
+	if err == nil || !strings.Contains(err.Error(), `不能包含`) {
+		t.Fatal(rsp2, err)
 	}
 }

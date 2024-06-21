@@ -44,9 +44,6 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 		} else if initReq != nil {
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
-				if s.postDataFS == nil {
-					return errors.New(`对此编号的文件系统不可用。`)
-				}
 				pfs, err = s.postDataFS.ForPost(int(init.Id))
 			}
 			if err != nil {

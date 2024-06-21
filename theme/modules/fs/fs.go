@@ -1,6 +1,7 @@
 package theme_fs
 
 import (
+	"embed"
 	"io/fs"
 )
 
@@ -11,4 +12,16 @@ type FS interface {
 	Root() (fs.FS, error)
 	// 针对单篇文章/评论的文件系统。
 	ForPost(id int) (fs.FS, error)
+}
+
+type Empty struct{}
+
+var empty embed.FS
+
+func (Empty) Root() (fs.FS, error) {
+	return empty, nil
+}
+
+func (Empty) ForPost(id int) (fs.FS, error) {
+	return empty, nil
 }

@@ -139,7 +139,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		testing: testing,
 
 		cfg:        cfg,
-		postDataFS: nil,
+		postDataFS: &theme_fs.Empty{},
 
 		db:   db,
 		tdb:  taorm.NewDB(db),
