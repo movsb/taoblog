@@ -67,6 +67,7 @@ func DefaultDataConfig() DataConfig {
 
 // FileDataConfig ...
 type FileDataConfig struct {
+	// 如果路径为空，使用内存文件系统。
 	Path string `yaml:"path"`
 }
 

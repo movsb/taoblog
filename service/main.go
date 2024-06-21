@@ -54,7 +54,7 @@ type Service struct {
 	cancel context.CancelFunc
 
 	testing bool
-	addr    net.Addr // 服务器的监听地址
+	addr    net.Addr // 服务器的实际监听地址
 
 	home *url.URL
 
@@ -124,13 +124,8 @@ func (s *Service) Addr() net.Addr {
 	return s.addr
 }
 
-func NewServiceForTesting(cfg *config.Config, db *sql.DB, auther *auth.Auth) *Service {
-	ctx, cancel := context.WithCancel(context.Background())
-	return newService(ctx, cancel, cfg, db, auther, true)
-}
-
-func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
-	return newService(ctx, cancel, cfg, db, auther, false, options...)
+func NewService(ctx context.Context, cancel context.CancelFunc, testing bool, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
+	return newService(ctx, cancel, cfg, db, auther, testing, options...)
 }
 
 func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
@@ -242,11 +237,6 @@ func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
 		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
 	}
 	return ac
-}
-
-// GrpcAddress ...
-func (s *Service) GrpcAddress() string {
-	return s.cfg.Server.GRPCListen
 }
 
 func grpcLoggerUnary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {

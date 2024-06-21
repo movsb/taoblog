@@ -13,6 +13,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/spf13/afero"
 )
 
 // walk returns the file list for a directory.
@@ -81,8 +82,8 @@ func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
 // TODO 没移除失败的文件。
 // NOTE：安全写：先写临时文件，再移动过去。临时文件写在目标目录，不存在跨设备移动文件的问题。
 // NOTE：如果 r 超过 size，会报错。
-func WriteFile(path string, mode fs.FileMode, modified time.Time, size int64, r io.Reader) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), `taoblog-*`)
+func WriteFile(fs afero.Fs, path string, mode fs.FileMode, modified time.Time, size int64, r io.Reader) error {
+	tmp, err := afero.TempFile(fs, filepath.Dir(path), `taoblog-*`)
 	if err != nil {
 		return err
 	}
@@ -91,19 +92,19 @@ func WriteFile(path string, mode fs.FileMode, modified time.Time, size int64, r 
 		return fmt.Errorf(`write error: %d %v`, n, err)
 	}
 
-	if err := tmp.Chmod(mode); err != nil {
-		return err
-	}
-
 	if err := tmp.Close(); err != nil {
 		return err
 	}
 
-	if err := os.Chtimes(tmp.Name(), modified, modified); err != nil {
+	if err := fs.Chmod(tmp.Name(), mode); err != nil {
 		return err
 	}
 
-	if err := os.Rename(tmp.Name(), path); err != nil {
+	if err := fs.Chtimes(tmp.Name(), modified, modified); err != nil {
+		return err
+	}
+
+	if err := fs.Rename(tmp.Name(), path); err != nil {
 		return err
 	}
 

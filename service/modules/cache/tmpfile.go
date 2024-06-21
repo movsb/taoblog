@@ -17,6 +17,7 @@ type TmpFiles struct {
 	lock sync.Mutex
 }
 
+// TODO 支持内存文件系统以方便测试。
 func NewTmpFiles(dir string, keep time.Duration) *TmpFiles {
 	if keep < time.Minute {
 		panic(`cache time too small`)

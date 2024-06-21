@@ -1,4 +1,4 @@
-package service_test
+package e2e_test
 
 import (
 	"strings"
@@ -8,15 +8,17 @@ import (
 )
 
 func TestPreviewComment(t *testing.T) {
-	initService()
-	rsp, err := blog.PreviewComment(guest, &proto.PreviewCommentRequest{
+	rsp, err := client.PreviewComment(guest, &proto.PreviewCommentRequest{
 		Markdown: `<a>`,
 		PostId:   1,
 	})
 	if err == nil || !strings.Contains(err.Error(), "不能包含") {
 		t.Fatal(rsp, err)
 	}
-	rsp2, err := blog.CreateComment(guest, &proto.Comment{
+}
+
+func TestCreateComment(t *testing.T) {
+	rsp2, err := client.CreateComment(guest, &proto.Comment{
 		PostId:     1,
 		Author:     `昵称`,
 		Email:      `fake@twofei.com`,

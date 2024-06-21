@@ -45,7 +45,7 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux,
 		service: service,
 		auther:  auther,
 
-		client:          clients.NewFromGrpcAddr(service.GrpcAddress()),
+		client:          clients.NewFromGrpcAddr(service.Addr().String()),
 		instantNotifier: instantNotifier,
 	}
 

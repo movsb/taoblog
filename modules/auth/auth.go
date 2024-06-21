@@ -287,9 +287,11 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 }
 
 // 仅用于测试的帐号。
+// 可同时用于 HTTP 和 GRPC 请求。
 func TestingAdminUserContext(a *Auth, userAgent string) context.Context {
 	md := metadata.Pairs()
 	md.Append(GatewayCookie, shasum(userAgent+a.Login()))
 	md.Append(GatewayUserAgent, userAgent)
+	md.Append(`Authorization`, fmt.Sprintf(`token %d:%s`, AdminID, a.cfg.Key))
 	return metadata.NewOutgoingContext(context.TODO(), md)
 }

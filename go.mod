@@ -15,8 +15,8 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/goldmark v1.7.1
-	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
-	google.golang.org/grpc v1.56.3
+	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
+	google.golang.org/grpc v1.59.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -30,8 +30,10 @@ require (
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4
 	github.com/phuslu/lru v1.0.15
+	github.com/spf13/afero v1.11.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/hashtag v0.3.1
+	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17
 	nhooyr.io/websocket v1.8.11
 )
 
@@ -49,6 +51,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 )
 
 require (
@@ -68,7 +71,7 @@ require (
 	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
-	github.com/golang/glog v1.1.0 // indirect
+	github.com/golang/glog v1.1.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect

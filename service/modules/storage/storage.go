@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	fspkg "io/fs"
 	"os"
 	"path/filepath"
@@ -11,10 +12,11 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
+	"github.com/spf13/afero"
 )
 
-type Local struct {
-	root string
+type Storage struct {
+	root afero.Fs
 }
 
 var _ interface {
@@ -26,58 +28,69 @@ var _ interface {
 	utils.WriteFS
 
 	theme_fs.FS
-} = (*Local)(nil)
+} = (*Storage)(nil)
 
-func NewLocal(root string) *Local {
-	l := &Local{
-		root: root,
+func NewLocal(root string) *Storage {
+	l := &Storage{
+		root: afero.NewBasePathFs(afero.NewOsFs(), root),
 	}
 	return l
 }
 
-func (fs *Local) Root() (fspkg.FS, error) {
-	return os.DirFS(fs.root), nil
+func NewMemory() *Storage {
+	return &Storage{
+		root: afero.NewMemMapFs(),
+	}
 }
 
-func (fs *Local) ForPost(id int) (fspkg.FS, error) {
+type _FsOpen afero.Afero
+
+func (fs *_FsOpen) Open(name string) (fs.File, error) {
+	return fs.Fs.Open(name)
+}
+
+func (fs *Storage) Root() (fspkg.FS, error) {
+	return &_FsOpen{Fs: fs.root}, nil
+}
+
+func (fs *Storage) ForPost(id int) (fspkg.FS, error) {
 	return fs.Sub(fmt.Sprint(id))
 }
 
-func (fs *Local) pathOf(path string) (string, error) {
+func (fs *Storage) pathOf(path string) (string, error) {
 	if !fspkg.ValidPath(path) {
 		return "", fmt.Errorf(`invalid fs path: %q` + path)
 	}
 	// ValidPath 会检查是可能 .. 到上级。
-	return filepath.Join(fs.root, path), nil
+	return path, nil
 }
 
-func (fs *Local) Open(name string) (fspkg.File, error) {
+func (fs *Storage) Open(name string) (fspkg.File, error) {
 	path, err := fs.pathOf(name)
 	if err != nil {
 		return nil, err
 	}
-	return os.Open(path)
+	return fs.root.Open(path)
 }
 
-func (fs *Local) Delete(name string) error {
+func (fs *Storage) Delete(name string) error {
 	path, err := fs.pathOf(name)
 	if err != nil {
 		return err
 	}
-	return os.Remove(path)
+	return fs.root.Remove(path)
 }
 
-func (fs *Local) Sub(dir string) (fspkg.FS, error) {
+func (fs *Storage) Sub(dir string) (fspkg.FS, error) {
 	path, err := fs.pathOf(dir)
 	if err != nil {
 		return nil, err
 	}
-
-	return NewLocal(path), nil
+	return &_FsOpen{afero.NewBasePathFs(fs.root, path)}, nil
 }
 
 // 会自动创建不存在的目录。
-func (fs *Local) Write(spec *proto.FileSpec, r io.Reader) error {
+func (fs *Storage) Write(spec *proto.FileSpec, r io.Reader) error {
 	// NOTE：实际上并没有什么用/并不关心。只是想看看有没有恶意上传😏。
 	// mode := fspkg.FileMode(spec.Mode)
 	// if strings.Contains(mode.Perm().String(), `x`) {
@@ -90,14 +103,14 @@ func (fs *Local) Write(spec *proto.FileSpec, r io.Reader) error {
 	}
 
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := fs.root.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 
-	return utils.WriteFile(path, fspkg.FileMode(spec.Mode), time.Unix(int64(spec.Time), 0), int64(spec.Size), r)
+	return utils.WriteFile(fs.root, path, fspkg.FileMode(spec.Mode), time.Unix(int64(spec.Time), 0), int64(spec.Size), r)
 }
 
-func (fs *Local) Stat(name string) (fspkg.FileInfo, error) {
+func (fs *Storage) Stat(name string) (fspkg.FileInfo, error) {
 	path, err := fs.pathOf(name)
 	if err != nil {
 		return nil, err
@@ -105,7 +118,7 @@ func (fs *Local) Stat(name string) (fspkg.FileInfo, error) {
 	return os.Stat(path)
 }
 
-func (fs *Local) ReadDir(name string) ([]fspkg.DirEntry, error) {
+func (fs *Storage) ReadDir(name string) ([]fspkg.DirEntry, error) {
 	path, err := fs.pathOf(name)
 	if err != nil {
 		return nil, err

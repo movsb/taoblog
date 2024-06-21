@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,6 +35,7 @@ import (
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
 	"github.com/movsb/taoblog/theme/modules/canonical"
+	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
 	"github.com/spf13/cobra"
 )
@@ -45,18 +47,24 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `Run the server`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			serve(context.Background())
+			cfg := config.LoadFile(`taoblog.yml`)
+			s := &Server{}
+			s.Serve(context.Background(), false, cfg, nil)
 		},
 	}
 
 	rootCmd.AddCommand(serveCommand)
 }
 
-func serve(ctx context.Context) {
+type Server struct {
+	HTTPAddr string // 服务器实际端口
+	GRPCAddr string // 服务器实际端口
+	Auther   *auth.Auth
+}
+
+func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	cfg := config.LoadFile(`taoblog.yml`)
 
 	db := InitDatabase(cfg.Database.Path)
 	defer db.Close()
@@ -101,13 +109,20 @@ func serve(ctx context.Context) {
 		}
 	}
 
-	storage := storage.NewLocal(cfg.Data.File.Path)
+	var store theme_fs.FS
+	if path := cfg.Data.File.Path; path == "" {
+		store = storage.NewMemory()
+	} else {
+		store = storage.NewLocal(cfg.Data.File.Path)
+	}
 
 	theAuth := auth.New(cfg.Auth, service.DevMode())
-	theService := service.NewService(ctx, cancel, cfg, db, theAuth,
-		service.WithPostDataFileSystem(storage),
+	s.Auther = theAuth
+	theService := service.NewService(ctx, cancel, testing, cfg, db, theAuth,
+		service.WithPostDataFileSystem(store),
 		service.WithInstantNotifier(instantNotifier),
 	)
+	s.GRPCAddr = theService.Addr().String()
 	r.MustRegister(theService.Exporter())
 	theAuth.SetService(theService)
 
@@ -153,7 +168,7 @@ func serve(ctx context.Context) {
 		)
 	}
 
-	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth, storage)
+	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth, store)
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
 
@@ -176,8 +191,14 @@ func serve(ctx context.Context) {
 		),
 	}
 
+	l, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		panic(err)
+	}
+	defer l.Close()
+	s.HTTPAddr = l.Addr().String()
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
+		if err := server.Serve(l); err != nil {
 			if err != http.ErrServerClosed {
 				panic(err)
 			}
@@ -193,6 +214,10 @@ func serve(ctx context.Context) {
 	signal.Notify(quit, syscall.SIGINT)
 	signal.Notify(quit, syscall.SIGTERM)
 
+	if ready != nil {
+		ready <- struct{}{}
+	}
+
 	select {
 	case <-quit:
 	case <-ctx.Done():
@@ -206,6 +231,7 @@ func serve(ctx context.Context) {
 
 // TODO 文章 1 必须存在。可以是非公开状态。
 // TODO 放在服务里面 tasks.go
+// TODO 放在 daemon 里面（同 webhooks）
 func liveCheck(s *service.Service, cc notify.InstantNotifier) {
 	t := time.NewTicker(time.Minute * 15)
 	defer t.Stop()
@@ -229,6 +255,7 @@ func liveCheck(s *service.Service, cc notify.InstantNotifier) {
 	}
 }
 
+// 如果路径为空，使用内存数据库。
 func InitDatabase(path string) *sql.DB {
 	var db *sql.DB
 	var err error

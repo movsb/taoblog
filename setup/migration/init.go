@@ -11,7 +11,9 @@ import (
 	"github.com/movsb/taorm"
 )
 
-// Init ...
+// 初始化过程。会创建所有的数据表。
+// 会创建第一篇文章。
+// TODO：不创建第一篇文章（因为测试的时候有不同的需求）。
 func Init(db *sql.DB, path string) {
 	var err error
 

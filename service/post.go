@@ -732,6 +732,7 @@ func (s *Service) updatePostPageCount() {
 
 // SetPostStatus sets post status.
 // 会总是更新 LastCommentedAt 时间。
+// TODO 改成内部调用 UpdatePost，并检查 status 是否合法。
 func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequest) (*proto.SetPostStatusResponse, error) {
 	s.MustBeAdmin(ctx)
 

@@ -386,7 +386,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 		},
 	)
 	if err != nil {
-		return 0, err
+		panic(err)
 	}
 
 	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
