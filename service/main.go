@@ -408,8 +408,16 @@ func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req any, info
 				return nil, status.Error(codes.Aborted, msg)
 			}
 		}
-		// TODO 只是限制了通过 HTTP 接口进行的调用，没限制 GRPC 接口。
-		if ti.Internal && !ac.User.IsAdmin() {
+		isFromGateway := func() bool {
+			md, _ := metadata.FromIncomingContext(ctx)
+			if md == nil {
+				return false
+			}
+			ss := md.Get(`X-TaoBlog-Gateway`)
+			return len(ss) > 0 && ss[0] == `1`
+		}()
+		// 可以排除 grpc-client 的调用。
+		if ti.Internal && (isFromGateway && !ac.User.IsAdmin()) {
 			return nil, status.Error(codes.FailedPrecondition, `此接口限管理员或内部调用。`)
 		}
 	}

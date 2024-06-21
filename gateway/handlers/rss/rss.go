@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -47,6 +48,7 @@ type RSS struct {
 
 	tmpl   *template.Template
 	client clients.Client
+	auther *auth.Auth
 }
 
 type Option func(r *RSS)
@@ -61,7 +63,7 @@ type _Config struct {
 	articleCount int
 }
 
-func New(client clients.Client, options ...Option) http.Handler {
+func New(auther *auth.Auth, client clients.Client, options ...Option) http.Handler {
 	info := utils.Must1(client.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	r := &RSS{
@@ -75,6 +77,7 @@ func New(client clients.Client, options ...Option) http.Handler {
 		LastBuildDate: Date(info.LastPostedAt),
 
 		client: client,
+		auther: auther,
 	}
 
 	for _, opt := range options {
@@ -88,13 +91,18 @@ func New(client clients.Client, options ...Option) http.Handler {
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := r.client.ListPosts(req.Context(), &proto.ListPostsRequest{
-		Limit:          int32(r.config.articleCount),
-		OrderBy:        `date desc`,
-		Kinds:          []string{`post`},
-		WithLink:       proto.LinkKind_LinkKindFull,
-		ContentOptions: co.For(co.Rss),
-	})
+	// TODO 这里没法列出管理员可看的文章。
+	// 没有调用 runtime.AnnotateContext
+	rsp, err := r.client.ListPosts(
+		r.auther.NewContextForRequestAsGateway(req),
+		&proto.ListPostsRequest{
+			Limit:          int32(r.config.articleCount),
+			OrderBy:        `date desc`,
+			Kinds:          []string{`post`},
+			WithLink:       proto.LinkKind_LinkKindFull,
+			ContentOptions: co.For(co.Rss),
+		},
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

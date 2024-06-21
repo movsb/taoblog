@@ -1,10 +1,13 @@
 package auth
 
 import (
+	"crypto/rand"
 	"encoding/binary"
+	"fmt"
 	"math"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 // User entity.
@@ -53,6 +56,12 @@ func (u *User) WebAuthnIcon() string {
 	return ""
 }
 
+func randomKey() string {
+	b := [32]byte{}
+	utils.Must1(rand.Read(b[:]))
+	return fmt.Sprintf(`%x`, b)
+}
+
 var (
 	guest = &User{
 		ID:                  0,
@@ -60,7 +69,9 @@ var (
 		DisplayName:         "未注册用户",
 		webAuthnCredentials: nil,
 	}
-	system = &User{
+	// TODO 怎么确保程序重启后一定不一样？
+	systemKey = randomKey()
+	system    = &User{
 		ID: 1,
 	}
 	AdminID = 2

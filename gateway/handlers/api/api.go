@@ -33,8 +33,14 @@ func New(ctx context.Context, client clients.Client) http.Handler {
 	utils.Must(proto.RegisterTaoBlogHandlerClient(ctx, mux, client))
 	utils.Must(proto.RegisterSearchHandlerClient(ctx, mux, client))
 
+	// 为了限制 Gateway 接口调用内部接口，特地给来自 Gateway 的接口加一个签名。
+	sig := func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Add(runtime.MetadataHeaderPrefix+`X-TaoBlog-Gateway`, `1`)
+		mux.ServeHTTP(w, r)
+	}
+
 	return &_Protos{
 		mux:     mux,
-		Handler: mux,
+		Handler: http.HandlerFunc(sig),
 	}
 }

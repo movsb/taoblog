@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/blugelabs/bluge/search/highlight"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
@@ -21,7 +22,7 @@ func TestEngine(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	result, err := engine.SearchPosts(context.TODO(), `杨柳依依`)
+	result, err := engine.SearchPosts(auth.GuestContext(context.TODO()), `杨柳依依`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,13 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"nhooyr.io/websocket"
 )
 
-func New(kind string, client clients.Client) http.Handler {
+func New(auther *auth.Auth, kind string, client clients.Client) http.Handler {
 	if kind != `post` {
 		panic(`only for post currently`)
 	}
@@ -27,7 +28,8 @@ func New(kind string, client clients.Client) http.Handler {
 
 		id := utils.MustToInt64(r.PathValue(`id`))
 
-		fs, err := client.FileSystem(r.Context())
+		ctx := auther.NewContextForRequestAsGateway(r)
+		fs, err := client.FileSystem(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

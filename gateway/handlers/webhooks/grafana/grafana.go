@@ -6,12 +6,13 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/status"
 )
 
-func New(client proto.UtilsServer) http.Handler {
+func New(auther *auth.Auth, client proto.UtilsClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rc := http.MaxBytesReader(w, r.Body, 1<<20)
 		defer rc.Close()
@@ -22,7 +23,8 @@ func New(client proto.UtilsServer) http.Handler {
 		if x, ok := m[`message`]; ok {
 			message, _ = x.(string)
 		}
-		_, err := client.InstantNotify(r.Context(), &proto.InstantNotifyRequest{
+		ctx := auther.NewContextForRequestAsGateway(r)
+		_, err := client.InstantNotify(ctx, &proto.InstantNotifyRequest{
 			Title: `监控告警`,
 			// https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/
 			Message: message,

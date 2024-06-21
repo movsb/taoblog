@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -42,17 +43,25 @@ func Context(ctx context.Context) *AuthContext {
 	if ac := _Context(ctx); ac != nil {
 		return ac
 	}
-	// Context 可能包含当前请求相关的信息，所以是新建的。
-	// TODO：不应该走到这里来，应该 Panic，中间件一定会添加。
-	return &AuthContext{User: guest}
+	panic(`Context 中未包含登录用户信息。`)
 }
 
 // 系统管理员身份。相当于后台任务执行者。拥有所有权限。
 // 不用 == Admin：一个是真人，一个是拟人。
 // 权限可以一样，也可以不一样。
 // 比如 System 不允许真实登录，只是后台操作。
+// 只能进程内/本地使用，不能跨网络使用（包括 gateway 也不行）。
 func SystemAdmin(ctx context.Context) context.Context {
 	return _NewContext(ctx, system, netip.AddrFrom4([4]byte{127, 0, 0, 1}), `system_admin`)
+}
+
+func GuestContext(ctx context.Context) context.Context {
+	return _NewContext(ctx, guest, netip.AddrFrom4([4]byte{127, 0, 0, 1}), `guest_context`)
+}
+
+// 不要保存到变量中，直接使用！
+func SystemAdminForGateway(ctx context.Context) context.Context {
+	return metadata.NewOutgoingContext(ctx, metadata.Pairs(`Authorization`, `token `+fmt.Sprintf(`%d:%s`, system.ID, systemKey)))
 }
 
 // 只获取不添加默认。
@@ -84,16 +93,35 @@ func _NewContext(parent context.Context, user *User, remoteAddr netip.Addr, user
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ac := a.NewContextForRequest(r)
+		ac := a.NewContextForRequestLocal(r)
 		h.ServeHTTP(w, r.WithContext(ac))
 	})
 }
 
-func (a *Auth) NewContextForRequest(r *http.Request) context.Context {
+// 返回的是能代表用户的本地 auth context，不能跨网络传输。
+func (a *Auth) NewContextForRequestLocal(r *http.Request) context.Context {
 	user := a.AuthRequest(r)
 	remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
 	userAgent := r.Header.Get(`User-Agent`)
 	return _NewContext(r.Context(), user, remoteAddr, userAgent)
+}
+
+// 把请求中的 Cookie 等信息转换成 Gateway 要求格式以通过 grpc-client 传递给 server。
+// server 然后转换成 local auth context 以表示用户。
+//
+// 并不是特别完善，是否应该参考 runtime.AnnotateContext？
+func (a *Auth) NewContextForRequestAsGateway(r *http.Request) context.Context {
+	md := metadata.Pairs()
+	for _, cookie := range r.Header.Values(`cookie`) {
+		md.Append(GatewayCookie, cookie)
+	}
+	for _, userAgent := range r.Header.Values(`user-agent`) {
+		md.Append(GatewayUserAgent, userAgent)
+	}
+	for _, authorization := range r.Header.Values(`authorization`) {
+		md.Append(`Authorization`, authorization)
+	}
+	return metadata.NewOutgoingContext(r.Context(), md)
 }
 
 const (
@@ -197,6 +225,9 @@ func (a *Auth) userByKey(id int, key string) *User {
 	}
 	if id == int(Notify.ID) && key == a.cfg.NotifyKey {
 		return Notify
+	}
+	if id == int(system.ID) && key == systemKey {
+		return system
 	}
 
 	return guest

@@ -6,19 +6,23 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/status"
 )
 
-func New(server proto.TaoBlogServer) http.Handler {
+func New(auther *auth.Auth, client clients.Client) http.Handler {
 	return &_Avatar{
-		server: server,
+		auther: auther,
+		client: client,
 	}
 }
 
 type _Avatar struct {
-	server proto.TaoBlogServer
+	auther *auth.Auth
+	client clients.Client
 }
 
 // Params ...
@@ -27,8 +31,9 @@ type Params struct {
 }
 
 func (h *_Avatar) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	emailRsp, err := h.server.GetCommentEmailById(
-		r.Context(),
+	// ctx := h.auther.NewContextForRequestAsGateway(r)
+	emailRsp, err := h.client.GetCommentEmailById(
+		auth.SystemAdminForGateway(r.Context()),
 		&proto.GetCommentEmailByIdRequest{
 			Id: int32(utils.MustToInt64(r.PathValue(`id`))),
 		},

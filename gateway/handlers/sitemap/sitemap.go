@@ -6,7 +6,9 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 )
@@ -25,17 +27,19 @@ type Article struct {
 type Sitemap struct {
 	Articles []*Article
 
-	tmpl *template.Template
-	svc  proto.TaoBlogServer
-	impl service.ToBeImplementedByRpc
+	auther *auth.Auth
+	tmpl   *template.Template
+	client clients.Client
+	impl   service.ToBeImplementedByRpc
 }
 
 // New ...
-func New(svc proto.TaoBlogServer, impl service.ToBeImplementedByRpc) http.Handler {
+func New(auther *auth.Auth, client clients.Client, impl service.ToBeImplementedByRpc) http.Handler {
 	s := &Sitemap{
-		svc:  svc,
-		impl: impl,
-		tmpl: template.Must(template.New(`sitemap`).Parse(tmpl)),
+		auther: auther,
+		client: client,
+		impl:   impl,
+		tmpl:   template.Must(template.New(`sitemap`).Parse(tmpl)),
 	}
 
 	return s
@@ -43,13 +47,15 @@ func New(svc proto.TaoBlogServer, impl service.ToBeImplementedByRpc) http.Handle
 
 // ServeHTTP ...
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := s.impl.ListAllPostsIds(req.Context())
+	rsp, err := s.impl.ListAllPostsIds(req.Context()) // 这个 Context 是被 Server 的 Interceptor 传递了 AuthContext 的。
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	info := utils.Must1(s.svc.GetInfo(req.Context(), &proto.GetInfoRequest{}))
+	ctx := s.auther.NewContextForRequestAsGateway(req)
+
+	info := utils.Must1(s.client.GetInfo(ctx, &proto.GetInfoRequest{}))
 
 	rssArticles := make([]*Article, 0, len(rsp))
 	for _, article := range rsp {

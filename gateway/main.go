@@ -99,14 +99,14 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 		))
 
 		// Grafana 监控告警通知。
-		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.server), g.localAuthenticate)
+		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.auther, g.client))
 	}
 
 	// 使用系统帐号鉴权的部分
 	// 只能在进程内使用。
 	{
 		// 头像服务
-		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(g.server), g.systemAdmin)
+		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(g.auther, g.client))
 	}
 
 	// 使用登录身份鉴权的部分
@@ -116,30 +116,16 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 		mc.Handle(`/v3/`, api.New(ctx, g.client))
 
 		// 文件服务：/123/a.txt
-		mc.Handle(`GET /v3/posts/{id}/files`, assets.New(`post`, g.client))
+		mc.Handle(`GET /v3/posts/{id}/files`, assets.New(g.auther, `post`, g.client))
 
 		// 站点地图：sitemap.xml
-		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.service, g.service), g.lastPostTimeHandler)
+		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.auther, g.client, g.service), g.lastPostTimeHandler)
 
 		// 订阅：rss
-		mc.Handle(`GET /rss`, rss.New(g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
+		mc.Handle(`GET /rss`, rss.New(g.auther, g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
 	}
 
 	return nil
-}
-
-func (g *Gateway) localAuthenticate(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r = r.WithContext(g.auther.NewContextForRequest(r))
-		h.ServeHTTP(w, r)
-	})
-}
-
-func (g *Gateway) systemAdmin(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := auth.SystemAdmin(r.Context())
-		h.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
 
 func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {

@@ -175,6 +175,9 @@ func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
 		u.Path = "/"
 	}
 	return gold_utils.NewWebFileSystem(
+		// NOTE：这个 Root 其实并不等于 web 的 root，只是目前的存储结构和文件系统一样，才没有出错。
+		// 即：https://.../123/a.avif => /path/to/root/123/a.avif
+		// 其实应该加个适配层。
 		utils.Must1(s.postDataFS.Root()),
 		u.JoinPath(fmt.Sprintf("/%d/", id)),
 	)

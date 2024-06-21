@@ -161,6 +161,13 @@ func serve(ctx context.Context) {
 		Addr: cfg.Server.HTTPListen,
 		Handler: utils.ChainFuncs(
 			http.Handler(mux),
+			// 注意这个拦截器的能力：
+			//
+			// 所有进入服务端认证信息均被包含在 context 中，
+			// 这也包含了 Gateway。
+			//
+			// 但是，gateway 虽然有了 auth context，但是如果使用的是 grpc-client，
+			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
 			theAuth.UserFromCookieHandler,
 			logs.NewRequestLoggerHandler(`access.log`, logs.WithSentBytesCounter(r)),
 			theService.MaintenanceMode().Handler(func(ctx context.Context) bool {
@@ -206,7 +213,7 @@ func liveCheck(s *service.Service, cc notify.InstantNotifier) {
 	for range t.C {
 		for !func() bool {
 			now := time.Now()
-			s.GetPost(context.Background(), &proto.GetPostRequest{Id: 1})
+			s.GetPost(auth.SystemAdmin(context.TODO()), &proto.GetPostRequest{Id: 1})
 			if elapsed := time.Since(now); elapsed > time.Second*10 {
 				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)
