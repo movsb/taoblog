@@ -3,17 +3,16 @@ package emojis
 import (
 	"embed"
 	"fmt"
-	"net/url"
+	"regexp"
 	"sync"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/service/modules/renderers"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
+	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 )
 
 //go:embed assets style.css
@@ -21,14 +20,14 @@ var _root embed.FS
 
 var (
 	_once sync.Once
-	_refs []parser.Reference
+	_refs = map[string]string{}
 )
 
 type Emojis struct{}
 
 var _ interface {
-	renderers.ContextPreparer
-	gold_utils.HtmlTransformer
+	goldmark.Extender
+	parser.InlineParser
 } = (*Emojis)(nil)
 
 func New() *Emojis {
@@ -47,44 +46,42 @@ func initEmojis() {
 	weixin := func(fileName string, aliases ...string) {
 		// NOTE：emoji 用的单数
 		// NOTE：没有转码，图简单。
-		dest := fmt.Sprintf(`emoji:///assets/weixin/%s`, fileName)
+		dest := fmt.Sprintf(`assets/weixin/%s`, fileName)
 		for _, a := range aliases {
-			ref := parser.NewReference([]byte(a), []byte(dest), []byte(a))
-			_refs = append(_refs, ref)
+			_refs[a] = dest
 		}
 	}
 
 	weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
 }
 
-func (e *Emojis) PrepareContext(ctx parser.Context) {
-	for _, r := range _refs {
-		ctx.AddReference(r)
-	}
+func (e *Emojis) Extend(md goldmark.Markdown) {
+	md.Parser().AddOptions(parser.WithInlineParsers(
+		util.Prioritized(e, 199),
+	))
 }
 
-func (e *Emojis) TransformHtml(doc *goquery.Document) error {
-	transform := func(a *goquery.Selection, u *url.URL) {
-		img := goquery.NewDocumentFromNode(&html.Node{
-			Type:     html.ElementNode,
-			DataAtom: atom.Img,
-			Data:     `img`,
-		})
-		img.SetAttr(`class`, `emoji weixin`)
-		img.SetAttr(`title`, a.AttrOr(`title`, ``))
-		u.Scheme = ""
-		img.SetAttr(`src`, `/v3/dynamic`+u.String())
-		a.ReplaceWithSelection(img.Selection)
+func (e *Emojis) Trigger() []byte {
+	return []byte{'[', ']'}
+}
+
+var re = regexp.MustCompile(`(?U:^\[.+\])`)
+
+func (e *Emojis) Parse(parent ast.Node, block text.Reader, pc parser.Context) ast.Node {
+	line, _ := block.PeekLine()
+	emoji := re.Find(line)
+	if len(emoji) == 0 {
+		return nil
 	}
-	doc.Find(`a`).Each(func(i int, s *goquery.Selection) {
-		u, err := url.Parse(s.AttrOr(`href`, ``))
-		if err != nil {
-			return
-		}
-		if u.Scheme != `emoji` || u.Path == "" {
-			return
-		}
-		transform(s, u)
-	})
-	return nil
+	link := ast.NewLink()
+	link.Title = emoji[1 : len(emoji)-1]
+	ref := _refs[string(link.Title)]
+	if len(ref) == 0 {
+		return nil
+	}
+	link.Destination = []byte(`/v3/dynamic/` + ref)
+	block.Advance(len(emoji))
+	img := ast.NewImage(link)
+	img.SetAttributeString(`class`, `emoji weixin`)
+	return img
 }

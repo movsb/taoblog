@@ -15,11 +15,15 @@ func TestEmojis(t *testing.T) {
 	}{
 		{
 			Markdown: `[旺柴]`,
-			HTML:     `<p><img class="emoji weixin" title="旺柴" src="/v3/dynamic/assets/weixin/doge.png"/></p>`,
+			HTML:     `<p><img src="/v3/dynamic/assets/weixin/doge.png" alt="" title="旺柴" class="emoji weixin" loading="lazy"/></p>`,
+		},
+		{
+			Markdown: `[未知]`,
+			HTML:     `<p>[未知]</p>`,
 		},
 		{
 			Markdown: `[旺柴][旺柴]`,
-			HTML:     `<p><img class="emoji weixin" title="旺柴" src="/v3/dynamic/assets/weixin/doge.png"/><img class="emoji weixin" title="旺柴" src="/v3/dynamic/assets/weixin/doge.png"/></p>`,
+			HTML:     `<p><img src="/v3/dynamic/assets/weixin/doge.png" alt="" title="旺柴" class="emoji weixin" loading="lazy"/><img src="/v3/dynamic/assets/weixin/doge.png" alt="" title="旺柴" class="emoji weixin" loading="lazy"/></p>`,
 		},
 	}
 	for _, tc := range testCases {
