@@ -172,6 +172,13 @@ func (me *_Markdown) Render(source string) (string, error) {
 	md := goldmark.New(append(options, goldmark.WithExtensions(extensions...))...)
 
 	pCtx := parser.NewContext()
+
+	for _, opt := range me.opts {
+		if cp, ok := opt.(ContextPreparer); ok {
+			cp.PrepareContext(pCtx)
+		}
+	}
+
 	sourceBytes := []byte(source)
 	doc := md.Parser().Parse(
 		text.NewReader(sourceBytes),

@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
+	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
@@ -301,6 +302,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		friends.New(),
 		katex.New(),
 		exif.New(s.OpenAsset(postId), s.exifTask, int(postId)),
+		emojis.New(),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

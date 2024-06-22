@@ -15,6 +15,8 @@ type Content struct {
 	Root    fs.FS
 }
 
+// TODO 不要暴露出去，外部通过注册的方式提供。
+// 然后，以目录名的方式防止名字冲突。
 var Dynamic = map[string]Content{}
 
 var once sync.Once
@@ -45,6 +47,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	path := r.URL.Path[1:]
 
+	// TODO 使用 Mux
 	switch path {
 	case `style`:
 		http.ServeContent(w, r, `style.css`, mod, strings.NewReader(style))
@@ -54,6 +57,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO 使用 OverlayFS
 	for _, f := range files {
 		p, err := f.Open(path)
 		if err == nil {
