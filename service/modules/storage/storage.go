@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	fspkg "io/fs"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -86,7 +85,8 @@ func (fs *Storage) Sub(dir string) (fspkg.FS, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &_FsOpen{afero.NewBasePathFs(fs.root, path)}, nil
+	// TODO: afero 有个 bug：https://github.com/spf13/afero/issues/428
+	return &Storage{root: afero.NewBasePathFs(fs.root, "/"+path)}, nil
 }
 
 // 会自动创建不存在的目录。
@@ -115,7 +115,7 @@ func (fs *Storage) Stat(name string) (fspkg.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return os.Stat(path)
+	return fs.root.Stat(path)
 }
 
 func (fs *Storage) ReadDir(name string) ([]fspkg.DirEntry, error) {
@@ -123,5 +123,12 @@ func (fs *Storage) ReadDir(name string) ([]fspkg.DirEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadDir(path)
+	fi, err := afero.ReadDir(fs.root, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.Map(fi, func(i fspkg.FileInfo) fspkg.DirEntry {
+		return fspkg.FileInfoToDirEntry(i)
+	}), nil
 }

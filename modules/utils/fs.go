@@ -83,7 +83,7 @@ func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
 // NOTE：安全写：先写临时文件，再移动过去。临时文件写在目标目录，不存在跨设备移动文件的问题。
 // NOTE：如果 r 超过 size，会报错。
 func WriteFile(fs afero.Fs, path string, mode fs.FileMode, modified time.Time, size int64, r io.Reader) error {
-	tmp, err := afero.TempFile(fs, filepath.Dir(path), `taoblog-*`)
+	tmp, err := afero.TempFile(fs, `.`, `taoblog-*`)
 	if err != nil {
 		return err
 	}
