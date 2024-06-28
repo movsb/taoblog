@@ -45,7 +45,7 @@ func NewDataForSearch(ctx context.Context, cfg *config.Config, user *auth.User, 
 		},
 	}
 
-	rsp, err := searcher.SearchPosts(context.TODO(), &proto.SearchPostsRequest{Search: q})
+	rsp, err := searcher.SearchPosts(ctx, &proto.SearchPostsRequest{Search: q})
 	if err != nil {
 		panic(err)
 	}
