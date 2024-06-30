@@ -331,3 +331,8 @@ body.signed-in {
 		padding-left: 4px;
 	}
 }
+
+// 高亮选中的评论项的内容。
+li:target > .comment-content {
+	background-color: yellow !important;
+}
