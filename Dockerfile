@@ -12,6 +12,7 @@ RUN apk add ca-certificates
 RUN apk add sqlite
 # for /etc/mime.types
 RUN apk add mailcap
+RUN apk add exiftool
 
 WORKDIR /workspace
 COPY --from=katex /katex/a.out katex

@@ -62,6 +62,7 @@ class ImageViewUI {
 			this.root.appendChild(this.obj);
 			this.obj.src = img.src;
 			this.ref = img;
+			this.initMetadata(img.dataset.metadata);
 		}
 	}
 
@@ -300,6 +301,38 @@ class ImageViewUI {
 	}
 	_onDivClick(e) {
 		this.show(false);
+	}
+	initMetadata(metadata) {
+		let md;
+		try {
+			md = JSON.parse(metadata);
+			if (md.length <= 0 || md.length&1 > 0) {
+				return;
+			}
+		} catch {
+			return;
+		}
+		let title = '';
+		for(let i=0; i<md.length; i+=2) {
+			title += `${md[i+0]}：${md[i+1]}\n`;
+		}
+		this.obj.title = title;
+
+		/*
+		let table = document.createElement('table');
+		table.classList.add('metadata');
+		for(let i=0; i<md.length; i+=2) {
+			let tr = document.createElement('tr');
+			let td1 = document.createElement('td');
+			td1.innerText = md[i+0];
+			let td2 = document.createElement('td');
+			td2.innerText = md[i+1];
+			tr.appendChild(td1);
+			tr.appendChild(td2);
+			table.appendChild(tr);
+		}
+		this.root.appendChild(table);
+		*/
 	}
 }
 
