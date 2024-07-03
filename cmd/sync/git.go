@@ -22,7 +22,7 @@ import (
 // 多少时间范围内的更新不应该被检测到。或者说：
 // 停止更新多少时间后才算作修改过、才能保存。
 // 这样可以防止保存正在频繁编辑的文章。
-const skewedDurationForUpdating = time.Hour
+const skewedDurationForUpdating = time.Minute * 15
 
 type GitSync struct {
 	proto *clients.ProtoClient
@@ -31,6 +31,8 @@ type GitSync struct {
 	// 上一次获取更新的时间。
 	// 下一次获取时从此时间继续增量获取。
 	// NOTE：第一次的可以设置得很远，以纠正中途备份中断的缺失内容，如果有的话。
+	// NOTE：本时间不等于计划任务执行的时间点，而是上一次的 notAfter 时间点。
+	// NOTE：这样可以保证无论计划任务执行的频次如何，总是能保证 [notBefore, notAfter) 时间有效。
 	lastCheckedAt time.Time
 }
 
@@ -40,8 +42,12 @@ func New(config client.HostConfig, root string) *GitSync {
 		config.Token,
 	)
 	return &GitSync{
-		proto:         client,
-		root:          root,
+		proto: client,
+		root:  root,
+
+		// 可以设置，也可以不设置。
+		// 这里假定备份程序不会中断超过 7 天。
+		// 如果不设备，则每次启动总是全量备份。
 		lastCheckedAt: time.Now().Add(-7 * time.Hour * 24),
 	}
 }
