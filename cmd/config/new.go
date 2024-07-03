@@ -32,8 +32,13 @@ func (c *WhoisApiLayerConfig) BeforeSet(paths Segments, obj any) error {
 }
 
 type VpsConfig struct {
+	Current  CurrentVpsConfig  `json:"current" yaml:"current"`
 	Hostdare HostdareVpsConfig `json:"hostdare" yaml:"hostdare"`
 }
+
+type CurrentVpsConfig string
+
+func (CurrentVpsConfig) CanSave() {}
 
 type HostdareVpsConfig struct {
 	Username string `json:"username" yaml:"username"`

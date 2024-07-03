@@ -99,13 +99,16 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
-	if hd := cfg.VPS.Hostdare; hd.Username != "" && hd.Password != "" {
-		exporter, err := hostdare.New(hd.Username, hd.Password)
-		if err != nil {
-			log.Println(err)
-		} else {
-			r.MustRegister(exporter)
-			log.Println(`注册 hostdare 指标`)
+	switch cfg.VPS.Current {
+	case `hostdare`:
+		if hd := cfg.VPS.Hostdare; hd.Username != "" && hd.Password != "" {
+			exporter, err := hostdare.New(hd.Username, hd.Password)
+			if err != nil {
+				log.Println(err)
+			} else {
+				r.MustRegister(exporter)
+				log.Println(`注册 hostdare 指标`)
+			}
 		}
 	}
 
