@@ -374,16 +374,16 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *proto.GetPostsByTagsR
 }
 
 func (s *Service) getPageParentID(parents string) int64 {
+	parents = strings.Trim(parents, `/`)
 	if len(parents) == 0 {
 		return 0
 	}
-	parents = parents[1:]
 	slugs := strings.Split(parents, "/")
 
 	type getPageParentID_Result struct {
-		ID     int64
-		Slug   string
-		Parent int64
+		ID       int64
+		Slug     string
+		Category int64
 	}
 
 	var results []*getPageParentID_Result
@@ -396,7 +396,7 @@ func (s *Service) getPageParentID(parents string) int64 {
 	for i := 0; i < len(slugs); i++ {
 		found := false
 		for _, r := range results {
-			if r.Parent == parent && r.Slug == slugs[i] {
+			if r.Category == parent && r.Slug == slugs[i] {
 				parent = r.ID
 				found = true
 				break
