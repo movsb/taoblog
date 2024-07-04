@@ -12,6 +12,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -59,6 +60,7 @@ func (f Friend) IconURL() template.URL {
 var tmpl = template.Must(template.New(`friend`).Parse(string(utils.Must1(_root.ReadFile(`friend.html`)))))
 
 func (f *Friends) TransformHtml(doc *goquery.Document) error {
+	// TODO 这个写法太泛了，容易 match 到意外的东西。
 	list := doc.Find(`script[type="application/yaml"]`)
 	if list.Length() == 0 {
 		return nil
@@ -90,7 +92,7 @@ func (f *Friends) TransformHtml(doc *goquery.Document) error {
 
 var svg = `<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
  <g class="layer">
-  <text font-size="50" text-anchor="middle" x="40" y="58">%s</text>
+  <text font-size="50" fill="#BB0000" text-anchor="middle" x="40" y="58">%s</text>
  </g>
 </svg>
 `
@@ -109,27 +111,29 @@ func (f *Friends) prepareIconURL(ctx context.Context, fs []*Friend) {
 		if fr.Icon == "" {
 			continue
 		}
+
+		// 预告填充成 SVG 首字母（因为可能加载失败）。
+		var first rune
+		if len(fr.Name) > 0 {
+			first, _ = utf8.DecodeRune([]byte(strings.ToUpper(fr.Name)))
+		}
+		letter := fmt.Sprintf(svg, string(first))
+		fr.iconDataURL = `data:image/svg+xml;base64,` + base64.StdEncoding.EncodeToString([]byte(letter))
+
 		go func(i int, fr *Friend) {
-			defer func() {
-				if fr.iconDataURL == "" {
-					var first rune
-					if len(fr.Name) > 0 {
-						first, _ = utf8.DecodeRune([]byte(fr.Name))
-					}
-					letter := fmt.Sprintf(svg, string(first))
-					fr.iconDataURL = `data:image/svg+xml;base64,` + base64.StdEncoding.EncodeToString([]byte(letter))
-				}
-			}()
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, fr.Icon, nil)
 			if err != nil {
+				log.Println(`头像请求失败：`, err)
 				return
 			}
 			rsp, err := http.DefaultClient.Do(req)
 			if err != nil {
+				log.Println(`头像请求失败：`, err)
 				return
 			}
 			defer rsp.Body.Close()
 			if rsp.StatusCode != http.StatusOK {
+				log.Println(`头像请求失败：`, rsp.Status)
 				return
 			}
 			body, _ := io.ReadAll(io.LimitReader(rsp.Body, 100<<10))
