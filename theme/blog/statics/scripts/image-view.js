@@ -73,7 +73,6 @@ class ImageViewUI {
 			window.scrollTo({left: 0, top: this._scrollY});
 		} else {
 			let body = document.body;
-			body.style.maxHeight = 'none';
 			body.style.overflow = 'auto';
 			body.removeEventListener('keydown', this._boundKeyHandler);
 		}
@@ -147,7 +146,6 @@ class ImageViewUI {
 			wrapper.style.display = 'none';
 		} else {
 			let body = document.body;
-			body.style.maxHeight = window.innerHeight + 'px';
 			body.style.overflow = 'hidden';
 		}
 	}
