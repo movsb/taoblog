@@ -42,6 +42,9 @@ message GetInfoResponse {
 
 	// 域名有效时间剩余天数。大于 >= 0 有效。
 	int32 domain_days_left = 12;
+	
+	// 已计划更新镜像并重启？
+	bool scheduled_update = 13;
 }
 
 message RestartRequest {
@@ -51,3 +54,6 @@ message RestartRequest {
 message RestartResponse {
 
 }
+
+message ScheduleUpdateRequest {}
+message ScheduleUpdateResponse {}

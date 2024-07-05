@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -54,6 +55,9 @@ type Service struct {
 
 	testing bool
 	addr    net.Addr // 服务器的实际监听地址
+
+	// 计划重启。
+	scheduledUpdate atomic.Bool
 
 	home *url.URL
 
@@ -279,7 +283,9 @@ func exceptionRecoveryHandler(e any) error {
 			return st.Err()
 		}
 	}
-	log.Println("未处理的内部错误：", e)
+	buf := make([]byte, 10<<10)
+	runtime.Stack(buf, false)
+	log.Println("未处理的内部错误：", e, "\n", string(buf))
 	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }
 
@@ -337,6 +343,8 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 
 		CertDaysLeft:   s.certDaysLeft.Load(),
 		DomainDaysLeft: s.domainExpirationDaysLeft.Load(),
+
+		ScheduledUpdate: s.scheduledUpdate.Load(),
 	}
 
 	return out, nil

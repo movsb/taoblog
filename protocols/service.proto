@@ -73,14 +73,19 @@ service Management {
 
 	// 文件系统管理：期允许管理的对象：文章附件、评论附件、备份文件、根目录等。
 	// TODO：合并上述 BackupFiles 接口、Backup 接口。
-
 	rpc FileSystem(stream FileSystemRequest) returns (stream FileSystemResponse) {
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "文件管理。";
 		};
 	}
 
+	// 启动重启任务。
+	// NOTE：实际上只是退出，借助于 docker 的自动重启容器，所以相当于重启。
 	rpc Restart(RestartRequest) returns (RestartResponse) {}
+
+	// 置“镜像需要更新”状态，守护进程获取此状态后更新镜像并重启。
+	// 此状态在 GetInfo 的接口的字段中标识。
+	rpc ScheduleUpdate(ScheduleUpdateRequest) returns (ScheduleUpdateResponse) {}
 }
 
 service Search {

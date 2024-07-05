@@ -6,12 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
-	"net"
-	"net/http"
-	"strings"
-
-	"github.com/movsb/taoblog/modules/utils"
 )
 
 func verifyIntegrity(content []byte, secret string, expected string) bool {
@@ -45,45 +39,4 @@ func decode(r io.Reader, secret string, sum string) (*Payload, error) {
 		return nil, err
 	}
 	return &p, nil
-}
-
-func handler(secret string, reloaderPath string, sendNotify func(content string)) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sum := strings.TrimPrefix(r.Header.Get(`X-Hub-Signature-256`), `sha256=`)
-		payload, err := decode(r.Body, secret, sum)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		if w := payload.WorkflowRun; w.Status == `completed` {
-			switch w.Conclusion {
-			case `success`:
-				client := http.Client{
-					Transport: &http.Transport{
-						Dial: func(network, addr string) (net.Conn, error) {
-							return net.Dial(`unix`, reloaderPath)
-						},
-					},
-				}
-				go func() {
-					rsp, err := client.Post(`http://localhost/reload`, "", nil)
-					if err != nil {
-						log.Println(err)
-						return
-					}
-					defer rsp.Body.Close()
-					if rsp.StatusCode == http.StatusOK {
-						log.Println("已成功触发重启。")
-						return
-					}
-					log.Println("未处理的重启失败。", rsp.Status)
-					sendNotify(string(utils.DropLast1(io.ReadAll(io.LimitReader(rsp.Body, 1<<10)))))
-				}()
-				return
-			default:
-				sendNotify(fmt.Sprintf("结果未知：%s", w.Conclusion))
-			}
-		}
-	})
 }

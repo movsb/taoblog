@@ -81,12 +81,9 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 	// 无需鉴权但本身自带鉴权的部分
 	{
 		// GitHub Workflow 完成回调。
-		mc.Handle(`POST /v3/webhooks/github`, github.New(
+		mc.Handle(`/v3/webhooks/github/`, github.New(g.client,
 			g.service.Config().Maintenance.Webhook.GitHub.Secret,
-			g.service.Config().Maintenance.Webhook.ReloaderPath,
-			func(content string) {
-				g.instantNotifier.InstantNotify(`GitHub Webhooks`, content)
-			},
+			g.instantNotifier, `/v3/webhooks/github`,
 		))
 
 		// Grafana 监控告警通知。

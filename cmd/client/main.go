@@ -452,6 +452,27 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	rootCmd.AddCommand(restartCmd)
 
+	updateCmd := &cobra.Command{
+		Use:    `update`,
+		Short:  `计划重启任务标识。`,
+		Args:   cobra.NoArgs,
+		PreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			client.Update()
+		},
+	}
+	rootCmd.AddCommand(updateCmd)
+	infoCmd := &cobra.Command{
+		Use:    `info`,
+		Short:  ``,
+		Args:   cobra.NoArgs,
+		PreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			client.Info()
+		},
+	}
+	rootCmd.AddCommand(infoCmd)
+
 	lfs := createLfsCommands()
 	lfs.PersistentPreRun = preRun
 	rootCmd.AddCommand(lfs)

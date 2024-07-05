@@ -146,3 +146,16 @@ func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*prot
 
 	return &proto.RestartResponse{}, nil
 }
+
+func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateRequest) (*proto.ScheduleUpdateResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	s.scheduledUpdate.Store(true)
+	log.Println(`已设置计划更新标识。`)
+
+	// 如果一分钟内没有更新，自动重启。
+	// 因为没有解决如何取消这个状态的函数。
+	time.AfterFunc(time.Minute, s.cancel)
+
+	return &proto.ScheduleUpdateResponse{}, nil
+}

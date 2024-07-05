@@ -2,9 +2,11 @@ package client
 
 import (
 	"log"
+	"os"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/status"
+	"gopkg.in/yaml.v2"
 )
 
 // HostConfig is a per host config.
@@ -43,4 +45,20 @@ func (c *Client) Restart() {
 		log.Fatalln(err)
 	}
 	_ = rsp
+}
+
+func (c *Client) Update() {
+	rsp, err := c.Management.ScheduleUpdate(c.Context(), &proto.ScheduleUpdateRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	_ = rsp
+}
+
+func (c *Client) Info() {
+	rsp, err := c.Blog.GetInfo(c.Context(), &proto.GetInfoRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	yaml.NewEncoder(os.Stdout).Encode(rsp)
 }
