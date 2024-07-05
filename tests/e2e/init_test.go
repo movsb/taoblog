@@ -34,6 +34,9 @@ func Serve(ctx context.Context) {
 	go Server.Serve(ctx, true, &cfg, ready)
 	<-ready
 
+	// 测试的时候默认禁用限流器；测试限流器相关函数会手动开启。
+	Server.Service.TestEnableRequestThrottler(false)
+
 	client = clients.NewFromGrpcAddr(Server.GRPCAddr)
 	admin = auth.TestingAdminUserContext(Server.Auther, "go_test")
 	guest = context.Background()

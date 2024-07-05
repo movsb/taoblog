@@ -31,6 +31,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/request_throttler"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
@@ -60,6 +61,7 @@ type Server struct {
 	HTTPAddr string // 服务器实际端口
 	GRPCAddr string // 服务器实际端口
 	Auther   *auth.Auth
+	Service  *service.Service
 }
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
@@ -121,11 +123,16 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	theAuth := auth.New(cfg.Auth, service.DevMode())
 	s.Auther = theAuth
-	theService := service.NewService(ctx, cancel, testing, cfg, db, theAuth,
+
+	serviceOptions := []service.With{
 		service.WithPostDataFileSystem(store),
 		service.WithInstantNotifier(instantNotifier),
-	)
+		service.WithRequestThrottler(request_throttler.New()),
+	}
+
+	theService := service.NewService(ctx, cancel, testing, cfg, db, theAuth, serviceOptions...)
 	s.GRPCAddr = theService.Addr().String()
+	s.Service = theService
 	r.MustRegister(theService.Exporter())
 	theAuth.SetService(theService)
 

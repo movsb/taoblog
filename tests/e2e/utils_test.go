@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
 )
@@ -18,5 +19,11 @@ func expectHTTPGetWithStatusCode(relativeURL string, code int) {
 	}
 	if rsp.StatusCode != code {
 		panic(fmt.Sprintf(`状态码不相等：%d with %d`, rsp.StatusCode, code))
+	}
+}
+
+func ExpectError(t *testing.T, err error) {
+	if err == nil {
+		panic(`期待错误，但是实际没有。`)
 	}
 }
