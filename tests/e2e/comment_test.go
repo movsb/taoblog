@@ -64,3 +64,31 @@ func TestThrottler(t *testing.T) {
 	}
 }
 
+// 评论的图片、链接的 scheme 不允许非法内容。
+func TestCommentInvalidLinkScheme(t *testing.T) {
+	contents := []string{
+		`<javascript:alert(1);>`,
+		`[](javascript:alert)`,
+		`![](javascript:)`,
+	}
+
+	for _, content := range contents {
+		rsp, err := client.CreateComment(guest,
+			&proto.Comment{
+				PostId:     1,
+				Author:     `昵称`,
+				Email:      fakeEmailAddress,
+				SourceType: `markdown`,
+				Source:     content,
+			},
+		)
+		if err == nil {
+			t.Errorf(`应该失败，但没有：%q`, content)
+			continue
+		}
+		if !strings.Contains(err.Error(), `不支持的协议`) {
+			t.Errorf(`未包含“不支持的协议”`)
+		}
+		_ = rsp
+	}
+}

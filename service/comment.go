@@ -33,6 +33,7 @@ func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceT
 	content, err, _ := s.commentContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			// NOTE：带缓存的，默认认识总是安全的
+			// TODO：用户的评论不应该渲染 #hashtags，好像没有意义。
 			content, err := s.renderMarkdown(true, postID, id, sourceType, source, models.PostMeta{}, co)
 			if err != nil {
 				return ``, 0, err

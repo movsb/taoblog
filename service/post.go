@@ -23,6 +23,7 @@ import (
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/highlight"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
+	"github.com/movsb/taoblog/service/modules/renderers/invalid_scheme"
 	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
@@ -300,7 +301,9 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		katex.New(),
 
 		// 没有缓存，打开碎碎念的时候太卡了，先关闭
-		// exif.New(s.OpenAsset(postId)),
+
+		// 所有人禁止贴无效协议的链接。
+		invalid_scheme.New(),
 
 		// 其它选项可能会插入链接，所以放后面。
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
