@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
+	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/highlight"
@@ -299,8 +300,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		renderers.WithLazyLoadingFrames(),
 		friends.New(),
 		katex.New(),
-
-		// 没有缓存，打开碎碎念的时候太卡了，先关闭
+		exif.New(s.OpenAsset(postId), s.exifTask, int(postId)),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
@@ -452,6 +452,11 @@ func (s *Service) updatePostCommentCount(pid int64, t time.Time) {
 	var count uint
 	s.tdb.Model(models.Comment{}).Where(`post_id=?`, pid).MustCount(&count)
 	s.tdb.MustExec(`UPDATE posts SET comments=?,last_commented_at=? WHERE id=?`, count, t.Unix(), pid)
+}
+
+// 有些特别的代码会贡献 304，比如图片元数据，此时需要更新文章。
+func (s *Service) updatePostMetadataTime(pid int64, t time.Time) {
+	s.tdb.MustExec(`UPDATE posts SET last_commented_at=? WHERE id=?`, t.Unix(), pid)
 }
 
 // CreatePost ...

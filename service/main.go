@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
+	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/search"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
@@ -75,6 +76,9 @@ type Service struct {
 
 	// 通用缓存
 	cache *lru.TTLCache[string, any]
+	// 图片元数据缓存任务。
+	exifTask      *exif.Task
+	exifDebouncer *utils.BatchDebouncer[int]
 
 	// 文章内容缓存。
 	// NOTE：缓存 Key 是跟文章编号和内容选项相关的（因为内容选项不同内容也就不同），
@@ -186,6 +190,14 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	s.cmtgeo = commentgeo.New(context.TODO())
 
 	s.cacheAllCommenterData()
+
+	s.exifDebouncer = utils.NewBatchDebouncer(time.Second*10, func(id int) {
+		s.deletePostContentCacheFor(int64(id))
+		s.updatePostMetadataTime(int64(id), time.Now())
+	})
+	s.exifTask = exif.NewTask(s.getPluginStorage(`exif`), func(id int) {
+		s.exifDebouncer.Enter(id)
+	})
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)

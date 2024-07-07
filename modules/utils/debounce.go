@@ -16,11 +16,11 @@ import (
 // 的情况下方可刷新。可避免掉大量无意义的刷新。
 //
 // NOTE：回调函数 fn 是在独立的线程中被调用的。
-func NewDebouncer(interval time.Duration, fn func()) *_Debouncer {
+func NewDebouncer(interval time.Duration, fn func()) *Debouncer {
 	if interval < time.Second {
 		panic(`invalid debouncer interval`)
 	}
-	d := &_Debouncer{
+	d := &Debouncer{
 		f:          fn,
 		remain:     interval,
 		interval:   interval,
@@ -29,7 +29,7 @@ func NewDebouncer(interval time.Duration, fn func()) *_Debouncer {
 	return d
 }
 
-type _Debouncer struct {
+type Debouncer struct {
 	l          sync.Mutex
 	t          *time.Ticker
 	f          func()
@@ -38,7 +38,7 @@ type _Debouncer struct {
 	resolution time.Duration
 }
 
-func (d *_Debouncer) Enter() {
+func (d *Debouncer) Enter() {
 	d.l.Lock()
 	d.remain = d.interval
 	// log.Println("重置倒计时")
@@ -50,7 +50,7 @@ func (d *_Debouncer) Enter() {
 	d.l.Unlock()
 }
 
-func (d *_Debouncer) wait() {
+func (d *Debouncer) wait() {
 	d.l.Lock()
 	c := d.t.C
 	d.l.Unlock()
@@ -69,6 +69,34 @@ func (d *_Debouncer) wait() {
 			}
 		}()
 	}
+}
+
+type BatchDebouncer[K comparable] struct {
+	l sync.Mutex
+	k map[K]struct{}
+	d *Debouncer
+}
+
+func NewBatchDebouncer[K comparable](interval time.Duration, fn func(k K)) *BatchDebouncer[K] {
+	d := &BatchDebouncer[K]{
+		k: make(map[K]struct{}),
+	}
+	d.d = NewDebouncer(interval, func() {
+		d.l.Lock()
+		defer d.l.Unlock()
+		defer func() { d.k = map[K]struct{}{} }()
+		for k := range d.k {
+			fn(k)
+		}
+	})
+	return d
+}
+
+func (b *BatchDebouncer[K]) Enter(k K) {
+	b.l.Lock()
+	defer b.l.Unlock()
+	b.k[k] = struct{}{}
+	b.d.Enter()
 }
 
 // 节流神器。

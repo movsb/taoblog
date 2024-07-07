@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
@@ -135,6 +136,29 @@ func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*
 		log.Println(`保存：`, path, value)
 	})
 	return &proto.SetConfigResponse{}, nil
+}
+
+type _PluginStorage struct {
+	ss *Service
+	ns string
+}
+
+func (s *_PluginStorage) Set(key string, value string) error {
+	name := s.ns + `:` + key
+	s.ss.SetOption(name, value)
+	return nil
+}
+
+func (s *_PluginStorage) Get(key string) (string, error) {
+	name := s.ns + `:` + key
+	return s.ss.GetStringOption(name)
+}
+
+func (s *Service) getPluginStorage(name string) utils.PluginStorage {
+	return &_PluginStorage{
+		ss: s,
+		ns: name,
+	}
 }
 
 func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*proto.RestartResponse, error) {

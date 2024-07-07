@@ -1,25 +1,25 @@
 package exif
 
 import (
-	"context"
-	"encoding/json"
-	"io"
 	"log"
-	"os/exec"
-	"path/filepath"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/movsb/taoblog/modules/utils"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 )
 
 type Exif struct {
-	fs gold_utils.WebFileSystem
+	fs   gold_utils.WebFileSystem
+	task *Task
+	id   int
 }
 
-func New(fs gold_utils.WebFileSystem) *Exif {
+// task: 用于取缓存的，可以为空。
+// id: 文章/评论的编号，用于后台成功获取信息后强制使缓存失效以使用元数据信息。
+func New(fs gold_utils.WebFileSystem, task *Task, id int) *Exif {
 	return &Exif{
-		fs: fs,
+		fs:   fs,
+		task: task,
+		id:   id,
 	}
 }
 
@@ -34,38 +34,15 @@ func (m *Exif) TransformHtml(doc *goquery.Document) error {
 			log.Println(err)
 			return
 		}
-		defer fp.Close()
-		stat, err := fp.Stat()
-		if err != nil {
-			log.Println(err)
+		// get 会负责关闭文件。
+		// defer fp.Close()
+		if m.task == nil {
 			return
 		}
-		info, err := extract(fp)
-		if err != nil {
-			log.Println(err)
-			return
+
+		if metadata := m.task.get(m.id, url, fp); metadata != "" {
+			s.SetAttr(`data-metadata`, metadata)
 		}
-		info.FileName = filepath.Base(stat.Name())
-		info.FileSize = utils.ByteCountIEC(stat.Size())
-		s.SetAttr(`data-metadata`, string(utils.DropLast1(json.Marshal(info.String()))))
 	})
 	return nil
-}
-
-// TODO 直接传文件？否则文件大小只能读完才知道。
-func extract(r io.Reader) (*Metadata, error) {
-	cmd := exec.CommandContext(context.TODO(), `exiftool`, `-G`, `-s`, `-json`, `-`)
-	cmd.Stdin = r
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	var md []*Metadata
-	if err := json.Unmarshal(output, &md); err != nil {
-		return nil, err
-	}
-	if len(md) <= 0 {
-		return nil, nil
-	}
-	return md[0], nil
 }
