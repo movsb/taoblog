@@ -46,6 +46,12 @@ func (m *Metadata) CreationDateTime() time.Time {
 	return t
 }
 
+// DJI 的型号在 XML:DroneModel 里面，但是从 JPG 拷贝到 AVIF 的时候带不过去，
+// 那就暂时这样简单映射一下？
+var knownDJIModels = map[string]string{
+	`FC3582`: `Mini 3 Pro`,
+}
+
 func (m *Metadata) String() []string {
 	var pairs []string
 
@@ -65,6 +71,9 @@ func (m *Metadata) String() []string {
 		add(f, `时间`)
 	}
 
+	if mapped, ok := knownDJIModels[m.Model]; ok {
+		m.Model = mapped
+	}
 	if m.Make != "" && m.Model != "" {
 		add(m.Make+` / `+m.Model, `设备`)
 	}
