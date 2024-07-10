@@ -133,9 +133,10 @@ func (g *GitSync) syncSingle(p *proto.Post) error {
 
 	// 正在编辑且并没提交的文件可能会比远程更新，此时不能覆盖本地的文件。
 	// TODO 用文件系统而不是 os.
-	stat := utils.Must1(os.Stat(fullPath))
-	if stat.ModTime().After(time.Unix(int64(p.Modified), 0)) {
-		return fmt.Errorf(`本地的文件更新，没有覆盖：%s`, path)
+	if stat, err := os.Stat(fullPath); err == nil {
+		if stat.ModTime().After(time.Unix(int64(p.Modified), 0)) {
+			return fmt.Errorf(`本地的文件更新，没有覆盖：%s`, path)
+		}
 	}
 
 	if err := ioutil.WriteFile(fullPath, []byte(p.Source), 0644); err != nil {
