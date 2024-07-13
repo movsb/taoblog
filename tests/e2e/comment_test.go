@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -90,5 +91,53 @@ func TestCommentInvalidLinkScheme(t *testing.T) {
 			t.Errorf(`未包含“不支持的协议”`)
 		}
 		_ = rsp
+	}
+}
+
+// 测试递归删除评论。
+func TestDeleteCommentsRecursively(t *testing.T) {
+	post := utils.Must1(client.CreatePost(admin, &proto.Post{
+		Type:       `post`,
+		SourceType: `markdown`,
+		Source:     "# 测试递归删除评论",
+	}))
+
+	/*
+		c1
+			c1.1
+				c1.1.1
+			c1.2
+				c1.2.1
+	*/
+	create := func(parent int64) *proto.Comment {
+		return utils.Must1(client.CreateComment(admin, &proto.Comment{
+			PostId:     post.Id,
+			Parent:     parent,
+			Author:     `author`,
+			Email:      fakeEmailAddress,
+			SourceType: `markdown`,
+			Source:     `test`,
+		}))
+	}
+	c1 := create(0)
+	c11 := create(c1.Id)
+	c111 := create(c11.Id)
+	_ = c111
+
+	c12 := create(c1.Id)
+	c121 := create(c12.Id)
+	_ = c121
+
+	count := utils.Must1(client.GetPostCommentsCount(admin, &proto.GetPostCommentsCountRequest{PostId: post.Id})).Count
+	if count != 5 {
+		t.Fatalf(`评论数应该为 5 条。`)
+	}
+
+	// 删除 c11 后应该剩 3 条。
+	utils.Must1(client.DeleteComment(admin, &proto.DeleteCommentRequest{Id: int32(c11.Id)}))
+
+	count2 := utils.Must1(client.GetPostCommentsCount(admin, &proto.GetPostCommentsCountRequest{PostId: post.Id})).Count
+	if count2 != 3 {
+		t.Fatalf(`评论数应该为 3 条，但是剩余：%d 条`, count2)
 	}
 }

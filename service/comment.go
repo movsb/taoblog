@@ -215,14 +215,44 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 	return comment.ToProto(s.setCommentExtraFields(ctx, co.For(co.UpdateCommentReturn))), nil
 }
 
-// DeleteComment ...
+// 删除评论。
+//
+// 会递归地删除其所有子评论。
+//
+// TODO：清理数据库的脏数据（有一部分 parent 评论已经不存在）。
 func (s *Service) DeleteComment(ctx context.Context, in *proto.DeleteCommentRequest) (*proto.DeleteCommentResponse, error) {
 	s.MustBeAdmin(ctx)
+
+	// 点击“删除”的评论。
 	cmt := s.getComment2(int64(in.Id))
-	s.comments().Where("id=? OR root=?", in.Id, in.Id).Delete()
+
+	// 此评论顶级评论下的所有评论
+	var all models.Comments
+	if cmt.Root == 0 {
+		s.tdb.Where(`root=?`, cmt.ID).MustFind(&all)
+	} else {
+		s.tdb.Where(`root=?`, cmt.Root).MustFind(&all)
+	}
+
+	// 找出所有以待删除评论为 “root” 的评论。
+	toDelete := []int64{int64(in.Id)}
+	for i := 0; i < len(toDelete); i++ {
+		for j := 0; j < len(all); j++ {
+			if all[j].Parent == toDelete[i] {
+				toDelete = append(toDelete, all[j].ID)
+			}
+		}
+	}
+
+	s.comments().Where("id IN (?)", toDelete).MustDelete()
+
 	s.updatePostCommentCount(cmt.PostID, time.Now())
 	s.updateCommentsCount()
-	s.deleteCommentContentCacheFor(int64(in.Id))
+
+	for _, d := range toDelete {
+		s.deleteCommentContentCacheFor(d)
+	}
+
 	return &proto.DeleteCommentResponse{}, nil
 }
 

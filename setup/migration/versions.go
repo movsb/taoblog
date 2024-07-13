@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"slices"
 
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
@@ -425,4 +427,41 @@ func v27(tx *sql.Tx) {
 func v28(tx *sql.Tx) {
 	mustExec(tx, `DROP TABLE categories`)
 	mustExec(tx, `DROP TABLE redirects`)
+}
+
+func v29(tx *sql.Tx) {
+	type v29Comment struct {
+		ID     int
+		Root   int
+		Parent int
+	}
+
+	var all []*v29Comment
+	taorm.MustScanRows(&all, tx, `SELECT id,root,parent FROM comments`)
+
+	slices.SortFunc(all, func(a, b *v29Comment) int {
+		return a.ID - b.ID
+	})
+
+	ids := map[int]struct{}{}
+	for _, c := range all {
+		ids[c.ID] = struct{}{}
+	}
+
+	var toDelete []int
+
+	for _, c := range all {
+		if c.Parent == 0 {
+			continue
+		}
+		if _, ok := ids[c.Parent]; !ok {
+			delete(ids, c.ID)
+			toDelete = append(toDelete, c.ID)
+		}
+	}
+
+	for _, id := range toDelete {
+		log.Println(`将删除评论：`, id)
+		mustExec(tx, `delete from comments where id=?`, id)
+	}
 }
