@@ -102,7 +102,7 @@ func (cn *CommentNotifier) sendMailAsync(
 		}
 		if err = mc.Send(subject, body); err != nil {
 			log.Println(err)
-			cn.ChanifyPlain(`邮件发送失败`, body+"\n\n"+err.Error())
+			return
 		}
 	}()
 }

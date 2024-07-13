@@ -29,7 +29,3 @@ func executeChanifyTemplate(data *AdminData) string {
 func (cn *CommentNotifier) Chanify(data *AdminData) {
 	cn.InstantNotifier.InstantNotify(data.Title, executeChanifyTemplate(data))
 }
-
-func (cn *CommentNotifier) ChanifyPlain(title, content string) {
-	cn.InstantNotifier.InstantNotify(title, content)
-}

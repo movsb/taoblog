@@ -186,7 +186,7 @@ func (s *Service) monitorDomain(notifier notify.InstantNotifier) {
 			return err
 		}
 
-		daysLeft := time.Until(t) / time.Hour / 24
+		daysLeft := int(time.Until(t) / time.Hour / 24)
 		s.domainExpirationDaysLeft.Store(int32(daysLeft))
 		s.exporter.domainDaysLeft.Set(float64(daysLeft))
 		log.Println(`剩余天数：`, daysLeft)
