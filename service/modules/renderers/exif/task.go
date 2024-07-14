@@ -100,6 +100,7 @@ func (t *Task) load() {
 	for k, v := range m {
 		p := parseCacheKeyFrom(k)
 		t.cache.Set(p, v, ttl)
+		t.allKeys = append(t.allKeys, p)
 	}
 	log.Println(`恢复了图片元数据：`, t.cache.Len())
 }
