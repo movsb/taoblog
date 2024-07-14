@@ -25,7 +25,15 @@ func DialTLS(host string) (*Mailer, error) {
 	if err != nil {
 		return nil, err
 	}
+	h, _, _ := net.SplitHostPort(host)
+	return New(conn, h)
+}
 
+// conn 必须是 tls.Conn
+func New(conn net.Conn, host string) (*Mailer, error) {
+	if _, ok := conn.(*tls.Conn); !ok {
+		panic(`not tls`)
+	}
 	c, err := smtp.NewClient(conn, host)
 	if err != nil {
 		conn.Close()

@@ -50,6 +50,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xtaci/smux v1.5.24 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 )

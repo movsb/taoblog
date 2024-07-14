@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -168,7 +169,8 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	if s.instantNotifier == nil {
 		s.instantNotifier = notify.NewConsoleNotify()
 	}
-	s.UtilsServer = NewUtils(s.instantNotifier)
+	utilsService := NewUtils(s.instantNotifier)
+	s.UtilsServer = utilsService
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
 		panic(err)
@@ -183,6 +185,20 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		Config:     &s.cfg.Comment,
 
 		InstantNotifier: s.instantNotifier,
+		Dialer: func(addr string) (net.Conn, error) {
+			if d := utilsService.RemoteDialer.Load(); d != nil {
+				conn, err := d.Dial(addr)
+				if err != nil {
+					return nil, err
+				}
+				host, _, _ := net.SplitHostPort(addr)
+				client := tls.Client(conn, &tls.Config{
+					ServerName: host,
+				})
+				return client, nil
+			}
+			return tls.Dial(`tcp`, addr, nil)
+		},
 	}
 	s.cmtntf.Init()
 

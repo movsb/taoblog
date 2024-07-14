@@ -22,3 +22,7 @@ message InstantNotifyRequest {
 message InstantNotifyResponse {
 
 }
+
+message DialRemoteMessage {
+	bytes data = 1;
+}

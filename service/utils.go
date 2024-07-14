@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"log"
+	"sync/atomic"
 	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/dialers"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/xeonx/timeago"
@@ -18,12 +20,16 @@ type Utils struct {
 	proto.UnimplementedUtilsServer
 
 	instantNotifier notify.InstantNotifier
+
+	RemoteDialer atomic.Pointer[dialers.RemoteDialerManager]
 }
 
 func NewUtils(instantNotifier notify.InstantNotifier) *Utils {
-	return &Utils{
+	u := &Utils{
 		instantNotifier: instantNotifier,
 	}
+	u.RemoteDialer.Store(nil)
+	return u
 }
 
 func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*proto.FormatTimeResponse, error) {
@@ -50,4 +56,11 @@ func (u *Utils) InstantNotify(ctx context.Context, in *proto.InstantNotifyReques
 		u.instantNotifier.InstantNotify(in.Title, in.Message)
 	}
 	return &proto.InstantNotifyResponse{}, nil
+}
+
+func (u *Utils) DialRemote(s proto.Utils_DialRemoteServer) error {
+	dialer := dialers.NewRemoteDialerManager(s)
+	u.RemoteDialer.Store(dialer)
+	defer u.RemoteDialer.CompareAndSwap(dialer, nil)
+	return dialer.Run()
 }

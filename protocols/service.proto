@@ -26,6 +26,8 @@ service Utils {
 			body: "*";
 		};
 	}
+	// 远程拨号器。用于从国外回国内。
+	rpc DialRemote(stream DialRemoteMessage) returns (stream DialRemoteMessage);
 }
 
 service Auth {
