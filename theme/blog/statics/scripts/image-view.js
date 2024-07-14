@@ -337,7 +337,13 @@ class ImageViewUI {
 class ImageView {
 	constructor() {
 		let images = document.querySelectorAll('.entry img:not(.no-zoom)');
-		images.forEach(img => img.addEventListener('click', e => this.show(e.target)));
+		images.forEach(img => img.addEventListener('click', e => {
+			if (!img.complete) {
+				console.log('图片未完成加载：', img);
+				return;
+			}
+			this.show(e.target);
+		}));
 		let svgs = document.querySelectorAll('.entry svg:not(.no-zoom)');
 		svgs.forEach(img => {
 			let parent = img.parentElement;

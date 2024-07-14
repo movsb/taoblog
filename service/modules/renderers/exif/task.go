@@ -70,7 +70,7 @@ func NewTask(storage utils.PluginStorage, invalidate InvalidateCacheFor) *Task {
 }
 
 func (t *Task) save() {
-	log.Println(`即可保存图片元数据`)
+	log.Println(`即将保存图片元数据`)
 
 	t.lock.Lock()
 	defer t.lock.Unlock()
