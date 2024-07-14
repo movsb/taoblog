@@ -28,6 +28,9 @@ TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};
 		{{ .Post.Post.Content }}
 		</div>
 		<div class="meta2">
+			{{ if ne .Post.Post.Status "public" }}
+				<span class="status">🔒 私密</span>
+			{{ end }}
 			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
 			<span class="author">{{ $.Author }}</span>
 			{{ friendlyDateTime .Post.Post.Date }}
