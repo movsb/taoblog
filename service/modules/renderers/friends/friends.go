@@ -97,31 +97,50 @@ var svg = `<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
 </svg>
 `
 
+// Name 是网站的名字，取首字符的大写作为图标。
+func genSvgURL(name string) string {
+	// 预告填充成 SVG 首字母（因为可能加载失败）。
+	var first rune
+	if len(name) > 0 {
+		first, _ = utf8.DecodeRune([]byte(strings.ToUpper(name)))
+	}
+	letter := fmt.Sprintf(svg, string(first))
+	return `data:image/svg+xml;base64,` + base64.StdEncoding.EncodeToString([]byte(letter))
+}
+
+// TODO 更好的做法是 parse 页面，取 <link rel="favicon" ...
+func resolveIconURL(siteURL, faviconURL string) (string, error) {
+	us, err := url.Parse(siteURL)
+	if err != nil {
+		return ``, err
+	}
+
+	// 如果没指定，默认用 favicon.ico
+	if faviconURL == "" {
+		faviconURL = us.JoinPath(`/favicon.ico`).String()
+	}
+
+	uf, err := url.Parse(faviconURL)
+	if err != nil {
+		return ``, err
+	}
+
+	uf = us.ResolveReference(uf)
+	return uf.String(), nil
+}
+
 func (f *Friends) prepareIconURL(ctx context.Context, fs []*Friend) {
 	for i, fr := range fs {
-		if fr.Icon == "" {
-			u2, err := url.Parse(fr.URL)
-			if err == nil {
-				if u2.Path == "" {
-					u2.Path = "/"
-				}
-				fr.Icon = u2.JoinPath(`/favicon.ico`).String()
-			}
-		}
-		if fr.Icon == "" {
+		fr.iconDataURL = genSvgURL(fr.Name)
+
+		u, err := resolveIconURL(fr.URL, fr.Icon)
+		if err != nil {
+			log.Println(err)
 			continue
 		}
 
-		// 预告填充成 SVG 首字母（因为可能加载失败）。
-		var first rune
-		if len(fr.Name) > 0 {
-			first, _ = utf8.DecodeRune([]byte(strings.ToUpper(fr.Name)))
-		}
-		letter := fmt.Sprintf(svg, string(first))
-		fr.iconDataURL = `data:image/svg+xml;base64,` + base64.StdEncoding.EncodeToString([]byte(letter))
-
-		go func(i int, fr *Friend) {
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, fr.Icon, nil)
+		go func(i int, u string, fr *Friend) {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 			if err != nil {
 				log.Println(`头像请求失败：`, err)
 				return
@@ -146,6 +165,6 @@ func (f *Friends) prepareIconURL(ctx context.Context, fs []*Friend) {
 			}
 			uri := fmt.Sprintf(`data:%s;base64,%s`, contentType, base64.StdEncoding.EncodeToString(body))
 			fr.iconDataURL = uri
-		}(i, fr)
+		}(i, u, fr)
 	}
 }
