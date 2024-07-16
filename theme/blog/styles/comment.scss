@@ -98,7 +98,7 @@ body.signed-in {
 		}
 
 		.comment-replies > li {
-				padding: 1em 0px 0em 1em;
+				padding: 1em 0px 0em 0;
 				border-top: 1px dashed var(--border-color);
         }
 
@@ -319,16 +319,6 @@ body.signed-in {
 				filter: invert(50%);
 			}
 		}
-	}
-}
-
-// 临时放这儿！
-@media screen and (max-width: 500px) {
-	#comment-list .comment-li {
-		padding-left: 0;
-	}
-	#comment-list .comment-li .comment-replies > li {
-		padding-left: 4px;
 	}
 }
 
