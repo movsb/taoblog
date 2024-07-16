@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -32,6 +33,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
 	"github.com/movsb/taorm"
+	"github.com/yuin/goldmark/extension"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -299,10 +301,14 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		custom_break.New(),
 		renderers.WithReserveListItemMarkerStyle(),
 		renderers.WithLazyLoadingFrames(),
+		renderers.WithImageRenderer(),
 		friends.New(),
 		katex.New(),
 		exif.New(s.OpenAsset(postId), s.exifTask, int(postId)),
 		emojis.New(),
+		wikitable.New(),
+		extension.GFM,
+		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
