@@ -22,7 +22,10 @@
 		display: none;
 		max-width: unset;
 		max-height: unset;
-    }
+		
+		// 看大图就不要暗色了。
+		filter: none;
+	}
 	svg text {
 		cursor: text;
 	}
