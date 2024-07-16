@@ -1,6 +1,7 @@
 package renderers_test
 
 import (
+	"compress/gzip"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,10 +12,13 @@ import (
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
+	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
+	"github.com/yuin/goldmark/extension"
 )
 
 func TestMarkdown(t *testing.T) {
@@ -168,7 +172,9 @@ func TestMarkdownAll(t *testing.T) {
 		if tc.ID == 10.0 {
 			log.Println(`debug`)
 		}
-		md := renderers.NewMarkdown(tc.Options...)
+		options := []renderers.Option2{renderers.WithImageRenderer()}
+		options = append(options, tc.Options...)
+		md := renderers.NewMarkdown(options...)
 		html, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Fatal(tc.ID, err)
@@ -280,7 +286,7 @@ func TestPrettifier(t *testing.T) {
 		// },
 	}
 	for _, tc := range cases {
-		options := append(tc.Options, renderers.WithHtmlPrettifier())
+		options := append(tc.Options, renderers.WithHtmlPrettifier(), extension.GFM, extension.Footnote)
 		md := renderers.NewMarkdown(options...)
 		if tc.ID == 9.0 {
 			log.Println(`debug`)
@@ -291,6 +297,35 @@ func TestPrettifier(t *testing.T) {
 		}
 		if strings.TrimSpace(text) != strings.TrimSpace(tc.Text) {
 			t.Fatalf("not equal %v:\nMarkdown:%s\nExpected:%s\nGot     :%s\n\n", tc.ID, tc.Markdown, tc.Text, text)
+		}
+	}
+}
+
+func TestSpec(t *testing.T) {
+	type _Case struct {
+		Example  int    `yaml:"example"`
+		Markdown string `yaml:"markdown"`
+		HTML     string `yaml:"html"`
+	}
+
+	fp := utils.Must1(os.Open(`test_data/spec-0.31.2.json.gz`))
+	defer fp.Close()
+	gr := utils.Must1(gzip.NewReader(fp))
+
+	testCases := test_utils.MustLoadCasesFromYamlReader[_Case](gr)
+	for _, tc := range testCases {
+		md := renderers.NewMarkdown(
+			emojis.New(),
+			renderers.WithXHTML(),
+		)
+		h, err := md.Render(tc.Markdown)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		if h != tc.HTML {
+			t.Errorf("example %d error:\nmd  : %s\nwant: %s\ngot : %s\n", tc.Example, tc.Markdown, tc.HTML, h)
+			continue
 		}
 	}
 }

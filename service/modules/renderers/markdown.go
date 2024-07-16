@@ -9,12 +9,10 @@ import (
 	"net/url"
 	"strings"
 
-	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/utils"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/renderer/html"
@@ -42,7 +40,9 @@ type _Markdown struct {
 	modifiedAnchorReference string
 	assetSourceFinder       AssetFinder
 
-	noRendering bool
+	noRendering   bool
+	xhtml         bool
+	imageRenderer bool
 }
 
 // TODO 不要返回 error。
@@ -102,6 +102,20 @@ func WithOpenLinksInNewTab(kind OpenLinksInNewTabKind) Option {
 	}
 }
 
+func WithXHTML() Option {
+	return func(me *_Markdown) error {
+		me.xhtml = true
+		return nil
+	}
+}
+
+func WithImageRenderer() Option {
+	return func(me *_Markdown) error {
+		me.imageRenderer = true
+		return nil
+	}
+}
+
 type OpenLinksInNewTabKind int
 
 const (
@@ -151,17 +165,21 @@ func (me *_Markdown) Render(source string) (string, error) {
 	options := []goldmark.Option{
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
-			renderer.WithNodeRenderers(
-				util.Prioritized(me, 100),
-			),
 		),
 	}
 
-	extensions := []goldmark.Extender{
-		extension.GFM,
-		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
-		wikitable.New(),
+	if me.xhtml {
+		options = append(options, goldmark.WithRendererOptions(html.WithXHTML()))
 	}
+	if me.imageRenderer {
+		options = append(options, goldmark.WithRendererOptions(
+			renderer.WithNodeRenderers(
+				util.Prioritized(me, 100),
+			),
+		))
+	}
+
+	extensions := []goldmark.Extender{}
 
 	for _, opt := range me.opts {
 		if tr, ok := opt.(goldmark.Extender); ok {
@@ -172,6 +190,13 @@ func (me *_Markdown) Render(source string) (string, error) {
 	md := goldmark.New(append(options, goldmark.WithExtensions(extensions...))...)
 
 	pCtx := parser.NewContext()
+
+	for _, opt := range me.opts {
+		if cp, ok := opt.(ContextPreparer); ok {
+			cp.PrepareContext(pCtx)
+		}
+	}
+
 	sourceBytes := []byte(source)
 	doc := md.Parser().Parse(
 		text.NewReader(sourceBytes),

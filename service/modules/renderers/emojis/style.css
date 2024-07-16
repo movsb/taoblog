@@ -1,0 +1,7 @@
+img.emoji.weixin {
+	width: 1em;
+	height: 1em;
+	border-radius: unset;
+	position: relative;
+	top: 2.5px; /* hardcode */
+}

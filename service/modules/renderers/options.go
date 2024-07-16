@@ -33,6 +33,10 @@ type HtmlPrettifier interface {
 	PrettifyHtml(doc *html.Node) ([]byte, error)
 }
 
+type ContextPreparer interface {
+	PrepareContext(ctx parser.Context)
+}
+
 // -----------------------------------------------------------------------------
 
 // 获取从 Markdown 中解析得到的一级标题。
