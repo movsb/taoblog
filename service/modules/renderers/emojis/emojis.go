@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
@@ -84,4 +85,11 @@ func (e *Emojis) Parse(parent ast.Node, block text.Reader, pc parser.Context) as
 	img := ast.NewImage(link)
 	img.SetAttributeString(`class`, `emoji weixin`)
 	return img
+}
+
+func (e *Emojis) TransformHtml(doc *goquery.Document) error {
+	doc.Find(`img.emoji.weixin`).Each(func(i int, s *goquery.Selection) {
+		s.SetAttr(`alt`, fmt.Sprintf(`[%s]`, s.AttrOr(`title`, ``)))
+	})
+	return nil
 }

@@ -317,6 +317,7 @@ func TestSpec(t *testing.T) {
 		md := renderers.NewMarkdown(
 			emojis.New(),
 			renderers.WithXHTML(),
+			renderers.WithoutTransform(),
 		)
 		h, err := md.Render(tc.Markdown)
 		if err != nil {

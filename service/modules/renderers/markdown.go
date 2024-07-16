@@ -41,6 +41,7 @@ type _Markdown struct {
 	assetSourceFinder       AssetFinder
 
 	noRendering   bool
+	noTransform   bool
 	xhtml         bool
 	imageRenderer bool
 }
@@ -79,6 +80,13 @@ func WithDisableHTML(disable bool) Option {
 func WithoutRendering() Option {
 	return func(me *_Markdown) error {
 		me.noRendering = true
+		return nil
+	}
+}
+
+func WithoutTransform() Option {
+	return func(me *_Markdown) error {
+		me.noTransform = true
 		return nil
 	}
 }
@@ -331,16 +339,18 @@ func (me *_Markdown) Render(source string) (string, error) {
 		}
 	}
 
-	if h2, err := gold_utils.ApplyHtmlTransformers(
-		htmlText,
-		utils.Map(
-			utils.Filter(me.opts, func(o Option2) bool { return utils.Implements[gold_utils.HtmlTransformer](o) }),
-			func(o Option2) gold_utils.HtmlTransformer { return o.(gold_utils.HtmlTransformer) },
-		)...,
-	); err != nil {
-		return "", err
-	} else {
-		htmlText = h2
+	if !me.noTransform {
+		if h2, err := gold_utils.ApplyHtmlTransformers(
+			htmlText,
+			utils.Map(
+				utils.Filter(me.opts, func(o Option2) bool { return utils.Implements[gold_utils.HtmlTransformer](o) }),
+				func(o Option2) gold_utils.HtmlTransformer { return o.(gold_utils.HtmlTransformer) },
+			)...,
+		); err != nil {
+			return "", err
+		} else {
+			htmlText = h2
+		}
 	}
 
 	// TODO 和渲染分开，根本不是一个阶段的事
