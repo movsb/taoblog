@@ -334,5 +334,5 @@ body.signed-in {
 
 // 高亮选中的评论项的内容。
 li:target > .comment-content {
-	background-color: yellow !important;
+	background-color: var(--highlight-color) !important;
 }

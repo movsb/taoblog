@@ -431,7 +431,7 @@ div.divider {
 			position: relative;
 			&::before {
 				content: "";
-				background-color: yellow;
+				background-color: var(--highlight-color);
 				position: absolute;
 				left: -3px;
 				bottom: 0;
