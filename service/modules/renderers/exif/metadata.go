@@ -8,20 +8,25 @@ import (
 )
 
 // exiftool -G -s -json test_data/exif.avif
+// https://blog.twofei.com/1442/
 type Metadata struct {
-	MimeType     string  `json:"File:MIMEType"`         // 类型：image/avif
 	FileName     string  `json:"File:FileName"`         // 文件名字
 	FileSize     string  `json:"File:FileSize"`         // 文件大小
 	ImageSize    string  `json:"Composite:ImageSize"`   // 尺寸
+	MimeType     string  `json:"File:MIMEType"`         // 类型：image/avif
+	Artist       string  `json:"EXIF:Artist"`           // 作者
+	Copyright    string  `json:"EXIF:Copyright"`        // 版权
 	Model        string  `json:"EXIF:Model"`            // 设置型号
 	Make         string  `json:"EXIF:Make"`             // 设置制造商
 	FNumber      float32 `json:"EXIF:FNumber"`          // 光圈数
 	FocalLength  string  `json:"EXIF:FocalLength"`      // 焦距
 	ExposureTime string  `json:"EXIF:ExposureTime"`     // 曝光时间
+	ISO          int     `json:"EXIF:ISO"`              // 感光度
 	GPSPosition  string  `json:"Composite:GPSPosition"` // 坐标
 	GPSAltitude  string  `json:"Composite:GPSAltitude"` // 海拔
 	CreateDate   string  `json:"EXIF:CreateDate"`       // 创建日期/时间
 	OffsetTime   string  `json:"EXIF:OffsetTime"`       // 时区
+	Description  string  `json:"EXIF:ImageDescription"` // 图片描述
 }
 
 func (m *Metadata) CreationDateTime() time.Time {
@@ -71,6 +76,10 @@ func (m *Metadata) String() []string {
 		add(f, `时间`)
 	}
 
+	add(m.Artist, `作者`)
+	add(m.Copyright, `版权`)
+	add(m.Description, `描述`)
+
 	if mapped, ok := knownDJIModels[m.Model]; ok {
 		m.Model = mapped
 	}
@@ -87,6 +96,9 @@ func (m *Metadata) String() []string {
 	}
 	if m.ExposureTime != "" {
 		lenInfo = append(lenInfo, m.ExposureTime)
+	}
+	if m.ISO > 0 {
+		lenInfo = append(lenInfo, fmt.Sprint(m.ISO))
 	}
 	add(strings.Join(lenInfo, `, `), `镜头`)
 
