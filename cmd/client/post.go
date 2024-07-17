@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"io/fs"
@@ -11,14 +12,13 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/protocols/clients"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/text"
-	html5 "golang.org/x/net/html"
+	"github.com/yuin/goldmark/renderer/html"
 	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -345,11 +345,21 @@ func readSource(dir string) (string, string, []string) {
 // 从文章的源代码里面提取出附件列表。
 // 参考：docs/usage/文章编辑::自动附件上传
 // TODO 暂时放在 client 中，其实 server 中也可能用到，到时候再独立成公共模块
-// TODO 目前此函数只针对 Markdown 类型的文章，HTML 类型的文章不支持。
 func parsePostAssets(source string) ([]string, error) {
-	sourceBytes := []byte(source)
-	reader := text.NewReader(sourceBytes)
-	doc := goldmark.DefaultParser().Parse(reader)
+	buf := bytes.NewBuffer(nil)
+	if err := goldmark.New(
+		goldmark.WithRendererOptions(
+			html.WithUnsafe(),
+		),
+	).Convert([]byte(source), buf); err != nil {
+		return nil, err
+	}
+	markup := buf.Bytes()
+	_ = markup
+	doc, err := goquery.NewDocumentFromReader(buf)
+	if err != nil {
+		return nil, err
+	}
 
 	// 用来保存所有的相对路径列表
 	var assets []string
@@ -361,108 +371,31 @@ func parsePostAssets(source string) ([]string, error) {
 			return
 		}
 		if u.Scheme != "" || u.Host != "" || strings.HasPrefix(u.Path, `/`) {
-			log.Println(`maybe an invalid asset presents in the post:`, theURL)
+			// log.Println(`maybe an invalid asset presents in the post:`, theURL)
 			return
 		}
-		relative := u.Path
-		// 锚点儿
-		if strings.HasPrefix(relative, `#`) {
+		if u.Path == "" {
 			return
 		}
-		// TODO 简单方式去掉 ? 后面的查询参数，有 BUG，但是“够用”。
-		relative, _, _ = strings.Cut(relative, "?")
-		assets = append(assets, relative)
+		assets = append(assets, u.Path)
 	}
 
-	fromHTML := func(html string) {
-		assets, err := parseHtmlAssets(html)
-		if err != nil {
-			log.Println(err)
+	doc.Find(`a,img,iframe,source,audio,video,object`).Each(func(_ int, s *goquery.Selection) {
+		var attrName string
+		switch s.Nodes[0].Data {
+		case `a`:
+			attrName = `href`
+		case `img`, `iframe`, `source`, `audio`, `video`:
+			attrName = `src`
+		case `object`:
+			attrName = `data`
 		}
-		for _, asset := range assets {
-			tryAdd(asset)
+		attrValue := s.AttrOr(attrName, ``)
+		if attrValue == `` {
+			return
 		}
-	}
-
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if !entering {
-			return ast.WalkContinue, nil
-		}
-
-		// 如果修改了这个列表，注意同时更新到文档。
-		switch tag := n.(type) {
-		case *ast.Link:
-			tryAdd(string(tag.Destination))
-		case *ast.Image:
-			tryAdd(string(tag.Destination))
-		case *ast.HTMLBlock, *ast.RawHTML:
-			var lines *text.Segments
-			switch tag := n.(type) {
-			default:
-				panic(`unknown tag type`)
-			case *ast.HTMLBlock:
-				lines = tag.Lines()
-			case *ast.RawHTML:
-				lines = tag.Segments
-			}
-
-			var rawLines []string
-			for i := 0; i < lines.Len(); i++ {
-				seg := lines.At(i)
-				value := seg.Value(sourceBytes)
-				rawLines = append(rawLines, string(value))
-			}
-			fromHTML(strings.Join(rawLines, "\n"))
-		}
-		return ast.WalkContinue, nil
+		tryAdd(attrValue)
 	})
 
 	return assets, nil
-}
-
-func parseHtmlAssets(html string) ([]string, error) {
-	node, err := html5.Parse(strings.NewReader(html))
-	if err != nil {
-		return nil, err
-	}
-
-	var assets []string
-
-	var recurse func(node *html5.Node)
-
-	// 先访问节点自身，再访问各子节点
-	recurse = func(node *html5.Node) {
-		if !(node.Type == html5.DocumentNode || node.Type == html5.ElementNode) {
-			return
-		}
-
-		var theURL string
-		var wantedAttr string
-		switch strings.ToLower(node.Data) {
-		case `a`:
-			wantedAttr = `href`
-		case `img`, `source`, `iframe`:
-			wantedAttr = `src`
-		case `object`:
-			wantedAttr = `data`
-		}
-		if wantedAttr != `` {
-			for _, attr := range node.Attr {
-				if strings.EqualFold(attr.Key, wantedAttr) {
-					theURL = attr.Val
-				}
-			}
-		}
-		if theURL != `` {
-			assets = append(assets, theURL)
-		}
-
-		for child := node.FirstChild; child != nil; child = child.NextSibling {
-			recurse(child)
-		}
-	}
-
-	recurse(node)
-
-	return assets, err
 }
