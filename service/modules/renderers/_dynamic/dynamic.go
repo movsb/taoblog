@@ -45,24 +45,29 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 
-	path := r.URL.Path[1:]
+	path := r.URL.Path
 
 	// TODO 使用 Mux
 	switch path {
-	case `style`:
+	case `/style`:
 		http.ServeContent(w, r, `style.css`, mod, strings.NewReader(style))
 		return
-	case `script`:
+	case `/script`:
 		http.ServeContent(w, r, `script.js`, mod, strings.NewReader(script))
 		return
 	}
 
 	// TODO 使用 OverlayFS
+	// TODO 按插件名称组织结构，就无需循环了。
 	for _, f := range files {
-		p, err := f.Open(path)
+		// 为了支持 io.Seeker.
+		p, err := http.FS(f).Open(path)
 		if err == nil {
-			p.Close()
-			http.ServeFileFS(w, r, f, path)
+			defer p.Close()
+			// 不使用 http.ServeFileFS：
+			// - embed.FS 不支持文件的修改时间
+			// - 可以少一次文件打开操作
+			http.ServeContent(w, r, path, mod, p)
 			return
 		}
 	}
