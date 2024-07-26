@@ -78,9 +78,9 @@ func (g *GitSync) Sync() error {
 	}
 	log.Println(`共有`, len(posts), `篇文章被处理。`)
 
-	if err := spawn(`git`, []string{`push`}, g.root, ``); err != nil {
-		return err
-	}
+	// if err := spawn(`git`, []string{`push`}, g.root, ``); err != nil {
+	// 	return err
+	// }
 
 	// 仅在全部成功后更新上次检测的时间。
 	g.lastCheckedAt = notAfter
