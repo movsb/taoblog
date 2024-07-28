@@ -284,11 +284,19 @@ func TestPrettifier(t *testing.T) {
 		// 	Markdown: `$a$`,
 		// 	Text:     `[公式]`,
 		// },
+		{
+			ID:       10.0,
+			Markdown: `[狗头]`,
+			Text:     `[狗头]`, // 其实直接用表情图片本身也是很好的。
+			Options: []renderers.Option2{
+				emojis.New(),
+			},
+		},
 	}
 	for _, tc := range cases {
 		options := append(tc.Options, renderers.WithHtmlPrettifier(), extension.GFM, extension.Footnote)
 		md := renderers.NewMarkdown(options...)
-		if tc.ID == 9.0 {
+		if tc.ID == 10.0 {
 			log.Println(`debug`)
 		}
 		text, err := md.Render(tc.Markdown)

@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -164,6 +165,17 @@ type _ContentPrettifier struct{}
 func (*_ContentPrettifier) PrettifyHtml(doc *html.Node) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 
+	emojiWithAlt := func(node *html.Node) (alt string) {
+		if node.Data != `img` {
+			return ""
+		}
+		img := goquery.NewDocumentFromNode(node)
+		if img.HasClass(`emoji`) {
+			alt = img.AttrOr(`alt`, ``)
+		}
+		return
+	}
+
 	var walk func(buf *bytes.Buffer, node *html.Node)
 	walk = func(buf *bytes.Buffer, node *html.Node) {
 		walkStatus := ast.WalkContinue
@@ -180,6 +192,9 @@ func (*_ContentPrettifier) PrettifyHtml(doc *html.Node) ([]byte, error) {
 					node.FirstChild.NextSibling == nil &&
 					len(node.FirstChild.Data) <= 16 {
 					buf.WriteString(node.FirstChild.Data)
+					walkStatus = ast.WalkSkipChildren
+				} else if alt := emojiWithAlt(node); alt != "" {
+					buf.WriteString(alt)
 					walkStatus = ast.WalkSkipChildren
 				} else {
 					buf.WriteString(fmt.Sprintf(`[%s]`, f))
