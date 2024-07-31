@@ -2,18 +2,13 @@ package friends
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"io"
 	"log"
-	"mime"
-	"net/http"
 	"net/url"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
@@ -25,12 +20,17 @@ import (
 var _root embed.FS
 
 type Friends struct {
+	task   *Task
+	postID int
 }
 
 type Option func(f *Friends)
 
-func New(options ...Option) *Friends {
-	f := &Friends{}
+func New(task *Task, postID int, options ...Option) *Friends {
+	f := &Friends{
+		task:   task,
+		postID: postID,
+	}
 
 	for _, opt := range options {
 		opt(f)
@@ -74,10 +74,7 @@ func (f *Friends) TransformHtml(doc *goquery.Document) error {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer cancel()
-	f.prepareIconURL(ctx, bundle.Friends)
-	<-ctx.Done()
+	f.prepareIconURL(bundle.Friends)
 
 	doc.Find(`div.friends`).Each(func(_ int, s *goquery.Selection) {
 		for _, f := range bundle.Friends {
@@ -99,7 +96,6 @@ var svg = `<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
 
 // Name 是网站的名字，取首字符的大写作为图标。
 func genSvgURL(name string) string {
-	// 预告填充成 SVG 首字母（因为可能加载失败）。
 	var first rune
 	if len(name) > 0 {
 		first, _ = utf8.DecodeRune([]byte(strings.ToUpper(name)))
@@ -129,42 +125,19 @@ func resolveIconURL(siteURL, faviconURL string) (string, error) {
 	return uf.String(), nil
 }
 
-func (f *Friends) prepareIconURL(ctx context.Context, fs []*Friend) {
-	for i, fr := range fs {
-		fr.iconDataURL = genSvgURL(fr.Name)
-
+func (f *Friends) prepareIconURL(fs []*Friend) {
+	for _, fr := range fs {
 		u, err := resolveIconURL(fr.URL, fr.Icon)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-
-		go func(i int, u string, fr *Friend) {
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-			if err != nil {
-				log.Println(`头像请求失败：`, err)
-				return
-			}
-			rsp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				log.Println(`头像请求失败：`, err)
-				return
-			}
-			defer rsp.Body.Close()
-			if rsp.StatusCode != http.StatusOK {
-				log.Println(`头像请求失败：`, rsp.Status)
-				return
-			}
-			body, _ := io.ReadAll(io.LimitReader(rsp.Body, 100<<10))
-			contentType, _, _ := mime.ParseMediaType(rsp.Header.Get(`Content-Type`))
-			if contentType == "" {
-				contentType = http.DetectContentType(body)
-			}
-			if contentType == "" {
-				return
-			}
-			uri := fmt.Sprintf(`data:%s;base64,%s`, contentType, base64.StdEncoding.EncodeToString(body))
-			fr.iconDataURL = uri
-		}(i, u, fr)
+		contentType, content, found := f.task.Get(f.postID, u)
+		if !found {
+			// 预填充成 SVG 首字母（因为可能加载失败）。
+			fr.iconDataURL = genSvgURL(fr.Name)
+		} else {
+			fr.iconDataURL = fmt.Sprintf(`data:%s;base64,%s`, contentType, base64.StdEncoding.EncodeToString(content))
+		}
 	}
 }
