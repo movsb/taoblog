@@ -94,12 +94,16 @@ func NewAdmin(devMode bool, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix st
 	return a
 }
 
+// 下面的网址在中国已经能访问，不能再用它来判断是否可以访问 Google 主站。
+//
+//	https://www.gstatic.com/generate_204
 func (a *Admin) detectNetwork() {
-	resp, err := http.Get(`https://www.gstatic.com/generate_204`)
+	resp, err := http.Get(`https://www.google.com/favicon.ico`)
 	if err == nil {
 		resp.Body.Close()
 	}
-	yes := err == nil && resp.StatusCode == 204
+	// 无需判断状态码，只需保证能访问（证书正确）即可。
+	yes := err == nil
 	log.Println(`google accessible: `, yes)
 	a.canGoogle.Store(yes)
 }
