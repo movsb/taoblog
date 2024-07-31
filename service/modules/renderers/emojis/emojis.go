@@ -54,6 +54,10 @@ func initEmojis() {
 	}
 
 	weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
+	weixin(`机智.png`, `机智`)
+	weixin(`捂脸.png`, `捂脸`)
+	weixin(`耶.png`, `耶`)
+	weixin(`皱眉.png`, `皱眉`, `纠结`, `小纠结`)
 }
 
 func (e *Emojis) Extend(md goldmark.Markdown) {

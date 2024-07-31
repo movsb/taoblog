@@ -31,6 +31,7 @@ func (m *Exif) TransformHtml(doc *goquery.Document) error {
 		}
 		fp, err := m.fs.OpenURL(url)
 		if err != nil {
+			// TODO 忽略 emoji
 			log.Println(err)
 			return
 		}

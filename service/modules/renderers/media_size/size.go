@@ -82,6 +82,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		md, err := size(ms.web, parsedURL, ms.localOnly)
 		if err != nil {
+			// TODO 忽略 emoji
 			log.Println(err, utils.IIF(parsedURL.Scheme == `data`, `(data: url)`, url))
 			return
 		}
