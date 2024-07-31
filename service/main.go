@@ -213,11 +213,11 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		s.deletePostContentCacheFor(int64(id))
 		s.updatePostMetadataTime(int64(id), time.Now())
 	})
-	s.exifTask = exif.NewTask(s.getPluginStorage(`exif`), func(id int) {
+	s.exifTask = exif.NewTask(s.GetPluginStorage(`exif`), func(id int) {
 		exifDebouncer.Enter(id)
 	})
 
-	s.friendsTask = friends.NewTask(s.getPluginStorage(`friends`), func(postID int) {
+	s.friendsTask = friends.NewTask(s.GetPluginStorage(`friends`), func(postID int) {
 		s.deletePostContentCacheFor(int64(postID))
 		s.updatePostMetadataTime(int64(postID), time.Now())
 	})

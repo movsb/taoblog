@@ -94,7 +94,8 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 	// 只能在进程内使用。
 	{
 		// 头像服务
-		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(g.auther, g.service))
+		task := avatar.NewTask(g.service.GetPluginStorage(`avatar`))
+		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(task, g.service))
 	}
 
 	// 使用登录身份鉴权的部分

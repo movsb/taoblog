@@ -154,7 +154,7 @@ func (s *_PluginStorage) Get(key string) (string, error) {
 	return s.ss.GetStringOption(name)
 }
 
-func (s *Service) getPluginStorage(name string) utils.PluginStorage {
+func (s *Service) GetPluginStorage(name string) utils.PluginStorage {
 	return &_PluginStorage{
 		ss: s,
 		ns: name,
