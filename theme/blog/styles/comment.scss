@@ -306,7 +306,11 @@ body.signed-in {
 
 // 高亮选中的评论项的内容。
 li:target > .comment-content {
-	background-color: var(--highlight-color) !important;
+	animation-name: diminished-background-color;
+	animation-duration: 10s;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease-in;
+	background-color: var(--highlight-color);
 }
 
 #comment-list {

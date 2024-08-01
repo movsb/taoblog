@@ -353,6 +353,10 @@ svg.plantuml {
 	to {transform:rotate(360deg);}
 }
 
+@keyframes diminished-background-color {
+	to { background-color: #00000000; }
+}
+
 // SVG
 text { cursor: text; }
 
