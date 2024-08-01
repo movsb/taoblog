@@ -34,9 +34,11 @@ func AddCommands(parent *cobra.Command) {
 		Short: `守护进程（更新镜像等）`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			update()
+			grpcAddress := utils.Must1(cmd.Flags().GetString(`grpc-address`))
+			update(grpcAddress)
 		},
 	}
+	daemonCmd.Flags().StringP(`grpc-address`, `g`, `127.0.0.1:2563`, `GRPC 服务器地址`)
 	parent.AddCommand(daemonCmd)
 
 	remoteDialerCmd := &cobra.Command{
@@ -106,9 +108,9 @@ func remoteDialer(endpoint string) {
 	}
 }
 
-func update() {
+func update(grpcAddress string) {
 	// TODO 写死了。
-	client := clients.NewFromGrpcAddr(`127.0.0.1:2563`)
+	client := clients.NewFromGrpcAddr(grpcAddress)
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	for range ticker.C {
