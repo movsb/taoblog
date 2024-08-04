@@ -107,7 +107,7 @@ body:not(.wide) {
 body:not(.wide) .entry {
 	p {
 		img, svg, video {
-			&:only-child {
+			&:not(.emoji):only-child {
 				display: block;
 				margin: auto;
 			}
