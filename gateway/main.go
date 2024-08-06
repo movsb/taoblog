@@ -12,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
 	"github.com/movsb/taoblog/gateway/handlers/assets"
 	"github.com/movsb/taoblog/gateway/handlers/avatar"
+	"github.com/movsb/taoblog/gateway/handlers/debug"
 	"github.com/movsb/taoblog/gateway/handlers/features"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
@@ -112,6 +113,9 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 
 		// 订阅：rss
 		mc.Handle(`GET /rss`, rss.New(g.auther, g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
+
+		// 调试相关
+		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.adminHandler)
 	}
 
 	return nil
@@ -124,5 +128,16 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, version.Time, info.LastPostedAt),
 		).ServeHTTP(w, r)
+	})
+}
+
+func (g *Gateway) adminHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ac := auth.Context(r.Context())
+		if !ac.User.IsAdmin() {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		h.ServeHTTP(w, r)
 	})
 }

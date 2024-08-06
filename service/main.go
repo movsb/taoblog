@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"expvar"
 	"fmt"
 	"log"
 	"net"
@@ -292,7 +293,14 @@ func grpcLoggerStream(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo
 	grpcLogger(ss.Context(), info.FullMethod)
 	return handler(srv, ss)
 }
+
+var enableGrpcLogger = expvar.NewInt(`log.grpc`)
+
 func grpcLogger(ctx context.Context, method string) {
+	logEnabled := enableGrpcLogger.Value() == 1
+	if !logEnabled {
+		return
+	}
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		log.Println(md)
 	}
