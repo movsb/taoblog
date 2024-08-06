@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/golang/protobuf/ptypes/empty"
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/auth"
@@ -284,7 +285,11 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		options = append(options, rooted_path.New(s.OpenAsset(postId)))
 	}
 	options = append(options,
-		media_size.New(s.OpenAsset(postId), media_size.WithLocalOnly(), media_size.WithDimensionLimiter(350)),
+		media_size.New(s.OpenAsset(postId),
+			media_size.WithLocalOnly(),
+			media_size.WithDimensionLimiter(350),
+			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
+		),
 		renderers.WithAssetSources(func(path string) (name string, url string, description string, found bool) {
 			if src, ok := metas.Sources[path]; ok {
 				name = src.Name
@@ -303,7 +308,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		renderers.WithLazyLoadingFrames(),
 		renderers.WithImageRenderer(),
 		katex.New(),
-		exif.New(s.OpenAsset(postId), s.exifTask, int(postId)),
+		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
 		friends.New(s.friendsTask, int(postId)),
 		emojis.New(),
 		wikitable.New(),
@@ -325,6 +330,10 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 	}
 
 	return rendered, nil
+}
+
+func withEmojiFilter(node *goquery.Selection) bool {
+	return node.HasClass(`emoji`)
 }
 
 func (s *Service) hashtagResolver(tag string) string {

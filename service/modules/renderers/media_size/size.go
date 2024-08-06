@@ -24,6 +24,7 @@ type MediaSize struct {
 
 	localOnly bool
 	sizeLimit int
+	filter    gold_utils.NodeFilter
 }
 
 type Option func(*MediaSize)
@@ -41,6 +42,12 @@ func WithDimensionLimiter(size int) Option {
 	}
 }
 
+func WithNodeFilter(f gold_utils.NodeFilter) Option {
+	return func(ms *MediaSize) {
+		ms.filter = f
+	}
+}
+
 // localOnly: 只处理本地图片，不处理网络图片。
 // NOTE: 本地文件直接用相对路径指定，不要用 file://。
 func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
@@ -54,7 +61,12 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
 }
 
 func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
-	doc.Find(`img`).Each(func(i int, s *goquery.Selection) {
+	doc.Find(`img`).FilterFunction(func(i int, s *goquery.Selection) bool {
+		if ms.filter == nil {
+			return true
+		}
+		return ms.filter(s)
+	}).Each(func(i int, s *goquery.Selection) {
 		url := s.AttrOr(`src`, ``)
 		if url == "" {
 			return
@@ -82,7 +94,6 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		md, err := size(ms.web, parsedURL, ms.localOnly)
 		if err != nil {
-			// TODO 忽略 emoji
 			log.Println(err, utils.IIF(parsedURL.Scheme == `data`, `(data: url)`, url))
 			return
 		}
