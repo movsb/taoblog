@@ -143,13 +143,13 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto
 	}
 
 	if in.WithRelates {
-		relates, err := s.getRelatedPosts(int64(in.Id))
+		relates, err := s.getRelatedPosts(ctx, int64(in.Id))
 		if err != nil {
 			return nil, err
 		}
 		for _, r := range relates {
 			out.Relates = append(out.Relates, &proto.Post{
-				Id:    r.ID,
+				Id:    r.Id,
 				Title: r.Title,
 			})
 		}
@@ -423,35 +423,35 @@ func (s *Service) getPageParentID(parents string) int64 {
 }
 
 // TODO cache
-func (s *Service) getRelatedPosts(id int64) (models.Posts, error) {
+// TODO 添加权限测试
+func (s *Service) getRelatedPosts(ctx context.Context, id int64) ([]*proto.Post, error) {
+	ac := auth.Context(ctx)
+
 	tagIDs := s.getObjectTagIDs(id, true)
 	if len(tagIDs) == 0 {
 		return nil, nil
 	}
 	type _PostForRelated struct {
-		ID        int64  `json:"id"`
-		Title     string `json:"title"`
-		Relevance uint   `json:"relevance"`
+		models.Post
+		Relevance uint `json:"relevance"`
 	}
 
 	var relates []_PostForRelated
 	s.tdb.From(models.Post{}).From(models.ObjectTag{}).
-		Select("posts.id,posts.title,COUNT(posts.id) relevance").
+		Select("posts.*,COUNT(posts.id) relevance").
 		Where("post_tags.post_id != ?", id).
 		Where("posts.id = post_tags.post_id").
 		Where("post_tags.tag_id IN (?)", tagIDs).
+		WhereIf(!(ac.User.IsAdmin() || ac.User.IsSystem()), `posts.status = 'public'`).
 		GroupBy("posts.id").
 		OrderBy("relevance DESC").
 		Limit(9).
 		MustFind(&relates)
 	var posts models.Posts
 	for _, r := range relates {
-		posts = append(posts, &models.Post{
-			ID:    r.ID,
-			Title: r.Title,
-		})
+		posts = append(posts, &r.Post)
 	}
-	return posts, nil
+	return posts.ToProto(s.setPostExtraFields(ctx, nil))
 }
 
 // t: last_commented_at 表示文章评论最后被操作的时间。不是最后被评论的时间。
@@ -798,7 +798,9 @@ func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostConten
 
 	return func(p *proto.Post) error {
 		if !ac.User.IsAdmin() && !ac.User.IsSystem() {
-			p.Metas.Geo = nil
+			if p.Metas != nil {
+				p.Metas.Geo = nil
+			}
 		}
 
 		if copt != nil && copt.WithContent {
