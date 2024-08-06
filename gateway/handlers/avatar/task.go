@@ -107,7 +107,7 @@ func (t *Task) Get(email string) (lastModified string, contentType string, conte
 		func(ctx context.Context, ck CacheKey) (CacheValue, time.Duration, error) {
 			l, t, c, err := get(email)
 			if err != nil {
-				log.Println(err)
+				log.Println(err, email)
 				return CacheValue{}, ttl, err
 			}
 			return CacheValue{

@@ -75,7 +75,7 @@ type Service struct {
 
 	instantNotifier notify.InstantNotifier
 	cmtntf          *comment_notify.CommentNotifier
-	cmtgeo          *commentgeo.CommentGeo
+	cmtgeo          *commentgeo.Task
 
 	// 通用缓存
 	cache *lru.TTLCache[string, any]
@@ -206,7 +206,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	s.cmtntf.Init()
 
 	s.avatarCache = cache.NewAvatarHash()
-	s.cmtgeo = commentgeo.New(context.TODO())
+	s.cmtgeo = commentgeo.NewTask(s.GetPluginStorage(`cmt_geo`))
 
 	s.cacheAllCommenterData()
 

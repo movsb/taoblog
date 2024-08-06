@@ -87,7 +87,6 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostConte
 			c.Email = ""
 			c.Ip = ""
 		} else {
-			s.cmtgeo.Queue(c.Ip)
 			c.GeoLocation = s.cmtgeo.Get(c.Ip)
 		}
 
@@ -122,16 +121,16 @@ func (s *Service) getComment2(name int64) *models.Comment {
 func (s *Service) cacheAllCommenterData() {
 	var comments models.Comments
 	s.tdb.Select(`email,ip`).OrderBy(`date desc`).MustFind(&comments)
+	dup := make(map[string]struct{})
 	for _, c := range comments {
-		_ = s.avatarCache.ID(c.Email)
-	}
-	if !DevMode() {
-		go func() {
-			for _, c := range comments {
-				s.cmtgeo.Queue(c.IP)
-				time.Sleep(time.Second * 6) // 沸腾！
-			}
-		}()
+		if _, ok := dup[c.Email]; !ok {
+			dup[c.Email] = struct{}{}
+			s.avatarCache.ID(c.Email)
+		}
+		if _, ok := dup[c.IP]; !ok {
+			dup[c.IP] = struct{}{}
+			s.cmtgeo.Get(c.IP)
+		}
 	}
 }
 
@@ -370,7 +369,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	ac := auth.Context(ctx)
 
 	// 尽早查询地理信息
-	s.cmtgeo.Queue(ac.RemoteAddr.String())
+	s.cmtgeo.Get(ac.RemoteAddr.String())
 
 	now := time.Now()
 
