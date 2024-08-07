@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io/fs"
-	"log"
 	"net/url"
 	"slices"
 	"strings"
@@ -82,9 +81,9 @@ func (fs *_WebFileSystem) OpenURL(url_ string) (fs.File, error) {
 	}
 	// 即使 base 不包含 host 也满足。
 	if !strings.EqualFold(fs.base.Host, ref.Host) {
-		if ref.Scheme != `data` {
-			log.Println(`fs: url:`, url_)
-		}
+		// if ref.Scheme != `data` {
+		// 	log.Println(`fs: url:`, url_)
+		// }
 		return nil, ErrCrossOrigin
 	}
 	// fs.FS 不能以 / 开头。

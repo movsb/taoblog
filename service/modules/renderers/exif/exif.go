@@ -1,6 +1,7 @@
 package exif
 
 import (
+	"errors"
 	"log"
 
 	"github.com/PuerkitoBio/goquery"
@@ -50,7 +51,9 @@ func (m *Exif) TransformHtml(doc *goquery.Document) error {
 		}
 		fp, err := m.fs.OpenURL(url)
 		if err != nil {
-			log.Println(err)
+			if !errors.Is(err, gold_utils.ErrCrossOrigin) {
+				log.Println(err)
+			}
 			return
 		}
 		// get 会负责关闭文件。

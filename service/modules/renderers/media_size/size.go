@@ -94,7 +94,9 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		md, err := size(ms.web, parsedURL, ms.localOnly)
 		if err != nil {
-			log.Println(err, utils.IIF(parsedURL.Scheme == `data`, `(data: url)`, url))
+			if !errors.Is(err, gold_utils.ErrCrossOrigin) && !ms.localOnly {
+				log.Println(err, utils.IIF(parsedURL.Scheme == `data`, `(data: url)`, url))
+			}
 			return
 		}
 
@@ -182,7 +184,7 @@ func limit(s *goquery.Selection, limit, width, height int) {
 // root: 如果 url 是相对路径，用于指定根文件系统。
 func size(fs gold_utils.WebFileSystem, parsedURL *url.URL, localOnly bool) (*Metadata, error) {
 	if (parsedURL.Scheme != "" || parsedURL.Host != "") && localOnly {
-		return nil, errors.New(`not for network images`)
+		return nil, gold_utils.ErrCrossOrigin
 	}
 
 	var r io.Reader
