@@ -422,9 +422,9 @@ func (s *Service) getPageParentID(parents string) int64 {
 				found = true
 				break
 			}
-			if !found {
-				panic(fmt.Errorf("找不到父页面：%s", slugs[i]))
-			}
+		}
+		if !found {
+			panic(status.Errorf(codes.NotFound, "找不到父页面：%s", slugs[i]))
 		}
 	}
 

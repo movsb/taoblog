@@ -9,7 +9,7 @@ require (
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
-	github.com/movsb/taorm v0.0.0-20240509064341-03180739c22c
+	github.com/movsb/taorm v0.0.0-20240807212532-f6a5b0a26586
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
@@ -31,6 +31,7 @@ require (
 	github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4
 	github.com/phuslu/lru v1.0.15
 	github.com/spf13/afero v1.11.0
+	github.com/xtaci/smux v1.5.24
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/hashtag v0.3.1
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17
@@ -50,7 +51,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xtaci/smux v1.5.24 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 )
