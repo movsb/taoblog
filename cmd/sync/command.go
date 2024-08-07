@@ -28,7 +28,7 @@ func AddCommands(parent *cobra.Command) {
 					continue
 				} else {
 					log.Println(`同步完成。`)
-					ch.Send(`同步成功`, `全部完成，没有错误。`, true)
+					ch.Send(`同步成功`, `全部完成，没有错误。`, false)
 				}
 				time.Sleep(time.Hour)
 			}
