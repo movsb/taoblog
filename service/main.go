@@ -154,9 +154,9 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		auth: auther,
 
 		cache:                lru.NewTTLCache[string, any](128),
-		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](128),
+		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](128),
+		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		filesCache:           cache.NewTmpFiles(".cache", time.Hour*24*7),
 
