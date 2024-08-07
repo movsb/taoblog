@@ -280,7 +280,7 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		if len(in.Types) > 0 {
-			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in ?`, in.Types)
+			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in (?)`, in.Types)
 		}
 		stmt.MustFind(&parents)
 	}
@@ -300,7 +300,7 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
 		}
 		if len(in.Types) > 0 {
-			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in ?`, in.Types)
+			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in (?)`, in.Types)
 		}
 		stmt.MustFind(&children)
 	}

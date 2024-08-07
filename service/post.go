@@ -61,7 +61,7 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	stmt := s.posts().Limit(int64(in.Limit)).OrderBy(in.OrderBy)
 
 	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
-	stmt.WhereIf(len(in.Kinds) > 0, `type in ?`, in.Kinds)
+	stmt.WhereIf(len(in.Kinds) > 0, `type in (?)`, in.Kinds)
 	stmt.WhereIf(in.ModifiedNotBefore > 0, `modified >= ?`, in.ModifiedNotBefore)
 	stmt.WhereIf(in.ModifiedNotAfter > 0, `modified < ?`, in.ModifiedNotAfter)
 
