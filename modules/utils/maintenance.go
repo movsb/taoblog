@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"expvar"
 	"fmt"
 	"net/http"
 	"sync"
@@ -9,10 +10,18 @@ import (
 	"time"
 )
 
+func NewMaintenance() *Maintenance {
+	return &Maintenance{
+		enabled: expvar.NewInt(`maintenance`),
+	}
+}
+
 type Maintenance struct {
 	Message   string
 	Estimated time.Duration
 	lock      sync.RWMutex
+
+	enabled *expvar.Int
 }
 
 func (m *Maintenance) Enter(message string, estimated time.Duration) {
@@ -20,21 +29,18 @@ func (m *Maintenance) Enter(message string, estimated time.Duration) {
 	defer m.lock.Unlock()
 	m.Message = message
 	m.Estimated = estimated
+	m.enabled.Set(1)
 }
 
-func (m *Maintenance) In() bool {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-	return m.in()
-}
 func (m *Maintenance) in() bool {
-	return m.Estimated != 0
+	return m.Estimated != 0 || m.enabled.Value() > 0
 }
 
 func (m *Maintenance) Leave() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.Estimated = 0
+	m.enabled.Set(0)
 }
 
 func (m *Maintenance) MessageString() string {

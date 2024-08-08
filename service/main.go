@@ -160,7 +160,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		filesCache:           cache.NewTmpFiles(".cache", time.Hour*24*7),
 
-		maintenance: &utils.Maintenance{},
+		maintenance: utils.NewMaintenance(),
 
 		themeChangedAt: time.Now(),
 	}
