@@ -7,6 +7,7 @@ import (
 
 	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/cmd/client"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,10 @@ func AddCommands(parent *cobra.Command) {
 				panic(`empty CHANIFY`)
 			}
 			ch := notify.NewOfficialChanify(chanifyToken)
-			gs := New(client.InitHostConfigs(), ".")
+
+			full := utils.Must1(cmd.Flags().GetBool(`full`))
+
+			gs := New(client.InitHostConfigs(), ".", full)
 			for {
 				if err := gs.Sync(); err != nil {
 					ch.Send("同步失败", err.Error(), true)
@@ -34,5 +38,6 @@ func AddCommands(parent *cobra.Command) {
 			}
 		},
 	}
+	syncCmd.Flags().Bool(`full`, false, `初次备份是否全量扫描更新。`)
 	parent.AddCommand(syncCmd)
 }

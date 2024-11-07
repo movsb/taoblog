@@ -36,19 +36,24 @@ type GitSync struct {
 	lastCheckedAt time.Time
 }
 
-func New(config client.HostConfig, root string) *GitSync {
+// full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
+func New(config client.HostConfig, root string, full bool) *GitSync {
 	client := clients.NewProtoClient(
 		clients.NewConn(config.API, config.GRPC),
 		config.Token,
 	)
+
+	time.Now().IsZero()
+	lastCheckedAt := time.Unix(0, 0)
+	if !full {
+		lastCheckedAt = time.Now().Add(-7 * time.Hour * 24)
+	}
+
 	return &GitSync{
 		proto: client,
 		root:  root,
 
-		// 可以设置，也可以不设置。
-		// 这里假定备份程序不会中断超过 7 天。
-		// 如果不设备，则每次启动总是全量备份。
-		lastCheckedAt: time.Now().Add(-7 * time.Hour * 24),
+		lastCheckedAt: lastCheckedAt,
 	}
 }
 

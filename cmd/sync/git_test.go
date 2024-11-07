@@ -14,7 +14,7 @@ func TestAll(t *testing.T) {
 	g := New(client.HostConfig{
 		API:   `https://blog.home.twofei.com/v3`,
 		Token: `12345678`,
-	}, "/tmp/")
+	}, "/tmp/", false)
 	posts, err := g.getUpdatedPosts(time.Now(), time.Now())
 	log.Println(posts, err)
 }
