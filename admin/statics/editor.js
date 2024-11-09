@@ -35,7 +35,16 @@ class PostFormUI {
 						let files = document.getElementById('files');
 						files.click();
 					},
-				}
+				},
+				{
+					name: `insertGallery`,
+					title: `插入九宫格图`,
+					innerHTML: `🧩`,
+					action: editor => {
+						const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
+						editor.paste(s);
+					},
+				},
 			],
 		});
 	}
