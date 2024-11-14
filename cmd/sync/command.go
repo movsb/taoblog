@@ -23,7 +23,17 @@ func AddCommands(parent *cobra.Command) {
 
 			full := utils.Must1(cmd.Flags().GetBool(`full`))
 
-			gs := New(client.InitHostConfigs(), ".", full)
+			cred := Credential{
+				Author:   os.Getenv(`AUTHOR`),
+				Email:    os.Getenv(`EMAIL`),
+				Username: os.Getenv(`USERNAME`),
+				Password: os.Getenv(`PASSWORD`),
+			}
+			if cred.Author == `` || cred.Email == `` || cred.Username == `` || cred.Password == `` {
+				log.Fatalln(`凭证为空。`)
+			}
+
+			gs := New(client.InitHostConfigs(), cred, ".", full)
 			for {
 				if err := gs.Sync(); err != nil {
 					ch.Send("同步失败", err.Error(), true)

@@ -7,11 +7,14 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -34,16 +37,25 @@ type GitSync struct {
 	// NOTE：本时间不等于计划任务执行的时间点，而是上一次的 notAfter 时间点。
 	// NOTE：这样可以保证无论计划任务执行的频次如何，总是能保证 [notBefore, notAfter) 时间有效。
 	lastCheckedAt time.Time
+
+	credential Credential
+	auth       transport.AuthMethod
+}
+
+type Credential struct {
+	Author   string
+	Email    string
+	Username string
+	Password string
 }
 
 // full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
-func New(config client.HostConfig, root string, full bool) *GitSync {
+func New(config client.HostConfig, credential Credential, root string, full bool) *GitSync {
 	client := clients.NewProtoClient(
 		clients.NewConn(config.API, config.GRPC),
 		config.Token,
 	)
 
-	time.Now().IsZero()
 	lastCheckedAt := time.Unix(0, 0)
 	if !full {
 		lastCheckedAt = time.Now().Add(-7 * time.Hour * 24)
@@ -53,11 +65,36 @@ func New(config client.HostConfig, root string, full bool) *GitSync {
 		proto: client,
 		root:  root,
 
+		credential: credential,
+		auth: &http.BasicAuth{
+			Username: credential.Username,
+			Password: credential.Password,
+		},
+
 		lastCheckedAt: lastCheckedAt,
 	}
 }
 
 func (g *GitSync) Sync() error {
+	repo, err := git.PlainOpen(g.root)
+	if err != nil {
+		return err
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	if err := wt.Pull(&git.PullOptions{
+		RemoteName:    `origin`,
+		ReferenceName: `refs/heads/master`,
+		SingleBranch:  true,
+		Progress:      os.Stdout,
+		Auth:          g.auth,
+	}); err != nil && err != git.NoErrAlreadyUpToDate {
+		log.Println(`Pull 失败：`, err)
+		return err
+	}
+
 	notBefore := g.lastCheckedAt
 	notAfter := time.Now().Add(-skewedDurationForUpdating)
 
@@ -70,22 +107,25 @@ func (g *GitSync) Sync() error {
 		return nil
 	}
 
-	if err := spawn(`git`, []string{`pull`, `-r`, `--autostash`}, g.root, ``); err != nil {
-		return err
-	}
-
 	for _, post := range posts {
 		// log.Println(`处理：`, post.Id, post.Title)
-		if err := g.syncSingle(post); err != nil {
+		if err := g.syncSingle(wt, post); err != nil {
 			log.Println(err)
 			continue
 		}
 	}
 	log.Println(`共有`, len(posts), `篇文章被处理。`)
 
-	// if err := spawn(`git`, []string{`push`}, g.root, ``); err != nil {
-	// 	return err
-	// }
+	if err := repo.Push(&git.PushOptions{
+		RemoteName: `origin`,
+		RefSpecs: []config.RefSpec{
+			`refs/heads/master:refs/remotes/origin/master`,
+		},
+		Auth: g.auth,
+	}); err != nil {
+		log.Println(`Push 失败：`, err)
+		return err
+	}
 
 	// 仅在全部成功后更新上次检测的时间。
 	g.lastCheckedAt = notAfter
@@ -104,7 +144,7 @@ func (g *GitSync) createPostDir(t int32, id int64) (string, error) {
 	return dir, nil
 }
 
-func (g *GitSync) syncSingle(p *proto.Post) error {
+func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 	path, config, err := findPostByID(os.DirFS(g.root), int32(p.Id))
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -147,25 +187,24 @@ func (g *GitSync) syncSingle(p *proto.Post) error {
 	if err := ioutil.WriteFile(fullPath, []byte(p.Source), 0644); err != nil {
 		return err
 	}
-	log.Println(`正在写入更新：`, fullPath)
-	date := time.Unix(int64(p.Modified), 0).Local().Format(`2006-01-02 15:04:05`)
-	script := fmt.Sprintf(`
-set -eu
-git add .
-git commit -m 'Updated by Sync Tool.' --date='%s'
-	`, date)
-	return spawn(`bash`, nil, filepath.Dir(fullPath), script)
-}
 
-func spawn(name string, args []string, dir string, input string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Dir = dir
-	cmd.Stdin = strings.NewReader(input)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	log.Println(`正在写入更新：`, fullPath)
+
+	if _, err := wt.Add("."); err != nil {
+		log.Println(`git add 失败：`, err)
 		return err
 	}
+	if _, err := wt.Commit(`Updated by Sync command.`, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  g.credential.Author,
+			Email: g.credential.Email,
+			When:  time.Unix(int64(p.Modified), 0),
+		},
+	}); err != nil {
+		log.Println(`提交失败：`, err)
+		return err
+	}
+
 	return nil
 }
 
