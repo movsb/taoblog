@@ -17,6 +17,6 @@ RUN apk add exiftool
 WORKDIR /workspace
 COPY --from=katex /katex/a.out katex
 
-ADD taoblog taoblog
-ENTRYPOINT ["./taoblog"]
+ADD taoblog /usr/local/bin/taoblog
+ENTRYPOINT ["taoblog"]
 CMD ["server"]
