@@ -122,7 +122,7 @@ func (g *GitSync) Sync() error {
 			`refs/heads/master:refs/remotes/origin/master`,
 		},
 		Auth: g.auth,
-	}); err != nil {
+	}); err != nil && err != git.NoErrAlreadyUpToDate {
 		log.Println(`Push 失败：`, err)
 		return err
 	}
