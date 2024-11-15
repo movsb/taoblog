@@ -21,6 +21,9 @@ type Comment struct {
 	Modified   int32  `json:"modified"`
 	SourceType string `json:"source_type"`
 	Source     string `json:"source"`
+
+	DateTimezone     string
+	ModifiedTimezone string
 }
 
 // TableName ...
@@ -52,6 +55,9 @@ func (c *Comment) ToProto(redact func(c *proto.Comment)) *proto.Comment {
 		SourceType: c.SourceType,
 		Source:     c.Source,
 		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
+
+		DateTimezone:     c.DateTimezone,
+		ModifiedTimezone: c.ModifiedTimezone,
 	}
 	redact(&comment)
 	return &comment

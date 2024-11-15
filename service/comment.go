@@ -177,6 +177,9 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 			case `modified`:
 				hasModified = true
 				data[`modified`] = time.Now().Unix()
+			case `modified_timezone`:
+				// hasModified = true
+				data[mask] = req.Comment.ModifiedTimezone
 			}
 		}
 		if !hasModified {
@@ -385,13 +388,21 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		Source:     in.Source,
 	}
 
+	c.ModifiedTimezone = in.ModifiedTimezone
 	if in.Modified > 0 {
 		c.Modified = in.Modified
 	}
+
+	c.DateTimezone = in.DateTimezone
+	if c.ModifiedTimezone == `` && c.DateTimezone != `` {
+		c.ModifiedTimezone = c.DateTimezone
+	}
+
 	if in.Date > 0 {
 		c.Date = in.Date
 		if in.Modified == 0 {
 			c.Modified = c.Date
+			c.ModifiedTimezone = c.DateTimezone
 		}
 	} else {
 		c.Date = int32(now.Unix())

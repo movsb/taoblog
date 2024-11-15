@@ -51,9 +51,7 @@ func (m *Maintenance) EstimatedString() string {
 	if m.Estimated < 0 {
 		return `(未知)`
 	}
-	t := time.Now().Add(m.Estimated)
-	tz := time.FixedZone(`China`, 8*60*60)
-	return t.In(tz).Format(`2006-01-02 15:04:05 -0700`)
+	return time.Now().Add(m.Estimated).Format(time.RFC3339)
 }
 
 func (m *Maintenance) Handler(exception func(ctx context.Context) bool) func(http.Handler) http.Handler {

@@ -91,7 +91,6 @@ func (w *_ResponseWriter) Write(b []byte) (int, error) {
 }
 
 func (l *RequestLogger) Handler(h http.Handler) http.Handler {
-	tz := time.FixedZone(`China`, 8*60*60)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		takeOver := &_ResponseWriter{
 			ResponseWriter:     w,
@@ -102,7 +101,7 @@ func (l *RequestLogger) Handler(h http.Handler) http.Handler {
 		l.counter.Store(0)
 		l.lock.Lock()
 		defer l.lock.Unlock()
-		now := time.Now().In(tz).Format(`2006-01-02 15:04:05`)
+		now := time.Now().Format(time.RFC3339)
 		ac := auth.Context(r.Context())
 		fmt.Fprintf(l.f,
 			"%s %-15s %3d %-8s %-32s %-32s %-32s\n",

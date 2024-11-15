@@ -92,6 +92,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	})
 
 	log.Println(`DevMode:`, service.DevMode())
+	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
 
 	instantNotifier := notify.NewConsoleNotify()
 	if token := cfg.Notify.Chanify.Token; token != "" {

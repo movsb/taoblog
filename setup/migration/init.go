@@ -51,6 +51,11 @@ func Init(db *sql.DB, path string) {
 			Status:     `public`,
 			SourceType: `markdown`,
 			Source:     `你好，世界！这是您的第一篇文章。`,
+
+			// TODO 用配置时区。
+			DateTimezone: ``,
+			// TODO 用配置时区。
+			ModifiedTimezone: ``,
 		}).MustCreate()
 	})
 }

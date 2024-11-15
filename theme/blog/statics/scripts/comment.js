@@ -54,6 +54,50 @@ document.write(function(){/*
 </div>
 */}.toString().slice(14,-3));
 
+class TimeWithZone {
+	constructor(timestamp, zone) {
+		const now = new Date();
+		if (typeof timestamp != 'number') {
+			timestamp = now.getTime() / 1000;
+			zone = TimeWithZone.getTimezone();
+		} else if (typeof zone != 'string' || zone == '') {
+			zone = TimeWithZone.getTimezone();
+		}
+		this._timestamp = timestamp;
+		this._zone = zone;
+	}
+	
+	get time() { return this._timestamp; }
+	get zone() { return this._zone;      }
+	
+	format() {
+		const options = {
+			timeZone: this._zone,
+			timeZoneName: 'longOffset',
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			hourCycle: 'h24',
+		}
+		return new Intl.DateTimeFormat(navigator.language, options).format(new Date(this._timestamp));
+	}
+	
+	toJSON() {
+		return new Date(this._timestamp).toJSON();
+	}
+
+	static getTimezone() {
+		try {
+			return Intl.DateTimeFormat().resolvedOptions().timeZone;
+		} catch {
+			return '';
+		}
+	}
+}
+
 class CommentAPI
 {
 	constructor(postID) {
@@ -90,6 +134,8 @@ class CommentAPI
 		c.date = +(c.date ?? 0);
 		c.modified = +(c.modified ?? 0);
 		c.date_fuzzy = c.date_fuzzy ?? '';
+		c.date_timezone = c.date_timezone ?? '';
+		c.modified_timezone = c.modified_timezone ?? '';
 
 		c.is_admin = c.is_admin ?? false;
 		c.geo_location = c.geo_location ?? '';
@@ -131,7 +177,8 @@ class CommentAPI
 				comment: {
 					source_type: 'markdown',
 					source: source,
-					modified: modified,
+					modified: modified.time,
+					modified_timezone: modified.zone,
 				},
 				update_mask: 'source,sourceType,modified'
 			})
@@ -681,7 +728,7 @@ class Comment {
 		};
 
 		let loggedin = cmt.ip != '';
-		let date = new Date(cmt.date * 1000);
+		let date = new TimeWithZone(cmt.date, cmt.date_timezone);
 
 		// 登录后可以显示评论者的详细信息
 		let info = '';
@@ -692,7 +739,7 @@ class Comment {
 网址：${cmt.url}
 地址：${cmt.ip}
 位置：${cmt.geo_location}
-日期：${date.toLocaleString()}
+日期：${date.format()}
 `;
 		}
 
@@ -720,7 +767,7 @@ class Comment {
 	<div class="comment-meta">
 		<span class="${cmt.is_admin ? "author" : "nickname"}">${h2t(cmt.author)}</span>
 		${urlContent}
-		<time class="date" datetime="${date.toJSON()}" title="${date.toLocaleString()}" data-unix="${Math.floor(date.getTime()/1000)}">${cmt.date_fuzzy}</time>
+		<time class="date" datetime="${date.toJSON()}" title="${date.format()}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
 	</div>
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content reset-list-style-type">${cmt.content}</div>`
@@ -897,7 +944,7 @@ class Comment {
 		let id = this.being_edited;
 		let raw = this.list.comments[id];
 
-		let updated = await this.api.updateComment(id, raw.modified, source);
+		let updated = await this.api.updateComment(id, new TimeWithZone(raw.modified), source);
 		this.list.update(updated);
 
 		this.clearContent();
@@ -920,6 +967,9 @@ class Comment {
 	}
 	async createComment() {
 		let body = this.formData();
+		
+		body.date_timezone = TimeWithZone.getTimezone();
+
 		let cmt = await this.api.createComment(body);
 		this.list.insert(cmt);
 		this.toggle_post_comment_button();

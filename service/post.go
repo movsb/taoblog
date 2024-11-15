@@ -500,17 +500,24 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		return nil, status.Error(codes.InvalidArgument, "内容不应为空。")
 	}
 
+	p.ModifiedTimezone = in.ModifiedTimezone
 	if in.Modified > 0 {
 		p.Modified = in.Modified
 	}
+
+	p.DateTimezone = in.DateTimezone
 	if in.Date > 0 {
 		p.Date = in.Date
 		if in.Modified == 0 {
 			p.Modified = p.Date
+			p.ModifiedTimezone = p.DateTimezone
 		}
 	} else {
 		p.Date = now
 		p.Modified = now
+		// TODO 设置时区。
+		p.DateTimezone = ``
+		p.ModifiedTimezone = ``
 	}
 
 	if in.Status != "" {
@@ -577,6 +584,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	// 适用于导入三方数据的时候更新导入。
 	if !in.DoNotTouch {
 		m[`modified`] = now
+		// TODO 使用 now 的时区对应名修改 modified_timezone
 	}
 
 	var hasSourceType, hasSource bool
@@ -608,6 +616,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			hasType = true
 		case `date`:
 			m[`date`] = in.Post.Date
+		case `date_timezone`:
+			m[path] = in.Post.DateTimezone
+		case `modified_timezone`:
+			m[path] = in.Post.ModifiedTimezone
 		case `status`:
 			m[`status`] = in.Post.Status
 		default:

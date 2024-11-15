@@ -465,3 +465,10 @@ func v29(tx *sql.Tx) {
 		mustExec(tx, `delete from comments where id=?`, id)
 	}
 }
+
+func v30(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN `date_timezone` TEXT NOT NULL DEFAULT ''")
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN `modified_timezone` TEXT NOT NULL DEFAULT ''")
+	mustExec(tx, "ALTER TABLE comments ADD COLUMN `date_timezone` TEXT NOT NULL DEFAULT ''")
+	mustExec(tx, "ALTER TABLE comments ADD COLUMN `modified_timezone` TEXT NOT NULL DEFAULT ''")
+}

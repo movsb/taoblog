@@ -55,6 +55,10 @@ message Comment {
 	int32 avatar = 18;
 
 	int32 modified = 19;
+
+	// 创建时间和修改时间所在的时区。
+	string date_timezone = 20;
+	string modified_timezone = 21;
 }
 
 message GetCommentRequest {

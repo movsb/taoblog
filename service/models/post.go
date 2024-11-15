@@ -28,6 +28,9 @@ type Post struct {
 	Metas           PostMeta
 	Source          string
 	SourceType      string
+
+	DateTimezone     string
+	ModifiedTimezone string
 }
 
 // NOTE 如果要添加字段，记得同步 isEmpty 方法。
@@ -179,6 +182,9 @@ func (p *Post) ToProto(redact func(p *proto.Post) error) (*proto.Post, error) {
 		SourceType:    p.SourceType,
 
 		LastCommentedAt: p.LastCommentedAt,
+
+		DateTimezone:     p.DateTimezone,
+		ModifiedTimezone: p.ModifiedTimezone,
 	}
 	err := redact(&out)
 	return &out, err

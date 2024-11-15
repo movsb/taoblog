@@ -13,7 +13,6 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/xeonx/timeago"
 )
 
 // PostData ...
@@ -104,9 +103,6 @@ func (p *Post) DateString() string {
 	t := time.Unix(int64(p.Date), 0).Local()
 	y, m, d := t.Date()
 	return fmt.Sprintf("%d年%02d月%02d日", y, m, d)
-}
-func (p *Post) ShortDateString() string {
-	return timeago.Chinese.Format(time.Unix(int64(p.Date), 0))
 }
 func (p *Post) CommentString() string {
 	if p.Comments == 0 {

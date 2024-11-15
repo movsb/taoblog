@@ -65,6 +65,9 @@ type Service struct {
 
 	home *url.URL
 
+	// 服务器默认的时区。
+	timeLocation *time.Location
+
 	cfg *config.Config
 
 	postDataFS theme_fs.FS
@@ -148,6 +151,9 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 		cfg:        cfg,
 		postDataFS: &theme_fs.Empty{},
+
+		// TODO 可配置使用的时区，而不是使用服务器当前时间或者硬编码成+8时区。
+		timeLocation: time.Now().Location(),
 
 		db:   db,
 		tdb:  taorm.NewDB(db),
@@ -268,6 +274,10 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 // 从 Context 中取出用户并且必须为 Admin/System，否则 panic。
 func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
+	return MustBeAdmin(ctx)
+}
+
+func MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	ac := auth.Context(ctx)
 	if ac == nil {
 		panic("AuthContext 不应为 nil")

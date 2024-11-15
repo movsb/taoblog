@@ -90,6 +90,10 @@ message Post {
 
 	// 文章的链接。
 	string link = 19;
+	
+	// 创建时间和修改时间所在的时区。
+	string date_timezone = 20;
+	string modified_timezone = 21;
 }
 
 enum LinkKind {
