@@ -242,11 +242,13 @@ function all() {
 async function format(stamps) {
 	let path = '/v3/utils/time/format';
 	let formatted = undefined;
+	const timezone = TimeWithZone.getTimezone();
 	try {
 		let rsp = await fetch(path, {
 			method: 'POST',
 			body: JSON.stringify({
 				unix: stamps,
+				device: timezone,
 			}),
 		});
 		if (!rsp.ok) {
@@ -265,7 +267,14 @@ let update = async function() {
 	let formatted = await format(stamps);
 	if (!formatted) { return; }
 	times.forEach((t, i) => {
-		t.innerText = formatted[i].friendly;
+		const f = formatted[i];
+		t.innerText = f.friendly;
+		let title = f.server;
+		if (f.device && f.device != f.server) {
+			title = `${title}\n${f.device}`;
+		}
+		t.title = title;
+		// console.log(title);
 	});
 	let current =  Math.floor(new Date().getTime()/1000);
 	let diff = current - latest;

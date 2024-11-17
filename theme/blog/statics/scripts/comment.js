@@ -54,50 +54,6 @@ document.write(function(){/*
 </div>
 */}.toString().slice(14,-3));
 
-class TimeWithZone {
-	constructor(timestamp, zone) {
-		const now = new Date();
-		if (typeof timestamp != 'number') {
-			timestamp = now.getTime() / 1000;
-			zone = TimeWithZone.getTimezone();
-		} else if (typeof zone != 'string' || zone == '') {
-			zone = TimeWithZone.getTimezone();
-		}
-		this._timestamp = timestamp;
-		this._zone = zone;
-	}
-	
-	get time() { return this._timestamp; }
-	get zone() { return this._zone;      }
-	
-	format() {
-		const options = {
-			timeZone: this._zone,
-			timeZoneName: 'longOffset',
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
-			hourCycle: 'h24',
-		}
-		return new Intl.DateTimeFormat(navigator.language, options).format(new Date(this._timestamp));
-	}
-	
-	toJSON() {
-		return new Date(this._timestamp).toJSON();
-	}
-
-	static getTimezone() {
-		try {
-			return Intl.DateTimeFormat().resolvedOptions().timeZone;
-		} catch {
-			return '';
-		}
-	}
-}
-
 class CommentAPI
 {
 	constructor(postID) {
@@ -734,12 +690,9 @@ class Comment {
 		let info = '';
 		if (loggedin) {
 			info = `编号：${cmt.id}
-作者：${cmt.author}
 邮箱：${cmt.email}
-网址：${cmt.url}
 地址：${cmt.ip}
 位置：${cmt.geo_location}
-日期：${date.format()}
 `;
 		}
 
@@ -767,7 +720,7 @@ class Comment {
 	<div class="comment-meta">
 		<span class="${cmt.is_admin ? "author" : "nickname"}">${h2t(cmt.author)}</span>
 		${urlContent}
-		<time class="date" datetime="${date.toJSON()}" title="${date.format()}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
+		<time class="date" datetime="${date.toJSON()}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
 	</div>
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content reset-list-style-type">${cmt.content}</div>`

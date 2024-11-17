@@ -4,12 +4,15 @@ option go_package = "github.com/movsb/taoblog/proto";
 
 message FormatTimeRequest {
 	repeated int32 unix = 1;
+	// 设备时区。
+	string device = 2;
 }
 
 message FormatTimeResponse {
 	message Formatted {
 		string friendly = 1;
-		string rfc3339 = 2;
+		string server = 3;
+		string device = 4;
 	}
 	repeated Formatted formatted = 1;
 }

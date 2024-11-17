@@ -7,14 +7,17 @@ import (
 	"sync/atomic"
 	"time"
 
+	_ "time/tzdata"
+
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/dialers"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/phuslu/lru"
 	"github.com/xeonx/timeago"
 )
 
-var fixedZone = time.FixedZone(``, 8*60*60)
+var fixedZone = time.Now().Local().Location()
 
 type Utils struct {
 	proto.UnimplementedUtilsServer
@@ -22,11 +25,14 @@ type Utils struct {
 	instantNotifier notify.InstantNotifier
 
 	RemoteDialer atomic.Pointer[dialers.RemoteDialerManager]
+
+	timeLocations *lru.TTLCache[string, *time.Location]
 }
 
 func NewUtils(instantNotifier notify.InstantNotifier) *Utils {
 	u := &Utils{
 		instantNotifier: instantNotifier,
+		timeLocations:   lru.NewTTLCache[string, *time.Location](16),
 	}
 	u.RemoteDialer.Store(nil)
 	return u
@@ -34,11 +40,25 @@ func NewUtils(instantNotifier notify.InstantNotifier) *Utils {
 
 func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*proto.FormatTimeResponse, error) {
 	formatted := make([]*proto.FormatTimeResponse_Formatted, len(in.Unix))
-	for i, u := range in.Unix {
+	for i, ts := range in.Unix {
 		r := proto.FormatTimeResponse_Formatted{}
-		t := time.Unix(int64(u), 0).In(fixedZone)
+		t := time.Unix(int64(ts), 0)
 		r.Friendly = timeago.Chinese.Format(t)
-		r.Rfc3339 = t.Format(time.RFC3339)
+		r.Server = t.In(fixedZone).Format(time.RFC3339)
+
+		if in.Device != `` {
+			loc, err, _ := u.timeLocations.GetOrLoad(ctx, in.Device, func(ctx context.Context, s string) (*time.Location, time.Duration, error) {
+				loc, err := time.LoadLocation(s)
+				// log.Println(`加载时区：`, s, loc, err)
+				return loc, time.Hour, err
+			})
+			if err != nil {
+				log.Println(err)
+			} else {
+				// log.Println(`时区：`, loc)
+				r.Device = t.In(loc).Format(time.RFC3339)
+			}
+		}
 		formatted[i] = &r
 	}
 	return &proto.FormatTimeResponse{
