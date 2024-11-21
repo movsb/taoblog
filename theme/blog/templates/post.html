@@ -8,7 +8,7 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 
 {{- $dot:=. -}}
 {{- render "header" . -}}
-<article class="post">
+<article class="post post-{{.Post.Post.ID}}" id="{{.Post.Post.Id}}">
 	{{ with .Post.Post }}
 	<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
 	<div class="entry">
