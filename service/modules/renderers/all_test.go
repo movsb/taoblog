@@ -18,6 +18,7 @@ import (
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
+	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	"github.com/yuin/goldmark/extension"
 )
 
@@ -166,6 +167,12 @@ func TestMarkdownAll(t *testing.T) {
 			}, &outputTags)},
 			Markdown: `a #b c #桃子`,
 			Html:     `<p>a <span class="hashtag"><a href="http://localhost/tags/b">#b</a></span> c <span class="hashtag"><a href="http://localhost/tags/%E6%A1%83%E5%AD%90">#桃子</a></span></p>`,
+		},
+		{
+			ID:       12.0,
+			Options:  []renderers.Option2{scoped_css.New(`article#123`)},
+			Markdown: `<style>table { min-width: 100px; }</style>`,
+			Html:     `<style>article#123 table{min-width:100px;}</style>`,
 		},
 	}
 	for _, tc := range cases {

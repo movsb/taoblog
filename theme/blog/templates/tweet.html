@@ -22,7 +22,7 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};
 </script>
 <div class="tweet">
-	<article class="post {{.Post.Post.OriginClass}}">
+	<article class="post post-{{.Post.Post.Id}} {{.Post.Post.OriginClass}}" id="{{.Post.Post.Id}}">
 	<div class="entry">
 		<div class="content">
 		{{ .Post.Post.Content }}

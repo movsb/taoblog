@@ -1,6 +1,6 @@
 {{ define "_tweet" }}
 {{ $p := $.Partial }}
-<article class="post {{ $p.OriginClass }}" id="{{$p.ID}}">
+<article class="post post-{{$p.ID}} {{ $p.OriginClass }}" id="{{$p.ID}}">
 <script>
 TaoBlog.posts["{{$p.ID}}"] = {{ $.Strip $p }};
 </script>

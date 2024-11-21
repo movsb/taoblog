@@ -32,6 +32,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
+	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
 	"github.com/movsb/taorm"
 	"github.com/yuin/goldmark/extension"
@@ -268,6 +269,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			)
 		}
 		options = append(options, media_tags.New(s.OpenAsset(postId), mediaTagOptions...))
+		options = append(options, scoped_css.New(fmt.Sprintf(`article.post-%d .entry .content`, postId)))
 	}
 	if !secure {
 		options = append(options,
