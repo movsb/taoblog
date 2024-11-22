@@ -45,6 +45,7 @@ func (p *ScopedCSS) addScope(s *goquery.Selection) error {
 func addScope(raw string, scope string) (string, error) {
 	p := css.NewParser(parse.NewInputString(raw), false)
 	output := ""
+	var lastGrammarType css.GrammarType
 	for {
 		grammar, _, data := p.Next()
 		data = parse.Copy(data)
@@ -60,8 +61,10 @@ func addScope(raw string, scope string) (string, error) {
 				data = append(data, ":"...)
 			}
 			if grammar == css.QualifiedRuleGrammar || grammar == css.BeginRulesetGrammar {
-				data = append(data, scope...)
-				data = append(data, ' ')
+				if lastGrammarType == 0 || lastGrammarType == css.QualifiedRuleGrammar || lastGrammarType == css.BeginRulesetGrammar {
+					data = append(data, scope...)
+					data = append(data, ' ')
+				}
 			}
 			for _, val := range p.Values() {
 				data = append(data, val.Data...)
@@ -75,6 +78,7 @@ func addScope(raw string, scope string) (string, error) {
 			}
 		}
 		output += string(data)
+		lastGrammarType = grammar
 	}
 	return output, nil
 }
