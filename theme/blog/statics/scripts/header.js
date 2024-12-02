@@ -117,7 +117,7 @@ class TimeWithZone {
 	get zone() { return this._zone;      }
 	
 	toJSON() {
-		return new Date(this._timestamp).toJSON();
+		return new Date(this._timestamp*1000).toJSON();
 	}
 
 	static getTimezone() {

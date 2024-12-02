@@ -35,6 +35,7 @@ func (c *AvatarHash) id(email string) int {
 	for {
 		e, ok := c.id2email[int(sum)]
 		if ok && e != email {
+			// 开放寻址法（Open Addressing）
 			sum++
 			sum &= math.MaxInt32
 			continue
