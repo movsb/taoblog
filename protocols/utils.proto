@@ -3,7 +3,11 @@ package protocols;
 option go_package = "github.com/movsb/taoblog/proto";
 
 message FormatTimeRequest {
-	repeated int32 unix = 1;
+	message Time {
+		int32 unix = 1;
+		string timezone = 2;
+	}
+	repeated Time times = 1;
 	// 设备时区。
 	string device = 2;
 }
@@ -11,6 +15,7 @@ message FormatTimeRequest {
 message FormatTimeResponse {
 	message Formatted {
 		string friendly = 1;
+		string original = 2;
 		string server = 3;
 		string device = 4;
 	}

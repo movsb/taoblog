@@ -233,9 +233,12 @@ TaoBlog.vim = new __Vim();
 
 function all() {
 	let times = document.querySelectorAll('time[data-unix]');
-	let stamps = Array.from(times).map(t => parseInt(t.getAttribute('data-unix')));
+	let stamps = Array.from(times).map(t => ({
+		unix: parseInt(t.dataset.unix),
+		timezone: t.dataset.timezone,
+	}));
 	let latest = 0;
-	stamps.forEach(t => { if (t > latest) latest = t; });
+	stamps.forEach(t => { if (t.unix > latest) latest = t.unix; });
 	return { times, stamps, latest };
 }
 
@@ -247,7 +250,7 @@ async function format(stamps) {
 		let rsp = await fetch(path, {
 			method: 'POST',
 			body: JSON.stringify({
-				unix: stamps,
+				times: stamps,
 				device: timezone,
 			}),
 		});
@@ -272,6 +275,9 @@ let update = async function() {
 		let title = f.server;
 		if (f.device && f.device != f.server) {
 			title = `${title}\n${f.device}`;
+		}
+		if (f.original && f.original != f.server) {
+			title = `${title}\n${f.original}`;
 		}
 		t.title = title;
 		// console.log(title);

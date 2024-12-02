@@ -39,12 +39,27 @@ func NewUtils(instantNotifier notify.InstantNotifier) *Utils {
 }
 
 func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*proto.FormatTimeResponse, error) {
-	formatted := make([]*proto.FormatTimeResponse_Formatted, len(in.Unix))
-	for i, ts := range in.Unix {
+	formatted := make([]*proto.FormatTimeResponse_Formatted, len(in.Times))
+	for i, ts := range in.Times {
 		r := proto.FormatTimeResponse_Formatted{}
-		t := time.Unix(int64(ts), 0)
+		t := time.Unix(int64(ts.Unix), 0)
 		r.Friendly = timeago.Chinese.Format(t)
 		r.Server = t.In(fixedZone).Format(time.RFC3339)
+
+		if ts.Timezone != `` {
+			loc, err, _ := u.timeLocations.GetOrLoad(ctx, ts.Timezone, func(ctx context.Context, s string) (*time.Location, time.Duration, error) {
+				loc, err := time.LoadLocation(s)
+				// log.Println(`加载时区：`, s, loc, err)
+				return loc, time.Hour, err
+			})
+			if err != nil {
+				log.Println(err)
+				r.Original = r.Server
+			} else {
+				// log.Println(`时区：`, loc)
+				r.Original = t.In(loc).Format(time.RFC3339)
+			}
+		}
 
 		if in.Device != `` {
 			loc, err, _ := u.timeLocations.GetOrLoad(ctx, in.Device, func(ctx context.Context, s string) (*time.Location, time.Duration, error) {
