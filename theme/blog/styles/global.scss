@@ -197,15 +197,15 @@ img, svg {
 // 注意：iframe 没法自动响应式大小，需要手动根据 size 计算 aspect-ratio。
 // 参考：service/modules/renderers/media_size
 iframe, img, svg, video {
-	max-width: 500px;
+	max-width: min(500px, 100%);
 	height: unset;
 	&.too-high {
-		max-width: unset;
 		max-height: 500px;
+		max-width: unset;
 		width: unset !important;
 	}
 	&.too-wide {
-		max-width: 500px;
+		max-width: min(500px, 100%);
 		max-height: unset;
 		height: unset !important;
 	}
