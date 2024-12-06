@@ -17,7 +17,7 @@ func TestGetNonExistentPost(t *testing.T) {
 }
 
 func TestNoAccessToPost(t *testing.T) {
-	p := utils.Must1(client.CreatePost(admin, &proto.Post{
+	p := utils.Must1(client.Blog.CreatePost(admin, &proto.Post{
 		SourceType: `markdown`,
 		Source:     `# 测试私密文章。`,
 		Status:     `draft`,

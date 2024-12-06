@@ -11,8 +11,7 @@ import (
 
 // HostConfig is a per host config.
 type HostConfig struct {
-	API   string `yaml:"api"`
-	GRPC  string `yaml:"grpc"`
+	Home  string `yaml:"home"`
 	Token string `yaml:"token"`
 }
 

@@ -12,7 +12,7 @@ import (
 func TestAll(t *testing.T) {
 	t.SkipNow()
 	g := New(client.HostConfig{
-		API:   `https://blog.home.twofei.com/v3`,
+		Home:  `https://blog.home.twofei.com`,
 		Token: `12345678`,
 	}, Credential{}, "/tmp/", false)
 	posts, err := g.getUpdatedPosts(time.Now(), time.Now())

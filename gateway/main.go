@@ -14,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/avatar"
 	"github.com/movsb/taoblog/gateway/handlers/debug"
 	"github.com/movsb/taoblog/gateway/handlers/features"
+	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
@@ -36,7 +37,9 @@ type Gateway struct {
 	service *service.Service
 	auther  *auth.Auth
 
-	client          clients.Client
+	// 未鉴权的
+	client *clients.ProtoClient
+
 	instantNotifier notify.InstantNotifier
 }
 
@@ -46,7 +49,8 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux,
 		service: service,
 		auther:  auther,
 
-		client:          clients.NewFromGrpcAddr(service.Addr().String()),
+		client: clients.NewProtoClientFromAddress(service.Addr().String()),
+
 		instantNotifier: instantNotifier,
 	}
 
@@ -60,7 +64,7 @@ func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux,
 func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 	mc := utils.ServeMuxChain{ServeMux: mux}
 
-	info := utils.Must1(g.client.GetInfo(ctx, &proto.GetInfoRequest{}))
+	info := utils.Must1(g.client.Blog.GetInfo(ctx, &proto.GetInfoRequest{}))
 
 	// 无需鉴权的部分
 	// 可跨进程使用。
@@ -88,7 +92,10 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 		))
 
 		// Grafana 监控告警通知。
-		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.auther, g.client))
+		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.auther, g.client.Utils))
+
+		// GRPC 走 HTTP 通信。少暴露一个端口，降低架构复杂性。
+		mc.Handle(`GET /v3/grpc`, grpc_proxy.New(g.service.Addr().String()))
 	}
 
 	// 使用系统帐号鉴权的部分
@@ -123,7 +130,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 
 func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		info := utils.Must1(g.client.GetInfo(r.Context(), &proto.GetInfoRequest{}))
+		info := utils.Must1(g.client.Blog.GetInfo(r.Context(), &proto.GetInfoRequest{}))
 		handle304.New(h,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, version.Time, info.LastPostedAt),

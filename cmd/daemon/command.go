@@ -34,11 +34,13 @@ func AddCommands(parent *cobra.Command) {
 		Short: `守护进程（更新镜像等）`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			grpcAddress := utils.Must1(cmd.Flags().GetString(`grpc-address`))
-			update(grpcAddress)
+			home := utils.Must1(cmd.Flags().GetString(`home`))
+			token := utils.Must1(cmd.Flags().GetString(`token`))
+			update(home, token)
 		},
 	}
-	daemonCmd.Flags().StringP(`grpc-address`, `g`, `127.0.0.1:2563`, `GRPC 服务器地址`)
+	daemonCmd.Flags().String(`home`, `http://127.0.0.1:2564`, `首页地址`)
+	daemonCmd.Flags().StringP(`token`, `t`, ``, `预共享密钥`)
 	parent.AddCommand(daemonCmd)
 
 	remoteDialerCmd := &cobra.Command{
@@ -46,22 +48,24 @@ func AddCommands(parent *cobra.Command) {
 		Short: ``,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			endpoint := utils.Must1(cmd.Flags().GetString(`endpoint`))
-			remoteDialer(endpoint)
+			home := utils.Must1(cmd.Flags().GetString(`home`))
+			token := utils.Must1(cmd.Flags().GetString(`token`))
+			remoteDialer(home, token)
 		},
 	}
-	remoteDialerCmd.Flags().StringP(`endpoint`, `e`, `https://blog.twofei.com`, "")
+	remoteDialerCmd.Flags().String(`home`, `http://127.0.0.1:2564`, `首页地址`)
+	remoteDialerCmd.Flags().StringP(`token`, `t`, ``, `预共享密钥`)
 	parent.AddCommand(remoteDialerCmd)
 }
 
-func remoteDialer(endpoint string) {
-	client := clients.NewProtoClient(clients.NewConn(endpoint, ""), "")
+func remoteDialer(home string, token string) {
+	client := clients.NewProtoClient(home, token)
 	drc, err := client.Utils.DialRemote(client.Context())
 	if err != nil {
 		panic(err)
 	}
 	defer drc.CloseSend()
-	log.Println(`远程连接成功：`, endpoint)
+	log.Println(`远程连接成功：`, home)
 	conn := dialers.NewStreamAsConn(drc)
 	session, err := smux.Server(conn, nil)
 	if err != nil {
@@ -108,13 +112,12 @@ func remoteDialer(endpoint string) {
 	}
 }
 
-func update(grpcAddress string) {
-	// TODO 写死了。
-	client := clients.NewFromGrpcAddr(grpcAddress)
+func update(home string, token string) {
+	client := clients.NewProtoClient(home, token)
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	for range ticker.C {
-		info, err := client.GetInfo(context.Background(), &proto.GetInfoRequest{})
+		info, err := client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{})
 		if err != nil {
 			log.Println(err)
 			continue

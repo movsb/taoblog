@@ -29,12 +29,12 @@ type Sitemap struct {
 
 	auther *auth.Auth
 	tmpl   *template.Template
-	client clients.Client
+	client *clients.ProtoClient
 	impl   service.ToBeImplementedByRpc
 }
 
 // New ...
-func New(auther *auth.Auth, client clients.Client, impl service.ToBeImplementedByRpc) http.Handler {
+func New(auther *auth.Auth, client *clients.ProtoClient, impl service.ToBeImplementedByRpc) http.Handler {
 	s := &Sitemap{
 		auther: auther,
 		client: client,
@@ -55,7 +55,7 @@ func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	ctx := s.auther.NewContextForRequestAsGateway(req)
 
-	info := utils.Must1(s.client.GetInfo(ctx, &proto.GetInfoRequest{}))
+	info := utils.Must1(s.client.Blog.GetInfo(ctx, &proto.GetInfoRequest{}))
 
 	rssArticles := make([]*Article, 0, len(rsp))
 	for _, article := range rsp {

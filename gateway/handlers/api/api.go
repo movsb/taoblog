@@ -16,7 +16,7 @@ type _Protos struct {
 	http.Handler
 }
 
-func New(ctx context.Context, client clients.Client) http.Handler {
+func New(ctx context.Context, client *clients.ProtoClient) http.Handler {
 	mux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(
 			runtime.MIMEWildcard,
@@ -29,9 +29,9 @@ func New(ctx context.Context, client clients.Client) http.Handler {
 		),
 	)
 
-	utils.Must(proto.RegisterUtilsHandlerClient(ctx, mux, client))
-	utils.Must(proto.RegisterTaoBlogHandlerClient(ctx, mux, client))
-	utils.Must(proto.RegisterSearchHandlerClient(ctx, mux, client))
+	utils.Must(proto.RegisterUtilsHandlerClient(ctx, mux, client.Utils))
+	utils.Must(proto.RegisterTaoBlogHandlerClient(ctx, mux, client.Blog))
+	utils.Must(proto.RegisterSearchHandlerClient(ctx, mux, client.Search))
 
 	// 为了限制 Gateway 接口调用内部接口，特地给来自 Gateway 的接口加一个签名。
 	sig := func(w http.ResponseWriter, r *http.Request) {

@@ -51,10 +51,7 @@ type Credential struct {
 
 // full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
 func New(config client.HostConfig, credential Credential, root string, full bool) *GitSync {
-	client := clients.NewProtoClient(
-		clients.NewConn(config.API, config.GRPC),
-		config.Token,
-	)
+	client := clients.NewProtoClient(config.Home, config.Token)
 
 	lastCheckedAt := time.Unix(0, 0)
 	if !full {

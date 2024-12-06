@@ -9,7 +9,7 @@ import (
 )
 
 func TestPreviewComment(t *testing.T) {
-	rsp, err := client.PreviewComment(guest, &proto.PreviewCommentRequest{
+	rsp, err := client.Blog.PreviewComment(guest, &proto.PreviewCommentRequest{
 		Markdown: `<a>`,
 		PostId:   1,
 	})
@@ -21,7 +21,7 @@ func TestPreviewComment(t *testing.T) {
 const fakeEmailAddress = `fake@twofei.com`
 
 func TestCreateComment(t *testing.T) {
-	rsp2, err := client.CreateComment(guest, &proto.Comment{
+	rsp2, err := client.Blog.CreateComment(guest, &proto.Comment{
 		PostId:     1,
 		Author:     `昵称`,
 		Email:      fakeEmailAddress,
@@ -39,7 +39,7 @@ func TestThrottler(t *testing.T) {
 
 	first := true
 	for i := 0; i < 2; i++ {
-		rsp, err := client.CreateComment(guest,
+		rsp, err := client.Blog.CreateComment(guest,
 			&proto.Comment{
 				PostId:     1,
 				Author:     `昵称`,
@@ -74,7 +74,7 @@ func TestCommentInvalidLinkScheme(t *testing.T) {
 	}
 
 	for _, content := range contents {
-		rsp, err := client.CreateComment(guest,
+		rsp, err := client.Blog.CreateComment(guest,
 			&proto.Comment{
 				PostId:     1,
 				Author:     `昵称`,
@@ -96,7 +96,7 @@ func TestCommentInvalidLinkScheme(t *testing.T) {
 
 // 测试递归删除评论。
 func TestDeleteCommentsRecursively(t *testing.T) {
-	post := utils.Must1(client.CreatePost(admin, &proto.Post{
+	post := utils.Must1(client.Blog.CreatePost(admin, &proto.Post{
 		Type:       `post`,
 		SourceType: `markdown`,
 		Source:     "# 测试递归删除评论",
@@ -110,7 +110,7 @@ func TestDeleteCommentsRecursively(t *testing.T) {
 				c1.2.1
 	*/
 	create := func(parent int64) *proto.Comment {
-		return utils.Must1(client.CreateComment(admin, &proto.Comment{
+		return utils.Must1(client.Blog.CreateComment(admin, &proto.Comment{
 			PostId:     post.Id,
 			Parent:     parent,
 			Author:     `author`,
@@ -128,15 +128,15 @@ func TestDeleteCommentsRecursively(t *testing.T) {
 	c121 := create(c12.Id)
 	_ = c121
 
-	count := utils.Must1(client.GetPostCommentsCount(admin, &proto.GetPostCommentsCountRequest{PostId: post.Id})).Count
+	count := utils.Must1(client.Blog.GetPostCommentsCount(admin, &proto.GetPostCommentsCountRequest{PostId: post.Id})).Count
 	if count != 5 {
 		t.Fatalf(`评论数应该为 5 条。`)
 	}
 
 	// 删除 c11 后应该剩 3 条。
-	utils.Must1(client.DeleteComment(admin, &proto.DeleteCommentRequest{Id: int32(c11.Id)}))
+	utils.Must1(client.Blog.DeleteComment(admin, &proto.DeleteCommentRequest{Id: int32(c11.Id)}))
 
-	count2 := utils.Must1(client.GetPostCommentsCount(admin, &proto.GetPostCommentsCountRequest{PostId: post.Id})).Count
+	count2 := utils.Must1(client.Blog.GetPostCommentsCount(admin, &proto.GetPostCommentsCountRequest{PostId: post.Id})).Count
 	if count2 != 3 {
 		t.Fatalf(`评论数应该为 3 条，但是剩余：%d 条`, count2)
 	}

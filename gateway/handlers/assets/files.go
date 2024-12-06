@@ -11,7 +11,7 @@ import (
 	"nhooyr.io/websocket"
 )
 
-func New(auther *auth.Auth, kind string, client clients.Client) http.Handler {
+func New(auther *auth.Auth, kind string, client *clients.ProtoClient) http.Handler {
 	if kind != `post` {
 		panic(`only for post currently`)
 	}
@@ -29,7 +29,7 @@ func New(auther *auth.Auth, kind string, client clients.Client) http.Handler {
 		id := utils.MustToInt64(r.PathValue(`id`))
 
 		ctx := auther.NewContextForRequestAsGateway(r)
-		fs, err := client.FileSystem(ctx)
+		fs, err := client.Management.FileSystem(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

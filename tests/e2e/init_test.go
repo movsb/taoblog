@@ -11,7 +11,7 @@ import (
 )
 
 var Server *server.Server
-var client clients.Client
+var client *clients.ProtoClient
 var admin context.Context
 var guest context.Context
 
@@ -27,7 +27,6 @@ func Serve(ctx context.Context) {
 	cfg.Database.Path = ""  // 使用内存
 	cfg.Data.File.Path = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
-	cfg.Server.GRPCListen = `localhost:0`
 
 	Server = &server.Server{}
 	ready := make(chan struct{})
@@ -37,7 +36,7 @@ func Serve(ctx context.Context) {
 	// 测试的时候默认禁用限流器；测试限流器相关函数会手动开启。
 	Server.Service.TestEnableRequestThrottler(false)
 
-	client = clients.NewFromGrpcAddr(Server.GRPCAddr)
+	client = clients.NewProtoClientFromAddress(Server.GRPCAddr)
 	admin = auth.TestingAdminUserContext(Server.Auther, "go_test")
 	guest = context.Background()
 }

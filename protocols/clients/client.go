@@ -2,45 +2,34 @@ package clients
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
+	"io"
+	"log"
+	"net"
 	"net/url"
+	"time"
 
+	"github.com/movsb/http2tcp"
+	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
-type Client interface {
-	proto.UtilsClient
-	proto.TaoBlogClient
-	proto.ManagementClient
-	proto.SearchClient
+func NewProtoClient(home string, token string) *ProtoClient {
+	cc := _NewConn(home, ``)
+	return _NewFromCC(cc, token)
 }
 
-type _Client struct {
-	proto.UtilsClient
-	proto.TaoBlogClient
-	proto.ManagementClient
-	proto.SearchClient
+func NewProtoClientFromAddress(grpcAddress string) *ProtoClient {
+	cc := _NewConn(``, grpcAddress)
+	return _NewFromCC(cc, ``)
 }
 
-func NewFromGrpcAddr(addr string) Client {
-	cc := NewConn("", addr)
-	pc := NewProtoClient(cc, "")
-	return &_Client{
-		UtilsClient:      pc.Utils,
-		TaoBlogClient:    pc.Blog,
-		ManagementClient: pc.Management,
-		SearchClient:     pc.Search,
-	}
-}
-
-func NewProtoClient(cc *grpc.ClientConn, token string) *ProtoClient {
+func _NewFromCC(cc *grpc.ClientConn, token string) *ProtoClient {
 	return &ProtoClient{
 		cc:         cc,
 		token:      token,
@@ -74,39 +63,52 @@ func (c *ProtoClient) contextFrom(parent context.Context) context.Context {
 
 // grpcAddress 可以为空，表示使用 api 同一地址。
 // TODO 私有化，并把 token 设置到 default call options
-func NewConn(api, grpcAddress string) *grpc.ClientConn {
-	secure := false
-	if grpcAddress == `` {
-		u, _ := url.Parse(api)
-		grpcAddress = u.Hostname()
-		grpcPort := u.Port()
-		if u.Scheme == `http` {
-			secure = false
-			if grpcPort == `` {
-				grpcPort = `80`
-			}
-		} else {
-			secure = true
-			if grpcPort == `` {
-				grpcPort = `443`
-			}
-		}
-
-		grpcAddress = fmt.Sprintf(`%s:%s`, grpcAddress, grpcPort)
-	}
-
+func _NewConn(home, orGrpcAddress string) *grpc.ClientConn {
 	options := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(100<<20),
 			grpc.MaxCallSendMsgSize(100<<20),
 		),
-		grpc.WithTransportCredentials(utils.IIF(secure, credentials.NewTLS(&tls.Config{}), insecure.NewCredentials())),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
-	conn, err := grpc.Dial(grpcAddress, options...)
+	var (
+		conn *grpc.ClientConn
+		err  error
+	)
+
+	if home != `` {
+		u := utils.Must1(url.Parse(home))
+		options = append(options,
+			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+				conn, err := http2tcp.Dial(u.JoinPath(`/v3/grpc`).String(), grpc_proxy.PreSharedKey, ``)
+				if err != nil {
+					log.Println(home, err)
+					return nil, err
+				}
+				return &_NetConn{conn}, nil
+			}),
+		)
+		conn, err = grpc.Dial(`does-not-matter:0`, options...)
+	} else {
+		conn, err = grpc.Dial(orGrpcAddress, options...)
+	}
+
 	if err != nil {
 		panic(err)
 	}
 
 	return conn
 }
+
+type _NetConn struct {
+	io.ReadWriteCloser
+}
+
+func (_NetConn) LocalAddr() net.Addr                { return nil }
+func (_NetConn) RemoteAddr() net.Addr               { return nil }
+func (_NetConn) SetDeadline(t time.Time) error      { return nil }
+func (_NetConn) SetReadDeadline(t time.Time) error  { return nil }
+func (_NetConn) SetWriteDeadline(t time.Time) error { return nil }
+
+var _ net.Conn = (*_NetConn)(nil)

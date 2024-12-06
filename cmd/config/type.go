@@ -42,14 +42,12 @@ func DefaultConfig() Config {
 // ServerConfig ...
 type ServerConfig struct {
 	HTTPListen string `yaml:"http_listen"`
-	GRPCListen string `yaml:"grpc_listen"`
 }
 
 // DefaultServerConfig ...
 func DefaultServerConfig() ServerConfig {
 	return ServerConfig{
 		HTTPListen: `0.0.0.0:2564`,
-		GRPCListen: `0.0.0.0:2563`,
 	}
 }
 

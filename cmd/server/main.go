@@ -216,7 +216,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		}
 	}()
 
-	log.Println("Server started on", server.Addr)
+	log.Println("Server started on", l.Addr().String())
 	instantNotifier.InstantNotify("博客状态", "已经开始运行。")
 
 	go liveCheck(theService, instantNotifier)

@@ -58,7 +58,7 @@ type Service struct {
 	cancel context.CancelFunc
 
 	testing bool
-	addr    net.Addr // 服务器的实际监听地址
+	addr    net.Addr // 服务器的实际监听地址（GRPC）
 
 	// 计划重启。
 	scheduledUpdate atomic.Bool
@@ -260,11 +260,12 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	proto.RegisterManagementServer(server, s)
 	proto.RegisterSearchServer(server, s)
 
-	listener, err := net.Listen("tcp", cfg.Server.GRPCListen)
+	listener, err := net.Listen("tcp", `127.0.0.1:0`)
 	if err != nil {
 		panic(err)
 	}
 	s.addr = listener.Addr()
+	log.Println(`GRPC listen on:`, listener.Addr().String())
 	go server.Serve(listener)
 
 	if !testing && !DevMode() {

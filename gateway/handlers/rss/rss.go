@@ -47,7 +47,7 @@ type RSS struct {
 	LastBuildDate Date
 
 	tmpl   *template.Template
-	client clients.Client
+	client *clients.ProtoClient
 	auther *auth.Auth
 }
 
@@ -63,8 +63,8 @@ type _Config struct {
 	articleCount int
 }
 
-func New(auther *auth.Auth, client clients.Client, options ...Option) http.Handler {
-	info := utils.Must1(client.GetInfo(context.Background(), &proto.GetInfoRequest{}))
+func New(auther *auth.Auth, client *clients.ProtoClient, options ...Option) http.Handler {
+	info := utils.Must1(client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	r := &RSS{
 		config: _Config{
@@ -93,7 +93,7 @@ func New(auther *auth.Auth, client clients.Client, options ...Option) http.Handl
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// TODO 这里没法列出管理员可看的文章。
 	// 没有调用 runtime.AnnotateContext
-	rsp, err := r.client.ListPosts(
+	rsp, err := r.client.Blog.ListPosts(
 		r.auther.NewContextForRequestAsGateway(req),
 		&proto.ListPostsRequest{
 			Limit:          int32(r.config.articleCount),

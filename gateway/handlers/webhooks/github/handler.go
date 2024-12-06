@@ -13,14 +13,14 @@ import (
 )
 
 type _GitHub struct {
-	client   clients.Client
+	client   *clients.ProtoClient
 	secret   string
 	notifier notify.InstantNotifier
 
 	mux *http.ServeMux
 }
 
-func New(client clients.Client, secret string, notifier notify.InstantNotifier, routePrefix string) http.Handler {
+func New(client *clients.ProtoClient, secret string, notifier notify.InstantNotifier, routePrefix string) http.Handler {
 	g := &_GitHub{
 		client:   client,
 		secret:   secret,
@@ -46,7 +46,7 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 	if w := payload.WorkflowRun; w.Status == `completed` {
 		switch w.Conclusion {
 		case `success`:
-			_, err := g.client.ScheduleUpdate(
+			_, err := g.client.Management.ScheduleUpdate(
 				auth.SystemAdminForGateway(context.Background()),
 				&proto.ScheduleUpdateRequest{},
 			)

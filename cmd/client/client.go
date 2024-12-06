@@ -14,11 +14,8 @@ type Client struct {
 // NewClient creates a new client that interacts with server.
 func NewClient(config HostConfig) *Client {
 	c := &Client{
-		config: config,
-		ProtoClient: clients.NewProtoClient(
-			clients.NewConn(config.API, config.GRPC),
-			config.Token,
-		),
+		config:      config,
+		ProtoClient: clients.NewProtoClient(config.Home, config.Token),
 	}
 
 	return c
