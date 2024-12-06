@@ -1,10 +1,10 @@
 :root {
---accent-color:             #4daac7;
+--accent-color:             #ac53ac;
+--highlight-color:          #ac53ac8f;
 --font-size:                15px;
 --mono-font:                "LXGW WenKai Mono", Monaco, Consolas, monospace;
 --max-width:                850px;
---border-color-hover:       #4da7c7;
---highlight-color:          #4da7c755;
+--border-color-hover:       var(--accent-color);
 --border-radius:            4px;
 --button-color-fg:          white;
 --button-color-bg:          rgba(60,60,60,0.6);
@@ -18,7 +18,7 @@
 --textarea-padding:         7px;
 
 // 其实我并不喜欢修改用户的选中色……
---selection-background-color:   #4da7c785;
+--selection-background-color:   #ac53ac8f;
 }
 
 @media (prefers-color-scheme: light) {
