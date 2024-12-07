@@ -116,7 +116,7 @@ func (g *GitSync) Sync() error {
 	if err := repo.Push(&git.PushOptions{
 		RemoteName: `origin`,
 		RefSpecs: []config.RefSpec{
-			`refs/heads/master:refs/remotes/origin/master`,
+			`refs/heads/master:refs/heads/master`,
 		},
 		Auth: g.auth,
 	}); err != nil && err != git.NoErrAlreadyUpToDate {
