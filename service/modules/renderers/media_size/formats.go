@@ -102,8 +102,8 @@ func avif(r io.Reader) (*Metadata, error) {
 	)
 
 	if size == 0x14 && version == 0x00 &&
-		(width > 0 && width < 10000) && // just in case
-		(height > 0 && height < 10000) {
+		(width > 0 && width < 65536) && // just in case
+		(height > 0 && height < 65536) {
 		return &Metadata{
 			Width:  int(width),
 			Height: int(height),
