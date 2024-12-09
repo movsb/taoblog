@@ -13,11 +13,20 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"gopkg.in/yaml.v2"
 )
 
-//go:embed friend.html
+//go:embed friend.html style.css
 var _root embed.FS
+
+func init() {
+	dynamic.Dynamic[`friends`] = dynamic.Content{
+		Styles: []string{
+			string(utils.Must1(_root.ReadFile(`style.css`))),
+		},
+	}
+}
 
 type Friends struct {
 	task   *Task
@@ -43,18 +52,20 @@ type Friend struct {
 	Name        string `yaml:"name"`
 	URL         string `yaml:"url"`
 	Description string `yaml:"description"`
-	Icon        string `yaml:"icon"`
-	iconDataURL string
+
+	// 日夜共用 & 日夜分开
+	Icon  string    `yaml:"icon"`
+	Icons [2]string `yaml:"icons"`
+
+	iconDataURLs [2]string
 }
 
-func (f Friend) IconURL() template.URL {
-	if f.iconDataURL != "" {
-		return template.URL(f.iconDataURL)
-	}
-	if f.Icon != "" {
-		return template.URL(f.Icon)
-	}
-	return ""
+func (f Friend) LightDataURL() template.URL {
+	return template.URL(f.iconDataURLs[0])
+}
+
+func (f Friend) DarkDataURL() template.URL {
+	return template.URL(f.iconDataURLs[1])
 }
 
 var tmpl = template.Must(template.New(`friend`).Parse(string(utils.Must1(_root.ReadFile(`friend.html`)))))
@@ -127,17 +138,23 @@ func resolveIconURL(siteURL, faviconURL string) (string, error) {
 
 func (f *Friends) prepareIconURL(fs []*Friend) {
 	for _, fr := range fs {
-		u, err := resolveIconURL(fr.URL, fr.Icon)
-		if err != nil {
-			log.Println(err)
-			continue
+		if fr.Icons[0] == `` {
+			fr.Icons[0] = fr.Icon
+			fr.Icons[1] = fr.Icon
 		}
-		contentType, content, found := f.task.Get(f.postID, u)
-		if !found {
-			// 预填充成 SVG 首字母（因为可能加载失败）。
-			fr.iconDataURL = genSvgURL(fr.Name)
-		} else {
-			fr.iconDataURL = fmt.Sprintf(`data:%s;base64,%s`, contentType, base64.StdEncoding.EncodeToString(content))
+		for i := 0; i < 2; i++ {
+			u, err := resolveIconURL(fr.URL, fr.Icons[i])
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			contentType, content, found := f.task.Get(f.postID, u)
+			if !found {
+				// 预填充成 SVG 首字母（因为可能加载失败）。
+				fr.iconDataURLs[i] = genSvgURL(fr.Name)
+			} else {
+				fr.iconDataURLs[i] = fmt.Sprintf(`data:%s;base64,%s`, contentType, base64.StdEncoding.EncodeToString(content))
+			}
 		}
 	}
 }

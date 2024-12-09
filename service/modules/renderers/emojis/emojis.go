@@ -32,11 +32,10 @@ var _ interface {
 } = (*Emojis)(nil)
 
 func New() *Emojis {
-	_once.Do(initEmojis)
 	return &Emojis{}
 }
 
-func initEmojis() {
+func init() {
 	dynamic.Dynamic[`emojis`] = dynamic.Content{
 		Root: _root,
 		Styles: []string{

@@ -1,6 +1,11 @@
 <div class="friend">
 	<div class="left">
-		<img src="{{ .IconURL }}" />
+		{{ if .DarkDataURL }}
+			<img class="light" src="{{ .LightDataURL }}"/>
+			<img class="dark" src="{{ .DarkDataURL }}"/>
+		{{ else }}
+			<img src="{{ .LightDataURL }}"/>
+		{{ end }}
 	</div>
 	<div class="right">
 		<p><b>{{.Name}}</b></p>

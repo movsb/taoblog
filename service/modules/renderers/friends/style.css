@@ -1,0 +1,12 @@
+/* <picture> 里面用 data-url 图片会不显示，找不到原因。
+   所以这里暂时用这种方式来切换日间/夜间显示。
+   https://blog.twofei.com/608/#comment-1792
+*/
+@media screen and (prefers-color-scheme: light) {
+	.friend .light { display: block; }
+	.friend .dark { display: none; }
+}
+@media screen and (prefers-color-scheme: dark) {
+	.friend .light { display: none; }
+	.friend .dark { display: block; }
+}
