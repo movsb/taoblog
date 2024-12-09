@@ -135,10 +135,23 @@ func (t *Task) refreshLoop(ctx context.Context) {
 	}
 }
 
+// 会重复多次尝试获取。
 func (t *Task) update(postID int, faviconURL string) {
-	contentType, content, err := t.get(faviconURL)
+	var (
+		contentType string
+		content     []byte
+		err         error
+	)
+	for range 3 {
+		contentType, content, err = t.get(faviconURL)
+		if err != nil {
+			log.Println(faviconURL, err)
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		break
+	}
 	if err != nil {
-		log.Println(faviconURL, err)
 		return
 	}
 	t.cache.Set(CacheKey{postID, faviconURL}, CacheValue{
@@ -174,7 +187,11 @@ func (t *Task) get(faviconURL string) (string, []byte, error) {
 		log.Println(`头像请求失败：`, rsp.Status)
 		return ``, nil, fmt.Errorf(`StatusCode: %d`, rsp.StatusCode)
 	}
-	body, _ := io.ReadAll(io.LimitReader(rsp.Body, maxBodySize))
+	body, err := io.ReadAll(io.LimitReader(rsp.Body, maxBodySize))
+	if err != nil {
+		log.Println(`读取头像 body 时出错：`, err)
+		return ``, nil, err
+	}
 	contentType, _, _ := mime.ParseMediaType(rsp.Header.Get(`Content-Type`))
 	if contentType == "" {
 		contentType = http.DetectContentType(body)
