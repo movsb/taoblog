@@ -54,16 +54,10 @@ func AddCommands(parent *cobra.Command) {
 				os.Exit(0)
 			}
 
-			for {
-				for range 3 {
-					if err := sync(); err != nil {
-						log.Println(err)
-						time.Sleep(time.Second * 5)
-						continue
-					}
-					break
+			for range time.NewTicker(every).C {
+				if err := sync(); err != nil {
+					log.Println(err)
 				}
-				time.Sleep(every)
 			}
 		},
 	}

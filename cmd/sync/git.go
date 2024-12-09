@@ -72,47 +72,99 @@ func New(config client.HostConfig, credential Credential, root string, full bool
 	}
 }
 
+// 内部会自动大量重试因为网络问题导致的错误。
 func (g *GitSync) Sync() error {
-	repo, err := git.PlainOpen(g.root)
+	const MaxRetry = 10
+
+	repo, tree, err := g.prepare()
 	if err != nil {
 		return err
+	}
+
+	for n := 1; ; n++ {
+		if err := g.pull(tree); err != nil {
+			if n >= MaxRetry {
+				return err
+			}
+			log.Println(err)
+			time.Sleep(time.Second * 3)
+			continue
+		}
+		break
+	}
+
+	notAfter, err := g.process(tree)
+	if err != nil {
+		return err
+	}
+
+	for n := 1; ; n++ {
+		if err := g.push(repo); err != nil {
+			if n >= MaxRetry {
+				return err
+			}
+			log.Println(err)
+			time.Sleep(time.Second * 3)
+			continue
+		}
+		break
+	}
+
+	// 仅在全部成功后更新上次检测的时间。
+	g.lastCheckedAt = notAfter
+
+	return nil
+}
+
+func (g *GitSync) prepare() (*git.Repository, *git.Worktree, error) {
+	repo, err := git.PlainOpen(g.root)
+	if err != nil {
+		return nil, nil, fmt.Errorf(`failed to git open: %w`, err)
 	}
 	wt, err := repo.Worktree()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	if err := wt.Pull(&git.PullOptions{
+	return repo, wt, nil
+}
+
+func (g *GitSync) pull(tree *git.Worktree) error {
+	if err := tree.Pull(&git.PullOptions{
 		RemoteName:    `origin`,
 		ReferenceName: `refs/heads/master`,
 		SingleBranch:  true,
 		Progress:      os.Stdout,
 		Auth:          g.auth,
 	}); err != nil && err != git.NoErrAlreadyUpToDate {
-		log.Println(`Pull 失败：`, err)
-		return err
+		return fmt.Errorf(`failed to git pull: %w`, err)
 	}
+	return nil
+}
 
+func (g *GitSync) process(tree *git.Worktree) (time.Time, error) {
 	notBefore := g.lastCheckedAt
 	notAfter := time.Now().Add(-skewedDurationForUpdating)
 
 	posts, err := g.getUpdatedPosts(notBefore, notAfter)
 	if err != nil {
-		return fmt.Errorf(`获取列表失败：%w`, err)
+		return time.Time{}, fmt.Errorf(`获取列表失败：%w`, err)
 	}
 	if len(posts) == 0 {
-		log.Println(`无文章更新。`)
-		return nil
+		return notAfter, nil
 	}
 
 	for _, post := range posts {
 		// log.Println(`处理：`, post.Id, post.Title)
-		if err := g.syncSingle(wt, post); err != nil {
+		if err := g.syncSingle(tree, post); err != nil {
 			log.Println(err)
 			continue
 		}
 	}
 	log.Println(`共有`, len(posts), `篇文章被处理。`)
+	return notAfter, nil
+}
 
+func (g *GitSync) push(repo *git.Repository) error {
 	if err := repo.Push(&git.PushOptions{
 		RemoteName: `origin`,
 		RefSpecs: []config.RefSpec{
@@ -123,10 +175,6 @@ func (g *GitSync) Sync() error {
 		log.Println(`Push 失败：`, err)
 		return err
 	}
-
-	// 仅在全部成功后更新上次检测的时间。
-	g.lastCheckedAt = notAfter
-
 	return nil
 }
 
