@@ -74,7 +74,7 @@ func New(config client.HostConfig, credential Credential, root string, full bool
 
 // 内部会自动大量重试因为网络问题导致的错误。
 func (g *GitSync) Sync() error {
-	const MaxRetry = 10
+	const MaxRetry = 20
 
 	repo, tree, err := g.prepare()
 	if err != nil {
@@ -172,8 +172,7 @@ func (g *GitSync) push(repo *git.Repository) error {
 		},
 		Auth: g.auth,
 	}); err != nil && err != git.NoErrAlreadyUpToDate {
-		log.Println(`Push 失败：`, err)
-		return err
+		return fmt.Errorf(`failed to git push: %w`, err)
 	}
 	return nil
 }
