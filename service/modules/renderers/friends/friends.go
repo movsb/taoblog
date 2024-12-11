@@ -17,6 +17,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+//go:generate sass style.scss style.css
+
 //go:embed friend.html style.css
 var _root embed.FS
 

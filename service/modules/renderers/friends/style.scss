@@ -3,10 +3,14 @@
    https://blog.twofei.com/608/#comment-1792
 */
 @media screen and (prefers-color-scheme: light) {
-	.friend .light { display: block; }
-	.friend .dark { display: none; }
+	.friend {
+		.light { display: block; }
+		.dark  { display: none;  }
+	}
 }
 @media screen and (prefers-color-scheme: dark) {
-	.friend .light { display: none; }
-	.friend .dark { display: block; }
+	.friend {
+		.light { display: none;  }
+		.dark  { display: block; }
+	}
 }
