@@ -30,7 +30,7 @@ func init() {
 			string(utils.Must1(_root.ReadFile(`style.css`))),
 		},
 	}
-	sass.WatchDefaultAsync(string(dir.SourceRelativeDir()))
+	sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
 }
 
 type Friends struct {
