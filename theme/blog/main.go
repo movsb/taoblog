@@ -11,6 +11,6 @@ import (
 //go:embed statics templates/*
 var Root embed.FS
 
-func SourceRelativeDir() dir.Dir {
-	return dir.SourceRelativeDir()
-}
+//go:generate sass --style compressed --no-source-map styles/style.scss statics/style.css
+
+var SourceRelativeDir = dir.SourceRelativeDir()

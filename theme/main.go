@@ -11,12 +11,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
@@ -28,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/theme/data"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
+	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/movsb/taorm"
 	"github.com/xeonx/timeago"
 	"google.golang.org/grpc/codes"
@@ -61,18 +60,17 @@ type Theme struct {
 }
 
 func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, fsys theme_fs.FS) *Theme {
-	var rootFS, tmplFS, stylesFS fs.FS
+	var rootFS, tmplFS fs.FS
 
 	if devMode {
-		dir := blog.SourceRelativeDir()
+		dir := blog.SourceRelativeDir
 		rootFS = os.DirFS(dir.Join(`statics`))
 		tmplFS = utils.NewDirFSWithNotify(dir.Join(`templates`))
-		stylesFS = utils.NewDirFSWithNotify(dir.Join(`styles`))
+		sass.WatchAsync(dir.Join(`styles`), `style.scss`, `../statics/style.css`)
 	} else {
 		// TODO 硬编码成 blog 了。
 		rootFS = utils.Must1(fs.Sub(blog.Root, `statics`))
 		tmplFS = utils.Must1(fs.Sub(blog.Root, `templates`))
-		stylesFS = utils.Must1(fs.Sub(blog.Root, `styles`))
 	}
 
 	t := &Theme{
@@ -103,7 +101,6 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
 
 	t.loadTemplates()
-	t.watchStyles(stylesFS)
 
 	return t
 }
@@ -197,36 +194,6 @@ func (t *Theme) loadTemplates() {
 	t.templates = utils.NewTemplateLoader(t.tmplFS, funcs, func() {
 		t.themeChangedAt = time.Now()
 	})
-}
-
-func (t *Theme) watchStyles(stylesFS fs.FS) {
-	if changed, ok := stylesFS.(utils.FsWithChangeNotify); ok {
-		log.Println(`Listening for style changes`)
-
-		bundle := func() {
-			cmd := exec.Command(`make`, `theme`)
-			cmd.Stdin = os.Stdin
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				log.Println(err)
-			} else {
-				log.Println(`Rebuilt styles`)
-			}
-		}
-
-		bundle()
-
-		go func() {
-			debouncer := utils.NewDebouncer(time.Second, bundle)
-			for event := range changed.Changed() {
-				switch event.Op {
-				case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
-					debouncer.Enter()
-				}
-			}
-		}()
-	}
 }
 
 func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
@@ -465,7 +432,7 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 
 // TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
-	if service.DevMode() {
+	if version.DevMode() {
 		handle304.MustRevalidate(w)
 	} else {
 		handle304.CacheShortly(w)

@@ -13,7 +13,9 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/theme/modules/sass"
 	"gopkg.in/yaml.v2"
 )
 
@@ -28,6 +30,7 @@ func init() {
 			string(utils.Must1(_root.ReadFile(`style.css`))),
 		},
 	}
+	sass.WatchDefaultAsync(string(dir.SourceRelativeDir()))
 }
 
 type Friends struct {

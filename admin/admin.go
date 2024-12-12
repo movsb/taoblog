@@ -19,9 +19,9 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 )
 
@@ -135,7 +135,7 @@ func (a *Admin) Handler() http.Handler {
 
 func (a *Admin) cachedHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if service.DevMode() {
+		if version.DevMode() {
 			handle304.MustRevalidate(w)
 		} else {
 			handle304.CacheShortly(w)

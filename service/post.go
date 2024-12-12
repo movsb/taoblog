@@ -16,6 +16,7 @@ import (
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -263,7 +264,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		}
 
 		var mediaTagOptions []media_tags.Option
-		if DevMode() {
+		if version.DevMode() {
 			mediaTagOptions = append(mediaTagOptions,
 				media_tags.WithDevMode(func() { s.themeChangedAt = time.Now() }),
 			)
