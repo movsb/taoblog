@@ -1,3 +1,43 @@
+.friends {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--border-radius);
+	.friend {
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		display: flex;
+		width: 278px;
+		.left {
+			width: 70px;
+			height: 70px;
+			min-width: 70px;
+			text-align: center;
+			align-self: center;
+			align-content: center;
+			margin: .5rem;
+			img {
+				max-width: 100% !important;
+				max-height: 100% !important;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+		}
+		.right {
+			display: flex;
+			flex-direction: column;
+			align-self: center;
+			margin-right: .5rem;
+			p {
+				margin: 0;
+				&:not(:nth-child(1)) {
+					font-size: 80%;
+				}
+			}
+		}
+	}
+}
+
 /* <picture> 里面用 data-url 图片会不显示，找不到原因。
    所以这里暂时用这种方式来切换日间/夜间显示。
    https://blog.twofei.com/608/#comment-1792
