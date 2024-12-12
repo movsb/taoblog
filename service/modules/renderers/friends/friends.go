@@ -147,9 +147,11 @@ func (f *Friends) prepareIconURL(fs []*Friend) {
 	for _, fr := range fs {
 		if fr.Icons[0] == `` {
 			fr.Icons[0] = fr.Icon
-			fr.Icons[1] = fr.Icon
 		}
 		for i := 0; i < 2; i++ {
+			if i == 1 && fr.Icons[i] == `` {
+				continue
+			}
 			u, err := resolveIconURL(fr.URL, fr.Icons[i])
 			if err != nil {
 				log.Println(err)
