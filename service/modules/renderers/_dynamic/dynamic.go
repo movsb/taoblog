@@ -24,9 +24,14 @@ var style string
 var script string
 var files []fs.FS
 var mod = time.Now()
+var once2 sync.Once
 
-type Handler struct {
+func New() http.Handler {
+	once2.Do(callInits)
+	return &Handler{}
 }
+
+type Handler struct{}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	once.Do(func() {
@@ -73,4 +78,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.NotFound(w, r)
+}
+
+var (
+	inits []func()
+)
+
+func RegisterInit(init func()) {
+	inits = append(inits, init)
+}
+
+func callInits() {
+	for _, init := range inits {
+		init()
+	}
 }

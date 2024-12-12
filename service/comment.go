@@ -529,7 +529,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPost
 			panic(`不能转移子评论`)
 		}
 		// 只是为了判断存在性。
-		_, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(in.PostId)})
+		_, err := txs.GetPost(ctx, &proto.GetPostRequest{Id: int32(in.PostId)})
 		if err != nil {
 			return err
 		}

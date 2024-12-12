@@ -178,7 +178,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Run: func(cmd *cobra.Command, args []string) {
 			resp, err := client.Blog.Ping(client.Context(), &proto.PingRequest{})
 			if err != nil {
-				panic(err)
+				log.Fatalln(err)
 			}
 			fmt.Println(resp.Pong)
 		},

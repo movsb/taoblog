@@ -25,12 +25,14 @@ import (
 var _root embed.FS
 
 func init() {
-	dynamic.Dynamic[`friends`] = dynamic.Content{
-		Styles: []string{
-			string(utils.Must1(_root.ReadFile(`style.css`))),
-		},
-	}
-	sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+	dynamic.RegisterInit(func() {
+		dynamic.Dynamic[`friends`] = dynamic.Content{
+			Styles: []string{
+				string(utils.Must1(_root.ReadFile(`style.css`))),
+			},
+		}
+		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+	})
 }
 
 type Friends struct {

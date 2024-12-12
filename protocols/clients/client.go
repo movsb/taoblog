@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/url"
 	"time"
@@ -83,7 +82,7 @@ func _NewConn(home, orGrpcAddress string) *grpc.ClientConn {
 			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 				conn, err := http2tcp.Dial(u.JoinPath(`/v3/grpc`).String(), grpc_proxy.PreSharedKey, ``)
 				if err != nil {
-					log.Println(home, err)
+					// log.Println(home, err)
 					return nil, err
 				}
 				return &_NetConn{conn}, nil

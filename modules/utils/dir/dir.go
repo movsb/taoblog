@@ -1,7 +1,6 @@
 package dir
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,7 +16,7 @@ func init() {
 		panic(err)
 	}
 	Root = rootDir
-	log.Println(`WorkingDir:`, rootDir)
+	// log.Println(`WorkingDir:`, rootDir)
 }
 
 type Dir string
@@ -27,7 +26,7 @@ func (d Dir) Join(components ...string) string {
 }
 
 func SourceRelativeDir() Dir {
-	s := strings.TrimPrefix(string(SourceAbsoluteDir()), Root)
+	s := strings.TrimPrefix(abs(), Root)
 	s = strings.TrimPrefix(s, "/")
 	if s == "" {
 		s = "."
@@ -36,12 +35,16 @@ func SourceRelativeDir() Dir {
 }
 
 func SourceAbsoluteDir() Dir {
-	_, file, _, ok := runtime.Caller(1)
+	return Dir(abs())
+}
+
+func abs() string {
+	_, file, _, ok := runtime.Caller(2)
 	if !ok {
 		panic(`无法获取路径。`)
 	}
 	if Root == "" {
 		panic(`没有设置根目录。`)
 	}
-	return Dir(filepath.Dir(file))
+	return filepath.Dir(file)
 }
