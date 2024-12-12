@@ -2,10 +2,6 @@
 protos:
 	./setup/scripts/build-protos.sh
 
-.PHONY: theme
-theme:
-	@cd theme/blog/styles && ./make_style.sh
-
 .PHONY: test
 test:
 	go test ./...

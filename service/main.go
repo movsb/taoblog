@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"net/url"
-	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -268,7 +267,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	log.Println(`GRPC listen on:`, listener.Addr().String())
 	go server.Serve(listener)
 
-	if !testing && !DevMode() {
+	if !testing && !version.DevMode() {
 		go s.monitorCert(s.instantNotifier)
 		go s.monitorDomain(s.instantNotifier)
 	}
@@ -372,10 +371,6 @@ func (s *Service) TxCall(callback func(txs *Service) error) error {
 		txs.tdb = tx
 		return callback(&txs)
 	})
-}
-
-func DevMode() bool {
-	return os.Getenv(`DEV`) != `0` && (version.GitCommit == "" || strings.EqualFold(version.GitCommit, `head`))
 }
 
 // 是否在维护模式。

@@ -28,6 +28,7 @@ import (
 	"github.com/movsb/taoblog/modules/metrics/exporters/hostdare"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
@@ -91,7 +92,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		log.Println(`加载配置：`, path)
 	})
 
-	log.Println(`DevMode:`, service.DevMode())
+	log.Println(`DevMode:`, version.DevMode())
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
 
 	instantNotifier := notify.NewConsoleNotify()
@@ -122,7 +123,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		store = storage.NewLocal(cfg.Data.File.Path)
 	}
 
-	theAuth := auth.New(cfg.Auth, service.DevMode())
+	theAuth := auth.New(cfg.Auth, version.DevMode())
 	s.Auther = theAuth
 
 	serviceOptions := []service.With{
@@ -149,7 +150,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 			panic(err)
 		}
 
-		a := admin.NewAdmin(service.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
+		a := admin.NewAdmin(version.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
 			admin.WithCustomThemes(&cfg.Theme),
 		)
 		log.Println(`admin on`, prefix)
@@ -179,7 +180,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		)
 	}
 
-	theme := theme.New(service.DevMode(), cfg, theService, theService, theService, theAuth, store)
+	theme := theme.New(version.DevMode(), cfg, theService, theService, theService, theAuth, store)
 	canon := canonical.New(theme, r)
 	mux.Handle(`/`, canon)
 

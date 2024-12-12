@@ -81,7 +81,7 @@ func render(tex string, displayMode bool) (string, error) {
 		DisplayMode: displayMode,
 	}
 	body, _ := json.Marshal(args)
-	cmd := exec.Command(`./katex`)
+	cmd := exec.Command(`katex`)
 	cmd.Stdin = bytes.NewReader(body)
 	out, err := cmd.Output()
 	return string(out), err
