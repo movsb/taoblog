@@ -18,6 +18,7 @@ import (
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
+	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	"github.com/yuin/goldmark/extension"
 )
@@ -299,11 +300,26 @@ func TestPrettifier(t *testing.T) {
 				emojis.New(),
 			},
 		},
+		{
+			ID: 11.0,
+			Options: []renderers.Option2{
+				media_tags.New(gold_utils.NewWebFileSystem(os.DirFS(`media_tags/test_data`), &url.URL{Path: `/`})),
+			},
+			Markdown: `
+万物死
+
+<audio controls>
+	<source src="杨晚晚 - 片片相思赋予谁.mp3" />
+</audio>
+`,
+			Text: `万物死
+[音乐]`,
+		},
 	}
 	for _, tc := range cases {
 		options := append(tc.Options, renderers.WithHtmlPrettifier(), extension.GFM, extension.Footnote)
 		md := renderers.NewMarkdown(options...)
-		if tc.ID == 10.0 {
+		if tc.ID == 11.0 {
 			log.Println(`debug`)
 		}
 		text, err := md.Render(tc.Markdown)

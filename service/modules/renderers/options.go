@@ -116,6 +116,10 @@ var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.Wa
 			if strings.ToLower(a.Key) == `class` {
 				if strings.Contains(a.Val, `footnotes`) {
 					return ast.WalkSkipChildren
+				} else if strings.Contains(a.Val, `audio-player`) {
+					// TODO 用更好的方式，不要特殊处理。
+					buf.WriteString(`[音乐]`)
+					return ast.WalkSkipChildren
 				}
 			}
 		}
