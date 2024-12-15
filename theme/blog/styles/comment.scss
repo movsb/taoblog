@@ -16,15 +16,9 @@
 	display: flex;
 	align-items: baseline;
 	.item {
-        margin-left: 1em;
-        font-weight: normal;
-        font-size: 0.7em;
-	}
-    .count-wrap {
-        color: #cfcfcf;
-    }
-	.count-loaded-wrap {
-		display: none;
+		margin-left: 1em;
+		font-weight: normal;
+		font-size: 0.7em;
 	}
 	.right {
 		flex: max-content;

@@ -3,7 +3,7 @@ document.write(function(){/*
 <!--评论标题 -->
 <div id="comment-title">
 	文章评论
-	<span class="count-wrap item"><span class="count-loaded-wrap"><span class="loaded">0</span>/</span><span class="total">0</span></span>
+	<span class="item"><span class="total">0</span></span>
 	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
 	<span class="right item">
 		<a class="sign-in pointer" onclick="comment.login()">登录</a>
@@ -37,16 +37,10 @@ document.write(function(){/*
 			<input type="url" name="url" placeholder="网站(可不填)" />
 			<input type="submit" id="comment-submit" value="发表评论" />
 			<div class="field">
-				<label>
-					<input type="checkbox" id="comment-wrap-lines" checked />
-					自动折行
-				</label>
+				<label><input type="checkbox" id="comment-wrap-lines" checked />自动折行</label>
 			</div>
 			<div class="field">
-				<label>
-					<input type="checkbox" id="comment-show-preview" />
-					显示预览
-				</label>
+				<label><input type="checkbox" id="comment-show-preview" />显示预览</label>
 			</div>
 		</div>
 	</form>
@@ -58,15 +52,6 @@ class CommentAPI
 {
 	constructor(postID) {
 		this._postID = postID;
-	}
-
-	// 返回文章的评论数。
-	async getCountForPost() {
-		let path = `/v3/posts/${this._postID}/comments:count`;
-		let rsp = await fetch(path);
-		if (!rsp.ok) { throw rsp.statusText; }
-		let json = await rsp.json();
-		return +json.count;
 	}
 
 	_normalize(c) {
@@ -174,22 +159,6 @@ class CommentAPI
 			throw new Error((await rsp.json()).message);
 		}
 		return await rsp.json();
-	}
-	
-	// 列举评论。
-	async listComments(postID, args) {
-		let path = `/v3/posts/${postID}/comments?${args}`;
-		let rsp = await fetch(path);
-		if (!rsp.ok) {
-			throw new Error(rsp.statusText);
-		}
-
-		let json = await rsp.json();
-		let comments = json.comments ?? [];
-		for (let i=0; i< comments.length; i++) {
-			comments[i] = this._normalize(comments[i]);
-		}
-		return json;
 	}
 }
 
@@ -338,11 +307,6 @@ class CommentFormUI {
 
 class CommentListUI {
 	constructor() {
-		// 已加载的顶级评论的数量，用于后续 list 的 limit/offset 参数。
-		this._loaded_roots = 0;
-		// 已加载的总评论数量。
-		this._loaded_all = 0;
-
 		// 从 API 获取的总评论数。
 		this._count = 0;
 
@@ -357,8 +321,6 @@ class CommentListUI {
 	get comments()  { return this._comments; }
 
 	get root()      { return document.querySelector('#comment-list'); }
-	get done()      { return this._loaded_all >= this._count; }
-	get offset()    { return this._loaded_roots; }
 	get count()     { return this._count; }
 	set count(n)    {
 		this._count = n;
@@ -393,8 +355,6 @@ class CommentListUI {
 	}
 
 	_updateStats() {
-		let loaded = document.querySelector('#comment-title .loaded');
-		loaded.innerText = this._loaded_all;
 		let total = document.querySelector('#comment-title .total');
 		total.innerText = this._count;
 	}
@@ -418,15 +378,10 @@ class CommentListUI {
 			};
 
 			recurse(0);
-
-			this._loaded_roots  += comments.filter((c)=>c.root == 0).length;
-			this._loaded_all    += comments.length;
 		} else {
 			let comment = comments_or_comment;
 			this._append(comment.parent, comment, comment.parent == 0);
 			this._count         += 1;
-			this._loaded_all    += 1;
-			this._loaded_roots  += comment.root == 0 ? 1 : 0;
 		}
 
 		this._updateStats();
@@ -442,9 +397,7 @@ class CommentListUI {
 	remove(id) {
 		let ui = new CommentNodeUI(id);
 		this._count--;
-		this._loaded_all--;
 		// TODO 不确定是删除了子/顶级评论
-		// this._loaded_roots--;
 		ui.remove();
 		delete(this._comments[id]);
 		this._updateStats();
@@ -502,29 +455,17 @@ class Comment {
 
 		this.preload();
 	}
+
 	preload() {
-		const loaded = true;
-		
-		if (loaded) {
-			let comments = TaoBlog.comments;
-			this.list.count = comments.length;
-			for (let i=0; i<comments.length; i++) {
-				comments[i] = this.api._normalize(comments[i]);
-			}
-			this.list.animation = false;
-			this.list.insert(comments);
-			this.list.animation = true;
-			this.toggle_post_comment_button();
-		} else {
-			let self = this;
-			window.addEventListener('scroll', function () {
-				self.load_essential_comments();
-			});
-			
-			window.addEventListener('load', function () {
-				self.getCount();
-			});
+		let comments = TaoBlog.comments;
+		this.list.count = comments.length;
+		for (let i=0; i<comments.length; i++) {
+			comments[i] = this.api._normalize(comments[i]);
 		}
+		this.list.animation = false;
+		this.list.insert(comments);
+		this.list.animation = true;
+		this.toggle_post_comment_button();
 	}
 
 	setContent(value) {
@@ -610,23 +551,7 @@ class Comment {
 			root.classList.add('no-comments');
 		}
 	}
-	async load_essential_comments() {
-		if (!this.list.done && window.scrollY + window.innerHeight + 1000 >= document.body.scrollHeight) {
-			await this.load_comments();
-		}
-	}
-	// 获取文章的最新评论数。
-	// 获取完成后会自动按需加载评论。
-	async getCount(callback) {
-		try {
-			let count = await this.api.getCountForPost();
-			this.list.count = count;
-			await this.load_essential_comments();
-			this.toggle_post_comment_button();
-		} catch (e) {
-			alert(e);
-		}
-	}
+
 	locate(id) {
 		let ui = new CommentNodeUI(id);
 		ui.locate();
@@ -819,32 +744,7 @@ class Comment {
 			alert(e);
 		}
 	}
-	async load_comments() {
-		if (this.loading) {
-			return;
-		}
 
-		let comments = [];
-
-		try {
-			this.loading = true;
-
-			let args = new URLSearchParams;
-			args.set('limit', '10');
-			args.set('offset', `${this.list.offset}`);
-			args.set('order_by', 'id desc'); // 等于是按评论时间倒序了。
-
-			let rsp = await this.api.listComments(this.post_id, args);
-			comments = rsp.comments;
-		} catch (e) {
-			alert('加载评论列表时出错：' + e);
-			return;
-		} finally {
-			this.loading = false;
-		}
-
-		this.list.insert(comments);
-	}
 	formData() {
 		return {
 			post_id: this.post_id,
