@@ -11,13 +11,7 @@ pre > code {
 	line-height: 1.5;
 	max-height: 500px;
 	max-height: 50vh;
-
-	-moz-tab-size: 4;
 	tab-size: 4;
-
-	-webkit-hyphens: none;
-	-moz-hyphens: none;
-	-ms-hyphens: none;
 	hyphens: none;
 }
 
@@ -26,8 +20,7 @@ a > code {
 }
 
 pre, code {
-	// 默认颜色，在 chroma 下看起来还不错的样子？
-	color: var(--button-color-bg);
+	color: var(--code-color);
 }
 
 @media (prefers-color-scheme: dark) {

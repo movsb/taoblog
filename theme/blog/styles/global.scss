@@ -59,22 +59,6 @@ h6 { font-size: 1.0em; }
     cursor: default;
 }
 
-/* 按钮 */
-.btn {
-    border: none;
-    box-sizing: border-box;
-    user-select: none;
-    padding: 6px;
-    cursor: pointer;
-    color: var(--button-color-fg);
-    transition: all 0s;
-    background-color: var(--button-color-bg);
-
-    &:hover {
-        background-color: var(--border-color-hover);
-    }
-}
-
 a {
     text-decoration: none;
     color: var(--a-fg);
@@ -131,7 +115,7 @@ textarea, button {
 }
 
 input[type=text]:hover, input[type=password]:hover,input[type=email]:hover,input[type=url]:hover, input[type=submit]:hover, textarea:hover, button:hover {
-    border: 1px solid var(--border-color-hover);
+	border: 1px solid var(--accent-color);
 }
 
 a, input, textarea {
