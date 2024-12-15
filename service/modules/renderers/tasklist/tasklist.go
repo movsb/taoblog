@@ -1,10 +1,15 @@
 package task_list
 
 import (
+	"embed"
 	"fmt"
 	"strings"
 
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -15,6 +20,22 @@ import (
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 )
+
+//go:generate sass --no-source-map style.scss style.css
+
+//go:embed style.css
+var _root embed.FS
+
+func init() {
+	dynamic.RegisterInit(func() {
+		dynamic.Dynamic[`task-list`] = dynamic.Content{
+			Styles: []string{
+				string(utils.Must1(_root.ReadFile(`style.css`))),
+			},
+		}
+		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+	})
+}
 
 // 任务/待办列表（TODO list）。
 //
