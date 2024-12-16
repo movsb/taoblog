@@ -3,10 +3,10 @@
 }
 
 body {
-    color: var(--color-fg);
-    background-color: var(--color-bg);
-    margin: 0px auto;
-    padding: 0px;
+	color: var(--color-fg);
+	background-color: var(--color-bg);
+	margin: 0px auto;
+	padding: 0px;
 	font-size: var(--font-size);
 	font-family: "LXGW WenKai", "Trebuchet MS","Microsoft YaHei",'Noto Sans',sans-serif;
 	font-weight: normal;
@@ -60,76 +60,17 @@ h6 { font-size: 1.0em; }
 }
 
 a {
-    text-decoration: none;
-    color: var(--a-fg);
+	text-decoration: none;
+	color: var(--a-fg);
+	transition: all .2s ease-out;
 	&:hover {
 		text-decoration: underline;
 	}
 	&:focus {
 		outline: none;
 	}
-}
-
-button, input[type=submit] {
-	border: none;
-	&::-moz-focus-inner {
-		border: 0;
-	}
-	color: inherit;
-	background-color: transparent;
-}
-
-input[type=text],input[type=password],input[type=email],input[type=url], a, textarea {
-    &:focus {
-        outline: none;
-    }
-}
-
-// 为什么默认有白色的背景色？
-input[type=password] {
-	background-color: inherit;
-}
-input[type=datetime-local] {
-	box-sizing: border-box;
-}
-
-@media (prefers-color-scheme: dark) {
-	input[type=text], input[type=password],input[type=email],input[type=url],input[type=datetime-local], textarea {
-		color: var(--color-fg);
-		background-color: var(--color-bg);
-	}
-}
-
-input[type=text], input[type=password],input[type=email],input[type=url], input[type=submit],input[type=datetime-local], textarea, button {
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	padding: var(--input-padding);
-}
-textarea {
-	padding: var(--textarea-padding);
-	line-height: inherit;
-}
-textarea, button {
-	font-family: inherit;
-	font-size: inherit;
-}
-
-input[type=text]:hover, input[type=password]:hover,input[type=email]:hover,input[type=url]:hover, input[type=submit]:hover, textarea:hover, button:hover {
-	border: 1px solid var(--accent-color);
-}
-
-a, input, textarea {
-	transition: all 0.2s ease-out;
-}
-
-input[type=checkbox], input[type=range] {
-	accent-color: var(--accent-color);
-}
-input[type=text],input[type=password],input[type=email],input[type=url],textarea {
-	caret-color: var(--accent-color);
-	box-sizing: border-box;
-	&::placeholder {
-		opacity: .45;
+	&:focus {
+		outline: none;
 	}
 }
 
@@ -272,15 +213,6 @@ details {
 			cursor: n-resize;
 		}
 	}
-}
-
-// 只是为了自定义夜间默认（默认没有）。
-// 只有在 Firefox 上看起来比较顺眼，Safari 上和默认的差异比较大。
-select {
-	color: var(--color-fg);
-	background-color: var(--code-bg);
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
 }
 
 @keyframes fadeIn {
