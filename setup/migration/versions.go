@@ -472,3 +472,8 @@ func v30(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE comments ADD COLUMN `date_timezone` TEXT NOT NULL DEFAULT ''")
 	mustExec(tx, "ALTER TABLE comments ADD COLUMN `modified_timezone` TEXT NOT NULL DEFAULT ''")
 }
+
+func v31(tx *sql.Tx) {
+	mustExec(tx, `DELETE FROM options WHERE name = 'vps.hostdare'`)
+	mustExec(tx, `DELETE FROM options WHERE name = 'vps.current'`)
+}

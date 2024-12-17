@@ -19,7 +19,6 @@ type Config struct {
 	// 所以我就在这里定义了针对所有站点适用的自定义样式表（或主题）集合。
 	Theme ThemeConfig `json:"theme" yaml:"theme"`
 
-	VPS    VpsConfig          `json:"vps" yaml:"vps"`
 	Notify NotificationConfig `json:"notify" yaml:"notify"`
 }
 

@@ -25,7 +25,6 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
-	"github.com/movsb/taoblog/modules/metrics/exporters/hostdare"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
@@ -103,18 +102,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
-	switch cfg.VPS.Current {
-	case `hostdare`:
-		if hd := cfg.VPS.Hostdare; hd.Username != "" && hd.Password != "" {
-			exporter, err := hostdare.New(hd.Username, hd.Password)
-			if err != nil {
-				log.Println(err)
-			} else {
-				r.MustRegister(exporter)
-				log.Println(`注册 hostdare 指标`)
-			}
-		}
-	}
 
 	var store theme_fs.FS
 	if path := cfg.Data.File.Path; path == "" {
