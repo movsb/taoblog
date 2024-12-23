@@ -17,6 +17,8 @@ import (
 	"go.abhg.dev/goldmark/hashtag"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+
+	_ "github.com/movsb/taoblog/service/modules/renderers/anniversary"
 )
 
 // 后面统一改成 Option。
