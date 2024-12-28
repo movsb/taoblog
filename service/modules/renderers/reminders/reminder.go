@@ -85,7 +85,7 @@ type Reminder struct {
 }
 
 func (r *Reminder) Days() int {
-	return int(time.Since(time.Time(r.Dates.Start)).Hours() / 24)
+	return int(time.Since(time.Time(r.Dates.Start)).Hours()/24) + 1
 }
 
 func (r *Reminder) Start() string {
