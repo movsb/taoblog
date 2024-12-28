@@ -1,0 +1,19 @@
+.reminder {
+	border: 1px solid var(--border-color);
+	display: inline-block;
+	padding: .5em 1em;
+	margin: 10px;
+
+	.title {
+		font-size: 1.5em;
+		font-weight: bold;
+		border-bottom: 1px solid var(--border-color);
+		text-align: center;
+		padding: 0 2em;
+	}
+	.days {
+		font-size: 3em;
+		color: var(--accent-color);
+		text-align: center;
+	}
+}

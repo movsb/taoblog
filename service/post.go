@@ -32,6 +32,7 @@ import (
 	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
@@ -317,6 +318,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		wikitable.New(),
 		extension.GFM,
 		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
+		reminders.New(s.remindersTask, int(postId)),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

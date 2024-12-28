@@ -29,6 +29,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	"github.com/movsb/taoblog/service/modules/search"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
@@ -87,6 +88,8 @@ type Service struct {
 	exifTask *exif.Task
 	// 朋友头像数据缓存任务
 	friendsTask *friends.Task
+	// 提醒事项任务
+	remindersTask *reminders.Task
 
 	// 文章内容缓存。
 	// NOTE：缓存 Key 是跟文章编号和内容选项相关的（因为内容选项不同内容也就不同），
@@ -229,6 +232,11 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	s.friendsTask = friends.NewTask(s.GetPluginStorage(`friends`), func(postID int) {
 		s.deletePostContentCacheFor(int64(postID))
 		s.updatePostMetadataTime(int64(postID), time.Now())
+	})
+
+	s.remindersTask = reminders.NewTask(s.GetPluginStorage(`reminders`), func(pid int64) {
+		s.deletePostContentCacheFor(pid)
+		s.updatePostMetadataTime(pid, time.Now())
 	})
 
 	s.certDaysLeft.Store(-1)

@@ -14,9 +14,9 @@ import (
 	"github.com/yuin/goldmark/util"
 )
 
-//go:generate sass --style compressed style.scss style.css
+//go:generate sass --no-source-map --style compressed style.scss style.css
 
-//go:embed style.css style.css.map script.js
+//go:embed style.css script.js
 var _root embed.FS
 
 func init() {
