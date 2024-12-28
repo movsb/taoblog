@@ -318,7 +318,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		wikitable.New(),
 		extension.GFM,
 		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
-		reminders.New(nil),
+		reminders.New(s.remindersTask, int(postId)),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
