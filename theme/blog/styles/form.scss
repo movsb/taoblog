@@ -35,7 +35,6 @@ input[type=text], input[type=password],input[type=email],input[type=url], textar
 button, select, input[type=datetime-local], input[type=submit] {
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
-	height: 2em;
 	padding-left: .5em;
 	padding-right: .5em;
 }
