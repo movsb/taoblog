@@ -166,7 +166,8 @@ func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*prot
 
 	s.maintenance.Enter(req.Reason, time.Second*10)
 
-	go s.cancel()
+	// 延迟重启可以基本保证 grpc 响应发送完成，不至于使客户端报错。
+	time.AfterFunc(time.Second*3, s.cancel)
 
 	return &proto.RestartResponse{}, nil
 }
