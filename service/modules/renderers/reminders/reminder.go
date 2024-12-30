@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
-	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -37,59 +36,16 @@ func init() {
 
 type Reminders struct {
 	task *Task
-	pid  int
+	pid  int64
 }
 
-func New(task *Task, pid int) *Reminders {
+func New(task *Task, pid int64) *Reminders {
 	f := &Reminders{
 		task: task,
 		pid:  pid,
 	}
 
 	return f
-}
-
-type UserDate time.Time
-
-var layouts = [...]string{
-	`2006-01-02`,
-}
-
-// TODO 需要修改成服务器时间。
-var fixedZone = time.FixedZone(`fixed`, 8*60*60)
-
-func (u *UserDate) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	if err := unmarshal(&s); err != nil {
-		return err
-	}
-	var outErr error
-	for _, layout := range layouts {
-		// TODO 需要区分 Parse 与 ParseInLocation
-		t, err := time.ParseInLocation(layout, s, fixedZone)
-		if err != nil {
-			outErr = err
-			continue
-		}
-		*u = UserDate(t)
-	}
-	return outErr
-}
-
-type Reminder struct {
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Dates       struct {
-		Start UserDate `yaml:"start"`
-	} `yaml:"dates"`
-}
-
-func (r *Reminder) Days() int {
-	return int(time.Since(time.Time(r.Dates.Start)).Hours()/24) + 1
-}
-
-func (r *Reminder) Start() string {
-	return time.Time(r.Dates.Start).Format(`2006-01-02`)
 }
 
 var _ interface {
