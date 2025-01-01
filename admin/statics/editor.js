@@ -290,6 +290,7 @@ formUI.submit(async () => {
 				id: TaoBlog.post_id,
 				date: formUI.time,
 				modified: p.modified,
+				modified_timezone: TimeWithZone.getTimezone(),
 				type: formUI.type,
 				status: formUI.status,
 				source: formUI.source,
@@ -297,6 +298,7 @@ formUI.submit(async () => {
 		} else {
 			post = await postAPI.createPost({
 				date: formUI.time,
+				date_timezone: TimeWithZone.getTimezone(),
 				type: formUI.type,
 				status: formUI.status,
 				source: formUI.source,

@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -574,16 +575,7 @@ func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c
 
 	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
 
-	loc, _, _ := s.timeLocations.GetOrLoad(ctx, c.DateTimezone, func(ctx context.Context, s string) (*time.Location, time.Duration, error) {
-		if s == `` {
-			s = `Local`
-		}
-		loc, err := time.LoadLocation(s)
-		return loc, time.Hour * 24, err
-	})
-	if loc == nil {
-		loc = time.Local
-	}
+	loc := globals.LoadTimezoneOrDefault(c.DateTimezone, time.Local)
 
 	if !s.isAdminEmail(c.Email) {
 		data := &comment_notify.AdminData{

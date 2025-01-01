@@ -189,6 +189,7 @@ class PostManagementAPI
 			},
 			body: JSON.stringify({
 				date: p.date,
+				date_timezone: p.date_timezone,
 				type: p.type ?? 'tweet',
 				status: p.status ?? 'public',
 				source: p.source,
@@ -216,12 +217,13 @@ class PostManagementAPI
 				post: {
 					date: p.date,
 					modified: p.modified,
+					modified_timezone: p.modified_timezone,
 					type: p.type ?? 'tweet',
 					status: p.status ?? 'public',
 					source: p.source,
 					source_type: 'markdown',
 				},
-				update_mask: 'source,sourceType,date,type,status'
+				update_mask: 'source,sourceType,date,type,status,modifiedTimezone'
 			})
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }

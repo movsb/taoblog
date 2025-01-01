@@ -11,9 +11,9 @@ import (
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/dialers"
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/phuslu/lru"
 	"github.com/xeonx/timeago"
 )
 
@@ -25,14 +25,11 @@ type Utils struct {
 	instantNotifier notify.InstantNotifier
 
 	RemoteDialer atomic.Pointer[dialers.RemoteDialerManager]
-
-	timeLocations *lru.TTLCache[string, *time.Location]
 }
 
 func NewUtils(instantNotifier notify.InstantNotifier) *Utils {
 	u := &Utils{
 		instantNotifier: instantNotifier,
-		timeLocations:   lru.NewTTLCache[string, *time.Location](16),
 	}
 	u.RemoteDialer.Store(nil)
 	return u
@@ -47,30 +44,17 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 		r.Server = t.In(fixedZone).Format(time.RFC3339)
 
 		if ts.Timezone != `` {
-			loc, err, _ := u.timeLocations.GetOrLoad(ctx, ts.Timezone, func(ctx context.Context, s string) (*time.Location, time.Duration, error) {
-				loc, err := time.LoadLocation(s)
-				// log.Println(`加载时区：`, s, loc, err)
-				return loc, time.Hour, err
-			})
-			if err != nil {
-				log.Println(err)
+			loc := globals.LoadTimezoneOrDefault(ts.Timezone, nil)
+			if loc == nil {
 				r.Original = r.Server
 			} else {
-				// log.Println(`时区：`, loc)
 				r.Original = t.In(loc).Format(time.RFC3339)
 			}
 		}
 
 		if in.Device != `` {
-			loc, err, _ := u.timeLocations.GetOrLoad(ctx, in.Device, func(ctx context.Context, s string) (*time.Location, time.Duration, error) {
-				loc, err := time.LoadLocation(s)
-				// log.Println(`加载时区：`, s, loc, err)
-				return loc, time.Hour, err
-			})
-			if err != nil {
-				log.Println(err)
-			} else {
-				// log.Println(`时区：`, loc)
+			loc := globals.LoadTimezoneOrDefault(in.Device, nil)
+			if loc != nil {
 				r.Device = t.In(loc).Format(time.RFC3339)
 			}
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -98,12 +99,6 @@ func (p *Post) StatusString() string {
 	}
 }
 
-// DateString ...
-func (p *Post) DateString() string {
-	t := time.Unix(int64(p.Date), 0).Local()
-	y, m, d := t.Date()
-	return fmt.Sprintf("%d年%02d月%02d日", y, m, d)
-}
 func (p *Post) CommentString() string {
 	if p.Comments == 0 {
 		return `没有评论`
@@ -111,11 +106,20 @@ func (p *Post) CommentString() string {
 	return fmt.Sprintf(`%d 条评论`, p.Comments)
 }
 
-// ModifiedString ...
-func (p *Post) ModifiedString() string {
-	t := time.Unix(int64(p.Modified), 0).Local()
+func (p *Post) ShortDateString() string {
+	t := time.Unix(int64(p.Date), 0).In(globals.LoadTimezoneOrDefault(p.DateTimezone, time.Local))
 	y, m, d := t.Date()
-	return fmt.Sprintf("%d年%02d月%02d日", y, m, d)
+	return fmt.Sprintf(`%d年%02d月%02d日`, y, m, d)
+}
+
+func (p *Post) DateString() string {
+	t := time.Unix(int64(p.Date), 0).In(globals.LoadTimezoneOrDefault(p.DateTimezone, time.Local))
+	return t.Format(time.RFC3339)
+}
+
+func (p *Post) ModifiedString() string {
+	t := time.Unix(int64(p.Modified), 0).In(globals.LoadTimezoneOrDefault(p.ModifiedTimezone, time.Local))
+	return t.Format(time.RFC3339)
 }
 
 // TagsString ...
