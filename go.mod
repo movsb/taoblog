@@ -28,7 +28,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-webauthn/webauthn v0.10.2
-	github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4
+	github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2
 	github.com/phuslu/lru v1.0.16
 	github.com/spf13/afero v1.11.0
 	github.com/xtaci/smux v1.5.24

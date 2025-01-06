@@ -15,12 +15,12 @@ import (
 type _GitHub struct {
 	client   *clients.ProtoClient
 	secret   string
-	notifier notify.InstantNotifier
+	notifier notify.Notifier
 
 	mux *http.ServeMux
 }
 
-func New(client *clients.ProtoClient, secret string, notifier notify.InstantNotifier, routePrefix string) http.Handler {
+func New(client *clients.ProtoClient, secret string, notifier notify.Notifier, routePrefix string) http.Handler {
 	g := &_GitHub{
 		client:   client,
 		secret:   secret,
@@ -51,11 +51,11 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 				&proto.ScheduleUpdateRequest{},
 			)
 			if err != nil {
-				g.notifier.InstantNotify(`持续集成`, fmt.Sprintf(`启动计划任务失败：%v`, err))
+				g.notifier.Notify(`持续集成`, fmt.Sprintf(`启动计划任务失败：%v`, err))
 				return
 			}
 		default:
-			g.notifier.InstantNotify(`持续集成`, fmt.Sprintf("结果未知：%s", w.Conclusion))
+			g.notifier.Notify(`持续集成`, fmt.Sprintf("结果未知：%s", w.Conclusion))
 		}
 	}
 }

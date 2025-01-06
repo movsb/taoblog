@@ -27,5 +27,5 @@ func executeChanifyTemplate(data *AdminData) string {
 
 // Chanify ...
 func (cn *CommentNotifier) Chanify(data *AdminData) {
-	cn.InstantNotifier.InstantNotify(data.Title, executeChanifyTemplate(data))
+	cn.Notifier.Notify(data.Title, executeChanifyTemplate(data))
 }

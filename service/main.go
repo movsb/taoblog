@@ -76,9 +76,9 @@ type Service struct {
 	tdb  *taorm.DB
 	auth *auth.Auth
 
-	instantNotifier notify.InstantNotifier
-	cmtntf          *comment_notify.CommentNotifier
-	cmtgeo          *commentgeo.Task
+	notifier notify.Notifier
+	cmtntf   *comment_notify.CommentNotifier
+	cmtgeo   *commentgeo.Task
 
 	// 通用缓存
 	cache *lru.TTLCache[string, any]
@@ -176,11 +176,11 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	for _, opt := range options {
 		opt(s)
 	}
-
-	if s.instantNotifier == nil {
-		s.instantNotifier = notify.NewConsoleNotify()
+	if s.notifier == nil {
+		s.notifier = notify.NewConsoleNotify()
 	}
-	utilsService := NewUtils(s.instantNotifier)
+
+	utilsService := NewUtils(s.notifier)
 	s.UtilsServer = utilsService
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
@@ -195,7 +195,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		Password:   s.cfg.Notify.Mailer.Password,
 		Config:     &s.cfg.Comment,
 
-		InstantNotifier: s.instantNotifier,
+		Notifier: s.notifier,
 		Dialer: func(addr string) (net.Conn, error) {
 			if d := utilsService.RemoteDialer.Load(); d != nil {
 				conn, err := d.Dial(addr)
@@ -273,8 +273,8 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	go server.Serve(listener)
 
 	if !testing && !version.DevMode() {
-		go s.monitorCert(s.instantNotifier)
-		go s.monitorDomain(s.instantNotifier)
+		go s.monitorCert(s.notifier)
+		go s.monitorDomain(s.notifier)
 	}
 
 	return s

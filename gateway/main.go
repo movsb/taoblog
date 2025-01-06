@@ -40,10 +40,10 @@ type Gateway struct {
 	// 未鉴权的
 	client *clients.ProtoClient
 
-	instantNotifier notify.InstantNotifier
+	instantNotifier notify.Notifier
 }
 
-func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.InstantNotifier) *Gateway {
+func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.Notifier) *Gateway {
 	g := &Gateway{
 		mux:     mux,
 		service: service,

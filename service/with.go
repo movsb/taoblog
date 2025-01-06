@@ -15,9 +15,9 @@ func WithPostDataFileSystem(fsys theme_fs.FS) With {
 	}
 }
 
-func WithInstantNotifier(instantNotifier notify.InstantNotifier) With {
+func WithNotifier(notifier notify.Notifier) With {
 	return func(s *Service) {
-		s.instantNotifier = instantNotifier
+		s.notifier = notifier
 	}
 }
 

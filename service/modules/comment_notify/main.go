@@ -42,8 +42,8 @@ type CommentNotifier struct {
 	Password   string
 	Config     *config.CommentConfig
 
-	InstantNotifier notify.InstantNotifier
-	Dialer          func(addr string) (net.Conn, error)
+	Notifier notify.Notifier
+	Dialer   func(addr string) (net.Conn, error)
 }
 
 func (cn *CommentNotifier) Init() {
@@ -89,7 +89,7 @@ func (cn *CommentNotifier) sendMailAsync(
 		defer func() {
 			if !succ {
 				s := fmt.Sprintf("SendMail: %s[%s] - %s\n\n%s\n\n", recipientName, recipientAddress, subject, body)
-				cn.InstantNotifier.InstantNotify(`邮件发送失败`, s)
+				cn.Notifier.Notify(`邮件发送失败`, s)
 				log.Println("邮件发送失败：", s)
 			}
 		}()

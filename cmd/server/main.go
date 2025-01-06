@@ -94,11 +94,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	log.Println(`DevMode:`, version.DevMode())
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
 
-	instantNotifier := notify.NewConsoleNotify()
-	if token := cfg.Notify.Chanify.Token; token != "" {
-		instantNotifier = notify.NewChanifyInstantNotify(token)
-	}
-
 	var mux = http.NewServeMux()
 	r := metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
@@ -113,9 +108,16 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	theAuth := auth.New(cfg.Auth, version.DevMode())
 	s.Auther = theAuth
 
+	notifier := notify.NewNotifyLogger(notify.NewLogStore(db))
+	if token := cfg.Notify.Chanify.Token; token != "" {
+		notifier.SetNotifier(notify.NewChanifyNotify(token))
+	} else {
+		notifier.SetNotifier(notify.NewConsoleNotify())
+	}
+
 	serviceOptions := []service.With{
 		service.WithPostDataFileSystem(store),
-		service.WithInstantNotifier(instantNotifier),
+		service.WithNotifier(notifier),
 		service.WithRequestThrottler(request_throttler.New()),
 	}
 
@@ -127,7 +129,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	theAuth.SetAdminWebAuthnCredentials(theService.GetDefaultStringOption(`admin_webauthn_credentials`, "[]"))
 
-	gateway.NewGateway(theService, theAuth, mux, instantNotifier)
+	gateway.NewGateway(theService, theAuth, mux, notifier)
 
 	if !cfg.Maintenance.DisableAdmin {
 		prefix := `/admin/`
@@ -205,9 +207,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}()
 
 	log.Println("Server started on", l.Addr().String())
-	instantNotifier.InstantNotify("博客状态", "已经开始运行。")
+	notifier.Notify("博客状态", "已经开始运行。")
 
-	go liveCheck(theService, instantNotifier)
+	go liveCheck(theService, notifier)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -231,7 +233,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 // TODO 文章 1 必须存在。可以是非公开状态。
 // TODO 放在服务里面 tasks.go
 // TODO 放在 daemon 里面（同 webhooks）
-func liveCheck(s *service.Service, cc notify.InstantNotifier) {
+func liveCheck(s *service.Service, cc notify.Notifier) {
 	t := time.NewTicker(time.Minute * 15)
 	defer t.Stop()
 
@@ -243,7 +245,7 @@ func liveCheck(s *service.Service, cc notify.InstantNotifier) {
 				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)
 				if cc != nil {
-					cc.InstantNotify(`服务不可用`, `保活检测卡住了。`)
+					cc.Notify(`服务不可用`, `保活检测卡住了。`)
 				}
 				return false
 			}

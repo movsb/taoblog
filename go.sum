@@ -253,6 +253,8 @@ github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd h1:m6UqxMUSn3LdkI6q
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd/go.mod h1:72PHqKHSMlJ0v209MIb1m4kpXf8NpMtygwDm1O8pPsA=
 github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4 h1:kuMEW9vTjkCF0lUu36IjIY/iXV+/1KBtLVSzof6vhQY=
 github.com/movsb/pkg v0.0.0-20240609000755-7489894593e4/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
+github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2 h1:bcjQ3O/xo1Z/5/bQwlaj0WOdWnR4DBIl4D5hMcXQcZc=
+github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
 github.com/movsb/taorm v0.0.0-20240807212532-f6a5b0a26586 h1:ELHLhWRNrRE3dmAs9djnueImGyf+bImD1NTZMwP6+nI=
 github.com/movsb/taorm v0.0.0-20240807212532-f6a5b0a26586/go.mod h1:gWYI7w8tEhmbDtRb6h5iqzoEs+/jHEhwxSy+Vlwn3dg=
 github.com/mschoch/smat v0.2.0 h1:8imxQsjDm8yFEAVBe7azKmKSgzSkZXDuKkSq9374khM=

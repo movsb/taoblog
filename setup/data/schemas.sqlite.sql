@@ -65,4 +65,13 @@ CREATE TABLE IF NOT EXISTS post_tags (
     UNIQUE (`post_id`,`tag_id`)
 );
 
+CREATE TABLE IF NOT EXISTS logs (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `time` INTEGER NOT NULL,
+    `type` TEXT NOT NULL COLLATE NOCASE,
+    `sub_type` TEXT NOT NULL COLLATE NOCASE,
+    `version` INTEGER NOT NULL,
+    `data` TEXT NOT NULL
+);
+
 COMMIT;

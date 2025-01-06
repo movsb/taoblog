@@ -477,3 +477,7 @@ func v31(tx *sql.Tx) {
 	mustExec(tx, `DELETE FROM options WHERE name = 'vps.hostdare'`)
 	mustExec(tx, `DELETE FROM options WHERE name = 'vps.current'`)
 }
+
+func v32(tx *sql.Tx) {
+	mustExec(tx, "CREATE TABLE IF NOT EXISTS logs (`id` INTEGER PRIMARY KEY AUTOINCREMENT,`time` INTEGER NOT NULL,`type` TEXT NOT NULL COLLATE NOCASE,`sub_type` TEXT NOT NULL COLLATE NOCASE,`version` INTEGER NOT NULL,`data` TEXT NOT NULL)")
+}

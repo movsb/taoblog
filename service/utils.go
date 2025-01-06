@@ -22,12 +22,12 @@ var fixedZone = time.Now().Local().Location()
 type Utils struct {
 	proto.UnimplementedUtilsServer
 
-	instantNotifier notify.InstantNotifier
+	instantNotifier notify.Notifier
 
 	RemoteDialer atomic.Pointer[dialers.RemoteDialerManager]
 }
 
-func NewUtils(instantNotifier notify.InstantNotifier) *Utils {
+func NewUtils(instantNotifier notify.Notifier) *Utils {
 	u := &Utils{
 		instantNotifier: instantNotifier,
 	}
@@ -72,7 +72,7 @@ func (u *Utils) InstantNotify(ctx context.Context, in *proto.InstantNotifyReques
 		return nil, errors.New(`此操作无权限。`)
 	}
 	if u.instantNotifier != nil {
-		u.instantNotifier.InstantNotify(in.Title, in.Message)
+		u.instantNotifier.Notify(in.Title, in.Message)
 	}
 	return &proto.InstantNotifyResponse{}, nil
 }

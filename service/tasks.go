@@ -65,7 +65,7 @@ func (s *Service) Exporter() prometheus.Collector {
 }
 
 // 监控证书过期的剩余时间。
-func (s *Service) monitorCert(notifier notify.InstantNotifier) {
+func (s *Service) monitorCert(notifier notify.Notifier) {
 	home := s.cfg.Site.Home
 	u, err := url.Parse(home)
 	if err != nil {
@@ -80,7 +80,7 @@ func (s *Service) monitorCert(notifier notify.InstantNotifier) {
 		conn, err := tls.Dial(`tcp`, addr, &tls.Config{})
 		if err != nil {
 			log.Println(err)
-			notifier.InstantNotify(`错误`, err.Error())
+			notifier.Notify(`错误`, err.Error())
 			return
 		}
 		defer conn.Close()
@@ -88,7 +88,7 @@ func (s *Service) monitorCert(notifier notify.InstantNotifier) {
 		left := time.Until(cert.NotAfter)
 		if left <= 0 {
 			log.Println(`已过期`)
-			notifier.InstantNotify(`证书`, `已经过期。`)
+			notifier.Notify(`证书`, `已经过期。`)
 			return
 		}
 		daysLeft := int(left.Hours() / 24)
@@ -98,7 +98,7 @@ func (s *Service) monitorCert(notifier notify.InstantNotifier) {
 			return
 		}
 		log.Println(`剩余天数：`, daysLeft)
-		notifier.InstantNotify(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
+		notifier.Notify(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
 	}
 	check()
 	go func() {
@@ -111,7 +111,7 @@ func (s *Service) monitorCert(notifier notify.InstantNotifier) {
 }
 
 // 监控域名过期的剩余时间。
-func (s *Service) monitorDomain(notifier notify.InstantNotifier) {
+func (s *Service) monitorDomain(notifier notify.Notifier) {
 	home := s.cfg.Site.Home
 	u, err := url.Parse(home)
 	if err != nil {
@@ -191,7 +191,7 @@ func (s *Service) monitorDomain(notifier notify.InstantNotifier) {
 		s.exporter.domainDaysLeft.Set(float64(daysLeft))
 		log.Println(`剩余天数：`, daysLeft)
 		if daysLeft < 15 {
-			notifier.InstantNotify(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
+			notifier.Notify(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
 		}
 
 		return nil
