@@ -1,11 +1,16 @@
 package mailer
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"mime"
 	"net"
 	"net/smtp"
+	"time"
+
+	"github.com/movsb/taoblog/modules/logs"
 )
 
 // Mailer is a SMTP mail sender.
@@ -115,4 +120,110 @@ func (m *Mailer) Quit() error {
 	m.c.Close()
 	m.conn.Close()
 	return nil
+}
+
+type MailerConfig struct {
+	server             string
+	username, password string
+}
+
+func NewMailerConfig(server string, username, password string) MailerConfig {
+	return MailerConfig{
+		server:   server,
+		username: username,
+		password: password,
+	}
+}
+
+type User struct {
+	Name    string
+	Address string
+}
+
+func (c *MailerConfig) Send(subject, body string, fromName string, tos []User) error {
+	mc, err := DialTLS(c.server)
+	if err != nil {
+		return err
+	}
+	defer mc.Quit()
+	if err := mc.Auth(c.username, c.password); err != nil {
+		return err
+	}
+	if err := mc.SetFrom(fromName, c.username); err != nil {
+		return err
+	}
+	for _, to := range tos {
+		if err := mc.AddTo(to.Name, to.Address); err != nil {
+			return err
+		}
+	}
+	if err := mc.Send(subject, body); err != nil {
+		return err
+	}
+	return nil
+}
+
+type MailerLogger struct {
+	store logs.Logger
+
+	mailer       MailerConfig
+	pullInterval time.Duration
+}
+
+func NewMailerLogger(store logs.Logger, mailer MailerConfig) *MailerLogger {
+	n := &MailerLogger{
+		store:  store,
+		mailer: mailer,
+	}
+	n.SetPullInterval(time.Second * 5)
+	go n.process(context.Background())
+	return n
+}
+
+const (
+	ty  = `mail`
+	sty = `message`
+)
+
+type _Message struct {
+	// From Address 始终使用 username
+	FromName string
+	Tos      []User
+	Subject  string
+	Body     string
+}
+
+func (n *MailerLogger) SetPullInterval(d time.Duration) {
+	if d <= time.Millisecond*100 {
+		d = time.Millisecond * 100
+	}
+	n.pullInterval = d
+}
+
+func (n *MailerLogger) Queue(subject, body string, fromName string, tos []User) {
+	n.store.CreateLog(context.Background(), ty, sty, 1, _Message{
+		FromName: fromName,
+		Tos:      tos,
+		Subject:  subject,
+		Body:     body,
+	})
+}
+
+func (n *MailerLogger) process(ctx context.Context) {
+	for {
+		var msg _Message
+		l := n.store.FindLog(ctx, ty, sty, &msg)
+		if l != nil {
+			log.Println(`找到日志：`, l.ID)
+			if err := n.mailer.Send(msg.Subject, msg.Body, msg.FromName, msg.Tos); err != nil {
+				log.Println(`MailError:`, err)
+				time.Sleep(n.pullInterval)
+				continue
+			} else {
+				n.store.DeleteLog(ctx, l.ID)
+			}
+		} else {
+			time.Sleep(n.pullInterval)
+		}
+	}
 }

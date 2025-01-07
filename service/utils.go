@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"sync/atomic"
 	"time"
 
 	_ "time/tzdata"
@@ -23,15 +22,12 @@ type Utils struct {
 	proto.UnimplementedUtilsServer
 
 	instantNotifier notify.Notifier
-
-	RemoteDialer atomic.Pointer[dialers.RemoteDialerManager]
 }
 
 func NewUtils(instantNotifier notify.Notifier) *Utils {
 	u := &Utils{
 		instantNotifier: instantNotifier,
 	}
-	u.RemoteDialer.Store(nil)
 	return u
 }
 
@@ -79,7 +75,5 @@ func (u *Utils) InstantNotify(ctx context.Context, in *proto.InstantNotifyReques
 
 func (u *Utils) DialRemote(s proto.Utils_DialRemoteServer) error {
 	dialer := dialers.NewRemoteDialerManager(s)
-	u.RemoteDialer.Store(dialer)
-	defer u.RemoteDialer.CompareAndSwap(dialer, nil)
 	return dialer.Run()
 }

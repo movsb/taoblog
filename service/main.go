@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
 	"expvar"
 	"fmt"
@@ -19,6 +18,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
@@ -76,6 +76,7 @@ type Service struct {
 	tdb  *taorm.DB
 	auth *auth.Auth
 
+	mailer   *mailer.MailerLogger
 	notifier notify.Notifier
 	cmtntf   *comment_notify.CommentNotifier
 	cmtgeo   *commentgeo.Task
@@ -151,6 +152,8 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		cancel:  cancel,
 		testing: testing,
 
+		notifier: notify.NewConsoleNotify(),
+
 		cfg:        cfg,
 		postDataFS: &theme_fs.Empty{},
 
@@ -176,9 +179,6 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	for _, opt := range options {
 		opt(s)
 	}
-	if s.notifier == nil {
-		s.notifier = notify.NewConsoleNotify()
-	}
 
 	utilsService := NewUtils(s.notifier)
 	s.UtilsServer = utilsService
@@ -189,31 +189,8 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		s.home = u
 	}
 
-	s.cmtntf = &comment_notify.CommentNotifier{
-		MailServer: s.cfg.Notify.Mailer.Server,
-		Username:   s.cfg.Notify.Mailer.Account,
-		Password:   s.cfg.Notify.Mailer.Password,
-		Config:     &s.cfg.Comment,
-
-		Notifier: s.notifier,
-		Dialer: func(addr string) (net.Conn, error) {
-			if d := utilsService.RemoteDialer.Load(); d != nil {
-				conn, err := d.Dial(addr)
-				if err != nil {
-					return nil, err
-				}
-				host, _, _ := net.SplitHostPort(addr)
-				client := tls.Client(conn, &tls.Config{
-					ServerName: host,
-				})
-				return client, nil
-			}
-			return tls.Dial(`tcp`, addr, nil)
-		},
-	}
-	s.cmtntf.Init()
-
 	s.avatarCache = cache.NewAvatarHash()
+	s.cmtntf = comment_notify.New(&s.cfg.Comment, s.notifier, s.mailer)
 	s.cmtgeo = commentgeo.NewTask(s.GetPluginStorage(`cmt_geo`))
 
 	s.cacheAllCommenterData()

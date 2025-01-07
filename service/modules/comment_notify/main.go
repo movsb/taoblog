@@ -2,18 +2,27 @@ package comment_notify
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"html/template"
-	"log"
-	"net"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/notify"
 )
 
-var adminTmpl *template.Template
-var guestTmpl *template.Template
+var (
+	//go:embed admin.html chanify.md guest.html
+	_root embed.FS
+
+	adminTmpl   = template.Must(template.New(`admin`).ParseFS(_root, `admin.html`)).Lookup(`admin.html`)
+	guestTmpl   = template.Must(template.New(`guest`).ParseFS(_root, `guest.html`)).Lookup(`guest.html`)
+	chanifyTmpl = template.Must(template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
+
+	adminPrefix  = `[新的评论]`
+	guestPrefix  = `[回复评论]`
+	mailFromName = `博客评论`
+)
 
 // TODO prettify 内容。
 type AdminData struct {
@@ -37,18 +46,17 @@ type GuestData struct {
 }
 
 type CommentNotifier struct {
-	MailServer string
-	Username   string
-	Password   string
-	Config     *config.CommentConfig
-
-	Notifier notify.Notifier
-	Dialer   func(addr string) (net.Conn, error)
+	config   *config.CommentConfig
+	mailer   *mailer.MailerLogger
+	notifier notify.Notifier
 }
 
-func (cn *CommentNotifier) Init() {
-	adminTmpl = template.Must(template.New("admin").Parse(cn.Config.Templates.Admin))
-	guestTmpl = template.Must(template.New("guest").Parse(cn.Config.Templates.Guest))
+func New(c *config.CommentConfig, notifier notify.Notifier, mailer *mailer.MailerLogger) *CommentNotifier {
+	return &CommentNotifier{
+		config:   c,
+		mailer:   mailer,
+		notifier: notifier,
+	}
 }
 
 func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {
@@ -56,9 +64,17 @@ func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {
 	if err := adminTmpl.Execute(buf, data); err != nil {
 		panic(err)
 	}
-	subject := "[新博文评论] " + data.Title
+	subject := fmt.Sprintf(`%s %s`, adminPrefix, data.Title)
 	body := buf.String()
-	cn.sendMailAsync(cn.Config.Author, cn.Config.Emails[0], subject, body)
+	cn.notifier.Notify(subject, body)
+	cn.mailer.Queue(
+		subject, body, mailFromName,
+		[]mailer.User{
+			{
+				Name:    cn.config.Author,
+				Address: cn.config.Emails[0],
+			},
+		})
 }
 
 func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipients []string) {
@@ -66,73 +82,17 @@ func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipie
 	if err := guestTmpl.Execute(buf, data); err != nil {
 		panic(err)
 	}
-	subject := "[回复评论] " + data.Title
+	subject := fmt.Sprintf(`%s %s`, guestPrefix, data.Title)
 	body := buf.String()
 	for i := 0; i < len(names); i++ {
-		cn.sendMailAsync(names[i], recipients[i], subject, body)
+		cn.mailer.Queue(
+			subject, body, mailFromName,
+			[]mailer.User{
+				{
+					Name:    names[i],
+					Address: recipients[i],
+				},
+			},
+		)
 	}
-}
-
-func (cn *CommentNotifier) sendMailAsync(
-	recipientName string, recipientAddress string,
-	subject string, body string,
-) {
-	log.Printf("SendMail: %s[%s] - %s\n\n%s\n\n", recipientName, recipientAddress, subject, body)
-
-	if !cn.Config.Notify {
-		log.Println(`邮件被禁用，将不发送。`)
-		return
-	}
-
-	go func() {
-		succ := false
-		defer func() {
-			if !succ {
-				s := fmt.Sprintf("SendMail: %s[%s] - %s\n\n%s\n\n", recipientName, recipientAddress, subject, body)
-				cn.Notifier.Notify(`邮件发送失败`, s)
-				log.Println("邮件发送失败：", s)
-			}
-		}()
-
-		var mc *mailer.Mailer
-		if cn.Dialer != nil {
-			conn, err := cn.Dialer(cn.MailServer)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			mc2, err := mailer.New(conn, cn.MailServer)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			mc = mc2
-		} else {
-			mc2, err := mailer.DialTLS(cn.MailServer)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			mc = mc2
-		}
-		defer mc.Quit()
-		if err := mc.Auth(cn.Username, cn.Password); err != nil {
-			log.Println(err)
-			return
-		}
-		if err := mc.SetFrom("博客评论", cn.Username); err != nil {
-			log.Println("SetFrom:", err)
-			return
-		}
-		if err := mc.AddTo(recipientName, recipientAddress); err != nil {
-			log.Println("AddTo:", recipientAddress, err)
-			return
-		}
-		if err := mc.Send(subject, body); err != nil {
-			log.Println(err)
-			return
-		}
-
-		succ = true
-	}()
 }

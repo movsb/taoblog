@@ -24,6 +24,7 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
+	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
@@ -115,10 +116,15 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		notifier.SetNotifier(notify.NewConsoleNotify())
 	}
 
+	mailer := mailer.NewMailerLogger(notify.NewLogStore(db), mailer.NewMailerConfig(
+		cfg.Notify.Mailer.Server, cfg.Notify.Mailer.Account, cfg.Notify.Mailer.Password,
+	))
+
 	serviceOptions := []service.With{
 		service.WithPostDataFileSystem(store),
 		service.WithNotifier(notifier),
 		service.WithRequestThrottler(request_throttler.New()),
+		service.WithMailer(mailer),
 	}
 
 	theService := service.NewService(ctx, cancel, testing, cfg, db, theAuth, serviceOptions...)

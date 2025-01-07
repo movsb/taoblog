@@ -470,15 +470,6 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		}
 	}
 
-	post, err := s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
-		Id:             int32(in.PostId),
-		WithLink:       proto.LinkKind_LinkKindFull,
-		ContentOptions: co.For(co.CreateCommentGetPost),
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	if c.SourceType == `markdown` {
 		if _, err := s.renderMarkdown(ac.User.IsAdmin(), c.PostID, 0, c.SourceType, c.Source, models.PostMeta{}, co.For(co.CreateCommentCheck)); err != nil {
 			return nil, err
@@ -508,8 +499,6 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		txs.updateLastPostTime(time.Now())
 		return nil
 	})
-
-	s.doCommentNotification(ctx, post, &c)
 
 	return c.ToProto(s.setCommentExtraFields(ctx, co.For(co.CreateCommentReturn))), nil
 }
@@ -566,11 +555,32 @@ func (s *Service) isAdminEmail(email string) bool {
 	})
 }
 
-// TODO 改成后台任务异步通知（因为可能失败，失败后应该重试）
-func (s *Service) doCommentNotification(ctx context.Context, post *proto.Post, c *models.Comment) {
-	adminEmails := s.cfg.Comment.Emails
-	if len(adminEmails) == 0 {
+type _CommentNotificationTask struct {
+	s *Service
+}
+
+func (t *_CommentNotificationTask) getNewComments() (models.Comments, error) {
+	t.s.ListComments(
+		auth.SystemAdmin(context.Background()),
+		&proto.ListCommentsRequest{
+			Mode: p,
+		},
+	)
+
+}
+
+func (s *Service) doCommentNotifications(ctx context.Context) {
+	if len(s.cfg.Comment.Emails) <= 0 {
 		return
+	}
+
+	post, err := s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
+		Id:             int32(in.PostId),
+		WithLink:       proto.LinkKind_LinkKindFull,
+		ContentOptions: co.For(co.CreateCommentGetPost),
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
