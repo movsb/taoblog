@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -556,38 +557,125 @@ func (s *Service) isAdminEmail(email string) bool {
 }
 
 type _CommentNotificationTask struct {
-	s *Service
+	s       *Service
+	storage utils.PluginStorage
+
+	// 扫描新评论的时间间隔。
+	// 不能低于一秒（因为有个成功 sleep 1s）。
+	scanInterval time.Duration
+	// 新评论产生后需要延迟多久才被扫描到（方便新发表后的编辑操作）。
+	dateDelay time.Duration
 }
 
-func (t *_CommentNotificationTask) getNewComments() (models.Comments, error) {
-	t.s.ListComments(
-		auth.SystemAdmin(context.Background()),
-		&proto.ListCommentsRequest{
-			Mode: p,
-		},
-	)
+// 记录上一次的评论编号，以跳过同一秒内可能重复的评论。
+// NOTE: 假设评论的编号是递增的，否则会失败。
+func NewCommentNotificationTask(s *Service, storage utils.PluginStorage) *_CommentNotificationTask {
+	t := _CommentNotificationTask{
+		s:       s,
+		storage: storage,
 
-}
-
-func (s *Service) doCommentNotifications(ctx context.Context) {
-	if len(s.cfg.Comment.Emails) <= 0 {
-		return
+		scanInterval: time.Second * 5,
+		dateDelay:    time.Minute * 1,
 	}
+	if _, err := t.storage.Get(`id`); err != nil {
+		var max int64
+		if err := t.s.tdb.Raw(`SELECT seq FROM sqlite_sequence WHERE name=?`, models.Comment{}.TableName()).Find(&max); err != nil {
+			if taorm.IsNotFoundError(err) {
+				max = 0
+			} else {
+				panic(err)
+			}
+		}
+		if err := t.storage.Set(`id`, fmt.Sprint(max)); err != nil {
+			panic(err)
+		}
+		log.Println(`当前评论的最大编号：`, max)
+	}
+	go t.Run(s.ctx)
+	return &t
+}
 
-	post, err := s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
-		Id:             int32(in.PostId),
-		WithLink:       proto.LinkKind_LinkKindFull,
-		ContentOptions: co.For(co.CreateCommentGetPost),
-	})
+func (t *_CommentNotificationTask) Run(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println(`退出评论通知任务`)
+			return
+		default:
+		}
+		if err := t.runOnce(ctx); err == nil {
+			time.Sleep(time.Second)
+		} else {
+			if !taorm.IsNotFoundError(err) {
+				log.Println(err)
+			}
+			time.Sleep(t.scanInterval)
+		}
+	}
+}
+
+func (t *_CommentNotificationTask) runOnce(ctx context.Context) error {
+	c, err := t.getNewComment()
+	if err != nil {
+		return err
+	}
+	log.Println(`找到新评论：`, c)
+	if err := t.queueForSingle(c); err != nil {
+		return err
+	}
+	if err := t.storage.Set(`id`, fmt.Sprint(c.ID)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *_CommentNotificationTask) getLast() (int64, error) {
+	idString, err := t.storage.Get(`id`)
+	if err != nil {
+		return 0, err
+	}
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		return 0, err
+	}
+	return int64(id), nil
+}
+
+// 取得一条自上次检查以来新产生的评论。
+func (t *_CommentNotificationTask) getNewComment() (*models.Comment, error) {
+	lastId, err := t.getLast()
 	if err != nil {
 		return nil, err
 	}
 
-	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
+	dateBefore := time.Now().Add(-t.dateDelay)
+
+	var c models.Comment
+	if err := t.s.tdb.Where(`id > ? AND date < ?`, lastId, dateBefore.Unix()).OrderBy(`id ASC`).Find(&c); err != nil {
+		return nil, err
+	}
+
+	// 正常来说扫描出的评论时间不可能超过 dateDelay，
+	// 否则属于错误扫描（比如意外扫描到 ID 为 1 的时的评论。
+	// TODO 检查评论时间。
+
+	return &c, nil
+}
+
+func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
+	post, err := t.s.GetPost(auth.SystemAdmin(context.Background()), &proto.GetPostRequest{
+		Id:             int32(c.PostID),
+		WithLink:       proto.LinkKind_LinkKindFull,
+		ContentOptions: co.For(co.CreateCommentGetPost),
+	})
+	if err != nil {
+		return err
+	}
 
 	loc := globals.LoadTimezoneOrDefault(c.DateTimezone, time.Local)
+	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
 
-	if !s.isAdminEmail(c.Email) {
+	if !t.s.isAdminEmail(c.Email) {
 		data := &comment_notify.AdminData{
 			Title:    post.Title,
 			Link:     link,
@@ -597,15 +685,14 @@ func (s *Service) doCommentNotifications(ctx context.Context) {
 			Email:    c.Email,
 			HomePage: c.URL,
 		}
-		s.cmtntf.NotifyAdmin(data)
-		s.cmtntf.Chanify(data)
+		t.s.cmtntf.NotifyAdmin(data)
 	}
 
 	var parents []models.Comment
 
 	for parentID := c.Parent; parentID > 0; {
 		var parent models.Comment
-		s.tdb.From(parent).
+		t.s.tdb.From(parent).
 			Select("id,author,email,parent").
 			Where("id=?", parentID).
 			MustFind(&parent)
@@ -615,7 +702,7 @@ func (s *Service) doCommentNotifications(ctx context.Context) {
 
 	// not a reply to some comment
 	if len(parents) == 0 {
-		return
+		return nil
 	}
 
 	var distinctNames []string
@@ -623,7 +710,7 @@ func (s *Service) doCommentNotifications(ctx context.Context) {
 
 	distinct := map[string]bool{}
 	for _, parent := range parents {
-		if s.isAdminEmail(parent.Email) || strings.EqualFold(parent.Email, c.Email) {
+		if t.s.isAdminEmail(parent.Email) || strings.EqualFold(parent.Email, c.Email) {
 			continue
 		}
 		email := strings.ToLower(parent.Email)
@@ -635,7 +722,7 @@ func (s *Service) doCommentNotifications(ctx context.Context) {
 	}
 
 	if len(distinctNames) == 0 {
-		return
+		return nil
 	}
 
 	guestData := comment_notify.GuestData{
@@ -646,7 +733,8 @@ func (s *Service) doCommentNotifications(ctx context.Context) {
 		Content: c.Source,
 	}
 
-	s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
+	t.s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
+	return nil
 }
 
 func (s *Service) deletePostComments(_ context.Context, postID int64) {

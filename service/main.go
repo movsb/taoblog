@@ -76,10 +76,11 @@ type Service struct {
 	tdb  *taorm.DB
 	auth *auth.Auth
 
-	mailer   *mailer.MailerLogger
-	notifier notify.Notifier
-	cmtntf   *comment_notify.CommentNotifier
-	cmtgeo   *commentgeo.Task
+	mailer        *mailer.MailerLogger
+	notifier      notify.Notifier
+	cmtntf        *comment_notify.CommentNotifier
+	cmtNotifyTask *_CommentNotificationTask
+	cmtgeo        *commentgeo.Task
 
 	// 通用缓存
 	cache *lru.TTLCache[string, any]
@@ -191,6 +192,7 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 
 	s.avatarCache = cache.NewAvatarHash()
 	s.cmtntf = comment_notify.New(&s.cfg.Comment, s.notifier, s.mailer)
+	s.cmtNotifyTask = NewCommentNotificationTask(s, s.GetPluginStorage(`comment_notify`))
 	s.cmtgeo = commentgeo.NewTask(s.GetPluginStorage(`cmt_geo`))
 
 	s.cacheAllCommenterData()

@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	text_template "text/template"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/mailer"
@@ -17,7 +18,7 @@ var (
 
 	adminTmpl   = template.Must(template.New(`admin`).ParseFS(_root, `admin.html`)).Lookup(`admin.html`)
 	guestTmpl   = template.Must(template.New(`guest`).ParseFS(_root, `guest.html`)).Lookup(`guest.html`)
-	chanifyTmpl = template.Must(template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
+	chanifyTmpl = text_template.Must(text_template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
 
 	adminPrefix  = `[新的评论]`
 	guestPrefix  = `[回复评论]`
@@ -60,21 +61,25 @@ func New(c *config.CommentConfig, notifier notify.Notifier, mailer *mailer.Maile
 }
 
 func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {
-	buf := bytes.NewBuffer(nil)
-	if err := adminTmpl.Execute(buf, data); err != nil {
-		panic(err)
-	}
 	subject := fmt.Sprintf(`%s %s`, adminPrefix, data.Title)
-	body := buf.String()
-	cn.notifier.Notify(subject, body)
+
+	buf := bytes.NewBuffer(nil)
+
+	buf.Reset()
+	chanifyTmpl.Execute(buf, data)
+	cn.notifier.Notify(subject, buf.String())
+
+	buf.Reset()
+	adminTmpl.Execute(buf, data)
 	cn.mailer.Queue(
-		subject, body, mailFromName,
+		subject, buf.String(), mailFromName,
 		[]mailer.User{
 			{
 				Name:    cn.config.Author,
 				Address: cn.config.Emails[0],
 			},
-		})
+		},
+	)
 }
 
 func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipients []string) {
