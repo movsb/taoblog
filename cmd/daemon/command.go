@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +20,10 @@ import (
 	"github.com/xtaci/smux"
 )
 
-const updateScript = `docker compose pull taoblog && docker compose up -d taoblog`
+const (
+	updateScript  = `docker compose pull taoblog && docker compose up -d taoblog`
+	restartScript = `docker compose restart taoblog`
+)
 
 func run(script string) error {
 	cmd := exec.Command(`bash`, `-c`, script)
@@ -119,6 +123,12 @@ func update(home string, token string) {
 	for range ticker.C {
 		info, err := client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{})
 		if err != nil {
+			if strings.Contains(err.Error(), `502`) {
+				log.Println(`需要重启。`)
+				if err := run(restartScript); err != nil {
+					log.Println(err)
+				}
+			}
 			log.Println(err)
 			continue
 		}
