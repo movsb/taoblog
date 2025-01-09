@@ -272,15 +272,14 @@ let update = async function() {
 	times.forEach((t, i) => {
 		const f = formatted[i];
 		t.innerText = f.friendly;
-		let title = f.server;
+		let title = `服务器时间：${f.server}`;
 		if (f.device && f.device != f.server) {
-			title = `${title}\n${f.device}`;
+			title = `${title}\n浏览器时间：${f.device}`;
 		}
 		if (f.original && f.original != f.server) {
-			title = `${title}\n${f.original}`;
+			title = `${title}\n评论者时间：${f.original}`;
 		}
 		t.title = title;
-		// console.log(title);
 	});
 	let current =  Math.floor(new Date().getTime()/1000);
 	let diff = current - latest;

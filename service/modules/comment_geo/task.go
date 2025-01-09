@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"sync"
 	"time"
@@ -149,6 +150,12 @@ func (r *Resp) String() string {
 }
 
 func fetch(ctx context.Context, ip string) (*Resp, error) {
+	if parsed, err := netip.ParseAddr(ip); err == nil {
+		if !parsed.IsGlobalUnicast() {
+			return &Resp{Message: `私有地址。`}, nil
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
