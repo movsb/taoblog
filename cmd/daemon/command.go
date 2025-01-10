@@ -139,5 +139,6 @@ func update(home string, token string) {
 		if err := run(updateScript); err != nil {
 			log.Println(err)
 		}
+		time.Sleep(time.Second * 10)
 	}
 }
