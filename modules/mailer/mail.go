@@ -3,11 +3,13 @@ package mailer
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"mime"
 	"net"
 	"net/smtp"
+	"net/textproto"
 	"time"
 
 	"github.com/movsb/taoblog/modules/logs"
@@ -217,6 +219,18 @@ func (n *MailerLogger) process(ctx context.Context) {
 			log.Println(`找到日志：`, l.ID)
 			if err := n.mailer.Send(msg.Subject, msg.Body, msg.FromName, msg.Tos); err != nil {
 				log.Println(`MailError:`, err)
+
+				// 有些错误不可重试
+				// ChatGPT：smtp 错误码？
+				var te *textproto.Error
+				if errors.As(err, &te) {
+					if te.Code >= 500 {
+						log.Println(`不可重试错误，将删除邮件。`)
+						n.store.DeleteLog(ctx, l.ID)
+						continue
+					}
+				}
+
 				time.Sleep(n.pullInterval)
 				continue
 			} else {
