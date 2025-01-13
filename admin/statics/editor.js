@@ -3,50 +3,55 @@ class PostFormUI {
 		this._form = document.querySelector('form');
 		this._previewCallbackReturned = true;
 		this._files = this._form.querySelector('#files');
-
-		this.editor = new TinyMDE.Editor({
-			element: document.querySelector('#editor-container'),
-			textarea: document.querySelector('#editor-container textarea'),
-		});
-		this.editorCommands = new TinyMDE.CommandBar({
-			element: document.getElementById('command-container'),
-			editor: this.editor,
-			commands: [
-				{
-					name: `divider`,
-					title: `插入当时时间分割线`,
-					innerHTML: `✂️`,
-					action: editor => {
-						const date = new Date();
-						let formatted = date.toLocaleString().replaceAll('/', '-');
-						formatted = `\n\n--- ${formatted} ---\n\n`;
-						editor.paste(formatted);
+		
+		if (typeof TinyMDE != 'undefined') {
+			this.editor = new TinyMDE.Editor({
+				element: document.querySelector('#editor-container'),
+				textarea: document.querySelector('#editor-container textarea'),
+			});
+			this.editorCommands = new TinyMDE.CommandBar({
+				element: document.getElementById('command-container'),
+				editor: this.editor,
+				commands: [
+					{
+						name: `divider`,
+						title: `插入当时时间分割线`,
+						innerHTML: `✂️`,
+						action: editor => {
+							const date = new Date();
+							let formatted = date.toLocaleString().replaceAll('/', '-');
+							formatted = `\n\n--- ${formatted} ---\n\n`;
+							editor.paste(formatted);
+						},
 					},
-				},
-				{
-					name: `insertImage`,
-					title: `上传图片/视频/文件`,
-					innerHTML: `⏫`,
-					action: editor => {
-						if (!TaoBlog.post_id) {
-							alert('新建文章暂不支持上传文件，请先发表。');
-							return;
-						}
-						let files = document.getElementById('files');
-						files.click();
+					{
+						name: `insertImage`,
+						title: `上传图片/视频/文件`,
+						innerHTML: `⏫`,
+						action: editor => {
+							if (!TaoBlog.post_id) {
+								alert('新建文章暂不支持上传文件，请先发表。');
+								return;
+							}
+							let files = document.getElementById('files');
+							files.click();
+						},
 					},
-				},
-				{
-					name: `insertGallery`,
-					title: `插入九宫格图`,
-					innerHTML: `🧩`,
-					action: editor => {
-						const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
-						editor.paste(s);
+					{
+						name: `insertGallery`,
+						title: `插入九宫格图`,
+						innerHTML: `🧩`,
+						action: editor => {
+							const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
+							editor.paste(s);
+						},
 					},
-				},
-			],
-		});
+				],
+			});
+		} else {
+			const editor = document.querySelector('#editor-container textarea[name=source]');
+			editor.style.display = 'block';
+		}
 	}
 
 	get elemSource()    { return this._form['source'];  }
@@ -280,7 +285,13 @@ class FilesManager {
 }
 
 let postAPI = new PostManagementAPI();
-let formUI = new PostFormUI();
+let formUI = (() => {
+	try {
+		return new PostFormUI();
+	} catch(e) {
+		alert('创建表单失败：' + e);
+	}
+})();
 formUI.submit(async () => {
 	try {
 		let post = undefined;
