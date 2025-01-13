@@ -141,12 +141,18 @@ func (p *Post) Wide() bool {
 	return p.Metas.Wide
 }
 
-func (d *Post) GeoString() string {
-	g := d.Metas.Geo
+var geoTmpl = template.Must(template.New(`geo`).Parse(`
+<geo-link longitude="{{.Longitude}}" latitude="{{.Latitude}}">{{.Name}}</geo-link>
+`))
+
+func (d *Post) GeoElement() template.HTML {
+	g := d.GetMetas().GetGeo()
 	if g != nil && g.Longitude > 0 && g.Latitude > 0 && g.Name != "" {
-		return g.Name
+		var buf bytes.Buffer
+		geoTmpl.Execute(&buf, g)
+		return template.HTML(buf.String())
 	}
-	return ""
+	return ``
 }
 
 func (d *Post) OriginClass() string {

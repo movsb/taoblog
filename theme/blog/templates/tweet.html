@@ -32,8 +32,8 @@ TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};
 			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
 			<span class="author">{{ $.Author }}</span>
 			{{ friendlyDateTime .Post.Post.Date }}
-			{{- with .Post.Post.GeoString }}
-			<span class="geo">{{ . }}</span>
+			{{- with .Post.Post.GeoElement }}
+				{{ . }}
 			{{- end }}
 			{{- with .Post.Post.Origin }}
 			<a class="origin" title="{{.Description}}" href="{{.URL}}" target="_blank">来源</a>

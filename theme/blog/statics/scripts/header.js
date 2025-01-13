@@ -128,3 +128,43 @@ class TimeWithZone {
 		}
 	}
 }
+
+class GeoLink extends HTMLElement {
+	constructor() {
+		super();
+		this.addEventListener('click', this.navigate);
+	}
+	connectedCallback() {
+		this.classList.add('like-a');
+		this.style.color = `inherit`;
+		this.style.cursor = 'pointer';
+	}
+	navigate(event) {
+		const longitude = this.getAttribute('longitude');
+		const latitude = this.getAttribute('latitude');
+		this.openMap(longitude, latitude);
+	}
+	// 怎样在浏览器里面调用打开系统地图的链接。
+	// 增加了通过时区判断是否在中国，决定是否回退到谷歌打开。
+	openMap(lon, lat) {
+		const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+		const isAndroid = /Android/.test(navigator.userAgent);
+
+		if (isIOS) {
+			// Apple Maps
+			window.location.href = `maps://?q=${lat},${lon}`;
+		} else if (isAndroid) {
+			// Android Maps
+			window.location.href = `geo:${lat},${lon}`;
+		} else {
+			const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			const maybeChina = /Asia\/(Shanghai|Beijing|Chongqing)/.test(timezone);
+			const url = maybeChina
+				? `https://map.baidu.com/?lat=${lat}&lng=${lon}`
+				: `https://www.google.com/maps?q=${lat},${lon}`
+				;
+			window.open(url, '_blank');
+		}
+	}
+}
+customElements.define('geo-link', GeoLink);
