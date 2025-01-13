@@ -22,7 +22,7 @@
 	TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 {{ end }}
 </script>
-<form>
+<form id="main">
 	<div id="container">
 		<div id="editor-container">
 			<textarea name="source" style="display: none;">{{with $.Post}}{{.Source}}{{end}}</textarea>
@@ -50,6 +50,13 @@
 				<option value="public">公开</option>
 			</select>
 		</label>
+	</p>
+	<p>
+		<label>位置：
+			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off"/>
+			<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off"/>
+		</label>
+		<button id="geo_modify">获取</button>
 	</p>
 	<p><input type="submit" value="提交" /></p>
 	<div class="files">

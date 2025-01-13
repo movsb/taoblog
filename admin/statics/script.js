@@ -194,6 +194,7 @@ class PostManagementAPI
 				status: p.status ?? 'public',
 				source: p.source,
 				source_type: 'markdown',
+				metas: p.metas,
 			}),
 		});
 		if (!rsp.ok) {
@@ -221,9 +222,10 @@ class PostManagementAPI
 					type: p.type ?? 'tweet',
 					status: p.status ?? 'public',
 					source: p.source,
+					metas: p.metas,
 					source_type: 'markdown',
 				},
-				update_mask: 'source,sourceType,date,type,status,modifiedTimezone'
+				update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas'
 			})
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }

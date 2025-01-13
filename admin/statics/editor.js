@@ -1,52 +1,78 @@
 class PostFormUI {
 	constructor() {
-		this._form = document.querySelector('form');
+		this._form = document.querySelector('#main');
 		this._previewCallbackReturned = true;
 		this._files = this._form.querySelector('#files');
+		
+		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
+			e.preventDefault();
+			navigator.geolocation.getCurrentPosition(
+				(p)=> {
+					const precision = 1e7;
+					const longitude = Math.round(p.coords.longitude * precision) / precision;
+					const latitude = Math.round(p.coords.latitude * precision) / precision;
+					// 按 GeoJSON 来，经度在前，纬度在后。
+					const s = `${longitude},${latitude}`;
+					console.log('位置：', s);
+					document.querySelector('#geo_location').value = s;
+				},
+				()=> {
+					alert('获取位置失败。');
+				},
+				{
+					enableHighAccuracy: true,
+				},
+			);
+		});
 
-		this.editor = new TinyMDE.Editor({
-			element: document.querySelector('#editor-container'),
-			textarea: document.querySelector('#editor-container textarea'),
-		});
-		this.editorCommands = new TinyMDE.CommandBar({
-			element: document.getElementById('command-container'),
-			editor: this.editor,
-			commands: [
-				{
-					name: `divider`,
-					title: `插入当时时间分割线`,
-					innerHTML: `✂️`,
-					action: editor => {
-						const date = new Date();
-						let formatted = date.toLocaleString().replaceAll('/', '-');
-						formatted = `\n\n--- ${formatted} ---\n\n`;
-						editor.paste(formatted);
+		if (typeof TinyMDE != 'undefined') {
+			this.editor = new TinyMDE.Editor({
+				element: document.querySelector('#editor-container'),
+				textarea: document.querySelector('#editor-container textarea'),
+			});
+			this.editorCommands = new TinyMDE.CommandBar({
+				element: document.getElementById('command-container'),
+				editor: this.editor,
+				commands: [
+					{
+						name: `divider`,
+						title: `插入当时时间分割线`,
+						innerHTML: `✂️`,
+						action: editor => {
+							const date = new Date();
+							let formatted = date.toLocaleString().replaceAll('/', '-');
+							formatted = `\n\n--- ${formatted} ---\n\n`;
+							editor.paste(formatted);
+						},
 					},
-				},
-				{
-					name: `insertImage`,
-					title: `上传图片/视频/文件`,
-					innerHTML: `⏫`,
-					action: editor => {
-						if (!TaoBlog.post_id) {
-							alert('新建文章暂不支持上传文件，请先发表。');
-							return;
-						}
-						let files = document.getElementById('files');
-						files.click();
+					{
+						name: `insertImage`,
+						title: `上传图片/视频/文件`,
+						innerHTML: `⏫`,
+						action: editor => {
+							if (!TaoBlog.post_id) {
+								alert('新建文章暂不支持上传文件，请先发表。');
+								return;
+							}
+							let files = document.getElementById('files');
+							files.click();
+						},
 					},
-				},
-				{
-					name: `insertGallery`,
-					title: `插入九宫格图`,
-					innerHTML: `🧩`,
-					action: editor => {
-						const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
-						editor.paste(s);
+					{
+						name: `insertGallery`,
+						title: `插入九宫格图`,
+						innerHTML: `🧩`,
+						action: editor => {
+							const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
+							editor.paste(s);
+						},
 					},
-				},
-			],
-		});
+				],
+			});
+		} else {
+			const editor = document.querySelector('#editor-container textarea[name=source]');
+			editor.style.display = 'block';
+		}
 	}
 
 	get elemSource()    { return this._form['source'];  }
@@ -54,6 +80,34 @@ class PostFormUI {
 	get elemPreviewContainer() { return this._form.querySelector('#preview-container'); }
 	get elemType()          { return this._form['type'];    }
 	get elemStatus()        { return this._form['status'];  }
+	
+	get geo() {
+		const values = this._form['geo_location'].value.trim().split(',');
+		if (values.length == 1 && values[0] == '') {
+			return {
+				name: '',
+				longitude: 0,
+				latitude: 0,
+			};
+		}
+		if (values.length != 2) {
+			throw new Error('坐标值格式错误。');
+		}
+		const longitude = parseFloat(values[0]);
+		const latitude = parseFloat(values[1]);
+
+		return {
+			name: this._form['geo_name'].value,
+			longitude: longitude,
+			latitude: latitude,
+		};
+	}
+	set geo(g) {
+		if (!g) { return; }
+		this._form['geo_name'].value = g.name ?? '';
+		// 按 GeoJSON 来，经度在前，纬度在后。
+		this._form['geo_location'].value = `${g.longitude},${g.latitude}`;
+	}
 
 	get source()    { return this.elemSource.value;     }
 	get time()      {
@@ -280,12 +334,19 @@ class FilesManager {
 }
 
 let postAPI = new PostManagementAPI();
-let formUI = new PostFormUI();
+let formUI = (() => {
+	try {
+		return new PostFormUI();
+	} catch(e) {
+		alert('创建表单失败：' + e);
+	}
+})();
 formUI.submit(async () => {
 	try {
 		let post = undefined;
 		if (TaoBlog.post_id > 0) {
 			let p = TaoBlog.posts[TaoBlog.post_id];
+			p.metas.geo = formUI.geo;
 			post = await postAPI.updatePost({
 				id: TaoBlog.post_id,
 				date: formUI.time,
@@ -294,14 +355,19 @@ formUI.submit(async () => {
 				type: formUI.type,
 				status: formUI.status,
 				source: formUI.source,
+				metas: p.metas,
 			});
 		} else {
+			const metas = {
+				geo: formUI.geo,
+			};
 			post = await postAPI.createPost({
 				date: formUI.time,
 				date_timezone: TimeWithZone.getTimezone(),
 				type: formUI.type,
 				status: formUI.status,
 				source: formUI.source,
+				metas: metas,
 			});
 		}
 		alert('成功。');
@@ -315,6 +381,9 @@ if (TaoBlog.post_id > 0) {
 	formUI.time = p.date * 1000;
 	formUI.status = p.status;
 	formUI.type = p.type;
+	if (p.metas && p.metas.geo) {
+		formUI.geo = p.metas.geo;
+	}
 }
 formUI.filesChanged(async files => {
 	if (files.length <= 0) { return; }
