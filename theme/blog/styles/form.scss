@@ -1,4 +1,10 @@
-button, input[type=submit] {
+// 默认不要挨着
+button, input, textarea, select {
+	margin: 2px;
+}
+
+// 颜色
+button, input, textarea, select {
 	&::-moz-focus-inner {
 		border: 0;
 	}
@@ -6,7 +12,34 @@ button, input[type=submit] {
 	background-color: transparent;
 }
 
-input[type=text],input[type=password],input[type=email],input[type=url], textarea {
+// 边框
+button, input, textarea, select {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+}
+
+// 内边距 & 行高
+button, input {
+	line-height: 2;
+}
+button,input[type=button],input[type=submit],input[type=reset] {
+	padding: var(--button-padding);
+}
+input {
+	padding: var(--input-padding);
+}
+textarea {
+	padding: var(--textarea-padding);
+	line-height: inherit;
+}
+
+// 字体
+input, button, textarea, select {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+input, textarea {
 	&:focus {
 		outline: none;
 	}
@@ -20,31 +53,7 @@ input[type=datetime-local] {
 	box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-	input[type=text], input[type=password],input[type=email],input[type=url],input[type=datetime-local], textarea {
-		color: var(--color-fg);
-		background-color: var(--color-bg);
-	}
-}
 
-input[type=text], input[type=password],input[type=email],input[type=url], textarea {
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	padding: var(--input-padding);
-}
-button, select, input[type=datetime-local], input[type=submit] {
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	padding-left: .5em;
-	padding-right: .5em;
-}
-textarea {
-	padding: var(--textarea-padding);
-	line-height: inherit;
-}
-input, button, textarea, select {
-	font: inherit;
-}
 input, textarea, button, select {
 	&:hover {
 		border: 1px solid var(--accent-color);
@@ -66,12 +75,7 @@ input[type=text],input[type=password],input[type=email],input[type=url],textarea
 	}
 }
 
-// 只是为了自定义夜间默认（默认没有）。
-// 只有在 Firefox 上看起来比较顺眼，Safari 上和默认的差异比较大。
 select {
-	color: var(--color-fg);
-	background-color: var(--color-bg);
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
+	height: 2em;
+	padding: var(--input-padding);
 }
-

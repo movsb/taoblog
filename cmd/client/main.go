@@ -2,9 +2,12 @@ package client
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -13,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -332,6 +336,39 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	postsCmd.AddCommand(postsDeleteCmd)
+
+	postsCreateStylingPageCmd := &cobra.Command{
+		Use:   `create-styling-page`,
+		Short: `创建样式测试页面`,
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			source := utils.Must1(cmd.Flags().GetString(`source`))
+			url, err := url.Parse(source)
+			if err == nil && (url.Scheme == `http` || url.Scheme == `https`) {
+				rsp, err := http.Get(source)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				if rsp.StatusCode != 200 {
+					log.Fatalln(`code != 200`)
+				}
+				doc := utils.Must1(goquery.NewDocumentFromReader(io.LimitReader(rsp.Body, 1<<20)))
+				body := doc.Find(`body`)
+				if len(body.Nodes) <= 0 {
+					log.Fatalln(`no body`)
+				}
+				source = utils.Must1(body.Html())
+				// log.Println(source)
+			} else if source != `` {
+				source = string(utils.Must1(os.ReadFile(source)))
+			}
+			utils.Must1(client.Blog.CreateStylingPage(client.Context(), &proto.CreateStylingPageRequest{
+				Source: source,
+			}))
+		},
+	}
+	postsCreateStylingPageCmd.Flags().StringP(`source`, `s`, ``, `文章源内容路径，支持指定网页。`)
+	postsCmd.AddCommand(postsCreateStylingPageCmd)
 
 	commentsCmd := &cobra.Command{
 		Use:              `comments`,

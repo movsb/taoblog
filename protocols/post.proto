@@ -190,6 +190,11 @@ message PreviewPostResponse {
 	string html = 1;
 }
 
+message CreateStylingPageRequest {
+	string source = 1;
+}
+message CreateStylingPageResponse {}
+
 message CheckTaskListItemsRequest {
 	// 文章/评论编号
 	int32 id = 1;

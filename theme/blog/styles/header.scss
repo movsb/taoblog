@@ -66,16 +66,11 @@ body.wide #header .content {
 			}
         }
 
-        .search {
-            input {
-                color: #fff6;
-                border: 1px solid #a9a9a933;
-                background-color: transparent;
-				border-radius: var(--border-radius);
-                padding:  4px 6px;
-                width: 120px;
-            }
-        }
+		.search {
+			input {
+				width: 120px;
+			}
+		}
     }
 }
 
