@@ -287,6 +287,15 @@ service TaoBlog {
 			description: "完成/取消完成任务。";
 		};
 	}
+	rpc CreateStylingPage (CreateStylingPageRequest) returns (CreateStylingPageResponse) {
+		option (google.api.http) = {
+			post: "/v3/styling";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "创建样式测试页面";
+		};
+	}
 }
 
 message PingRequest {

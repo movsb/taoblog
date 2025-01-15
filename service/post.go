@@ -36,6 +36,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
+	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
 	"github.com/yuin/goldmark/extension"
 	"google.golang.org/grpc/codes"
@@ -673,7 +674,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			m[`title`] = title
 		}
 		// 除碎碎念外，文章不允许空标题
-		if ty != `tweet` && title == "" {
+		if ty != `tweet` && (title == "" && !hasTitle) {
 			return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
 		}
 	}
@@ -972,4 +973,55 @@ func (s *Service) applyTaskChecks(modified int32, sourceType, rawSource string, 
 	}
 
 	return string(source), nil
+}
+
+func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStylingPageRequest) (*proto.CreateStylingPageResponse, error) {
+	source := in.Source
+	if source == `` {
+		source = string(utils.Must1(styling.Root.ReadFile(`index.md`)))
+	}
+
+	id, err := s.GetIntegerOption(`styling_page_id`)
+	if err != nil {
+		if !taorm.IsNotFoundError(err) {
+			return nil, err
+		}
+		var p *proto.Post
+		p, err = s.CreatePost(ctx, &proto.Post{
+			Title:      `测试页面📄`,
+			Slug:       `styling`,
+			Type:       `page`,
+			Status:     `public`,
+			SourceType: `markdown`,
+			Source:     source,
+		})
+		if err == nil {
+			s.SetOption(`styling_page_id`, p.Id)
+		}
+	} else {
+		var p *proto.Post
+		p, err = s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
+		if err != nil {
+			return nil, err
+		}
+		_, err = s.UpdatePost(ctx, &proto.UpdatePostRequest{
+			Post: &proto.Post{
+				Id:         id,
+				Title:      `测试页面📄`,
+				Modified:   p.Modified,
+				Slug:       `styling`,
+				SourceType: `markdown`,
+				Source:     source,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{
+				Paths: []string{
+					`slug`,
+					`source_type`,
+					`source`,
+					`title`,
+				},
+			},
+		})
+	}
+	return &proto.CreateStylingPageResponse{}, err
 }
