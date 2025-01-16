@@ -230,7 +230,6 @@ func (s *Service) getPostTagsCached(ctx context.Context, id int64) ([]string, er
 }
 
 func (s *Service) deletePostContentCacheFor(id int64) {
-	log.Println(`即将删除文章缓存：`, id)
 	s.postCaches.Delete(id, func(second _PostContentCacheKey) {
 		s.postContentCaches.Delete(second)
 		log.Println(`删除文章缓存：`, second)

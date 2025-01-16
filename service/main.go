@@ -256,8 +256,12 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 		go s.monitorDomain(s.notifier)
 	}
 
+	s.exportVars()
+
 	return s
 }
+
+func (s *Service) exportVars() {}
 
 // 从 Context 中取出用户并且必须为 Admin/System，否则 panic。
 func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {

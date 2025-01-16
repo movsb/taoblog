@@ -149,11 +149,20 @@ blockquote {
 }
 
 .entry {
-	h2::before { content: "## ";}
-	h3::before { content: "### ";}
-	h4::before { content: "#### ";}
-	h5::before { content: "##### ";}
-	h6::before { content: "###### ";}
+	h2::after{ content: " 2️⃣";}
+	h3::after{ content: " 3️⃣";}
+	h4::after{ content: " 4️⃣";}
+	h5::after{ content: " 5️⃣";}
+	h6::after{ content: " 6️⃣";}
+	h2,h3,h4,h5,h6 {
+		&::after {
+			transition: opacity .2s linear;
+			opacity: 0;
+		}
+		&:hover::after {
+			opacity: 1;
+		}
+	}
 }
 
 .content-wrap {
