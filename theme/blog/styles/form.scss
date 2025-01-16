@@ -64,9 +64,10 @@ input, textarea, button, select {
 	transition: all 0.2s ease-out;
 }
 
-input[type=checkbox], input[type=range] {
+input[type=checkbox], input[type=range], input[type=radio] {
 	accent-color: var(--accent-color);
 }
+
 input[type=text],input[type=password],input[type=email],input[type=url],textarea {
 	caret-color: var(--accent-color);
 	box-sizing: border-box;
