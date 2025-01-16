@@ -141,3 +141,16 @@
 单选框：<label><input type=radio name="r" />选项一</label>
 <label><input type=radio name="r" />选项一</label>
 <label><input type=radio name="r" />选项一</label>
+
+## 其它
+
+### 对话框
+
+<button onclick="document.querySelector('#dialog').showModal()">显示</button>
+
+<dialog id="dialog">
+  <p>一段文字。</p>
+  <form method="dialog">
+    <input type="submit" value="关闭" />
+  </form>
+</dialog>
