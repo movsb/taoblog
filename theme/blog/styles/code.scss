@@ -41,3 +41,9 @@ pre, code {
 a > code:hover {
 	text-decoration: none;
 }
+
+kbd {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	padding: var(--kbd-padding);
+}
