@@ -190,6 +190,12 @@ hr {
 	symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
 	suffix: ") ";
 }
+@counter-style square-enclosed {
+	system: numeric;
+	symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
+	prefix: "[";
+	suffix: "] ";
+}
 ul, ol {
 	&.marker-minus          { list-style-type: "- ";        }
 	&.marker-plus           { list-style-type: "+ ";        }
@@ -317,9 +323,13 @@ div.divider {
 // 脚注
 .footnotes {
 	font-size: 80%;
+	ol {
+		list-style-type: square-enclosed;
+	}
 	li {
 		&::marker {
 			color: inherit;
+			font-family: monospace;
 		}
 		&:target {
 			position: relative;

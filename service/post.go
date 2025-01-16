@@ -318,7 +318,11 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		emojis.New(),
 		wikitable.New(),
 		extension.GFM,
-		extension.NewFootnote(extension.WithFootnoteBacklinkHTML(`^`)),
+		extension.NewFootnote(
+			extension.WithFootnoteBacklinkHTML(`^`),
+			// NOTE：在同一个 HTML 页面中显示多篇文章的时候需要区别此。
+			// extension.WithFootnoteIDPrefix(fmt.Sprintf(`article-%d-`, postId)),
+		),
 		reminders.New(s.remindersTask, postId),
 
 		// 所有人禁止贴无效协议的链接。
