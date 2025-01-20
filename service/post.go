@@ -1024,6 +1024,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 					`title`,
 				},
 			},
+			DoNotTouch: true,
 		})
 	}
 	return &proto.CreateStylingPageResponse{}, err
