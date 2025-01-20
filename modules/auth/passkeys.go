@@ -3,7 +3,9 @@ package auth
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,12 +13,16 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// TODO 更改成 Auth 服务。
 type Passkeys struct {
+	db         *taorm.DB
 	wa         *webauthn.WebAuthn
 	userFinder func(userHandle []byte) (user *User, token string, err error)
 	cookieGen  func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie
@@ -26,11 +32,14 @@ type Passkeys struct {
 	proto.UnimplementedAuthServer
 }
 
-func NewPasskeys(wa *webauthn.WebAuthn,
+func NewPasskeys(
+	db *taorm.DB,
+	wa *webauthn.WebAuthn,
 	userFinder func(userHandler []byte) (*User, string, error),
 	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie,
 ) *Passkeys {
 	return &Passkeys{
+		db:            db,
 		wa:            wa,
 		userFinder:    userFinder,
 		cookieGen:     cookieGen,
@@ -126,3 +135,23 @@ func (p *Passkeys) FinishPasskeysLogin(ctx context.Context, in *proto.FinishPass
 }
 
 var _ proto.AuthServer = (*Passkeys)(nil)
+
+func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User, error) {
+	var password [16]byte
+	utils.Must1(rand.Read(password[:]))
+	passwordString := fmt.Sprintf(`%x`, password)
+
+	now := time.Now()
+
+	user := models.User{
+		CreatedAt: now.Unix(),
+		UpdatedAt: now.Unix(),
+		Password:  passwordString,
+	}
+
+	if err := p.db.Model(&user).Create(); err != nil {
+		return nil, err
+	}
+
+	return user.ToProto(), nil
+}

@@ -513,6 +513,10 @@ func AddCommands(rootCmd *cobra.Command) {
 	lfs := createLfsCommands()
 	lfs.PersistentPreRun = preRun
 	rootCmd.AddCommand(lfs)
+
+	users := createUsersCommands()
+	users.PersistentPreRun = preRun
+	rootCmd.AddCommand(users)
 }
 
 func edit(value string, fileSuffix string) (string, bool) {

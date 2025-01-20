@@ -74,4 +74,11 @@ CREATE TABLE IF NOT EXISTS logs (
     `data` TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS users (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `created_at` INTEGER NOT NULL,
+    `updated_at` INTEGER NOT NULL,
+    `password` TEXT NOT NULL
+);
+
 COMMIT;

@@ -161,7 +161,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 			panic(err)
 		}
 		theService.AuthServer = auth.NewPasskeys(
-			wa,
+			taorm.NewDB(db), wa,
 			func(userHandler []byte) (*auth.User, string, error) {
 				id := binary.LittleEndian.Uint32(userHandler)
 				u := theAuth.GetUserByID(int64(id))

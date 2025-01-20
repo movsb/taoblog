@@ -1,11 +1,14 @@
 package migration
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
 	"github.com/movsb/taorm"
@@ -36,8 +39,9 @@ func Init(db *sql.DB, path string) {
 	}
 	_ = result
 
+	now := int32(time.Now().Unix())
+
 	tdb.MustTxCall(func(tx *taorm.DB) {
-		now := int32(time.Now().Unix())
 		tx.Model(&models.Option{
 			Name:  `db_ver`,
 			Value: fmt.Sprint(MaxVersionNumber()),
@@ -57,5 +61,18 @@ func Init(db *sql.DB, path string) {
 			// TODO 用配置时区。
 			ModifiedTimezone: ``,
 		}).MustCreate()
+	})
+
+	tdb.MustTxCall(func(tx *taorm.DB) {
+		var r [16]byte
+		utils.Must1(rand.Read(r[:]))
+		user := models.User{
+			ID:        2,
+			CreatedAt: int64(now),
+			UpdatedAt: int64(now),
+			Password:  fmt.Sprintf(`%x`, r),
+		}
+		tx.Model(&user).MustCreate()
+		log.Println(`管理员密码：`, user.Password)
 	})
 }
