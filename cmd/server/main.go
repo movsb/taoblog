@@ -132,7 +132,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	gateway.NewGateway(theService, theAuth, mux, notifier)
 
-	if !cfg.Maintenance.DisableAdmin {
+	(func() {
 		prefix := `/admin/`
 
 		u, err := url.Parse(cfg.Site.Home)
@@ -159,7 +159,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 			taorm.NewDB(db), wa,
 			theAuth.GenCookieForPasskeys,
 		)
-	}
+	})()
 
 	theme := theme.New(version.DevMode(), cfg, theService, theService, theService, theAuth, store)
 	canon := canonical.New(theme, r)

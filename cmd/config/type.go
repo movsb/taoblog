@@ -77,8 +77,7 @@ func DefaultFileDataConfig() FileDataConfig {
 
 // MaintenanceConfig ...
 type MaintenanceConfig struct {
-	DisableAdmin bool `yaml:"disable_admin"`
-	Webhook      struct {
+	Webhook struct {
 		GitHub struct {
 			Secret string `yaml:"secret"`
 		} `yaml:"github"`
@@ -87,8 +86,6 @@ type MaintenanceConfig struct {
 
 // DefaultMainMaintenanceConfig ...
 func DefaultMainMaintenanceConfig() MaintenanceConfig {
-	c := MaintenanceConfig{
-		DisableAdmin: false,
-	}
+	c := MaintenanceConfig{}
 	return c
 }
