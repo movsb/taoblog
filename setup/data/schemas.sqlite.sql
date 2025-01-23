@@ -79,7 +79,9 @@ CREATE TABLE IF NOT EXISTS users (
     `created_at` INTEGER NOT NULL,
     `updated_at` INTEGER NOT NULL,
     `password` TEXT NOT NULL,
-    `credentials` TEXT NOT NULL
+    `credentials` TEXT NOT NULL,
+    `google_user_id` TEXT NOT NULL,
+    `github_user_id` INTEGER NOT NULL
 );
 
 COMMIT;

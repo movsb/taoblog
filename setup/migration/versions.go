@@ -513,3 +513,8 @@ func v35(tx *sql.Tx) {
 	}
 	mustExec(tx, `DELETE FROM options WHERE name=?`, `admin_webauthn_credentials`)
 }
+
+func v36(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN `google_user_id` TEXT NOT NULL DEFAULT ''")
+	mustExec(tx, "ALTER TABLE users ADD COLUMN `github_user_id` INTEGER NOT NULL DEFAULT 0")
+}

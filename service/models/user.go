@@ -18,6 +18,9 @@ type User struct {
 	// 社交账号绑定信息
 	// Passkeys 凭证。
 	Credentials Credentials
+
+	GoogleUserID string
+	GithubUserID string
 }
 
 type Credentials []webauthn.Credential
