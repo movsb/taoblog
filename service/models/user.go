@@ -1,12 +1,39 @@
 package models
 
-import "github.com/movsb/taoblog/protocols/go/proto"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+
+	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/protocols/go/proto"
+)
 
 type User struct {
 	ID        int64
 	CreatedAt int64
 	UpdatedAt int64
 	Password  string
+
+	// 社交账号绑定信息
+	// Passkeys 凭证。
+	Credentials Credentials
+}
+
+type Credentials []webauthn.Credential
+
+func (c Credentials) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *Credentials) Scan(v any) error {
+	switch val := v.(type) {
+	case string:
+		return json.Unmarshal([]byte(val), c)
+	case []byte:
+		return json.Unmarshal(val, c)
+	}
+	return errors.New(`unsupported type for credentials`)
 }
 
 func (User) TableName() string {
@@ -20,19 +47,6 @@ func (u *User) ToProto() *proto.User {
 		UpdatedAt: u.UpdatedAt,
 		Password:  u.Password,
 	}
-}
-
-type SocialBinding struct {
-	ID          int64
-	CreatedAt   int64
-	UserID      int64
-	Type        string
-	SocialID    string
-	SocialLogin string
-}
-
-func (SocialBinding) TableName() string {
-	return `social_bindings`
 }
 
 type AccessControlEntry struct {

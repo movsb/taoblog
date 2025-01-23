@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -34,12 +33,11 @@ func (p *SearchPost) Content() template.HTML {
 }
 
 // NewDataForSearch ...
-func NewDataForSearch(ctx context.Context, cfg *config.Config, user *auth.User, service proto.TaoBlogServer, searcher proto.SearchServer, r *http.Request) *Data {
+func NewDataForSearch(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, searcher proto.SearchServer, r *http.Request) *Data {
 	q := r.URL.Query().Get(`q`)
 	d := &Data{
 		ctx:    ctx,
 		Config: cfg,
-		User:   user,
 		Meta: &MetaData{
 			Title: fmt.Sprintf("%s - 搜索结果", q),
 		},

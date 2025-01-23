@@ -489,6 +489,8 @@ func v33(tx *sql.Tx) {
 	mustExec(tx, "CREATE TABLE IF NOT EXISTS users (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `password` TEXT NOT NULL)")
 }
 
+var AdminID = 2
+
 // 密码是随机生成的，会同时使用配置文件里面的 key 和此 password，
 // 待到后续移除 key 后，就仅使用此 password 了。
 // ID 总是 2；1 留给 SystemAdmin 了。
@@ -500,5 +502,14 @@ func v34(tx *sql.Tx) {
 	// 暂时使用当前时间，其实应该是建站时间。
 	now := time.Now().Unix()
 
-	mustExec(tx, `INSERT INTO users (id,created_at,updated_at,password) VALUES (2,?,?,?)`, now, now, password)
+	mustExec(tx, `INSERT INTO users (id,created_at,updated_at,password) VALUES (?,?,?,?)`, AdminID, now, now, password)
+}
+
+func v35(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN `credentials` TEXT NOT NULL DEFAULT ''")
+	var credentials string
+	if err := tx.QueryRow(`SELECT value FROM options WHERE name=?`, `admin_webauthn_credentials`).Scan(&credentials); err == nil {
+		mustExec(tx, `UPDATE users SET credentials=? WHERE id=?`, credentials, AdminID)
+	}
+	mustExec(tx, `DELETE FROM options WHERE name=?`, `admin_webauthn_credentials`)
 }

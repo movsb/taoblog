@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,10 +23,9 @@ import (
 
 // TODO 更改成 Auth 服务。
 type Passkeys struct {
-	db         *taorm.DB
-	wa         *webauthn.WebAuthn
-	userFinder func(userHandle []byte) (user *User, token string, err error)
-	cookieGen  func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie
+	db        *taorm.DB
+	wa        *webauthn.WebAuthn
+	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie
 
 	loginSessions *lru.TTLCache[string, *webauthn.SessionData]
 
@@ -35,13 +35,11 @@ type Passkeys struct {
 func NewPasskeys(
 	db *taorm.DB,
 	wa *webauthn.WebAuthn,
-	userFinder func(userHandler []byte) (*User, string, error),
 	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie,
 ) *Passkeys {
 	return &Passkeys{
 		db:            db,
 		wa:            wa,
-		userFinder:    userFinder,
 		cookieGen:     cookieGen,
 		loginSessions: lru.NewTTLCache[string, *webauthn.SessionData](8),
 	}
@@ -110,14 +108,15 @@ func (p *Passkeys) FinishPasskeysLogin(ctx context.Context, in *proto.FinishPass
 	}
 
 	var outUser *User
-	var outToken string
-
 	credential, err := p.wa.FinishDiscoverableLogin(
 		func(rawID, userHandle []byte) (webauthn.User, error) {
-			user, token, err := p.userFinder(userHandle)
-			outToken = token
-			outUser = user
-			return user, err
+			id := binary.LittleEndian.Uint32(userHandle)
+			var user models.User
+			if err := p.db.Where(`id=?`, id).Find(&user); err != nil {
+				return nil, err
+			}
+			outUser = &User{&user}
+			return ToWebAuthnUser(outUser), nil
 		},
 		*session,
 		req,
@@ -129,12 +128,19 @@ func (p *Passkeys) FinishPasskeysLogin(ctx context.Context, in *proto.FinishPass
 	_ = credential
 
 	return &proto.FinishPasskeysLoginResponse{
-		Token:   outToken,
+		Token:   fmt.Sprintf(`%d:%s`, outUser.ID, outUser.Password),
 		Cookies: p.cookieGen(outUser, in.UserAgent),
 	}, nil
 }
 
 var _ proto.AuthServer = (*Passkeys)(nil)
+
+func ToWebAuthnUser(u *User) webauthn.User {
+	return &WebAuthnUser{
+		User:        u,
+		credentials: u.Credentials,
+	}
+}
 
 func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User, error) {
 	var password [16]byte

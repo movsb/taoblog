@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
@@ -16,11 +15,10 @@ type TagsData struct {
 }
 
 // NewDataForTags ...
-func NewDataForTags(ctx context.Context, cfg *config.Config, user *auth.User, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
+func NewDataForTags(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		ctx:    ctx,
 		Config: cfg,
-		User:   user,
 		Meta:   &MetaData{},
 	}
 	tags := impl.ListTagsWithCount()

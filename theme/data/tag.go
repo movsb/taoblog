@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -19,7 +18,6 @@ func NewDataForTag(ctx context.Context, cfg *config.Config, service proto.TaoBlo
 	d := &Data{
 		ctx:    ctx,
 		Config: cfg,
-		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},
 	}
 	td := &TagData{

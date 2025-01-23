@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 )
@@ -27,7 +26,6 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service proto.TaoB
 	d := &Data{
 		ctx:    ctx,
 		Config: cfg,
-		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},
 	}
 

@@ -22,9 +22,6 @@ type Data struct {
 	// It's not safe to export all configs outside.
 	Config *config.Config
 
-	// current login user, non-nil.
-	User *auth.User
-
 	// The response writer.
 	Writer io.Writer
 
@@ -131,7 +128,8 @@ type ErrorData struct {
 }
 
 func (d *Data) Strip(obj any) (any, error) {
-	isAdmin := d.User.IsAdmin()
+	user := auth.Context(d.ctx).User
+	isAdmin := user.IsAdmin()
 	switch typed := obj.(type) {
 	case *Post:
 		if isAdmin {

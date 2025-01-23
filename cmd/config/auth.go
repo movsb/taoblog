@@ -2,12 +2,8 @@ package config
 
 // AuthConfig ...
 type AuthConfig struct {
-	Key       string `yaml:"key"`
-	NotifyKey string `yaml:"notify_key"`
-
-	Basic  BasicAuthConfig  `yaml:"basic"`
-	Github GithubAuthConfig `yaml:"github"`
-	Google GoogleAuthConfig `yaml:"google"`
+	// Github GithubAuthConfig `yaml:"github"`
+	// Google GoogleAuthConfig `yaml:"google"`
 
 	AdminName   string
 	AdminEmails []string
@@ -16,23 +12,8 @@ type AuthConfig struct {
 // DefaultAuthConfig ...
 func DefaultAuthConfig() AuthConfig {
 	return AuthConfig{
-		Basic:  DefaultBasicBasicAuthConfig(),
-		Github: DefaultGithubAuthConfig(),
-		Google: DefaultGoogleAuthConfig(),
-	}
-}
-
-// BasicAuthConfig ...
-type BasicAuthConfig struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-}
-
-// DefaultBasicBasicAuthConfig ...
-func DefaultBasicBasicAuthConfig() BasicAuthConfig {
-	return BasicAuthConfig{
-		Username: `taoblog`,
-		Password: `taoblog`,
+		// Github: DefaultGithubAuthConfig(),
+		// Google: DefaultGoogleAuthConfig(),
 	}
 }
 
@@ -40,7 +21,6 @@ func DefaultBasicBasicAuthConfig() BasicAuthConfig {
 type GithubAuthConfig struct {
 	ClientID     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
-	UserID       int64  `yaml:"user_id"`
 }
 
 // DefaultGithubAuthConfig ...
@@ -51,7 +31,6 @@ func DefaultGithubAuthConfig() GithubAuthConfig {
 // GoogleAuthConfig ...
 type GoogleAuthConfig struct {
 	ClientID string `yaml:"client_id"`
-	UserID   string `yaml:"user_id"`
 }
 
 // DefaultGoogleAuthConfig ...

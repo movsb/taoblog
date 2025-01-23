@@ -3,10 +3,7 @@ package server
 import (
 	"context"
 	"database/sql"
-	"encoding/binary"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -106,7 +103,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		store = storage.NewLocal(cfg.Data.File.Path)
 	}
 
-	theAuth := auth.New(cfg.Auth, version.DevMode())
+	theAuth := auth.New(cfg.Auth, taorm.NewDB(db), version.DevMode())
 	s.Auther = theAuth
 
 	notifier := notify.NewNotifyLogger(notify.NewLogStore(db))
@@ -132,8 +129,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.Service = theService
 	r.MustRegister(theService.Exporter())
 	theAuth.SetService(theService)
-
-	theAuth.SetAdminWebAuthnCredentials(theService.GetDefaultStringOption(`admin_webauthn_credentials`, "[]"))
 
 	gateway.NewGateway(theService, theAuth, mux, notifier)
 
@@ -162,15 +157,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		}
 		theService.AuthServer = auth.NewPasskeys(
 			taorm.NewDB(db), wa,
-			func(userHandler []byte) (*auth.User, string, error) {
-				id := binary.LittleEndian.Uint32(userHandler)
-				u := theAuth.GetUserByID(int64(id))
-				if u.IsAdmin() {
-					return u, fmt.Sprintf("%d:%s", u.ID, cfg.Auth.Key), nil
-				}
-
-				return u, "", errors.New(`no such user`)
-			},
 			theAuth.GenCookieForPasskeys,
 		)
 	}

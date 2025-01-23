@@ -7,6 +7,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 )
 
@@ -21,9 +22,6 @@ func Serve(ctx context.Context) {
 	os.Setenv(`DEV`, `0`)
 
 	cfg := config.DefaultConfig()
-	cfg.Auth.Basic.Username = `test`
-	cfg.Auth.Basic.Password = `test`
-	cfg.Auth.Key = `12345678`
 	cfg.Database.Path = ""  // 使用内存
 	cfg.Data.File.Path = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
@@ -37,7 +35,8 @@ func Serve(ctx context.Context) {
 	Server.Service.TestEnableRequestThrottler(false)
 
 	client = clients.NewProtoClientFromAddress(Server.GRPCAddr)
-	admin = auth.TestingAdminUserContext(Server.Auther, "go_test")
+	adminUser := &auth.User{User: utils.Must1(Server.Auther.GetUserByID(int64(auth.AdminID)))}
+	admin = auth.TestingUserContext(adminUser, "go_test")
 	guest = context.Background()
 }
 

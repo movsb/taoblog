@@ -8,34 +8,34 @@ import (
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/models"
 )
 
 // User entity.
 type User struct {
-	ID          int64  // 不可变 ID
-	Email       string // 可变 ID
-	DisplayName string // 昵称
-
-	webAuthnCredentials []webauthn.Credential
+	*models.User
 }
 
-// IsGuest ...
 func (u *User) IsGuest() bool {
 	return u == nil || u.ID == 0
 }
 
-// IsAdmin ...
 func (u *User) IsAdmin() bool {
-	return u.ID == admin.ID
+	return u.ID == int64(AdminID)
 }
 
 func (u *User) IsSystem() bool {
-	return u.ID == system.ID
+	return u.ID == int64(SystemID)
 }
 
-var _ webauthn.User = (*User)(nil)
+var _ webauthn.User = (*WebAuthnUser)(nil)
 
-func (u *User) WebAuthnID() []byte {
+type WebAuthnUser struct {
+	*User
+	credentials []webauthn.Credential
+}
+
+func (u *WebAuthnUser) WebAuthnID() []byte {
 	if u.ID <= 0 || u.ID > math.MaxInt32 {
 		panic(`user id is invalid`)
 	}
@@ -43,16 +43,16 @@ func (u *User) WebAuthnID() []byte {
 	binary.LittleEndian.PutUint32(buf, uint32(u.ID))
 	return buf
 }
-func (u *User) WebAuthnName() string {
-	return u.Email
+func (u *WebAuthnUser) WebAuthnName() string {
+	return fmt.Sprintf(`id:%d`, u.ID)
 }
-func (u *User) WebAuthnDisplayName() string {
-	return u.DisplayName
+func (u *WebAuthnUser) WebAuthnDisplayName() string {
+	return u.WebAuthnName()
 }
-func (u *User) WebAuthnCredentials() []webauthn.Credential {
-	return u.webAuthnCredentials
+func (u *WebAuthnUser) WebAuthnCredentials() []webauthn.Credential {
+	return u.credentials
 }
-func (u *User) WebAuthnIcon() string {
+func (u *WebAuthnUser) WebAuthnIcon() string {
 	return ""
 }
 
@@ -63,22 +63,19 @@ func randomKey() string {
 }
 
 var (
+	// TODO 移除，用 nil 代表未登录用户。
 	guest = &User{
-		ID:                  0,
-		Email:               "",
-		DisplayName:         "未注册用户",
-		webAuthnCredentials: nil,
+		User: &models.User{
+			ID: 0,
+		},
 	}
 	// TODO 怎么确保程序重启后一定不一样？
 	systemKey = randomKey()
+	SystemID  = 1
 	system    = &User{
-		ID: 1,
+		User: &models.User{
+			ID: int64(SystemID),
+		},
 	}
 	AdminID = 2
-	admin   = &User{
-		ID: int64(AdminID),
-	}
-	Notify = &User{
-		ID: 3,
-	}
 )
