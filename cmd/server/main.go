@@ -56,10 +56,29 @@ func AddCommands(rootCmd *cobra.Command) {
 }
 
 type Server struct {
-	HTTPAddr string // 服务器实际端口
-	GRPCAddr string // 服务器实际端口
-	Auther   *auth.Auth
-	Service  *service.Service
+	httpAddr string // 服务器实际端口
+	grpcAddr string // 服务器实际端口
+
+	Auther  *auth.Auth
+	Service *service.Service
+}
+
+// 运行时的真实 HTTP 地址。
+// 形如：127.0.0.1:2564，不包含协议、路径等。
+func (s *Server) HTTPAddr() string {
+	if s.httpAddr == `` {
+		panic(`no http addr`)
+	}
+	return s.httpAddr
+}
+
+// 运行时的真实 GRPC 地址。
+// 形如：127.0.0.1:2563，不包含协议、路径等。
+func (s *Server) GRPCAddr() string {
+	if s.grpcAddr == `` {
+		panic(`no grpc addr`)
+	}
+	return s.grpcAddr
 }
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {

@@ -10,7 +10,7 @@ import (
 )
 
 func expectHTTPGetWithStatusCode(relativeURL string, code int) {
-	u := utils.Must1(url.Parse(`http://` + Server.HTTPAddr))
+	u := utils.Must1(url.Parse(`http://` + Server.HTTPAddr()))
 	ur := utils.Must1(url.Parse(relativeURL))
 	urlFinal := u.ResolveReference(ur)
 	rsp, err := http.Get(urlFinal.String())

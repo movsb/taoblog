@@ -12,9 +12,13 @@ import (
 // 运行起始时间。
 var Time = time.Now()
 
+// 在运行时控制开发者模式。
+// 只对部分可修改的配置生效，方便用于测试。
+var EnableDevMode = false
+
 // 是否是开发模式
 func DevMode() bool {
-	return os.Getenv(`DEV`) != `0` && (GitCommit == "" || strings.EqualFold(GitCommit, `head`))
+	return EnableDevMode || GitCommit == "" || strings.EqualFold(GitCommit, `head`)
 }
 
 // 在编译脚本里面被注入进来。
