@@ -26,16 +26,16 @@ func Serve(ctx context.Context) {
 	cfg.Data.File.Path = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
 
-	Server = &server.Server{}
+	Server = server.NewDefaultServer()
 	ready := make(chan struct{})
 	go Server.Serve(ctx, true, &cfg, ready)
 	<-ready
 
 	// 测试的时候默认禁用限流器；测试限流器相关函数会手动开启。
-	Server.Service.TestEnableRequestThrottler(false)
+	Server.TestEnableRequestThrottler(false)
 
 	client = clients.NewProtoClientFromAddress(Server.GRPCAddr())
-	adminUser := &auth.User{User: utils.Must1(Server.Auther.GetUserByID(int64(auth.AdminID)))}
+	adminUser := &auth.User{User: utils.Must1(Server.Auth().GetUserByID(int64(auth.AdminID)))}
 	admin = auth.TestingUserContext(adminUser, "go_test")
 	guest = context.Background()
 }

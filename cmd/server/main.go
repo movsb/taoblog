@@ -4,17 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"expvar"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
@@ -37,6 +43,10 @@ import (
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // AddCommands ...
@@ -47,7 +57,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := config.LoadFile(`taoblog.yml`)
-			s := &Server{}
+			s := NewDefaultServer()
 			s.Serve(context.Background(), false, cfg, nil)
 		},
 	}
@@ -55,12 +65,36 @@ func AddCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(serveCommand)
 }
 
+// 服务器实例。
 type Server struct {
-	httpAddr string // 服务器实际端口
-	grpcAddr string // 服务器实际端口
+	httpAddr   string
+	httpServer *http.Server
 
-	Auther  *auth.Auth
-	Service *service.Service
+	grpcAddr   string
+	grpcServer *grpc.Server
+
+	// 请求节流器。
+	throttler        grpc.UnaryServerInterceptor
+	throttlerEnabled atomic.Bool
+
+	auth *auth.Auth
+	main *service.Service
+
+	metrics *metrics.Registry
+}
+
+func NewDefaultServer() *Server {
+	return NewServer(
+		WithRequestThrottler(request_throttler.New()),
+	)
+}
+
+func NewServer(with ...With) *Server {
+	s := &Server{}
+	for _, w := range with {
+		w(s)
+	}
+	return s
 }
 
 // 运行时的真实 HTTP 地址。
@@ -81,7 +115,15 @@ func (s *Server) GRPCAddr() string {
 	return s.grpcAddr
 }
 
+func (s *Server) Auth() *auth.Auth {
+	return s.auth
+}
+
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
+	if s.httpAddr != `` {
+		panic(`server is already running`)
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -111,9 +153,10 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	log.Println(`DevMode:`, version.DevMode())
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
 
+	s.metrics = metrics.NewRegistry(context.TODO())
+
 	var mux = http.NewServeMux()
-	r := metrics.NewRegistry(context.TODO())
-	mux.Handle(`/v3/metrics`, r.Handler()) // TODO: insecure
+	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
 	var store theme_fs.FS
 	if path := cfg.Data.File.Path; path == "" {
@@ -122,8 +165,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		store = storage.NewLocal(cfg.Data.File.Path)
 	}
 
-	theAuth := auth.New(cfg.Auth, taorm.NewDB(db), version.DevMode())
-	s.Auther = theAuth
+	theAuth := auth.New(cfg.Auth, taorm.NewDB(db))
+	s.auth = theAuth
 
 	notifier := notify.NewNotifyLogger(notify.NewLogStore(db))
 	if token := cfg.Notify.Chanify.Token; token != "" {
@@ -136,20 +179,21 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		cfg.Notify.Mailer.Server, cfg.Notify.Mailer.Account, cfg.Notify.Mailer.Password,
 	))
 
+	startGRPC := s.serveGRPC(ctx)
+
 	serviceOptions := []service.With{
 		service.WithPostDataFileSystem(store),
 		service.WithNotifier(notifier),
-		service.WithRequestThrottler(request_throttler.New()),
 		service.WithMailer(mailer),
 	}
 
-	theService := service.NewService(ctx, cancel, testing, cfg, db, theAuth, serviceOptions...)
-	s.GRPCAddr = theService.Addr().String()
-	s.Service = theService
-	r.MustRegister(theService.Exporter())
-	theAuth.SetService(theService)
+	theService := service.NewService(ctx, s.grpcServer, cancel, testing, cfg, db, theAuth, serviceOptions...)
+	s.main = theService
+	go startGRPC()
 
-	gateway.NewGateway(theService, theAuth, mux, notifier)
+	s.metrics.MustRegister(theService.Exporter())
+
+	gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notifier)
 
 	(func() {
 		prefix := `/admin/`
@@ -181,43 +225,11 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	})()
 
 	theme := theme.New(version.DevMode(), cfg, theService, theService, theService, theAuth, store)
-	canon := canonical.New(theme, r)
+	canon := canonical.New(theme, s.metrics)
 	mux.Handle(`/`, canon)
 
-	server := &http.Server{
-		Addr: cfg.Server.HTTPListen,
-		Handler: utils.ChainFuncs(
-			http.Handler(mux),
-			// 注意这个拦截器的能力：
-			//
-			// 所有进入服务端认证信息均被包含在 context 中，
-			// 这也包含了 Gateway。
-			//
-			// 但是，gateway 虽然有了 auth context，但是如果使用的是 grpc-client，
-			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
-			theAuth.UserFromCookieHandler,
-			logs.NewRequestLoggerHandler(`access.log`, logs.WithSentBytesCounter(r)),
-			theService.MaintenanceMode().Handler(func(ctx context.Context) bool {
-				return auth.Context(ctx).User.IsAdmin()
-			}),
-		),
-	}
+	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
 
-	l, err := net.Listen("tcp", server.Addr)
-	if err != nil {
-		panic(err)
-	}
-	defer l.Close()
-	s.HTTPAddr = l.Addr().String()
-	go func() {
-		if err := server.Serve(l); err != nil {
-			if err != http.ErrServerClosed {
-				panic(err)
-			}
-		}
-	}()
-
-	log.Println("Server started on", l.Addr().String())
 	notifier.Notify("博客状态", "已经开始运行。")
 
 	go liveCheck(theService, notifier)
@@ -237,8 +249,138 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	log.Println("server shutting down")
 	theService.MaintenanceMode().Enter(`服务关闭中...`, time.Second*30)
-	server.Shutdown(context.Background())
+	s.httpServer.Shutdown(context.Background())
 	log.Println("server shut down")
+}
+
+// 因为 GRPC 服务启动后不能注册，所以返回了一个函数用于适时启动。
+//
+// TODO
+func (s *Server) serveGRPC(ctx context.Context) func() {
+	server := grpc.NewServer(
+		grpc.MaxRecvMsgSize(100<<20),
+		grpc.MaxSendMsgSize(100<<20),
+		grpc_middleware.WithUnaryServerChain(
+			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
+			s.auth.UserFromGatewayUnaryInterceptor(),
+			s.auth.UserFromClientTokenUnaryInterceptor(),
+			s.throttlerGatewayInterceptor,
+			grpcLoggerUnary,
+		),
+		grpc_middleware.WithStreamServerChain(
+			grpc_recovery.StreamServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
+			s.auth.UserFromGatewayStreamInterceptor(),
+			s.auth.UserFromClientTokenStreamInterceptor(),
+			grpcLoggerStream,
+		),
+	)
+
+	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp", `127.0.0.1:0`)
+	if err != nil {
+		panic(err)
+	}
+	s.grpcServer = server
+	s.grpcAddr = l.Addr().String()
+	log.Println(`GRPC listen on:`, s.grpcAddr)
+
+	return func() {
+		defer l.Close()
+		server.Serve(l)
+	}
+}
+
+func (s *Server) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	if s.throttlerEnabled.Load() && s.throttler != nil {
+		return s.throttler(ctx, req, info, handler)
+	}
+	return handler(ctx, req)
+}
+
+// 运行 HTTP 服务。
+// 真实地址回写到 s.httpAddr 中。
+func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
+	server := &http.Server{
+		Addr: addr,
+		Handler: utils.ChainFuncs(h,
+			// 注意这个拦截器的能力：
+			//
+			// 所有进入服务端认证信息均被包含在 context 中，
+			// 这也包含了 Gateway。
+			//
+			// 但是，gateway 虽然有了 auth context，但是如果使用的是 grpc-client，
+			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
+			s.auth.UserFromCookieHandler,
+			logs.NewRequestLoggerHandler(`access.log`, logs.WithSentBytesCounter(s.metrics)),
+			s.main.MaintenanceMode().Handler(func(ctx context.Context) bool {
+				return auth.Context(ctx).User.IsAdmin()
+			}),
+		),
+	}
+
+	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp", server.Addr)
+	if err != nil {
+		panic(err)
+	}
+	// 总是会被 http.Server 关闭。
+	// defer l.Close()
+	s.httpAddr = l.Addr().String()
+	s.httpServer = server
+	log.Println(`HTTP:`, s.httpAddr)
+
+	go func() {
+		if err := server.Serve(l); err != nil {
+			if err != http.ErrServerClosed {
+				panic(err)
+			}
+		}
+	}()
+}
+
+func exceptionRecoveryHandler(e any) error {
+	switch te := e.(type) {
+	case *taorm.Error:
+		switch typed := te.Err.(type) {
+		case *taorm.NotFoundError:
+			return status.New(codes.NotFound, typed.Error()).Err()
+		case *taorm.DupKeyError:
+			return status.New(codes.AlreadyExists, typed.Error()).Err()
+		}
+	case *status.Status:
+		return te.Err()
+	case codes.Code:
+		return status.Error(te, te.String())
+	case error:
+		if st, ok := status.FromError(te); ok {
+			return st.Err()
+		}
+	}
+	buf := make([]byte, 10<<10)
+	runtime.Stack(buf, false)
+	log.Println("未处理的内部错误：", e, "\n", string(buf))
+	return status.New(codes.Internal, fmt.Sprint(e)).Err()
+}
+
+func grpcLoggerUnary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	grpcLogger(ctx, info.FullMethod)
+	return handler(ctx, req)
+}
+func grpcLoggerStream(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	grpcLogger(ss.Context(), info.FullMethod)
+	return handler(srv, ss)
+}
+
+var enableGrpcLogger = expvar.NewInt(`log.grpc`)
+
+func grpcLogger(ctx context.Context, method string) {
+	logEnabled := enableGrpcLogger.Value() == 1
+	if !logEnabled {
+		return
+	}
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		log.Println(md)
+	}
+	ac := auth.Context(ctx)
+	log.Println(method, ac.UserAgent)
 }
 
 // TODO 文章 1 必须存在。可以是非公开状态。

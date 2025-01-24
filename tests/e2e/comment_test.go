@@ -34,8 +34,8 @@ func TestCreateComment(t *testing.T) {
 }
 
 func TestThrottler(t *testing.T) {
-	Server.Service.TestEnableRequestThrottler(true)
-	defer Server.Service.TestEnableRequestThrottler(false)
+	Server.TestEnableRequestThrottler(true)
+	defer Server.TestEnableRequestThrottler(false)
 
 	first := true
 	for i := 0; i < 2; i++ {

@@ -3,19 +3,12 @@ package service
 import (
 	"context"
 	"database/sql"
-	"expvar"
-	"fmt"
-	"log"
-	"net"
 	"net/url"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/mailer"
@@ -36,7 +29,6 @@ import (
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -58,7 +50,6 @@ type Service struct {
 	cancel context.CancelFunc
 
 	testing bool
-	addr    net.Addr // 服务器的实际监听地址（GRPC）
 
 	// 计划重启。
 	scheduledUpdate atomic.Bool
@@ -104,10 +95,6 @@ type Service struct {
 	// 基本临时文件的缓存。
 	filesCache *cache.TmpFiles
 
-	// 请求节流器。
-	throttler        grpc.UnaryServerInterceptor
-	throttlerEnabled atomic.Bool
-
 	avatarCache *cache.AvatarHash
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
@@ -139,15 +126,11 @@ func (s *Service) ThemeChangedAt() time.Time {
 	return s.themeChangedAt
 }
 
-func (s *Service) Addr() net.Addr {
-	return s.addr
+func NewService(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, testing bool, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
+	return newService(ctx, server, cancel, cfg, db, auther, testing, options...)
 }
 
-func NewService(ctx context.Context, cancel context.CancelFunc, testing bool, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
-	return newService(ctx, cancel, cfg, db, auther, testing, options...)
-}
-
-func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
+func newService(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
 	s := &Service{
 		ctx:     ctx,
 		cancel:  cancel,
@@ -219,37 +202,11 @@ func newService(ctx context.Context, cancel context.CancelFunc, cfg *config.Conf
 	s.domainExpirationDaysLeft.Store(-1)
 	s.exporter = _NewExporter(s)
 
-	server := grpc.NewServer(
-		grpc.MaxRecvMsgSize(100<<20),
-		grpc.MaxSendMsgSize(100<<20),
-		grpc_middleware.WithUnaryServerChain(
-			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
-			s.auth.UserFromGatewayUnaryInterceptor(),
-			s.auth.UserFromClientTokenUnaryInterceptor(),
-			s.throttlerGatewayInterceptor,
-			grpcLoggerUnary,
-		),
-		grpc_middleware.WithStreamServerChain(
-			grpc_recovery.StreamServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
-			s.auth.UserFromGatewayStreamInterceptor(),
-			s.auth.UserFromClientTokenStreamInterceptor(),
-			grpcLoggerStream,
-		),
-	)
-
 	proto.RegisterUtilsServer(server, s)
 	proto.RegisterAuthServer(server, s)
 	proto.RegisterTaoBlogServer(server, s)
 	proto.RegisterManagementServer(server, s)
 	proto.RegisterSearchServer(server, s)
-
-	listener, err := net.Listen("tcp", `127.0.0.1:0`)
-	if err != nil {
-		panic(err)
-	}
-	s.addr = listener.Addr()
-	log.Println(`GRPC listen on:`, listener.Addr().String())
-	go server.Serve(listener)
 
 	if !testing && !version.DevMode() {
 		go s.monitorCert(s.notifier)
@@ -277,60 +234,6 @@ func MustBeAdmin(ctx context.Context) *auth.AuthContext {
 		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
 	}
 	return ac
-}
-
-func (s *Service) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	if s.throttlerEnabled.Load() && s.throttler != nil {
-		return s.throttler(ctx, req, info, handler)
-	}
-	return handler(ctx, req)
-}
-
-func grpcLoggerUnary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-	grpcLogger(ctx, info.FullMethod)
-	return handler(ctx, req)
-}
-func grpcLoggerStream(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	grpcLogger(ss.Context(), info.FullMethod)
-	return handler(srv, ss)
-}
-
-var enableGrpcLogger = expvar.NewInt(`log.grpc`)
-
-func grpcLogger(ctx context.Context, method string) {
-	logEnabled := enableGrpcLogger.Value() == 1
-	if !logEnabled {
-		return
-	}
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		log.Println(md)
-	}
-	ac := auth.Context(ctx)
-	log.Println(method, ac.UserAgent)
-}
-
-func exceptionRecoveryHandler(e any) error {
-	switch te := e.(type) {
-	case *taorm.Error:
-		switch typed := te.Err.(type) {
-		case *taorm.NotFoundError:
-			return status.New(codes.NotFound, typed.Error()).Err()
-		case *taorm.DupKeyError:
-			return status.New(codes.AlreadyExists, typed.Error()).Err()
-		}
-	case *status.Status:
-		return te.Err()
-	case codes.Code:
-		return status.Error(te, te.String())
-	case error:
-		if st, ok := status.FromError(te); ok {
-			return st.Err()
-		}
-	}
-	buf := make([]byte, 10<<10)
-	runtime.Stack(buf, false)
-	log.Println("未处理的内部错误：", e, "\n", string(buf))
-	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }
 
 // Ping ...

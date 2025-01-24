@@ -5,9 +5,6 @@ import "errors"
 type AuthConfig struct {
 	Github GithubAuthConfig `yaml:"github"`
 	Google GoogleAuthConfig `yaml:"google"`
-
-	AdminName   string
-	AdminEmails []string
 }
 
 func DefaultAuthConfig() AuthConfig {

@@ -139,7 +139,7 @@ func (l *DirFSWithNotify) Changed() <-chan fsnotify.Event {
 
 func (l *DirFSWithNotify) watch() chan fsnotify.Event {
 	if _, err := l.FS.Open("."); err != nil {
-		panic(err.Error() + fmt.Sprint(os.Getwd()))
+		panic(fmt.Sprintf(`err: %v, cwd: %v, root: %v`, err, Must1(os.Getwd()), l.root))
 	}
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

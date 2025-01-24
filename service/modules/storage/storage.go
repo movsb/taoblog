@@ -58,7 +58,7 @@ func (fs *Storage) ForPost(id int) (fspkg.FS, error) {
 
 func (fs *Storage) pathOf(path string) (string, error) {
 	if !fspkg.ValidPath(path) {
-		return "", fmt.Errorf(`invalid fs path: %q` + path)
+		return "", fmt.Errorf(`invalid fs path: %q`, path)
 	}
 	// ValidPath 会检查是可能 .. 到上级。
 	return path, nil

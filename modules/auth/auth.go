@@ -26,29 +26,16 @@ import (
 type Auth struct {
 	db *taorm.DB
 
-	cfg      config.AuthConfig
-	optioner Optioner
-	devMode  bool
+	cfg config.AuthConfig
 }
 
-type Optioner interface {
-	SetOption(name string, value any)
-	GetDefaultStringOption(name string, def string) string
-}
-
-// New ...
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
-func New(cfg config.AuthConfig, db *taorm.DB, devMode bool) *Auth {
+func New(cfg config.AuthConfig, db *taorm.DB) *Auth {
 	a := Auth{
-		db:      db,
-		cfg:     cfg,
-		devMode: devMode,
+		db:  db,
+		cfg: cfg,
 	}
 	return &a
-}
-
-func (a *Auth) SetService(optioner Optioner) {
-	a.optioner = optioner
 }
 
 // temporary
