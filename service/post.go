@@ -139,6 +139,7 @@ func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
 // 获取指定编号的文章。
 //
 // NOTE：如果是公开文章但是非管理员用户，会过滤掉敏感字段。
+// TODO 写单测测权限。
 func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto.Post, error) {
 	ac := auth.Context(ctx)
 
@@ -1007,6 +1008,8 @@ func (s *Service) applyTaskChecks(modified int32, sourceType, rawSource string, 
 }
 
 func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStylingPageRequest) (*proto.CreateStylingPageResponse, error) {
+	s.MustBeAdmin(ctx)
+
 	source := in.Source
 	if source == `` {
 		source = string(utils.Must1(styling.Root.ReadFile(`index.md`)))
