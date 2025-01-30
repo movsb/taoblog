@@ -77,6 +77,7 @@ type Server struct {
 	throttler        grpc.UnaryServerInterceptor
 	throttlerEnabled atomic.Bool
 
+	db   *taorm.DB
 	auth *auth.Auth
 	main *service.Service
 
@@ -118,6 +119,12 @@ func (s *Server) GRPCAddr() string {
 func (s *Server) Auth() *auth.Auth {
 	return s.auth
 }
+func (s *Server) Main() *service.Service {
+	return s.main
+}
+func (s *Server) DB() *taorm.DB {
+	return s.db
+}
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
 	if s.httpAddr != `` {
@@ -129,6 +136,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	db := InitDatabase(cfg.Database.Path)
 	defer db.Close()
+
+	s.db = taorm.NewDB(db)
 
 	migration.Migrate(db)
 
@@ -420,7 +429,12 @@ func InitDatabase(path string) *sql.DB {
 
 	if path == `` {
 		// 内存数据库
-		path = `no-matter-what-path-used`
+		// NOTE: 测试的时候同名路径会引用同一个内存数据库，
+		// 所以需要取不同的路径名。
+		path = fmt.Sprintf(`%s@%d`,
+			`no-matter-what-path-used`,
+			time.Now().UnixNano(),
+		)
 		v.Set(`mode`, `memory`)
 	}
 
@@ -430,7 +444,9 @@ func InitDatabase(path string) *sql.DB {
 		RawQuery: v.Encode(),
 	}
 
-	db, err = sql.Open(`sqlite3`, u.String())
+	dsn := u.String()
+	log.Println(`数据库连接字符串：`, dsn)
+	db, err = sql.Open(`sqlite3`, dsn)
 	if err == nil {
 		db.SetMaxOpenConns(1)
 	}

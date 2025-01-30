@@ -518,3 +518,12 @@ func v36(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE users ADD COLUMN `google_user_id` TEXT NOT NULL DEFAULT ''")
 	mustExec(tx, "ALTER TABLE users ADD COLUMN `github_user_id` INTEGER NOT NULL DEFAULT 0")
 }
+
+func v37(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
+	mustExec(tx, "UPDATE posts SET user_id=?", AdminID)
+}
+
+func v38(tx *sql.Tx) {
+	mustExec(tx, "CREATE TABLE IF NOT EXISTS acl ( `id` INTEGER PRIMARY KEY AUTOINCREMENT, `created_at` INTEGER NOT NULL, `post_id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `permission` TEXT NOT NULL)")
+}

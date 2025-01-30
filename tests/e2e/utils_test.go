@@ -2,15 +2,18 @@ package e2e_test
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"runtime"
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-func expectHTTPGetWithStatusCode(relativeURL string, code int) {
-	u := utils.Must1(url.Parse(`http://` + Server.HTTPAddr()))
+func expectHTTPGetWithStatusCode(r *R, relativeURL string, code int) {
+	u := utils.Must1(url.Parse(`http://` + r.server.HTTPAddr()))
 	ur := utils.Must1(url.Parse(relativeURL))
 	urlFinal := u.ResolveReference(ur)
 	rsp, err := http.Get(urlFinal.String())
@@ -18,7 +21,9 @@ func expectHTTPGetWithStatusCode(relativeURL string, code int) {
 		panic(err)
 	}
 	if rsp.StatusCode != code {
-		panic(fmt.Sprintf(`状态码不相等：%d with %d`, rsp.StatusCode, code))
+		_, file, line, _ := runtime.Caller(1)
+		io.Copy(os.Stderr, rsp.Body)
+		panic(fmt.Sprintf(`[%s:%d] 状态码不相等：got: %d, expect: %d`, file, line, rsp.StatusCode, code))
 	}
 }
 

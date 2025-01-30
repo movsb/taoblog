@@ -26,10 +26,12 @@ type ctxAuthKey struct{}
 type AuthContext struct {
 	// 当前请求所引用的用户。
 	// 不会随不同的请求改变。
+	// 始终不为空；如果是未登录用户，则为 guest。
 	User *User
 
 	// 请求来源 IP 地址。
 	// 包括 HTTP 请求，GRPC 请求。
+	// 始终不为空。
 	RemoteAddr netip.Addr
 
 	// 用户使用的代理端名字。

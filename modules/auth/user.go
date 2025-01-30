@@ -16,6 +16,7 @@ type User struct {
 	*models.User
 }
 
+// 是否为非登录用户。
 func (u *User) IsGuest() bool {
 	return u == nil || u.ID == 0
 }

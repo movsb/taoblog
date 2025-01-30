@@ -20,6 +20,9 @@ type User struct {
 	Credentials Credentials
 
 	GoogleUserID string
+
+	// 小写 GitHub 是为了使默认数据库字段名为：github_user_id
+	// 否则默认的蛇形规则可能是 git_hub_user_id
 	GithubUserID string
 }
 
@@ -52,10 +55,20 @@ func (u *User) ToProto() *proto.User {
 	}
 }
 
+type Perm string
+
+const (
+	PermRead = `read`
+)
+
 type AccessControlEntry struct {
 	ID         int64
 	CreatedAt  int64
 	UserID     int64
 	PostID     int64
 	Permission string
+}
+
+func (AccessControlEntry) TableName() string {
+	return `acl`
 }

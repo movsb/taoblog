@@ -217,6 +217,23 @@ service TaoBlog {
 			description: "完成/取消完成任务。";
 		};
 	}
+	rpc SetPostACL (SetPostACLRequest) returns (SetPostACLResponse) {
+		option (google.api.http) = {
+			patch: "/v3/posts/{post_id=*}/perms";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "为文章设置权限。";
+		};
+	}
+	rpc GetPostACL (GetPostACLRequest) returns (GetPostACLResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts/{post_id=*}/perms";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取文章权限。";
+		};
+	}
 
 	// Comments
 
