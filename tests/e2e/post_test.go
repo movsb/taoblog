@@ -1,7 +1,12 @@
 package e2e_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"runtime"
 	"slices"
 	"testing"
@@ -24,8 +29,8 @@ func TestListPosts(t *testing.T) {
 	p1 := create(r.admin, &proto.Post{Source: `# admin`, SourceType: `markdown`})
 	p2 := create(r.user1, &proto.Post{Source: `# user1`, SourceType: `markdown`})
 	p3 := create(r.user2, &proto.Post{Source: `# user2`, SourceType: `markdown`})
-	if p1.Id != 2 {
-		panic(`应该=2`)
+	if p1.Id != 1 {
+		panic(`应该=1`)
 	}
 
 	eq := func(p string, u context.Context, ownership proto.Ownership, list []int64) {
@@ -116,4 +121,42 @@ func TestListPosts(t *testing.T) {
 	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{p1.Id})
 	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
 	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p3.Id})
+}
+
+// 测试只可访问公开的文章。
+func TestSitemaps(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r := Serve(ctx)
+
+	create := func(user context.Context, p *proto.Post) *proto.Post {
+		return utils.Must1(r.client.Blog.CreatePost(user, p))
+	}
+
+	p1 := create(r.admin, &proto.Post{Status: models.PostStatusPublic, Source: `# admin`, SourceType: `markdown`})
+	p2 := create(r.user1, &proto.Post{Status: models.PostStatusPrivate, Source: `# user1`, SourceType: `markdown`})
+	log.Println(`状态：`, p1.Status, p2.Status)
+
+	// TODO hard-coded URL
+	u := fmt.Sprintf(`http://%s/sitemap.xml`, r.server.HTTPAddr())
+	rsp := utils.Must1(http.Get(u))
+	defer rsp.Body.Close()
+	if rsp.StatusCode != 200 {
+		t.Fatal(`状态码不正确。`)
+	}
+	buf := bytes.NewBuffer(nil)
+	utils.Must1(io.Copy(buf, rsp.Body))
+	// t.Log(buf.String())
+
+	// TODO 硬编码的，难得解析了。
+	expect := `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<url><loc>http://localhost:2564/1/</loc></url>
+</urlset>
+`
+
+	if buf.String() != expect {
+		t.Fatalf("Sitemap 不匹配：\n%s\n%s", buf.String(), expect)
+	}
 }

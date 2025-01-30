@@ -52,6 +52,7 @@ type _PostContentCacheKey struct {
 	// 除开最基本的文章编号和渲染选项的不同之外，
 	// 可能还有其它的 Vary 特性，比如：如果同一篇文章，管理员和访客看到的内容不一样（角色），
 	// 这部分就属于 Vary 应该标记出来的。暂时不使用相关标记。只是备用。
+	// TODO 由于增加了用户系统，不同用于看不同用户的文章时应该有不同的缓存。
 	Vary struct{}
 }
 
@@ -87,6 +88,7 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 		stmt.Where("status=?", models.PostStatusPublic)
 	}
 
+	// TODO 以前觉得这样写很省事儿。但是这样好像无法写覆盖测试？
 	stmt.WhereIf(len(in.Kinds) > 0, `type in (?)`, in.Kinds)
 	stmt.WhereIf(in.ModifiedNotBefore > 0, `modified >= ?`, in.ModifiedNotBefore)
 	stmt.WhereIf(in.ModifiedNotAfter > 0, `modified < ?`, in.ModifiedNotAfter)
@@ -111,11 +113,11 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	}, nil
 }
 
+// 只会列出公开的。
 func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
-	ac := auth.Context(ctx)
+	s.MustBeAdmin(ctx)
 	var posts models.Posts
-	if err := s.tdb.Model(models.Post{}).Select(`id`).
-		WhereIf(ac.User.IsGuest(), `status='public'`).Find(&posts); err != nil {
+	if err := s.tdb.Select(`id`).Where(`status=?`, models.PostStatusPublic).Find(&posts); err != nil {
 		return nil, err
 	}
 	var ids []int32

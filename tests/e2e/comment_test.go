@@ -5,12 +5,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/modules/request_throttler"
 )
 
 func TestPreviewComment(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(context.Background(), server.WithCreateFirstPost())
 	rsp, err := r.client.Blog.PreviewComment(r.guest, &proto.PreviewCommentRequest{
 		Markdown: `<a>`,
 		PostId:   1,
@@ -23,7 +25,7 @@ func TestPreviewComment(t *testing.T) {
 const fakeEmailAddress = `fake@twofei.com`
 
 func TestCreateComment(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(context.Background(), server.WithCreateFirstPost())
 	rsp2, err := r.client.Blog.CreateComment(r.guest, &proto.Comment{
 		PostId:     1,
 		Author:     `昵称`,
@@ -37,7 +39,10 @@ func TestCreateComment(t *testing.T) {
 }
 
 func TestThrottler(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(context.Background(),
+		server.WithCreateFirstPost(),
+		server.WithRequestThrottler(request_throttler.New()),
+	)
 	r.server.TestEnableRequestThrottler(true)
 	defer r.server.TestEnableRequestThrottler(false)
 
@@ -71,7 +76,7 @@ func TestThrottler(t *testing.T) {
 
 // 评论的图片、链接的 scheme 不允许非法内容。
 func TestCommentInvalidLinkScheme(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(context.Background(), server.WithCreateFirstPost())
 	contents := []string{
 		`<javascript:alert(1);>`,
 		`[](javascript:alert)`,
@@ -93,7 +98,7 @@ func TestCommentInvalidLinkScheme(t *testing.T) {
 			continue
 		}
 		if !strings.Contains(err.Error(), `不支持的协议`) {
-			t.Errorf(`未包含“不支持的协议”`)
+			t.Errorf(`未包含“不支持的协议”：%v`, err.Error())
 		}
 		_ = rsp
 	}

@@ -11,3 +11,10 @@ func WithRequestThrottler(throttler grpc.UnaryServerInterceptor) With {
 		s.throttlerEnabled.Store(true)
 	}
 }
+
+// 是否自动创建第一篇（自动生成的）文章。
+func WithCreateFirstPost() With {
+	return func(s *Server) {
+		s.createFirstPost = true
+	}
+}

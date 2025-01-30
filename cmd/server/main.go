@@ -77,9 +77,12 @@ type Server struct {
 	throttler        grpc.UnaryServerInterceptor
 	throttlerEnabled atomic.Bool
 
-	db   *taorm.DB
-	auth *auth.Auth
-	main *service.Service
+	createFirstPost bool
+
+	db      *taorm.DB
+	auth    *auth.Auth
+	main    *service.Service
+	gateway *gateway.Gateway
 
 	metrics *metrics.Registry
 }
@@ -87,6 +90,7 @@ type Server struct {
 func NewDefaultServer() *Server {
 	return NewServer(
 		WithRequestThrottler(request_throttler.New()),
+		WithCreateFirstPost(),
 	)
 }
 
@@ -125,6 +129,9 @@ func (s *Server) Main() *service.Service {
 func (s *Server) DB() *taorm.DB {
 	return s.db
 }
+func (s *Server) Gateway() *gateway.Gateway {
+	return s.gateway
+}
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
 	if s.httpAddr != `` {
@@ -134,7 +141,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	db := InitDatabase(cfg.Database.Path)
+	db := InitDatabase(cfg.Database.Path, s.createFirstPost)
 	defer db.Close()
 
 	s.db = taorm.NewDB(db)
@@ -202,7 +209,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.metrics.MustRegister(theService.Exporter())
 
-	gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notifier)
+	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notifier)
 
 	(func() {
 		prefix := `/admin/`
@@ -419,7 +426,8 @@ func liveCheck(s *service.Service, cc notify.Notifier) {
 }
 
 // 如果路径为空，使用内存数据库。
-func InitDatabase(path string) *sql.DB {
+// TODO 把首篇文章的创建改到服务中实现，属于业务逻辑。
+func InitDatabase(path string, createFirstPost bool) *sql.DB {
 	var db *sql.DB
 	var err error
 
@@ -460,6 +468,30 @@ func InitDatabase(path string) *sql.DB {
 		if se, ok := err.(sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
 				migration.Init(db, path)
+
+				tdb := taorm.NewDB(db)
+				now := time.Now().Unix()
+
+				if createFirstPost {
+					tdb.MustTxCall(func(tx *taorm.DB) {
+						tx.Model(&models.Post{
+							Date:       int32(now),
+							Modified:   int32(now),
+							Title:      `你好，世界`,
+							Type:       `post`,
+							Category:   0,
+							Status:     `public`,
+							SourceType: `markdown`,
+							Source:     `你好，世界！这是您的第一篇文章。`,
+
+							// TODO 用配置时区。
+							DateTimezone: ``,
+							// TODO 用配置时区。
+							ModifiedTimezone: ``,
+						}).MustCreate()
+					})
+				}
+
 				return db
 			}
 		}

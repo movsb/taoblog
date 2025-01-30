@@ -24,7 +24,7 @@ type R struct {
 }
 
 // 会在服务启动后快速返回。
-func Serve(ctx context.Context) *R {
+func Serve(ctx context.Context, options ...server.With) *R {
 	// 测试环境应该不依赖本地系统。
 	version.EnableDevMode = false
 
@@ -35,7 +35,7 @@ func Serve(ctx context.Context) *R {
 
 	r := &R{}
 
-	r.server = server.NewDefaultServer()
+	r.server = server.NewServer(options...)
 	ready := make(chan struct{})
 	go r.server.Serve(ctx, true, &cfg, ready)
 	<-ready

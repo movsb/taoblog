@@ -15,8 +15,8 @@ import (
 )
 
 // 初始化过程。会创建所有的数据表。
-// 会创建第一篇文章。
-// TODO：不创建第一篇文章（因为测试的时候有不同的需求）。
+// 会自动创建管理员用户。
+// TODO 移除用户创建。
 func Init(db *sql.DB, path string) {
 	var err error
 
@@ -45,21 +45,6 @@ func Init(db *sql.DB, path string) {
 		tx.Model(&models.Option{
 			Name:  `db_ver`,
 			Value: fmt.Sprint(MaxVersionNumber()),
-		}).MustCreate()
-		tx.Model(&models.Post{
-			Date:       now,
-			Modified:   now,
-			Title:      `你好，世界`,
-			Type:       `post`,
-			Category:   0,
-			Status:     `public`,
-			SourceType: `markdown`,
-			Source:     `你好，世界！这是您的第一篇文章。`,
-
-			// TODO 用配置时区。
-			DateTimezone: ``,
-			// TODO 用配置时区。
-			ModifiedTimezone: ``,
 		}).MustCreate()
 	})
 

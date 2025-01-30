@@ -21,7 +21,7 @@ func (n *_RandomErrorNotify) Notify(title, message string) error {
 }
 
 func TestNotify(t *testing.T) {
-	db := server.InitDatabase(``)
+	db := server.InitDatabase(``, false)
 	defer db.Close()
 
 	n := notify.NewNotifyLogger(notify.NewLogStore(db))
