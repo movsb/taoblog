@@ -43,25 +43,25 @@ type Gateway struct {
 	instantNotifier notify.Notifier
 }
 
-func NewGateway(service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.Notifier) *Gateway {
+func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.Notifier) *Gateway {
 	g := &Gateway{
 		mux:     mux,
 		service: service,
 		auther:  auther,
 
-		client: clients.NewProtoClientFromAddress(service.Addr().String()),
+		client: clients.NewProtoClientFromAddress(serverAddr),
 
 		instantNotifier: instantNotifier,
 	}
 
-	if err := g.register(context.TODO(), mux); err != nil {
+	if err := g.register(context.TODO(), serverAddr, mux); err != nil {
 		panic(err)
 	}
 
 	return g
 }
 
-func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
+func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
 	mc := utils.ServeMuxChain{ServeMux: mux}
 
 	info := utils.Must1(g.client.Blog.GetInfo(ctx, &proto.GetInfoRequest{}))
@@ -95,7 +95,7 @@ func (g *Gateway) register(ctx context.Context, mux *http.ServeMux) error {
 		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.auther, g.client.Utils))
 
 		// GRPC 走 HTTP 通信。少暴露一个端口，降低架构复杂性。
-		mc.Handle(`GET /v3/grpc`, grpc_proxy.New(g.service.Addr().String()))
+		mc.Handle(`GET /v3/grpc`, grpc_proxy.New(serverAddr))
 	}
 
 	// 使用系统帐号鉴权的部分

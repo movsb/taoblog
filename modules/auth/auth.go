@@ -7,50 +7,35 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taorm"
 	"google.golang.org/grpc/metadata"
 )
 
 type Auth struct {
-	cfg      config.AuthConfig
-	optioner Optioner
-	devMode  bool
+	db *taorm.DB
+
+	cfg config.AuthConfig
 }
 
-type Optioner interface {
-	SetOption(name string, value any)
-	GetDefaultStringOption(name string, def string) string
-}
-
-// New ...
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
-func New(cfg config.AuthConfig, devMode bool) *Auth {
+func New(cfg config.AuthConfig, db *taorm.DB) *Auth {
 	a := Auth{
-		cfg:     cfg,
-		devMode: devMode,
+		db:  db,
+		cfg: cfg,
 	}
-	if len(cfg.AdminEmails) > 0 {
-		admin.Email = cfg.AdminEmails[0]
-	}
-	admin.DisplayName = cfg.AdminName
 	return &a
-}
-
-func (a *Auth) SetAdminWebAuthnCredentials(j string) {
-	if err := json.Unmarshal([]byte(j), &admin.webAuthnCredentials); err != nil {
-		panic("credentials:" + err.Error())
-	}
-}
-
-func (a *Auth) SetService(optioner Optioner) {
-	a.optioner = optioner
 }
 
 // temporary
@@ -60,33 +45,28 @@ func (a *Auth) Config() *config.AuthConfig {
 
 // 找不到返回空。
 // NOTE：系统管理员因为不因为登录所以不允许查找。
-func (o *Auth) GetUserByID(id int64) *User {
-	if id == admin.ID {
-		return admin
+func (o *Auth) GetUserByID(id int64) (*models.User, error) {
+	var user models.User
+	if err := o.db.Where(`id=?`, id).Find(&user); err != nil {
+		return nil, err
 	}
-	return guest
+	return &user, nil
 }
 
 func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
-	existed := slices.IndexFunc(user.webAuthnCredentials, func(c webauthn.Credential) bool {
+	existed := slices.IndexFunc(user.Credentials, func(c webauthn.Credential) bool {
 		return bytes.Equal(c.PublicKey, cred.PublicKey) ||
 			// 不允许为同一认证器添加多个凭证。
 			bytes.Equal(c.Authenticator.AAGUID, cred.Authenticator.AAGUID)
 	})
 	if existed >= 0 {
-		user.webAuthnCredentials[existed] = *cred
+		user.Credentials[existed] = *cred
 	} else {
-		user.webAuthnCredentials = append(user.webAuthnCredentials, *cred)
+		user.Credentials = append(user.Credentials, *cred)
 	}
-	body, err := json.Marshal(user.webAuthnCredentials)
-	if err != nil {
-		panic(err)
-	}
-	o.optioner.SetOption(`admin_webauthn_credentials`, string(body))
-}
-
-func (o *Auth) Login() string {
-	return login(o.cfg.Basic.Username, o.cfg.Basic.Password)
+	o.db.Model(user.User).Where(`id=?`, user.ID).MustUpdateMap(taorm.M{
+		`credentials`: user.Credentials,
+	})
 }
 
 func login(username, password string) string {
@@ -106,12 +86,14 @@ func constantEqual(x, y string) bool {
 	return subtle.ConstantTimeCompare([]byte(x), []byte(y)) == 1
 }
 
+// 增加用户系统后，用户名可以是用户编号。
+// TODO: 防止每次验证都检查数据库，应该限流。
 func (o *Auth) AuthLogin(username string, password string) *User {
-	if username != `` {
-		if constantEqual(username, o.cfg.Basic.Username) {
-			if constantEqual(password, o.cfg.Basic.Password) {
-				return admin
-			}
+	id, err := strconv.Atoi(username)
+	if err == nil {
+		u, err := o.userByKey(id, password)
+		if err == nil {
+			return &User{u}
 		}
 	}
 	return guest
@@ -122,9 +104,7 @@ func (o *Auth) AuthRequest(req *http.Request) *User {
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
 			if id, token, ok := parseAuthorization(a); ok {
-				if u := o.userByKey(id, token); u != nil {
-					return u
-				}
+				return o.AuthLogin(fmt.Sprint(id), token)
 			}
 		}
 		return guest
@@ -140,8 +120,21 @@ func (o *Auth) authCookie(login string, userAgent string) *User {
 		return guest
 	}
 
-	if shasum(userAgent+o.Login()) == login {
-		return admin
+	splits := strings.Split(login, `:`)
+	if len(splits) != 2 {
+		return guest
+	}
+	id, err := strconv.Atoi(splits[0])
+	if err != nil {
+		return guest
+	}
+	u, err := o.GetUserByID(int64(id))
+	if err != nil {
+		return guest
+	}
+
+	if login == cookieValue(userAgent, splits[0], u.Password) {
+		return &User{u}
 	}
 
 	return guest
@@ -150,13 +143,17 @@ func (o *Auth) authCookie(login string, userAgent string) *User {
 func (o *Auth) AuthGoogle(token string) *User {
 	fullClientID := o.cfg.Google.ClientID + ".apps.googleusercontent.com"
 	claims, err := googleidtokenverifier.Verify(token, fullClientID)
-	if err != nil {
+	if err != nil || claims.Sub == "" {
 		return guest
 	}
-	if claims.Sub == o.cfg.Google.UserID {
-		return admin
+
+	var user models.User
+	if err := o.db.Where(`google_user_id=?`, claims.Sub).Find(&user); err != nil {
+		log.Println(`谷歌登录错误：`, err)
+		return guest
 	}
-	return guest
+
+	return &User{User: &user}
 }
 
 func (o *Auth) AuthGitHub(code string) *User {
@@ -198,16 +195,20 @@ func (o *Auth) AuthGitHub(code string) *User {
 	if resp.StatusCode != 200 {
 		return guest
 	}
-	var user struct {
+	var gUser struct {
 		ID int64 `json:"id"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&gUser); err != nil || gUser.ID == 0 {
 		return guest
 	}
-	if user.ID != 0 && user.ID == o.cfg.Github.UserID {
-		return admin
+
+	var user models.User
+	if err := o.db.Where(`github_user_id=?`, gUser.ID).Find(&user); err != nil {
+		log.Println(`鸡盒登录错误：`, err)
+		return guest
 	}
-	return guest
+
+	return &User{User: &user}
 }
 
 const (
@@ -216,13 +217,13 @@ const (
 )
 
 func cookieValue(userAgent, username, password string) string {
-	return shasum(userAgent + login(username, password))
+	return username + ":" + shasum(userAgent+login(username, password))
 }
 
 // MakeCookie ...
 func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	agent := r.Header.Get("User-Agent")
-	cookie := cookieValue(agent, a.cfg.Basic.Username, a.cfg.Basic.Password)
+	cookie := cookieValue(agent, fmt.Sprint(u.ID), u.Password)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    cookie,
@@ -247,7 +248,7 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) GenCookieForPasskeys(u *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie {
-	cookie := shasum(agent + a.Login())
+	cookie := cookieValue(agent, fmt.Sprint(u.ID), u.Password)
 	return []*proto.FinishPasskeysLoginResponse_Cookie{
 		{
 			Name:     CookieNameLogin,
@@ -288,10 +289,10 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 
 // 仅用于测试的帐号。
 // 可同时用于 HTTP 和 GRPC 请求。
-func TestingAdminUserContext(a *Auth, userAgent string) context.Context {
+func TestingUserContext(user *User, userAgent string) context.Context {
 	md := metadata.Pairs()
-	md.Append(GatewayCookie, shasum(userAgent+a.Login()))
+	md.Append(GatewayCookie, cookieValue(userAgent, fmt.Sprint(user.ID), user.Password))
 	md.Append(GatewayUserAgent, userAgent)
-	md.Append(`Authorization`, fmt.Sprintf(`token %d:%s`, AdminID, a.cfg.Key))
+	md.Append(`Authorization`, fmt.Sprintf(`token %d:%s`, user.ID, user.Password))
 	return metadata.NewOutgoingContext(context.TODO(), md)
 }

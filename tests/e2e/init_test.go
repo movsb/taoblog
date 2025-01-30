@@ -2,45 +2,63 @@ package e2e_test
 
 import (
 	"context"
-	"os"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
-var Server *server.Server
-var client *clients.ProtoClient
-var admin context.Context
-var guest context.Context
+type R struct {
+	server *server.Server
+	client *clients.ProtoClient
+	admin  context.Context
+	guest  context.Context
+	user1  context.Context
+	user2  context.Context
+
+	user1ID, user2ID int64
+}
 
 // 会在服务启动后快速返回。
-func Serve(ctx context.Context) {
+func Serve(ctx context.Context, options ...server.With) *R {
 	// 测试环境应该不依赖本地系统。
-	os.Setenv(`DEV`, `0`)
+	version.EnableDevMode = false
 
 	cfg := config.DefaultConfig()
-	cfg.Auth.Basic.Username = `test`
-	cfg.Auth.Basic.Password = `test`
-	cfg.Auth.Key = `12345678`
 	cfg.Database.Path = ""  // 使用内存
 	cfg.Data.File.Path = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
 
-	Server = &server.Server{}
+	r := &R{}
+
+	r.server = server.NewServer(options...)
 	ready := make(chan struct{})
-	go Server.Serve(ctx, true, &cfg, ready)
+	go r.server.Serve(ctx, true, &cfg, ready)
 	<-ready
 
 	// 测试的时候默认禁用限流器；测试限流器相关函数会手动开启。
-	Server.Service.TestEnableRequestThrottler(false)
+	r.server.TestEnableRequestThrottler(false)
 
-	client = clients.NewProtoClientFromAddress(Server.GRPCAddr)
-	admin = auth.TestingAdminUserContext(Server.Auther, "go_test")
-	guest = context.Background()
+	r.client = clients.NewProtoClientFromAddress(r.server.GRPCAddr())
+
+	r.admin = onBehalfOf(r, int64(auth.AdminID))
+	r.guest = context.Background()
+
+	u := utils.Must1(r.server.Main().CreateUser(r.admin, &proto.User{}))
+	r.user1 = onBehalfOf(r, u.Id)
+	r.user1ID = u.Id
+	u = utils.Must1(r.server.Main().CreateUser(r.admin, &proto.User{}))
+	r.user2 = onBehalfOf(r, u.Id)
+	r.user2ID = u.Id
+
+	return r
 }
 
-func init() {
-	Serve(context.Background())
+func onBehalfOf(r *R, user int64) context.Context {
+	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(user))}
+	return auth.TestingUserContext(u, "go_test")
 }

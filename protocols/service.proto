@@ -33,6 +33,16 @@ service Utils {
 service Auth {
 	rpc BeginPasskeysLogin (BeginPasskeysLoginRequest) returns (BeginPasskeysLoginResponse);
 	rpc FinishPasskeysLogin (FinishPasskeysLoginRequest) returns (FinishPasskeysLoginResponse);
+
+	rpc CreateUser (User) returns (User) {
+		option (google.api.http) = {
+			post: "/v3/users";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "创建用户。";
+		};
+	}
 }
 
 service Management {
@@ -205,6 +215,23 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "完成/取消完成任务。";
+		};
+	}
+	rpc SetPostACL (SetPostACLRequest) returns (SetPostACLResponse) {
+		option (google.api.http) = {
+			patch: "/v3/posts/{post_id=*}/perms";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "为文章设置权限。";
+		};
+	}
+	rpc GetPostACL (GetPostACLRequest) returns (GetPostACLResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts/{post_id=*}/perms";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取文章权限。";
 		};
 	}
 

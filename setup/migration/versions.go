@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
@@ -8,7 +9,9 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
 )
@@ -480,4 +483,47 @@ func v31(tx *sql.Tx) {
 
 func v32(tx *sql.Tx) {
 	mustExec(tx, "CREATE TABLE IF NOT EXISTS logs (`id` INTEGER PRIMARY KEY AUTOINCREMENT,`time` INTEGER NOT NULL,`type` TEXT NOT NULL COLLATE NOCASE,`sub_type` TEXT NOT NULL COLLATE NOCASE,`version` INTEGER NOT NULL,`data` TEXT NOT NULL)")
+}
+
+func v33(tx *sql.Tx) {
+	mustExec(tx, "CREATE TABLE IF NOT EXISTS users (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `password` TEXT NOT NULL)")
+}
+
+var AdminID = 2
+
+// 密码是随机生成的，会同时使用配置文件里面的 key 和此 password，
+// 待到后续移除 key 后，就仅使用此 password 了。
+// ID 总是 2；1 留给 SystemAdmin 了。
+func v34(tx *sql.Tx) {
+	var r [16]byte
+	utils.Must1(rand.Read(r[:]))
+	password := fmt.Sprintf(`%x`, r)
+
+	// 暂时使用当前时间，其实应该是建站时间。
+	now := time.Now().Unix()
+
+	mustExec(tx, `INSERT INTO users (id,created_at,updated_at,password) VALUES (?,?,?,?)`, AdminID, now, now, password)
+}
+
+func v35(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN `credentials` TEXT NOT NULL DEFAULT ''")
+	var credentials string
+	if err := tx.QueryRow(`SELECT value FROM options WHERE name=?`, `admin_webauthn_credentials`).Scan(&credentials); err == nil {
+		mustExec(tx, `UPDATE users SET credentials=? WHERE id=?`, credentials, AdminID)
+	}
+	mustExec(tx, `DELETE FROM options WHERE name=?`, `admin_webauthn_credentials`)
+}
+
+func v36(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN `google_user_id` TEXT NOT NULL DEFAULT ''")
+	mustExec(tx, "ALTER TABLE users ADD COLUMN `github_user_id` INTEGER NOT NULL DEFAULT 0")
+}
+
+func v37(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE posts ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
+	mustExec(tx, "UPDATE posts SET user_id=?", AdminID)
+}
+
+func v38(tx *sql.Tx) {
+	mustExec(tx, "CREATE TABLE IF NOT EXISTS acl ( `id` INTEGER PRIMARY KEY AUTOINCREMENT, `created_at` INTEGER NOT NULL, `post_id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `permission` TEXT NOT NULL)")
 }

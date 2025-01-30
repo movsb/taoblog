@@ -1,19 +1,22 @@
 package migration
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
 	"github.com/movsb/taorm"
 )
 
 // 初始化过程。会创建所有的数据表。
-// 会创建第一篇文章。
-// TODO：不创建第一篇文章（因为测试的时候有不同的需求）。
+// 会自动创建管理员用户。
+// TODO 移除用户创建。
 func Init(db *sql.DB, path string) {
 	var err error
 
@@ -36,26 +39,25 @@ func Init(db *sql.DB, path string) {
 	}
 	_ = result
 
+	now := int32(time.Now().Unix())
+
 	tdb.MustTxCall(func(tx *taorm.DB) {
-		now := int32(time.Now().Unix())
 		tx.Model(&models.Option{
 			Name:  `db_ver`,
 			Value: fmt.Sprint(MaxVersionNumber()),
 		}).MustCreate()
-		tx.Model(&models.Post{
-			Date:       now,
-			Modified:   now,
-			Title:      `你好，世界`,
-			Type:       `post`,
-			Category:   0,
-			Status:     `public`,
-			SourceType: `markdown`,
-			Source:     `你好，世界！这是您的第一篇文章。`,
+	})
 
-			// TODO 用配置时区。
-			DateTimezone: ``,
-			// TODO 用配置时区。
-			ModifiedTimezone: ``,
-		}).MustCreate()
+	tdb.MustTxCall(func(tx *taorm.DB) {
+		var r [16]byte
+		utils.Must1(rand.Read(r[:]))
+		user := models.User{
+			ID:        2,
+			CreatedAt: int64(now),
+			UpdatedAt: int64(now),
+			Password:  fmt.Sprintf(`%x`, r),
+		}
+		tx.Model(&user).MustCreate()
+		log.Println(`管理员密码：`, user.Password)
 	})
 }

@@ -1,49 +1,35 @@
 package config
 
-// AuthConfig ...
-type AuthConfig struct {
-	Key       string `yaml:"key"`
-	NotifyKey string `yaml:"notify_key"`
+import "errors"
 
-	Basic  BasicAuthConfig  `yaml:"basic"`
+type AuthConfig struct {
 	Github GithubAuthConfig `yaml:"github"`
 	Google GoogleAuthConfig `yaml:"google"`
-
-	AdminName   string
-	AdminEmails []string
 }
 
-// DefaultAuthConfig ...
 func DefaultAuthConfig() AuthConfig {
 	return AuthConfig{
-		Basic:  DefaultBasicBasicAuthConfig(),
 		Github: DefaultGithubAuthConfig(),
 		Google: DefaultGoogleAuthConfig(),
 	}
 }
 
-// BasicAuthConfig ...
-type BasicAuthConfig struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-}
-
-// DefaultBasicBasicAuthConfig ...
-func DefaultBasicBasicAuthConfig() BasicAuthConfig {
-	return BasicAuthConfig{
-		Username: `taoblog`,
-		Password: `taoblog`,
-	}
-}
-
-// GithubAuthConfig ...
 type GithubAuthConfig struct {
 	ClientID     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
-	UserID       int64  `yaml:"user_id"`
 }
 
-// DefaultGithubAuthConfig ...
+func (GithubAuthConfig) CanSave() {}
+func (c *GithubAuthConfig) BeforeSet(paths Segments, obj any) error {
+	switch paths.At(0).Key {
+	case `client_id`:
+		return nil
+	case `client_secret`:
+		return nil
+	}
+	return errors.New(`unknown key for github`)
+}
+
 func DefaultGithubAuthConfig() GithubAuthConfig {
 	return GithubAuthConfig{}
 }
@@ -51,7 +37,15 @@ func DefaultGithubAuthConfig() GithubAuthConfig {
 // GoogleAuthConfig ...
 type GoogleAuthConfig struct {
 	ClientID string `yaml:"client_id"`
-	UserID   string `yaml:"user_id"`
+}
+
+func (GoogleAuthConfig) CanSave() {}
+func (c *GoogleAuthConfig) BeforeSet(paths Segments, obj any) error {
+	switch paths.At(0).Key {
+	case `client_id`:
+		return nil
+	}
+	return errors.New(`unknown key for google`)
 }
 
 // DefaultGoogleAuthConfig ...

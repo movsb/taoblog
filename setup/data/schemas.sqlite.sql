@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `options` (
 -- 创建表 posts
 CREATE TABLE IF NOT EXISTS `posts` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `user_id` INTEGER NOT NULL,
     `date` INTEGER NOT NULL,
     `date_timezone` TEXT NOT NULL,
     `modified` INTEGER NOT NULL,
@@ -72,6 +73,24 @@ CREATE TABLE IF NOT EXISTS logs (
     `sub_type` TEXT NOT NULL COLLATE NOCASE,
     `version` INTEGER NOT NULL,
     `data` TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `created_at` INTEGER NOT NULL,
+    `updated_at` INTEGER NOT NULL,
+    `password` TEXT NOT NULL,
+    `credentials` TEXT NOT NULL,
+    `google_user_id` TEXT NOT NULL,
+    `github_user_id` INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS acl (
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `created_at` INTEGER NOT NULL,
+    `user_id` INTEGER NOT NULL,
+    `post_id` INTEGER NOT NULL,
+    `permission` TEXT NOT NULL
 );
 
 COMMIT;

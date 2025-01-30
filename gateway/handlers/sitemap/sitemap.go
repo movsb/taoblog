@@ -45,9 +45,8 @@ func New(auther *auth.Auth, client *clients.ProtoClient, impl service.ToBeImplem
 	return s
 }
 
-// ServeHTTP ...
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := s.impl.ListAllPostsIds(req.Context()) // 这个 Context 是被 Server 的 Interceptor 传递了 AuthContext 的。
+	rsp, err := s.impl.ListAllPostsIds(auth.SystemAdmin(req.Context()))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

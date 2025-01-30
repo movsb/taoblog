@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
@@ -26,7 +25,6 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 	d := &Data{
 		ctx:    ctx,
 		Config: cfg,
-		User:   auth.Context(ctx).User,
 		Meta:   &MetaData{},
 		svc:    service,
 	}

@@ -260,7 +260,7 @@ func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
 }
 
 func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForSearch(r.Context(), t.cfg, t.auth.AuthRequest(r), t.service, t.searcher, r)
+	d := data.NewDataForSearch(r.Context(), t.cfg, t.service, t.searcher, r)
 	t.executeTemplate(`search.html`, w, d)
 }
 
@@ -299,7 +299,7 @@ func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTags(r.Context(), t.cfg, t.auth.AuthRequest(r), t.service, t.impl)
+	d := data.NewDataForTags(r.Context(), t.cfg, t.service, t.impl)
 	t.executeTemplate(`tags.html`, w, d)
 }
 
@@ -376,7 +376,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 		panic(err)
 	}
 
-	d := data.NewDataForPost(req.Context(), t.cfg, t.auth.AuthRequest(req), t.service, p, rsp.Comments)
+	d := data.NewDataForPost(req.Context(), t.cfg, t.service, p, rsp.Comments)
 
 	var name string
 	if p.Type == `tweet` {

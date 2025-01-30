@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -12,6 +13,7 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/movsb/taoblog/service/models"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -24,10 +26,12 @@ type ctxAuthKey struct{}
 type AuthContext struct {
 	// 当前请求所引用的用户。
 	// 不会随不同的请求改变。
+	// 始终不为空；如果是未登录用户，则为 guest。
 	User *User
 
 	// 请求来源 IP 地址。
 	// 包括 HTTP 请求，GRPC 请求。
+	// 始终不为空。
 	RemoteAddr netip.Addr
 
 	// 用户使用的代理端名字。
@@ -38,7 +42,6 @@ type AuthContext struct {
 // 会默认添加 Guest，如果不存在的话。
 //
 // Note：在当前的实现下，非登录用户/无权限用户被表示为 Guest（id==0）的用户。所以此函数的返回值始终不为空。
-// TODO：是不是应该返回 AuthContext 整体？可能包含用户的 IP 地址。
 func Context(ctx context.Context) *AuthContext {
 	if ac := _Context(ctx); ac != nil {
 		return ac
@@ -200,7 +203,13 @@ const TokenName = `token`
 // 适用于服务端代码功能。
 func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = addUserContextToInterceptorForToken(ctx, a.userByKey)
+		ctx = addUserContextToInterceptorForToken(ctx, func(id int, key string) *User {
+			u, err := a.userByKey(id, key)
+			if err == nil {
+				return &User{User: u}
+			}
+			return guest
+		})
 		return handler(ctx, req)
 	}
 }
@@ -208,29 +217,30 @@ func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor
 func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
-			ServerStream:   ss,
-			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), a.userByKey),
+			ServerStream: ss,
+			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), func(id int, key string) *User {
+				u, err := a.userByKey(id, key)
+				if err == nil {
+					return &User{User: u}
+				}
+				return guest
+			}),
 		}
 		return handler(srv, &wss)
 	}
 }
 
-func (a *Auth) userByKey(id int, key string) *User {
-	if key == "" {
-		return guest
+func (a *Auth) userByKey(id int, key string) (*models.User, error) {
+	u, err := a.GetUserByID(int64(id))
+	if err != nil {
+		return nil, err
 	}
 
-	if id == AdminID && key == a.cfg.Key {
-		return admin
-	}
-	if id == int(Notify.ID) && key == a.cfg.NotifyKey {
-		return Notify
-	}
-	if id == int(system.ID) && key == systemKey {
-		return system
+	if constantEqual(key, u.Password) {
+		return u, nil
 	}
 
-	return guest
+	return nil, sql.ErrNoRows
 }
 
 func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id int, key string) *User) context.Context {

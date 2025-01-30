@@ -232,9 +232,10 @@ type ProfileData struct {
 	User *auth.User
 }
 
+// 输出的是 ID，不是 PublicKey。目前只作展示使用。
 func (d *ProfileData) PublicKeys() []string {
-	ss := make([]string, 0, len(d.User.WebAuthnCredentials()))
-	for _, c := range d.User.WebAuthnCredentials() {
+	ss := make([]string, 0, len(d.User.Credentials))
+	for _, c := range d.User.Credentials {
 		ss = append(ss, base64.RawURLEncoding.EncodeToString(c.ID))
 	}
 	return ss

@@ -94,6 +94,8 @@ message Post {
 	// 创建时间和修改时间所在的时区。
 	string date_timezone = 20;
 	string modified_timezone = 21;
+
+	int32 user_id = 22;
 }
 
 enum LinkKind {
@@ -126,6 +128,16 @@ message DeletePostRequest {
 	int32 id = 1;
 }
 
+// 权限。
+//
+// 如果是 Unknown，默认为 All。
+enum Ownership {
+	OwnershipUnknown = 0;
+	OwnershipMine = 1;
+	OwnershipTheir = 2;
+	OwnershipAll = 100;
+}
+
 message ListPostsRequest {
 	int32 limit = 1;
 	string order_by = 2;
@@ -138,6 +150,9 @@ message ListPostsRequest {
 	// 时间范围：[NotBefore, NotAfter)。
 	int32 modified_not_before = 6;
 	int32 modified_not_after = 7;
+
+	// 文章的所有者。
+	Ownership ownership = 8;
 }
 
 message ListPostsResponse {
@@ -154,7 +169,9 @@ message GetPostCommentsCountResponse {
 
 message SetPostStatusRequest {
 	int64 id = 1;
-	bool public = 2;
+	
+	// TODO 换成枚举
+	string status = 2;
 
 	// Whether to create_time and update_time
 	bool touch = 3;
@@ -209,6 +226,32 @@ message CheckTaskListItemsRequest {
 
 message CheckTaskListItemsResponse {
 	int32 modification_time = 1;
+}
+
+enum Perm {
+	PermUnknown = 0;
+	PermRead = 1;
+}
+
+message UserPerm {
+	repeated Perm perms = 1;
+}
+
+message SetPostACLRequest {
+	int64 post_id = 1;
+	map<int32, UserPerm> users = 2;
+}
+
+message SetPostACLResponse {
+
+}
+
+message GetPostACLRequest {
+	int64 post_id = 1;
+}
+
+message GetPostACLResponse {
+	map<int32, UserPerm> users = 1;
 }
 
 message FileSpec {

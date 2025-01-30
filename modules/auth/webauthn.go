@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/service/models"
 )
 
 type WebAuthn struct {
@@ -115,7 +115,7 @@ func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options, session, err := a.wa.BeginRegistration(user,
+	options, session, err := a.wa.BeginRegistration(ToWebAuthnUser(user),
 		// YubiKey + Webauth: userHandle is always null
 		// https://stackoverflow.com/a/62780333/3628322
 		webauthn.WithResidentKeyRequirement(protocol.ResidentKeyRequirementRequired),
@@ -146,7 +146,7 @@ func (a *WebAuthn) FinishRegistration(w http.ResponseWriter, r *http.Request) {
 	session := sessionAny.(*webauthn.SessionData)
 	defer a.registrationSessions.Delete(user.ID)
 
-	credential, err := a.wa.FinishRegistration(user, *session, r)
+	credential, err := a.wa.FinishRegistration(ToWebAuthnUser(user), *session, r)
 	if err != nil {
 		http.Error(w, "注册失败："+err.Error(), http.StatusInternalServerError)
 		return
@@ -180,37 +180,28 @@ func (a *WebAuthn) FinishLogin(w http.ResponseWriter, r *http.Request) {
 	session := sessionAny.(*webauthn.SessionData)
 	defer a.loginSessions.Delete(challenge)
 
-	var user *User
+	var outUser *User
 
-	credential, err := a.wa.FinishDiscoverableLogin(a.findUser(&user), *session, r)
+	credential, err := a.wa.FinishDiscoverableLogin(
+		func(rawID, userHandle []byte) (webauthn.User, error) {
+			id := binary.LittleEndian.Uint32(userHandle)
+			var user models.User
+			if err := a.auth.db.Where(`id=?`, id).Find(&user); err != nil {
+				return nil, err
+			}
+			outUser = &User{&user}
+			return ToWebAuthnUser(outUser), nil
+		},
+		*session, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	a.auth.AddWebAuthnCredential(user, credential)
+	a.auth.AddWebAuthnCredential(outUser, credential)
 	log.Println("登录成功，凭证已更新")
 
-	a.auth.MakeCookie(user, w, r)
+	a.auth.MakeCookie(outUser, w, r)
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (a *WebAuthn) findUser(user **User) func(rawID, userHandle []byte) (webauthn.User, error) {
-	return func(rawID, userHandle []byte) (webauthn.User, error) {
-		// just in case
-		if *user != nil {
-			return nil, fmt.Errorf(`user already found`)
-		}
-		if len(userHandle) != 4 {
-			return nil, fmt.Errorf(`bad user handle length: %v`, len(userHandle))
-		}
-		id := binary.LittleEndian.Uint32(userHandle)
-		u := a.auth.GetUserByID(int64(id))
-		if u != nil && !u.IsGuest() {
-			*user = u
-			return u, nil
-		}
-		return nil, fmt.Errorf(`no such user`)
-	}
 }

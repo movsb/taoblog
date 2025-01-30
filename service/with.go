@@ -4,7 +4,6 @@ import (
 	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/notify"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
-	"google.golang.org/grpc"
 )
 
 type With func(s *Service)
@@ -26,13 +25,5 @@ func WithNotifier(notifier notify.Notifier) With {
 func WithMailer(mailer *mailer.MailerLogger) With {
 	return func(s *Service) {
 		s.mailer = mailer
-	}
-}
-
-// 请求节流器。
-func WithRequestThrottler(throttler grpc.UnaryServerInterceptor) With {
-	return func(s *Service) {
-		s.throttler = throttler
-		s.throttlerEnabled.Store(true)
 	}
 }

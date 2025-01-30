@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"log"
@@ -51,6 +52,7 @@ type _PostContentCacheKey struct {
 	// 除开最基本的文章编号和渲染选项的不同之外，
 	// 可能还有其它的 Vary 特性，比如：如果同一篇文章，管理员和访客看到的内容不一样（角色），
 	// 这部分就属于 Vary 应该标记出来的。暂时不使用相关标记。只是备用。
+	// TODO 由于增加了用户系统，不同用于看不同用户的文章时应该有不同的缓存。
 	Vary struct{}
 }
 
@@ -64,7 +66,29 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	var posts models.Posts
 	stmt := s.posts().Limit(int64(in.Limit)).OrderBy(in.OrderBy)
 
-	stmt.WhereIf(ac.User.IsGuest(), "status = 'public'")
+	if !ac.User.IsGuest() {
+		// 1. 所有自己的
+		// 2. 所有公开的
+		// 3. 所有别人分享、自己可见的
+		switch in.Ownership {
+		default:
+			return nil, fmt.Errorf(`未知所有者。`)
+		case proto.Ownership_OwnershipMine:
+			stmt.Where(`user_id=?`, ac.User.ID)
+		case proto.Ownership_OwnershipTheir:
+			stmt.Select(`posts.*`)
+			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id AND acl.user_id = ?`, ac.User.ID)
+			stmt.Where(`posts.user_id!=? AND acl.user_id=? AND posts.status != ?`, ac.User.ID, ac.User.ID, models.PostStatusPrivate)
+		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
+			stmt.Select(`posts.*`)
+			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id AND acl.user_id = ?`, ac.User.ID)
+			stmt.Where(`posts.user_id=? OR (acl.user_id=? AND posts.status != ?)`, ac.User.ID, ac.User.ID, models.PostStatusPrivate)
+		}
+	} else {
+		stmt.Where("status=?", models.PostStatusPublic)
+	}
+
+	// TODO 以前觉得这样写很省事儿。但是这样好像无法写覆盖测试？
 	stmt.WhereIf(len(in.Kinds) > 0, `type in (?)`, in.Kinds)
 	stmt.WhereIf(in.ModifiedNotBefore > 0, `modified >= ?`, in.ModifiedNotBefore)
 	stmt.WhereIf(in.ModifiedNotAfter > 0, `modified < ?`, in.ModifiedNotAfter)
@@ -89,11 +113,11 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	}, nil
 }
 
+// 只会列出公开的。
 func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
-	ac := auth.Context(ctx)
+	s.MustBeAdmin(ctx)
 	var posts models.Posts
-	if err := s.tdb.Model(models.Post{}).Select(`id`).
-		WhereIf(ac.User.IsGuest(), `status='public'`).Find(&posts); err != nil {
+	if err := s.tdb.Select(`id`).Where(`status=?`, models.PostStatusPublic).Find(&posts); err != nil {
 		return nil, err
 	}
 	var ids []int32
@@ -115,6 +139,7 @@ func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
 // 获取指定编号的文章。
 //
 // NOTE：如果是公开文章但是非管理员用户，会过滤掉敏感字段。
+// TODO 写单测测权限。
 func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto.Post, error) {
 	ac := auth.Context(ctx)
 
@@ -487,12 +512,13 @@ func (s *Service) updatePostMetadataTime(pid int64, t time.Time) {
 
 // CreatePost ...
 func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, error) {
-	s.MustBeAdmin(ctx)
+	ac := s.MustCanCreatePost(ctx)
 
 	now := int32(time.Now().Unix())
 
 	p := models.Post{
 		ID:         in.Id,
+		UserID:     int32(ac.User.ID),
 		Date:       0,
 		Modified:   0,
 		Title:      strings.TrimSpace(in.Title),
@@ -789,13 +815,16 @@ func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequ
 		var post models.Post
 		txs.tdb.Select("id").Where("id=?", in.Id).MustFind(&post)
 
-		status := `public`
-		if !in.Public {
-			status = `draft`
+		if !slices.Contains([]string{
+			models.PostStatusPublic,
+			models.PostStatusPartial,
+			models.PostStatusPrivate,
+		}, in.Status) {
+			return errors.New(`无效状态`)
 		}
 
 		m := map[string]any{
-			"status": status,
+			"status": in.Status,
 		}
 
 		now := time.Now().Unix()
@@ -979,6 +1008,8 @@ func (s *Service) applyTaskChecks(modified int32, sourceType, rawSource string, 
 }
 
 func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStylingPageRequest) (*proto.CreateStylingPageResponse, error) {
+	s.MustBeAdmin(ctx)
+
 	source := in.Source
 	if source == `` {
 		source = string(utils.Must1(styling.Root.ReadFile(`index.md`)))
@@ -1028,4 +1059,95 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 		})
 	}
 	return &proto.CreateStylingPageResponse{}, err
+}
+
+func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (*proto.SetPostACLResponse, error) {
+	// TODO 临时
+	s.MustBeAdmin(ctx)
+
+	return &proto.SetPostACLResponse{}, s.TxCall(func(s *Service) error {
+		// 获取当前的。
+		var acl []*models.AccessControlEntry
+		s.tdb.Where(`post_id=?`, in.PostId).MustFind(&acl)
+
+		type ACE struct {
+			UserID int32
+			Perm   proto.Perm
+		}
+
+		var old, new []ACE
+
+		for _, ace := range acl {
+			var perm proto.Perm
+			switch ace.Permission {
+			default:
+				panic(`错误的权限。`)
+			case models.PermRead:
+				perm = proto.Perm_PermRead
+			}
+			old = append(old, ACE{UserID: int32(ace.UserID), Perm: perm})
+		}
+
+		for uid, up := range in.Users {
+			for _, p := range up.Perms {
+				if p == proto.Perm_PermUnknown {
+					panic(`错误的权限。`)
+				}
+				new = append(new, ACE{UserID: uid, Perm: p})
+			}
+		}
+
+		ps := func(p proto.Perm) string {
+			switch p {
+			case proto.Perm_PermRead:
+				return models.PermRead
+			default:
+				panic(`无效权限。`)
+			}
+		}
+
+		for _, a := range old {
+			if !slices.Contains(new, a) {
+				s.tdb.From(models.AccessControlEntry{}).Where(`user_id=? AND permission=?`, a.UserID, ps(a.Perm)).MustDelete()
+			}
+		}
+		for _, b := range new {
+			if !slices.Contains(old, b) {
+				ace := models.AccessControlEntry{
+					CreatedAt:  time.Now().Unix(),
+					PostID:     in.PostId,
+					UserID:     int64(b.UserID),
+					Permission: ps(b.Perm),
+				}
+				s.tdb.Model(&ace).MustCreate()
+			}
+		}
+
+		return nil
+	})
+}
+
+func (s *Service) GetPostACL(ctx context.Context, in *proto.GetPostACLRequest) (*proto.GetPostACLResponse, error) {
+	// TODO 临时
+	s.MustBeAdmin(ctx)
+
+	var acl []models.AccessControlEntry
+	s.tdb.Where(`post_id=?`, in.PostId).MustFind(&acl)
+
+	users := map[int32]*proto.UserPerm{}
+	for _, ace := range acl {
+		if _, ok := users[int32(ace.UserID)]; !ok {
+			users[int32(ace.UserID)] = &proto.UserPerm{}
+		}
+		var perm proto.Perm
+		switch ace.Permission {
+		default:
+			return nil, errors.New(`错误的权限。`)
+		case models.PermRead:
+			perm = proto.Perm_PermRead
+		}
+		users[int32(ace.UserID)].Perms = append(users[int32(ace.UserID)].Perms, perm)
+	}
+
+	return &proto.GetPostACLResponse{Users: users}, nil
 }

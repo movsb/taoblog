@@ -11,9 +11,18 @@ import (
 
 const Untitled = `无标题`
 
+type PostStatus string
+
+const (
+	PostStatusPublic  = `public`  // 所有人可见。
+	PostStatusPrivate = `draft`   // 仅自己可见。
+	PostStatusPartial = `partial` // 仅对指定的人可见。
+)
+
 // Post ...
 type Post struct {
 	ID              int64
+	UserID          int32
 	Date            int32
 	Modified        int32
 	LastCommentedAt int32
@@ -167,6 +176,7 @@ func (Post) TableName() string {
 func (p *Post) ToProto(redact func(p *proto.Post) error) (*proto.Post, error) {
 	out := proto.Post{
 		Id:            p.ID,
+		UserId:        p.UserID,
 		Date:          p.Date,
 		Modified:      p.Modified,
 		Title:         p.Title,

@@ -148,7 +148,7 @@ func (c *Client) GetPost() {
 }
 
 // SetPostStatus ...
-func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
+func (c *Client) SetPostStatus(id int64, status models.PostStatus, touch bool) {
 	if id <= 0 {
 		config := c.readPostConfig()
 		if config.ID == 0 {
@@ -158,7 +158,7 @@ func (c *Client) SetPostStatus(id int64, public bool, touch bool) {
 	}
 	_, err := c.Blog.SetPostStatus(c.Context(), &proto.SetPostStatusRequest{
 		Id:     id,
-		Public: public,
+		Status: string(status),
 		Touch:  touch,
 	})
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -21,7 +20,6 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlog
 	d := &Data{
 		ctx:    ctx,
 		Meta:   &MetaData{},
-		User:   auth.Context(ctx).User,
 		Config: cfg,
 		svc:    svc,
 		Tweets: &TweetsData{

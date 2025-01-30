@@ -11,8 +11,15 @@ import (
 )
 
 func NewMaintenance() *Maintenance {
+	// 为了测试不重复注册，特地注册为全局。
+	// TODO 解决测试重复注册的问题
+	// if version.DevMode() {
+	enabled := expvar.NewInt(fmt.Sprintf(`%s:%d`, `maintenance:`, time.Now().UnixNano()))
+	// } else {
+	// 	enabled = expvar.NewInt(`maintenance`)
+	// }
 	return &Maintenance{
-		enabled: expvar.NewInt(`maintenance`),
+		enabled: enabled,
 	}
 }
 
