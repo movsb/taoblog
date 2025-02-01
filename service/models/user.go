@@ -35,6 +35,10 @@ func (c Credentials) Value() (driver.Value, error) {
 func (c *Credentials) Scan(v any) error {
 	switch val := v.(type) {
 	case string:
+		// TODO 支持 NULL，以处理空字符串。
+		if val == `` {
+			return nil
+		}
 		return json.Unmarshal([]byte(val), c)
 	case []byte:
 		return json.Unmarshal(val, c)

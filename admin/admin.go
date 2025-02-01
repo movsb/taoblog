@@ -163,11 +163,11 @@ func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to strin
 
 func (a *Admin) requireLogin(h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !a.auth.AuthRequest(r).IsAdmin() {
-			a.redirectToLogin(w, r, r.RequestURI)
+		if !a.auth.AuthRequest(r).IsGuest() {
+			h.ServeHTTP(w, r)
 			return
 		}
-		h.ServeHTTP(w, r)
+		a.redirectToLogin(w, r, r.RequestURI)
 	})
 }
 
@@ -199,7 +199,7 @@ func (a *Admin) executeTemplate(w io.Writer, name string, data any) {
 }
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
-	if a.auth.AuthRequest(r).IsAdmin() {
+	if !a.auth.AuthRequest(r).IsGuest() {
 		to := a.prefixed(`/profile`)
 		if u := r.URL.Query().Get(`u`); u != "" {
 			to = u

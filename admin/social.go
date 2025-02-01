@@ -19,7 +19,7 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := a.auth.AuthLogin(t.Username, t.Password)
-	if user.IsAdmin() {
+	if !user.IsGuest() {
 		a.auth.MakeCookie(user, w, r)
 		w.WriteHeader(http.StatusOK)
 		return
