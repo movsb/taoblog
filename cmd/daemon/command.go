@@ -123,13 +123,15 @@ func update(home string, token string) {
 	for range ticker.C {
 		info, err := client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{})
 		if err != nil {
+			log.Println(`GetInfo:`, err)
 			if strings.Contains(err.Error(), `502`) {
-				log.Println(`需要重启。`)
+				log.Println(`因 502 需要重启。`)
 				if err := run(restartScript); err != nil {
-					log.Println(err)
+					log.Println(`重启失败：`, err)
+				} else {
+					time.Sleep(time.Second * 10)
 				}
 			}
-			log.Println(err)
 			continue
 		}
 		if !info.ScheduledUpdate {
