@@ -183,14 +183,6 @@ service TaoBlog {
 			description: "是否公开文章。";
 		};
 	}
-	rpc GetPostComments(GetPostCommentsRequest) returns (GetPostCommentsResponse) {
-		option (google.api.http) = {
-			get: "/v3/posts/{id=*}/comments";
-		};
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "获取某篇文章的全部评论。比 ListComments 接口简单很多。";
-		};
-	}
 	rpc GetPostsByTags(GetPostsByTagsRequest) returns (GetPostsByTagsResponse) {
 		option (google.api.http) = {
 			get: "/v3/posts:tags";

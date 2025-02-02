@@ -96,6 +96,11 @@ message Post {
 	string modified_timezone = 21;
 
 	int32 user_id = 22;
+	
+	// 评论列表。
+	// 名字被上面的占用了，记得把上面的改名。
+	// 仅在 GetPost 时指定选项后返回。
+	repeated Comment comment_list = 23;
 }
 
 enum LinkKind {
@@ -113,6 +118,8 @@ message GetPostRequest {
 	bool with_relates = 99;
 	PostContentOptions content_options = 100;
 	LinkKind with_link = 101;
+	// 是否返回评论列表。
+	bool with_comments = 102;
 }
 
 message UpdatePostRequest {
@@ -133,8 +140,11 @@ message DeletePostRequest {
 // 如果是 Unknown，默认为 All。
 enum Ownership {
 	OwnershipUnknown = 0;
+	// 自己创建的。
 	OwnershipMine = 1;
+	// 他们分享的 + 他们公开的。
 	OwnershipTheir = 2;
+	// 自己创建的 + 他们分享的 + 他们公开的。
 	OwnershipAll = 100;
 }
 
@@ -179,14 +189,6 @@ message SetPostStatusRequest {
 
 message SetPostStatusResponse {
 
-}
-
-// 获取某篇文章的全部评论。
-message GetPostCommentsRequest {
-	int64 id = 1;
-}
-message GetPostCommentsResponse {
-	repeated Comment comments = 1;
 }
 
 message GetPostsByTagsRequest {

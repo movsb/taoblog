@@ -85,7 +85,7 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostConte
 		// TODO：其实也允许/也已经支持编辑早期的 HTML 评论，但是在保存的时候已经被转换成 Markdown。
 		c.CanEdit = c.SourceType == `markdown` && (ac.RemoteAddr.String() == c.Ip && in5min(c.Date))
 
-		if !ac.User.IsAdmin() && !ac.User.IsSystem() {
+		if ac.User.IsGuest() {
 			c.Email = ""
 			c.Ip = ""
 		} else {
@@ -319,18 +319,11 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 	return &proto.ListCommentsResponse{Comments: protoComments}, nil
 }
 
-func (s *Service) GetPostComments(ctx context.Context, req *proto.GetPostCommentsRequest) (*proto.GetPostCommentsResponse, error) {
-	ac := auth.Context(ctx)
-	if !(ac.User.IsAdmin() || ac.User.IsSystem() || s.isPostPublic(ctx, req.Id)) {
-		return nil, status.Error(codes.PermissionDenied, `你无权查看此文章的评论。`)
-	}
+// 由 GetPostComments 改写而来，私有函数，不鉴权。
+func (s *Service) getPostComments(ctx context.Context, postID int64) ([]*proto.Comment, error) {
 	var comments models.Comments
-	stmt := s.tdb.Select(`*`)
-	stmt.Where("post_id=?", req.Id)
-	stmt.MustFind(&comments)
-	return &proto.GetPostCommentsResponse{
-		Comments: comments.ToProto(s.setCommentExtraFields(ctx, co.For(co.GetPostComments))),
-	}, nil
+	s.tdb.Where("post_id=?", postID).MustFind(&comments)
+	return comments.ToProto(s.setCommentExtraFields(ctx, co.For(co.GetPostComments))), nil
 }
 
 func (s *Service) GetAllCommentsCount() int64 {

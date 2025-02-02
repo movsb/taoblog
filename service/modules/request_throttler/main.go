@@ -88,9 +88,6 @@ var methodThrottlerInfo = map[string]struct {
 	`/protocols.TaoBlog/ListComments`: {
 		Internal: true,
 	},
-	`/protocols.TaoBlog/GetPostComments`: {
-		Internal: true,
-	},
 	`/protocols.TaoBlog/CheckCommentTaskListItems`: {
 		Interval:  time.Second * 5,
 		Message:   `任务完成得过于频繁？`,

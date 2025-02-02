@@ -60,6 +60,10 @@ func (s *Service) posts() *taorm.Stmt {
 	return s.tdb.Model(models.Post{})
 }
 
+// 按条件枚举文章。
+//
+// TODO: 具体的 permission 没用上。
+// TODO: 好像对于登录用于 status=public 没用上。
 func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*proto.ListPostsResponse, error) {
 	ac := auth.Context(ctx)
 
@@ -77,12 +81,18 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 			stmt.Where(`user_id=?`, ac.User.ID)
 		case proto.Ownership_OwnershipTheir:
 			stmt.Select(`posts.*`)
-			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id AND acl.user_id = ?`, ac.User.ID)
-			stmt.Where(`posts.user_id!=? AND acl.user_id=? AND posts.status != ?`, ac.User.ID, ac.User.ID, models.PostStatusPrivate)
+			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+			stmt.Where(
+				`posts.user_id!=? AND (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
+				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
+			)
 		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
 			stmt.Select(`posts.*`)
-			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id AND acl.user_id = ?`, ac.User.ID)
-			stmt.Where(`posts.user_id=? OR (acl.user_id=? AND posts.status != ?)`, ac.User.ID, ac.User.ID, models.PostStatusPrivate)
+			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+			stmt.Where(
+				`posts.user_id=? OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
+				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
+			)
 		}
 	} else {
 		stmt.Where("status=?", models.PostStatusPublic)
@@ -127,38 +137,37 @@ func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
 	return ids, nil
 }
 
-// TODO 性能很差！
-func (s *Service) isPostPublic(ctx context.Context, id int64) bool {
-	p, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
-	if err != nil {
-		return false
-	}
-	return p.Status == `public`
-}
-
 // 获取指定编号的文章。
 //
-// NOTE：如果是公开文章但是非管理员用户，会过滤掉敏感字段。
-// TODO 写单测测权限。
+// NOTE：如果是访客用户，会过滤掉敏感字段。
 func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto.Post, error) {
 	ac := auth.Context(ctx)
 
 	var p models.Post
 
-	stmt := s.tdb.Model(p)
+	stmt := s.tdb.Model(p).Select(`posts.*`)
 
 	if in.Id > 0 {
-		stmt = stmt.Where(`id=?`, in.Id)
+		stmt.Where(`posts.id=?`, in.Id)
 	} else if in.Page != "" {
 		dir, slug := path.Split(in.Page)
 		catID := s.getPageParentID(dir)
-		stmt = stmt.Where("slug=? AND category=?", slug, catID).
+		stmt.Where("slug=? AND category=?", slug, catID).
 			OrderBy("date DESC") // ???
 	} else {
 		return nil, status.Error(codes.InvalidArgument, `需要指定文章查询条件。`)
 	}
 
-	stmt = stmt.WhereIf(ac.User.IsGuest(), `status='public'`)
+	if ac.User.IsGuest() {
+		stmt.Where(`status=?`, models.PostStatusPublic)
+	} else {
+		stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+		stmt.Where(
+			`posts.user_id=? OR posts.status=? OR (acl.user_id=? AND acl.permission=?)`,
+			ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PermRead,
+		)
+	}
+
 	if err := stmt.Find(&p); err != nil {
 		return nil, err
 	}
@@ -188,6 +197,14 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto
 				s.setPostLink(p, in.WithLink)
 			}
 		}
+	}
+
+	if in.WithComments {
+		list, err := s.getPostComments(ctx, p.ID)
+		if err != nil {
+			return nil, err
+		}
+		out.CommentList = list
 	}
 
 	return out, nil
@@ -786,7 +803,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 
 // TODO 文章编号可能是 0️⃣
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
-	s.MustBeAdmin(ctx)
+	s.MustNotBeGuest(ctx)
 	// ac := auth.Context(ctx)
 	content, err := s.renderMarkdown(true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
 	return &proto.PreviewPostResponse{Html: content}, err
@@ -856,7 +873,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostConten
 	ac := auth.Context(ctx)
 
 	return func(p *proto.Post) error {
-		if !ac.User.IsAdmin() && !ac.User.IsSystem() {
+		if ac.User.IsGuest() {
 			if p.Metas != nil {
 				p.Metas.Geo = nil
 			}

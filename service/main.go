@@ -224,6 +224,16 @@ func (s *Service) exportVars() {}
 func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	return MustBeAdmin(ctx)
 }
+func (s *Service) MustNotBeGuest(ctx context.Context) *auth.AuthContext {
+	ac := auth.Context(ctx)
+	if ac == nil {
+		panic("AuthContext 不应为 nil")
+	}
+	if ac.User.IsGuest() {
+		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
+	}
+	return ac
+}
 
 func (s *Service) MustCanCreatePost(ctx context.Context) *auth.AuthContext {
 	ac := auth.Context(ctx)

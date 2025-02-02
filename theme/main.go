@@ -310,6 +310,7 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 			WithRelates:    true,
 			WithLink:       proto.LinkKind_LinkKindRooted,
 			ContentOptions: co.For(co.QueryByID),
+			WithComments:   true,
 		},
 	)
 	if err != nil {
@@ -350,6 +351,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 			WithRelates:    false, // 页面总是不是显示相关文章。
 			WithLink:       proto.LinkKind_LinkKindRooted,
 			ContentOptions: co.For(co.QueryByPage),
+			WithComments:   true,
 		},
 	)
 	if err != nil {
@@ -371,12 +373,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 
 // TODO 304 不要放这里处理。
 func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto.Post) {
-	rsp, err := t.service.GetPostComments(req.Context(), &proto.GetPostCommentsRequest{Id: p.Id})
-	if err != nil {
-		panic(err)
-	}
-
-	d := data.NewDataForPost(req.Context(), t.cfg, t.service, p, rsp.Comments)
+	d := data.NewDataForPost(req.Context(), t.cfg, t.service, p)
 
 	var name string
 	if p.Type == `tweet` {
