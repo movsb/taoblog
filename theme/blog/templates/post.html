@@ -14,8 +14,8 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 	<div class="entry">
 	<div class="meta1">
 		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ $.Config.Site.Name }}</a>
-		{{ if $.Author }}
-		<span class="author">{{ $.Author }}</span>
+		{{ with $.Author }}
+		<span class="author">{{ . }}</span>
 		{{ end }}
 		{{ if ne .Type `page` }}
 		<time class="date" title="发表时间：{{.DateString}}

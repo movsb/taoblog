@@ -24,9 +24,9 @@ type PostsData struct {
 // NewDataForPosts ...
 func NewDataForPosts(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
-		ctx:    ctx,
-		Config: cfg,
-		Meta:   &MetaData{},
+		Context: ctx,
+		Config:  cfg,
+		Meta:    &MetaData{},
 	}
 
 	postsData := &PostsData{

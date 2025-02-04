@@ -12,6 +12,8 @@
 <div id="wrapper">
 <h1>{{ .Name }}</h1>
 <div class="user-info">
+	<p>昵称：{{ .User.Nickname }}</p>
+	<p>邮箱：{{ with .User.Email }} {{ . }} {{ else }}(无){{ end }}</p>
 	{{ if .PublicKeys }}
 	<p><b>公钥：</b></p>
 	<ul>

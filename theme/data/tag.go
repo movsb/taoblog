@@ -16,9 +16,9 @@ type TagData struct {
 // NewDataForTag ...
 func NewDataForTag(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, tags []string) *Data {
 	d := &Data{
-		ctx:    ctx,
-		Config: cfg,
-		Meta:   &MetaData{},
+		Context: ctx,
+		Config:  cfg,
+		Meta:    &MetaData{},
 	}
 	td := &TagData{
 		Names: tags,

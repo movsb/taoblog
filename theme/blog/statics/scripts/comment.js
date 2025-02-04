@@ -78,7 +78,7 @@ class CommentAPI
 		c.date_timezone = c.date_timezone ?? '';
 		c.modified_timezone = c.modified_timezone ?? '';
 
-		c.is_admin = c.is_admin ?? false;
+		c.user_id = c.user_id ?? 0;
 		c.geo_location = c.geo_location ?? '';
 		c.can_edit = c.can_edit ?? false;
 		c.avatar = +(c.avatar ?? 0);
@@ -611,7 +611,7 @@ class Comment {
 		</a>
 	</div>
 	<div class="comment-meta">
-		<span class="${cmt.is_admin ? "author" : "nickname"}">${h2t(cmt.author)}</span>
+		<span class="${cmt.user_id > 0 ? "author" : "nickname"}">${h2t(cmt.author)}</span>
 		${urlContent}
 		<time class="date" datetime="${date.toJSON()}" data-timezone="${date.zone}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
 	</div>

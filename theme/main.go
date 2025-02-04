@@ -201,12 +201,6 @@ func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
 	if t2 == nil {
 		panic(`未找到模板：` + name)
 	}
-	if d == nil {
-		d = &data.Data{
-			// TODO
-			// ctx: context.TODO(),
-		}
-	}
 	d.Template = t2
 	d.Writer = w
 	if err := t2.Execute(w, d); err != nil {
@@ -221,6 +215,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 			case codes.PermissionDenied:
 				w.WriteHeader(http.StatusForbidden)
 				t.executeTemplate(`error.html`, w, &data.Data{
+					Context: req.Context(),
 					Error: &data.ErrorData{
 						Message: "你无权查看此内容：" + st.Message(),
 					},
@@ -229,6 +224,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 			case codes.NotFound:
 				w.WriteHeader(http.StatusNotFound)
 				t.executeTemplate(`error.html`, w, &data.Data{
+					Context: req.Context(),
 					Error: &data.ErrorData{
 						Message: `你查看的内容不存在。`,
 					},
@@ -239,6 +235,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 		if taorm.IsNotFoundError(err) {
 			w.WriteHeader(http.StatusNotFound)
 			t.executeTemplate(`error.html`, w, &data.Data{
+				Context: req.Context(),
 				Error: &data.ErrorData{
 					Message: `你查看的内容不存在。`,
 				},

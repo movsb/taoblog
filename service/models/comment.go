@@ -15,6 +15,7 @@ type Comment struct {
 	PostID     int64  `json:"post_id"`
 	Author     string `json:"author"`
 	Email      string `json:"email"`
+	UserID     int32  `json:"user_id"`
 	URL        string `json:"url"`
 	IP         string `json:"ip"`
 	Date       int32  `json:"date"`
@@ -33,7 +34,6 @@ func (Comment) TableName() string {
 
 // ToProtocols ...
 // 以下字段由 setCommentExtraFields 提供/清除。
-// - IsAdmin
 // - Email
 // - Ip
 // - GeoLocation
@@ -48,6 +48,7 @@ func (c *Comment) ToProto(redact func(c *proto.Comment)) *proto.Comment {
 		PostId:     c.PostID,
 		Author:     c.Author,
 		Email:      c.Email,
+		UserId:     c.UserID,
 		Ip:         c.IP,
 		Url:        c.URL,
 		Date:       c.Date,

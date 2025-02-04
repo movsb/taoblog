@@ -43,7 +43,6 @@ func (a *Auth) Config() *config.AuthConfig {
 	return &a.cfg
 }
 
-// 找不到返回空。
 // NOTE：系统管理员因为不因为登录所以不允许查找。
 func (o *Auth) GetUserByID(id int64) (*models.User, error) {
 	var user models.User

@@ -36,8 +36,8 @@ func (p *SearchPost) Content() template.HTML {
 func NewDataForSearch(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, searcher proto.SearchServer, r *http.Request) *Data {
 	q := r.URL.Query().Get(`q`)
 	d := &Data{
-		ctx:    ctx,
-		Config: cfg,
+		Context: ctx,
+		Config:  cfg,
 		Meta: &MetaData{
 			Title: fmt.Sprintf("%s - 搜索结果", q),
 		},

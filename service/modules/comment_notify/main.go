@@ -7,7 +7,6 @@ import (
 	"html/template"
 	text_template "text/template"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/notify"
 )
@@ -47,20 +46,18 @@ type GuestData struct {
 }
 
 type CommentNotifier struct {
-	config   *config.CommentConfig
 	mailer   *mailer.MailerLogger
 	notifier notify.Notifier
 }
 
-func New(c *config.CommentConfig, notifier notify.Notifier, mailer *mailer.MailerLogger) *CommentNotifier {
+func New(notifier notify.Notifier, mailer *mailer.MailerLogger) *CommentNotifier {
 	return &CommentNotifier{
-		config:   c,
 		mailer:   mailer,
 		notifier: notifier,
 	}
 }
 
-func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {
+func (cn *CommentNotifier) NotifyPostAuthor(data *AdminData, name string, email string) {
 	subject := fmt.Sprintf(`%s %s`, adminPrefix, data.Title)
 
 	buf := bytes.NewBuffer(nil)
@@ -75,8 +72,8 @@ func (cn *CommentNotifier) NotifyAdmin(data *AdminData) {
 		subject, buf.String(), mailFromName,
 		[]mailer.User{
 			{
-				Name:    cn.config.Author,
-				Address: cn.config.Emails[0],
+				Name:    name,
+				Address: email,
 			},
 		},
 	)

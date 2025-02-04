@@ -67,7 +67,8 @@ var (
 	// TODO 移除，用 nil 代表未登录用户。
 	guest = &User{
 		User: &models.User{
-			ID: 0,
+			ID:       0,
+			Nickname: `未登录用户`,
 		},
 	}
 	// TODO 怎么确保程序重启后一定不一样？

@@ -11,7 +11,6 @@ type Config struct {
 	Auth        AuthConfig           `yaml:"auth"`
 	Menus       Menus                `json:"menus" yaml:"menus"`
 	Site        SiteConfig           `yaml:"site"`
-	Comment     CommentConfig        `yaml:"comment"`
 	Search      search_config.Config `yaml:"search"`
 	Others      OthersConfig         `json:"others" yaml:"others"`
 
@@ -32,7 +31,6 @@ func DefaultConfig() Config {
 		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
 		Site:        DefaultSiteConfig(),
-		Comment:     DefaultCommentConfig(),
 		Search:      search_config.DefaultConfig(),
 		Theme:       DefaultThemeConfig(),
 	}

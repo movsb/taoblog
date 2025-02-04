@@ -160,6 +160,8 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto
 
 	if ac.User.IsGuest() {
 		stmt.Where(`status=?`, models.PostStatusPublic)
+	} else if ac.User.IsSystem() {
+		// fallthrough
 	} else {
 		stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 		stmt.Where(

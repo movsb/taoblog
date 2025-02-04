@@ -50,8 +50,8 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 // NewDataForPost ...
 func NewDataForPost(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, post *proto.Post) *Data {
 	d := &Data{
-		ctx:    ctx,
-		Config: cfg,
+		Context: ctx,
+		Config:  cfg,
 		Meta: &MetaData{
 			Title: post.Title,
 		},

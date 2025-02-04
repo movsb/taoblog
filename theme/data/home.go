@@ -23,10 +23,10 @@ type HomeData struct {
 // NewDataForHome ...
 func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
-		ctx:    ctx,
-		Config: cfg,
-		Meta:   &MetaData{},
-		svc:    service,
+		Context: ctx,
+		Config:  cfg,
+		Meta:    &MetaData{},
+		svc:     service,
 	}
 	home := &HomeData{
 		PostCount:    impl.GetDefaultIntegerOption("post_count", 0),

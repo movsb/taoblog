@@ -13,9 +13,15 @@ type User struct {
 	ID        int64
 	CreatedAt int64
 	UpdatedAt int64
+	Nickname  string
 	Password  string
 
-	// 社交账号绑定信息
+	/// 社交账号绑定信息
+
+	// 邮箱地址。
+	// 并非必须。
+	Email string
+
 	// Passkeys 凭证。
 	Credentials Credentials
 

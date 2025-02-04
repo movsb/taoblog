@@ -174,7 +174,7 @@ func newService(ctx context.Context, server *grpc.Server, cancel context.CancelF
 	}
 
 	s.avatarCache = cache.NewAvatarHash()
-	s.cmtntf = comment_notify.New(&s.cfg.Comment, s.notifier, s.mailer)
+	s.cmtntf = comment_notify.New(s.notifier, s.mailer)
 	s.cmtNotifyTask = NewCommentNotificationTask(s, s.GetPluginStorage(`comment_notify`))
 	s.cmtgeo = commentgeo.NewTask(s.GetPluginStorage(`cmt_geo`))
 

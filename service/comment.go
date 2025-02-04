@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"log/slog"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -75,7 +74,6 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostConte
 	ac := auth.Context(ctx)
 
 	return func(c *proto.Comment) {
-		c.IsAdmin = s.isAdminEmail(c.Email)
 		c.Avatar = int32(s.avatarCache.ID(c.Email))
 
 		// （同 IP 用户 & 5️⃣分钟内） 可编辑。
@@ -154,10 +152,20 @@ func in5min(t int32) bool {
 func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentRequest) (*proto.Comment, error) {
 	ac := auth.Context(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
-	if !ac.User.IsAdmin() {
-		if ac.RemoteAddr.String() != cmtOld.IP || !in5min(cmtOld.Date) {
-			return nil, status.Error(codes.PermissionDenied, `超时或无权限编辑评论`)
-		}
+
+	// 1. 同 IP 的游客五分钟内允许
+	// 2. 管理员允许
+	// 3. 其它登录用户五分钟内
+	allowEdit := (ac.User.IsGuest() && ac.RemoteAddr.String() == cmtOld.IP && in5min(cmtOld.Date)) ||
+		ac.User.IsAdmin() ||
+		!ac.User.IsGuest() && in5min(cmtOld.Date)
+	if !allowEdit {
+		return nil, status.Error(codes.PermissionDenied, `超时或无权限编辑评论`)
+	}
+
+	// 其他已登录用户只能改自己创建的
+	if !ac.User.IsGuest() && !ac.User.IsAdmin() && cmtOld.UserID > 0 && ac.User.ID != int64(cmtOld.UserID) {
+		return nil, status.Error(codes.PermissionDenied, `不能编辑非由自己创建的评论`)
 	}
 
 	var comment models.Comment
@@ -376,6 +384,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		Parent:     in.Parent,
 		Author:     strings.TrimSpace(in.Author),
 		Email:      strings.TrimSpace(in.Email),
+		UserID:     int32(ac.User.ID),
 		URL:        strings.TrimSpace(in.Url),
 		IP:         ac.RemoteAddr.String(),
 		Date:       0,
@@ -441,24 +450,6 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	}
 
 	if ac.User.IsGuest() {
-		notAllowedEmails := s.cfg.Comment.NotAllowedEmails
-		if adminEmails := s.cfg.Comment.Emails; len(adminEmails) > 0 {
-			notAllowedEmails = append(notAllowedEmails, adminEmails...)
-		}
-		for _, email := range notAllowedEmails {
-			if email != "" && c.Email != "" && strings.EqualFold(email, c.Email) {
-				return nil, status.Error(codes.InvalidArgument, `不能使用此邮箱地址`)
-			}
-		}
-		notAllowedAuthors := s.cfg.Comment.NotAllowedAuthors
-		if adminName := s.cfg.Comment.Author; adminName != "" {
-			notAllowedAuthors = append(notAllowedAuthors, adminName)
-		}
-		for _, author := range notAllowedAuthors {
-			if author != "" && c.Author != "" && strings.EqualFold(author, string(c.Author)) {
-				return nil, status.Error(codes.InvalidArgument, `不能使用此昵称`)
-			}
-		}
 		if c.Author != "" && strings.Contains(in.Author, "作者") {
 			return nil, status.Error(codes.InvalidArgument, "昵称中不应包含“作者”两字")
 		}
@@ -539,14 +530,6 @@ func (s *Service) PreviewComment(ctx context.Context, in *proto.PreviewCommentRe
 	ac := auth.Context(ctx)
 	content, err := s.renderMarkdown(ac.User.IsAdmin(), int64(in.PostId), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewComment))
 	return &proto.PreviewCommentResponse{Html: content}, err
-}
-
-// 判断评论者的邮箱是否为管理员。
-// 不区分大小写。
-func (s *Service) isAdminEmail(email string) bool {
-	return slices.ContainsFunc(s.cfg.Comment.Emails, func(s string) bool {
-		return strings.EqualFold(email, s)
-	})
 }
 
 type _CommentNotificationTask struct {
@@ -668,17 +651,25 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	loc := globals.LoadTimezoneOrDefault(c.DateTimezone, time.Local)
 	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
 
-	if !t.s.isAdminEmail(c.Email) {
-		data := &comment_notify.AdminData{
-			Title:    post.Title,
-			Link:     link,
-			Date:     time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
-			Author:   c.Author,
-			Content:  c.Source,
-			Email:    c.Email,
-			HomePage: c.URL,
+	if c.UserID != post.UserId {
+		pu, err := t.s.auth.GetUserByID(int64(post.UserId))
+		if err != nil {
+			return err
 		}
-		t.s.cmtntf.NotifyAdmin(data)
+		if pu.Email == `` {
+			log.Println(`文章作者没有邮箱地址，不发送邮件通知。`)
+		} else {
+			data := &comment_notify.AdminData{
+				Title:    post.Title,
+				Link:     link,
+				Date:     time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
+				Author:   c.Author,
+				Content:  c.Source,
+				Email:    c.Email,
+				HomePage: c.URL,
+			}
+			t.s.cmtntf.NotifyPostAuthor(data, pu.Nickname, pu.Email)
+		}
 	}
 
 	var parents []models.Comment
@@ -686,7 +677,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	for parentID := c.Parent; parentID > 0; {
 		var parent models.Comment
 		t.s.tdb.From(parent).
-			Select("id,author,email,parent").
+			Select("id,author,email,parent,user_id").
 			Where("id=?", parentID).
 			MustFind(&parent)
 		parents = append(parents, parent)
@@ -703,7 +694,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 
 	distinct := map[string]bool{}
 	for _, parent := range parents {
-		if t.s.isAdminEmail(parent.Email) || strings.EqualFold(parent.Email, c.Email) {
+		if parent.UserID == c.UserID {
 			continue
 		}
 		email := strings.ToLower(parent.Email)

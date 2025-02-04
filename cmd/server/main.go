@@ -403,7 +403,7 @@ func grpcLogger(ctx context.Context, method string) {
 // TODO 放在服务里面 tasks.go
 // TODO 放在 daemon 里面（同 webhooks）
 func liveCheck(s *service.Service, cc notify.Notifier) {
-	t := time.NewTicker(time.Minute * 15)
+	t := time.NewTicker(time.Minute * 1)
 	defer t.Stop()
 
 	for range t.C {

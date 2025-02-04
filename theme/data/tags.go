@@ -17,9 +17,9 @@ type TagsData struct {
 // NewDataForTags ...
 func NewDataForTags(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
-		ctx:    ctx,
-		Config: cfg,
-		Meta:   &MetaData{},
+		Context: ctx,
+		Config:  cfg,
+		Meta:    &MetaData{},
 	}
 	tags := impl.ListTagsWithCount()
 	td := &TagsData{

@@ -39,7 +39,6 @@ type AuthContext struct {
 }
 
 // 从 Context 里面提取出当前的用户信息。
-// 会默认添加 Guest，如果不存在的话。
 //
 // Note：在当前的实现下，非登录用户/无权限用户被表示为 Guest（id==0）的用户。所以此函数的返回值始终不为空。
 func Context(ctx context.Context) *AuthContext {

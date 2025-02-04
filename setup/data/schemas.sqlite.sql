@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
 CREATE TABLE IF NOT EXISTS `comments` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
     `post_id` INTEGER  NOT NULL,
+    `user_id` INTEGER NOT NULL,
     `author` TEXT  NOT NULL,
     `email` TEXT NOT NULL,
     `url` TEXT NOT NULL,
@@ -79,6 +80,8 @@ CREATE TABLE IF NOT EXISTS users (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,
     `created_at` INTEGER NOT NULL,
     `updated_at` INTEGER NOT NULL,
+    `nickname` TEXT NOT NULL,
+    `email` TEXT NOT NULL,
     `password` TEXT NOT NULL,
     `credentials` TEXT NOT NULL,
     `google_user_id` TEXT NOT NULL,

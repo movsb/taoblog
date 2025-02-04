@@ -7,20 +7,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-// CommentConfig ...
-type CommentConfig struct {
-	Author            string   `yaml:"author"`
-	Emails            []string `yaml:"emails"`
-	Notify            bool     `yaml:"notify"`
-	NotAllowedEmails  []string `yaml:"not_allowed_emails"`
-	NotAllowedAuthors []string `yaml:"not_allowed_authors"`
-}
-
-// DefaultCommentConfig ...
-func DefaultCommentConfig() CommentConfig {
-	return CommentConfig{}
-}
-
 type NotificationConfig struct {
 	Chanify NotificationChanifyConfig `json:"chanify" yaml:"chanify"`
 	Mailer  NotificationMailerConfig  `json:"mailer" yaml:"mailer"`

@@ -45,7 +45,7 @@ message Comment {
 	string source_type = 10;
 	string source = 11;
 	string content = 12;
-	bool is_admin = 14;
+	int32 user_id = 13;
 	string date_fuzzy = 15;
 	string geo_location = 16;
 	// 前端用户是否可以编辑此评论？

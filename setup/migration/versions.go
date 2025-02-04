@@ -527,3 +527,12 @@ func v37(tx *sql.Tx) {
 func v38(tx *sql.Tx) {
 	mustExec(tx, "CREATE TABLE IF NOT EXISTS acl ( `id` INTEGER PRIMARY KEY AUTOINCREMENT, `created_at` INTEGER NOT NULL, `post_id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `permission` TEXT NOT NULL)")
 }
+
+func v39(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN nickname TEXT NOT NULL DEFAULT ''")
+	mustExec(tx, "ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''")
+}
+
+func v40(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE comments ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
+}

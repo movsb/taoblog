@@ -15,8 +15,8 @@ import (
 
 // Data holds all data for rendering the site.
 type Data struct {
-	ctx context.Context
-	svc proto.TaoBlogServer
+	Context context.Context
+	svc     proto.TaoBlogServer
 
 	// all configuration.
 	// It's not safe to export all configs outside.
@@ -58,11 +58,10 @@ type Data struct {
 }
 
 func (d *Data) Info() (*proto.GetInfoResponse, error) {
-	if d.ctx == nil {
-		// TODO
-		d.ctx = context.TODO()
+	if d.Context == nil {
+		d.Context = auth.GuestContext(context.TODO())
 	}
-	return d.svc.GetInfo(d.ctx, &proto.GetInfoRequest{})
+	return d.svc.GetInfo(d.Context, &proto.GetInfoRequest{})
 }
 
 func (d *Data) ExecutePartial(t *template.Template, partial any) error {
@@ -92,7 +91,7 @@ func (d *Data) SiteName() string {
 }
 
 func (d *Data) TweetName() string {
-	return fmt.Sprintf(`%s的%s`, d.Config.Comment.Author, TweetName)
+	return fmt.Sprintf(`%s`, TweetName)
 }
 
 func (d *Data) BodyClass() string {
@@ -111,11 +110,10 @@ func (d *Data) BodyClass() string {
 	return strings.Join(c, ` `)
 }
 
+// TODO 返回作者的名字。
 func (d *Data) Author() string {
-	if d.Config.Comment.Author != `` {
-		return d.Config.Comment.Author
-	}
-	return ``
+	u := auth.Context(d.Context)
+	return u.User.Nickname
 }
 
 // MetaData ...
@@ -128,7 +126,7 @@ type ErrorData struct {
 }
 
 func (d *Data) Strip(obj any) (any, error) {
-	user := auth.Context(d.ctx).User
+	user := auth.Context(d.Context).User
 	isAdmin := user.IsAdmin()
 	switch typed := obj.(type) {
 	case *Post:
