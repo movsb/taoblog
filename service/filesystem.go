@@ -15,7 +15,7 @@ import (
 
 func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 	// TODO 如果是评论，允许用户上传文件。
-	s.MustBeAdmin(srv.Context())
+	s.MustNotBeGuest(srv.Context())
 
 	initialized := false
 
