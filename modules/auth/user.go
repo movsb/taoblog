@@ -45,10 +45,10 @@ func (u *WebAuthnUser) WebAuthnID() []byte {
 	return buf
 }
 func (u *WebAuthnUser) WebAuthnName() string {
-	return fmt.Sprintf(`id:%d`, u.ID)
+	return fmt.Sprintf(`%s (id:%d)`, u.Nickname, u.ID)
 }
 func (u *WebAuthnUser) WebAuthnDisplayName() string {
-	return u.WebAuthnName()
+	return u.Nickname
 }
 func (u *WebAuthnUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.credentials
