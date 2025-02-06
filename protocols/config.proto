@@ -32,6 +32,9 @@ message GetInfoResponse {
 	// 形如：https://blog.twofei.com
 	// 不带最后的 /。
 	string home = 3;
+	
+	// Git 版本号
+	string commit = 4;
 
 	// 最后更新时间。
 	// 主要包含：文章。

@@ -303,6 +303,7 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 		Name:         s.cfg.Site.Name,
 		Description:  s.cfg.Site.Description,
 		Home:         strings.TrimSuffix(s.cfg.Site.Home, "/"),
+		Commit:       version.GitCommit,
 		LastPostedAt: int32(t.Unix()),
 
 		CertDaysLeft:   s.certDaysLeft.Load(),
