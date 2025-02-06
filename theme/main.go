@@ -189,6 +189,13 @@ func (t *Theme) loadTemplates() {
 				r, r, s, f,
 			))
 		},
+		"authorName": func(p *data.Post) string {
+			u, err := t.auth.GetUserByID(int64(p.UserId))
+			if err != nil {
+				panic(err)
+			}
+			return u.Nickname
+		},
 	}
 
 	t.templates = utils.NewTemplateLoader(t.tmplFS, funcs, func() {

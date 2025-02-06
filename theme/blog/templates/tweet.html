@@ -30,7 +30,7 @@ TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};
 				<span class="status">🔒 私密</span>
 			{{ end }}
 			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
-			<span class="author">{{ $.Author }}</span>
+			<span class="author">{{ authorName .Post.Post }}</span>
 			{{ friendlyDateTime .Post.Post.Date }}
 			{{- with .Post.Post.GeoElement }}
 				{{ . }}

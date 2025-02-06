@@ -110,12 +110,6 @@ func (d *Data) BodyClass() string {
 	return strings.Join(c, ` `)
 }
 
-// TODO 返回作者的名字。
-func (d *Data) Author() string {
-	u := auth.Context(d.Context)
-	return u.User.Nickname
-}
-
 // MetaData ...
 type MetaData struct {
 	Title string // 实际上应该为站点标题，但是好像成了文章标题？
