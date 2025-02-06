@@ -220,6 +220,8 @@ func newService(ctx context.Context, server *grpc.Server, cancel context.CancelF
 
 func (s *Service) exportVars() {}
 
+const noPerm = `此操作无权限。`
+
 // 从 Context 中取出用户并且必须为 Admin/System，否则 panic。
 func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	return MustBeAdmin(ctx)
@@ -230,7 +232,7 @@ func (s *Service) MustNotBeGuest(ctx context.Context) *auth.AuthContext {
 		panic("AuthContext 不应为 nil")
 	}
 	if ac.User.IsGuest() {
-		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
+		panic(status.Error(codes.PermissionDenied, noPerm))
 	}
 	return ac
 }
@@ -241,7 +243,7 @@ func (s *Service) MustCanCreatePost(ctx context.Context) *auth.AuthContext {
 		panic("AuthContext 不应为 nil")
 	}
 	if ac.User.IsGuest() {
-		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
+		panic(status.Error(codes.PermissionDenied, noPerm))
 	}
 	return ac
 }
@@ -252,7 +254,7 @@ func MustBeAdmin(ctx context.Context) *auth.AuthContext {
 		panic("AuthContext 不应为 nil")
 	}
 	if !ac.User.IsAdmin() && !ac.User.IsSystem() {
-		panic(status.Error(codes.PermissionDenied, "此操作无权限。"))
+		panic(status.Error(codes.PermissionDenied, noPerm))
 	}
 	return ac
 }

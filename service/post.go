@@ -616,10 +616,10 @@ func (s *Service) getPost(id int) (*models.Post, error) {
 	return &post, s.tdb.Where(`id=?`, id).Find(&post)
 }
 
-// UpdatePost ...
+// 更新文章。
 // 需要携带版本号，像评论一样。
 func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
-	s.MustBeAdmin(ctx)
+	ac := s.MustNotBeGuest(ctx)
 
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
 		return nil, status.Error(codes.InvalidArgument, "无效文章编号、更新字段")
@@ -629,6 +629,11 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	oldPost, err := s.getPost(int(in.Post.Id))
 	if err != nil {
 		return nil, err
+	}
+
+	// 管理员可编辑所有文章，其他用户可编辑自己的文章。
+	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(oldPost.UserID)) {
+		panic(status.Error(codes.PermissionDenied, noPerm))
 	}
 
 	now := time.Now().Unix()
