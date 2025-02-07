@@ -159,8 +159,9 @@ class GeoLink extends HTMLElement {
 		} else {
 			const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const maybeChina = /Asia\/(Shanghai|Beijing|Chongqing)/.test(timezone);
+			const encodedTitle = encodeURIComponent(this.innerText);
 			const url = maybeChina
-				? `https://map.baidu.com/?lat=${lat}&lng=${lon}`
+				? `https://map.baidu.com/?latlng=${lat},${lon}&title=${encodedTitle}`
 				: `https://www.google.com/maps?q=${lat},${lon}`
 				;
 			window.open(url, '_blank');
