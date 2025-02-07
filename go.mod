@@ -41,6 +41,7 @@ require (
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/Lofanmi/chinese-calendar-golang v0.0.0-20241124100822-1cf51e767c9f // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect

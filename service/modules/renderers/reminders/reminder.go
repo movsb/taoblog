@@ -34,17 +34,10 @@ func init() {
 	})
 }
 
-type Reminders struct {
-	task *Task
-	pid  int64
-}
+type Reminders struct{}
 
-func New(task *Task, pid int64) *Reminders {
-	f := &Reminders{
-		task: task,
-		pid:  pid,
-	}
-
+func New() *Reminders {
+	f := &Reminders{}
 	return f
 }
 
