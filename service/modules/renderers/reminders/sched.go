@@ -105,5 +105,33 @@ func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message 
 		}
 	}
 
+	for _, year := range r.Remind.Years {
+		if year < 1 {
+			return fmt.Errorf(`提醒年份不能小于 1 年`)
+		}
+
+		d1 := time.Time(r.Dates.Start)
+		d2 := d1.AddDate(year, 0, 0)
+
+		// 同上面月份的注意事项
+		expect := int(d1.Month())
+		for expect != int(d2.Month()) {
+			d2 = d2.AddDate(0, 0, -1)
+		}
+
+		if d2.Before(now) {
+			continue
+		}
+
+		j, err := s.backend.NewJob(
+			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(d2)),
+			gocron.NewTask(remind, d2, fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year)),
+		)
+		if err != nil {
+			log.Println(j, err)
+			return err
+		}
+	}
+
 	return nil
 }

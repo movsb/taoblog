@@ -63,10 +63,25 @@ func TestScheduler(t *testing.T) {
 				date(2015, 2, 28),
 			},
 		},
+		{
+			Reminder: reminders.Reminder{
+				Title: `测试年份`,
+				Dates: reminders.DateStart(`2016-02-29`),
+				Remind: reminders.ReminderRemind{
+					Years: []int{1, 4, 5},
+				},
+			},
+			Dates: []time.Time{
+				date(2017, 2, 28),
+				date(2020, 2, 29),
+				date(2021, 2, 28),
+			},
+		},
 	}
 
 	for _, tt := range tests {
-		func() {
+		t.Run(tt.Reminder.Title, func(t *testing.T) {
+			t.Parallel()
 			d := time.Time(tt.Reminder.Dates.Start)
 			f := clockwork.NewFakeClockAt(d)
 			s := reminders.NewScheduler(reminders.WithFakeClock(f))
@@ -92,7 +107,7 @@ func TestScheduler(t *testing.T) {
 			}) != 0 {
 				t.Errorf("%s: 不相等：\n期望：%v\n实际：%v", tt.Reminder.Title, tt.Dates, ts)
 			}
-		}()
+		})
 	}
 }
 
