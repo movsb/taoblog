@@ -13,13 +13,13 @@ var layouts = [...]string{
 }
 
 // TODO 需要修改成服务器时间。
-var fixedZone = time.FixedZone(`fixed`, 8*60*60)
+var FixedZone = time.FixedZone(`fixed`, 8*60*60)
 
 func NewUserDateFromString(s string) (UserDate, error) {
 	var outErr error
 	for _, layout := range layouts {
 		// TODO 需要区分 Parse 与 ParseInLocation
-		t, err := time.ParseInLocation(layout, s, fixedZone)
+		t, err := time.ParseInLocation(layout, s, FixedZone)
 		if err != nil {
 			outErr = err
 			continue
@@ -71,6 +71,7 @@ type ReminderRemind struct {
 	// 第几个月。
 	//
 	// 对于类似 1.31 号这样的日期，目前的处理逻辑是：下个月是 2.28/2.29 。
+	// 这也是苹果日历目前的处理方式。
 	Months []int `yaml:"months"`
 
 	// 第几年。

@@ -67,5 +67,43 @@ func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message 
 		}
 	}
 
+	for _, month := range r.Remind.Months {
+		if month < 1 {
+			return fmt.Errorf(`提醒月份不能小于 1 个月`)
+		}
+
+		d1 := time.Time(r.Dates.Start)
+		d2 := d1.AddDate(0, month, 0)
+
+		// 注意 AddDate：
+		//
+		// 2014-10-31 +1 个月，期待：2014-11-30，但实际会是 2014-12-01 号。
+		// 2014-12-31 +2 个月，期待：2015-02-28，但实际会是 2015-03-03 号。
+		//
+		// 实际结果均与目前的设计有违，手动往前调整到上个月最后一天。
+		//
+		// 注意，12月到1月会 round
+		expect := int(d1.Month()) + month
+		if expect > 12 {
+			expect -= 12
+		}
+		for expect != int(d2.Month()) {
+			d2 = d2.AddDate(0, 0, -1)
+		}
+
+		if d2.Before(now) {
+			continue
+		}
+
+		j, err := s.backend.NewJob(
+			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(d2)),
+			gocron.NewTask(remind, d2, fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month)),
+		)
+		if err != nil {
+			log.Println(j, err)
+			return err
+		}
+	}
+
 	return nil
 }
