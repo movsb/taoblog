@@ -12,9 +12,6 @@ import (
 )
 
 func TestScheduler(t *testing.T) {
-	// MacOS: date -j -v+99d -f %y%m%d 141224
-	// d := time.Date(2014, time.December, 24, 0, 0, 0, 0, time.Local)
-
 	date := func(y, m, d int) time.Time {
 		return time.Date(y, time.Month(m), d, 0, 0, 0, 0, reminders.FixedZone)
 	}
@@ -54,13 +51,14 @@ func TestScheduler(t *testing.T) {
 				Title: `测试月份`,
 				Dates: reminders.DateStart(`2014-10-31`),
 				Remind: reminders.ReminderRemind{
-					Months: []int{1, 2, 4},
+					Months: []int{1, 2, 4, 5},
 				},
 			},
 			Dates: []time.Time{
 				date(2014, 11, 30),
 				date(2014, 12, 31),
 				date(2015, 2, 28),
+				date(2015, 3, 31),
 			},
 		},
 		{
