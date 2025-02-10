@@ -1,6 +1,10 @@
 package reminders
 
-import "time"
+import (
+	"time"
+
+	"github.com/movsb/taoblog/modules/utils"
+)
 
 type UserDate time.Time
 
@@ -53,9 +57,24 @@ type ReminderDates struct {
 	Start UserDate `yaml:"start"`
 }
 
+func DateStart(s string) ReminderDates {
+	return ReminderDates{
+		Start: utils.Must1(NewUserDateFromString(s)),
+	}
+}
+
 type ReminderRemind struct {
-	// 序数词，表示第 ？天。
+	// 序数词，表示第几天。
+	// 当天可包含在内，也可不包含在内；由 Exclusive 决定。
 	Days []int `yaml:"days"`
+
+	// 第几个月。
+	//
+	// 对于类似 1.31 号这样的日期，目前的处理逻辑是：下个月是 2.28/2.29 。
+	Months []int `yaml:"months"`
+
+	// 第几年。
+	Years []int `yaml:"years"`
 }
 
 func (r *Reminder) Days() int {
