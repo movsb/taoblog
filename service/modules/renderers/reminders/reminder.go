@@ -34,10 +34,25 @@ func init() {
 	})
 }
 
-type Reminders struct{}
+type RemindersOption func(*Reminders)
 
-func New() *Reminders {
+func WithOutputReminders(out *[]*Reminder) RemindersOption {
+	return func(r *Reminders) {
+		r.out = out
+	}
+}
+
+type Reminders struct {
+	out *[]*Reminder
+}
+
+func New(options ...RemindersOption) *Reminders {
 	f := &Reminders{}
+
+	for _, opt := range options {
+		opt(f)
+	}
+
 	return f
 }
 
@@ -110,6 +125,11 @@ func (r *Reminders) renderCodeBlock(writer util.BufWriter, source []byte, n ast.
 	rm := Reminder{}
 	if err := yaml.UnmarshalStrict(y, &rm); err != nil {
 		return ast.WalkStop, err
+	}
+
+	// TODO 在 Transform 的时候实现，以实现不渲染获取到数据。
+	if r.out != nil {
+		*r.out = append(*r.out, &rm)
 	}
 
 	if err := tmpl.Execute(writer, &rm); err != nil {

@@ -72,7 +72,9 @@ func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 
 	ch <- struct{}{}
 
-	ticker := time.NewTicker(s.cfg.Search.ScanInterval)
+	const scanInterval = time.Minute * 1
+
+	ticker := time.NewTicker(scanInterval)
 	defer ticker.Stop()
 
 	for loop := true; loop; {

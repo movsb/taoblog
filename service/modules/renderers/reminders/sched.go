@@ -48,6 +48,20 @@ func NewScheduler(options ...SchedulerOption) *Scheduler {
 func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message string)) error {
 	now := s.clock.Now()
 
+	createJob := func(t time.Time, message string) error {
+		j, err := s.backend.NewJob(
+			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
+			gocron.NewTask(remind, t, message),
+			gocron.WithTags(r.tags...),
+		)
+		if err != nil {
+			log.Println(r, err)
+			return err
+		}
+		_ = j
+		return nil
+	}
+
 	for _, day := range r.Remind.Days {
 		if day == 1 {
 			return fmt.Errorf(`提醒天数不能为第 1 天`)
@@ -57,12 +71,7 @@ func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message 
 			continue
 		}
 
-		j, err := s.backend.NewJob(
-			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
-			gocron.NewTask(remind, t, fmt.Sprintf(`%s 已经 %d 天了`, r.Title, day)),
-		)
-		if err != nil {
-			log.Println(j, err)
+		if err := createJob(t, fmt.Sprintf(`%s 已经 %d 天了`, r.Title, day)); err != nil {
 			return err
 		}
 	}
@@ -95,12 +104,7 @@ func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message 
 			continue
 		}
 
-		j, err := s.backend.NewJob(
-			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(d2)),
-			gocron.NewTask(remind, d2, fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month)),
-		)
-		if err != nil {
-			log.Println(j, err)
+		if err := createJob(d2, fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month)); err != nil {
 			return err
 		}
 	}
@@ -123,15 +127,17 @@ func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message 
 			continue
 		}
 
-		j, err := s.backend.NewJob(
-			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(d2)),
-			gocron.NewTask(remind, d2, fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year)),
-		)
-		if err != nil {
-			log.Println(j, err)
+		if err := createJob(d2, fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year)); err != nil {
 			return err
 		}
 	}
 
+	log.Println(`提醒：添加任务：`, r.Title)
+
 	return nil
+}
+
+// 根据标签删除提醒。
+func (s *Scheduler) DeleteRemindersByTags(tags ...string) {
+	s.backend.RemoveByTags(tags...)
 }

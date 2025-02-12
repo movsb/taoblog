@@ -70,7 +70,9 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	var posts models.Posts
 	stmt := s.posts().Limit(int64(in.Limit)).OrderBy(in.OrderBy)
 
-	if !ac.User.IsGuest() {
+	if ac.User.IsSystem() {
+		// nothing to do
+	} else if !ac.User.IsGuest() {
 		// 1. 所有自己的
 		// 2. 所有公开的
 		// 3. 所有别人分享、自己可见的

@@ -193,10 +193,7 @@ func newService(ctx context.Context, server *grpc.Server, cancel context.CancelF
 		s.updatePostMetadataTime(int64(postID), time.Now())
 	})
 
-	s.remindersTask = reminders.NewTask(s.GetPluginStorage(`reminders`), func(pid int64) {
-		s.deletePostContentCacheFor(pid)
-		s.updatePostMetadataTime(pid, time.Now())
-	})
+	s.remindersTask = reminders.NewTask(ctx, s.GetPluginStorage(`reminders`), s)
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)
