@@ -51,9 +51,6 @@ type Reminder struct {
 
 	// 提醒？
 	Remind ReminderRemind `yaml:"remind"`
-
-	// 私有数据
-	tags []string
 }
 
 type ReminderDates struct {

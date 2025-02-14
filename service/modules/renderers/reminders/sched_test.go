@@ -84,7 +84,7 @@ func TestScheduler(t *testing.T) {
 			f := clockwork.NewFakeClockAt(d)
 			s := reminders.NewScheduler(reminders.WithFakeClock(f))
 			var ts []time.Time
-			utils.Must(s.AddReminder(&tt.Reminder, func(now time.Time, message string) {
+			utils.Must(s.AddReminder(1, &tt.Reminder, func(now time.Time, message string) {
 				ts = append(ts, now)
 			}))
 			f.Advance(time.Hour * 24 * 365 * 100)

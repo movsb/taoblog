@@ -19,16 +19,26 @@ type Task struct {
 	svc   proto.TaoBlogServer
 	store utils.PluginStorage
 	sched *Scheduler
+
+	invalidatePost func(id int)
+	sendNotify     func(message string)
 }
 
-func NewTask(ctx context.Context, svc proto.TaoBlogServer) *Task {
+func NewTask(ctx context.Context, svc proto.TaoBlogServer,
+	invalidatePost func(id int),
+	sendNotify func(message string),
+) *Task {
 	t := &Task{
 		ctx:   ctx,
 		svc:   svc,
 		store: utils.NewInMemoryStorage(),
 		sched: NewScheduler(),
+
+		invalidatePost: invalidatePost,
+		sendNotify:     sendNotify,
 	}
 	go t.run(ctx)
+	go t.refreshPosts(ctx)
 	return t
 }
 
@@ -47,6 +57,7 @@ func (t *Task) run(ctx context.Context) {
 
 func (t *Task) notify(now time.Time, message string) {
 	log.Println(`提醒：`, message)
+	t.sendNotify(message)
 }
 
 func (t *Task) runOnce(ctx context.Context) error {
@@ -59,17 +70,14 @@ func (t *Task) runOnce(ctx context.Context) error {
 	}
 
 	for _, p := range ps {
-		log.Println(`处理文章：`, p.Id, p.Title)
+		// log.Println(`处理文章：`, p.Id, p.Title)
 		rs, err := t.parsePost(p)
 		if err != nil {
 			return err
 		}
-		t.sched.DeleteRemindersByTags(fmt.Sprintf(`post_id:%d`, p.Id))
+		t.sched.DeleteRemindersByPostID(int(p.Id))
 		for _, r := range rs {
-			r.tags = append(r.tags,
-				fmt.Sprintf(`post_id:%d`, p.Id),
-			)
-			if err := t.sched.AddReminder(r, t.notify); err != nil {
+			if err := t.sched.AddReminder(int(p.Id), r, t.notify); err != nil {
 				return err
 			}
 		}
@@ -126,4 +134,30 @@ func (t *Task) parsePost(p *proto.Post) ([]*Reminder, error) {
 	}
 
 	return out, nil
+}
+
+// 每天凌晨刷新文章缓存。
+func (t *Task) refreshPosts(ctx context.Context) {
+	execute := func() {
+		log.Println(`刷新文章提醒缓存：`, time.Now())
+		t.sched.ForEachPost(func(id int, jobs []Job) {
+
+		})
+	}
+
+	ticker := time.NewTicker(time.Second * 50)
+	defer ticker.Stop()
+	last := time.Now()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-ticker.C:
+			if (now.Hour() == 0 && now.Minute() == 0) || (last.Day() != now.Day()) {
+				execute()
+			}
+			last = now
+		}
+	}
 }

@@ -193,7 +193,15 @@ func newService(ctx context.Context, server *grpc.Server, cancel context.CancelF
 		s.updatePostMetadataTime(int64(postID), time.Now())
 	})
 
-	s.remindersTask = reminders.NewTask(ctx, s)
+	s.remindersTask = reminders.NewTask(ctx, s,
+		func(id int) {
+			s.deletePostContentCacheFor(int64(id))
+			s.updatePostMetadataTime(int64(id), time.Now())
+		},
+		func(message string) {
+			s.notifier.Notify(`提醒事项`, message)
+		},
+	)
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)

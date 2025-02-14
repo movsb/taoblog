@@ -3,6 +3,7 @@ package reminders
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
@@ -10,9 +11,18 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
+type Job struct {
+	underlying gocron.Job
+	startAt    time.Time
+	message    string
+}
+
 type Scheduler struct {
 	backend gocron.Scheduler
 	clock   clockwork.Clock
+
+	lock sync.Mutex
+	jobs map[int][]Job
 }
 
 type SchedulerOption func(s *Scheduler)
@@ -24,7 +34,9 @@ func WithFakeClock(clock clockwork.Clock) SchedulerOption {
 }
 
 func NewScheduler(options ...SchedulerOption) *Scheduler {
-	sched := &Scheduler{}
+	sched := &Scheduler{
+		jobs: make(map[int][]Job),
+	}
 
 	for _, opt := range options {
 		opt(sched)
@@ -45,20 +57,30 @@ func NewScheduler(options ...SchedulerOption) *Scheduler {
 	return sched
 }
 
-func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message string)) error {
+func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Time, message string)) error {
 	now := s.clock.Now()
 
 	createJob := func(t time.Time, message string) error {
 		j, err := s.backend.NewJob(
 			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
 			gocron.NewTask(remind, t, message),
-			gocron.WithTags(r.tags...),
+			gocron.WithTags(
+				fmt.Sprintf(`post_id:%d`, postID),
+			),
 		)
 		if err != nil {
 			log.Println(r, err)
 			return err
 		}
-		_ = j
+
+		s.lock.Lock()
+		defer s.lock.Unlock()
+		s.jobs[postID] = append(s.jobs[postID], Job{
+			underlying: j,
+			startAt:    t,
+			message:    message,
+		})
+
 		return nil
 	}
 
@@ -137,7 +159,19 @@ func (s *Scheduler) AddReminder(r *Reminder, remind func(now time.Time, message 
 	return nil
 }
 
-// 根据标签删除提醒。
-func (s *Scheduler) DeleteRemindersByTags(tags ...string) {
-	s.backend.RemoveByTags(tags...)
+// 根据文章编号删除提醒。
+func (s *Scheduler) DeleteRemindersByPostID(id int) {
+	s.backend.RemoveByTags(fmt.Sprintf(`post_id:%d`, id))
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	delete(s.jobs, id)
+}
+
+func (s *Scheduler) ForEachPost(fn func(id int, jobs []Job)) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	for id, jobs := range s.jobs {
+		fn(id, jobs)
+	}
 }
