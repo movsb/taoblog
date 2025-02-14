@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"crypto/rand"
+	"database/sql"
 	"fmt"
 	"io"
 	mr "math/rand"
@@ -126,4 +127,26 @@ func ByteCountIEC(b int64) string {
 type PluginStorage interface {
 	Set(key string, value string) error
 	Get(key string) (string, error)
+}
+
+type InMemoryStorage struct {
+	m map[string]string
+}
+
+func (s *InMemoryStorage) Set(key string, value string) error {
+	s.m[key] = value
+	return nil
+}
+
+func (s *InMemoryStorage) Get(key string) (string, error) {
+	if v, ok := s.m[key]; ok {
+		return v, nil
+	}
+	return ``, sql.ErrNoRows
+}
+
+func NewInMemoryStorage() PluginStorage {
+	return &InMemoryStorage{
+		m: map[string]string{},
+	}
 }

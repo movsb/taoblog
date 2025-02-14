@@ -21,11 +21,11 @@ type Task struct {
 	sched *Scheduler
 }
 
-func NewTask(ctx context.Context, storage utils.PluginStorage, svc proto.TaoBlogServer) *Task {
+func NewTask(ctx context.Context, svc proto.TaoBlogServer) *Task {
 	t := &Task{
 		ctx:   ctx,
 		svc:   svc,
-		store: storage,
+		store: utils.NewInMemoryStorage(),
 		sched: NewScheduler(),
 	}
 	go t.run(ctx)
