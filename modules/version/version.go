@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const Name = `TaoBlog`
+
 // 运行起始时间。
 var Time = time.Now()
 

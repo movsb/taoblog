@@ -103,7 +103,7 @@ func (o *Auth) AuthRequest(req *http.Request) *User {
 	loginCookie, err := req.Cookie(CookieNameLogin)
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
-			if id, token, ok := parseAuthorization(a); ok {
+			if id, token, ok := ParseAuthorization(a); ok {
 				return o.AuthLogin(fmt.Sprint(id), token)
 			}
 		}

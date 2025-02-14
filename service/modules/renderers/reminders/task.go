@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -40,6 +41,11 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 	go t.run(ctx)
 	go t.refreshPosts(ctx)
 	return t
+}
+
+func (t *Task) CalenderService() http.Handler {
+	info, _ := t.svc.GetInfo(t.ctx, &proto.GetInfoRequest{})
+	return NewCalendarService(info.Name, t.sched)
 }
 
 func (t *Task) run(ctx context.Context) {

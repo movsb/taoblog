@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/notify"
@@ -126,11 +128,7 @@ func (s *Service) ThemeChangedAt() time.Time {
 	return s.themeChangedAt
 }
 
-func NewService(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, testing bool, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
-	return newService(ctx, server, cancel, cfg, db, auther, testing, options...)
-}
-
-func newService(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
+func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
 	s := &Service{
 		ctx:     ctx,
 		cancel:  cancel,
@@ -202,6 +200,8 @@ func newService(ctx context.Context, server *grpc.Server, cancel context.CancelF
 			s.notifier.Notify(`提醒事项`, message)
 		},
 	)
+	// TODO 注册到全局的，可能会导致测试冲突
+	addons.Handle(`/reminders/`, http.StripPrefix(`/reminders`, s.remindersTask.CalenderService()))
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)

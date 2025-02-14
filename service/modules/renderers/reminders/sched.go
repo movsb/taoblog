@@ -2,13 +2,17 @@ package reminders
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
+	ics "github.com/arran4/golang-ical"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/jonboulle/clockwork"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 )
 
 type Job struct {
@@ -61,6 +65,7 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 	now := s.clock.Now()
 
 	createJob := func(t time.Time, message string) error {
+		log.Println(`创建任务：`, message)
 		j, err := s.backend.NewJob(
 			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
 			gocron.NewTask(remind, t, message),
@@ -173,5 +178,57 @@ func (s *Scheduler) ForEachPost(fn func(id int, jobs []Job)) {
 
 	for id, jobs := range s.jobs {
 		fn(id, jobs)
+	}
+}
+
+// https://icalendar.org/validator.html
+type CalenderService struct {
+	name  string
+	sched *Scheduler
+	*http.ServeMux
+}
+
+func NewCalendarService(name string, sched *Scheduler) *CalenderService {
+	s := &CalenderService{
+		name:     name,
+		sched:    sched,
+		ServeMux: http.NewServeMux(),
+	}
+	s.Handle(`/all.ics`, s.addHeaders(s.all))
+	return s
+}
+
+func (s *CalenderService) marshal(w io.Writer) error {
+	cal := ics.NewCalendarFor(version.Name)
+	cal.SetMethod(ics.MethodPublish)
+	// TODO 写死了
+	cal.SetTimezoneId(`Asia/Shanghai`)
+	cal.SetXWRCalName(s.name)
+
+	s.sched.ForEachPost(func(id int, jobs []Job) {
+		for _, job := range jobs {
+			eventID := fmt.Sprintf(`post_id:%d,job_id:%d`, id, job.startAt.Unix())
+			e := cal.AddEvent(eventID)
+			e.SetSummary(job.message)
+			e.SetDtStampTime(job.startAt)
+			e.SetStartAt(job.startAt)
+			e.SetEndAt(job.startAt.AddDate(0, 0, 1).Add(-1))
+			_ = e
+		}
+	})
+
+	return cal.SerializeTo(w, ics.WithNewLine("\r\n"))
+}
+
+func (s *CalenderService) addHeaders(h http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set(`Content-Type`, `text/calendar; charset=utf-8`)
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (s *CalenderService) all(w http.ResponseWriter, r *http.Request) {
+	if err := s.marshal(w); err != nil {
+		log.Println(err)
 	}
 }

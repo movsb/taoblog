@@ -45,6 +45,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/arran4/golang-ical v0.3.2 // indirect
 	github.com/bep/godartsass/v2 v2.3.2 // indirect
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect

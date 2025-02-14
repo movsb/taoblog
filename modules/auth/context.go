@@ -257,7 +257,7 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id 
 		return ctx
 	}
 
-	id, token, ok := parseAuthorization(authorizations[0])
+	id, token, ok := ParseAuthorization(authorizations[0])
 	if !ok {
 		return ctx
 	}
@@ -274,7 +274,7 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id 
 	return _NewContext(ctx, user, remoteAddr, userAgent)
 }
 
-func parseAuthorization(a string) (int, string, bool) {
+func ParseAuthorization(a string) (int, string, bool) {
 	splits := strings.Fields(a)
 	if len(splits) != 2 {
 		return 0, "", false
@@ -282,7 +282,11 @@ func parseAuthorization(a string) (int, string, bool) {
 	if splits[0] != TokenName {
 		return 0, "", false
 	}
-	splits = strings.Split(splits[1], `:`)
+	return ParseAuthorizationValue(splits[1])
+}
+
+func ParseAuthorizationValue(v string) (int, string, bool) {
+	splits := strings.Split(v, `:`)
 	if len(splits) != 2 {
 		return 0, "", false
 	}

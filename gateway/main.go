@@ -2,12 +2,14 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
 	_ "embed"
 
+	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/api"
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
 	"github.com/movsb/taoblog/gateway/handlers/assets"
@@ -122,7 +124,10 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		mc.Handle(`GET /rss`, rss.New(g.auther, g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
 
 		// 调试相关
-		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.adminHandler)
+		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler)
+
+		// 附加组件提供的
+		mc.Handle(`/v3/addons/`, http.StripPrefix(`/v3/addons`, addons.Handler()), g.userFromQueryHandler)
 	}
 
 	return nil
@@ -138,13 +143,25 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (g *Gateway) adminHandler(h http.Handler) http.Handler {
+func (g *Gateway) nonGuestHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ac := auth.Context(r.Context())
-		if !ac.User.IsAdmin() {
-			w.WriteHeader(http.StatusForbidden)
+		if !ac.User.IsGuest() {
+			h.ServeHTTP(w, r)
 			return
 		}
-		h.ServeHTTP(w, r)
+		w.WriteHeader(http.StatusForbidden)
+	})
+}
+
+func (g *Gateway) userFromQueryHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, token, ok := auth.ParseAuthorizationValue(r.URL.Query().Get(`auth`))
+		u := g.auther.AuthLogin(fmt.Sprint(id), token)
+		if ok && !u.IsGuest() {
+			h.ServeHTTP(w, r)
+			return
+		}
+		http.Error(w, `bad token`, http.StatusUnauthorized)
 	})
 }

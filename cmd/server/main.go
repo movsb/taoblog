@@ -25,6 +25,7 @@ import (
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
+	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/mailer"
@@ -203,7 +204,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		service.WithMailer(mailer),
 	}
 
-	theService := service.NewService(ctx, s.grpcServer, cancel, testing, cfg, db, theAuth, serviceOptions...)
+	addons.New()
+	theService := service.New(ctx, s.grpcServer, cancel, cfg, db, theAuth, testing, serviceOptions...)
 	s.main = theService
 	go startGRPC()
 
