@@ -101,6 +101,10 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 		return nil
 	}
 
+	if err := createJob(time.Time(r.Dates.Start), r.Title); err != nil {
+		return err
+	}
+
 	for _, day := range r.Remind.Days {
 		if day == 1 {
 			return fmt.Errorf(`提醒天数不能为第 1 天`)

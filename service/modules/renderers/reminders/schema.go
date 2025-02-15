@@ -79,12 +79,8 @@ type ReminderRemind struct {
 }
 
 func (r *Reminder) Days() int {
-	// NOTE: +1 表示包含当天。
 	n := int(time.Since(time.Time(r.Dates.Start)).Hours() / 24)
-	if r.Exclusive {
-		return n
-	}
-	return n + 1
+	return utils.IIF(r.Exclusive, n, n+1)
 }
 
 func (r *Reminder) Start() string {

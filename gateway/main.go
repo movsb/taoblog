@@ -162,6 +162,6 @@ func (g *Gateway) userFromQueryHandler(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
-		http.Error(w, `bad token`, http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	})
 }
