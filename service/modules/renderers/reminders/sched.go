@@ -16,6 +16,10 @@ import (
 )
 
 type Job struct {
+	// 底层计划任务。
+	//
+	// 如果任务在添加时已经过期，则不添加真实任务，
+	// 仅记录，方便在日历中复现。此时为空。
 	underlying gocron.Job
 	startAt    time.Time
 	message    string
@@ -66,22 +70,30 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 
 	createJob := func(t time.Time, message string) error {
 		log.Println(`创建任务：`, message)
-		j, err := s.backend.NewJob(
-			gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
-			gocron.NewTask(remind, t, message),
-			gocron.WithTags(
-				fmt.Sprintf(`post_id:%d`, postID),
-			),
-		)
-		if err != nil {
-			log.Println(r, err)
-			return err
+
+		var job gocron.Job
+
+		if t.After(now) {
+			j, err := s.backend.NewJob(
+				gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
+				gocron.NewTask(remind, t, message),
+				gocron.WithTags(
+					fmt.Sprintf(`post_id:%d`, postID),
+				),
+			)
+			if err != nil {
+				log.Println(r, err)
+				return err
+			}
+			job = j
+		} else {
+			log.Println(`任务已过期，不创建真实任务。`, message)
 		}
 
 		s.lock.Lock()
 		defer s.lock.Unlock()
 		s.jobs[postID] = append(s.jobs[postID], Job{
-			underlying: j,
+			underlying: job,
 			startAt:    t,
 			message:    message,
 		})
@@ -93,10 +105,8 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 		if day == 1 {
 			return fmt.Errorf(`提醒天数不能为第 1 天`)
 		}
+
 		t := time.Time(r.Dates.Start).AddDate(0, 0, utils.IIF(r.Exclusive, day, day-1))
-		if t.Before(now) {
-			continue
-		}
 
 		if err := createJob(t, fmt.Sprintf(`%s 已经 %d 天了`, r.Title, day)); err != nil {
 			return err
@@ -127,10 +137,6 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 			d2 = d2.AddDate(0, 0, -1)
 		}
 
-		if d2.Before(now) {
-			continue
-		}
-
 		if err := createJob(d2, fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month)); err != nil {
 			return err
 		}
@@ -148,10 +154,6 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 		expect := int(d1.Month())
 		for expect != int(d2.Month()) {
 			d2 = d2.AddDate(0, 0, -1)
-		}
-
-		if d2.Before(now) {
-			continue
 		}
 
 		if err := createJob(d2, fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year)); err != nil {
