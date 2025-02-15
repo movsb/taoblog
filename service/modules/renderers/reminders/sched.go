@@ -201,6 +201,7 @@ func NewCalendarService(name string, sched *Scheduler) *CalenderService {
 func (s *CalenderService) marshal(w io.Writer) error {
 	cal := ics.NewCalendarFor(version.Name)
 	cal.SetMethod(ics.MethodPublish)
+	cal.SetLastModified(time.Now())
 	// TODO 写死了
 	cal.SetTimezoneId(`Asia/Shanghai`)
 	cal.SetXWRCalName(s.name)
@@ -211,9 +212,11 @@ func (s *CalenderService) marshal(w io.Writer) error {
 			e := cal.AddEvent(eventID)
 			e.SetSummary(job.message)
 			e.SetDtStampTime(job.startAt)
-			e.SetStartAt(job.startAt)
-			e.SetEndAt(job.startAt.AddDate(0, 0, 1).Add(-1))
-			_ = e
+
+			// 默认为全天事件
+			e.SetAllDayStartAt(job.startAt)
+			// 不包含结束日。
+			e.SetAllDayEndAt(job.startAt.AddDate(0, 0, 1))
 		}
 	})
 
