@@ -1,7 +1,6 @@
 package reminders_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/Lofanmi/chinese-calendar-golang/calendar"
@@ -29,11 +28,11 @@ func TestLunar(t *testing.T) {
 }
 
 func TestPrintLunar(t *testing.T) {
-	cc := func(y, m, d int64, leap bool) *calendar.Calendar {
-		return calendar.ByLunar(y, m, d, 0, 0, 0, leap)
+	cc := func(y, m, d int, leap bool) *reminders.LunarDate {
+		return reminders.NewLunarDate(y, m, d, 0, 0, 0, leap)
 	}
 	tests := []struct {
-		c *calendar.Calendar
+		l *reminders.LunarDate
 		s string
 	}{
 		{cc(2005, 3, 8, false), `二零零五年三月初八`},
@@ -42,19 +41,18 @@ func TestPrintLunar(t *testing.T) {
 		{cc(2005, 12, 23, false), `二零零五年腊月廿三`},
 	}
 	for _, test := range tests {
-		got := fmt.Sprintf(`%s年%s%s`, test.c.Lunar.YearAlias(), test.c.Lunar.MonthAlias(), test.c.Lunar.DayAlias())
-		if got != test.s {
+		if got := test.l.DateString(); got != test.s {
 			t.Errorf(`%s != %s`, got, test.s)
 		}
 	}
 }
 
 func TestParseLunarDate(t *testing.T) {
-	cc := func(y, m, d int64, leap bool) *calendar.Calendar {
-		return calendar.ByLunar(y, m, d, 0, 0, 0, leap)
+	cc := func(y, m, d int, leap bool) *reminders.LunarDate {
+		return reminders.NewLunarDate(y, m, d, 0, 0, 0, leap)
 	}
 	tests := []struct {
-		c *calendar.Calendar
+		l *reminders.LunarDate
 		s string
 	}{
 		{cc(2005, 3, 8, false), `二零零五年三月初八`},
@@ -64,14 +62,13 @@ func TestParseLunarDate(t *testing.T) {
 		{cc(2025, 6, 1, true), `二零二五年闰六月初一`},
 	}
 	for _, test := range tests {
-		want := fmt.Sprintf(`%s年%s%s`, test.c.Lunar.YearAlias(), test.c.Lunar.MonthAlias(), test.c.Lunar.DayAlias())
-		cal, err := reminders.ParseLunarDate(test.s)
+		want := test.l.DateString()
+		lunar, err := reminders.ParseLunarDate(test.s)
 		if err != nil {
 			t.Errorf(`%s: %s`, test.s, want)
 			continue
 		}
-		got := fmt.Sprintf(`%s年%s%s`, cal.Lunar.YearAlias(), cal.Lunar.MonthAlias(), cal.Lunar.DayAlias())
-		if got != want {
+		if got := lunar.DateString(); got != want {
 			t.Errorf(`got:%s != want:%s`, got, want)
 		}
 	}

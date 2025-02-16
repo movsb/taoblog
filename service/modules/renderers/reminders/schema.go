@@ -48,7 +48,7 @@ func NewUserDateFromString(s string) (UserDate, error) {
 //   - 二零零五年腊月二十
 //   - 二零零五年腊月廿三
 //   - 二零零五年闰二月廿三
-func ParseLunarDate(s string) (*calendar.Calendar, error) {
+func ParseLunarDate(s string) (*LunarDate, error) {
 	var err = fmt.Errorf(`无法解析农历日期：%v`, s)
 	var (
 		year, month, day int64
@@ -185,7 +185,8 @@ func ParseLunarDate(s string) (*calendar.Calendar, error) {
 		return nil, err
 	}
 
-	return calendar.ByLunar(year, month, day, 0, 0, 0, leap), nil
+	l := calendar.ByLunar(year, month, day, 0, 0, 0, leap)
+	return &LunarDate{c: l}, nil
 }
 
 func (u *UserDate) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -244,4 +245,21 @@ func (r *Reminder) Days() int {
 
 func (r *Reminder) Start() string {
 	return time.Time(r.Dates.Start).Format(`2006-01-02`)
+}
+
+// 农历日期，及相关计算。
+type LunarDate struct {
+	c *calendar.Calendar
+}
+
+func NewLunarDate(year, month, day int, hour, minute, second int, leapMonth bool) *LunarDate {
+	return &LunarDate{
+		c: calendar.ByLunar(int64(year), int64(month), int64(day), int64(hour), int64(minute), int64(second), leapMonth),
+	}
+}
+
+// 返回形如“二零零五年三月初八”的农历日期显示。
+func (d *LunarDate) DateString() string {
+	l := d.c.Lunar
+	return fmt.Sprintf(`%s年%s%s`, l.YearAlias(), l.MonthAlias(), l.DayAlias())
 }
