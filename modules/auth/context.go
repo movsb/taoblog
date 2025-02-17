@@ -242,6 +242,7 @@ func (a *Auth) userByKey(id int, key string) (*models.User, error) {
 	return nil, sql.ErrNoRows
 }
 
+// TODO 密码错误的时候返回错误而不是游客。
 func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id int, key string) *User) context.Context {
 	if ac := _Context(ctx); ac != nil {
 		return ctx

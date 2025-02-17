@@ -55,6 +55,7 @@ func (c *ProtoClient) Context() context.Context {
 	return c.contextFrom(context.Background())
 }
 
+// TODO 配置文件中写/传完整的 ID:TOKEN 格式，而不是假定是 AdminID。
 func (c *ProtoClient) contextFrom(parent context.Context) context.Context {
 	if c.token == "" {
 		return parent
