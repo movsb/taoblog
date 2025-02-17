@@ -147,7 +147,8 @@ func (t *Task) refreshPosts(ctx context.Context) {
 	execute := func() {
 		log.Println(`刷新文章提醒缓存：`, time.Now())
 		t.sched.ForEachPost(func(id int, jobs []Job) {
-
+			t.invalidatePost(id)
+			log.Println(`刷新文章缓存：`, id)
 		})
 	}
 
