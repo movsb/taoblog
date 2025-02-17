@@ -28,11 +28,11 @@ func TestLunar(t *testing.T) {
 }
 
 func TestPrintLunar(t *testing.T) {
-	cc := func(y, m, d int, leap bool) *reminders.LunarDate {
+	cc := func(y, m, d int, leap bool) reminders.LunarDate {
 		return reminders.NewLunarDate(y, m, d, 0, 0, 0, leap)
 	}
 	tests := []struct {
-		l *reminders.LunarDate
+		l reminders.LunarDate
 		s string
 	}{
 		{cc(2005, 3, 8, false), `二零零五年三月初八`},
@@ -48,11 +48,11 @@ func TestPrintLunar(t *testing.T) {
 }
 
 func TestParseLunarDate(t *testing.T) {
-	cc := func(y, m, d int, leap bool) *reminders.LunarDate {
+	cc := func(y, m, d int, leap bool) reminders.LunarDate {
 		return reminders.NewLunarDate(y, m, d, 0, 0, 0, leap)
 	}
 	tests := []struct {
-		l *reminders.LunarDate
+		l reminders.LunarDate
 		s string
 	}{
 		{cc(2005, 3, 8, false), `二零零五年三月初八`},
@@ -71,5 +71,13 @@ func TestParseLunarDate(t *testing.T) {
 		if got := lunar.DateString(); got != want {
 			t.Errorf(`got:%s != want:%s`, got, want)
 		}
+	}
+}
+
+func TestLunarDateAddDays(t *testing.T) {
+	l := reminders.NewLunarDate(2025, 6, 30, 0, 0, 0, false)
+	a := l.AddDays(1)
+	if a.DateString() != `二零二五年闰六月初一` {
+		t.Fatalf(`农历不相等。`)
 	}
 }

@@ -252,14 +252,32 @@ type LunarDate struct {
 	c *calendar.Calendar
 }
 
-func NewLunarDate(year, month, day int, hour, minute, second int, leapMonth bool) *LunarDate {
-	return &LunarDate{
+func NewLunarDate(year, month, day int, hour, minute, second int, leapMonth bool) LunarDate {
+	return LunarDate{
 		c: calendar.ByLunar(int64(year), int64(month), int64(day), int64(hour), int64(minute), int64(second), leapMonth),
 	}
 }
 
 // 返回形如“二零零五年三月初八”的农历日期显示。
-func (d *LunarDate) DateString() string {
+func (d LunarDate) DateString() string {
 	l := d.c.Lunar
 	return fmt.Sprintf(`%s年%s%s`, l.YearAlias(), l.MonthAlias(), l.DayAlias())
+}
+
+// 返回对应的阳历时间。
+func (d LunarDate) SolarTime() time.Time {
+	s := d.c.Solar
+	t := time.Date(
+		int(s.GetYear()), time.Month(s.GetMonth()), int(s.GetDay()),
+		int(s.GetHour()), int(s.GetMinute()), int(s.GetSecond()), int(s.GetNanosecond()),
+		FixedZone,
+	)
+	return t
+}
+
+// 返回“添加 N 天”后的农历日期。
+func (d LunarDate) AddDays(n int) LunarDate {
+	t := d.SolarTime().AddDate(0, 0, 1)
+	c := calendar.ByTimestamp(t.Unix())
+	return LunarDate{c: c}
 }
