@@ -21,6 +21,7 @@ func NewDefaults(sitemapFullURL string) *Robots {
 					Disallows: []string{
 						`/admin/`,
 						`/v3/`,
+						`/search`,
 					},
 				},
 			},

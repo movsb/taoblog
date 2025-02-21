@@ -9,7 +9,6 @@ import (
 	"github.com/movsb/taoblog/service"
 )
 
-// HomeData ...
 type HomeData struct {
 	Posts    []*Post
 	Tweets   []*Post
@@ -20,7 +19,6 @@ type HomeData struct {
 	CommentCount int64
 }
 
-// NewDataForHome ...
 func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		Context: ctx,

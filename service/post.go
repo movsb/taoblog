@@ -73,9 +73,6 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	if ac.User.IsSystem() {
 		// nothing to do
 	} else if !ac.User.IsGuest() {
-		// 1. 所有自己的
-		// 2. 所有公开的
-		// 3. 所有别人分享、自己可见的
 		switch in.Ownership {
 		default:
 			return nil, fmt.Errorf(`未知所有者。`)

@@ -172,6 +172,6 @@ func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*Searc
 		return nil, err
 	}
 
-	log.Println("结果数", len(result))
+	log.Println("结果数", len(result), search)
 	return result, nil
 }

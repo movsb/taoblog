@@ -78,6 +78,6 @@ func TestLunarDateAddDays(t *testing.T) {
 	l := reminders.NewLunarDate(2025, 6, 30, 0, 0, 0, false)
 	a := l.AddDays(1)
 	if a.DateString() != `二零二五年闰六月初一` {
-		t.Fatalf(`农历不相等。`)
+		t.Fatalf(`农历不相等：%v`, a.DateString())
 	}
 }
