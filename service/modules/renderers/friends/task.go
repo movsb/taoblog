@@ -38,7 +38,7 @@ type CacheValue struct {
 type Task struct {
 	cache      *lru.TTLCache[CacheKey, CacheValue]
 	lock       sync.Mutex
-	keys       []CacheKey
+	keys       map[CacheKey]struct{}
 	store      utils.PluginStorage
 	deb        *utils.Debouncer
 	invalidate func(postID int)
@@ -47,6 +47,7 @@ type Task struct {
 func NewTask(storage utils.PluginStorage, invalidate func(postID int)) *Task {
 	t := &Task{
 		cache:      lru.NewTTLCache[CacheKey, CacheValue](1024),
+		keys:       map[CacheKey]struct{}{},
 		store:      storage,
 		invalidate: invalidate,
 	}
@@ -74,7 +75,7 @@ func (t *Task) load() {
 	for k, v := range m {
 		ck := CacheKeyFromString(k)
 		t.cache.Set(ck, v, ttl)
-		t.keys = append(t.keys, ck)
+		t.keys[ck] = struct{}{}
 	}
 
 	log.Println(`已恢复朋友头像数据`)
@@ -85,11 +86,11 @@ func (t *Task) save() {
 	defer t.lock.Unlock()
 
 	m := map[string]CacheValue{}
-	existingKeys := []CacheKey{}
-	for _, k := range t.keys {
+	existingKeys := make(map[CacheKey]struct{})
+	for k := range t.keys {
 		if value, ok := t.cache.Get(k); ok {
 			m[k.String()] = value
-			existingKeys = append(existingKeys, k)
+			existingKeys[k] = struct{}{}
 		}
 	}
 
@@ -118,7 +119,7 @@ func (t *Task) refreshLoop(ctx context.Context) {
 		t.lock.Lock()
 		defer t.lock.Unlock()
 
-		for _, k := range t.keys {
+		for k := range t.keys {
 			go t.update(k.PostID, k.FaviconURL)
 		}
 	}
@@ -146,7 +147,7 @@ func (t *Task) update(postID int, faviconURL string) {
 		contentType, content, err = t.get(faviconURL)
 		if err != nil {
 			log.Println(faviconURL, err)
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			continue
 		}
 		break
@@ -159,14 +160,14 @@ func (t *Task) update(postID int, faviconURL string) {
 		Content:     content,
 	}, ttl)
 	t.lock.Lock()
-	t.keys = append(t.keys, CacheKey{postID, faviconURL})
+	t.keys[CacheKey{postID, faviconURL}] = struct{}{}
 	t.lock.Unlock()
 	t.invalidate(postID)
 	t.deb.Enter()
 	log.Println(`已更新朋友头像数据：`, faviconURL)
 }
 
-const maxBodySize = 100 << 10
+const maxBodySize = 200 << 10
 
 // 返回 [ContentType, Data]
 func (t *Task) get(faviconURL string) (string, []byte, error) {
