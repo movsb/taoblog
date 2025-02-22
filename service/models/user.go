@@ -61,6 +61,7 @@ func (u *User) ToProto() *proto.User {
 		Id:        u.ID,
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
+		Nickname:  u.Nickname,
 		Password:  u.Password,
 	}
 }

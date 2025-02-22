@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -152,7 +153,12 @@ func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User,
 	user := models.User{
 		CreatedAt: now.Unix(),
 		UpdatedAt: now.Unix(),
+		Nickname:  strings.TrimSpace(in.Nickname),
 		Password:  passwordString,
+	}
+
+	if user.Nickname == `` {
+		return nil, fmt.Errorf(`昵称不能为空。`)
 	}
 
 	if err := p.db.Model(&user).Create(); err != nil {

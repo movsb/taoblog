@@ -48,10 +48,10 @@ func Serve(ctx context.Context, options ...server.With) *R {
 	r.admin = onBehalfOf(r, int64(auth.AdminID))
 	r.guest = context.Background()
 
-	u := utils.Must1(r.server.Main().CreateUser(r.admin, &proto.User{}))
+	u := utils.Must1(r.server.Main().CreateUser(r.admin, &proto.User{Nickname: `用户1`}))
 	r.user1 = onBehalfOf(r, u.Id)
 	r.user1ID = u.Id
-	u = utils.Must1(r.server.Main().CreateUser(r.admin, &proto.User{}))
+	u = utils.Must1(r.server.Main().CreateUser(r.admin, &proto.User{Nickname: `用户2`}))
 	r.user2 = onBehalfOf(r, u.Id)
 	r.user2ID = u.Id
 
