@@ -236,11 +236,24 @@ type ReminderRemind struct {
 
 	// 第几年。
 	Years []int `yaml:"years"`
+
+	// 每天提醒。用于计数，比如“分开了多少天了”这样的。
+	//
+	// 注意：
+	//  - 此事件不创建提醒。
+	//  - 此事件只会创建于今日。
+	//
+	// 即：仅用于日历展示。
+	Daily bool `yaml:"daily"`
 }
 
 func (r *Reminder) Days() int {
-	n := int(time.Since(time.Time(r.Dates.Start)).Hours() / 24)
-	return utils.IIF(r.Exclusive, n, n+1)
+	return daysPassed(time.Time(r.Dates.Start), r.Exclusive)
+}
+
+func daysPassed(t time.Time, exclusive bool) int {
+	n := int(time.Since(t).Hours() / 24)
+	return utils.IIF(exclusive, n, n+1)
 }
 
 func (r *Reminder) Start() string {

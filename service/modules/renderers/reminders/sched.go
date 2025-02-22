@@ -29,8 +29,9 @@ type Scheduler struct {
 	backend gocron.Scheduler
 	clock   clockwork.Clock
 
-	lock sync.Mutex
-	jobs map[int][]Job
+	lock  sync.Mutex
+	jobs  map[int][]Job
+	daily map[int][]Job
 }
 
 type SchedulerOption func(s *Scheduler)
@@ -43,7 +44,8 @@ func WithFakeClock(clock clockwork.Clock) SchedulerOption {
 
 func NewScheduler(options ...SchedulerOption) *Scheduler {
 	sched := &Scheduler{
-		jobs: make(map[int][]Job),
+		jobs:  make(map[int][]Job),
+		daily: make(map[int][]Job),
 	}
 
 	for _, opt := range options {
@@ -67,6 +69,15 @@ func NewScheduler(options ...SchedulerOption) *Scheduler {
 
 func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Time, message string)) error {
 	now := s.clock.Now()
+
+	if r.Remind.Daily {
+		s.lock.Lock()
+		s.daily[postID] = append(s.daily[postID], Job{
+			startAt: time.Time(r.Dates.Start),
+			message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, daysPassed(time.Time(r.Dates.Start), r.Exclusive)),
+		})
+		s.lock.Unlock()
+	}
 
 	createJob := func(t time.Time, message string) error {
 		log.Println(`创建任务：`, message)
@@ -101,6 +112,7 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 		return nil
 	}
 
+	// 始终创建当天提醒。
 	if err := createJob(time.Time(r.Dates.Start), r.Title); err != nil {
 		return err
 	}
@@ -176,17 +188,30 @@ func (s *Scheduler) DeleteRemindersByPostID(id int) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	delete(s.jobs, id)
+	delete(s.daily, id)
 }
 
-func (s *Scheduler) ForEachPost(fn func(id int, jobs []Job)) {
+func (s *Scheduler) ForEachPost(fn func(id int, jobs []Job, daily []Job)) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	for id, jobs := range s.jobs {
-		fn(id, jobs)
+	ids := make(map[int]struct{}, len(s.jobs)+len(s.daily))
+	for id := range s.jobs {
+		ids[id] = struct{}{}
+	}
+	for id := range s.daily {
+		ids[id] = struct{}{}
+	}
+
+	for id := range ids {
+		jobs := s.jobs[id]
+		daily := s.daily[id]
+		fn(id, jobs, daily)
 	}
 }
 
+// 用于把提醒事件导出为日历格式。
+//
 // https://icalendar.org/validator.html
 type CalenderService struct {
 	name  string
@@ -204,6 +229,7 @@ func NewCalendarService(name string, sched *Scheduler) *CalenderService {
 	return s
 }
 
+// TODO: 对于每天任务，需要强制刷新修改时间以使得每日更新。
 func (s *CalenderService) marshal(w io.Writer) error {
 	cal := ics.NewCalendarFor(version.Name)
 	cal.SetMethod(ics.MethodPublish)
@@ -212,7 +238,9 @@ func (s *CalenderService) marshal(w io.Writer) error {
 	cal.SetTimezoneId(`Asia/Shanghai`)
 	cal.SetXWRCalName(s.name)
 
-	s.sched.ForEachPost(func(id int, jobs []Job) {
+	now := s.sched.clock.Now()
+
+	s.sched.ForEachPost(func(id int, jobs []Job, daily []Job) {
 		for _, job := range jobs {
 			eventID := fmt.Sprintf(`post_id:%d,job_id:%d`, id, job.startAt.Unix())
 			e := cal.AddEvent(eventID)
@@ -223,6 +251,18 @@ func (s *CalenderService) marshal(w io.Writer) error {
 			e.SetAllDayStartAt(job.startAt)
 			// 不包含结束日。
 			e.SetAllDayEndAt(job.startAt.AddDate(0, 0, 1))
+		}
+
+		for _, job := range daily {
+			eventID := fmt.Sprintf(`post_id:%d,job_id:%d,daily:true`, id, job.startAt.Unix())
+			e := cal.AddEvent(eventID)
+			e.SetSummary(job.message)
+			e.SetDtStampTime(job.startAt)
+
+			// 默认为全天事件
+			e.SetAllDayStartAt(now)
+			// 不包含结束日。
+			e.SetAllDayEndAt(now.AddDate(0, 0, 1))
 		}
 	})
 
