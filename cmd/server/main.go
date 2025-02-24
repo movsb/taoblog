@@ -142,7 +142,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	db := InitDatabase(cfg.Database.Path, s.createFirstPost)
+	db := InitDatabase(cfg.Database.Path, InitForPosts(s.createFirstPost))
 	defer db.Close()
 
 	s.db = taorm.NewDB(db)
@@ -178,6 +178,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var store theme_fs.FS
 	if path := cfg.Data.File.Path; path == "" {
 		store = storage.NewMemory()
+	} else if cfg.Data.File.Files != `` {
+		db2 := InitDatabase(cfg.Data.File.Files, InitForFiles())
+		store = storage.NewSQLite(db2)
 	} else {
 		store = storage.NewLocal(cfg.Data.File.Path)
 	}
@@ -429,7 +432,7 @@ func liveCheck(s *service.Service, cc notify.Notifier) {
 
 // 如果路径为空，使用内存数据库。
 // TODO 把首篇文章的创建改到服务中实现，属于业务逻辑。
-func InitDatabase(path string, createFirstPost bool) *sql.DB {
+func InitDatabase(path string, init func(db *sql.DB)) *sql.DB {
 	var db *sql.DB
 	var err error
 
@@ -464,40 +467,62 @@ func InitDatabase(path string, createFirstPost bool) *sql.DB {
 		panic(err)
 	}
 
-	var count int
-	row := db.QueryRow(`select count(1) from options`)
-	if err := row.Scan(&count); err != nil {
-		if se, ok := err.(sqlite3.Error); ok {
-			if strings.Contains(se.Error(), `no such table`) {
-				migration.Init(db, path)
+	init(db)
 
-				tdb := taorm.NewDB(db)
-				now := time.Now().Unix()
-
-				if createFirstPost {
-					tdb.MustTxCall(func(tx *taorm.DB) {
-						tx.Model(&models.Post{
-							Date:       int32(now),
-							Modified:   int32(now),
-							Title:      `你好，世界`,
-							Type:       `post`,
-							Category:   0,
-							Status:     `public`,
-							SourceType: `markdown`,
-							Source:     `你好，世界！这是您的第一篇文章。`,
-
-							// TODO 用配置时区。
-							DateTimezone: ``,
-							// TODO 用配置时区。
-							ModifiedTimezone: ``,
-						}).MustCreate()
-					})
-				}
-
-				return db
-			}
-		}
-		panic(err)
-	}
 	return db
+}
+
+func InitForPosts(createFirstPost bool) func(db *sql.DB) {
+	return func(db *sql.DB) {
+		var count int
+		row := db.QueryRow(`select count(1) from options`)
+		if err := row.Scan(&count); err != nil {
+			if se, ok := err.(sqlite3.Error); ok {
+				if strings.Contains(se.Error(), `no such table`) {
+					migration.InitPosts(db)
+
+					tdb := taorm.NewDB(db)
+					now := time.Now().Unix()
+
+					if createFirstPost {
+						tdb.MustTxCall(func(tx *taorm.DB) {
+							tx.Model(&models.Post{
+								Date:       int32(now),
+								Modified:   int32(now),
+								Title:      `你好，世界`,
+								Type:       `post`,
+								Category:   0,
+								Status:     `public`,
+								SourceType: `markdown`,
+								Source:     `你好，世界！这是您的第一篇文章。`,
+
+								// TODO 用配置时区。
+								DateTimezone: ``,
+								// TODO 用配置时区。
+								ModifiedTimezone: ``,
+							}).MustCreate()
+						})
+					}
+					return
+				}
+			}
+			panic(err)
+		}
+	}
+}
+
+func InitForFiles() func(db *sql.DB) {
+	return func(db *sql.DB) {
+		var count int
+		row := db.QueryRow(`select count(1) from files`)
+		if err := row.Scan(&count); err != nil {
+			if se, ok := err.(sqlite3.Error); ok {
+				if strings.Contains(se.Error(), `no such table`) {
+					migration.InitFiles(db)
+					return
+				}
+			}
+			panic(err)
+		}
+	}
 }

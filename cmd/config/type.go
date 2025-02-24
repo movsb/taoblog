@@ -64,12 +64,15 @@ func DefaultDataConfig() DataConfig {
 type FileDataConfig struct {
 	// 如果路径为空，使用内存文件系统。
 	Path string `yaml:"path"`
+	// 如果不为空，使用数据库文件系统。
+	Files string `yaml:"files"`
 }
 
 // DefaultFileDataConfig ...
 func DefaultFileDataConfig() FileDataConfig {
 	return FileDataConfig{
-		Path: `./files`,
+		Path:  `./files`,
+		Files: `files.db`,
 	}
 }
 
