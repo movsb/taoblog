@@ -75,16 +75,29 @@ type _Reader struct {
 	pid  int
 	path string
 
-	data io.Reader
+	data io.ReadSeeker
 }
 
-func (r *_Reader) Read(p []byte) (int, error) {
+func (r *_Reader) prepare() error {
 	if r.data == nil {
 		var file models.File
 		if err := r.db.Select(`data`).Where(`post_id=? AND path=?`, r.pid, r.path).Find(&file); err != nil {
-			return 0, err
+			return err
 		}
-		r.data = bytes.NewBuffer(file.Data)
+		r.data = bytes.NewReader(file.Data)
+	}
+	return nil
+}
+
+func (r *_Reader) Seek(offset int64, whence int) (int64, error) {
+	if err := r.prepare(); err != nil {
+		return 0, err
+	}
+	return r.data.Seek(offset, whence)
+}
+func (r *_Reader) Read(p []byte) (int, error) {
+	if err := r.prepare(); err != nil {
+		return 0, err
 	}
 	return r.data.Read(p)
 }

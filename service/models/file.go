@@ -23,8 +23,8 @@ func (File) TableName() string {
 	return `files`
 }
 
-func (f *File) FsFile(r io.Reader) fs.File {
-	return &_FsFile{f: f, r: r}
+func (f *File) FsFile(r io.ReadSeeker) fs.File {
+	return &_FsFile{f: f, ReadSeeker: r}
 }
 
 func (f *File) InfoFile() fs.FileInfo {
@@ -37,11 +37,10 @@ func (f *File) DirEntry() fs.DirEntry {
 
 type _FsFile struct {
 	f *File
-	r io.Reader
+	io.ReadSeeker
 }
 
 func (f *_FsFile) Stat() (fs.FileInfo, error) { return &_InfoFile{f.f}, nil }
-func (f *_FsFile) Read(p []byte) (int, error) { return f.r.Read(p) }
 func (f *_FsFile) Close() error               { return nil }
 
 type _InfoFile struct{ f *File }
