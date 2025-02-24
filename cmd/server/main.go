@@ -142,7 +142,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	db := InitDatabase(cfg.Database.Path, InitForPosts(s.createFirstPost))
+	db := InitDatabase(cfg.Database.Posts, InitForPosts(s.createFirstPost))
 	defer db.Close()
 
 	s.db = taorm.NewDB(db)
@@ -175,15 +175,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	var store theme_fs.FS
-	if path := cfg.Data.File.Path; path == "" {
-		store = storage.NewMemory()
-	} else if cfg.Data.File.Files != `` {
-		db2 := InitDatabase(cfg.Data.File.Files, InitForFiles())
-		store = storage.NewSQLite(db2)
-	} else {
-		store = storage.NewLocal(cfg.Data.File.Path)
-	}
+	filesDB := InitDatabase(cfg.Database.Files, InitForFiles())
+	store := theme_fs.FS(storage.NewSQLite(filesDB))
 
 	theAuth := auth.New(cfg.Auth, taorm.NewDB(db))
 	s.auth = theAuth
@@ -202,6 +195,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	startGRPC := s.serveGRPC(ctx)
 
 	serviceOptions := []service.With{
+		// service.WithThemeRootFileSystem(),
 		service.WithPostDataFileSystem(store),
 		service.WithNotifier(notifier),
 		service.WithMailer(mailer),
@@ -431,7 +425,6 @@ func liveCheck(s *service.Service, cc notify.Notifier) {
 }
 
 // 如果路径为空，使用内存数据库。
-// TODO 把首篇文章的创建改到服务中实现，属于业务逻辑。
 func InitDatabase(path string, init func(db *sql.DB)) *sql.DB {
 	var db *sql.DB
 	var err error
@@ -458,7 +451,7 @@ func InitDatabase(path string, init func(db *sql.DB)) *sql.DB {
 	}
 
 	dsn := u.String()
-	log.Println(`数据库连接字符串：`, dsn)
+	// log.Println(`数据库连接字符串：`, dsn)
 	db, err = sql.Open(`sqlite3`, dsn)
 	if err == nil {
 		db.SetMaxOpenConns(1)

@@ -10,10 +10,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/mattn/go-sqlite3"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -212,19 +210,21 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 	s.MustBeAdmin(srv.Context())
 
 	listFiles := func(req *proto.BackupFilesRequest_ListFilesRequest) error {
-		root, err := s.postDataFS.Root()
-		if err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
-		files, err := utils.ListBackupFiles(root, ".")
+		files, err := s.postDataFS.AllFiles()
 		if err != nil {
 			log.Printf(`BackupFiles failed to list files: %v`, err)
 			return err
 		}
+		outFiles := map[int32]*proto.BackupFilesResponse_ListFilesResponse_Files{}
+		for id, f := range files {
+			outFiles[int32(id)] = &proto.BackupFilesResponse_ListFilesResponse_Files{
+				Files: f,
+			}
+		}
 		rsp := &proto.BackupFilesResponse{
 			BackupFilesMessage: &proto.BackupFilesResponse_ListFiles{
 				ListFiles: &proto.BackupFilesResponse_ListFilesResponse{
-					Files: files,
+					Files: outFiles,
 				},
 			},
 		}
@@ -236,16 +236,24 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 	}
 
 	sendFile := func(req *proto.BackupFilesRequest_SendFileRequest) error {
-		log.Printf("send file: %s", req.Path)
-		localPath := filepath.Join(s.cfg.Data.File.Path, filepath.Clean(req.Path))
-		data, err := ioutil.ReadFile(localPath)
+		log.Printf("send file: %d/%s", req.PostId, req.Path)
+		fs, err := s.postDataFS.ForPost(int(req.PostId))
+		if err != nil {
+			return err
+		}
+		f, err := fs.Open(req.Path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		all, err := io.ReadAll(f)
 		if err != nil {
 			return err
 		}
 		rsp := &proto.BackupFilesResponse{
 			BackupFilesMessage: &proto.BackupFilesResponse_SendFile{
 				SendFile: &proto.BackupFilesResponse_SendFileResponse{
-					Data: data,
+					Data: all,
 				},
 			},
 		}

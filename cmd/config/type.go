@@ -6,7 +6,6 @@ import search_config "github.com/movsb/taoblog/service/modules/search/config"
 type Config struct {
 	Database    DatabaseConfig       `yaml:"database"`
 	Server      ServerConfig         `yaml:"server"`
-	Data        DataConfig           `yaml:"data"`
 	Maintenance MaintenanceConfig    `yaml:"maintenance"`
 	Auth        AuthConfig           `yaml:"auth"`
 	Menus       Menus                `json:"menus" yaml:"menus"`
@@ -26,7 +25,6 @@ func DefaultConfig() Config {
 	return Config{
 		Database:    DefaultDatabaseConfig(),
 		Server:      DefaultServerConfig(),
-		Data:        DefaultDataConfig(),
 		Maintenance: DefaultMainMaintenanceConfig(),
 		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
@@ -45,34 +43,6 @@ type ServerConfig struct {
 func DefaultServerConfig() ServerConfig {
 	return ServerConfig{
 		HTTPListen: `0.0.0.0:2564`,
-	}
-}
-
-// DataConfig ...
-type DataConfig struct {
-	File FileDataConfig `yaml:"file"`
-}
-
-// DefaultDataConfig ...
-func DefaultDataConfig() DataConfig {
-	return DataConfig{
-		File: DefaultFileDataConfig(),
-	}
-}
-
-// FileDataConfig ...
-type FileDataConfig struct {
-	// 如果路径为空，使用内存文件系统。
-	Path string `yaml:"path"`
-	// 如果不为空，使用数据库文件系统。
-	Files string `yaml:"files"`
-}
-
-// DefaultFileDataConfig ...
-func DefaultFileDataConfig() FileDataConfig {
-	return FileDataConfig{
-		Path:  `./files`,
-		Files: `files.db`,
 	}
 }
 

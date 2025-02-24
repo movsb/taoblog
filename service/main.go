@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"database/sql"
+	"embed"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"strings"
@@ -63,7 +65,10 @@ type Service struct {
 
 	cfg *config.Config
 
-	postDataFS theme_fs.FS
+	// 服务端渲染的时候一些模块会要求解析 URL（包含相对文件和绝对文件），
+	// 所以需要用到主题相关的根文件系统。
+	themeRootFS fs.FS
+	postDataFS  theme_fs.FS
 
 	db   *sql.DB
 	tdb  *taorm.DB
@@ -136,8 +141,9 @@ func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cf
 
 		notifier: notify.NewConsoleNotify(),
 
-		cfg:        cfg,
-		postDataFS: &theme_fs.Empty{},
+		cfg:         cfg,
+		themeRootFS: embed.FS{},
+		postDataFS:  &theme_fs.Empty{},
 
 		// TODO 可配置使用的时区，而不是使用服务器当前时间或者硬编码成+8时区。
 		timeLocation: time.Now().Location(),

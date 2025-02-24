@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	std_fs "io/fs"
+	"mime"
 	"os"
 	"path"
 	"strings"
@@ -38,10 +39,24 @@ var _ interface {
 	theme_fs.FS
 } = (*SQLite)(nil)
 
-func (fs *SQLite) Root() (std_fs.FS, error) {
-	// panic(`未实现根目录`)
-	return fs.ForPost(0)
+func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
+	var files []*models.File
+	if err := fs.db.Select(fileFieldsWithoutData).Find(&files); err != nil {
+		return nil, err
+	}
+	m := make(map[int][]*proto.FileSpec)
+	for _, f := range files {
+		m[f.PostID] = append(m[f.PostID], &proto.FileSpec{
+			Path: f.Path,
+			Mode: f.Mode,
+			Size: f.Size,
+			Time: uint32(f.ModTime),
+			Type: mime.TypeByExtension(path.Ext(f.Path)),
+		})
+	}
+	return m, nil
 }
+
 func (fs *SQLite) ForPost(id int) (std_fs.FS, error) {
 	return &SQLiteForPost{s: fs, pid: id, dir: ``}, nil
 }
