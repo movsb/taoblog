@@ -427,9 +427,11 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `backup files`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.BackupFiles(cmd)
+			name := utils.Must1(cmd.Flags().GetString(`name`))
+			client.BackupFiles(cmd, name)
 		},
 	}
+	backupFilesCmd.Flags().StringP(`name`, `n`, `files.db`, `数据库文件名。`)
 	backupCmd.AddCommand(backupFilesCmd)
 
 	configCmd := &cobra.Command{

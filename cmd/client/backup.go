@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"compress/zlib"
 	"fmt"
 	"io"
@@ -11,7 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/syncer"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/spf13/cobra"
@@ -125,11 +128,30 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 	return n, nil
 }
 
-// Backup backups all blog database.
-func (c *Client) BackupFiles(cmd *cobra.Command) {
+type SpecWithPostID struct {
+	PostID int
+	File   *proto.FileSpec
+}
+
+func lessSpecWithPostID(s, than SpecWithPostID) bool {
+	return s.PostID < than.PostID || s.PostID == than.PostID && s.File.Path < than.File.Path
+}
+
+func (s SpecWithPostID) Less(than SpecWithPostID) bool {
+	return lessSpecWithPostID(s, than)
+}
+
+func (s SpecWithPostID) DeepEqual(to SpecWithPostID) bool {
+	return s.PostID == to.PostID &&
+		s.File.Path == to.File.Path &&
+		s.File.Time == to.File.Time &&
+		s.File.Size == to.File.Size
+}
+
+func (c *Client) BackupFiles(cmd *cobra.Command, name string) {
 	client, err := c.Management.BackupFiles(c.Context())
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	defer client.CloseSend()
 	log.Printf(`Remote: list files...`)
@@ -150,140 +172,77 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 	}
 	remoteFiles := rsp.GetListFiles().Files
 
+	var localSpecs, remoteSpecs []SpecWithPostID
+
+	for id, r := range remoteFiles {
+		for _, f := range r.Files {
+			remoteSpecs = append(remoteSpecs, SpecWithPostID{
+				PostID: int(id),
+				File:   f,
+			})
+		}
+	}
+
 	log.Printf(`Local: list files...`)
 
-	localDir := "files"
-	localFS := storage.NewLocal("files")
-
-	localFiles, err := utils.ListBackupFiles(localFS, ".")
+	localDB := server.InitDatabase(name, server.InitForFiles())
+	localStore := storage.NewSQLite(localDB)
+	localFiles, err := localStore.AllFiles()
 	if err != nil {
 		panic(err)
 	}
 
+	for id, r := range localFiles {
+		for _, f := range r {
+			localSpecs = append(localSpecs, SpecWithPostID{
+				PostID: int(id),
+				File:   f,
+			})
+		}
+	}
+
 	log.Println(`Sort files...`)
-	sort.Slice(remoteFiles, func(i, j int) bool {
-		return strings.Compare(remoteFiles[i].Path, remoteFiles[j].Path) < 0
+	sort.Slice(remoteSpecs, func(i, j int) bool {
+		return remoteSpecs[i].PostID < remoteSpecs[j].PostID || strings.Compare(remoteSpecs[i].File.Path, remoteSpecs[j].File.Path) < 0
 	})
-	sort.Slice(localFiles, func(i, j int) bool {
-		return strings.Compare(localFiles[i].Path, localFiles[j].Path) < 0
+	sort.Slice(localSpecs, func(i, j int) bool {
+		return localSpecs[i].PostID < localSpecs[j].PostID || strings.Compare(localSpecs[i].File.Path, localSpecs[j].File.Path) < 0
 	})
 
-	// yaml.NewEncoder(os.Stdout).Encode(remoteFiles)
-	// yaml.NewEncoder(os.Stdout).Encode(localFiles)
-
-	deleteLocal := func(f *proto.BackupFileSpec) {
-		path := filepath.Join(localDir, f.Path)
-		if err := os.Remove(path); err != nil {
-			panic(err)
-		}
-	}
-	copyRemote := func(f *proto.BackupFileSpec) {
-		localPath := filepath.Join(localDir, f.Path)
-		mode := os.FileMode(f.Mode)
-		if mode.IsDir() {
-			if err := os.MkdirAll(localPath, mode.Perm()); err != nil {
-				panic(err)
-			}
-			return
-		}
-		dir := filepath.Dir(localPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			panic(err)
-		}
-		err := client.Send(&proto.BackupFilesRequest{
-			BackupFilesMessage: &proto.BackupFilesRequest_SendFile{
-				SendFile: &proto.BackupFilesRequest_SendFileRequest{
-					Path: f.Path,
+	sync := syncer.New(
+		syncer.WithCopyRemoteToLocal[[]SpecWithPostID](func(f SpecWithPostID) error {
+			log.Println(`远程→本地：`, f.PostID, f.File.Path)
+			err := client.Send(&proto.BackupFilesRequest{
+				BackupFilesMessage: &proto.BackupFilesRequest_SendFile{
+					SendFile: &proto.BackupFilesRequest_SendFileRequest{
+						PostId: int32(f.PostID),
+						Path:   f.File.Path,
+					},
 				},
-			},
-		})
-		if err != nil {
-			panic(err)
-		}
-		rsp, err := client.Recv()
-		if err != nil {
-			panic(err)
-		}
-		if rsp.GetSendFile() == nil {
-			panic(`bad message`)
-		}
-		data := rsp.GetSendFile().Data
-		fp, err := os.OpenFile(localPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode.Perm())
-		if err != nil {
-			panic(err)
-		}
-		defer func(fp *os.File) {
-			if err := fp.Close(); err != nil {
+			})
+			if err != nil {
 				panic(err)
 			}
-		}(fp)
-		if _, err := fp.Write(data); err != nil {
-			panic(err)
-		}
-		t := time.Unix(int64(f.Time), 0)
-		if err := os.Chtimes(localPath, t, t); err != nil {
-			panic(err)
-		}
-	}
-
-	rf, lf := remoteFiles, localFiles
-	i, j := len(rf)-1, len(lf)-1
-
-	for {
-		if i == -1 && j == -1 {
-			log.Println(`No more files to compare`)
-			break
-		}
-		if j == -1 {
-			log.Printf("Local: copy %s\n", rf[i].Path)
-			copyRemote(rf[i])
-			i--
-			continue
-		}
-		if i == -1 {
-			log.Printf("Local: delete %s\n", lf[j].Path)
-			deleteLocal(lf[j])
-			j--
-			continue
-		}
-		switch n := strings.Compare(rf[i].Path, lf[j].Path); {
-		case n < 0:
-			log.Printf("Local: delete %s\n", lf[j].Path)
-			deleteLocal(lf[j])
-			j--
-		case n == 0:
-			rm, lm := os.FileMode(rf[i].Mode), os.FileMode(lf[j].Mode)
-			if rm.IsDir() != lm.IsDir() {
-				panic(`file != dir`)
+			rsp, err := client.Recv()
+			if err != nil {
+				panic(err)
 			}
-			shouldSync := false
-			if rf[i].Size != lf[j].Size {
-				shouldSync = true
+			if rsp.GetSendFile() == nil {
+				panic(`bad message`)
 			}
-			if rf[i].Time != lf[j].Time {
-				shouldSync = true
-			}
-			if shouldSync {
-				if rm.IsRegular() {
-					log.Printf("Local: delete %s\n", lf[j].Path)
-					deleteLocal(lf[j])
-					log.Printf("Local: copy %s\n", rf[i].Path)
-					copyRemote(rf[i])
-				} else {
-					// log.Printf("Local: modtime of dir: %s", rf[i].Path)
-					path := filepath.Join(localDir, lf[j].Path)
-					t := time.Unix(int64(rf[i].Time), 0)
-					if err := os.Chtimes(path, t, t); err != nil {
-						panic(err)
-					}
-				}
-			}
-			i--
-			j--
-		case n > 0:
-			log.Printf("Local: copy %s\n", rf[i].Path)
-			copyRemote(rf[i])
-			i--
-		}
+			data := rsp.GetSendFile().Data
+			fs := utils.Must1(localStore.ForPost(f.PostID))
+			utils.Must(utils.Write(fs, f.File, bytes.NewReader(data)))
+			return nil
+		}),
+		syncer.WithDeleteLocal[[]SpecWithPostID](func(f SpecWithPostID) error {
+			log.Println(`删除本地：`, f.PostID, f.File.Path)
+			fs := utils.Must1(localStore.ForPost(f.PostID))
+			utils.Must(utils.Delete(fs, f.File.Path))
+			return nil
+		}),
+	)
+	if err := sync.Sync(localSpecs, remoteSpecs, syncer.RemoteToLocal); err != nil {
+		log.Fatalln(err)
 	}
 }

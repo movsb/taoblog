@@ -1,15 +1,18 @@
 package config
 
-// DatabaseConfig ...
 type DatabaseConfig struct {
-	// 数据库文件路径。
+	// 文章数据库文件路径。
 	// 如果不指定，使用内存数据库。
-	Path string `yaml:"path"`
+	Posts string `yaml:"posts"`
+
+	// 文件数据库文件路径。
+	// 如果不指定，使用内存数据库。
+	Files string `yaml:"files"`
 }
 
-// DefaultDatabaseConfig ...
 func DefaultDatabaseConfig() DatabaseConfig {
 	return DatabaseConfig{
-		Path: `taoblog.db`,
+		Posts: `posts.db`,
+		Files: `files.db`,
 	}
 }

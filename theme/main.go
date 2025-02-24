@@ -399,6 +399,9 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 // file 不以 / 开头。
 // TODO 添加测试用例。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
+	// 权限检查
+	utils.Must1(t.service.GetPost(req.Context(), &proto.GetPostRequest{Id: int32(postID)}))
+
 	// 所有人禁止访问特殊文件：以 . 或者 _ 开头的文件或目录。
 	// TODO：以及 config.yaml | README.md
 	switch file[0] {

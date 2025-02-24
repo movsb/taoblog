@@ -12,7 +12,6 @@ xcuserdata
 /.tmp/
 /.cache/
 /.vscode/
-/files/
 /posts/
 /taoblog.yml
 /taoblog
@@ -20,4 +19,3 @@ xcuserdata
 /article/
 /access.log
 /katex
-

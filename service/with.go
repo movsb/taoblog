@@ -1,12 +1,20 @@
 package service
 
 import (
+	"io/fs"
+
 	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/notify"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 )
 
 type With func(s *Service)
+
+func WithThemeRootFileSystem(fsys fs.FS) With {
+	return func(s *Service) {
+		s.themeRootFS = fsys
+	}
+}
 
 // 用于指定文章的附件存储。
 func WithPostDataFileSystem(fsys theme_fs.FS) With {

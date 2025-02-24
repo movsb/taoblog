@@ -29,8 +29,8 @@ func Serve(ctx context.Context, options ...server.With) *R {
 	version.EnableDevMode = false
 
 	cfg := config.DefaultConfig()
-	cfg.Database.Path = ""  // 使用内存
-	cfg.Data.File.Path = "" // 使用内存
+	cfg.Database.Posts = "" // 使用内存
+	cfg.Database.Files = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
 
 	r := &R{}

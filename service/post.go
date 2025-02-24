@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"io/fs"
 	"log"
 	"net/url"
+	"os"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -223,17 +226,39 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 }
 
 func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
+	// TODO 测试，似乎不需要这个。
 	u := utils.Must1(url.Parse(s.cfg.Site.Home))
 	if u.Path == "" {
 		u.Path = "/"
 	}
 	return gold_utils.NewWebFileSystem(
-		// NOTE：这个 Root 其实并不等于 web 的 root，只是目前的存储结构和文件系统一样，才没有出错。
-		// 即：https://.../123/a.avif => /path/to/root/123/a.avif
-		// 其实应该加个适配层。
-		utils.Must1(s.postDataFS.Root()),
+		utils.NewOverlayFS(
+			_OpenPostFile{s: s},
+			// s.themeRootFS,
+		),
 		u.JoinPath(fmt.Sprintf("/%d/", id)),
 	)
+}
+
+type _OpenPostFile struct {
+	s *Service
+}
+
+// 只支持打开 /123/a.txt 这种 URL 对应的文件。
+func (f _OpenPostFile) Open(name string) (fs.File, error) {
+	before, after, found := strings.Cut(name, `/`)
+	if !found {
+		return nil, os.ErrNotExist
+	}
+	id, err := strconv.Atoi(before)
+	if err != nil {
+		return nil, err
+	}
+	fs, err := f.s.postDataFS.ForPost(id)
+	if err != nil {
+		return nil, err
+	}
+	return fs.Open(after)
 }
 
 func (s *Service) GetPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {

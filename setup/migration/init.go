@@ -17,10 +17,10 @@ import (
 // 初始化过程。会创建所有的数据表。
 // 会自动创建管理员用户。
 // TODO 移除用户创建。
-func Init(db *sql.DB, path string) {
+func InitPosts(db *sql.DB) {
 	var err error
 
-	fp, err := setup_data.Root.Open(`schemas.sqlite.sql`)
+	fp, err := setup_data.Root.Open(`posts.sql`)
 	if err != nil {
 		panic(err)
 	}
@@ -60,4 +60,27 @@ func Init(db *sql.DB, path string) {
 		tx.Model(&user).MustCreate()
 		log.Println(`管理员密码：`, user.Password)
 	})
+}
+
+func InitFiles(db *sql.DB) {
+	var err error
+
+	fp, err := setup_data.Root.Open(`files.sql`)
+	if err != nil {
+		panic(err)
+	}
+	defer fp.Close()
+
+	all, err := io.ReadAll(fp)
+	if err != nil {
+		panic(err)
+	}
+
+	tdb := taorm.NewDB(db)
+
+	result, err := tdb.Exec(string(all))
+	if err != nil {
+		panic(err)
+	}
+	_ = result
 }

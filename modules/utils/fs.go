@@ -9,11 +9,9 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/spf13/afero"
 )
 
 // walk returns the file list for a directory.
@@ -21,7 +19,7 @@ import (
 // Returned paths are related to dir.
 // 返回的所有路径都是相对于 dir 而言的。
 func ListFiles(fsys fs.FS, dir string) ([]*proto.FileSpec, error) {
-	bfs, err := ListBackupFiles(fsys, dir)
+	bfs, err := listBackupFiles(fsys, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +37,8 @@ func ListFiles(fsys fs.FS, dir string) ([]*proto.FileSpec, error) {
 }
 
 // Deprecated. 用 ListFiles。
-func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
-	files := make([]*proto.BackupFileSpec, 0, 32)
+func listBackupFiles(fsys fs.FS, dir string) ([]*proto.FileSpec, error) {
+	files := make([]*proto.FileSpec, 0, 32)
 
 	err := fs.WalkDir(fsys, dir, func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
@@ -59,7 +57,7 @@ func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
 			return err
 		}
 
-		file := &proto.BackupFileSpec{
+		file := &proto.FileSpec{
 			Path: rel,
 			Mode: uint32(info2.Mode().Perm()),
 			Size: uint32(info2.Size()),
@@ -74,41 +72,6 @@ func ListBackupFiles(fsys fs.FS, dir string) ([]*proto.BackupFileSpec, error) {
 	}
 
 	return files, nil
-}
-
-// 安全写文件。
-// TODO 不应该引入专用的 FileSpec 定义。
-// path 中包含的目录必须存在，否则失败。
-// TODO 没移除失败的文件。
-// NOTE：安全写：先写临时文件，再移动过去。临时文件写在目标目录，不存在跨设备移动文件的问题。
-// NOTE：如果 r 超过 size，会报错。
-func WriteFile(fs afero.Fs, path string, mode fs.FileMode, modified time.Time, size int64, r io.Reader) error {
-	tmp, err := afero.TempFile(fs, `.`, `taoblog-*`)
-	if err != nil {
-		return err
-	}
-
-	if n, err := io.Copy(tmp, io.LimitReader(r, size+1)); err != nil || n != size {
-		return fmt.Errorf(`write error: %d %v`, n, err)
-	}
-
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-
-	if err := fs.Chmod(tmp.Name(), mode); err != nil {
-		return err
-	}
-
-	if err := fs.Chtimes(tmp.Name(), modified, modified); err != nil {
-		return err
-	}
-
-	if err := fs.Rename(tmp.Name(), path); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type FsWithChangeNotify interface {
@@ -210,6 +173,7 @@ func (fsys *_OverlayFS) Open(name string) (fs.File, error) {
 	return nil, &fs.PathError{Op: `open`, Path: name, Err: fs.ErrNotExist}
 }
 
+// 前面参数的层先被打开（也即：前面的是上层）。
 func NewOverlayFS(layers ...fs.FS) fs.FS {
 	return &_OverlayFS{layers: layers}
 }
