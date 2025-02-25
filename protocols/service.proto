@@ -9,9 +9,32 @@ import "comment.proto";
 import "search.proto";
 import "config.proto";
 import "utils.proto";
+import "notify.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
+
+service Notify {
+	rpc SendEmail (SendEmailRequest) returns (SendEmailResponse) {
+		option (google.api.http) = {
+			post: "/v3/notify/email";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "发送邮件。";
+		};
+	}
+	
+	rpc SendInstant (SendInstantRequest) returns (SendInstantResponse) {
+		option (google.api.http) = {
+			post: "/v3/notify/instant";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "发送即时通知消息。";
+		};
+	}
+}
 
 service Utils {
 	rpc FormatTime (FormatTimeRequest) returns (FormatTimeResponse) {
@@ -20,12 +43,7 @@ service Utils {
 			body: "*";
 		};
 	};
-	rpc InstantNotify (InstantNotifyRequest) returns (InstantNotifyResponse) {
-		option (google.api.http) = {
-			post: "/v3/utils/notify/instant";
-			body: "*";
-		};
-	}
+
 	// 远程拨号器。用于从国外回国内。
 	rpc DialRemote(stream DialRemoteMessage) returns (stream DialRemoteMessage);
 }

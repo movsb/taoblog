@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/codes"
@@ -15,7 +16,7 @@ import (
 
 func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 	// TODO 如果是评论，允许用户上传文件。
-	s.MustNotBeGuest(srv.Context())
+	auth.MustNotBeGuest(srv.Context())
 
 	initialized := false
 

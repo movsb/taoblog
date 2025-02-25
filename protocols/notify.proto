@@ -1,0 +1,35 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/proto";
+
+message SendEmailRequest {
+	// 邮件主题（标题）。
+	string subject = 1;
+
+	// 邮件正文内容。
+	// 目前总是默认为 HTML。
+	string body = 2;
+
+	// 发送者的名字。
+	// 注意：发送者的地址不需要填写，始终使用账户地址。
+	string from_name = 3;
+
+	message User {
+		string name = 1;
+		string address = 2;
+	}
+	
+	// 收件人地址列表。
+	repeated User users = 4;
+}
+
+message SendEmailResponse {
+
+}
+
+message SendInstantRequest {
+	string subject = 1;
+	string body = 2;
+}
+
+message SendInstantResponse {}

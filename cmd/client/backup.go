@@ -70,7 +70,7 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 		}
 		if !bNoLink {
 			defer func() {
-				link := `taoblog.db`
+				link := `posts.db`
 				if _, err := os.Stat(link); err == nil {
 					os.Remove(link)
 				}

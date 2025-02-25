@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/movsb/pkg/notify"
 	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/spf13/cobra"
 )
 
@@ -15,15 +15,10 @@ func AddCommands(parent *cobra.Command) {
 	syncCmd := &cobra.Command{
 		Use: `sync`,
 		Run: func(cmd *cobra.Command, args []string) {
-			chanifyToken := os.Getenv(`CHANIFY`)
-			if chanifyToken == "" {
-				panic(`empty CHANIFY`)
-			}
-			ch := notify.NewOfficialChanify(chanifyToken)
-
 			full := utils.Must1(cmd.Flags().GetBool(`full`))
 			every := utils.Must1(cmd.Flags().GetDuration(`every`))
 
+			// TODO 直接用 API 从服务器拉取此配置。
 			cred := Credential{
 				Author:   os.Getenv(`AUTHOR`),
 				Email:    os.Getenv(`EMAIL`),
@@ -34,15 +29,18 @@ func AddCommands(parent *cobra.Command) {
 				log.Fatalln(`凭证为空。`)
 			}
 
-			gs := New(client.InitHostConfigs(), cred, ".", full)
+			config := client.InitHostConfigs()
+			client := clients.NewProtoClient(config.Home, config.Token)
+
+			gs := New(client, cred, ".", full)
 
 			sync := func() error {
 				if err := gs.Sync(); err != nil {
-					ch.Send("同步失败", err.Error(), true)
+					client.SendInstant("同步失败", err.Error())
 					return err
 				}
 
-				ch.Send(`同步成功`, `全部完成，没有错误。`, false)
+				client.SendInstant(`同步成功`, `全部完成，没有错误。`)
 				log.Println(`同步完成。`)
 				return nil
 			}

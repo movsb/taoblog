@@ -2,16 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
-	"log"
 	"time"
 
 	_ "time/tzdata"
 
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/dialers"
 	"github.com/movsb/taoblog/modules/globals"
-	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/xeonx/timeago"
 )
@@ -20,14 +16,10 @@ var fixedZone = time.Now().Local().Location()
 
 type Utils struct {
 	proto.UnimplementedUtilsServer
-
-	instantNotifier notify.Notifier
 }
 
-func NewUtils(instantNotifier notify.Notifier) *Utils {
-	u := &Utils{
-		instantNotifier: instantNotifier,
-	}
+func NewUtils() *Utils {
+	u := &Utils{}
 	return u
 }
 
@@ -59,18 +51,6 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 	return &proto.FormatTimeResponse{
 		Formatted: formatted,
 	}, nil
-}
-
-func (u *Utils) InstantNotify(ctx context.Context, in *proto.InstantNotifyRequest) (*proto.InstantNotifyResponse, error) {
-	log.Println(`即时通知：`, in.Title, in.Message)
-	ac := auth.Context(ctx)
-	if !ac.User.IsSystem() && !ac.User.IsAdmin() {
-		return nil, errors.New(`此操作无权限。`)
-	}
-	if u.instantNotifier != nil {
-		u.instantNotifier.Notify(in.Title, in.Message)
-	}
-	return &proto.InstantNotifyResponse{}, nil
 }
 
 func (u *Utils) DialRemote(s proto.Utils_DialRemoteServer) error {

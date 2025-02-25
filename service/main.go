@@ -15,8 +15,6 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/mailer"
-	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -50,8 +48,10 @@ type ToBeImplementedByRpc interface {
 
 // Service implements IServer.
 type Service struct {
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx context.Context
+
+	// 用于主动关闭服务并重启。
+	cancel func()
 
 	testing bool
 
@@ -74,8 +74,7 @@ type Service struct {
 	tdb  *taorm.DB
 	auth *auth.Auth
 
-	mailer        *mailer.MailerLogger
-	notifier      notify.Notifier
+	notifier      proto.NotifyServer
 	cmtntf        *comment_notify.CommentNotifier
 	cmtNotifyTask *_CommentNotificationTask
 	cmtgeo        *commentgeo.Task
@@ -133,13 +132,11 @@ func (s *Service) ThemeChangedAt() time.Time {
 	return s.themeChangedAt
 }
 
-func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cfg *config.Config, db *sql.DB, auther *auth.Auth, testing bool, options ...With) *Service {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
 	s := &Service{
-		ctx:     ctx,
-		cancel:  cancel,
-		testing: testing,
+		ctx: ctx,
 
-		notifier: notify.NewConsoleNotify(),
+		notifier: &proto.UnimplementedNotifyServer{},
 
 		cfg:         cfg,
 		themeRootFS: embed.FS{},
@@ -168,7 +165,7 @@ func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cf
 		opt(s)
 	}
 
-	utilsService := NewUtils(s.notifier)
+	utilsService := NewUtils()
 	s.UtilsServer = utilsService
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
@@ -178,7 +175,7 @@ func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cf
 	}
 
 	s.avatarCache = cache.NewAvatarHash()
-	s.cmtntf = comment_notify.New(s.notifier, s.mailer)
+	s.cmtntf = comment_notify.New(s.notifier)
 	s.cmtNotifyTask = NewCommentNotificationTask(s, s.GetPluginStorage(`comment_notify`))
 	s.cmtgeo = commentgeo.NewTask(s.GetPluginStorage(`cmt_geo`))
 
@@ -203,7 +200,13 @@ func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cf
 			s.updatePostMetadataTime(int64(id), time.Now())
 		},
 		func(message string) {
-			s.notifier.Notify(`提醒事项`, message)
+			s.notifier.SendInstant(
+				auth.SystemAdmin(ctx),
+				&proto.SendInstantRequest{
+					Subject: `提醒事项`,
+					Body:    message,
+				},
+			)
 		},
 	)
 	// TODO 注册到全局的，可能会导致测试冲突
@@ -213,13 +216,13 @@ func New(ctx context.Context, server *grpc.Server, cancel context.CancelFunc, cf
 	s.domainExpirationDaysLeft.Store(-1)
 	s.exporter = _NewExporter(s)
 
-	proto.RegisterUtilsServer(server, s)
-	proto.RegisterAuthServer(server, s)
-	proto.RegisterTaoBlogServer(server, s)
-	proto.RegisterManagementServer(server, s)
-	proto.RegisterSearchServer(server, s)
+	proto.RegisterUtilsServer(sr, s)
+	proto.RegisterAuthServer(sr, s)
+	proto.RegisterTaoBlogServer(sr, s)
+	proto.RegisterManagementServer(sr, s)
+	proto.RegisterSearchServer(sr, s)
 
-	if !testing && !version.DevMode() {
+	if !s.testing && !version.DevMode() {
 		go s.monitorCert(s.notifier)
 		go s.monitorDomain(s.notifier)
 	}
@@ -236,16 +239,6 @@ const noPerm = `此操作无权限。`
 // 从 Context 中取出用户并且必须为 Admin/System，否则 panic。
 func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	return MustBeAdmin(ctx)
-}
-func (s *Service) MustNotBeGuest(ctx context.Context) *auth.AuthContext {
-	ac := auth.Context(ctx)
-	if ac == nil {
-		panic("AuthContext 不应为 nil")
-	}
-	if ac.User.IsGuest() {
-		panic(status.Error(codes.PermissionDenied, noPerm))
-	}
-	return ac
 }
 
 func (s *Service) MustCanCreatePost(ctx context.Context) *auth.AuthContext {

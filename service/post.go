@@ -643,7 +643,7 @@ func (s *Service) getPost(id int) (*models.Post, error) {
 // 更新文章。
 // 需要携带版本号，像评论一样。
 func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
-	ac := s.MustNotBeGuest(ctx)
+	ac := auth.MustNotBeGuest(ctx)
 
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
 		return nil, status.Error(codes.InvalidArgument, "无效文章编号、更新字段")
@@ -834,7 +834,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 
 // TODO 文章编号可能是 0️⃣
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
-	s.MustNotBeGuest(ctx)
+	auth.MustNotBeGuest(ctx)
 	// ac := auth.Context(ctx)
 	content, err := s.renderMarkdown(true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
 	return &proto.PreviewPostResponse{Html: content}, err

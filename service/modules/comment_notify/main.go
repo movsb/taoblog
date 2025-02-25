@@ -2,13 +2,14 @@ package comment_notify
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
 	text_template "text/template"
 
-	"github.com/movsb/taoblog/modules/mailer"
-	"github.com/movsb/taoblog/modules/notify"
+	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 var (
@@ -46,13 +47,11 @@ type GuestData struct {
 }
 
 type CommentNotifier struct {
-	mailer   *mailer.MailerLogger
-	notifier notify.Notifier
+	notifier proto.NotifyServer
 }
 
-func New(notifier notify.Notifier, mailer *mailer.MailerLogger) *CommentNotifier {
+func New(notifier proto.NotifyServer) *CommentNotifier {
 	return &CommentNotifier{
-		mailer:   mailer,
 		notifier: notifier,
 	}
 }
@@ -64,16 +63,27 @@ func (cn *CommentNotifier) NotifyPostAuthor(data *AdminData, name string, email 
 
 	buf.Reset()
 	chanifyTmpl.Execute(buf, data)
-	cn.notifier.Notify(subject, buf.String())
+	cn.notifier.SendInstant(
+		auth.SystemAdmin(context.Background()),
+		&proto.SendInstantRequest{
+			Subject: subject,
+			Body:    buf.String(),
+		},
+	)
 
 	buf.Reset()
 	adminTmpl.Execute(buf, data)
-	cn.mailer.Queue(
-		subject, buf.String(), mailFromName,
-		[]mailer.User{
-			{
-				Name:    name,
-				Address: email,
+	cn.notifier.SendEmail(
+		auth.SystemAdmin(context.Background()),
+		&proto.SendEmailRequest{
+			Subject:  subject,
+			Body:     buf.String(),
+			FromName: mailFromName,
+			Users: []*proto.SendEmailRequest_User{
+				{
+					Name:    name,
+					Address: email,
+				},
 			},
 		},
 	)
@@ -85,14 +95,18 @@ func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipie
 		panic(err)
 	}
 	subject := fmt.Sprintf(`%s %s`, guestPrefix, data.Title)
-	body := buf.String()
 	for i := 0; i < len(names); i++ {
-		cn.mailer.Queue(
-			subject, body, mailFromName,
-			[]mailer.User{
-				{
-					Name:    names[i],
-					Address: recipients[i],
+		cn.notifier.SendEmail(
+			auth.SystemAdmin(context.Background()),
+			&proto.SendEmailRequest{
+				Subject:  subject,
+				Body:     buf.String(),
+				FromName: mailFromName,
+				Users: []*proto.SendEmailRequest_User{
+					{
+						Name:    names[i],
+						Address: recipients[i],
+					},
 				},
 			},
 		)

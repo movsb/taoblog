@@ -11,6 +11,8 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 )
 
@@ -164,6 +166,10 @@ func (s *Service) GetPluginStorage(name string) utils.PluginStorage {
 func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*proto.RestartResponse, error) {
 	s.MustBeAdmin(ctx)
 
+	if s.cancel == nil {
+		return nil, status.Error(codes.Unimplemented, `服务器不支持此操作。`)
+	}
+
 	s.maintenance.Enter(req.Reason, time.Second*10)
 
 	// 延迟重启可以基本保证 grpc 响应发送完成，不至于使客户端报错。
@@ -174,6 +180,10 @@ func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*prot
 
 func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateRequest) (*proto.ScheduleUpdateResponse, error) {
 	s.MustBeAdmin(ctx)
+
+	if s.cancel == nil {
+		return nil, status.Error(codes.Unimplemented, `服务器不支持此操作。`)
+	}
 
 	s.scheduledUpdate.Store(true)
 	log.Println(`已设置计划更新标识。`)

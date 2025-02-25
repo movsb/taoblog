@@ -341,3 +341,16 @@ func parseRemoteAddr(f string) netip.Addr {
 	}
 	return netip.MustParseAddr(f)
 }
+
+const noPerm = `此操作无权限。`
+
+func MustNotBeGuest(ctx context.Context) *AuthContext {
+	ac := Context(ctx)
+	if ac == nil {
+		panic("AuthContext 不应为 nil")
+	}
+	if ac.User.IsGuest() {
+		panic(status.Error(codes.PermissionDenied, noPerm))
+	}
+	return ac
+}

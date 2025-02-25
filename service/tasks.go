@@ -14,8 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/movsb/taoblog/modules/notify"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -65,7 +66,7 @@ func (s *Service) Exporter() prometheus.Collector {
 }
 
 // 监控证书过期的剩余时间。
-func (s *Service) monitorCert(notifier notify.Notifier) {
+func (s *Service) monitorCert(notifier proto.NotifyServer) {
 	home := s.cfg.Site.Home
 	u, err := url.Parse(home)
 	if err != nil {
@@ -80,7 +81,7 @@ func (s *Service) monitorCert(notifier notify.Notifier) {
 		conn, err := tls.Dial(`tcp`, addr, &tls.Config{})
 		if err != nil {
 			log.Println(err)
-			notifier.Notify(`错误`, err.Error())
+			// notifier.Notify(`错误`, err.Error())
 			return
 		}
 		defer conn.Close()
@@ -88,8 +89,13 @@ func (s *Service) monitorCert(notifier notify.Notifier) {
 		left := time.Until(cert.NotAfter)
 		if left <= 0 {
 			log.Println(`已过期`)
-			notifier.Notify(`证书`, `已经过期。`)
-			return
+			notifier.SendInstant(
+				auth.SystemAdmin(s.ctx),
+				&proto.SendInstantRequest{
+					Subject: `证书`,
+					Body:    `已经过期`,
+				},
+			)
 		}
 		daysLeft := int(left.Hours() / 24)
 		s.certDaysLeft.Store(int32(daysLeft))
@@ -98,7 +104,13 @@ func (s *Service) monitorCert(notifier notify.Notifier) {
 			return
 		}
 		log.Println(`剩余天数：`, daysLeft)
-		notifier.Notify(`证书`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
+		notifier.SendInstant(
+			auth.SystemAdmin(s.ctx),
+			&proto.SendInstantRequest{
+				Subject: `证书`,
+				Body:    fmt.Sprintf(`剩余天数：%v`, daysLeft),
+			},
+		)
 	}
 	check()
 	go func() {
@@ -111,7 +123,7 @@ func (s *Service) monitorCert(notifier notify.Notifier) {
 }
 
 // 监控域名过期的剩余时间。
-func (s *Service) monitorDomain(notifier notify.Notifier) {
+func (s *Service) monitorDomain(notifier proto.NotifyServer) {
 	home := s.cfg.Site.Home
 	u, err := url.Parse(home)
 	if err != nil {
@@ -191,7 +203,13 @@ func (s *Service) monitorDomain(notifier notify.Notifier) {
 		s.exporter.domainDaysLeft.Set(float64(daysLeft))
 		log.Println(`剩余天数：`, daysLeft)
 		if daysLeft < 15 {
-			notifier.Notify(`域名`, fmt.Sprintf(`剩余天数：%v`, daysLeft))
+			notifier.SendInstant(
+				auth.SystemAdmin(s.ctx),
+				&proto.SendInstantRequest{
+					Subject: `域名`,
+					Body:    fmt.Sprintf(`剩余天数：%v`, daysLeft),
+				},
+			)
 		}
 
 		return nil

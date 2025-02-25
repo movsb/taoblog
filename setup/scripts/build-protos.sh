@@ -21,6 +21,7 @@ protoc \
 	$SWIFT_OPTIONS \
 	 \
 	utils.proto \
+	notify.proto \
 	auth.proto \
 	backup.proto \
 	service.proto \

@@ -23,7 +23,6 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/webhooks/github"
 	"github.com/movsb/taoblog/gateway/handlers/webhooks/grafana"
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -42,10 +41,10 @@ type Gateway struct {
 	// 未鉴权的
 	client *clients.ProtoClient
 
-	instantNotifier notify.Notifier
+	notify proto.NotifyServer
 }
 
-func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, mux *http.ServeMux, instantNotifier notify.Notifier) *Gateway {
+func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, mux *http.ServeMux, notify proto.NotifyServer) *Gateway {
 	g := &Gateway{
 		mux:     mux,
 		service: service,
@@ -53,7 +52,7 @@ func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, 
 
 		client: clients.NewProtoClientFromAddress(serverAddr),
 
-		instantNotifier: instantNotifier,
+		notify: notify,
 	}
 
 	if err := g.register(context.TODO(), serverAddr, mux); err != nil {
@@ -90,11 +89,11 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		// GitHub Workflow 完成回调。
 		mc.Handle(`/v3/webhooks/github/`, github.New(g.client,
 			g.service.Config().Maintenance.Webhook.GitHub.Secret,
-			g.instantNotifier, `/v3/webhooks/github`,
+			g.notify, `/v3/webhooks/github`,
 		))
 
 		// Grafana 监控告警通知。
-		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.auther, g.client.Utils))
+		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.auther, g.client.Notify))
 
 		// GRPC 走 HTTP 通信。少暴露一个端口，降低架构复杂性。
 		mc.Handle(`GET /v3/grpc`, grpc_proxy.New(serverAddr))

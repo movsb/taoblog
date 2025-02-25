@@ -7,14 +7,17 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/client"
+	"github.com/movsb/taoblog/protocols/clients"
 )
 
 func TestAll(t *testing.T) {
 	t.SkipNow()
-	g := New(client.HostConfig{
+	config := client.HostConfig{
 		Home:  `https://blog.home.twofei.com`,
 		Token: `12345678`,
-	}, Credential{}, "/tmp/", false)
+	}
+	client := clients.NewProtoClient(config.Home, config.Token)
+	g := New(client, Credential{}, "/tmp/", false)
 	posts, err := g.getUpdatedPosts(time.Now(), time.Now())
 	log.Println(posts, err)
 }

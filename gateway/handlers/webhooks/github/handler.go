@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -15,12 +14,12 @@ import (
 type _GitHub struct {
 	client   *clients.ProtoClient
 	secret   string
-	notifier notify.Notifier
+	notifier proto.NotifyServer
 
 	mux *http.ServeMux
 }
 
-func New(client *clients.ProtoClient, secret string, notifier notify.Notifier, routePrefix string) http.Handler {
+func New(client *clients.ProtoClient, secret string, notifier proto.NotifyServer, routePrefix string) http.Handler {
 	g := &_GitHub{
 		client:   client,
 		secret:   secret,
@@ -51,11 +50,18 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 				&proto.ScheduleUpdateRequest{},
 			)
 			if err != nil {
-				g.notifier.Notify(`持续集成`, fmt.Sprintf(`启动计划任务失败：%v`, err))
+				g.notify(r.Context(), `持续集成`, fmt.Sprintf(`启动计划任务失败：%v`, err))
 				return
 			}
 		default:
-			g.notifier.Notify(`持续集成`, fmt.Sprintf("结果未知：%s", w.Conclusion))
+			g.notify(r.Context(), `持续集成`, fmt.Sprintf("结果未知：%s", w.Conclusion))
 		}
 	}
+}
+
+func (g *_GitHub) notify(ctx context.Context, subject, body string) {
+	g.notifier.SendInstant(ctx, &proto.SendInstantRequest{
+		Subject: subject,
+		Body:    body,
+	})
 }

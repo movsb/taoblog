@@ -28,14 +28,15 @@ import (
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
-	"github.com/movsb/taoblog/modules/mailer"
 	"github.com/movsb/taoblog/modules/metrics"
-	"github.com/movsb/taoblog/modules/notify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/notify"
+	"github.com/movsb/taoblog/service/modules/notify/instant"
+	"github.com/movsb/taoblog/service/modules/notify/mailer"
 	"github.com/movsb/taoblog/service/modules/request_throttler"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
@@ -71,8 +72,7 @@ type Server struct {
 	httpAddr   string
 	httpServer *http.Server
 
-	grpcAddr   string
-	grpcServer *grpc.Server
+	grpcAddr string
 
 	// 请求节流器。
 	throttler        grpc.UnaryServerInterceptor
@@ -175,79 +175,38 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	filesDB := InitDatabase(cfg.Database.Files, InitForFiles())
-	store := theme_fs.FS(storage.NewSQLite(filesDB))
-
 	theAuth := auth.New(cfg.Auth, taorm.NewDB(db))
 	s.auth = theAuth
 
-	notifier := notify.NewNotifyLogger(notify.NewLogStore(db))
-	if token := cfg.Notify.Chanify.Token; token != "" {
-		notifier.SetNotifier(notify.NewChanifyNotify(token))
-	} else {
-		notifier.SetNotifier(notify.NewConsoleNotify())
-	}
+	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
-	mailer := mailer.NewMailerLogger(notify.NewLogStore(db), mailer.NewMailerConfig(
-		cfg.Notify.Mailer.Server, cfg.Notify.Mailer.Account, cfg.Notify.Mailer.Password,
-	))
-
-	startGRPC := s.serveGRPC(ctx)
-
-	serviceOptions := []service.With{
-		// service.WithThemeRootFileSystem(),
-		service.WithPostDataFileSystem(store),
-		service.WithNotifier(notifier),
-		service.WithMailer(mailer),
-	}
-
-	addons.New()
-	theService := service.New(ctx, s.grpcServer, cancel, cfg, db, theAuth, testing, serviceOptions...)
+	filesStore := theme_fs.FS(storage.NewSQLite(InitDatabase(cfg.Database.Files, InitForFiles())))
+	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
+	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore)
 	s.main = theService
+
 	go startGRPC()
 
 	s.metrics.MustRegister(theService.Exporter())
 
-	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notifier)
+	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
+	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
-	(func() {
-		prefix := `/admin/`
-
-		u, err := url.Parse(cfg.Site.Home)
-		if err != nil {
-			panic(err)
-		}
-
-		a := admin.NewAdmin(version.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
-			admin.WithCustomThemes(&cfg.Theme),
-		)
-		log.Println(`admin on`, prefix)
-		mux.Handle(prefix, a.Handler())
-
-		config := &webauthn.Config{
-			RPID:          u.Hostname(),
-			RPDisplayName: cfg.Site.Name,
-			RPOrigins:     []string{u.String()},
-		}
-		wa, err := webauthn.New(config)
-		if err != nil {
-			panic(err)
-		}
-		theService.AuthServer = auth.NewPasskeys(
-			taorm.NewDB(db), wa,
-			theAuth.GenCookieForPasskeys,
-		)
-	})()
-
-	theme := theme.New(version.DevMode(), cfg, theService, theService, theService, theAuth, store)
+	theme := theme.New(version.DevMode(), cfg, theService, theService, theService, theAuth, filesStore)
 	canon := canonical.New(theme, s.metrics)
 	mux.Handle(`/`, canon)
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
 
-	notifier.Notify("博客状态", "已经开始运行。")
+	notify.SendInstant(
+		auth.SystemAdmin(ctx),
+		&proto.SendInstantRequest{
+			Subject: `博客状态`,
+			Body:    `已经开始运行`,
+		},
+	)
 
-	go liveCheck(theService, notifier)
+	go liveCheck(theService, notify)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -268,10 +227,79 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	log.Println("server shut down")
 }
 
+func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
+	prefix := `/admin/`
+
+	u, err := url.Parse(cfg.Site.Home)
+	if err != nil {
+		panic(err)
+	}
+
+	a := admin.NewAdmin(version.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
+		admin.WithCustomThemes(&cfg.Theme),
+	)
+	log.Println(`admin on`, prefix)
+	mux.Handle(prefix, a.Handler())
+
+	config := &webauthn.Config{
+		RPID:          u.Hostname(),
+		RPDisplayName: cfg.Site.Name,
+		RPOrigins:     []string{u.String()},
+	}
+	wa, err := webauthn.New(config)
+	if err != nil {
+		panic(err)
+	}
+	theService.AuthServer = auth.NewPasskeys(
+		taorm.NewDB(db), wa,
+		theAuth.GenCookieForPasskeys,
+	)
+}
+
+func (s *Server) createMainServices(
+	ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar,
+	notifier proto.NotifyServer,
+	cancel func(),
+	auth *auth.Auth,
+	testing bool,
+	filesStore theme_fs.FS,
+) *service.Service {
+	serviceOptions := []service.With{
+		// service.WithThemeRootFileSystem(),
+		service.WithPostDataFileSystem(filesStore),
+		service.WithNotifier(notifier),
+		service.WithCancel(cancel),
+		service.WithTesting(testing),
+	}
+
+	addons.New()
+
+	return service.New(ctx, sr, cfg, db, auth, serviceOptions...)
+}
+
+func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
+	var options []notify.With
+
+	store := logs.NewLogStore(db)
+
+	if ch := cfg.Notify.Chanify; ch.Token != `` {
+		instant := instant.NewChanifyNotify(ch.Token)
+		options = append(options, notify.WithInstantLogger(store, instant))
+	} else {
+		instant := instant.NewConsoleNotify()
+		options = append(options, notify.WithInstantLogger(store, instant))
+	}
+
+	if m := cfg.Notify.Mailer; m.Account != `` && m.Server != `` {
+		options = append(options, notify.WithMailerLogger(store, mailer.NewMailerConfig(m.Server, m.Account, m.Password)))
+	}
+
+	n := notify.New(ctx, sr, options...)
+	return n
+}
+
 // 因为 GRPC 服务启动后不能注册，所以返回了一个函数用于适时启动。
-//
-// TODO
-func (s *Server) serveGRPC(ctx context.Context) func() {
+func (s *Server) serveGRPC(ctx context.Context) (func(), grpc.ServiceRegistrar) {
 	server := grpc.NewServer(
 		grpc.MaxRecvMsgSize(100<<20),
 		grpc.MaxSendMsgSize(100<<20),
@@ -294,14 +322,19 @@ func (s *Server) serveGRPC(ctx context.Context) func() {
 	if err != nil {
 		panic(err)
 	}
-	s.grpcServer = server
+
 	s.grpcAddr = l.Addr().String()
 	log.Println(`GRPC listen on:`, s.grpcAddr)
+
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+	}()
 
 	return func() {
 		defer l.Close()
 		server.Serve(l)
-	}
+	}, server
 }
 
 func (s *Server) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -401,7 +434,7 @@ func grpcLogger(ctx context.Context, method string) {
 // TODO 文章 1 必须存在。可以是非公开状态。
 // TODO 放在服务里面 tasks.go
 // TODO 放在 daemon 里面（同 webhooks）
-func liveCheck(s *service.Service, cc notify.Notifier) {
+func liveCheck(s *service.Service, cc proto.NotifyServer) {
 	t := time.NewTicker(time.Minute * 1)
 	defer t.Stop()
 
@@ -413,7 +446,10 @@ func liveCheck(s *service.Service, cc notify.Notifier) {
 				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)
 				if cc != nil {
-					cc.Notify(`服务不可用`, `保活检测卡住了。`)
+					cc.SendInstant(context.TODO(), &proto.SendInstantRequest{
+						Subject: `服务不可用`,
+						Body:    `保活检测卡住了。`,
+					})
 				}
 				return false
 			}

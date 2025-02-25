@@ -1,4 +1,4 @@
-package notify_test
+package instant_test
 
 import (
 	"io"
@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/server"
-	"github.com/movsb/taoblog/modules/notify"
+	"github.com/movsb/taoblog/modules/logs"
+	"github.com/movsb/taoblog/service/modules/notify/instant"
 )
 
 type _RandomErrorNotify struct{}
@@ -24,7 +25,7 @@ func TestNotify(t *testing.T) {
 	db := server.InitDatabase(``, server.InitForPosts(false))
 	defer db.Close()
 
-	n := notify.NewNotifyLogger(notify.NewLogStore(db))
+	n := instant.NewNotifyLogger(logs.NewLogStore(db))
 	n.SetNotifier(&_RandomErrorNotify{})
 	n.SetPullInterval(10 * time.Millisecond)
 	n.Notify(`title`, `message 1`)

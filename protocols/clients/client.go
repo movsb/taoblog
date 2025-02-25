@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/url"
 	"time"
@@ -37,6 +38,7 @@ func _NewFromCC(cc *grpc.ClientConn, token string) *ProtoClient {
 		Blog:       proto.NewTaoBlogClient(cc),
 		Management: proto.NewManagementClient(cc),
 		Search:     proto.NewSearchClient(cc),
+		Notify:     proto.NewNotifyClient(cc),
 	}
 }
 
@@ -49,6 +51,7 @@ type ProtoClient struct {
 	Blog       proto.TaoBlogClient
 	Management proto.ManagementClient
 	Search     proto.SearchClient
+	Notify     proto.NotifyClient
 }
 
 func (c *ProtoClient) Context() context.Context {
@@ -114,3 +117,16 @@ func (_NetConn) SetReadDeadline(t time.Time) error  { return nil }
 func (_NetConn) SetWriteDeadline(t time.Time) error { return nil }
 
 var _ net.Conn = (*_NetConn)(nil)
+
+func (c *ProtoClient) SendInstant(title, message string) {
+	if _, err := c.Notify.SendInstant(
+		c.Context(),
+		&proto.SendInstantRequest{
+			Subject: title,
+			Body:    message,
+		},
+	); err != nil {
+		log.Println(err)
+		log.Println(title, message)
+	}
+}

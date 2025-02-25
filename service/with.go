@@ -3,8 +3,7 @@ package service
 import (
 	"io/fs"
 
-	"github.com/movsb/taoblog/modules/mailer"
-	"github.com/movsb/taoblog/modules/notify"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 )
 
@@ -23,15 +22,20 @@ func WithPostDataFileSystem(fsys theme_fs.FS) With {
 	}
 }
 
-func WithNotifier(notifier notify.Notifier) With {
+func WithNotifier(notifier proto.NotifyServer) With {
 	return func(s *Service) {
 		s.notifier = notifier
 	}
 }
 
-// TODO 改成接口，像 Notify 一样。
-func WithMailer(mailer *mailer.MailerLogger) With {
+func WithCancel(cancel func()) With {
 	return func(s *Service) {
-		s.mailer = mailer
+		s.cancel = cancel
+	}
+}
+
+func WithTesting(t bool) With {
+	return func(s *Service) {
+		s.testing = t
 	}
 }
