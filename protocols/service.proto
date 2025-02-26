@@ -100,6 +100,12 @@ service Management {
 			description: "导出文件。";
 		};
 	};
+	
+	rpc GetSyncConfig (GetSyncConfigRequest) returns (GetSyncConfigResponse) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "返回增量同步文章需要的配置参数。";
+		};
+	}
 
 	// 文件系统管理：期允许管理的对象：文章附件、评论附件、备份文件、根目录等。
 	// TODO：合并上述 BackupFiles 接口、Backup 接口。

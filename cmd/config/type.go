@@ -1,6 +1,11 @@
 package config
 
-import search_config "github.com/movsb/taoblog/service/modules/search/config"
+import (
+	"fmt"
+
+	"github.com/movsb/taoblog/modules/utils"
+	search_config "github.com/movsb/taoblog/service/modules/search/config"
+)
 
 // Config ...
 type Config struct {
@@ -53,10 +58,94 @@ type MaintenanceConfig struct {
 			Secret string `yaml:"secret"`
 		} `yaml:"github"`
 	} `yaml:"webhook"`
+
+	Backups struct {
+		Sync MaintenanceBackupsSyncConfig `yaml:"sync"`
+	} `yaml:"backups"`
 }
 
 // DefaultMainMaintenanceConfig ...
 func DefaultMainMaintenanceConfig() MaintenanceConfig {
 	c := MaintenanceConfig{}
 	return c
+}
+
+type MaintenanceBackupsSyncConfig struct {
+	Enabled bool `yaml:"enabled"`
+
+	Author string `yaml:"author"` // Git 提交作者用户名
+	Email  string `yaml:"email"`  // Git 提交作者邮箱
+
+	Username string `yaml:"username"` // Git 仓库用户名
+	Password string `yaml:"password"` // Git 仓库密码
+}
+
+func (c *MaintenanceBackupsSyncConfig) CanSave() {}
+func (c *MaintenanceBackupsSyncConfig) BeforeSet(paths Segments, obj any) error {
+	var (
+		new    MaintenanceBackupsSyncConfig
+		checks []func() error
+	)
+
+	checkAuthor := func() error {
+		if new.Author == `` {
+			return fmt.Errorf(`git 提交作者者用户名不能为空。`)
+		}
+		return nil
+	}
+	checkEmail := func() error {
+		if !utils.IsEmail(new.Email) {
+			return fmt.Errorf(`git 提交作者者邮箱格式不正确。`)
+		}
+		return nil
+	}
+	checkUsername := func() error {
+		if new.Username == `` {
+			return fmt.Errorf(`git 仓库用户名格式不正确。`)
+		}
+		return nil
+	}
+	checkPassword := func() error {
+		if new.Password == `` {
+			return fmt.Errorf(`git 仓库密码格式不正确。`)
+		}
+		return nil
+	}
+
+	if len(paths) == 0 {
+		new = obj.(MaintenanceBackupsSyncConfig)
+		checks = append(checks,
+			checkAuthor,
+			checkEmail,
+			checkUsername,
+			checkPassword,
+		)
+	} else {
+		switch paths[0].Key {
+		case `enabled`:
+			new.Enabled = obj.(bool)
+		case `author`:
+			new.Author = obj.(string)
+			checks = append(checks, checkAuthor)
+		case `email`:
+			new.Email = obj.(string)
+			checks = append(checks, checkEmail)
+		case `username`:
+			new.Username = obj.(string)
+			checks = append(checks, checkUsername)
+		case `password`:
+			new.Password = obj.(string)
+			checks = append(checks, checkPassword)
+		default:
+			return fmt.Errorf(`未知键值：%v`, paths)
+		}
+	}
+
+	for _, c := range checks {
+		if err := c(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

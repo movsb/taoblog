@@ -10,7 +10,6 @@ import (
 	"github.com/movsb/taoblog/cmd/daemon"
 	"github.com/movsb/taoblog/cmd/imports"
 	"github.com/movsb/taoblog/cmd/server"
-	"github.com/movsb/taoblog/cmd/sync"
 	"github.com/movsb/taoblog/modules/version"
 	_ "github.com/movsb/taoblog/setup/tool-deps"
 	"github.com/spf13/cobra"
@@ -28,7 +27,6 @@ func main() {
 	client.AddCommands(rootCmd)
 	server.AddCommands(rootCmd)
 	daemon.AddCommands(rootCmd)
-	sync.AddCommands(rootCmd)
 	imports.AddCommands(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {

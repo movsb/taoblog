@@ -263,6 +263,8 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 func (u *Updater) set(p any, value string) {
 	vpe := reflect.ValueOf(p).Elem()
 
+	value = strings.TrimRight(value, "\n")
+
 	switch vpe.Type().Kind() {
 	case reflect.Bool:
 		var b bool

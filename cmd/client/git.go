@@ -1,4 +1,4 @@
-package sync
+package client
 
 import (
 	"errors"
@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
+	git_config "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -38,19 +37,12 @@ type GitSync struct {
 	// NOTE：这样可以保证无论计划任务执行的频次如何，总是能保证 [notBefore, notAfter) 时间有效。
 	lastCheckedAt time.Time
 
-	credential Credential
-	auth       transport.AuthMethod
-}
-
-type Credential struct {
-	Author   string
-	Email    string
-	Username string
-	Password string
+	config *proto.GetSyncConfigResponse
+	auth   transport.AuthMethod
 }
 
 // full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
-func New(client *clients.ProtoClient, credential Credential, root string, full bool) *GitSync {
+func New(client *clients.ProtoClient, root string, full bool) *GitSync {
 	lastCheckedAt := time.Unix(0, 0)
 	if !full {
 		lastCheckedAt = time.Now().Add(-7 * time.Hour * 24)
@@ -59,12 +51,6 @@ func New(client *clients.ProtoClient, credential Credential, root string, full b
 	return &GitSync{
 		proto: client,
 		root:  root,
-
-		credential: credential,
-		auth: &http.BasicAuth{
-			Username: credential.Username,
-			Password: credential.Password,
-		},
 
 		lastCheckedAt: lastCheckedAt,
 	}
@@ -115,6 +101,17 @@ func (g *GitSync) Sync() error {
 }
 
 func (g *GitSync) prepare() (*git.Repository, *git.Worktree, error) {
+	config, err := g.proto.Management.GetSyncConfig(g.proto.Context(), &proto.GetSyncConfigRequest{})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	g.config = config
+	g.auth = &http.BasicAuth{
+		Username: config.Username,
+		Password: config.Password,
+	}
+
 	repo, err := git.PlainOpen(g.root)
 	if err != nil {
 		return nil, nil, fmt.Errorf(`failed to git open: %w`, err)
@@ -165,7 +162,7 @@ func (g *GitSync) process(tree *git.Worktree) (time.Time, error) {
 func (g *GitSync) push(repo *git.Repository) error {
 	if err := repo.Push(&git.PushOptions{
 		RemoteName: `origin`,
-		RefSpecs: []config.RefSpec{
+		RefSpecs: []git_config.RefSpec{
 			`refs/heads/master:refs/heads/master`,
 		},
 		Auth: g.auth,
@@ -196,8 +193,8 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 		if err != nil {
 			return err
 		}
-		path = filepath.Join(dir, client.ConfigFileName)
-		config = &client.PostConfig{}
+		path = filepath.Join(dir, ConfigFileName)
+		config = &PostConfig{}
 	}
 	if p.Modified == config.Modified {
 		return nil
@@ -212,11 +209,11 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 	config.Tags = p.Tags
 	config.Title = p.Title
 	config.Type = p.Type
-	if err := client.SavePostConfig(filepath.Join(g.root, path), config); err != nil {
+	if err := SavePostConfig(filepath.Join(g.root, path), config); err != nil {
 		return err
 	}
 	// TODO 没用 fsys。
-	fullPath := filepath.Join(g.root, filepath.Dir(path), client.IndexFileName)
+	fullPath := filepath.Join(g.root, filepath.Dir(path), IndexFileName)
 
 	// 正在编辑且并没提交的文件可能会比远程更新，此时不能覆盖本地的文件。
 	// TODO 用文件系统而不是 os.
@@ -238,8 +235,8 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 	}
 	if _, err := wt.Commit(`Updated by Sync command.`, &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  g.credential.Author,
-			Email: g.credential.Email,
+			Name:  g.config.Author,
+			Email: g.config.Email,
 			When:  time.Unix(int64(p.Modified), 0),
 		},
 	}); err != nil {
@@ -269,7 +266,7 @@ func (g *GitSync) getUpdatedPosts(notBefore, notAfter time.Time) ([]*proto.Post,
 
 // 根据 ID 找到在本地仓库的路径。
 // TODO：创建索引。
-func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *client.PostConfig, outErr error) {
+func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *PostConfig, outErr error) {
 	err := fs.WalkDir(fsys, `.`, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -277,10 +274,10 @@ func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *client.PostC
 		if !d.Type().IsRegular() {
 			return nil
 		}
-		if d.Name() == client.ConfigFileName {
+		if d.Name() == ConfigFileName {
 			fp := utils.Must1(fsys.Open(path))
 			defer fp.Close()
-			c, err := client.ReadPostConfigReader(fp)
+			c, err := ReadPostConfigReader(fp)
 			if err != nil {
 				log.Fatalln(path, err)
 			}

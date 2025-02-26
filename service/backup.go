@@ -293,3 +293,20 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 		return fmt.Errorf(`unknown message`)
 	}
 }
+
+func (s *Service) GetSyncConfig(ctx context.Context, in *proto.GetSyncConfigRequest) (*proto.GetSyncConfigResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	if !s.cfg.Maintenance.Backups.Sync.Enabled {
+		return nil, status.Error(codes.FailedPrecondition, `服务器未开启同步。`)
+	}
+
+	c := s.cfg.Maintenance.Backups.Sync
+
+	return &proto.GetSyncConfigResponse{
+		Author:   c.Author,
+		Email:    c.Email,
+		Username: c.Username,
+		Password: c.Password,
+	}, nil
+}

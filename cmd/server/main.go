@@ -446,7 +446,7 @@ func liveCheck(s *service.Service, cc proto.NotifyServer) {
 				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)
 				if cc != nil {
-					cc.SendInstant(context.TODO(), &proto.SendInstantRequest{
+					cc.SendInstant(auth.SystemAdmin(context.Background()), &proto.SendInstantRequest{
 						Subject: `服务不可用`,
 						Body:    `保活检测卡住了。`,
 					})
