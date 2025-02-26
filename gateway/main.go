@@ -123,10 +123,10 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		mc.Handle(`GET /rss`, rss.New(g.auther, g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
 
 		// 调试相关
-		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler)
+		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler(userFromRequestContext, userFromRequestQuery))
 
 		// 附加组件提供的
-		mc.Handle(`/v3/addons/`, http.StripPrefix(`/v3/addons`, addons.Handler()), g.userFromQueryHandler)
+		mc.Handle(`/v3/addons/`, http.StripPrefix(`/v3/addons`, addons.Handler()), g.nonGuestHandler(userFromRequestContext, userFromRequestQuery))
 	}
 
 	return nil
@@ -142,25 +142,31 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (g *Gateway) nonGuestHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ac := auth.Context(r.Context())
-		if !ac.User.IsGuest() {
-			h.ServeHTTP(w, r)
-			return
-		}
-		w.WriteHeader(http.StatusForbidden)
-	})
+type AuthFunc func(g *Gateway, r *http.Request) *auth.User
+
+func userFromRequestContext(g *Gateway, r *http.Request) *auth.User {
+	return auth.Context(r.Context()).User
+}
+func userFromRequestQuery(g *Gateway, r *http.Request) *auth.User {
+	id, token, _ := auth.ParseAuthorizationValue(r.URL.Query().Get(`auth`))
+	return g.auther.AuthLogin(fmt.Sprint(id), token)
 }
 
-func (g *Gateway) userFromQueryHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id, token, ok := auth.ParseAuthorizationValue(r.URL.Query().Get(`auth`))
-		u := g.auther.AuthLogin(fmt.Sprint(id), token)
-		if ok && !u.IsGuest() {
-			h.ServeHTTP(w, r)
-			return
-		}
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	})
+func (g *Gateway) nonGuestHandler(fns ...AuthFunc) func(http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var u *auth.User
+			for _, fn := range fns {
+				u = fn(g, r)
+				if !u.IsGuest() {
+					break
+				}
+			}
+			if u != nil && !u.IsGuest() {
+				h.ServeHTTP(w, r)
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		})
+	}
 }
