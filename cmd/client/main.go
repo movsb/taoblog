@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -560,6 +561,16 @@ func AddCommands(rootCmd *cobra.Command) {
 	users := createUsersCommands()
 	users.PersistentPreRun = preRun
 	rootCmd.AddCommand(users)
+
+	proxyCmd := &cobra.Command{
+		Use:              `proxy`,
+		Short:            `代理网络请求，自动登录。`,
+		PersistentPreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			proxy(cmd.Context(), `localhost:2564`, config.Home, fmt.Sprint(auth.AdminID), config.Token)
+		},
+	}
+	rootCmd.AddCommand(proxyCmd)
 }
 
 func edit(value string, fileSuffix string) (string, bool) {
