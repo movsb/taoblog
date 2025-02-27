@@ -24,17 +24,6 @@ func (s *Service) GetTagByName(name string) *models.Tag {
 	return &tag
 }
 
-func (s *Service) ListTagsWithCount() []*models.TagWithCount {
-	var tags []*models.TagWithCount
-	s.tdb.Raw(`
-		SELECT tags.name AS name, count(tags.id) AS count
-		FROM tags INNER JOIN post_tags ON tags.id = post_tags.tag_id
-		GROUP BY tags.id
-		ORDER BY count desc
-	`).MustFind(&tags)
-	return tags
-}
-
 func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	sql := `SELECT tag_id FROM post_tags WHERE post_id=?`
 	rows, err := s.tdb.Query(sql, postID)

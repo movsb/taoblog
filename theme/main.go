@@ -98,7 +98,6 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	m.HandleFunc(`GET /search`, t.querySearch)
 	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
 	m.Handle(`GET /tweets`, t.LastPostTime304HandlerFunc(t.queryTweets))
-	m.Handle(`GET /tags`, t.LastPostTime304HandlerFunc(t.queryTags))
 
 	t.loadTemplates()
 
@@ -300,11 +299,6 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
 	d := data.NewDataForTweets(r.Context(), t.impl.Config(), t.service)
 	t.executeTemplate(`tweets.html`, w, d)
-}
-
-func (t *Theme) queryTags(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTags(r.Context(), t.cfg, t.service, t.impl)
-	t.executeTemplate(`tags.html`, w, d)
 }
 
 func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {

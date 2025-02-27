@@ -43,9 +43,6 @@ type Data struct {
 	// If it is the Posts.
 	Posts *PostsData
 
-	// If it is the Tags.
-	Tags *TagsData
-
 	// If it is the tag.
 	Tag *TagData
 

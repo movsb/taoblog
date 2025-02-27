@@ -18,7 +18,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -40,7 +39,6 @@ type ToBeImplementedByRpc interface {
 	GetLink(ID int64) string
 	GetPlainLink(ID int64) string
 	Config() *config.Config
-	ListTagsWithCount() []*models.TagWithCount
 	IncrementPostPageView(id int64)
 	ThemeChangedAt() time.Time
 	GetCommentEmailById(id int) string

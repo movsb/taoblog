@@ -14,6 +14,4 @@ var nonCategoryNames = map[string]bool{
 	"/admin/":   true,
 	"/scripts/": true,
 	"/images/":  true,
-	"/tags/":    true,
-	"/plugins/": true,
 }

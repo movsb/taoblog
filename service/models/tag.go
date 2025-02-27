@@ -23,10 +23,3 @@ type ObjectTag struct {
 func (ObjectTag) TableName() string {
 	return `post_tags`
 }
-
-// TagWithCount is a tag with associated post count.
-type TagWithCount struct {
-	// taorm yet doesn't support embedded field scanning.
-	Name  string
-	Count int64
-}
