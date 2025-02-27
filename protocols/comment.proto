@@ -78,24 +78,30 @@ message DeleteCommentResponse {
 
 }
 
-message ListCommentsRequest {
-	enum Mode {
-		Unspecified = 0;
-		// limit 控制顶级评论的数量，子评论全部返回。用于以树型结构展示。
-		Tree = 1;
-		// limit 控制全部评论的数量，不区分父子评论。用于平铺展示近期评论。
-		Flat = 2;
-	}
+// 文章权限。
+//
+// 如果是 Unknown，默认为 All。
+enum Ownership {
+	OwnershipUnknown = 0;
+	// 自己创建的。
+	OwnershipMine = 1;
+	// 自己创建的 + 他们分享的。
+	OwnershipMineAndShared = 2;
+	// 他们分享的 + 他们公开的。
+	OwnershipTheir = 3;
+	// 自己创建的 + 他们分享的 + 他们公开的。
+	OwnershipAll = 100;
+}
 
-	Mode mode = 1;
+message ListCommentsRequest {
 	// 0 for all posts.
 	int64 post_id = 2;
-	// defaults to "*".
-	repeated string fields = 3;
 	// must be > 0.
 	int64 limit = 4;
 	int64 offset = 5;
 	string order_by = 6;
+	
+	Ownership ownership = 9;
 
 	// 文章的种类，比如 post、page、tweet。
 	// 如果不指定的话，则是全部种类。

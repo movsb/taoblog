@@ -88,6 +88,13 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 				`posts.user_id!=? AND (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
 				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
 			)
+		case proto.Ownership_OwnershipMineAndShared:
+			stmt.Select(`posts.*`)
+			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+			stmt.Where(
+				`posts.user_id=? OR (acl.user_id=? AND posts.status = ?)`,
+				ac.User.ID, ac.User.ID, models.PostStatusPartial,
+			)
 		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
 			stmt.Select(`posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)

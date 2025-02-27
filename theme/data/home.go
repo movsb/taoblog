@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
@@ -31,6 +33,8 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 		PageCount:    impl.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
+	user := auth.Context(ctx).User
+	ownership := utils.IIF(user.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
 	rsp, err := service.ListPosts(ctx,
 		&proto.ListPostsRequest{
 			Limit:          15,
@@ -38,6 +42,7 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 			Kinds:          []string{`post`},
 			WithLink:       proto.LinkKind_LinkKindRooted,
 			ContentOptions: co.For(co.HomeLatestPosts),
+			Ownership:      ownership,
 		},
 	)
 	if err != nil {
@@ -57,6 +62,7 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 				Kinds:          []string{`tweet`},
 				WithLink:       proto.LinkKind_LinkKindRooted,
 				ContentOptions: co.For(co.HomeLatestTweets),
+				Ownership:      ownership,
 			},
 		)
 		if err != nil {
@@ -71,10 +77,10 @@ func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBl
 	comments, err := d.svc.ListComments(ctx,
 		&proto.ListCommentsRequest{
 			Types:   []string{},
-			Mode:    proto.ListCommentsRequest_Flat,
 			Limit:   15,
 			OrderBy: "date DESC",
 
+			Ownership:      ownership,
 			ContentOptions: co.For(co.HomeLatestComments),
 		})
 	if err != nil {

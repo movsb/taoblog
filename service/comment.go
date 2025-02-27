@@ -268,7 +268,6 @@ func (s *Service) DeleteComment(ctx context.Context, in *proto.DeleteCommentRequ
 	return &proto.DeleteCommentResponse{}, nil
 }
 
-// ListComments ...
 func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsRequest) (*proto.ListCommentsResponse, error) {
 	ac := auth.Context(ctx)
 
@@ -276,54 +275,53 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
 	}
 
-	if in.Mode == proto.ListCommentsRequest_Unspecified {
-		in.Mode = proto.ListCommentsRequest_Tree
+	// TODO ensure that fields must include root etc to be used later.
+	// TODO verify fields that are sanitized.
+	stmt := s.tdb.Select(`comments.*`)
+	stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
+	stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
+	if ac.User.IsGuest() {
+		stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
+	} else if ac.User.IsSystem() {
+		// nothing to do
+	} else {
+		switch in.Ownership {
+		default:
+			return nil, fmt.Errorf(`未知所有者。`)
+		case proto.Ownership_OwnershipMine:
+			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
+			stmt.Where(`posts.user_id=?`, ac.User.ID)
+		case proto.Ownership_OwnershipTheir:
+			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
+			stmt.InnerJoin(models.AccessControlEntry{}, `comments.post_id=acl.post_id`)
+			stmt.Where(
+				`posts.user_id!=? AND (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
+				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
+			)
+		case proto.Ownership_OwnershipMineAndShared:
+			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
+			stmt.LeftJoin(models.AccessControlEntry{}, `comments.post_id=acl.post_id`)
+			stmt.Where(
+				`posts.user_id=? OR (acl.user_id=? AND posts.status = ?)`,
+				ac.User.ID, ac.User.ID, models.PostStatusPartial,
+			)
+		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
+			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
+			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+			stmt.Where(
+				`posts.user_id=? OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
+				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
+			)
+		}
+	}
+	if len(in.Types) > 0 {
+		stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in (?)`, in.Types)
 	}
 
-	var parents models.Comments
-	{
-		// TODO ensure that fields must include root etc to be used later.
-		// TODO verify fields that are sanitized.
-		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
-		stmt.WhereIf(in.Mode == proto.ListCommentsRequest_Tree, "root = 0")
-		stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
-		// limit & offset apply to parent comments only
-		stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
-		if ac.User.IsGuest() {
-			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
-		}
-		if len(in.Types) > 0 {
-			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in (?)`, in.Types)
-		}
-		stmt.MustFind(&parents)
-	}
-
-	var children models.Comments
-
-	// 其实是可以合并这两段高度相似的代码的，不过，因为 limit/offset 只限制顶级评论不限制子评论的原因，SQL 语句不好写。
-	if in.Mode == proto.ListCommentsRequest_Tree && len(parents) > 0 {
-		parentIDs := make([]int64, 0, len(parents))
-		for _, parent := range parents {
-			parentIDs = append(parentIDs, parent.ID)
-		}
-
-		stmt := s.tdb.Select(strings.Join(in.Fields, ","))
-		stmt.Where("root IN (?)", parentIDs)
-		if ac.User.IsGuest() {
-			stmt.InnerJoin("posts", "comments.post_id = posts.id AND posts.status = 'public'")
-		}
-		if len(in.Types) > 0 {
-			stmt.InnerJoin(`posts`, `comments.post_id = posts.id AND posts.type in (?)`, in.Types)
-		}
-		stmt.MustFind(&children)
-	}
-
-	comments := make(models.Comments, 0, len(parents)+len(children))
-	comments = append(comments, parents...)
-	comments = append(comments, children...)
+	var comments models.Comments
+	stmt.MustFind(&comments)
 
 	protoComments := comments.ToProto(s.setCommentExtraFields(ctx, in.ContentOptions))
-
 	return &proto.ListCommentsResponse{Comments: protoComments}, nil
 }
 

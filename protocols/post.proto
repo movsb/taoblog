@@ -135,19 +135,6 @@ message DeletePostRequest {
 	int32 id = 1;
 }
 
-// 权限。
-//
-// 如果是 Unknown，默认为 All。
-enum Ownership {
-	OwnershipUnknown = 0;
-	// 自己创建的。
-	OwnershipMine = 1;
-	// 他们分享的 + 他们公开的。
-	OwnershipTheir = 2;
-	// 自己创建的 + 他们分享的 + 他们公开的。
-	OwnershipAll = 100;
-}
-
 message ListPostsRequest {
 	int32 limit = 1;
 	string order_by = 2;
@@ -162,6 +149,8 @@ message ListPostsRequest {
 	int32 modified_not_after = 7;
 
 	// 文章的所有者。
+	// 如果不指定，默认为 All。
+	// 只对已登录用户有效，未登录用户始终只能看公开文章。
 	Ownership ownership = 8;
 }
 
