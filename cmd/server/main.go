@@ -192,7 +192,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
-	theme := theme.New(version.DevMode(), cfg, theService, theService, theService, theAuth, filesStore)
+	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth, filesStore)
 	canon := canonical.New(theme, s.metrics)
 	mux.Handle(`/`, canon)
 
@@ -225,6 +225,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	theService.MaintenanceMode().Enter(`服务关闭中...`, time.Second*30)
 	s.httpServer.Shutdown(context.Background())
 	log.Println("server shut down")
+
+	cancel()
+	<-ctx.Done()
 }
 
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {

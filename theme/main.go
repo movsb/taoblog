@@ -2,6 +2,7 @@ package theme
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html"
 	"html/template"
@@ -35,6 +36,8 @@ import (
 
 // Theme ...
 type Theme struct {
+	ctx context.Context
+
 	localRootFS fs.FS
 	rootFS      fs.FS
 	tmplFS      fs.FS
@@ -57,9 +60,11 @@ type Theme struct {
 	themeChangedAt time.Time
 
 	specialMux *http.ServeMux
+
+	incViewDebouncer *_IncViewDebouncer
 }
 
-func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, fsys theme_fs.FS) *Theme {
+func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, fsys theme_fs.FS) *Theme {
 	var rootFS, tmplFS fs.FS
 
 	if devMode {
@@ -74,6 +79,8 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 	}
 
 	t := &Theme{
+		ctx: ctx,
+
 		rootFS: rootFS,
 		tmplFS: tmplFS,
 
@@ -92,6 +99,8 @@ func New(devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl ser
 
 		specialMux: http.NewServeMux(),
 	}
+
+	t.incViewDebouncer = NewIncViewDebouncer(ctx, t.incViews)
 
 	m := t.specialMux
 
@@ -328,7 +337,7 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 	}
 
 	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.incView(p.Id)
+		t.incViewDebouncer.Increase(int(p.Id))
 		t.tempRenderPost(w, r, p)
 	})
 
@@ -338,8 +347,8 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 	).ServeHTTP(w, r)
 }
 
-func (t *Theme) incView(id int64) {
-	t.impl.IncrementPostPageView(id)
+func (t *Theme) incViews(m map[int]int) {
+	t.impl.IncrementViewCount(m)
 }
 
 func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string) (int64, error) {
@@ -357,7 +366,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 	}
 
 	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.incView(p.Id)
+		t.incViewDebouncer.Increase(int(p.Id))
 		t.tempRenderPost(w, r, p)
 	})
 
@@ -387,11 +396,8 @@ func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []str
 	t.executeTemplate(`tag.html`, w, d)
 }
 
-// TODO 没限制不可访问文章的附件是否不可访问。
-// 毕竟，文章不可访问后，文件列表暂时拿不到。
-// 不一定，比如，文件很可能是形如：IMG_XXXX.JPG，暴力遍历一下就能拿到。
-// file 不以 / 开头。
-// TODO 添加测试用例。
+// 注意：file 不以 / 开头。
+// TODO 添加权限测试用例。
 func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
 	// 权限检查
 	utils.Must1(t.service.GetPost(req.Context(), &proto.GetPostRequest{Id: int32(postID)}))

@@ -39,7 +39,7 @@ type ToBeImplementedByRpc interface {
 	GetLink(ID int64) string
 	GetPlainLink(ID int64) string
 	Config() *config.Config
-	IncrementPostPageView(id int64)
+	IncrementViewCount(m map[int]int)
 	ThemeChangedAt() time.Time
 	GetCommentEmailById(id int) string
 }

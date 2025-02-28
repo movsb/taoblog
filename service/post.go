@@ -444,9 +444,15 @@ func (s *Service) plainLink(id int64) string {
 	return fmt.Sprintf(`/%d/`, id)
 }
 
-func (s *Service) IncrementPostPageView(id int64) {
-	query := "UPDATE posts SET page_view=page_view+1 WHERE id=?"
-	s.tdb.MustExec(query, id)
+func (s *Service) IncrementViewCount(m map[int]int) {
+	if len(m) <= 0 {
+		return
+	}
+	s.tdb.MustTxCall(func(tx *taorm.DB) {
+		for p, n := range m {
+			tx.MustExec(fmt.Sprintf(`UPDATE posts SET page_view=page_view+%d WHERE id=?`, n), p)
+		}
+	})
 }
 
 // GetPostsByTags gets tag posts.
