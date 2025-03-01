@@ -63,6 +63,9 @@ func ReInitTestRandomSeed() {
 func DropLast1[First any, Last any](f First, l Last) First {
 	return f
 }
+func KeepLast1[First any, Last any](f First, l Last) Last {
+	return l
+}
 
 func CatchAsError(err *error) {
 	if er := recover(); er != nil {

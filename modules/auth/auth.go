@@ -43,9 +43,12 @@ func (a *Auth) Config() *config.AuthConfig {
 	return &a.cfg
 }
 
-// NOTE：系统管理员因为不因为登录所以不允许查找。
 // TODO: 改成接口。
 func (o *Auth) GetUserByID(id int64) (*models.User, error) {
+	if id == int64(SystemID) {
+		return system.User, nil
+	}
+
 	var user models.User
 	if err := o.db.Where(`id=?`, id).Find(&user); err != nil {
 		return nil, err

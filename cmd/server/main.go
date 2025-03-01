@@ -27,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/backups"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
@@ -207,6 +208,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	)
 
 	go liveCheck(theService, notify)
+	go s.createBackupTasks(ctx, cfg)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -257,6 +259,23 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 		taorm.NewDB(db), wa,
 		theAuth.GenCookieForPasskeys,
 	)
+}
+
+func (s *Server) createBackupTasks(
+	ctx context.Context,
+	cfg *config.Config,
+) {
+	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled {
+		b := utils.Must1(backups.New(
+			ctx, s.main.GetPluginStorage(`backups.r2`), s.GRPCAddr(),
+			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
+		))
+		if err := b.BackupPosts(ctx); err != nil {
+			log.Println(`备份失败：`, err)
+		} else {
+			log.Println(`备份成功`)
+		}
+	}
 }
 
 func (s *Server) createMainServices(
