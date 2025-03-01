@@ -87,6 +87,8 @@ type Server struct {
 	gateway *gateway.Gateway
 
 	metrics *metrics.Registry
+
+	notify proto.NotifyServer
 }
 
 func NewDefaultServer() *Server {
@@ -183,6 +185,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	filesStore := theme_fs.FS(storage.NewSQLite(InitDatabase(cfg.Database.Files, InitForFiles())))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
+	s.notify = notify
 	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore)
 	s.main = theService
 
@@ -261,6 +264,16 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 	)
 }
 
+func (s *Server) sendNotify(title, message string) {
+	s.notify.SendInstant(
+		auth.SystemAdmin(context.Background()),
+		&proto.SendInstantRequest{
+			Subject: title,
+			Body:    message,
+		},
+	)
+}
+
 func (s *Server) createBackupTasks(
 	ctx context.Context,
 	cfg *config.Config,
@@ -269,11 +282,14 @@ func (s *Server) createBackupTasks(
 		b := utils.Must1(backups.New(
 			ctx, s.main.GetPluginStorage(`backups.r2`), s.GRPCAddr(),
 			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
+			backups.WithEncoderAge(r2.AgeKey),
 		))
 		if err := b.BackupPosts(ctx); err != nil {
 			log.Println(`备份失败：`, err)
+			s.sendNotify(`备份`, fmt.Sprintf(`文章备份失败：%v`, err))
 		} else {
 			log.Println(`备份成功`)
+			s.sendNotify(`备份`, `文章备份成功`)
 		}
 	}
 }

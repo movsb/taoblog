@@ -156,6 +156,9 @@ type MaintenanceBackupsRemoteConfig struct {
 type MaintenanceBackupsRemoteR2Config struct {
 	Enabled bool `yaml:"enabled"`
 
+	// 临时放这儿。
+	AgeKey string `yaml:"age_key"`
+
 	AccountID       string `yaml:"account_id"`
 	AccessKeyID     string `yaml:"access_key_id"`
 	AccessKeySecret string `yaml:"access_key_secret"`

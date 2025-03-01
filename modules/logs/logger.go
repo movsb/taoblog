@@ -43,12 +43,13 @@ func NewLogStore(db *sql.DB) *_LogStore {
 }
 
 func (s *_LogStore) CreateLog(ctx context.Context, ty, subType string, version int, data any) {
+	d := utils.Must1(toJSON(data))
 	l := models.Log{
 		Time:    time.Now().Unix(),
 		Type:    ty,
 		SubType: subType,
 		Version: version,
-		Data:    utils.Must1(toJSON(data)),
+		Data:    d,
 	}
 	s.tdb.Model(&l).MustCreate()
 	log.Println(`创建日志：`, l.ID, l.Type, l.SubType, l.Data)

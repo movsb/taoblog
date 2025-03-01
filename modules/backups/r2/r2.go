@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// TODO 引入 AWS-SDK-GO 使得二进制大了 10MB
+
 type R2 struct {
 	client     *s3.Client
 	bucketName string
