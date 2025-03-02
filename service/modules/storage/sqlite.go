@@ -3,13 +3,13 @@ package storage
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	std_fs "io/fs"
 	"mime"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -64,7 +64,6 @@ func (fs *SQLite) ForPost(id int) (std_fs.FS, error) {
 var _ interface {
 	std_fs.FS
 	std_fs.StatFS
-	std_fs.ReadDirFS
 	std_fs.SubFS
 	utils.DeleteFS
 	utils.WriteFS
@@ -117,6 +116,27 @@ func (r *_Reader) Read(p []byte) (int, error) {
 	return r.data.Read(p)
 }
 
+func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
+	if fs.dir != `` && fs.dir != `.` {
+		return nil, errors.New(`不支持列举子目录文件。`)
+	}
+	var files []*models.File
+	if err := fs.s.db.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Find(&files); err != nil {
+		return nil, err
+	}
+	specs := make([]*proto.FileSpec, 0, len(files))
+	for _, f := range files {
+		specs = append(specs, &proto.FileSpec{
+			Path: f.Path,
+			Mode: f.Mode,
+			Size: f.Size,
+			Time: uint32(f.ModTime),
+			Type: mime.TypeByExtension(path.Ext(f.Path)),
+		})
+	}
+	return specs, nil
+}
+
 func (fs *SQLiteForPost) Delete(name string) error {
 	fullName := path.Clean(path.Join(fs.dir, name))
 	var file models.File
@@ -127,34 +147,6 @@ func (fs *SQLiteForPost) Delete(name string) error {
 		return err
 	}
 	return fs.s.db.Model(&file).Delete()
-}
-
-// 用了 SQLite 的特殊函数 glob
-func (fs *SQLiteForPost) ReadDir(name string) ([]std_fs.DirEntry, error) {
-	dir := path.Clean(path.Join(fs.dir, name))
-	pattern := path.Join(dir, `*`)
-	var files []*models.File
-	if err := fs.s.db.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).
-		Where(`path glob ?`, pattern).Find(&files); err != nil {
-		if taorm.IsNotFoundError(err) {
-			return nil, os.ErrNotExist
-		}
-		return nil, err
-	}
-	prefix := dir + `/`
-	if prefix == `./` {
-		prefix = ``
-	}
-	var entries []std_fs.DirEntry
-	for _, file := range files {
-		after, found := strings.CutPrefix(file.Path, prefix)
-		if !found {
-			continue
-		}
-		file.Path = after // 修改了原数据
-		entries = append(entries, file.DirEntry())
-	}
-	return entries, nil
 }
 
 func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {

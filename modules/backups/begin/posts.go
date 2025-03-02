@@ -1,7 +1,9 @@
 package begin
 
 import (
+	"bytes"
 	"io"
+	"log"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -25,6 +27,7 @@ func (b *BackupClient) BackupPosts(w io.Writer) (outErr error) {
 		b.cc.Context(),
 		&proto.BackupRequest{Compress: false},
 	))
+	defer client.CloseSend()
 
 	bpr := &_BackupProgressReader{c: client}
 	return utils.KeepLast1(io.Copy(w, bpr))
@@ -49,4 +52,53 @@ func (r *_BackupProgressReader) Read(p []byte) (outN int, outErr error) {
 	n := copy(p, r.d)
 	r.d = r.d[n:]
 	return n, nil
+}
+
+func (b *BackupClient) BackupFiles(postID int, writeFile func(spec *proto.FileSpec, r io.Reader) error) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	client := utils.Must1(b.cc.Management.FileSystem(b.cc.Context()))
+	defer client.CloseSend()
+
+	utils.Must(client.Send(&proto.FileSystemRequest{
+		Init: &proto.FileSystemRequest_InitRequest{
+			For: &proto.FileSystemRequest_InitRequest_Post_{
+				Post: &proto.FileSystemRequest_InitRequest_Post{
+					Id: int64(postID),
+				},
+			},
+		},
+	}))
+	if utils.Must1(client.Recv()).GetInit() == nil {
+		log.Panicln(`文件系统初始化失败。`)
+	}
+
+	utils.Must(client.Send(&proto.FileSystemRequest{
+		Request: &proto.FileSystemRequest_ListFiles{
+			ListFiles: &proto.FileSystemRequest_ListFilesRequest{},
+		},
+	}))
+
+	files := utils.Must1(client.Recv()).GetListFiles().GetFiles()
+	for _, file := range files {
+		utils.Must(writeFile(file, utils.Must1(_NewFileRead(client, file.Path))))
+	}
+	return nil
+}
+
+type _FileReader struct {
+	io.Reader
+}
+
+func _NewFileRead(client proto.Management_FileSystemClient, path string) (_ *_FileReader, outErr error) {
+	defer utils.CatchAsError(&outErr)
+	utils.Must(client.Send(&proto.FileSystemRequest{
+		Request: &proto.FileSystemRequest_ReadFile{
+			ReadFile: &proto.FileSystemRequest_ReadFileRequest{
+				Path: path,
+			},
+		},
+	}))
+	data := utils.Must1(client.Recv()).GetReadFile().Data
+	return &_FileReader{Reader: bytes.NewReader(data)}, nil
 }

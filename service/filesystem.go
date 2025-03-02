@@ -14,7 +14,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
+func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
 	// TODO 如果是评论，允许用户上传文件。
 	auth.MustNotBeGuest(srv.Context())
 
@@ -66,7 +68,7 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 		}
 
 		if list := req.GetListFiles(); list != nil {
-			files, err := utils.ListFiles(pfs, ".")
+			files, err := utils.ListFiles(pfs)
 			if err != nil {
 				if !errors.Is(err, fs.ErrNotExist) {
 					return err
@@ -105,6 +107,15 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) error {
 			}); err != nil {
 				return err
 			}
+		} else if read := req.GetReadFile(); read != nil {
+			r := utils.Must1(pfs.Open(read.Path))
+			utils.Must(srv.Send(&proto.FileSystemResponse{
+				Response: &proto.FileSystemResponse_ReadFile{
+					ReadFile: &proto.FileSystemResponse_ReadFileResponse{
+						Data: utils.Must1(io.ReadAll(r)),
+					},
+				},
+			}))
 		}
 	}
 }
