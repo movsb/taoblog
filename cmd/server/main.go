@@ -284,19 +284,26 @@ func (s *Server) createBackupTasks(
 			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
 			backups.WithEncoderAge(r2.AgeKey),
 		))
-		// if err := b.BackupPosts(ctx); err != nil {
-		// 	log.Println(`备份失败：`, err)
-		// 	s.sendNotify(`备份`, fmt.Sprintf(`文章备份失败：%v`, err))
-		// } else {
-		// 	log.Println(`备份成功`)
-		// 	s.sendNotify(`备份`, `文章备份成功`)
-		// }
-		if err := b.BackupFiles(ctx); err != nil {
-			log.Println(`备份失败：`, err)
-			s.sendNotify(`备份`, fmt.Sprintf(`文章备份附件失败：%v`, err))
-		} else {
-			log.Println(`备份成功`)
-			s.sendNotify(`备份`, `文章附件备份成功`)
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			var messages []string
+			if err := b.BackupPosts(ctx); err != nil {
+				log.Println(`备份失败：`, err)
+				messages = append(messages, fmt.Sprintf(`文章备份失败：%v`, err))
+			} else {
+				log.Println(`文章备份成功`)
+				messages = append(messages, `文章备份成功。`)
+			}
+			if err := b.BackupFiles(ctx); err != nil {
+				log.Println(`备份失败：`, err)
+				messages = append(messages, fmt.Sprintf(`附件备份失败：%v`, err))
+			} else {
+				log.Println(`附件备份成功`)
+				messages = append(messages, `附件备份成功。`)
+			}
+			s.sendNotify(`文章和附件备份`, strings.Join(messages, "\n"))
 		}
 	}
 }
