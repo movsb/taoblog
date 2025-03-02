@@ -28,7 +28,7 @@ func NewIncViewDebouncer(ctx context.Context, save func(m map[int]int)) *_IncVie
 		flush: make(chan struct{}, 1),
 		save:  save,
 	}
-	d.d = utils.NewDebouncer(time.Second*10, func() {
+	d.d = utils.NewDebouncer(time.Minute, func() {
 		select {
 		case d.flush <- struct{}{}:
 		default:
@@ -39,7 +39,7 @@ func NewIncViewDebouncer(ctx context.Context, save func(m map[int]int)) *_IncVie
 }
 
 func (d *_IncViewDebouncer) run(ctx context.Context) {
-	const forceInterval = time.Minute
+	const forceInterval = time.Minute * 5
 	ticker := time.NewTicker(forceInterval)
 	defer ticker.Stop()
 

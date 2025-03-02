@@ -21,8 +21,18 @@ type Job struct {
 	// 如果任务在添加时已经过期，则不添加真实任务，
 	// 仅记录，方便在日历中复现。此时为空。
 	underlying gocron.Job
-	startAt    time.Time
-	message    string
+
+	startAt time.Time
+
+	message     string
+	messageFunc func() string
+}
+
+func (j Job) Message() string {
+	if j.messageFunc != nil {
+		return j.messageFunc()
+	}
+	return j.message
 }
 
 type Scheduler struct {
@@ -74,7 +84,9 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 		s.lock.Lock()
 		s.daily[postID] = append(s.daily[postID], Job{
 			startAt: time.Time(r.Dates.Start),
-			message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, daysPassed(time.Time(r.Dates.Start), r.Exclusive)),
+			messageFunc: func() string {
+				return fmt.Sprintf(`%s 已经 %d 天了`, r.Title, daysPassed(time.Time(r.Dates.Start), r.Exclusive))
+			},
 		})
 		s.lock.Unlock()
 	}
@@ -244,7 +256,7 @@ func (s *CalenderService) marshal(w io.Writer) error {
 		for _, job := range jobs {
 			eventID := fmt.Sprintf(`post_id:%d,job_id:%d`, id, job.startAt.Unix())
 			e := cal.AddEvent(eventID)
-			e.SetSummary(job.message)
+			e.SetSummary(job.Message())
 			e.SetDtStampTime(job.startAt)
 
 			// 默认为全天事件
@@ -256,7 +268,7 @@ func (s *CalenderService) marshal(w io.Writer) error {
 		for _, job := range daily {
 			eventID := fmt.Sprintf(`post_id:%d,job_id:%d,daily:true`, id, job.startAt.Unix())
 			e := cal.AddEvent(eventID)
-			e.SetSummary(job.message)
+			e.SetSummary(job.Message())
 			e.SetDtStampTime(job.startAt)
 
 			// 默认为全天事件
