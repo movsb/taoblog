@@ -284,10 +284,8 @@ func (s *Server) createBackupTasks(
 			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
 			backups.WithEncoderAge(r2.AgeKey),
 		))
-		ticker := time.NewTicker(time.Hour)
-		defer ticker.Stop()
 
-		for range ticker.C {
+		execute := func() {
 			var messages []string
 			if err := b.BackupPosts(ctx); err != nil {
 				log.Println(`备份失败：`, err)
@@ -304,6 +302,16 @@ func (s *Server) createBackupTasks(
 				messages = append(messages, `附件备份成功。`)
 			}
 			s.sendNotify(`文章和附件备份`, strings.Join(messages, "\n"))
+		}
+
+		time.Sleep(time.Minute)
+		execute()
+
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			execute()
 		}
 	}
 }
