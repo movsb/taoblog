@@ -1,10 +1,10 @@
-package reminders_test
+package lunar_test
 
 import (
 	"testing"
 
 	"github.com/Lofanmi/chinese-calendar-golang/calendar"
-	"github.com/movsb/taoblog/service/modules/renderers/reminders"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders/lunar"
 )
 
 func TestLunar(t *testing.T) {
@@ -28,11 +28,11 @@ func TestLunar(t *testing.T) {
 }
 
 func TestPrintLunar(t *testing.T) {
-	cc := func(y, m, d int, leap bool) reminders.LunarDate {
-		return reminders.NewLunarDate(y, m, d, 0, 0, 0, leap)
+	cc := func(y, m, d int, leap bool) lunar.LunarDate {
+		return lunar.NewLunarDate(y, m, d, 0, 0, 0, leap)
 	}
 	tests := []struct {
-		l reminders.LunarDate
+		l lunar.LunarDate
 		s string
 	}{
 		{cc(2005, 3, 8, false), `二零零五年三月初八`},
@@ -48,11 +48,11 @@ func TestPrintLunar(t *testing.T) {
 }
 
 func TestParseLunarDate(t *testing.T) {
-	cc := func(y, m, d int, leap bool) reminders.LunarDate {
-		return reminders.NewLunarDate(y, m, d, 0, 0, 0, leap)
+	cc := func(y, m, d int, leap bool) lunar.LunarDate {
+		return lunar.NewLunarDate(y, m, d, 0, 0, 0, leap)
 	}
 	tests := []struct {
-		l reminders.LunarDate
+		l lunar.LunarDate
 		s string
 	}{
 		{cc(2005, 3, 8, false), `二零零五年三月初八`},
@@ -63,7 +63,7 @@ func TestParseLunarDate(t *testing.T) {
 	}
 	for _, test := range tests {
 		want := test.l.DateString()
-		lunar, err := reminders.ParseLunarDate(test.s)
+		lunar, err := lunar.ParseLunarDate(test.s)
 		if err != nil {
 			t.Errorf(`%s: %s`, test.s, want)
 			continue

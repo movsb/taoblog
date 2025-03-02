@@ -119,8 +119,6 @@ func (t *Task) getUpdatedPosts(ctx context.Context) ([]*proto.Post, error) {
 		return nil, err
 	}
 
-	// t.store.Set(lastCheckTimeName, fmt.Sprint(now))
-
 	return rsp.Posts, nil
 }
 
