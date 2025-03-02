@@ -63,7 +63,7 @@ func GuestContext(ctx context.Context) context.Context {
 
 // 不要保存到变量中，直接使用！
 func SystemAdminForGateway(ctx context.Context) context.Context {
-	return metadata.NewOutgoingContext(ctx, metadata.Pairs(`Authorization`, `token `+fmt.Sprintf(`%d:%s`, system.ID, systemKey)))
+	return metadata.NewOutgoingContext(ctx, metadata.Pairs(`Authorization`, `token `+fmt.Sprintf(`%d:%s`, system.ID, SystemKey)))
 }
 
 // 只获取不添加默认。
@@ -233,6 +233,9 @@ func (a *Auth) userByKey(id int, key string) (*models.User, error) {
 	u, err := a.GetUserByID(int64(id))
 	if err != nil {
 		return nil, err
+	}
+	if u.ID == int64(SystemID) && constantEqual(key, SystemKey) {
+		return u, nil
 	}
 
 	if constantEqual(key, u.Password) {

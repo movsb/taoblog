@@ -209,7 +209,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 	s.MustBeAdmin(srv.Context())
 
-	listFiles := func(req *proto.BackupFilesRequest_ListFilesRequest) error {
+	listFiles := func(_ *proto.BackupFilesRequest_ListFilesRequest) error {
 		files, err := s.postDataFS.AllFiles()
 		if err != nil {
 			log.Printf(`BackupFiles failed to list files: %v`, err)

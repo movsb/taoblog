@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/movsb/http2tcp"
@@ -27,6 +28,13 @@ func NewProtoClient(home string, token string) *ProtoClient {
 func NewProtoClientFromAddress(grpcAddress string) *ProtoClient {
 	cc := _NewConn(``, grpcAddress)
 	return _NewFromCC(cc, ``)
+}
+
+// TODO: 临时用的，需要更好的办法
+// TODO: 仅能同进程内使用，因为 key 是临时生成的。
+func NewProtoClientAsSystemAdmin(grpcAddress string) *ProtoClient {
+	cc := _NewConn(``, grpcAddress)
+	return _NewFromCC(cc, fmt.Sprintf(`%d:%s`, auth.SystemID, auth.SystemKey))
 }
 
 func _NewFromCC(cc *grpc.ClientConn, token string) *ProtoClient {
@@ -63,7 +71,12 @@ func (c *ProtoClient) contextFrom(parent context.Context) context.Context {
 	if c.token == "" {
 		return parent
 	}
-	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, fmt.Sprintf("%s %d:%s", auth.TokenName, auth.AdminID, c.token)))
+	tokenValue := c.token
+	if !strings.Contains(c.token, `:`) {
+		tokenValue = fmt.Sprintf(`%d:%s`, auth.AdminID, c.token)
+	}
+	authValue := fmt.Sprintf(`%s %s`, auth.TokenName, tokenValue)
+	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, authValue))
 }
 
 // grpcAddress 可以为空，表示使用 api 同一地址。

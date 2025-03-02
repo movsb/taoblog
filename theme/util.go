@@ -56,8 +56,10 @@ func (d *_IncViewDebouncer) run(ctx context.Context) {
 			default:
 			}
 		case <-d.flush:
-			log.Println(`保存文章访问次数`)
-			d.save(d.m)
+			if len(d.m) > 0 {
+				log.Println(`保存文章访问次数`)
+				d.save(d.m)
+			}
 		}
 	}
 }

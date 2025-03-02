@@ -6,73 +6,11 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"mime"
 	"os"
-	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
-
-// walk returns the file list for a directory.
-// Directories are omitted.
-// Returned paths are related to dir.
-// 返回的所有路径都是相对于 dir 而言的。
-func ListFiles(fsys fs.FS, dir string) ([]*proto.FileSpec, error) {
-	bfs, err := listBackupFiles(fsys, dir)
-	if err != nil {
-		return nil, err
-	}
-	fs := make([]*proto.FileSpec, 0, len(bfs))
-	for _, f := range bfs {
-		fs = append(fs, &proto.FileSpec{
-			Path: f.Path,
-			Mode: f.Mode,
-			Size: f.Size,
-			Time: f.Time,
-			Type: mime.TypeByExtension(filepath.Ext(f.Path)),
-		})
-	}
-	return fs, nil
-}
-
-// Deprecated. 用 ListFiles。
-func listBackupFiles(fsys fs.FS, dir string) ([]*proto.FileSpec, error) {
-	files := make([]*proto.FileSpec, 0, 32)
-
-	err := fs.WalkDir(fsys, dir, func(path string, info fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.Type().IsRegular() {
-			return nil
-		}
-		rel, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
-		}
-
-		info2, err := info.Info()
-		if err != nil {
-			return err
-		}
-
-		file := &proto.FileSpec{
-			Path: rel,
-			Mode: uint32(info2.Mode().Perm()),
-			Size: uint32(info2.Size()),
-			Time: uint32(info2.ModTime().Unix()),
-		}
-
-		files = append(files, file)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return files, nil
-}
 
 type FsWithChangeNotify interface {
 	fs.FS
@@ -158,6 +96,17 @@ func Write(fsys fs.FS, spec *proto.FileSpec, r io.Reader) error {
 		return wfs.Write(spec, r)
 	}
 	return errors.New(`fs.Write: unimplemented`)
+}
+
+type ListFilesFS interface {
+	ListFiles() ([]*proto.FileSpec, error)
+}
+
+func ListFiles(fsys fs.FS) ([]*proto.FileSpec, error) {
+	if lfs, ok := fsys.(ListFilesFS); ok {
+		return lfs.ListFiles()
+	}
+	return nil, errors.New(`fs.ListFiles: unimplemented`)
 }
 
 type _OverlayFS struct {

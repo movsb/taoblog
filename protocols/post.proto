@@ -270,6 +270,9 @@ message FileSystemRequest {
 	InitRequest init = 1;
 
 	message ListFilesRequest {}
+	message ReadFileRequest {
+		string path = 1;
+	}
 	message WriteFileRequest {
 		FileSpec spec = 1;
 		bytes data = 2;
@@ -281,6 +284,7 @@ message FileSystemRequest {
 		ListFilesRequest list_files = 10;
 		WriteFileRequest write_file = 11;
 		DeleteFileRequest delete_file = 12;
+		ReadFileRequest read_file = 13;
 	}
 }
 
@@ -294,10 +298,14 @@ message FileSystemResponse {
 	}
 	message WriteFileResponse { }
 	message DeleteFileResponse { }
+	message ReadFileResponse {
+		bytes data = 1;
+	}
 
 	oneof Response {
 		ListFilesResponse list_files = 10;
 		WriteFileResponse write_file = 11;
 		DeleteFileResponse delete_file = 12;
+		ReadFileResponse read_file = 13;
 	}
 }

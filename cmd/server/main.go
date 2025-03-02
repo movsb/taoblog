@@ -27,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/backups"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
@@ -86,6 +87,8 @@ type Server struct {
 	gateway *gateway.Gateway
 
 	metrics *metrics.Registry
+
+	notify proto.NotifyServer
 }
 
 func NewDefaultServer() *Server {
@@ -182,6 +185,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	filesStore := theme_fs.FS(storage.NewSQLite(InitDatabase(cfg.Database.Files, InitForFiles())))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
+	s.notify = notify
 	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore)
 	s.main = theService
 
@@ -207,6 +211,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	)
 
 	go liveCheck(theService, notify)
+	go s.createBackupTasks(ctx, cfg)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -257,6 +262,50 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 		taorm.NewDB(db), wa,
 		theAuth.GenCookieForPasskeys,
 	)
+}
+
+func (s *Server) sendNotify(title, message string) {
+	s.notify.SendInstant(
+		auth.SystemAdmin(context.Background()),
+		&proto.SendInstantRequest{
+			Subject: title,
+			Body:    message,
+		},
+	)
+}
+
+func (s *Server) createBackupTasks(
+	ctx context.Context,
+	cfg *config.Config,
+) {
+	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled {
+		b := utils.Must1(backups.New(
+			ctx, s.main.GetPluginStorage(`backups.r2`), s.GRPCAddr(),
+			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
+			backups.WithEncoderAge(r2.AgeKey),
+		))
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			var messages []string
+			if err := b.BackupPosts(ctx); err != nil {
+				log.Println(`备份失败：`, err)
+				messages = append(messages, fmt.Sprintf(`文章备份失败：%v`, err))
+			} else {
+				log.Println(`文章备份成功`)
+				messages = append(messages, `文章备份成功。`)
+			}
+			if err := b.BackupFiles(ctx); err != nil {
+				log.Println(`备份失败：`, err)
+				messages = append(messages, fmt.Sprintf(`附件备份失败：%v`, err))
+			} else {
+				log.Println(`附件备份成功`)
+				messages = append(messages, `附件备份成功。`)
+			}
+			s.sendNotify(`文章和附件备份`, strings.Join(messages, "\n"))
+		}
+	}
 }
 
 func (s *Server) createMainServices(

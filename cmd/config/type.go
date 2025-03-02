@@ -60,11 +60,11 @@ type MaintenanceConfig struct {
 	} `yaml:"webhook"`
 
 	Backups struct {
-		Sync MaintenanceBackupsSyncConfig `yaml:"sync"`
+		Sync MaintenanceBackupsSyncConfig     `yaml:"sync"`
+		R2   MaintenanceBackupsRemoteR2Config `yaml:"r2"`
 	} `yaml:"backups"`
 }
 
-// DefaultMainMaintenanceConfig ...
 func DefaultMainMaintenanceConfig() MaintenanceConfig {
 	c := MaintenanceConfig{}
 	return c
@@ -147,5 +147,25 @@ func (c *MaintenanceBackupsSyncConfig) BeforeSet(paths Segments, obj any) error 
 		}
 	}
 
+	return nil
+}
+
+type MaintenanceBackupsRemoteConfig struct {
+}
+
+type MaintenanceBackupsRemoteR2Config struct {
+	Enabled bool `yaml:"enabled"`
+
+	// 临时放这儿。
+	AgeKey string `yaml:"age_key"`
+
+	AccountID       string `yaml:"account_id"`
+	AccessKeyID     string `yaml:"access_key_id"`
+	AccessKeySecret string `yaml:"access_key_secret"`
+	BucketName      string `yaml:"bucket_name"`
+}
+
+func (c *MaintenanceBackupsRemoteR2Config) CanSave() {}
+func (c *MaintenanceBackupsRemoteR2Config) BeforeSet(paths Segments, obj any) error {
 	return nil
 }

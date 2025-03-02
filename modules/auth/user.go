@@ -72,7 +72,7 @@ var (
 		},
 	}
 	// TODO 怎么确保程序重启后一定不一样？
-	systemKey = randomKey()
+	SystemKey = randomKey()
 	SystemID  = 1
 	system    = &User{
 		User: &models.User{

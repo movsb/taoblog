@@ -31,10 +31,6 @@ func (f *File) InfoFile() fs.FileInfo {
 	return &_InfoFile{f: f}
 }
 
-func (f *File) DirEntry() fs.DirEntry {
-	return &_DirEntry{f: f}
-}
-
 type _FsFile struct {
 	f *File
 	io.ReadSeeker
@@ -51,10 +47,3 @@ func (f *_InfoFile) Mode() fs.FileMode  { return fs.FileMode(f.f.Mode) }
 func (f *_InfoFile) ModTime() time.Time { return time.Unix(f.f.ModTime, 0).Local() }
 func (f *_InfoFile) IsDir() bool        { return f.Mode().IsDir() }
 func (f *_InfoFile) Sys() any           { return nil }
-
-type _DirEntry struct{ f *File }
-
-func (f *_DirEntry) Name() string               { return path.Base(f.f.Path) }
-func (f *_DirEntry) IsDir() bool                { return (&_InfoFile{f: f.f}).IsDir() }
-func (f *_DirEntry) Type() fs.FileMode          { return (&_InfoFile{f: f.f}).Mode().Type() }
-func (f *_DirEntry) Info() (fs.FileInfo, error) { return &_InfoFile{f: f.f}, nil }
