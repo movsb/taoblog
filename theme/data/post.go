@@ -13,6 +13,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 )
 
 // PostData ...
@@ -95,6 +96,10 @@ func (p *Post) StatusString() string {
 	default:
 		panic(`unknown post status`)
 	}
+}
+
+func (p *Post) IsPrivate() bool {
+	return p.Post.Status == models.PostStatusPrivate
 }
 
 func (p *Post) CommentString() string {

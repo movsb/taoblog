@@ -23,7 +23,9 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 		{{ with .Metas.Weixin }}
 			<span>在<span class="weixin"><a class="no-external" href="https://mp.weixin.qq.com/s/{{.}}" target="_blank">微信</a></span>上查看</span>
 		{{ end }}
+		{{ if not .IsPrivate }}
 		<span>阅读次数：<span class="view">{{ .PageView }}</span></span>
+		{{ end }}
 	</div>
 {{ if .Outdated }}
 <div class="content-wrap outdated">
