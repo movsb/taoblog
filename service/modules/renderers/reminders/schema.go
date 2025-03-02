@@ -86,6 +86,14 @@ type ReminderRemind struct {
 	//
 	// 即：仅用于日历展示。
 	Daily bool `yaml:"daily"`
+
+	// 前多少天提醒。用于添加一段行程。
+	//
+	// 注意：
+	//  - 此事件不创建提醒。
+	//
+	// 即：仅用于日历展示。
+	First int `yaml:"first"`
 }
 
 func (r *Reminder) Days() int {

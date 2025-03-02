@@ -26,6 +26,10 @@ type Job struct {
 
 	message     string
 	messageFunc func() string
+
+	isDaily   bool
+	isFirst   bool
+	firstDays int
 }
 
 func (j Job) Message() string {
@@ -87,6 +91,17 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 			messageFunc: func() string {
 				return fmt.Sprintf(`%s 已经 %d 天了`, r.Title, daysPassed(time.Time(r.Dates.Start), r.Exclusive))
 			},
+			isDaily: true,
+		})
+		s.lock.Unlock()
+	}
+	if r.Remind.First > 0 {
+		s.lock.Lock()
+		s.daily[postID] = append(s.daily[postID], Job{
+			startAt:   time.Time(r.Dates.Start),
+			message:   r.Title,
+			isFirst:   true,
+			firstDays: r.Remind.First,
 		})
 		s.lock.Unlock()
 	}
@@ -125,8 +140,11 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 	}
 
 	// 始终创建当天提醒。
-	if err := createJob(time.Time(r.Dates.Start), r.Title); err != nil {
-		return err
+	// 但是 first 任务不需要
+	if r.Remind.First <= 0 {
+		if err := createJob(time.Time(r.Dates.Start), r.Title); err != nil {
+			return err
+		}
 	}
 
 	for _, day := range r.Remind.Days {
@@ -266,15 +284,24 @@ func (s *CalenderService) marshal(w io.Writer) error {
 		}
 
 		for _, job := range daily {
-			eventID := fmt.Sprintf(`post_id:%d,job_id:%d,daily:true`, id, job.startAt.Unix())
-			e := cal.AddEvent(eventID)
-			e.SetSummary(job.Message())
-			e.SetDtStampTime(job.startAt)
+			if job.isDaily {
+				eventID := fmt.Sprintf(`post_id:%d,job_id:%d,daily:true`, id, job.startAt.Unix())
+				e := cal.AddEvent(eventID)
+				e.SetSummary(job.Message())
+				e.SetDtStampTime(job.startAt)
 
-			// 默认为全天事件
-			e.SetAllDayStartAt(now)
-			// 不包含结束日。
-			e.SetAllDayEndAt(now.AddDate(0, 0, 1))
+				// 默认为全天事件
+				e.SetAllDayStartAt(now)
+				// 不包含结束日。
+				e.SetAllDayEndAt(now.AddDate(0, 0, 1))
+			} else if job.isFirst {
+				eventID := fmt.Sprintf(`post_id:%d,job_id:%d,first:%d`, id, job.startAt.Unix(), job.firstDays)
+				e := cal.AddEvent(eventID)
+				e.SetSummary(job.Message())
+				e.SetDtStampTime(job.startAt)
+				e.SetAllDayStartAt(job.startAt)
+				e.SetAllDayEndAt(job.startAt.AddDate(0, 0, job.firstDays))
+			}
 		}
 	})
 
