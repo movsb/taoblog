@@ -143,6 +143,7 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 					firstWeeks: -week,
 				})
 			})
+			omitToday = true
 			continue
 		}
 
