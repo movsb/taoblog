@@ -8,10 +8,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type UserDate time.Time
+type UserDate struct {
+	time.Time
+}
 
 var layouts = [...]string{
 	`2006-01-02`,
+	`2006-01-02 15:04`,
 }
 
 // TODO 需要修改成服务器时间。
@@ -26,7 +29,7 @@ func NewUserDateFromString(s string) (UserDate, error) {
 			outErr = err
 			continue
 		}
-		return UserDate(t), nil
+		return UserDate{Time: t}, nil
 	}
 	return UserDate{}, outErr
 }
@@ -56,19 +59,26 @@ type Reminder struct {
 }
 
 type ReminderDates struct {
+	// 开始时间：日期和时间 或 日期
 	Start UserDate `yaml:"start"`
+	// 结束时间：日期和时间 或 日期，可选。
+	End UserDate `yaml:"end"`
 }
 
-func DateStart(s string) ReminderDates {
-	return ReminderDates{
-		Start: utils.Must1(NewUserDateFromString(s)),
-	}
-}
-
+// NOTE: 日、周、月、年均支持负数，分别表示“前多少日、周、月、年”。
 type ReminderRemind struct {
 	// 序数词，表示第几天。
 	// 当天可包含在内，也可不包含在内；由 Exclusive 决定。
 	Days []int `yaml:"days"`
+
+	// 第多少周
+	//
+	// 处理成当天所在星期。
+	//
+	// 比如今天是星期二，则依次为：下周二，下下周二。
+	//
+	// 适用于课程表。
+	Weeks []int `yaml:"weeks"`
 
 	// 第几个月。
 	//
@@ -88,26 +98,21 @@ type ReminderRemind struct {
 	// 即：仅用于日历展示。
 	Daily bool `yaml:"daily"`
 
-	// 前多少天提醒。用于添加一段行程。
-	//
-	// 注意：
-	//  - 此事件不创建提醒。
-	//
-	// 即：仅用于日历展示。
+	// TODO not used
 	First int `yaml:"first"`
 }
 
 func (r *Reminder) Days() int {
-	return daysPassed(time.Time(r.Dates.Start), r.Exclusive)
+	return daysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
 }
 
-func daysPassed(t time.Time, exclusive bool) int {
-	n := int(time.Since(t).Hours() / 24)
+func daysPassed(now, t time.Time, exclusive bool) int {
+	n := int(now.Sub(t).Hours() / 24)
 	return utils.IIF(exclusive, n, n+1)
 }
 
 func (r *Reminder) Start() string {
-	return time.Time(r.Dates.Start).Format(`2006-01-02`)
+	return r.Dates.Start.Format(`2006-01-02`)
 }
 
 func ParseReminder(y []byte) (*Reminder, error) {

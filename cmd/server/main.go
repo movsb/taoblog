@@ -278,7 +278,7 @@ func (s *Server) createBackupTasks(
 	ctx context.Context,
 	cfg *config.Config,
 ) {
-	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled {
+	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled && !version.DevMode() {
 		b := utils.Must1(backups.New(
 			ctx, s.main.GetPluginStorage(`backups.r2`), s.GRPCAddr(),
 			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
