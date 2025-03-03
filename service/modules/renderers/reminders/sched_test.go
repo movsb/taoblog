@@ -265,7 +265,8 @@ END:VEVENT
 		},
 	}
 
-	now := time.Date(2002, time.July, 3, 1, 2, 3, 0, time.Local)
+	fixed := time.FixedZone(`fixed`, 8*60*60)
+	now := time.Date(2002, time.July, 3, 1, 2, 3, 0, fixed)
 
 	for _, test := range tests {
 		sched := reminders.NewScheduler(reminders.WithNowFunc(func() time.Time { return now }))
