@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"gopkg.in/yaml.v2"
 )
 
 type UserDate time.Time
@@ -107,4 +108,12 @@ func daysPassed(t time.Time, exclusive bool) int {
 
 func (r *Reminder) Start() string {
 	return time.Time(r.Dates.Start).Format(`2006-01-02`)
+}
+
+func ParseReminder(y []byte) (*Reminder, error) {
+	rm := Reminder{}
+	if err := yaml.UnmarshalStrict(y, &rm); err != nil {
+		return nil, err
+	}
+	return &rm, nil
 }

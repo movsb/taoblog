@@ -15,7 +15,6 @@ import (
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
-	"gopkg.in/yaml.v2"
 )
 
 //go:generate sass --no-source-map style.scss style.css
@@ -120,16 +119,15 @@ func (r *Reminders) renderCodeBlock(writer util.BufWriter, source []byte, n ast.
 		line := n.Lines().At(i)
 		b.Write(line.Value(source))
 	}
-	y := b.Bytes()
 
-	rm := Reminder{}
-	if err := yaml.UnmarshalStrict(y, &rm); err != nil {
+	rm, err := ParseReminder(b.Bytes())
+	if err != nil {
 		return ast.WalkStop, err
 	}
 
 	// TODO 在 Transform 的时候实现，以实现不渲染获取到数据。
 	if r.out != nil {
-		*r.out = append(*r.out, &rm)
+		*r.out = append(*r.out, rm)
 	}
 
 	if err := tmpl.Execute(writer, &rm); err != nil {

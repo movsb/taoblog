@@ -1,109 +1,188 @@
 package reminders_test
 
 import (
-	"slices"
+	"bytes"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/jonboulle/clockwork"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 )
 
-func TestScheduler(t *testing.T) {
-	date := func(y, m, d int) time.Time {
-		return time.Date(y, time.Month(m), d, 0, 0, 0, 0, reminders.FixedZone)
-	}
+const calPrefix = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//TaoBlog//Golang ICS Library
+METHOD:PUBLISH
+LAST-MODIFIED:20020702T170203Z
+TIMEZONE-ID:Asia/Shanghai
+X-WR-CALNAME:Cal
+`
+const calSuffix = `
+END:VCALENDAR`
 
-	var tests = []struct {
-		Reminder reminders.Reminder
-		Dates    []time.Time
+func TestScheduler(t *testing.T) {
+	tests := []struct {
+		Reminder string
+		Calendar string
 	}{
 		{
-			Reminder: reminders.Reminder{
-				Title:     `测试第2天（包含当天）`,
-				Dates:     reminders.DateStart(`2014-12-24`),
-				Exclusive: false,
-				Remind: reminders.ReminderRemind{
-					Days: []int{2},
-				},
-			},
-			Dates: []time.Time{
-				date(2014, 12, 25),
-			},
+			Reminder: `
+title: 测试第2天（包含当天）
+dates:
+  start: 2014-12-24
+remind:
+  days: [2]
+`,
+			Calendar: `
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1419350400
+SUMMARY:测试第2天（包含当天）
+DTSTAMP:20141223T160000Z
+DTSTART;VALUE=DATE:20141224
+DTEND;VALUE=DATE:20141225
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1419436800
+SUMMARY:测试第2天（包含当天） 已经 2 天了
+DTSTAMP:20141224T160000Z
+DTSTART;VALUE=DATE:20141225
+DTEND;VALUE=DATE:20141226
+END:VEVENT
+`,
 		},
 		{
-			Reminder: reminders.Reminder{
-				Title:     `测试第2天（不包含当天）`,
-				Dates:     reminders.DateStart(`2014-12-24`),
-				Exclusive: true,
-				Remind: reminders.ReminderRemind{
-					Days: []int{2},
-				},
-			},
-			Dates: []time.Time{
-				date(2014, 12, 26),
-			},
+			Reminder: `
+title: 测试第2天（不包含当天）
+dates:
+  start: 2014-12-24
+exclusive: true
+remind:
+  days: [2]
+`,
+			Calendar: `
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1419350400
+SUMMARY:测试第2天（不包含当天）
+DTSTAMP:20141223T160000Z
+DTSTART;VALUE=DATE:20141224
+DTEND;VALUE=DATE:20141225
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1419523200
+SUMMARY:测试第2天（不包含当天） 已经 2 天了
+DTSTAMP:20141225T160000Z
+DTSTART;VALUE=DATE:20141226
+DTEND;VALUE=DATE:20141227
+END:VEVENT
+`,
 		},
 		{
-			Reminder: reminders.Reminder{
-				Title: `测试月份`,
-				Dates: reminders.DateStart(`2014-10-31`),
-				Remind: reminders.ReminderRemind{
-					Months: []int{1, 2, 4, 5},
-				},
-			},
-			Dates: []time.Time{
-				date(2014, 11, 30),
-				date(2014, 12, 31),
-				date(2015, 2, 28),
-				date(2015, 3, 31),
-			},
+			Reminder: `
+title: 测试月份
+dates:
+  start: 2014-10-31
+remind:
+  months: [1,2,4,5]
+`,
+			Calendar: `
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1414684800
+SUMMARY:测试月份
+DTSTAMP:20141030T160000Z
+DTSTART;VALUE=DATE:20141031
+DTEND;VALUE=DATE:20141101
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1417276800
+SUMMARY:测试月份 已经 1 个月了
+DTSTAMP:20141129T160000Z
+DTSTART;VALUE=DATE:20141130
+DTEND;VALUE=DATE:20141201
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1419955200
+SUMMARY:测试月份 已经 2 个月了
+DTSTAMP:20141230T160000Z
+DTSTART;VALUE=DATE:20141231
+DTEND;VALUE=DATE:20150101
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1425052800
+SUMMARY:测试月份 已经 4 个月了
+DTSTAMP:20150227T160000Z
+DTSTART;VALUE=DATE:20150228
+DTEND;VALUE=DATE:20150301
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1427731200
+SUMMARY:测试月份 已经 5 个月了
+DTSTAMP:20150330T160000Z
+DTSTART;VALUE=DATE:20150331
+DTEND;VALUE=DATE:20150401
+END:VEVENT
+`,
 		},
 		{
-			Reminder: reminders.Reminder{
-				Title: `测试年份`,
-				Dates: reminders.DateStart(`2016-02-29`),
-				Remind: reminders.ReminderRemind{
-					Years: []int{1, 4, 5},
-				},
-			},
-			Dates: []time.Time{
-				date(2017, 2, 28),
-				date(2020, 2, 29),
-				date(2021, 2, 28),
-			},
+			Reminder: `
+title: 测试年份
+dates:
+  start: 2016-02-29
+remind:
+  years: [1,4,5]
+`,
+			Calendar: `
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1456675200
+SUMMARY:测试年份
+DTSTAMP:20160228T160000Z
+DTSTART;VALUE=DATE:20160229
+DTEND;VALUE=DATE:20160301
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1488211200
+SUMMARY:测试年份 已经 1 年了
+DTSTAMP:20170227T160000Z
+DTSTART;VALUE=DATE:20170228
+DTEND;VALUE=DATE:20170301
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1582905600
+SUMMARY:测试年份 已经 4 年了
+DTSTAMP:20200228T160000Z
+DTSTART;VALUE=DATE:20200229
+DTEND;VALUE=DATE:20200301
+END:VEVENT
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1614441600
+SUMMARY:测试年份 已经 5 年了
+DTSTAMP:20210227T160000Z
+DTSTART;VALUE=DATE:20210228
+DTEND;VALUE=DATE:20210301
+END:VEVENT
+`,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.Reminder.Title, func(t *testing.T) {
-			t.Parallel()
-			d := time.Time(tt.Reminder.Dates.Start)
-			f := clockwork.NewFakeClockAt(d)
-			s := reminders.NewScheduler(reminders.WithFakeClock(f))
-			var ts []time.Time
-			utils.Must(s.AddReminder(1, &tt.Reminder, func(now time.Time, message string) {
-				ts = append(ts, now)
-			}))
-			f.Advance(time.Hour * 24 * 365 * 100)
-			time.Sleep(time.Second * 2)
-			slices.SortFunc(tt.Dates, func(a, b time.Time) int {
-				return int(a.UnixNano() - b.UnixNano())
-			})
-			slices.SortFunc(ts, func(a, b time.Time) int {
-				return int(a.UnixNano() - b.UnixNano())
-			})
-			if slices.CompareFunc(tt.Dates, ts, func(a, b time.Time) int {
-				y1, m1, d1 := a.Date()
-				y2, m2, d2 := b.Date()
-				if y1 == y2 && m1 == m2 && d1 == d2 {
-					return 0
-				}
-				return -1
-			}) != 0 {
-				t.Errorf("%s: 不相等：\n期望：%v\n实际：%v", tt.Reminder.Title, tt.Dates, ts)
-			}
-		})
+	now := time.Date(2002, time.July, 3, 1, 2, 3, 0, time.Local)
+
+	for _, test := range tests {
+		sched := reminders.NewScheduler()
+		r := utils.Must1(reminders.ParseReminder([]byte(test.Reminder)))
+		utils.Must(sched.AddReminder(1, r))
+		cal := reminders.NewCalendarService(`Cal`, sched)
+		buf := bytes.NewBuffer(nil)
+		utils.Must(cal.Marshal(now, buf))
+		got := strings.ReplaceAll(strings.TrimSpace(buf.String()), "\r\n", "\n")
+		want := strings.TrimSpace(test.Calendar)
+		fullWant := calPrefix + want + calSuffix
+		if got != fullWant {
+			t1, _ := os.CreateTemp("", "got-*")
+			t1.WriteString(got)
+			t2, _ := os.CreateTemp("", "want-*")
+			t2.WriteString(fullWant)
+			t.Fatalf("输出不相等：\n%s\ngot:  %s\nwant: %s", test.Reminder, t1.Name(), t2.Name())
+		}
 	}
 }

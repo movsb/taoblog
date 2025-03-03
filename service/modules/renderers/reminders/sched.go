@@ -9,19 +9,11 @@ import (
 	"time"
 
 	ics "github.com/arran4/golang-ical"
-	"github.com/go-co-op/gocron/v2"
-	"github.com/jonboulle/clockwork"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 )
 
 type Job struct {
-	// 底层计划任务。
-	//
-	// 如果任务在添加时已经过期，则不添加真实任务，
-	// 仅记录，方便在日历中复现。此时为空。
-	underlying gocron.Job
-
 	startAt time.Time
 
 	message     string
@@ -40,21 +32,12 @@ func (j Job) Message() string {
 }
 
 type Scheduler struct {
-	backend gocron.Scheduler
-	clock   clockwork.Clock
-
 	lock  sync.Mutex
 	jobs  map[int][]Job
 	daily map[int][]Job
 }
 
 type SchedulerOption func(s *Scheduler)
-
-func WithFakeClock(clock clockwork.Clock) SchedulerOption {
-	return func(s *Scheduler) {
-		s.clock = clock
-	}
-}
 
 func NewScheduler(options ...SchedulerOption) *Scheduler {
 	sched := &Scheduler{
@@ -66,24 +49,10 @@ func NewScheduler(options ...SchedulerOption) *Scheduler {
 		opt(sched)
 	}
 
-	if sched.clock == nil {
-		sched.clock = clockwork.NewRealClock()
-	}
-
-	backendOptions := []gocron.SchedulerOption{}
-	if sched.clock != nil {
-		backendOptions = append(backendOptions, gocron.WithClock(sched.clock))
-	}
-
-	sched.backend = utils.Must1(gocron.NewScheduler(backendOptions...))
-	sched.backend.Start()
-
 	return sched
 }
 
-func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Time, message string)) error {
-	now := s.clock.Now()
-
+func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 	if r.Remind.Daily {
 		s.lock.Lock()
 		s.daily[postID] = append(s.daily[postID], Job{
@@ -107,33 +76,13 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 	}
 
 	createJob := func(t time.Time, message string) error {
-		log.Println(`创建任务：`, message)
-
-		var job gocron.Job
-
-		if t.After(now) {
-			j, err := s.backend.NewJob(
-				gocron.OneTimeJob(gocron.OneTimeJobStartDateTime(t)),
-				gocron.NewTask(remind, t, message),
-				gocron.WithTags(
-					fmt.Sprintf(`post_id:%d`, postID),
-				),
-			)
-			if err != nil {
-				log.Println(r, err)
-				return err
-			}
-			job = j
-		} else {
-			log.Println(`任务已过期，不创建真实任务。`, message)
-		}
+		// log.Println(`创建任务：`, message)
 
 		s.lock.Lock()
 		defer s.lock.Unlock()
 		s.jobs[postID] = append(s.jobs[postID], Job{
-			underlying: job,
-			startAt:    t,
-			message:    message,
+			startAt: t,
+			message: message,
 		})
 
 		return nil
@@ -214,7 +163,6 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder, remind func(now time.Ti
 
 // 根据文章编号删除提醒。
 func (s *Scheduler) DeleteRemindersByPostID(id int) {
-	s.backend.RemoveByTags(fmt.Sprintf(`post_id:%d`, id))
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	delete(s.jobs, id)
@@ -260,15 +208,13 @@ func NewCalendarService(name string, sched *Scheduler) *CalenderService {
 }
 
 // TODO: 对于每天任务，需要强制刷新修改时间以使得每日更新。
-func (s *CalenderService) marshal(w io.Writer) error {
+func (s *CalenderService) Marshal(now time.Time, w io.Writer) error {
 	cal := ics.NewCalendarFor(version.Name)
 	cal.SetMethod(ics.MethodPublish)
-	cal.SetLastModified(time.Now())
+	cal.SetLastModified(now)
 	// TODO 写死了
 	cal.SetTimezoneId(`Asia/Shanghai`)
 	cal.SetXWRCalName(s.name)
-
-	now := s.sched.clock.Now()
 
 	s.sched.ForEachPost(func(id int, jobs []Job, daily []Job) {
 		for _, job := range jobs {
@@ -316,7 +262,7 @@ func (s *CalenderService) addHeaders(h http.HandlerFunc) http.Handler {
 }
 
 func (s *CalenderService) all(w http.ResponseWriter, r *http.Request) {
-	if err := s.marshal(w); err != nil {
+	if err := s.Marshal(time.Now(), w); err != nil {
 		log.Println(err)
 	}
 }

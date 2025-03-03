@@ -22,12 +22,10 @@ type Task struct {
 	sched *Scheduler
 
 	invalidatePost func(id int)
-	sendNotify     func(message string)
 }
 
 func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 	invalidatePost func(id int),
-	sendNotify func(message string),
 ) *Task {
 	t := &Task{
 		ctx:   ctx,
@@ -36,7 +34,6 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 		sched: NewScheduler(),
 
 		invalidatePost: invalidatePost,
-		sendNotify:     sendNotify,
 	}
 	go t.run(ctx)
 	go t.refreshPosts(ctx)
@@ -61,11 +58,6 @@ func (t *Task) run(ctx context.Context) {
 	}
 }
 
-func (t *Task) notify(now time.Time, message string) {
-	log.Println(`提醒：`, message)
-	t.sendNotify(message)
-}
-
 func (t *Task) runOnce(ctx context.Context) error {
 	now := time.Now()
 
@@ -83,7 +75,7 @@ func (t *Task) runOnce(ctx context.Context) error {
 		}
 		t.sched.DeleteRemindersByPostID(int(p.Id))
 		for _, r := range rs {
-			if err := t.sched.AddReminder(int(p.Id), r, t.notify); err != nil {
+			if err := t.sched.AddReminder(int(p.Id), r); err != nil {
 				return err
 			}
 		}
