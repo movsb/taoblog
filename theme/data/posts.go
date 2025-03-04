@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 )
@@ -51,11 +53,15 @@ func NewDataForPosts(ctx context.Context, cfg *config.Config, service proto.TaoB
 		sort[1] = "desc"
 	}
 
+	user := auth.Context(ctx).User
+	ownership := utils.IIF(user.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
+
 	posts, err := service.ListPosts(ctx,
 		&proto.ListPostsRequest{
-			OrderBy:  fmt.Sprintf(`%s %s`, sort[0], sort[1]),
-			Kinds:    []string{`post`},
-			WithLink: proto.LinkKind_LinkKindRooted,
+			OrderBy:   fmt.Sprintf(`%s %s`, sort[0], sort[1]),
+			Kinds:     []string{`post`},
+			WithLink:  proto.LinkKind_LinkKindRooted,
+			Ownership: ownership,
 		},
 	)
 	if err != nil {

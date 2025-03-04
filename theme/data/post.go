@@ -22,6 +22,22 @@ type PostData struct {
 	Comments []*proto.Comment
 }
 
+type Comment struct {
+	*proto.Comment
+}
+
+func (c *Comment) Text() string {
+	if c.Source != `` {
+		return c.Source
+	}
+	return c.Content
+}
+
+type LatestCommentsByPost struct {
+	Post     *Post
+	Comments []*Comment
+}
+
 func (d *PostData) CommentsAsJsonArray() template.JS {
 	if d.Comments == nil {
 		d.Comments = make([]*proto.Comment, 0)

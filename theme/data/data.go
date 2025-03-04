@@ -88,7 +88,7 @@ func (d *Data) SiteName() string {
 }
 
 func (d *Data) TweetName() string {
-	return fmt.Sprintf(`%s`, TweetName)
+	return TweetName
 }
 
 func (d *Data) BodyClass() string {

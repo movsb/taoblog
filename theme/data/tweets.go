@@ -2,8 +2,11 @@ package data
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -16,7 +19,7 @@ type TweetsData struct {
 
 const TweetName = `碎碎念`
 
-func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer) *Data {
+func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer, req *http.Request) *Data {
 	d := &Data{
 		Context: ctx,
 		Meta:    &MetaData{},
@@ -29,6 +32,9 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlog
 
 	d.Meta.Title = d.TweetName()
 
+	user := auth.Context(ctx).User
+	ownership := utils.IIF(user.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
+
 	posts, err := svc.ListPosts(ctx,
 		&proto.ListPostsRequest{
 			Limit:          1000,
@@ -36,6 +42,7 @@ func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlog
 			OrderBy:        `date desc`,
 			WithLink:       proto.LinkKind_LinkKindRooted,
 			ContentOptions: co.For(co.Tweets),
+			Ownership:      ownership,
 		},
 	)
 	if err != nil {
