@@ -28,7 +28,7 @@
 可以一句话就启动起来我的博客系统（需要 Docker 哦！）：
 
 ```bash
-$ docker run -it --rm --name=taoblog -p 2564:2564 -p 2563:2563 taocker/taoblog:amd64-latest
+$ docker run -it --rm --name=taoblog -p 2564:2564 taocker/taoblog:amd64-latest
 ```
 
 然后打开：<http://localhost:2564>。

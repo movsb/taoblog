@@ -576,6 +576,7 @@ func InitForPosts(createFirstPost bool) func(db *sql.DB) {
 					if createFirstPost {
 						tdb.MustTxCall(func(tx *taorm.DB) {
 							tx.Model(&models.Post{
+								UserID:     int32(auth.AdminID),
 								Date:       int32(now),
 								Modified:   int32(now),
 								Title:      `你好，世界`,
