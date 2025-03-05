@@ -52,5 +52,5 @@ main.go     | 入口程序
 
 <picture>
 <source media="(prefers-color-scheme: dark)" srcset="https://blog.twofei.com/v3/features/dark">
-<img src="https://blog.twofei.com/v3/features/light" alt="FEATURES.md" />
+<img src="https://blog.twofei.com/v3/features/light?1" alt="FEATURES.md" />
 </picture>
