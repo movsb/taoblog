@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
@@ -19,7 +18,7 @@ type TweetsData struct {
 
 const TweetName = `碎碎念`
 
-func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer, req *http.Request) *Data {
+func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer) *Data {
 	d := &Data{
 		Context: ctx,
 		Meta:    &MetaData{},

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"path"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -59,8 +59,8 @@ func Watch(dir string, input, output string) {
 		for event := range fsDir.Changed() {
 			switch event.Op {
 			case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
-				// 忽略对最终文件的通知。
-				if event.Name == filepath.Join(dir, output) {
+				// 只关心 .scss 文件
+				if path.Ext(event.Name) != `.scss` {
 					break
 				}
 				debouncer.Enter()

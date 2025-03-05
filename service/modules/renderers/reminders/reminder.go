@@ -115,7 +115,7 @@ func (r *Reminders) renderCodeBlock(writer util.BufWriter, source []byte, n ast.
 
 	n = n.(*_ReminderRendererBlock).ref
 	b := bytes.NewBuffer(nil)
-	for i := 0; i < n.Lines().Len(); i++ {
+	for i := range n.Lines().Len() {
 		line := n.Lines().At(i)
 		b.Write(line.Value(source))
 	}
