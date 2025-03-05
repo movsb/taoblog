@@ -1,29 +1,41 @@
-// 默认不要挨着
-button, input, textarea, select {
-	margin: 2px;
-}
+button, input, select, textarea {
+	transition: all 0.2s ease-out;
 
-// 颜色
-button, input, textarea, select {
+	// 默认不要挨着
+	margin: 2px;
+
+	// 颜色
 	&::-moz-focus-inner {
 		border: 0;
 	}
 	color: inherit;
 	background-color: transparent;
-}
 
-// 边框
-button, input, textarea, select {
+	// 边框
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
+	&:not(:disabled):hover {
+		border: 1px solid var(--accent-color);
+	}
+
+	// 字体
+	font-family: inherit;
+	font-size: inherit;
 }
 
 // 内边距 & 行高
 button, input {
 	line-height: 2;
 }
+// 所有类型的按钮
 button,input[type=button],input[type=submit],input[type=reset] {
 	padding: var(--button-padding);
+	&:not(:disabled):hover {
+		cursor: pointer;
+	}
+	&:disabled {
+		color: var(--border-color);
+	}
 }
 input {
 	padding: var(--input-padding);
@@ -31,12 +43,6 @@ input {
 textarea {
 	padding: var(--textarea-padding);
 	line-height: inherit;
-}
-
-// 字体
-input, button, textarea, select {
-	font-family: inherit;
-	font-size: inherit;
 }
 
 input, textarea {
@@ -51,17 +57,6 @@ input[type=password] {
 }
 input[type=datetime-local] {
 	box-sizing: border-box;
-}
-
-
-input, textarea, button, select {
-	&:hover {
-		border: 1px solid var(--accent-color);
-	}
-}
-
-input, textarea, button, select {
-	transition: all 0.2s ease-out;
 }
 
 input[type=checkbox], input[type=range], input[type=radio] {

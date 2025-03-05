@@ -219,7 +219,10 @@ class PostFormUI {
 		submit.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			callback();
+			submit.disabled = true;
+			callback(()=>{
+				submit.disabled = false;
+			});
 		});
 	}
 
@@ -341,7 +344,7 @@ let formUI = (() => {
 		alert('创建表单失败：' + e);
 	}
 })();
-formUI.submit(async () => {
+formUI.submit(async (done) => {
 	try {
 		let post = undefined;
 		if (TaoBlog.post_id > 0) {
@@ -370,10 +373,11 @@ formUI.submit(async () => {
 				metas: metas,
 			});
 		}
-		alert('成功。');
 		window.location = `/${post.id}/`;
 	} catch(e) {
 		alert(e);
+	} finally {
+		done();
 	}
 });
 if (TaoBlog.post_id > 0) {
@@ -407,10 +411,9 @@ formUI.filesChanged(async files => {
 			}
 			await fm.create(f);
 			alert(`文件 ${f.name} 上传成功。`);
-			let list = await fm.list();
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。
-			formUI.files = list;
+			formUI.files = await fm.list();
 		} catch(e) {
 			alert(`文件 ${f.name} 上传失败：${e}`);
 			return;
@@ -437,8 +440,7 @@ updatePreview(formUI.source);
 	let fm = new FilesManager(TaoBlog.post_id);
 	try {
 		await fm.connect();
-		let list = await fm.list();
-		formUI.files = list;
+		formUI.files = await fm.list();
 		fm.close();
 	} catch(e) {
 		alert(e);

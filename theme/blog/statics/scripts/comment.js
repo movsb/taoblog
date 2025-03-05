@@ -293,7 +293,10 @@ class CommentFormUI {
 				console.log('表单内容不合法。');
 				return;
 			}
-			callback();
+			submit.disabled = true;
+			callback(()=>{
+				submit.disabled = false;
+			});
 		});
 	}
 
@@ -427,7 +430,7 @@ class Comment {
 	init() {
 		let self = this;
 
-		this.form.submit(async () => {
+		this.form.submit(async (done) => {
 			try {
 				self.setStates({ submitting: true });
 				if (self.being_edited > 0) {
@@ -439,6 +442,7 @@ class Comment {
 				alert(e);
 			} finally {
 				self.setStates({ submitted: true });
+				done();
 			}
 		});
 

@@ -121,10 +121,10 @@
 
 ### 按钮
 
-* 提交：<input type=submit value="提交按钮" />
+* 提交：<input type=submit value="提交按钮" /><input type=submit value="禁用" disabled="" />
 * 重置：<input type=reset value="重置按钮" />
 * 按钮：<input type=button value="输入按钮" />
-* 按钮：<button>普通按钮</button>
+* 按钮：<button>普通按钮</button><button disabled="">禁用</button>
 
 ### 选择
 
