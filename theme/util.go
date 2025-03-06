@@ -59,6 +59,7 @@ func (d *_IncViewDebouncer) run(ctx context.Context) {
 			if len(d.m) > 0 {
 				log.Println(`保存文章访问次数`)
 				d.save(d.m)
+				clear(d.m)
 			}
 		}
 	}
