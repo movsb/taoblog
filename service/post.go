@@ -397,7 +397,8 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			// NOTE：在同一个 HTML 页面中显示多篇文章的时候需要区别此。
 			// extension.WithFootnoteIDPrefix(fmt.Sprintf(`article-%d-`, postId)),
 		),
-		reminders.New(),
+
+		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

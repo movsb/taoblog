@@ -326,3 +326,9 @@ func (t *_HashTags) Transform(node *ast.Document, reader text.Reader, pc parser.
 	}
 	*t.out = list
 }
+
+func WithFencedCodeBlockRenderer(language string, r gold_utils.FencedCodeBlockRenderer) OptionNoError {
+	return func(me *_Markdown) {
+		me.fencedCodeBlockRenderer[language] = r
+	}
+}

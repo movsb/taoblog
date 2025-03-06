@@ -44,6 +44,8 @@ type _Markdown struct {
 	noTransform   bool
 	xhtml         bool
 	imageRenderer bool
+
+	fencedCodeBlockRenderer map[string]gold_utils.FencedCodeBlockRenderer
 }
 
 // TODO 不要返回 error。
@@ -144,9 +146,16 @@ func WithAssetSources(fn AssetFinder) Option {
 }
 
 func NewMarkdown(options ...any) *_Markdown {
-	me := &_Markdown{}
+	me := &_Markdown{
+		fencedCodeBlockRenderer: map[string]gold_utils.FencedCodeBlockRenderer{},
+	}
 
 	me.AddOptions(options...)
+
+	// 总是添加辅助功能扩展。
+	me.AddOptions(&gold_utils.FencedCodeBlockExtender{
+		Renders: &me.fencedCodeBlockRenderer,
+	})
 
 	return me
 }

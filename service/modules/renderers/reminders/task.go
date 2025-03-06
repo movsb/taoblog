@@ -122,7 +122,7 @@ func (t *Task) parsePost(p *proto.Post) ([]*Reminder, error) {
 
 	var out []*Reminder
 	md := renderers.NewMarkdown(
-		New(WithOutputReminders(&out)),
+		renderers.WithFencedCodeBlockRenderer(`reminder`, New(WithOutputReminders(&out))),
 	)
 	_, err := md.Render(p.Source)
 	if err != nil {
