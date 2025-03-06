@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -33,12 +32,11 @@ func (p *SearchPost) Content() template.HTML {
 }
 
 // NewDataForSearch ...
-func NewDataForSearch(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, searcher proto.SearchServer, r *http.Request) *Data {
+func NewDataForSearch(ctx context.Context, service proto.TaoBlogServer, searcher proto.SearchServer, r *http.Request) *Data {
 	q := r.URL.Query().Get(`q`)
 	d := &Data{
 		Context: ctx,
-		Config:  cfg,
-		Meta: &MetaData{
+		Meta: MetaData{
 			Title: fmt.Sprintf("%s - 搜索结果", q),
 		},
 	}

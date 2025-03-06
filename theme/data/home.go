@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -21,11 +20,9 @@ type HomeData struct {
 	CommentCount int64
 }
 
-func NewDataForHome(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
+func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	d := &Data{
 		Context: ctx,
-		Config:  cfg,
-		Meta:    &MetaData{},
 		svc:     service,
 	}
 	home := &HomeData{

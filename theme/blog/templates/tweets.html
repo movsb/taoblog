@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-<title>{{ $.Title }}</title>
+<title>{{ sitePageTitle .Title }}</title>
 <link rel="stylesheet" type="text/css" href="/style.css" />
 <link rel="stylesheet" type="text/css" href="/v3/dynamic/style" />
 {{ apply_site_theme_customs }}
@@ -15,9 +15,9 @@
 	<!-- 用来移除头部的 margin -->
 	<div style="height: 1px; margin-bottom: -1px;"></div>
 <div id="content">
-<h1>{{ $.Meta.Title }}</h1>
+<h1>{{ $.Title }}</h1>
 <p>
-	<span class="go-home"><a href="/">{{ $.Config.Site.Name }}</a></span>
+	<span class="go-home"><a href="/">{{ siteName }}</a></span>
 	<span class="comments"><a href="/admin/editor">新建</a></span>
 </p>
 <div class="tweets">

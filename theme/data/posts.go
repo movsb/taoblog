@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -24,11 +23,9 @@ type PostsData struct {
 }
 
 // NewDataForPosts ...
-func NewDataForPosts(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
+func NewDataForPosts(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
 		Context: ctx,
-		Config:  cfg,
-		Meta:    &MetaData{},
 	}
 
 	postsData := &PostsData{

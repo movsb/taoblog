@@ -13,7 +13,7 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 	<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
 	<div class="entry">
 	<div class="meta1">
-		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ $.Config.Site.Name }}</a>
+		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ siteName }}</a>
 		<span class="author">{{ authorName $.Post.Post }}</span>
 		{{ if ne .Type `page` }}
 		<time class="date" title="发表时间：{{.DateString}}

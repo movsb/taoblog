@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-<title>{{ $.Title }}</title>
+<title>{{ sitePageTitle .Title }}</title>
 <link rel="stylesheet" type="text/css" href="/style.css" />
 <link rel="stylesheet" type="text/css" href="/v3/dynamic/style" />
 {{ apply_site_theme_customs }}
@@ -20,7 +20,7 @@
 	{{ if not .Post }}
     <header id="header">
         <div class="content">
-			<h1 class="sitename"><a href="/">{{ $.SiteName }}</a></h1>
+			<h1 class="sitename"><a href="/">{{ siteName }}</a></h1>
 <form name="search_box" class="search" action="/search">
 <input name="q" placeholder="Search"/>
 <script>

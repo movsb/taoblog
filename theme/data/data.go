@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -18,9 +17,7 @@ type Data struct {
 	Context context.Context
 	svc     proto.TaoBlogServer
 
-	// all configuration.
-	// It's not safe to export all configs outside.
-	Config *config.Config
+	User *auth.User
 
 	// The response writer.
 	Writer io.Writer
@@ -29,7 +26,7 @@ type Data struct {
 	Template *template.Template
 
 	// Metadata
-	Meta *MetaData
+	Meta MetaData
 
 	// If it is home page.
 	Home *HomeData
@@ -77,14 +74,7 @@ func (d *Data) Partial() (any, error) {
 }
 
 func (d *Data) Title() string {
-	if d.Meta != nil && d.Meta.Title != "" {
-		return fmt.Sprintf(`%s - %s`, d.Meta.Title, d.Config.Site.Name)
-	}
-	return d.Config.Site.Name
-}
-
-func (d *Data) SiteName() string {
-	return d.Config.Site.Name
+	return d.Meta.Title
 }
 
 func (d *Data) TweetName() string {

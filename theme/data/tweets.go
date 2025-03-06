@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -18,11 +17,9 @@ type TweetsData struct {
 
 const TweetName = `碎碎念`
 
-func NewDataForTweets(ctx context.Context, cfg *config.Config, svc proto.TaoBlogServer) *Data {
+func NewDataForTweets(ctx context.Context, svc proto.TaoBlogServer) *Data {
 	d := &Data{
 		Context: ctx,
-		Meta:    &MetaData{},
-		Config:  cfg,
 		svc:     svc,
 		Tweets: &TweetsData{
 			Name: TweetName,

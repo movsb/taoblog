@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -29,7 +28,6 @@ import (
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/movsb/taorm"
-	"github.com/xeonx/timeago"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -154,59 +152,7 @@ func createMenus(items []config.MenuItem, outer bool) string {
 }
 
 func (t *Theme) loadTemplates() {
-	menustr := createMenus(t.cfg.Menus, false)
-
-	customTheme := t.cfg.Theme.Stylesheets.Render()
-	fixedZone := time.FixedZone(`+8`, 8*60*60)
-
-	funcs := template.FuncMap{
-		// https://githut.com/golang/go/issues/14256
-		"raw": func(s string) template.HTML {
-			return template.HTML(s)
-		},
-		"menus": func() template.HTML {
-			return template.HTML(menustr)
-		},
-		"render": func(name string, data *data.Data) error {
-			if t := data.Template.Lookup(name); t != nil {
-				return t.Execute(data.Writer, data)
-			}
-			if t := t.templates.GetPartial(name); t != nil {
-				return t.Execute(data.Writer, data)
-			}
-			// TODO 找不到应该报错。
-			return nil
-		},
-		"partial": func(name string, data *data.Data, data2 any) error {
-			if t := t.templates.GetPartial(name); t != nil {
-				return data.ExecutePartial(t, data2)
-			}
-			// TODO 找不到应该报错。
-			return nil
-		},
-		"apply_site_theme_customs": func() template.HTML {
-			return template.HTML(customTheme)
-		},
-		// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
-		"friendlyDateTime": func(s int32) template.HTML {
-			t := time.Unix(int64(s), 0).In(fixedZone)
-			r := t.Format(time.RFC3339)
-			f := timeago.Chinese.Format(t)
-			return template.HTML(fmt.Sprintf(
-				`<time class="date" datetime="%s" title="%s" data-unix="%d">%s</time>`,
-				r, r, s, f,
-			))
-		},
-		"authorName": func(p *data.Post) string {
-			u, err := t.auth.GetUserByID(int64(p.UserId))
-			if err != nil {
-				panic(err)
-			}
-			return u.Nickname
-		},
-	}
-
-	t.templates = utils.NewTemplateLoader(t.tmplFS, funcs, func() {
+	t.templates = utils.NewTemplateLoader(t.tmplFS, t.funcs(), func() {
 		t.themeChangedAt = time.Now()
 	})
 }
@@ -266,13 +212,13 @@ func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, que
 }
 
 func (t *Theme) QueryHome(w http.ResponseWriter, req *http.Request) error {
-	d := data.NewDataForHome(req.Context(), t.cfg, t.service, t.impl)
+	d := data.NewDataForHome(req.Context(), t.service, t.impl)
 	t.executeTemplate(`home.html`, w, d)
 	return nil
 }
 
 func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForSearch(r.Context(), t.cfg, t.service, t.searcher, r)
+	d := data.NewDataForSearch(r.Context(), t.service, t.searcher, r)
 	t.executeTemplate(`search.html`, w, d)
 }
 
@@ -301,12 +247,12 @@ func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 }
 
 func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForPosts(r.Context(), t.cfg, t.service, t.impl, r)
+	d := data.NewDataForPosts(r.Context(), t.service, t.impl, r)
 	t.executeTemplate(`posts.html`, w, d)
 }
 
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTweets(r.Context(), t.impl.Config(), t.service)
+	d := data.NewDataForTweets(r.Context(), t.service)
 	t.executeTemplate(`tweets.html`, w, d)
 }
 
@@ -380,7 +326,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 
 // TODO 304 不要放这里处理。
 func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto.Post) {
-	d := data.NewDataForPost(req.Context(), t.cfg, t.service, p)
+	d := data.NewDataForPost(req.Context(), t.service, p)
 
 	var name string
 	if p.Type == `tweet` {
@@ -392,7 +338,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTag(req.Context(), t.cfg, t.service, tags)
+	d := data.NewDataForTag(req.Context(), t.service, tags)
 	t.executeTemplate(`tag.html`, w, d)
 }
 

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -65,11 +64,10 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 }
 
 // NewDataForPost ...
-func NewDataForPost(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, post *proto.Post) *Data {
+func NewDataForPost(ctx context.Context, service proto.TaoBlogServer, post *proto.Post) *Data {
 	d := &Data{
 		Context: ctx,
-		Config:  cfg,
-		Meta: &MetaData{
+		Meta: MetaData{
 			Title: post.Title,
 		},
 	}

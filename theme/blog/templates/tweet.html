@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-<title>{{ $.Title }}</title>
+<title>{{ sitePageTitle .Title }}</title>
 <link rel="stylesheet" type="text/css" href="/style.css" />
 <link rel="stylesheet" type="text/css" href="/v3/dynamic/style" />
 {{ apply_site_theme_customs }}
@@ -14,7 +14,6 @@
 <body class="{{ $.BodyClass }}">
 <div id="wrapper">
 <div id="content">
-<!-- <h1>{{ $.Meta.Title }}</h1> -->
 <script>
 TaoBlog.post_id = +"{{.Post.Post.Id}}";
 TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};

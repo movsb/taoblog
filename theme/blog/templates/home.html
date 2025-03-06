@@ -50,7 +50,7 @@
 <div class="status">
 	<h2>服务状态</h2>
 	<ul id="status-list">
-		<li>服务器开始运行于{{ .Config.Site.Since }}，已运行 {{ .Config.Site.Since.Days }} 天。</li>
+		<li>服务器开始运行于{{ siteSince }}，已运行 {{ siteDays }} 天。</li>
 		{{ with .Home }}
 		<li>博客归档：文章数：{{.PostCount}}，页面数：{{.PageCount}}，评论数：{{.CommentCount}}。</li>
 		{{ end }}

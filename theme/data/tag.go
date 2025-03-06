@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -14,11 +13,9 @@ type TagData struct {
 }
 
 // NewDataForTag ...
-func NewDataForTag(ctx context.Context, cfg *config.Config, service proto.TaoBlogServer, tags []string) *Data {
+func NewDataForTag(ctx context.Context, service proto.TaoBlogServer, tags []string) *Data {
 	d := &Data{
 		Context: ctx,
-		Config:  cfg,
-		Meta:    &MetaData{},
 	}
 	td := &TagData{
 		Names: tags,
