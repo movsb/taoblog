@@ -98,7 +98,7 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 		specialMux: http.NewServeMux(),
 	}
 
-	t.incViewDebouncer = NewIncViewDebouncer(ctx, t.incViews)
+	t.incViewDebouncer = NewIncViewDebouncer(ctx, impl.IncrementViewCount)
 
 	m := t.specialMux
 
@@ -290,10 +290,6 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
 		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
 	).ServeHTTP(w, r)
-}
-
-func (t *Theme) incViews(m map[int]int) {
-	t.impl.IncrementViewCount(m)
 }
 
 func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string) (int64, error) {
