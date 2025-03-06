@@ -1,20 +1,20 @@
 {{define "custom_header"}}
-<base href="/{{.Post.Post.ID}}/" />
+<base href="/{{.Data.Post.ID}}/" />
 <script>
-TaoBlog.posts["{{.Post.Post.Id}}"] = {{$.Strip .Post.Post}};
-TaoBlog.post_id = +"{{.Post.Post.Id}}";
+TaoBlog.posts["{{.Data.Post.Id}}"] = {{$.Strip .Data.Post}};
+TaoBlog.post_id = +"{{.Data.Post.Id}}";
 </script>
 {{end -}}
 
 {{- $dot:=. -}}
 {{- render "header" . -}}
-<article class="post post-{{.Post.Post.ID}}" id="{{.Post.Post.Id}}">
-	{{ with .Post.Post }}
+<article class="post post-{{.Data.Post.ID}}" id="{{.Data.Post.Id}}">
+	{{ with .Data.Post }}
 	<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
 	<div class="entry">
 	<div class="meta1">
 		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ siteName }}</a>
-		<span class="author">{{ authorName $.Post.Post }}</span>
+		<span class="author">{{ authorName $.Data.Post }}</span>
 		{{ if ne .Type `page` }}
 		<time class="date" title="发表时间：{{.DateString}}
 修改时间：{{.ModifiedString}}" datetime="{{.DateString}}">{{ .ShortDateString }}</time>
@@ -50,7 +50,7 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
 
 	{{ end }}
 
-	{{ with $dot.Post.Post.Relates }}
+	{{ with $dot.Data.Post.Relates }}
     <div class="related">
 		<div class="name">相关文章</div>
         <ul>
@@ -61,7 +61,7 @@ TaoBlog.post_id = +"{{.Post.Post.Id}}";
     </div><!-- end related -->
 	{{ end }}
     <!-- comments begin -->
-	<script>TaoBlog.comments = {{ $.Post.CommentsAsJsonArray }};</script>
+	<script>TaoBlog.comments = {{ $.Data.CommentsAsJsonArray }};</script>
 	<script src="/scripts/comment.js"></script>
     <!-- comments end -->
 </article>

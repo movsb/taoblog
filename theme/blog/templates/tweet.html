@@ -15,33 +15,33 @@
 <div id="wrapper">
 <div id="content">
 <script>
-TaoBlog.post_id = +"{{.Post.Post.Id}}";
-TaoBlog.posts["{{.Post.Post.Id}}"] = {{ $.Strip .Post.Post }};
+TaoBlog.post_id = +"{{.Data.Post.Id}}";
+TaoBlog.posts["{{.Data.Post.Id}}"] = {{ $.Strip .Data.Post }};
 </script>
 <div class="tweet">
-	<article class="post post-{{.Post.Post.Id}} {{.Post.Post.OriginClass}}" id="{{.Post.Post.Id}}">
+	<article class="post post-{{.Data.Post.Id}} {{.Data.Post.OriginClass}}" id="{{.Data.Post.Id}}">
 	<div class="entry">
 		<div class="content">
-		{{ .Post.Post.Content }}
+		{{ .Data.Post.Content }}
 		</div>
 		<div class="meta2">
-			{{ if ne .Post.Post.Status "public" }}
+			{{ if ne .Data.Post.Status "public" }}
 				<span class="status">🔒 私密</span>
 			{{ end }}
-			<a class="sitename" href="/tweets#{{.Post.Post.Id}}">{{ $.TweetName }}</a>
-			<span class="author">{{ authorName .Post.Post }}</span>
-			{{ friendlyDateTime .Post.Post.Date }}
-			{{- with .Post.Post.GeoElement }}
+			<a class="sitename" href="/tweets#{{.Data.Post.Id}}">{{ $.TweetName }}</a>
+			<span class="author">{{ authorName .Data.Post }}</span>
+			{{ friendlyDateTime .Data.Post.Date }}
+			{{- with .Data.Post.GeoElement }}
 				{{ . }}
 			{{- end }}
-			{{- with .Post.Post.Origin }}
+			{{- with .Data.Post.Origin }}
 			<a class="origin" title="{{.Description}}" href="{{.URL}}" target="_blank">来源</a>
 			{{- end }}
-			<span class="edit"><a href="/admin/editor?id={{.Post.Post.Id}}">编辑</a></span>
+			<span class="edit"><a href="/admin/editor?id={{.Data.Post.Id}}">编辑</a></span>
 		</div>
 	</div>
 	<!-- comments begin -->
-	<script>TaoBlog.comments = {{ $.Post.CommentsAsJsonArray }};</script>
+	<script>TaoBlog.comments = {{ $.Data.CommentsAsJsonArray }};</script>
 	<script src="/scripts/comment.js"></script>
 	<!-- comments end -->
 	</article>

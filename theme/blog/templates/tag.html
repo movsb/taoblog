@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>标签 “{{ .Tag.Names }}” 下的归档</title>
+<title>标签 “{{ .Data.Names }}” 下的归档</title>
 </head>
 <body>
-{{ if .Tag.Posts }}
+{{ if .Data.Posts }}
 <ul>
-{{ range .Tag.Posts -}}
+{{ range .Data.Posts -}}
 	<li><a target="_blank" href="{{ .Link }}">{{ .Title }}</a></li>
 {{ end -}}
 </ul>

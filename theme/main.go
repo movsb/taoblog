@@ -162,8 +162,7 @@ func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
 	if t2 == nil {
 		panic(`未找到模板：` + name)
 	}
-	d.Template = t2
-	d.Writer = w
+	d.SetWriterAndTemplate(w, t2)
 	if err := t2.Execute(w, d); err != nil {
 		log.Println("\033[31m", err, "\033[m")
 	}
@@ -177,7 +176,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusForbidden)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Context: req.Context(),
-					Error: &data.ErrorData{
+					Data: &data.ErrorData{
 						Message: "你无权查看此内容：" + st.Message(),
 					},
 				})
@@ -186,7 +185,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusNotFound)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Context: req.Context(),
-					Error: &data.ErrorData{
+					Data: &data.ErrorData{
 						Message: `你查看的内容不存在。`,
 					},
 				})
@@ -197,7 +196,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 			w.WriteHeader(http.StatusNotFound)
 			t.executeTemplate(`error.html`, w, &data.Data{
 				Context: req.Context(),
-				Error: &data.ErrorData{
+				Data: &data.ErrorData{
 					Message: `你查看的内容不存在。`,
 				},
 			})

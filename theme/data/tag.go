@@ -33,6 +33,6 @@ func NewDataForTag(ctx context.Context, service proto.TaoBlogServer, tags []stri
 		pp := newPost(p)
 		td.Posts = append(td.Posts, pp)
 	}
-	d.Tag = td
+	d.Data = td
 	return d
 }

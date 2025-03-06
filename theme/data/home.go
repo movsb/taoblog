@@ -107,6 +107,6 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		})
 	}
 
-	d.Home = home
+	d.Data = home
 	return d
 }

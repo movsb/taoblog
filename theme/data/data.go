@@ -14,41 +14,52 @@ import (
 
 // Data holds all data for rendering the site.
 type Data struct {
+	svc      proto.TaoBlogServer
+	writer   io.Writer
+	template *template.Template
+
 	Context context.Context
-	svc     proto.TaoBlogServer
-
-	User *auth.User
-
-	// The response writer.
-	Writer io.Writer
-
-	// The template
-	Template *template.Template
+	User    *auth.User
 
 	// Metadata
 	Meta MetaData
 
-	// If it is home page.
-	Home *HomeData
-
-	// If it is a post (or page).
-	Post *PostData
-
-	// If it is the Search.
-	Search *SearchData
-
-	// If it is the Posts.
-	Posts *PostsData
-
-	// If it is the tag.
-	Tag *TagData
-
-	// 碎碎念、叽叽喳喳🦜
-	Tweets *TweetsData
-
-	Error *ErrorData
+	// 可能是以下之下：
+	//
+	//  - *HomeData
+	//  - *PostData
+	//  - *SearchData
+	//  - *PostsData
+	//  - *TagData
+	//  - *TweetsData
+	//  - *ErrorData
+	Data any
 
 	Partials []any
+}
+
+func (d *Data) Execute(name string, alt *template.Template) error {
+	tt := d.template.Lookup(name)
+	if tt == nil {
+		tt = alt
+	}
+	if tt != nil {
+		return tt.Execute(d.writer, d)
+	}
+	return nil
+}
+
+func (d *Data) SetWriterAndTemplate(w io.Writer, t *template.Template) {
+	d.writer = w
+	d.template = t
+}
+
+func (d *Data) ShowHeader() bool {
+	switch d.Data.(type) {
+	case *PostData:
+		return false
+	}
+	return true
 }
 
 func (d *Data) Info() (*proto.GetInfoResponse, error) {
@@ -63,7 +74,7 @@ func (d *Data) ExecutePartial(t *template.Template, partial any) error {
 	defer func() {
 		d.Partials = d.Partials[:len(d.Partials)-1]
 	}()
-	return t.Execute(d.Writer, d)
+	return t.Execute(d.writer, d)
 }
 
 func (d *Data) Partial() (any, error) {
@@ -83,15 +94,15 @@ func (d *Data) TweetName() string {
 
 func (d *Data) BodyClass() string {
 	c := []string{}
-	if d.Post != nil {
-		if d.Post.Post.Wide() {
+	switch typed := d.Data.(type) {
+	case *PostData:
+		if typed.Post.Wide() {
 			c = append(c, `wide`)
 		}
-		if d.Post.Post.Type == `tweet` {
+		if typed.Post.Type == `tweet` {
 			c = append(c, `tweet`)
 		}
-	}
-	if d.Tweets != nil {
+	case *TweetsData:
 		c = append(c, `tweets`)
 	}
 	return strings.Join(c, ` `)

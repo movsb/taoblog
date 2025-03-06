@@ -53,7 +53,7 @@ func NewDataForSearch(ctx context.Context, service proto.TaoBlogServer, searcher
 		})
 	}
 
-	d.Search = &SearchData{
+	d.Data = &SearchData{
 		Initialized: rsp.Initialized,
 		Posts:       posts2,
 	}

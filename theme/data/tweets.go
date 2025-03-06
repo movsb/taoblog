@@ -21,9 +21,6 @@ func NewDataForTweets(ctx context.Context, svc proto.TaoBlogServer) *Data {
 	d := &Data{
 		Context: ctx,
 		svc:     svc,
-		Tweets: &TweetsData{
-			Name: TweetName,
-		},
 	}
 
 	d.Meta.Title = d.TweetName()
@@ -44,11 +41,15 @@ func NewDataForTweets(ctx context.Context, svc proto.TaoBlogServer) *Data {
 	if err != nil {
 		panic(err)
 	}
+	tweets := &TweetsData{
+		Name: TweetName,
+	}
 	for _, p := range posts.Posts {
 		pp := newPost(p)
-		d.Tweets.Tweets = append(d.Tweets.Tweets, pp)
+		tweets.Tweets = append(tweets.Tweets, pp)
 	}
-	d.Tweets.Count = len(d.Tweets.Tweets)
+	tweets.Count = len(tweets.Tweets)
+	d.Data = tweets
 
 	return d
 }

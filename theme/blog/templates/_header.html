@@ -17,7 +17,7 @@
 	<!-- 用来移除头部的 margin -->
 	<div style="height: 1px; margin-bottom: -1px;"></div>
     <!-- 头部开始 -->
-	{{ if not .Post }}
+	{{ if $.ShowHeader }}
     <header id="header">
         <div class="content">
 			<h1 class="sitename"><a href="/">{{ siteName }}</a></h1>

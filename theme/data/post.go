@@ -74,7 +74,7 @@ func NewDataForPost(ctx context.Context, service proto.TaoBlogServer, post *prot
 	p := &PostData{
 		Post: newPost(post),
 	}
-	d.Post = p
+	d.Data = p
 	p.Comments = p.Post.CommentList
 	return d
 }

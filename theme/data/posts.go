@@ -73,6 +73,6 @@ func NewDataForPosts(ctx context.Context, service proto.TaoBlogServer, impl serv
 		pp := newPost(p)
 		postsData.Posts = append(postsData.Posts, pp)
 	}
-	d.Posts = postsData
+	d.Data = postsData
 	return d
 }

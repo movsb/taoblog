@@ -22,15 +22,8 @@ func (t *Theme) funcs() map[string]any {
 		"menus": func() template.HTML {
 			return template.HTML(menustr)
 		},
-		"render": func(name string, data *data.Data) error {
-			if t := data.Template.Lookup(name); t != nil {
-				return t.Execute(data.Writer, data)
-			}
-			if t := t.templates.GetPartial(name); t != nil {
-				return t.Execute(data.Writer, data)
-			}
-			// TODO 找不到应该报错。
-			return nil
+		"render": func(name string, d *data.Data) error {
+			return d.Execute(name, t.templates.GetPartial(name))
 		},
 		"partial": func(name string, data *data.Data, data2 any) error {
 			if t := t.templates.GetPartial(name); t != nil {

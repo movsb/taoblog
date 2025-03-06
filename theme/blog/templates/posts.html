@@ -1,7 +1,7 @@
 {{ render "header" . }}
 <h1 style="text-align:center">全部文章列表</h1>
 <div class="summary">
-{{ with .Posts }}
+{{ with .Data }}
 文章：{{.PostCount}}<span class=sep></span>页面：{{.PageCount}}<span class=sep></span>评论：{{.CommentCount}}<span class=sep></span>浏览：{{.ViewCount}}
 {{ end }}
 </div>
@@ -16,7 +16,7 @@
 </tr>
 </thead>
 <tbody>
-    {{range .Posts.Posts}}
+    {{range .Data.Posts}}
     <tr>
     <td>{{.ID}}</td>
     <td><a href="{{.Link}}" target="_blank" title="{{.Title}}">{{.StatusString}}{{.Title}}</a></td>
