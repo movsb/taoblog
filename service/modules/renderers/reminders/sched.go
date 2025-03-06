@@ -202,9 +202,13 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 	}
 
 	if !omitToday {
-		if err := createJob(r.Dates.Start.Time, r.Title); err != nil {
-			return err
-		}
+		s.lock.Lock()
+		s.jobs[postID] = append(s.jobs[postID], Job{
+			startAt: UserDate{Time: r.Dates.Start.Time},
+			endAt:   UserDate{Time: r.Dates.End.Time},
+			message: r.Title,
+		})
+		s.lock.Unlock()
 	}
 
 	log.Println(`提醒：处理完成：`, r.Title)
@@ -277,10 +281,13 @@ func (s *CalenderService) Marshal(now time.Time, w io.Writer) error {
 			e.SetSummary(job.Message())
 			e.SetDtStampTime(job.startAt.Time)
 
-			// 默认为全天事件
-			e.SetAllDayStartAt(job.startAt.Time)
-			// 不包含结束日。
-			e.SetAllDayEndAt(job.startAt.AddDate(0, 0, 1))
+			if job.isAllDay() {
+				e.SetAllDayStartAt(job.startAt.Time)
+				e.SetAllDayEndAt(job.startAt.AddDate(0, 0, 1))
+			} else {
+				e.SetStartAt(job.startAt.Time)
+				e.SetEndAt(job.endAt.Time)
+			}
 		}
 
 		for _, job := range firsts {

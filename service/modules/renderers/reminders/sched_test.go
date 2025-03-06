@@ -275,6 +275,23 @@ DTEND:20250303T091000Z
 END:VEVENT
 `,
 		},
+		{
+			Reminder: `
+title: 武胜 → 重庆（D156）
+dates:
+  start: 2025-03-07 19:20
+  end: 2025-03-07 20:19
+
+`,
+			Calendar: `
+BEGIN:VEVENT
+UID:post_id:1\,job_id:1741346400\,title:275bd0cc
+SUMMARY:武胜 → 重庆（D156）
+DTSTAMP:20250307T112000Z
+DTSTART:20250307T112000Z
+DTEND:20250307T121900Z
+END:VEVENT`,
+		},
 	}
 
 	fixed := time.FixedZone(`fixed`, 8*60*60)
