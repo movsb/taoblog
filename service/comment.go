@@ -18,7 +18,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
-	"github.com/movsb/taoblog/service/modules/renderers"
+	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
@@ -57,7 +57,7 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 	})
 }
 
-func (s *Service) markdownWithPlantUMLRenderer() renderers.Option2 {
+func (s *Service) markdownWithPlantUMLRenderer() gold_utils.FencedCodeBlockRenderer {
 	return plantuml.New(
 		`https://www.plantuml.com/plantuml`, `svg`,
 		plantuml.WithCache(func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error) {

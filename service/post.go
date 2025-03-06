@@ -378,7 +378,6 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			}
 			return
 		}),
-		s.markdownWithPlantUMLRenderer(),
 		imaging.WithGallery(),
 		task_list.New(),
 		renderers.WithHashTags(s.hashtagResolver, nil),
@@ -399,6 +398,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		),
 
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
+		renderers.WithFencedCodeBlockRenderer(`plantuml`, s.markdownWithPlantUMLRenderer()),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

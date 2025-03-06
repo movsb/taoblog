@@ -11,19 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer"
-	"github.com/yuin/goldmark/text"
-	"github.com/yuin/goldmark/util"
 )
-
-var _ interface {
-	parser.ASTTransformer
-	goldmark.Extender
-	renderer.NodeRenderer
-} = (*_PlantUMLRenderer)(nil)
 
 type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀
@@ -50,70 +39,12 @@ func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	return p
 }
 
-func (p *_PlantUMLRenderer) Extend(m goldmark.Markdown) {
-	m.Parser().AddOptions(parser.WithASTTransformers(util.Prioritized(p, 100)))
-	m.Renderer().AddOptions(renderer.WithNodeRenderers(util.Prioritized(p, 100)))
-}
-
-type _PlantUMLRendererBlock struct {
-	ast.BaseBlock
-	ref *ast.FencedCodeBlock
-}
-
-var _plantUMLCodeBLockKind = ast.NewNodeKind(`plantuml_code_block`)
-
-func (b *_PlantUMLRendererBlock) Kind() ast.NodeKind {
-	return _plantUMLCodeBLockKind
-}
-func (b *_PlantUMLRendererBlock) Dump(source []byte, level int) {
-	b.ref.Dump(source, level)
-}
-
-func (p *_PlantUMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
-	reg.Register(_plantUMLCodeBLockKind, p.renderCodeBlock)
-}
-
-// Transform implements parser.ASTTransformer.
-func (p *_PlantUMLRenderer) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
-	puCodeBlocks := []*ast.FencedCodeBlock{}
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if entering && n.Kind() == ast.KindFencedCodeBlock {
-			cb := n.(*ast.FencedCodeBlock)
-			if cb.Info != nil {
-				info := string(cb.Info.Segment.Value(reader.Source()))
-				if info == `plantuml` {
-					puCodeBlocks = append(puCodeBlocks, cb)
-				}
-			}
-		}
-		return ast.WalkContinue, nil
-	})
-	for _, cb := range puCodeBlocks {
-		cb.Parent().ReplaceChild(cb.Parent(), cb, &_PlantUMLRendererBlock{
-			ref: cb,
-		})
-	}
-}
-
-// TODO 可选渲染成链接还是直接嵌入页面文件中，当前是后者。
-func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
-	if !entering {
-		return ast.WalkContinue, nil
-	}
-
-	n = n.(*_PlantUMLRendererBlock).ref
-	b := bytes.NewBuffer(nil)
-	for i := 0; i < n.Lines().Len(); i++ {
-		line := n.Lines().At(i)
-		b.Write(line.Value(source))
-	}
-	uml := b.Bytes()
-
-	compressed, err := compress(uml)
+func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) error {
+	compressed, err := compress(source)
 	if err != nil {
-		p.error(writer)
+		p.error(w)
 		log.Println(`渲染失败`, err)
-		return ast.WalkContinue, nil
+		return err
 	}
 
 	got, err := p.cache(compressed, func() (io.ReadCloser, error) {
@@ -121,7 +52,7 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 		if err != nil {
 			return nil, err
 		}
-		log.Println(`no using cache for plantuml ...`)
+		log.Println(`not using cache for plantuml ...`)
 		buf := bytes.NewBuffer(nil)
 		if err := json.NewEncoder(buf).Encode(_Cache{Light: light, Dark: dark}); err != nil {
 			return nil, err
@@ -129,26 +60,26 @@ func (p *_PlantUMLRenderer) renderCodeBlock(writer util.BufWriter, source []byte
 		return io.NopCloser(buf), nil
 	})
 	if err != nil {
-		p.error(writer)
+		p.error(w)
 		log.Println(`渲染失败`, err)
-		return ast.WalkContinue, nil
+		return err
 	}
 
 	defer got.Close()
 
 	var cache _Cache
 	if err := json.NewDecoder(got).Decode(&cache); err != nil {
-		return ast.WalkStop, err
+		return err
 	}
 
-	writer.Write(cache.Light)
-	writer.Write(cache.Dark)
+	w.Write(cache.Light)
+	w.Write(cache.Dark)
 
-	return ast.WalkContinue, nil
+	return nil
 }
 
 // TODO fallback 到用链接。
-func (p *_PlantUMLRenderer) error(w util.BufWriter) {
+func (p *_PlantUMLRenderer) error(w io.Writer) {
 	fmt.Fprintln(w, `<p style="color:red">PlantUML 渲染失败。</p>`)
 }
 

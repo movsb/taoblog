@@ -154,3 +154,14 @@
     <input type="submit" value="关闭" />
   </form>
 </dialog>
+
+## 渲染
+
+### PlantUML
+
+```plantuml
+@startuml
+Alice -> Bob: Authentication Request
+Bob --> Alice: Authentication Response
+@enduml
+```
