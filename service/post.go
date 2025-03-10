@@ -856,15 +856,15 @@ func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest)
 
 // updateLastPostTime updates last_post_time in options.
 func (s *Service) updateLastPostTime(t time.Time) {
-	s.SetOption("last_post_time", t.Unix())
+	s.options.SetInteger("last_post_time", t.Unix())
 }
 
 func (s *Service) updatePostPageCount() {
 	var postCount, pageCount int
 	s.tdb.Model(models.Post{}).Select(`count(1) as count`).Where(`type='post'`).MustFind(&postCount)
 	s.tdb.Model(models.Post{}).Select(`count(1) as count`).Where(`type='page'`).MustFind(&pageCount)
-	s.SetOption(`post_count`, postCount)
-	s.SetOption(`page_count`, pageCount)
+	s.options.SetInteger(`post_count`, int64(postCount))
+	s.options.SetInteger(`page_count`, int64(pageCount))
 }
 
 // SetPostStatus sets post status.
@@ -1077,7 +1077,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 		source = string(utils.Must1(styling.Root.ReadFile(`index.md`)))
 	}
 
-	id, err := s.GetIntegerOption(`styling_page_id`)
+	id, err := s.options.GetInteger(`styling_page_id`)
 	if err != nil {
 		if !taorm.IsNotFoundError(err) {
 			return nil, err
@@ -1092,7 +1092,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 			Source:     source,
 		})
 		if err == nil {
-			s.SetOption(`styling_page_id`, p.Id)
+			s.options.SetInteger(`styling_page_id`, p.Id)
 		}
 	} else {
 		var p *proto.Post

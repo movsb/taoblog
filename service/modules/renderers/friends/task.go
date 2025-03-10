@@ -60,7 +60,7 @@ func NewTask(storage utils.PluginStorage, invalidate func(postID int)) *Task {
 const ttl = time.Hour * 24 * 7
 
 func (t *Task) load() {
-	cached, err := t.store.Get(`cache`)
+	cached, err := t.store.GetString(`cache`)
 	if err != nil {
 		log.Println(err)
 		return
@@ -95,7 +95,7 @@ func (t *Task) save() {
 	}
 
 	data := string(utils.Must1(json.Marshal(m)))
-	t.store.Set(`cache`, data)
+	t.store.SetString(`cache`, data)
 	t.keys = existingKeys
 
 	log.Println(`已存储朋友头像数据`)

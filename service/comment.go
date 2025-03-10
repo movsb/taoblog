@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"log/slog"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -488,7 +487,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 
 func (s *Service) updateCommentsCount() {
 	count := s.GetAllCommentsCount()
-	s.SetOption("comment_count", count)
+	s.options.SetInteger("comment_count", count)
 }
 
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
@@ -551,7 +550,7 @@ func NewCommentNotificationTask(s *Service, storage utils.PluginStorage) *_Comme
 		scanInterval: time.Second * 5,
 		dateDelay:    time.Minute * 1,
 	}
-	if _, err := t.storage.Get(`id`); err != nil {
+	if _, err := t.storage.GetInteger(`id`); err != nil {
 		var max int64
 		if err := t.s.tdb.Raw(`SELECT seq FROM sqlite_sequence WHERE name=?`, models.Comment{}.TableName()).Find(&max); err != nil {
 			if taorm.IsNotFoundError(err) {
@@ -560,7 +559,7 @@ func NewCommentNotificationTask(s *Service, storage utils.PluginStorage) *_Comme
 				panic(err)
 			}
 		}
-		if err := t.storage.Set(`id`, fmt.Sprint(max)); err != nil {
+		if err := t.storage.SetInteger(`id`, max); err != nil {
 			panic(err)
 		}
 		log.Println(`当前评论的最大编号：`, max)
@@ -597,22 +596,14 @@ func (t *_CommentNotificationTask) runOnce(ctx context.Context) error {
 	if err := t.queueForSingle(c); err != nil {
 		return err
 	}
-	if err := t.storage.Set(`id`, fmt.Sprint(c.ID)); err != nil {
+	if err := t.storage.SetInteger(`id`, c.ID); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (t *_CommentNotificationTask) getLast() (int64, error) {
-	idString, err := t.storage.Get(`id`)
-	if err != nil {
-		return 0, err
-	}
-	id, err := strconv.Atoi(idString)
-	if err != nil {
-		return 0, err
-	}
-	return int64(id), nil
+	return t.storage.GetInteger(`id`)
 }
 
 // 取得一条自上次检查以来新产生的评论。

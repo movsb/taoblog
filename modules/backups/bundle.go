@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/movsb/taoblog/modules/backups/begin"
@@ -17,7 +16,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taorm"
 )
 
 type Remote interface {
@@ -117,16 +115,9 @@ func (b *Backup) BackupPosts(ctx context.Context) (outErr error) {
 func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	var lastTime int
-	lastTimeStr, err := b.store.Get(`last_time`)
+	lastTime, err := b.store.GetIntegerDefault(`last_time`, 0)
 	if err != nil {
-		if taorm.IsNotFoundError(err) {
-			lastTime = 0
-		} else {
-			log.Panicln(`获取上次更新时间失败：`, err)
-		}
-	} else {
-		lastTime = utils.Must1(strconv.Atoi(lastTimeStr))
+		log.Panicln(`获取上次更新时间失败：`, err)
 	}
 
 	now := time.Now()
@@ -180,7 +171,7 @@ func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
 		}
 	}
 
-	b.store.Set(`last_time`, fmt.Sprint(now.Unix()))
+	b.store.SetInteger(`last_time`, now.Unix())
 
 	return nil
 }

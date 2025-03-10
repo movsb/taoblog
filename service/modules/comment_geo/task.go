@@ -39,7 +39,7 @@ func NewTask(store utils.PluginStorage) *Task {
 const ttl = time.Hour * 24 * 30
 
 func (t *Task) load() {
-	cached, err := t.store.Get(`cache`)
+	cached, err := t.store.GetString(`cache`)
 	if err != nil {
 		log.Println(err)
 		return
@@ -67,7 +67,7 @@ func (t *Task) save() {
 		}
 	}
 	data := string(utils.Must1(json.Marshal(m)))
-	t.store.Set(`cache`, data)
+	t.store.SetString(`cache`, data)
 }
 
 func (t *Task) Get(ip string) string {

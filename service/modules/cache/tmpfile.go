@@ -60,7 +60,7 @@ func (t *TmpFiles) GetOrLoad(key string, loader func(key string) (io.ReadCloser,
 		t.lock.Unlock()
 		return nil, err
 	}
-	if err := t.Cache(key, r); err != nil {
+	if err := t.cache(key, r); err != nil {
 		t.lock.Unlock()
 		// 失败直接用。
 		return loader(key)
@@ -69,7 +69,7 @@ func (t *TmpFiles) GetOrLoad(key string, loader func(key string) (io.ReadCloser,
 	return os.Open(t.nameFor(key))
 }
 
-func (t *TmpFiles) Cache(key string, r io.ReadCloser) error {
+func (t *TmpFiles) cache(key string, r io.ReadCloser) error {
 	fp, err := os.Create(t.nameFor(key))
 	if err != nil {
 		return nil

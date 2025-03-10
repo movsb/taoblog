@@ -2,17 +2,14 @@ package reminders
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/renderers"
-	"github.com/movsb/taorm"
 )
 
 type Task struct {
@@ -81,7 +78,7 @@ func (t *Task) runOnce(ctx context.Context) error {
 		}
 	}
 
-	t.store.Set(lastCheckTimeName, fmt.Sprint(now.Unix()))
+	t.store.SetInteger(lastCheckTimeName, now.Unix())
 
 	return nil
 }
@@ -89,14 +86,7 @@ func (t *Task) runOnce(ctx context.Context) error {
 const lastCheckTimeName = `last_check_time`
 
 func (t *Task) getUpdatedPosts(ctx context.Context) ([]*proto.Post, error) {
-	lastCheckTimeString, err := t.store.Get(lastCheckTimeName)
-	if err != nil {
-		if !taorm.IsNotFoundError(err) {
-			return nil, err
-		}
-		lastCheckTimeString = `0`
-	}
-	lastCheckTime, err := strconv.Atoi(lastCheckTimeString)
+	lastCheckTime, err := t.store.GetIntegerDefault(lastCheckTimeName, 0)
 	if err != nil {
 		return nil, err
 	}

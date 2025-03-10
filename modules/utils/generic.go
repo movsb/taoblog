@@ -8,6 +8,7 @@ import (
 	"io"
 	mr "math/rand"
 	"net/http"
+	"strconv"
 )
 
 // 搁这套娃🪆🪆🪆？
@@ -127,25 +128,63 @@ func ByteCountIEC(b int64) string {
 		float64(b)/float64(div), "KMGTPE"[exp])
 }
 
+// 对于 Get*Default 方法来说，只会当错误为 key 不存在时会返回默认值。
+// 其它时候照常报错，以避免真实错误被隐藏。
 type PluginStorage interface {
-	Set(key string, value string) error
-	Get(key string) (string, error)
+	SetString(key string, value string) error
+	GetString(key string) (string, error)
+	GetStringDefault(key string, def string) (string, error)
+	SetInteger(key string, value int64) error
+	GetInteger(key string) (int64, error)
+	GetIntegerDefault(key string, def int64) (int64, error)
 }
 
 type InMemoryStorage struct {
 	m map[string]string
 }
 
-func (s *InMemoryStorage) Set(key string, value string) error {
+func (s *InMemoryStorage) SetString(key string, value string) error {
 	s.m[key] = value
 	return nil
 }
 
-func (s *InMemoryStorage) Get(key string) (string, error) {
+func (s *InMemoryStorage) SetInteger(key string, i int64) error {
+	s.m[key] = fmt.Sprint(i)
+	return nil
+}
+
+func (s *InMemoryStorage) GetString(key string) (string, error) {
 	if v, ok := s.m[key]; ok {
 		return v, nil
 	}
 	return ``, sql.ErrNoRows
+}
+
+func (s *InMemoryStorage) GetStringDefault(key string, def string) (string, error) {
+	if v, ok := s.m[key]; ok {
+		return v, nil
+	}
+	return def, nil
+}
+func (s *InMemoryStorage) GetInteger(key string) (int64, error) {
+	if v, ok := s.m[key]; ok {
+		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return i, nil
+		} else {
+			return 0, err
+		}
+	}
+	return 0, sql.ErrNoRows
+}
+func (s *InMemoryStorage) GetIntegerDefault(key string, def int64) (int64, error) {
+	if v, ok := s.m[key]; ok {
+		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return i, nil
+		} else {
+			return 0, err
+		}
+	}
+	return def, nil
 }
 
 func NewInMemoryStorage() PluginStorage {

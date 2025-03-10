@@ -82,11 +82,11 @@ func (t *Task) save() {
 	}
 
 	data := string(utils.Must1(json.Marshal(m)))
-	t.storage.Set(`cache`, data)
+	t.storage.SetString(`cache`, data)
 }
 
 func (t *Task) load() {
-	cached, err := t.storage.Get(`cache`)
+	cached, err := t.storage.GetString(`cache`)
 	if err != nil {
 		log.Println(err)
 		return

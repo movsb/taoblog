@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -20,7 +21,14 @@ func optionCacheKey(name string) string {
 	return "option:" + name
 }
 
-func (s *Service) GetStringOption(name string) (string, error) {
+func (s *Service) Options() utils.PluginStorage {
+	if s.options == nil {
+		panic(`未实现`)
+	}
+	return s.options
+}
+
+func (s *Service) getOption(name string) (string, error) {
 	val, err, _ := s.cache.GetOrLoad(context.TODO(), optionCacheKey(name),
 		func(ctx context.Context, _ string) (any, time.Duration, error) {
 			val, err := s._getOption(name)
@@ -31,45 +39,6 @@ func (s *Service) GetStringOption(name string) (string, error) {
 		return ``, err
 	}
 	return val.(string), nil
-}
-
-func (s *Service) GetDefaultStringOption(name string, def string) string {
-	val, err := s.GetStringOption(name)
-	if err == nil {
-		return val
-	}
-	if taorm.IsNotFoundError(err) {
-		return def
-	}
-	panic(err)
-}
-
-func (s *Service) GetIntegerOption(name string) (int64, error) {
-	val, err, _ := s.cache.GetOrLoad(context.TODO(), optionCacheKey(name),
-		func(ctx context.Context, _ string) (any, time.Duration, error) {
-			val, err := s._getOption(name)
-			if err != nil {
-				return nil, 0, err
-			}
-			n, err := strconv.ParseInt(val, 10, 64)
-			return n, time.Hour, err
-		},
-	)
-	if err != nil {
-		return 0, err
-	}
-	return val.(int64), nil
-}
-
-func (s *Service) GetDefaultIntegerOption(name string, def int64) int64 {
-	val, err := s.GetIntegerOption(name)
-	if err == nil {
-		return val
-	}
-	if taorm.IsNotFoundError(err) {
-		return def
-	}
-	panic(err)
 }
 
 func (s *Service) _getOption(name string) (string, error) {
@@ -85,32 +54,25 @@ func (s *Service) _haveOption(name string) (have bool) {
 	return err == nil
 }
 
-func (s *Service) SetOption(name string, value any) {
-	var toSave string
-	switch v := value.(type) {
-	case string:
-		toSave = v
-	case int:
-		toSave = strconv.Itoa(v)
-		value = int64(v)
-	case int64:
-		toSave = strconv.FormatInt(v, 10)
-	default:
-		panic("unsupported option type:" + name)
-	}
+func (s *Service) setOption(name string, value string) error {
 	if s._haveOption(name) {
 		stmt := s.tdb.From(models.Option{}).Where("name = ?", name)
 		stmt.MustUpdateMap(map[string]any{
-			"value": toSave,
+			"value": value,
 		})
 	} else {
 		option := models.Option{
 			Name:  name,
-			Value: toSave,
+			Value: value,
 		}
 		s.tdb.Model(&option).MustCreate()
 	}
-	s.cache.Set(optionCacheKey(name), value, time.Minute*10)
+	s.cache.Set(optionCacheKey(name), value, time.Hour)
+	return nil
+}
+
+func (s *Service) GetDefaultIntegerOption(name string, def int64) int64 {
+	return utils.Must1(s.options.GetIntegerDefault(name, def))
 }
 
 func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
@@ -134,32 +96,67 @@ func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*
 
 	u := config.NewUpdater(s.cfg)
 	u.MustApply(req.Path, req.Yaml, func(path, value string) {
-		s.SetOption(path, value)
+		utils.Must(s.options.SetString(path, value))
 		log.Println(`保存：`, path, value)
 	})
 	return &proto.SetConfigResponse{}, nil
 }
 
 type _PluginStorage struct {
-	ss *Service
-	ns string
+	ss     *Service
+	prefix string
 }
 
-func (s *_PluginStorage) Set(key string, value string) error {
-	name := s.ns + `:` + key
-	s.ss.SetOption(name, value)
-	return nil
+func (s *_PluginStorage) SetString(key string, value string) error {
+	return s.ss.setOption(s.prefix+key, value)
 }
 
-func (s *_PluginStorage) Get(key string) (string, error) {
-	name := s.ns + `:` + key
-	return s.ss.GetStringOption(name)
+func (s *_PluginStorage) GetString(key string) (string, error) {
+	return s.ss.getOption(s.prefix + key)
+}
+
+func (s *_PluginStorage) GetStringDefault(key string, def string) (string, error) {
+	value, err := s.GetString(key)
+	if err == nil {
+		return value, nil
+	}
+	if taorm.IsNotFoundError(err) {
+		return def, nil
+	}
+	return ``, err
+}
+
+func (s *_PluginStorage) SetInteger(key string, value int64) error {
+	return s.SetString(key, fmt.Sprint(value))
+}
+
+func (s *_PluginStorage) GetInteger(key string) (int64, error) {
+	str, err := s.GetString(key)
+	if err == nil {
+		return strconv.ParseInt(str, 10, 64)
+	}
+	return 0, err
+}
+
+func (s *_PluginStorage) GetIntegerDefault(key string, def int64) (int64, error) {
+	value, err := s.GetInteger(key)
+	if err == nil {
+		return value, nil
+	}
+	if taorm.IsNotFoundError(err) {
+		return def, nil
+	}
+	return 0, err
 }
 
 func (s *Service) GetPluginStorage(name string) utils.PluginStorage {
+	prefix := ``
+	if name != `` {
+		prefix = name + `:`
+	}
 	return &_PluginStorage{
-		ss: s,
-		ns: name,
+		ss:     s,
+		prefix: prefix,
 	}
 }
 
