@@ -98,7 +98,7 @@ func (m *Metadata) String() []string {
 		lenInfo = append(lenInfo, m.ExposureTime)
 	}
 	if m.ISO > 0 {
-		lenInfo = append(lenInfo, fmt.Sprint(m.ISO))
+		lenInfo = append(lenInfo, fmt.Sprintf(`ISO/%v`, m.ISO))
 	}
 	add(strings.Join(lenInfo, `, `), `镜头`)
 
