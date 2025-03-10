@@ -64,6 +64,9 @@ func ReInitTestRandomSeed() {
 func DropLast1[First any, Last any](f First, l Last) First {
 	return f
 }
+func DropLast2[First any, Second any, Last any](f First, s Second, l Last) (First, Second) {
+	return f, s
+}
 func KeepLast1[First any, Last any](f First, l Last) Last {
 	return l
 }

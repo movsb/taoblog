@@ -98,10 +98,8 @@ type Service struct {
 	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
 	commentCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
-	// 基本临时文件的缓存。
-	filesCache *cache.TmpFiles
-
-	avatarCache *cache.AvatarHash
+	avatarCache   *cache.AvatarHash
+	plantumlCache *lru.TTLCache[string, []byte]
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
@@ -154,7 +152,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-		filesCache:           cache.NewTmpFiles(".cache", time.Hour*24*7),
 
 		maintenance: utils.NewMaintenance(),
 
@@ -180,6 +177,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	}
 
 	s.avatarCache = cache.NewAvatarHash()
+	s.plantumlCache = lru.NewTTLCache[string, []byte](32)
+
 	s.cmtntf = comment_notify.New(s.notifier)
 	s.cmtNotifyTask = NewCommentNotificationTask(s, s.GetPluginStorage(`comment_notify`))
 	s.cmtgeo = commentgeo.NewTask(s.GetPluginStorage(`cmt_geo`))

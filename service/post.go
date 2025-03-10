@@ -36,6 +36,7 @@ import (
 	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
@@ -398,7 +399,20 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		),
 
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
-		renderers.WithFencedCodeBlockRenderer(`plantuml`, s.markdownWithPlantUMLRenderer()),
+		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.New(
+			`https://www.plantuml.com/plantuml`, `svg`,
+			plantuml.WithCache(func(key string, loader func(ctx context.Context) ([]byte, error)) ([]byte, error) {
+				return utils.DropLast2(
+					s.plantumlCache.GetOrLoad(
+						s.ctx, key,
+						func(ctx context.Context, _ string) ([]byte, time.Duration, error) {
+							r, err := loader(ctx)
+							return r, time.Hour, err
+						},
+					),
+				)
+			}),
+		)),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

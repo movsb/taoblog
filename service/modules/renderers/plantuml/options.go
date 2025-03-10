@@ -1,10 +1,12 @@
 package plantuml
 
-import "io"
+import (
+	"context"
+)
 
 type Option func(*_PlantUMLRenderer)
 
-func WithCache(getter func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error)) Option {
+func WithCache(getter func(key string, loader func(ctx context.Context) ([]byte, error)) ([]byte, error)) Option {
 	return func(pu *_PlantUMLRenderer) {
 		pu.cache = getter
 	}

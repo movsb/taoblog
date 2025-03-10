@@ -18,7 +18,7 @@ type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀
 	format string
 
-	cache func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error)
+	cache func(key string, loader func(context.Context) ([]byte, error)) ([]byte, error)
 }
 
 func New(server string, format string, options ...Option) *_PlantUMLRenderer {
@@ -31,8 +31,8 @@ func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	}
 
 	if p.cache == nil {
-		p.cache = func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error) {
-			return loader()
+		p.cache = func(key string, loader func(ctx context.Context) ([]byte, error)) ([]byte, error) {
+			return loader(context.Background())
 		}
 	}
 
@@ -47,8 +47,8 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 		return err
 	}
 
-	got, err := p.cache(compressed, func() (io.ReadCloser, error) {
-		light, dark, err := p.fetch(compressed)
+	got, err := p.cache(compressed, func(ctx context.Context) ([]byte, error) {
+		light, dark, err := p.fetch(ctx, compressed)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +57,7 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 		if err := json.NewEncoder(buf).Encode(_Cache{Light: light, Dark: dark}); err != nil {
 			return nil, err
 		}
-		return io.NopCloser(buf), nil
+		return buf.Bytes(), nil
 	})
 	if err != nil {
 		p.error(w)
@@ -65,10 +65,8 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 		return err
 	}
 
-	defer got.Close()
-
 	var cache _Cache
-	if err := json.NewDecoder(got).Decode(&cache); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(got)).Decode(&cache); err != nil {
 		return err
 	}
 
@@ -83,14 +81,14 @@ func (p *_PlantUMLRenderer) error(w io.Writer) {
 	fmt.Fprintln(w, `<p style="color:red">PlantUML 渲染失败。</p>`)
 }
 
-func (p *_PlantUMLRenderer) fetch(compressed string) ([]byte, []byte, error) {
+func (p *_PlantUMLRenderer) fetch(ctx context.Context, compressed string) ([]byte, []byte, error) {
 	var (
 		content1, content2 []byte
 		err1, err2         error
 	)
 
 	wg := &sync.WaitGroup{}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	wg.Add(2)
 	go func() {

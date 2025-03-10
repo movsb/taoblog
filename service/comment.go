@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"log/slog"
 	"strings"
@@ -17,8 +16,6 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
-	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
-	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,19 +51,6 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 		s.commentContentCaches.Delete(second)
 		log.Println(`删除评论缓存：`, second)
 	})
-}
-
-func (s *Service) markdownWithPlantUMLRenderer() gold_utils.FencedCodeBlockRenderer {
-	return plantuml.New(
-		`https://www.plantuml.com/plantuml`, `svg`,
-		plantuml.WithCache(func(key string, loader func() (io.ReadCloser, error)) (io.ReadCloser, error) {
-			return s.filesCache.GetOrLoad(key,
-				func(_ string) (io.ReadCloser, error) {
-					return loader()
-				},
-			)
-		}),
-	)
 }
 
 func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
