@@ -24,6 +24,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
+	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/search"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
@@ -64,6 +65,7 @@ type Service struct {
 	cfg *config.Config
 
 	options utils.PluginStorage
+	runtime *runtime_config.Runtime
 
 	// 服务端渲染的时候一些模块会要求解析 URL（包含相对文件和绝对文件），
 	// 所以需要用到主题相关的根文件系统。
@@ -130,13 +132,14 @@ func (s *Service) ThemeChangedAt() time.Time {
 	return s.themeChangedAt
 }
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, auther *auth.Auth, options ...With) *Service {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, rc *runtime_config.Runtime, auther *auth.Auth, options ...With) *Service {
 	s := &Service{
 		ctx: ctx,
 
 		notifier: &proto.UnimplementedNotifyServer{},
 
 		cfg:         cfg,
+		runtime:     rc,
 		themeRootFS: embed.FS{},
 		postDataFS:  &theme_fs.Empty{},
 

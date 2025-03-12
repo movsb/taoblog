@@ -17,11 +17,13 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	client_common "github.com/movsb/taoblog/cmd/client/common"
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
+	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 )
 
 // 多少时间范围内的更新不应该被检测到。或者说：
@@ -31,6 +33,7 @@ const skewedDurationForUpdating = time.Minute * 15
 
 type GitSync struct {
 	ctx   context.Context
+	rc    *RuntimeConfig
 	proto *clients.ProtoClient
 
 	// 上一次获取更新的时间。
@@ -49,6 +52,21 @@ type GitSync struct {
 	tmpDir string
 }
 
+type RuntimeConfig struct {
+	SyncNow bool `yaml:"sync_now"`
+
+	syncNow chan bool
+
+	config.Saver
+}
+
+func (c *RuntimeConfig) AfterSet(paths config.Segments, obj any) {
+	switch paths.At(0).Key {
+	case `sync_now`:
+		c.syncNow <- obj.(bool)
+	}
+}
+
 // full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
 func New(ctx context.Context, client *clients.ProtoClient, full bool) *GitSync {
 	lastCheckedAt := time.Unix(0, 0)
@@ -56,13 +74,25 @@ func New(ctx context.Context, client *clients.ProtoClient, full bool) *GitSync {
 		lastCheckedAt = time.Now().Add(-7 * time.Hour * 24)
 	}
 
+	rc := &RuntimeConfig{
+		syncNow: make(chan bool),
+	}
+	if r := runtime_config.FromContext(ctx); r != nil {
+		r.Register(`git`, rc)
+	}
+
 	return &GitSync{
 		ctx:   ctx,
+		rc:    rc,
 		proto: client,
 
 		lastCheckedAt: lastCheckedAt,
 		pathCache:     map[int]string{},
 	}
+}
+
+func (g *GitSync) Do() <-chan bool {
+	return g.rc.syncNow
 }
 
 // 内部会自动大量重试因为网络问题导致的错误。

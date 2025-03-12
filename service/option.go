@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
+	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -78,6 +80,10 @@ func (s *Service) GetDefaultIntegerOption(name string, def int64) int64 {
 func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
+	if strings.HasPrefix(req.Path, runtime_config.Prefix) || req.Path+`.` == runtime_config.Prefix {
+		return s.runtime.GetConfig(ctx, req)
+	}
+
 	u := config.NewUpdater(s.cfg)
 	p := u.Find(req.Path)
 
@@ -93,6 +99,10 @@ func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*
 
 func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*proto.SetConfigResponse, error) {
 	s.MustBeAdmin(ctx)
+
+	if strings.HasPrefix(req.Path, runtime_config.Prefix) {
+		return s.runtime.SetConfig(ctx, req)
+	}
 
 	u := config.NewUpdater(s.cfg)
 	u.MustApply(req.Path, req.Yaml, func(path, value string) {

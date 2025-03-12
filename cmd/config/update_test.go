@@ -70,6 +70,10 @@ type C struct {
 
 func (C) CanSave() {}
 
+func (C) AfterSet(paths config.Segments, obj any) {
+	log.Println(`AfterSet:`, paths, obj)
+}
+
 func TestSaver(t *testing.T) {
 	var c Config
 	updater := config.NewUpdater(&c)
@@ -90,5 +94,38 @@ func TestSaver(t *testing.T) {
 	}
 	updater2.EachSaver(func(path string, obj any) {
 		log.Println(`将会保存：`, path, obj)
+	})
+}
+
+type Set struct {
+	A int `yaml:"a"`
+}
+
+func (Set) CanSave() {}
+func (s *Set) BeforeSet(paths config.Segments, obj any) error {
+	if paths.At(0).Key != `a` {
+		panic(`expect a`)
+	}
+	n, ok := obj.(int)
+	if !ok || n != 123 {
+		panic(`expect 123`)
+	}
+	return nil
+}
+func (s *Set) AfterSet(paths config.Segments, obj any) {
+	if paths.At(0).Key != `a` {
+		panic(`expect a`)
+	}
+	n, ok := obj.(int)
+	if !ok || n != 123 {
+		panic(`expect 123`)
+	}
+}
+
+func TestSaver2(t *testing.T) {
+	var a Set
+	updater := config.NewUpdater(&a)
+	updater.MustApply(`a`, `123`, func(path, value string) {
+		t.Logf(`保存：%s: %s`, path, value)
 	})
 }

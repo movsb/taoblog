@@ -25,6 +25,10 @@ type Settable interface {
 	BeforeSet(paths Segments, obj any) error
 }
 
+type AfterSettable interface {
+	AfterSet(paths Segments, obj any)
+}
+
 type Saver interface {
 	CanSave()
 }
@@ -55,21 +59,36 @@ func NewUpdater(ptr any) *Updater {
 
 func (u *Updater) MustApply(path string, value string, save func(path string, value string)) {
 	segments := u.parse(path)
-	saver, saveSegmentIndex, settable, settableSegments, p := u.find(u.obj, nil, -1, nil, -1, segments, 0)
+	saver, saveSegmentIndex, settable, settableSegments, p := u.find(u.obj, segments, 0, nil, -1, nil, -1)
 
 	// 创建值的副本，在设置之前先检查是否合法。
 	new := reflect.New(reflect.TypeOf(p).Elem())
 	u.set(new.Interface(), value)
+	newVal := new.Elem().Interface()
 
-	if settable != nil {
-		if err := settable.BeforeSet(segments[settableSegments+1:], new.Elem().Interface()); err != nil {
+	if saver == nil {
+		saver, _ = u.obj.(Saver)
+		if saver == nil {
+			panic("尝试修改的值找不到存储者。")
+		}
+	}
+
+	if settable == nil {
+		settable, _ = u.obj.(Settable)
+	}
+
+	if bs, ok := settable.(Settable); ok {
+		if err := bs.BeforeSet(segments[settableSegments+1:], newVal); err != nil {
 			panic(err)
 		}
 	}
 
-	if saver == nil {
-		panic("尝试修改的值找不到存储者。")
+	u.set(p, value)
+
+	if as, ok := settable.(AfterSettable); ok {
+		as.AfterSet(segments[settableSegments+1:], newVal)
 	}
+
 	var saverPath string
 	for i := 0; i <= saveSegmentIndex; i++ {
 		if i != saveSegmentIndex && segments[i].Index != nil {
@@ -80,8 +99,6 @@ func (u *Updater) MustApply(path string, value string, save func(path string, va
 		}
 		saverPath += segments[i].Key
 	}
-
-	u.set(p, value)
 
 	if b, err := json.Marshal(saver); err != nil {
 		panic(err)
@@ -170,20 +187,22 @@ func (u *Updater) parse(path string) []Segment {
 
 func (u *Updater) Find(path string) any {
 	segments := u.parse(path)
-	_, _, _, _, p := u.find(u.obj, nil, -1, nil, -1, segments, 0)
+	_, _, _, _, p := u.find(u.obj, segments, 0, nil, -1, nil, -1)
 	return p
 }
 
-func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable, settableSegments int, segments []Segment, index int) (Saver, int, Settable, int, any) {
-	value := reflect.ValueOf(obj)
-
-	// 不是也行，那就是简单赋值了，无意义。
-	if value.Type().Kind() != reflect.Pointer {
-		panic(`expect pointer`)
-	}
-
+// 在 obj 对象中查找 segments 依次对应的元素。
+// save 用于记录谁可以保存此元素。
+// settable 用于记录谁可以校验此元素。
+// 如果 saver, settable 为 nil，则有可能是 obj 本身。
+func (u *Updater) find(obj any, segments []Segment, index int, saver Saver, saverSegment int, settable any, settableSegments int) (Saver, int, any, int, any) {
 	if len(segments[index:]) < 1 {
 		return saver, saverSegment, settable, settableSegments, obj
+	}
+
+	value := reflect.ValueOf(obj)
+	if value.Type().Kind() != reflect.Pointer {
+		panic(`expect pointer`)
 	}
 
 	seg := segments[index]
@@ -226,6 +245,8 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 		}
 		ownerField = field
 		field = field.MapIndex(reflect.ValueOf(index))
+	} else {
+		// ownerField = value.Elem()
 	}
 
 	if !field.IsValid() {
@@ -233,7 +254,8 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 	}
 
 	if ownerField.IsValid() {
-		if reflect.PointerTo(ownerField.Type()).Implements(reflect.TypeOf((*Settable)(nil)).Elem()) {
+		if reflect.PointerTo(ownerField.Type()).Implements(reflect.TypeOf((*Settable)(nil)).Elem()) ||
+			reflect.PointerTo(ownerField.Type()).Implements(reflect.TypeOf((*AfterSettable)(nil)).Elem()) {
 			reflect.ValueOf(&settable).Elem().Set(ownerField.Addr())
 			settableSegments = index
 		}
@@ -245,7 +267,8 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 			saverSegment = index
 		}
 	}
-	if reflect.PointerTo(field.Type()).Implements(reflect.TypeOf((*Settable)(nil)).Elem()) {
+	if reflect.PointerTo(field.Type()).Implements(reflect.TypeOf((*Settable)(nil)).Elem()) ||
+		reflect.PointerTo(field.Type()).Implements(reflect.TypeOf((*AfterSettable)(nil)).Elem()) {
 		reflect.ValueOf(&settable).Elem().Set(field.Addr())
 		settableSegments = index
 	}
@@ -257,10 +280,10 @@ func (u *Updater) find(obj any, saver Saver, saverSegment int, settable Settable
 		saverSegment = index
 	}
 
-	return u.find(field.Addr().Interface(), saver, saverSegment, settable, settableSegments, segments, index+1)
+	return u.find(field.Addr().Interface(), segments, index+1, saver, saverSegment, settable, settableSegments)
 }
 
-func (u *Updater) set(p any, value string) {
+func (*Updater) set(p any, value string) {
 	vpe := reflect.ValueOf(p).Elem()
 
 	value = strings.TrimRight(value, "\n")

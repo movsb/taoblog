@@ -41,6 +41,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/notify/instant"
 	"github.com/movsb/taoblog/service/modules/notify/mailer"
 	"github.com/movsb/taoblog/service/modules/request_throttler"
+	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
@@ -153,6 +154,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	rc := runtime_config.NewRuntime()
+	ctx = runtime_config.Context(ctx, rc)
+
 	db := InitDatabase(cfg.Database.Posts, InitForPosts(s.createFirstPost))
 	defer db.Close()
 
@@ -176,7 +180,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	filesStore := theme_fs.FS(storage.NewSQLite(InitDatabase(cfg.Database.Files, InitForFiles())))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
 	s.notify = notify
-	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore)
+
+	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore, rc)
 	s.main = theService
 
 	go startGRPC()
@@ -289,6 +294,11 @@ func (s *Server) createGitSyncTasks(
 	ctx context.Context,
 	client *clients.ProtoClient,
 ) {
+	if version.DevMode() {
+		log.Println(`开发模式不运行 git 同步`)
+		return
+	}
+
 	ctx = clients.ContextFrom(ctx, fmt.Sprintf(`%d:%s`, auth.SystemID, auth.SystemKey))
 	gs := backups_git.New(ctx, client, false)
 
@@ -312,6 +322,11 @@ func (s *Server) createGitSyncTasks(
 		case <-ctx.Done():
 			log.Println(`git 同步任务退出`)
 			return
+		case <-gs.Do():
+			log.Println(`立即执行同步中`)
+			if err := sync(); err != nil {
+				log.Println(err)
+			}
 		case <-ticker.C:
 			if err := sync(); err != nil {
 				log.Println(err)
@@ -369,6 +384,7 @@ func (s *Server) createMainServices(
 	auth *auth.Auth,
 	testing bool,
 	filesStore theme_fs.FS,
+	rc *runtime_config.Runtime,
 ) *service.Service {
 	serviceOptions := []service.With{
 		// service.WithThemeRootFileSystem(),
@@ -380,7 +396,7 @@ func (s *Server) createMainServices(
 
 	addons.New()
 
-	return service.New(ctx, sr, cfg, db, auth, serviceOptions...)
+	return service.New(ctx, sr, cfg, db, rc, auth, serviceOptions...)
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
