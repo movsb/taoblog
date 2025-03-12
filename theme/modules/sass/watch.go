@@ -25,7 +25,7 @@ func WatchDefaultAsync(dir string) {
 // NOTE: 只在 DevMode 下执行。
 func Watch(dir string, input, output string) {
 	if !version.DevMode() {
-		log.Println(`非开发模式，不观察样式：`, dir)
+		// log.Println(`非开发模式，不观察样式：`, dir)
 		return
 	}
 

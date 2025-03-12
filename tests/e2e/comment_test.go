@@ -47,7 +47,7 @@ func TestThrottler(t *testing.T) {
 	defer r.server.TestEnableRequestThrottler(false)
 
 	first := true
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		rsp, err := r.client.Blog.CreateComment(r.guest,
 			&proto.Comment{
 				PostId:     1,

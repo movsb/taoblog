@@ -273,18 +273,21 @@ func (s *Service) Config() *config.Config {
 	return s.cfg
 }
 
-// MustTxCall ...
 func (s *Service) MustTxCall(callback func(txs *Service) error) {
 	if err := s.TxCall(callback); err != nil {
 		panic(err)
 	}
 }
 
-// TxCall ...
+// TODO 去掉，复制 s 非常有问题。
 func (s *Service) TxCall(callback func(txs *Service) error) error {
 	return s.tdb.TxCall(func(tx *taorm.DB) error {
 		txs := *s
 		txs.tdb = tx
+		txs.options = &_PluginStorage{
+			ss:     &txs,
+			prefix: ``,
+		}
 		return callback(&txs)
 	})
 }

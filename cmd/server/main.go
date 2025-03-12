@@ -312,7 +312,7 @@ func (s *Server) createGitSyncTasks(
 		return nil
 	}
 
-	log.Println(sync())
+	// log.Println(sync())
 
 	const every = time.Hour * 1
 	ticker := time.NewTicker(every)
