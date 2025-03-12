@@ -1,10 +1,10 @@
-package client
+package backups_git
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,10 +12,13 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	git_config "github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	client_common "github.com/movsb/taoblog/cmd/client/common"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -27,8 +30,8 @@ import (
 const skewedDurationForUpdating = time.Minute * 15
 
 type GitSync struct {
+	ctx   context.Context
 	proto *clients.ProtoClient
-	root  string
 
 	// 上一次获取更新的时间。
 	// 下一次获取时从此时间继续增量获取。
@@ -37,22 +40,28 @@ type GitSync struct {
 	// NOTE：这样可以保证无论计划任务执行的频次如何，总是能保证 [notBefore, notAfter) 时间有效。
 	lastCheckedAt time.Time
 
+	pathCache map[int]string
+
 	config *proto.GetSyncConfigResponse
 	auth   transport.AuthMethod
+
+	// 临时保存仓库的目录。
+	tmpDir string
 }
 
 // full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
-func New(client *clients.ProtoClient, root string, full bool) *GitSync {
+func New(ctx context.Context, client *clients.ProtoClient, full bool) *GitSync {
 	lastCheckedAt := time.Unix(0, 0)
 	if !full {
 		lastCheckedAt = time.Now().Add(-7 * time.Hour * 24)
 	}
 
 	return &GitSync{
+		ctx:   ctx,
 		proto: client,
-		root:  root,
 
 		lastCheckedAt: lastCheckedAt,
+		pathCache:     map[int]string{},
 	}
 }
 
@@ -66,7 +75,7 @@ func (g *GitSync) Sync() error {
 	}
 
 	for n := 1; ; n++ {
-		if err := g.pull(tree); err != nil {
+		if err := g.pull(repo, tree); err != nil {
 			if n >= MaxRetry {
 				return err
 			}
@@ -100,11 +109,10 @@ func (g *GitSync) Sync() error {
 	return nil
 }
 
-func (g *GitSync) prepare() (*git.Repository, *git.Worktree, error) {
-	config, err := g.proto.Management.GetSyncConfig(g.proto.Context(), &proto.GetSyncConfigRequest{})
-	if err != nil {
-		return nil, nil, err
-	}
+func (g *GitSync) prepare() (_ *git.Repository, _ *git.Worktree, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	config := utils.Must1(g.proto.Management.GetSyncConfig(g.ctx, &proto.GetSyncConfigRequest{}))
 
 	g.config = config
 	g.auth = &http.BasicAuth{
@@ -112,27 +120,65 @@ func (g *GitSync) prepare() (*git.Repository, *git.Worktree, error) {
 		Password: config.Password,
 	}
 
-	repo, err := git.PlainOpen(g.root)
-	if err != nil {
-		return nil, nil, fmt.Errorf(`failed to git open: %w`, err)
+	var repo *git.Repository
+
+	if g.tmpDir == `` {
+		log.Println(`正在克隆仓库：`, config.Url)
+		g.tmpDir, repo = utils.Must2(clone(g.ctx, config.Url, g.auth))
+	} else {
+		log.Println(`使用已经仓库：`, g.tmpDir)
+		repo = utils.Must1(git.PlainOpen(g.tmpDir))
 	}
-	wt, err := repo.Worktree()
-	if err != nil {
-		return nil, nil, err
-	}
-	return repo, wt, nil
+
+	return repo, utils.Must1(repo.Worktree()), nil
 }
 
-func (g *GitSync) pull(tree *git.Worktree) error {
-	if err := tree.Pull(&git.PullOptions{
+func clone(ctx context.Context, url string, auth transport.AuthMethod) (_ string, _ *git.Repository, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	dir := utils.Must1(os.MkdirTemp(``, fmt.Sprintf(`%s-git-sync-*`, version.NameLowercase)))
+
+	repo := utils.Must1(git.PlainCloneContext(ctx, dir, false, &git.CloneOptions{
+		URL:           url,
+		Auth:          auth,
 		RemoteName:    `origin`,
-		ReferenceName: `refs/heads/master`,
+		ReferenceName: `main`,
 		SingleBranch:  true,
+		Depth:         1,
 		Progress:      os.Stdout,
-		Auth:          g.auth,
-	}); err != nil && err != git.NoErrAlreadyUpToDate {
-		return fmt.Errorf(`failed to git pull: %w`, err)
+	}))
+
+	return dir, repo, nil
+}
+
+// fetch & reset --hard
+func (g *GitSync) pull(repo *git.Repository, tree *git.Worktree) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	remoteBranch := `refs/remotes/origin/main`
+
+	if err := repo.FetchContext(
+		context.Background(),
+		&git.FetchOptions{
+			RemoteName: `origin`,
+			RefSpecs: []git_config.RefSpec{
+				git_config.RefSpec(`+refs/heads/main:` + remoteBranch),
+			},
+			Auth:     g.auth,
+			Progress: os.Stdout,
+			Force:    true,
+		},
+	); err != nil && err != git.NoErrAlreadyUpToDate {
+		panic(fmt.Errorf(`failed to git fetch: %w`, err))
 	}
+
+	remoteHead := utils.Must1(repo.Reference(plumbing.ReferenceName(remoteBranch), true))
+
+	utils.Must(tree.Reset(&git.ResetOptions{
+		Commit: remoteHead.Hash(),
+		Mode:   git.HardReset,
+	}))
+
 	return nil
 }
 
@@ -163,7 +209,7 @@ func (g *GitSync) push(repo *git.Repository) error {
 	if err := repo.Push(&git.PushOptions{
 		RemoteName: `origin`,
 		RefSpecs: []git_config.RefSpec{
-			`refs/heads/master:refs/heads/master`,
+			`refs/heads/main:refs/heads/main`,
 		},
 		Auth: g.auth,
 	}); err != nil && err != git.NoErrAlreadyUpToDate {
@@ -176,15 +222,17 @@ func (g *GitSync) createPostDir(t int32, id int64) (string, error) {
 	createdAt := time.Unix(int64(t), 0).Local()
 	dir := createdAt.Format(`2006/01/02`)
 	dir = filepath.Join(dir, fmt.Sprint(id))
-	fullDir := filepath.Join(g.root, dir)
+	fullDir := filepath.Join(g.tmpDir, dir)
 	if err := os.MkdirAll(fullDir, 0755); err != nil {
 		return "", err
 	}
 	return dir, nil
 }
 
-func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
-	path, config, err := findPostByID(os.DirFS(g.root), int32(p.Id))
+func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	path, config, err := findPostByID(os.DirFS(g.tmpDir), int32(p.Id), g.pathCache)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
@@ -193,8 +241,8 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 		if err != nil {
 			return err
 		}
-		path = filepath.Join(dir, ConfigFileName)
-		config = &PostConfig{}
+		path = filepath.Join(dir, client_common.ConfigFileName)
+		config = &client_common.PostConfig{}
 	}
 	if p.Modified == config.Modified {
 		return nil
@@ -202,6 +250,7 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 	if p.Modified < config.Modified {
 		return fmt.Errorf(`本地比远程文件更新？：%v`, path)
 	}
+
 	config.ID = p.Id
 	config.Metas = *models.PostMetaFrom(p.Metas)
 	config.Modified = p.Modified
@@ -209,11 +258,11 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 	config.Tags = p.Tags
 	config.Title = p.Title
 	config.Type = p.Type
-	if err := SavePostConfig(filepath.Join(g.root, path), config); err != nil {
-		return err
-	}
+
+	utils.Must(client_common.SavePostConfig(filepath.Join(g.tmpDir, path), config))
+
 	// TODO 没用 fsys。
-	fullPath := filepath.Join(g.root, filepath.Dir(path), IndexFileName)
+	fullPath := filepath.Join(g.tmpDir, filepath.Dir(path), client_common.IndexFileName)
 
 	// 正在编辑且并没提交的文件可能会比远程更新，此时不能覆盖本地的文件。
 	// TODO 用文件系统而不是 os.
@@ -223,17 +272,13 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 		}
 	}
 
-	if err := ioutil.WriteFile(fullPath, []byte(p.Source), 0644); err != nil {
-		return err
-	}
+	utils.Must(os.WriteFile(fullPath, []byte(p.Source), 0644))
 
 	log.Println(`正在写入更新：`, fullPath)
 
-	if _, err := wt.Add("."); err != nil {
-		log.Println(`git add 失败：`, err)
-		return err
-	}
-	if _, err := wt.Commit(`Updated by Sync command.`, &git.CommitOptions{
+	utils.Must1(wt.Add(`.`))
+
+	if _, err := wt.Commit(`Updated by Sync task.`, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  g.config.Author,
 			Email: g.config.Email,
@@ -252,7 +297,7 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) error {
 // NOTE：时间范围是：
 func (g *GitSync) getUpdatedPosts(notBefore, notAfter time.Time) ([]*proto.Post, error) {
 	rsp, err := g.proto.Blog.ListPosts(
-		g.proto.Context(),
+		g.ctx,
 		&proto.ListPostsRequest{
 			ModifiedNotBefore: int32(notBefore.Unix()),
 			ModifiedNotAfter:  int32(notAfter.Unix()),
@@ -265,8 +310,24 @@ func (g *GitSync) getUpdatedPosts(notBefore, notAfter time.Time) ([]*proto.Post,
 }
 
 // 根据 ID 找到在本地仓库的路径。
-// TODO：创建索引。
-func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *PostConfig, outErr error) {
+func findPostByID(fsys fs.FS, id int32, cache map[int]string) (string, *client_common.PostConfig, error) {
+	if p, ok := cache[int(id)]; ok {
+		fp := utils.Must1(fsys.Open(p))
+		defer fp.Close()
+		c, err := client_common.ReadPostConfigReader(fp)
+		if err != nil {
+			return ``, nil, err
+		}
+		if c.ID != int64(id) {
+			return ``, nil, fmt.Errorf(`缓存不正确`)
+		}
+		log.Println(`找到缓存路径：`, id, p)
+		return p, c, nil
+	}
+
+	var outPath string
+	var outConfig *client_common.PostConfig
+
 	err := fs.WalkDir(fsys, `.`, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -274,29 +335,30 @@ func findPostByID(fsys fs.FS, id int32) (outPath string, outConfig *PostConfig, 
 		if !d.Type().IsRegular() {
 			return nil
 		}
-		if d.Name() == ConfigFileName {
-			fp := utils.Must1(fsys.Open(path))
-			defer fp.Close()
-			c, err := ReadPostConfigReader(fp)
-			if err != nil {
-				log.Fatalln(path, err)
-			}
-			if c.ID == int64(id) {
-				outPath = path
-				outConfig = c
-				outErr = nil
-				return fs.SkipAll
-			}
+		if d.Name() != client_common.ConfigFileName {
+			return nil
 		}
-		return nil
+		fp := utils.Must1(fsys.Open(path))
+		defer fp.Close()
+		c, err := client_common.ReadPostConfigReader(fp)
+		if err != nil {
+			return err
+		}
+		if c.ID != int64(id) {
+			return nil
+		}
+		outPath = path
+		outConfig = c
+		return fs.SkipAll
 	})
 	if err != nil {
-		outErr = err
-		return
+		return ``, nil, err
 	}
-	outErr = nil
-	if outPath == "" {
-		outErr = fmt.Errorf("文章未找到：%d, %w", id, os.ErrNotExist)
+
+	if outConfig == nil {
+		return ``, nil, fmt.Errorf("文章未找到：%d, %w", id, os.ErrNotExist)
 	}
-	return
+
+	cache[int(id)] = outPath
+	return outPath, outConfig, nil
 }

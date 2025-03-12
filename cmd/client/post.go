@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"errors"
-	"io"
 	"io/fs"
 	"log"
 	"net/url"
@@ -13,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	client_common "github.com/movsb/taoblog/cmd/client/common"
 	"github.com/movsb/taoblog/protocols/clients"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -20,7 +20,6 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/renderer/html"
 	field_mask "google.golang.org/protobuf/types/known/fieldmaskpb"
-	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -29,19 +28,6 @@ var (
 	errPostNotCreated = errors.New(`post not created, use create instead`)
 )
 
-// PostConfig ...
-type PostConfig struct {
-	ID       int64           `json:"id" yaml:"id"`
-	Title    string          `json:"title" yaml:"title"`
-	Modified int32           `json:"modified" yaml:"modified"`
-	Tags     []string        `json:"tags" yaml:"tags"`
-	Metas    models.PostMeta `json:"metas" yaml:"metas"`
-	Slug     string          `json:"slug" yaml:"slug,omitempty"`
-	Type     string          `json:"type" yaml:"type"`
-}
-
-const ConfigFileName = `config.yml`
-
 // InitPost ...
 func (c *Client) InitPost() error {
 	// 禁止意外在项目下创建。
@@ -49,13 +35,13 @@ func (c *Client) InitPost() error {
 		log.Fatalln(`不允许在项目根目录下创建文章。`)
 	}
 
-	fp, err := os.Open(ConfigFileName)
+	fp, err := os.Open(client_common.ConfigFileName)
 	if err == nil {
 		fp.Close()
 		return errPostInited
 	}
 	fp.Close()
-	config := PostConfig{}
+	config := client_common.PostConfig{}
 	c.savePostConfig(&config)
 	// try to touch README.md
 	fp, _ = os.OpenFile("README.md", os.O_RDONLY|os.O_CREATE, 0644)
@@ -246,7 +232,7 @@ func (c *Client) UploadPostFiles(id int64, files []string) {
 // NOTE 会自动去重本地文件。
 // NOTE 会自动排除 config.yml 文件。
 func UploadPostFiles(client *clients.ProtoClient, id int64, root fs.FS, files []string) {
-	files = slices.DeleteFunc(files, func(f string) bool { return f == ConfigFileName })
+	files = slices.DeleteFunc(files, func(f string) bool { return f == client_common.ConfigFileName })
 
 	if len(files) <= 0 {
 		return
@@ -265,56 +251,24 @@ func UploadPostFiles(client *clients.ProtoClient, id int64, root fs.FS, files []
 	}
 }
 
-func (c *Client) readPostConfig() *PostConfig {
-	p, err := ReadPostConfig(ConfigFileName)
+func (c *Client) readPostConfig() *client_common.PostConfig {
+	p, err := client_common.ReadPostConfig(client_common.ConfigFileName)
 	if err != nil {
 		panic(err)
 	}
 	return p
 }
 
-func ReadPostConfig(path string) (*PostConfig, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	return ReadPostConfigReader(file)
-}
-func ReadPostConfigReader(r io.Reader) (*PostConfig, error) {
-	config := PostConfig{}
-	dec := yaml.NewDecoder(r)
-	if err := dec.Decode(&config); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
-
-func (c *Client) savePostConfig(config *PostConfig) {
-	if err := SavePostConfig(ConfigFileName, config); err != nil {
+func (c *Client) savePostConfig(config *client_common.PostConfig) {
+	if err := client_common.SavePostConfig(client_common.ConfigFileName, config); err != nil {
 		panic(err)
 	}
 }
 
-func SavePostConfig(path string, config *PostConfig) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	enc := yaml.NewEncoder(file)
-	if err := enc.Encode(config); err != nil {
-		return err
-	}
-	return nil
-}
-
-const IndexFileName = `README.md`
-
 func readSource(dir string) (string, string, []string) {
 	var source string
 
-	path := filepath.Join(dir, IndexFileName)
+	path := filepath.Join(dir, client_common.IndexFileName)
 	bys, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)

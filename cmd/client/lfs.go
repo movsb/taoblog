@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	client_common "github.com/movsb/taoblog/cmd/client/common"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +38,7 @@ func createLfsCommands() *cobra.Command {
 		Use:   `add <files...>`,
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			config, err := ReadPostConfig(ConfigFileName)
+			config, err := client_common.ReadPostConfig(client_common.ConfigFileName)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -83,7 +84,7 @@ func createLfsCommands() *cobra.Command {
 		Use:   `commit`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			config, err := ReadPostConfig(ConfigFileName)
+			config, err := client_common.ReadPostConfig(client_common.ConfigFileName)
 			if err != nil {
 				log.Fatalln(err)
 			}

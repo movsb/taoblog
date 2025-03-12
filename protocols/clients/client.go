@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func NewProtoClient(home string, token string) *ProtoClient {
+func NewProtoClientFromHome(home string, token string) *ProtoClient {
 	cc := _NewConn(home, ``)
 	return _NewFromCC(cc, token)
 }
@@ -63,20 +63,25 @@ type ProtoClient struct {
 }
 
 func (c *ProtoClient) Context() context.Context {
-	return c.contextFrom(context.Background())
+	return c.ContextFrom(context.Background())
 }
 
-// TODO 配置文件中写/传完整的 ID:TOKEN 格式，而不是假定是 AdminID。
-func (c *ProtoClient) contextFrom(parent context.Context) context.Context {
-	if c.token == "" {
-		return parent
-	}
-	tokenValue := c.token
-	if !strings.Contains(c.token, `:`) {
-		tokenValue = fmt.Sprintf(`%d:%s`, auth.AdminID, c.token)
+// 为了基于不带默认 token 的 client 创建基于父级 ctx 的认证。
+func ContextFrom(parent context.Context, token string) context.Context {
+	tokenValue := token
+	if !strings.Contains(token, `:`) {
+		tokenValue = fmt.Sprintf(`%d:%s`, auth.AdminID, token)
 	}
 	authValue := fmt.Sprintf(`%s %s`, auth.TokenName, tokenValue)
 	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, authValue))
+}
+
+// TODO 配置文件中写/传完整的 ID:TOKEN 格式，而不是假定是 AdminID。
+func (c *ProtoClient) ContextFrom(parent context.Context) context.Context {
+	if c.token == "" {
+		return parent
+	}
+	return ContextFrom(parent, c.token)
 }
 
 // grpcAddress 可以为空，表示使用 api 同一地址。
@@ -131,15 +136,14 @@ func (_NetConn) SetWriteDeadline(t time.Time) error { return nil }
 
 var _ net.Conn = (*_NetConn)(nil)
 
-func (c *ProtoClient) SendInstant(title, message string) {
+func (c *ProtoClient) SendInstant(ctx context.Context, title, message string) {
 	if _, err := c.Notify.SendInstant(
-		c.Context(),
+		ctx,
 		&proto.SendInstantRequest{
 			Subject: title,
 			Body:    message,
 		},
 	); err != nil {
-		log.Println(err)
-		log.Println(title, message)
+		log.Println(`SendInstant:`, title, message, err)
 	}
 }

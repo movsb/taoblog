@@ -54,8 +54,10 @@ message BackupFilesResponse {
 message GetSyncConfigRequest {}
 
 message GetSyncConfigResponse {
-	string author = 1;
-	string email = 2;
-	string username = 3;
-	string password = 4;
+	string url = 1;
+	string username = 2;
+	string password = 3;
+
+	string author = 10;
+	string email = 11;
 }

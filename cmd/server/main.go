@@ -28,10 +28,12 @@ import (
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/backups"
+	backups_git "github.com/movsb/taoblog/modules/backups/git"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
@@ -74,6 +76,9 @@ type Server struct {
 	httpServer *http.Server
 
 	grpcAddr string
+
+	// 不带默认认证。
+	noAuthClient *clients.ProtoClient
 
 	// 请求节流器。
 	throttler        grpc.UnaryServerInterceptor
@@ -142,6 +147,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		panic(`server is already running`)
 	}
 
+	log.Println(`DevMode:`, version.DevMode())
+	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -152,26 +160,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	migration.Migrate(db)
 
-	// 在此之前不能读配置！！！
-	updater := config.NewUpdater(cfg)
-	updater.EachSaver(func(path string, obj any) {
-		// TODO 改成 grpc 配置服务。
-		var option models.Option
-		err := taorm.NewDB(db).Model(option).Where(`name=?`, path).Find(&option)
-		if err != nil {
-			if !taorm.IsNotFoundError(err) {
-				panic(err)
-			}
-			return
-		}
-		if err := json.Unmarshal([]byte(option.Value), obj); err != nil {
-			panic(err)
-		}
-		log.Println(`加载配置：`, path)
-	})
-
-	log.Println(`DevMode:`, version.DevMode())
-	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
+	utils.Must(s.initConfig(cfg, db))
 
 	s.metrics = metrics.NewRegistry(context.TODO())
 
@@ -182,6 +171,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
+	s.noAuthClient = clients.NewProtoClientFromAddress(s.GRPCAddr())
 
 	filesStore := theme_fs.FS(storage.NewSQLite(InitDatabase(cfg.Database.Files, InitForFiles())))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
@@ -212,6 +202,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	go liveCheck(theService, notify)
 	go s.createBackupTasks(ctx, cfg)
+	go s.createGitSyncTasks(ctx, s.noAuthClient)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -233,6 +224,26 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	cancel()
 	<-ctx.Done()
+}
+
+func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
+	updater := config.NewUpdater(cfg)
+	updater.EachSaver(func(path string, obj any) {
+		// TODO 改成 grpc 配置服务。
+		var option models.Option
+		err := taorm.NewDB(db).Model(option).Where(`name=?`, path).Find(&option)
+		if err != nil {
+			if !taorm.IsNotFoundError(err) {
+				panic(err)
+			}
+			return
+		}
+		if err := json.Unmarshal([]byte(option.Value), obj); err != nil {
+			panic(err)
+		}
+		log.Println(`加载配置：`, path)
+	})
+	return nil
 }
 
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
@@ -272,6 +283,41 @@ func (s *Server) sendNotify(title, message string) {
 			Body:    message,
 		},
 	)
+}
+
+func (s *Server) createGitSyncTasks(
+	ctx context.Context,
+	client *clients.ProtoClient,
+) {
+	ctx = clients.ContextFrom(ctx, fmt.Sprintf(`%d:%s`, auth.SystemID, auth.SystemKey))
+	gs := backups_git.New(ctx, client, false)
+
+	sync := func() error {
+		if err := gs.Sync(); err != nil {
+			client.SendInstant(ctx, "同步失败", err.Error())
+			return err
+		}
+
+		client.SendInstant(ctx, `同步成功`, `全部完成，没有错误。`)
+		return nil
+	}
+
+	log.Println(sync())
+
+	const every = time.Hour * 1
+	ticker := time.NewTicker(every)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println(`git 同步任务退出`)
+			return
+		case <-ticker.C:
+			if err := sync(); err != nil {
+				log.Println(err)
+			}
+		}
+	}
 }
 
 func (s *Server) createBackupTasks(

@@ -73,11 +73,12 @@ func DefaultMainMaintenanceConfig() MaintenanceConfig {
 type MaintenanceBackupsSyncConfig struct {
 	Enabled bool `yaml:"enabled"`
 
-	Author string `yaml:"author"` // Git 提交作者用户名
-	Email  string `yaml:"email"`  // Git 提交作者邮箱
-
+	URL      string `yaml:"url"`      // Git 仓库地址
 	Username string `yaml:"username"` // Git 仓库用户名
 	Password string `yaml:"password"` // Git 仓库密码
+
+	Author string `yaml:"author"` // Git 提交作者用户名
+	Email  string `yaml:"email"`  // Git 提交作者邮箱
 }
 
 func (c *MaintenanceBackupsSyncConfig) CanSave() {}
@@ -99,6 +100,12 @@ func (c *MaintenanceBackupsSyncConfig) BeforeSet(paths Segments, obj any) error 
 		}
 		return nil
 	}
+	checkURL := func() error {
+		if !utils.IsURL(new.URL, false) {
+			return fmt.Errorf(`git 仓库地址不正确`)
+		}
+		return nil
+	}
 	checkUsername := func() error {
 		if new.Username == `` {
 			return fmt.Errorf(`git 仓库用户名格式不正确。`)
@@ -117,6 +124,7 @@ func (c *MaintenanceBackupsSyncConfig) BeforeSet(paths Segments, obj any) error 
 		checks = append(checks,
 			checkAuthor,
 			checkEmail,
+			checkURL,
 			checkUsername,
 			checkPassword,
 		)
@@ -130,6 +138,9 @@ func (c *MaintenanceBackupsSyncConfig) BeforeSet(paths Segments, obj any) error 
 		case `email`:
 			new.Email = obj.(string)
 			checks = append(checks, checkEmail)
+		case `url`:
+			new.URL = obj.(string)
+			checks = append(checks, checkURL)
 		case `username`:
 			new.Username = obj.(string)
 			checks = append(checks, checkUsername)

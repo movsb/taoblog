@@ -34,6 +34,12 @@ func Must1[A any](a A, e error) A {
 	}
 	return a
 }
+func Must2[A any, B any](a A, b B, e error) (A, B) {
+	if e != nil {
+		panic(e)
+	}
+	return a, b
+}
 func Must(e error) {
 	if e != nil {
 		panic(e)

@@ -306,6 +306,7 @@ func (s *Service) GetSyncConfig(ctx context.Context, in *proto.GetSyncConfigRequ
 	return &proto.GetSyncConfigResponse{
 		Author:   c.Author,
 		Email:    c.Email,
+		Url:      c.URL,
 		Username: c.Username,
 		Password: c.Password,
 	}, nil

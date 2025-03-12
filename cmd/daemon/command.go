@@ -63,7 +63,7 @@ func AddCommands(parent *cobra.Command) {
 }
 
 func remoteDialer(home string, token string) {
-	client := clients.NewProtoClient(home, token)
+	client := clients.NewProtoClientFromHome(home, token)
 	drc, err := client.Utils.DialRemote(client.Context())
 	if err != nil {
 		panic(err)
@@ -117,7 +117,7 @@ func remoteDialer(home string, token string) {
 }
 
 func update(home string, token string) {
-	client := clients.NewProtoClient(home, token)
+	client := clients.NewProtoClientFromHome(home, token)
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	for range ticker.C {

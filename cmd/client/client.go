@@ -15,7 +15,7 @@ type Client struct {
 func NewClient(config HostConfig) *Client {
 	c := &Client{
 		config:      config,
-		ProtoClient: clients.NewProtoClient(config.Home, config.Token),
+		ProtoClient: clients.NewProtoClientFromHome(config.Home, config.Token),
 	}
 
 	return c

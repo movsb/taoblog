@@ -14,7 +14,7 @@ func AddCommands(parent *cobra.Command) {
 
 	importsCmd.AddCommand(twitter.CreateCommands(func() *clients.ProtoClient {
 		config := client.InitHostConfigs()
-		return clients.NewProtoClient(config.Home, config.Token)
+		return clients.NewProtoClientFromHome(config.Home, config.Token)
 	}))
 
 	parent.AddCommand(importsCmd)

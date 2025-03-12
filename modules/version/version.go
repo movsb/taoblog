@@ -9,7 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Name = `TaoBlog`
+const (
+	Name          = `TaoBlog`
+	NameLowercase = `taoblog`
+)
 
 // 运行起始时间。
 var Time = time.Now()
