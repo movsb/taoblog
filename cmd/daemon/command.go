@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,8 +20,7 @@ import (
 )
 
 const (
-	updateScript  = `docker compose pull taoblog && docker compose up -d taoblog`
-	restartScript = `docker compose restart taoblog`
+	updateScript = `docker compose pull taoblog && docker compose up -d taoblog`
 )
 
 func run(script string) error {
@@ -118,29 +116,20 @@ func remoteDialer(home string, token string) {
 
 func update(home string, token string) {
 	client := clients.NewProtoClientFromHome(home, token)
-	ticker := time.NewTicker(time.Second * 10)
-	defer ticker.Stop()
-	for range ticker.C {
+	for {
+		time.Sleep(time.Second * 15)
 		info, err := client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{})
 		if err != nil {
 			log.Println(`GetInfo:`, err)
-			if strings.Contains(err.Error(), `502`) {
-				log.Println(`因 502 需要重启。`)
-				if err := run(restartScript); err != nil {
-					log.Println(`重启失败：`, err)
-				} else {
-					time.Sleep(time.Second * 10)
-				}
-			}
 			continue
 		}
 		if !info.ScheduledUpdate {
 			continue
 		}
-		log.Println(`需要更新。`)
+		log.Println(`检测到设置了更新标识，需要更新。`)
 		if err := run(updateScript); err != nil {
 			log.Println(err)
+			continue
 		}
-		time.Sleep(time.Second * 10)
 	}
 }
