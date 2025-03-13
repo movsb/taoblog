@@ -294,15 +294,15 @@ func (s *Server) createGitSyncTasks(
 	ctx context.Context,
 	client *clients.ProtoClient,
 ) {
-	if version.DevMode() {
-		log.Println(`开发模式不运行 git 同步`)
-		return
-	}
-
 	ctx = clients.ContextFrom(ctx, fmt.Sprintf(`%d:%s`, auth.SystemID, auth.SystemKey))
 	gs := backups_git.New(ctx, client, false)
 
 	sync := func() error {
+		if version.DevMode() {
+			log.Println(`开发模式不运行 git 同步`)
+			return nil
+		}
+
 		if err := gs.Sync(); err != nil {
 			client.SendInstant(ctx, "同步失败", err.Error())
 			return err

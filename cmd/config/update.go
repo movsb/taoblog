@@ -75,6 +75,9 @@ func (u *Updater) MustApply(path string, value string, save func(path string, va
 
 	if settable == nil {
 		settable, _ = u.obj.(Settable)
+		if settable == nil {
+			settable, _ = u.obj.(AfterSettable)
+		}
 	}
 
 	if bs, ok := settable.(Settable); ok {
