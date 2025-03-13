@@ -156,7 +156,7 @@ func (g *GitSync) prepare() (_ *git.Repository, _ *git.Worktree, outErr error) {
 		log.Println(`正在克隆仓库：`, config.Url)
 		g.tmpDir, repo = utils.Must2(clone(g.ctx, config.Url, g.auth))
 	} else {
-		log.Println(`使用已经仓库：`, g.tmpDir)
+		log.Println(`使用已有仓库：`, g.tmpDir)
 		repo = utils.Must1(git.PlainOpen(g.tmpDir))
 	}
 

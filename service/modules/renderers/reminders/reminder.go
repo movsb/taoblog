@@ -2,6 +2,7 @@ package reminders
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"io"
 
@@ -37,11 +38,15 @@ func WithOutputReminders(out *[]*Reminder) RemindersOption {
 }
 
 type Reminders struct {
+	sched *Scheduler
+
 	out *[]*Reminder
 }
 
 func New(options ...RemindersOption) *Reminders {
-	f := &Reminders{}
+	f := &Reminders{
+		sched: NewScheduler(),
+	}
 
 	for _, opt := range options {
 		opt(f)
@@ -52,10 +57,17 @@ func New(options ...RemindersOption) *Reminders {
 
 var tmpl = template.Must(template.New(`reminder`).Parse(string(utils.Must1(_root.ReadFile(`reminder.html`)))))
 
-func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) error {
+func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
 	rm, err := ParseReminder(source)
 	if err != nil {
-		return err
+		return fmt.Errorf(`解析提醒失败：%w`, err)
+	}
+
+	// 1：随便写的，因为 sched 是测试用的，没共享。
+	if err := r.sched.AddReminder(1, rm); err != nil {
+		return fmt.Errorf(`添加提醒失败：%w`, err)
 	}
 
 	// TODO 在 Transform 的时候实现，以实现不渲染获取到数据。

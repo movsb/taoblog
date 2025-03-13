@@ -51,7 +51,7 @@ type Scheduler struct {
 
 type SchedulerOption func(s *Scheduler)
 
-func WithNowFunc(now func() time.Time) func(s *Scheduler) {
+func WithNowFunc(now func() time.Time) SchedulerOption {
 	return func(s *Scheduler) {
 		s.now = now
 	}

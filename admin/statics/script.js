@@ -248,7 +248,13 @@ class PostManagementAPI
 			})
 		});
 		if (!rsp.ok) {
-			throw new Error(await rsp.text());
+			let exception = await rsp.text();
+			try { 
+				exception = JSON.parse(exception);
+				exception = exception.message ?? exception;
+			}
+			catch {}
+			throw exception;
 		}
 		return await rsp.json();
 	}
