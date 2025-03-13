@@ -47,6 +47,10 @@ type Scheduler struct {
 	firsts map[int][]Job
 
 	now func() time.Time
+
+	// 最后更新时间。
+	// 可以用于日历生成时设定“最后修改时间”。
+	lastUpdatedAt time.Time
 }
 
 type SchedulerOption func(s *Scheduler)
@@ -71,7 +75,17 @@ func NewScheduler(options ...SchedulerOption) *Scheduler {
 		sched.now = time.Now
 	}
 
+	sched.updateLastUpdatedAt()
+
 	return sched
+}
+
+func (s *Scheduler) updateLastUpdatedAt() {
+	s.lastUpdatedAt = s.now()
+}
+
+func (s *Scheduler) LastUpdatedAt() time.Time {
+	return s.lastUpdatedAt
 }
 
 func (s *Scheduler) withLock(fn func()) {
@@ -81,6 +95,8 @@ func (s *Scheduler) withLock(fn func()) {
 }
 
 func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
+	defer s.updateLastUpdatedAt()
+
 	omitToday := false
 
 	if r.Remind.Daily {
@@ -220,6 +236,7 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 func (s *Scheduler) DeleteRemindersByPostID(id int) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	defer s.updateLastUpdatedAt()
 	delete(s.jobs, id)
 	delete(s.firsts, id)
 }
@@ -266,7 +283,7 @@ func NewCalendarService(name string, sched *Scheduler) *CalenderService {
 func (s *CalenderService) Marshal(now time.Time, w io.Writer) error {
 	cal := ics.NewCalendarFor(version.Name)
 	cal.SetMethod(ics.MethodPublish)
-	cal.SetLastModified(now)
+	cal.SetLastModified(s.sched.LastUpdatedAt())
 	// TODO 写死了
 	cal.SetTimezoneId(`Asia/Shanghai`)
 	cal.SetXWRCalName(s.name)
