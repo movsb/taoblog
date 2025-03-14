@@ -29,6 +29,11 @@ type Backup struct {
 
 	remote   Remote
 	identity string
+
+	// 由于 R2 目前好像没有版本机制，所以旧文件会覆盖新文件，
+	// 为了避免如此，每次上传为不同的文件名，循环覆盖。
+	// 如果要手动恢复，取修改时间最新的即可。
+	nextPostsFileIndex int
 }
 
 type Option func(b *Backup)
@@ -94,7 +99,7 @@ func (b *Backup) createWriter() (_ *_RW, outErr error) {
 
 	buf := bytes.NewBuffer(nil)
 	aw := utils.Must1(backups_crypto.NewAge(b.identity, buf))
-	// 总量压缩
+	// 总是压缩
 	gw := gzip.NewWriter(aw)
 
 	closers := []io.Closer{gw, aw}
@@ -109,7 +114,13 @@ func (b *Backup) BackupPosts(ctx context.Context) (outErr error) {
 	wc := utils.Must1(b.createWriter())
 	utils.Must(bb.BackupPosts(wc.Writer()))
 	r := utils.Must1(wc.Close())
-	return b.remote.Upload(ctx, `posts.db.gz.age`, r)
+
+	// 1, 2, 3... 循环命名。
+	next := b.nextPostsFileIndex%3 + 1
+	b.nextPostsFileIndex++
+	name := fmt.Sprintf(`posts-%d.db.gz.age`, next)
+
+	return b.remote.Upload(ctx, name, r)
 }
 
 func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
