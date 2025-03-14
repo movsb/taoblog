@@ -1,0 +1,18 @@
+// 其实大部分样式也适用于非 PlantUML。
+svg.pikchr {
+	padding: 1em !important;
+	box-sizing: border-box;
+
+	// 不加会有奇怪的 margin-bottom，不知道哪里来的
+	display: block;
+
+	&.dark {
+		display: none;
+	}
+	
+	// 日夜轮换显示。
+	@media (prefers-color-scheme: dark) {
+		&:not(.dark) { display: none;}
+		&.dark { display: block !important; }
+	}
+}

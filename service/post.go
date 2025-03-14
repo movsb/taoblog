@@ -36,6 +36,7 @@ import (
 	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	"github.com/movsb/taoblog/service/modules/renderers/pikchr"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
@@ -413,6 +414,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 				)
 			}),
 		)),
+		renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
