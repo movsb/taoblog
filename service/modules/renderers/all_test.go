@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
+	katex "github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
@@ -285,13 +286,12 @@ func TestPrettifier(t *testing.T) {
 			Markdown: "用 `<script>` 嵌入 JSON 的正规做法[^1]：\n\n[^1]: https://",
 			Text:     `用 <script> 嵌入 JSON 的正规做法：`,
 		},
-		// TODO: 测试的时候 katex 还没 build 出来，暂时跑不了。
-		// {
-		// 	ID:       9.0,
-		// 	Options:  []renderers.Option2{katex.New()},
-		// 	Markdown: `$a$`,
-		// 	Text:     `[公式]`,
-		// },
+		{
+			ID:       9.0,
+			Options:  []renderers.Option2{katex.New()},
+			Markdown: `$a$`,
+			Text:     `[公式]`,
+		},
 		{
 			ID:       10.0,
 			Markdown: `[狗头]`,
@@ -319,7 +319,7 @@ func TestPrettifier(t *testing.T) {
 	for _, tc := range cases {
 		options := append(tc.Options, renderers.WithHtmlPrettifier(), extension.GFM, extension.Footnote)
 		md := renderers.NewMarkdown(options...)
-		if tc.ID == 11.0 {
+		if tc.ID == 9 {
 			log.Println(`debug`)
 		}
 		text, err := md.Render(tc.Markdown)

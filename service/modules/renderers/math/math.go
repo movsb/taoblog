@@ -4,38 +4,41 @@ import (
 	"context"
 	"embed"
 	"io/fs"
-	"log"
 	"regexp"
-	"strings"
 	"sync"
+	"time"
 
-	"github.com/PuerkitoBio/goquery"
-	mathjax "github.com/litao91/goldmark-mathjax"
+	gold_katex "github.com/libkush/goldmark-katex"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/theme/modules/sass"
+	"github.com/phuslu/lru"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
+	"github.com/yuin/goldmark/util"
 )
 
 //go:generate sass --no-source-map static/style.scss static/style.css
 
-//go:embed static binary katex/katex.min.css katex/style.css
+//go:embed static katex/katex.min.css katex/style.css
 var Root embed.FS
 
 func init() {
 	dynamic.RegisterInit(func() {
 		katexDir := utils.Must1(fs.Sub(Root, `katex`))
-		raw := utils.Must1(fs.ReadFile(katexDir, `katex/katex.min.css`))
+		raw := utils.Must1(fs.ReadFile(katexDir, `katex.min.css`))
 		// 删除不必要的字体。
 		stripped := regexp.MustCompile(`,url[^}]+`).ReplaceAllLiteral(raw, nil)
-		customize := utils.Must1(fs.ReadFile(katexDir, `katex/style.css`))
+		customize := utils.Must1(fs.ReadFile(katexDir, `style.css`))
 		dynamic.Dynamic[`math`] = dynamic.Content{
 			Styles: []string{
 				string(stripped),
 				string(customize),
 			},
-			Root: Root,
+			Root: utils.Must1(fs.Sub(Root, `static`)),
 		}
 		sass.WatchDefaultAsync(dir.SourceAbsoluteDir().Join(`katex`))
 	})
@@ -43,46 +46,98 @@ func init() {
 
 type Math struct{}
 
-var _ interface {
-	goldmark.Extender
-} = (*Math)(nil)
-
-func New() *Math {
+func New() goldmark.Extender {
 	return &Math{}
 }
 
-func (m *Math) Extend(md goldmark.Markdown) {
-	onceRt.Do(func() {
-		// TODO 关闭。
-		rt = utils.Must1(NewWebAssemblyRuntime(context.TODO()))
+func (e *Math) Extend(m goldmark.Markdown) {
+	_onceCache.Do(func() {
+		_cache = lru.NewTTLCache[_CacheKey, string](1024)
 	})
 
-	mathjax.NewMathJax(
-		mathjax.WithInlineDelim(`$`, `$`),
-		mathjax.WithBlockDelim(`$$`, `$$`),
-	).Extend(md)
+	exec := gold_katex.New_Exec()
+	m.Parser().AddOptions(
+		parser.WithInlineParsers(
+			util.Prioritized(&gold_katex.Parser{}, 0),
+		),
+	)
+	m.Renderer().AddOptions(
+		renderer.WithNodeRenderers(
+			util.Prioritized(&HTMLRenderer{
+				exec: exec,
+			}, 0),
+		),
+	)
 }
 
-func (m *Math) TransformHtml(doc *goquery.Document) error {
-	process := func(s *goquery.Selection, text string, displayMode bool) {
-		tex := strings.Trim(text, ` $`)
-		html, err := rt.RenderKatex(context.TODO(), tex, displayMode)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		s.ReplaceWithHtml(html)
-	}
-	doc.Find(`span.math.inline`).Each(func(_ int, s *goquery.Selection) {
-		process(s, s.Text(), false)
-	})
-	doc.Find(`span.math.display`).Each(func(_ int, s *goquery.Selection) {
-		process(s, s.Text(), true)
-	})
-	return nil
+type _CacheKey struct {
+	displayMode bool
+	tex         string
 }
 
 var (
-	rt     *WebAssemblyRuntime
-	onceRt sync.Once
+	_cache     *lru.TTLCache[_CacheKey, string]
+	_onceCache sync.Once
 )
+
+// 优化：
+//
+//   - 共用了代码
+//   - 简化了缓存
+//   - 默认输出 HTML 而不是 mathml
+type HTMLRenderer struct {
+	exec *gold_katex.Exec
+}
+
+func (r *HTMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+	reg.Register(gold_katex.KindInline, func(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
+		return ast.WalkContinue, r.render(writer, source, n, entering, false)
+	})
+	reg.Register(gold_katex.KindBlock, func(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
+		return ast.WalkContinue, r.render(writer, source, n, entering, true)
+	})
+}
+
+func (r *HTMLRenderer) render(w util.BufWriter, _ []byte, n ast.Node, entering bool, block bool) error {
+	if !entering {
+		return nil
+	}
+
+	var equation string
+
+	if block {
+		equation = string(n.(*gold_katex.Block).Equation)
+	} else {
+		equation = string(n.(*gold_katex.Inline).Equation)
+	}
+
+	html, err, _ := _cache.GetOrLoad(
+		context.Background(),
+		_CacheKey{
+			displayMode: block,
+			tex:         string(equation),
+		},
+		func(ctx context.Context, ck _CacheKey) (string, time.Duration, error) {
+			html, err := Render(equation, block, r.exec)
+			return html, time.Hour, err
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.WriteString(html)
+	return err
+}
+
+func Render(equation string, displayMode bool, exec *gold_katex.Exec) (string, error) {
+	res, err := exec.RunString(
+		`katex.renderToString(expression, { displayMode: displayMode, output: 'html' })`,
+		gold_katex.Arg{Name: `expression`, Value: equation},
+		gold_katex.Arg{Name: `displayMode`, Value: displayMode},
+	)
+	if err != nil {
+		return ``, err
+	}
+	return res.Export().(string), nil
+}

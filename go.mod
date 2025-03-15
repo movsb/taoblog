@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/yuin/goldmark v1.7.1
+	github.com/yuin/goldmark v1.7.4
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/grpc v1.68.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
@@ -70,23 +70,28 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.29.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.16 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
+	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
+	github.com/dop251/goja v0.0.0-20240627195025-eb1f15ee67d2 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/forPelevin/gomoji v1.1.3 // indirect
 	github.com/fxamacker/cbor/v2 v2.6.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
+	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-webauthn/x v0.1.9 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-tpm v0.9.0 // indirect
+	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
+	github.com/libkush/goldmark-katex v0.3.4 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
