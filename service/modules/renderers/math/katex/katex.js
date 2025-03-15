@@ -1,7 +1,7 @@
-import * as std from "std";
+import { readInput, writeOutput } from "./common.js";
+import katex from "./katex.min.js";
 
-const stdin = std.in.readAsString();
-const args = JSON.parse(stdin);
+const args = readInput();
 
 // https://katex.org/docs/options
 const options = {
@@ -12,4 +12,4 @@ const options = {
 
 const tex = args.tex ?? '';
 
-std.out.puts(katex.renderToString(tex, options));
+writeOutput(katex.renderToString(tex, options));

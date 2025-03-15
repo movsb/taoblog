@@ -67,6 +67,8 @@ func (c *ProtoClient) Context() context.Context {
 }
 
 // 为了基于不带默认 token 的 client 创建基于父级 ctx 的认证。
+//
+// TODO: [go的grpc client可以携带默认凭证吗？](https://chatgpt.com/share/67d4858b-d004-8008-9627-8d738d00e0e4)
 func ContextFrom(parent context.Context, token string) context.Context {
 	tokenValue := token
 	if !strings.Contains(token, `:`) {
