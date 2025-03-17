@@ -11,19 +11,16 @@ body.admin {
 }
 
 body.admin.login {
-	background-color: var(--code-bg);
-	@media (prefers-color-scheme: dark) {
-		background-color: var(--color-bg);
-	}
 	margin: 0;
 	padding: 0;
 	height: 100vh;
 	display: flex;
+	background-color: var(--code-bg);
+	@media (prefers-color-scheme: dark) {
+		background-color: var(--color-bg);
+	}
 	#wrapper {
 		background-color: var(--color-bg);
-		@media (prefers-color-scheme: dark) {
-			background-color: var(--code-bg);
-		}
 		border: 1px solid var(--border-color);
 		border-radius: var(--border-radius);
 		margin: auto;
@@ -35,6 +32,9 @@ body.admin.login {
 		}
 		@media (max-width: 399px) {
 			width: 90%;
+		}
+		@media (prefers-color-scheme: dark) {
+			background-color: var(--code-bg);
 		}
 		h1 {
 			margin: 0;

@@ -1,13 +1,13 @@
 /*! syntactically awesome style sheet for https://blog.twofei.com */
 
-@import "assets";
-@import "variables";
-@import "global";
-@import "form";
-@import "admin";
-@import "header";
-@import "home";
-@import "content";
-@import "comment";
-@import "toolbar";
-@import "code";
+@use "assets";
+@use "variables";
+@use "global";
+@use "form";
+@use "admin";
+@use "header";
+@use "home";
+@use "content";
+@use "comment";
+@use "toolbar";
+@use "code";

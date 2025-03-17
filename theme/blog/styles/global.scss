@@ -1,3 +1,5 @@
+@use "variables";
+
 ::selection {
 	background-color: var(--selection-background-color);
 }
@@ -29,7 +31,7 @@ body.tweet, body.tweets {
 	}
 }
 
-@media screen and (max-width: $max_width) {
+@media screen and (max-width: variables.$max_width) {
     body {
         text-shadow: 0 0 1px rgba(0,0,0,0.22);
     }

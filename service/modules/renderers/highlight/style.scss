@@ -48,13 +48,13 @@ table.lntable {
 	// 行号列。
 	td.lntd:nth-child(1) {
 		color: #777;
-		@media (prefers-color-scheme: dark) {
-			color: #666;
-		}
 		user-select: none;
 		position: absolute;
 		left: 0;
 		width: calc(40px - .5em);
+		@media (prefers-color-scheme: dark) {
+			color: #666;
+		}
 		pre.chroma {
 			padding-right: .5em;
 			box-sizing: border-box;

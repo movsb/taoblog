@@ -3,16 +3,17 @@
     position: fixed;
     z-index: 1000000;
     background-color: rgba(0,0,0,0.88);
-	&.transparent {
-		@media (prefers-color-scheme: light) {
-			background-color: rgba(white, 0.95);
-		}
-	}
     left: 0px;
     top: 0px;
     right: 0px;
     bottom: 0px;
     cursor: zoom-out;
+
+	&.transparent {
+		@media (prefers-color-scheme: light) {
+			background-color: rgba(white, 0.95);
+		}
+	}
 
     > img, > svg {
         cursor: move;
@@ -38,22 +39,22 @@
 }
 
 body#error {
-	background-color: var(--code-bg);
-	@media (prefers-color-scheme: dark) {
-		background-color: var(--color-bg);
-	}
 	margin: 0;
 	padding: 0;
 	height: 100vh;
 	display: flex;
-	#wrapper {
+	background-color: var(--code-bg);
+	@media (prefers-color-scheme: dark) {
 		background-color: var(--color-bg);
-		@media (prefers-color-scheme: dark) {
-			background-color: var(--code-bg);
-		}
+	}
+	#wrapper {
 		border: 1px solid var(--border-color);
 		border-radius: var(--border-radius);
 		padding: 2em;
 		margin: auto;
+		background-color: var(--color-bg);
+		@media (prefers-color-scheme: dark) {
+			background-color: var(--code-bg);
+		}
 	}
 }
