@@ -39,12 +39,13 @@ func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	return p
 }
 
+// 错误被忽略了，因为返回的渲染结果包含错误。
 func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) error {
 	compressed, err := compress(source)
 	if err != nil {
 		p.error(w)
 		log.Println(`渲染失败`, err)
-		return err
+		return nil
 	}
 
 	got, err := p.cache(compressed, func(ctx context.Context) ([]byte, error) {
@@ -62,7 +63,7 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 	if err != nil {
 		p.error(w)
 		log.Println(`渲染失败`, err)
-		return err
+		return nil
 	}
 
 	var cache _Cache
