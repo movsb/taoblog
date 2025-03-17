@@ -77,7 +77,9 @@ func TestParseLunarDate(t *testing.T) {
 // 在 GitHub Actions 上面偶尔可能跑不过，暂时不测试。
 func TestLunarDateAddDays(t *testing.T) {
 	l := lunar.NewLunarDate(2025, 6, 30, 0, 0, 0, false)
+	// t.Log(`当前：`, l.SolarTime().Unix())
 	a := l.AddDays(1)
+	// t.Log(`加一：`, a.SolarTime().Unix())
 	if a.DateString() != `二零二五年闰六月初一` {
 		t.Fatalf(`农历不相等：%v`, a.DateString())
 	}

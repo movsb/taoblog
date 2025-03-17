@@ -7,9 +7,6 @@ import (
 	"github.com/Lofanmi/chinese-calendar-golang/calendar"
 )
 
-// TODO 需要修改成服务器时间。
-var FixedZone = time.FixedZone(`fixed`, 8*60*60)
-
 // 农历日期，及相关计算。
 type LunarDate struct {
 	c *calendar.Calendar
@@ -33,14 +30,15 @@ func (d LunarDate) SolarTime() time.Time {
 	t := time.Date(
 		int(s.GetYear()), time.Month(s.GetMonth()), int(s.GetDay()),
 		int(s.GetHour()), int(s.GetMinute()), int(s.GetSecond()), int(s.GetNanosecond()),
-		FixedZone,
+		time.Local,
 	)
 	return t
 }
 
 // 返回“添加 N 天”后的农历日期。
 func (d LunarDate) AddDays(n int) LunarDate {
-	t := d.SolarTime().AddDate(0, 0, n)
+	// AddDate 会因为时区产生偏移，所以这里直接计算。
+	t := d.SolarTime().Add(time.Hour * 24 * time.Duration(n))
 	c := calendar.ByTimestamp(t.Unix())
 	return LunarDate{c: c}
 }
