@@ -7,11 +7,6 @@ import (
 	"sync"
 )
 
-type AvatarHasher interface {
-	ID(email string) int
-	Email(id int) string
-}
-
 type AvatarHash struct {
 	id2email map[int]string
 	email2id map[string]int

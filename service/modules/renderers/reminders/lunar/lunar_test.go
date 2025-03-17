@@ -74,13 +74,34 @@ func TestParseLunarDate(t *testing.T) {
 	}
 }
 
-/*
-在 GitHub Actions 上面偶尔可能跑不过，暂时不测试。
+// 在 GitHub Actions 上面偶尔可能跑不过，暂时不测试。
 func TestLunarDateAddDays(t *testing.T) {
-	l := reminders.NewLunarDate(2025, 6, 30, 0, 0, 0, false)
+	l := lunar.NewLunarDate(2025, 6, 30, 0, 0, 0, false)
 	a := l.AddDays(1)
 	if a.DateString() != `二零二五年闰六月初一` {
 		t.Fatalf(`农历不相等：%v`, a.DateString())
 	}
 }
-*/
+
+func TestLunarDateAddYears(t *testing.T) {
+	l := lunar.NewLunarDate(2005, 3, 8, 0, 0, 0, false)
+	if s := l.AddYears(1).DateString(); s != `二零零六年三月初八` {
+		t.Fatalf(`农历不相等：%v`, s)
+	}
+	if s := l.AddYears(20).DateString(); s != `二零二五年三月初八` {
+		t.Fatalf(`农历不相等：%v`, s)
+	}
+	if s := l.AddYears(26).DateString(); s != `二零三一年三月初八` {
+		t.Fatalf(`农历不相等：%v`, s)
+	}
+	for i := 0; i < 50; i++ {
+		t.Log(l.AddYears(i).DateString())
+	}
+}
+
+func TestLunarDateAddYears2(t *testing.T) {
+	l := lunar.NewLunarDate(2005, 2, 30, 0, 0, 0, false)
+	if s := l.AddYears(1).DateString(); s != `二零零六年二月廿九` {
+		t.Fatalf(`农历不相等：%v`, s)
+	}
+}

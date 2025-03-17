@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -64,7 +65,10 @@ func (s *_LogStore) FindLog(ctx context.Context, ty, subType string, data any) *
 		return &log
 	}
 	if !taorm.IsNotFoundError(err) {
-		panic(err)
+		// TODO 正确处理关闭数据库的情况
+		if !strings.Contains(err.Error(), `database is closed`) {
+			panic(err)
+		}
 	}
 	return nil
 }

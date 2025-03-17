@@ -40,9 +40,57 @@ func (d LunarDate) SolarTime() time.Time {
 
 // 返回“添加 N 天”后的农历日期。
 func (d LunarDate) AddDays(n int) LunarDate {
-	t := d.SolarTime().AddDate(0, 0, 1)
+	t := d.SolarTime().AddDate(0, 0, n)
 	c := calendar.ByTimestamp(t.Unix())
 	return LunarDate{c: c}
+}
+
+// 返回“添加 N 年”后的农历日期。
+// 对于月份，目前只保证数字相等，不包含“闰”。
+func (d LunarDate) AddYears(n int) LunarDate {
+	var (
+		l             = d.c.Lunar
+		expectedYear  = int(l.GetYear()) + n
+		expectedMonth = l.GetMonth()
+		expectedDay   = l.GetDay()
+	)
+
+	calc := func(near time.Time) bool {
+		lu := LunarDate{c: calendar.ByTimestamp(near.Unix())}
+		gotYear := lu.c.Lunar.GetYear()
+		gotMonth := lu.c.Lunar.GetMonth()
+		isLeapMonth := lu.c.Lunar.IsLeapMonth()
+		gotDay := lu.c.Lunar.GetDay()
+
+		if expectedYear == int(gotYear) && expectedMonth == gotMonth {
+			if expectedDay == gotDay && !isLeapMonth {
+				return true
+			}
+		}
+		return false
+	}
+
+	base := d.SolarTime().AddDate(n, 0, 0)
+
+	// 前后计算 1000 天以推算到最接近的一天。
+	for i := range 1000 {
+		near1 := base.AddDate(0, 0, i)
+		if calc(near1) {
+			return LunarDate{c: calendar.ByTimestamp(near1.Unix())}
+		}
+
+		near2 := base.AddDate(0, 0, -i)
+		if calc(near2) {
+			return LunarDate{c: calendar.ByTimestamp(near2.Unix())}
+		}
+	}
+
+	// 最后一天天数可能不一样，前进到下一个月，然后减一天。
+	if expectedDay != 1 && d.AddDays(1).c.Lunar.GetDay() == 1 {
+		return d.AddDays(1).AddYears(n).AddDays(-1)
+	}
+
+	panic(fmt.Sprintf(`找不到对应的农历：%s + %d Year`, d.DateString(), n))
 }
 
 // 解析农历日期。

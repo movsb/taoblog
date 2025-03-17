@@ -28,7 +28,7 @@ import (
 
 var SourceRelativeDir = dir.SourceRelativeDir()
 
-//go:embed player.html script.js style.css style.css.map
+//go:embed player.html script.js style.css
 var _embed embed.FS
 var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
