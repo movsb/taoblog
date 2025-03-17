@@ -20,15 +20,11 @@ import (
 var _root embed.FS
 
 func init() {
-	dynamic.Dynamic[`highlight`] = dynamic.Content{
-		Styles: []string{
-			string(utils.Must1(_root.ReadFile(`style.css`))),
-		},
-		Scripts: []string{
-			string(utils.Must1(_root.ReadFile(`script.js`))),
-		},
-		// Root: _root,
-	}
+	dynamic.RegisterInit(func() {
+		const module = `highlight`
+		dynamic.WithStyles(module, _root, `style.css`)
+		dynamic.WithScripts(module, _root, `script.js`)
+	})
 }
 
 type Highlight struct{}

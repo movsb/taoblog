@@ -297,7 +297,7 @@ func TestPrettifier(t *testing.T) {
 			Markdown: `[狗头]`,
 			Text:     `[狗头]`, // 其实直接用表情图片本身也是很好的。
 			Options: []renderers.Option2{
-				emojis.New(),
+				emojis.New(utils.Must1(url.Parse(`/`))),
 			},
 		},
 		{
@@ -344,9 +344,10 @@ func TestSpec(t *testing.T) {
 	gr := utils.Must1(gzip.NewReader(fp))
 
 	testCases := test_utils.MustLoadCasesFromYamlReader[_Case](gr)
+	baseURL, _ := url.Parse(`/`)
 	for _, tc := range testCases {
 		md := renderers.NewMarkdown(
-			emojis.New(),
+			emojis.New(baseURL),
 			renderers.WithXHTML(),
 			renderers.WithoutTransform(),
 		)

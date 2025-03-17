@@ -3,11 +3,10 @@ package emojis
 import (
 	"embed"
 	"fmt"
+	"net/url"
 	"regexp"
-	"sync"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/movsb/taoblog/modules/utils"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -16,47 +15,53 @@ import (
 	"github.com/yuin/goldmark/util"
 )
 
-//go:embed assets style.css
-var _root embed.FS
-
 var (
-	_once sync.Once
+	//go:embed assets style.css
+	_root embed.FS
+
+	// 映射：狗头 → assets/weixin/doge.png
 	_refs = map[string]string{}
 )
 
-type Emojis struct{}
+var BaseURLForDynamic = dynamic.BaseURL.JoinPath(`emojis/`)
+
+type Emojis struct {
+	baseURL *url.URL
+}
 
 var _ interface {
 	goldmark.Extender
 	parser.InlineParser
 } = (*Emojis)(nil)
 
-func New() *Emojis {
-	return &Emojis{}
+func New(baseURL *url.URL) *Emojis {
+	return &Emojis{
+		baseURL: baseURL,
+	}
 }
 
 func init() {
-	dynamic.Dynamic[`emojis`] = dynamic.Content{
-		Root: _root,
-		Styles: []string{
-			string(utils.Must1(_root.ReadFile(`style.css`))),
-		},
-	}
+	dynamic.RegisterInit(func() {
+		const module = `emojis`
 
-	weixin := func(fileName string, aliases ...string) {
-		// NOTE：emoji 用的单数
-		// NOTE：没有转码，图简单。
-		dest := fmt.Sprintf(`assets/weixin/%s`, fileName)
-		for _, a := range aliases {
-			_refs[a] = dest
+		dynamic.WithRoot(module, _root)
+		dynamic.WithStyles(module, _root, `style.css`)
+
+		weixin := func(fileName string, aliases ...string) {
+			// NOTE：emoji 用的单数
+			// NOTE：没有转码，图简单。
+			dest := fmt.Sprintf(`assets/weixin/%s`, fileName)
+			for _, a := range aliases {
+				_refs[a] = dest
+			}
 		}
-	}
 
-	weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
-	weixin(`机智.png`, `机智`)
-	weixin(`捂脸.png`, `捂脸`)
-	weixin(`耶.png`, `耶`)
-	weixin(`皱眉.png`, `皱眉`, `纠结`, `小纠结`)
+		weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
+		weixin(`机智.png`, `机智`)
+		weixin(`捂脸.png`, `捂脸`)
+		weixin(`耶.png`, `耶`)
+		weixin(`皱眉.png`, `皱眉`, `纠结`, `小纠结`)
+	})
 }
 
 func (e *Emojis) Extend(md goldmark.Markdown) {
@@ -83,7 +88,12 @@ func (e *Emojis) Parse(parent ast.Node, block text.Reader, pc parser.Context) as
 	if len(ref) == 0 {
 		return nil
 	}
-	link.Destination = []byte(`/v3/dynamic/` + ref)
+
+	if u, err := url.Parse(ref); err == nil {
+		u = e.baseURL.ResolveReference(u)
+		link.Destination = []byte(u.String())
+	}
+
 	block.Advance(len(emoji))
 	img := ast.NewImage(link)
 	img.SetAttributeString(`class`, `emoji weixin`)

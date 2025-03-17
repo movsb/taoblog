@@ -39,7 +39,7 @@ require (
 	github.com/libkush/goldmark-katex v0.3.4
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
 	github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2
-	github.com/phuslu/lru v1.0.16
+	github.com/phuslu/lru v1.0.18
 	github.com/tdewolff/parse/v2 v2.7.19
 	github.com/xtaci/smux v1.5.24
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc

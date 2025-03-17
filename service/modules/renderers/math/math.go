@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"io/fs"
-	"regexp"
 	"sync"
 	"time"
 
@@ -21,25 +20,17 @@ import (
 	"github.com/yuin/goldmark/util"
 )
 
-//go:generate sass --no-source-map static/style.scss static/style.css
+//go:generate sass --style compressed --no-source-map katex/style.scss katex/style.css
 
-//go:embed static katex/katex.min.css katex/style.css
+//go:embed static katex/katex.min.stripped.css katex/style.css
 var Root embed.FS
 
 func init() {
 	dynamic.RegisterInit(func() {
+		const module = `katex`
 		katexDir := utils.Must1(fs.Sub(Root, `katex`))
-		raw := utils.Must1(fs.ReadFile(katexDir, `katex.min.css`))
-		// 删除不必要的字体。
-		stripped := regexp.MustCompile(`,url[^}]+`).ReplaceAllLiteral(raw, nil)
-		customize := utils.Must1(fs.ReadFile(katexDir, `style.css`))
-		dynamic.Dynamic[`math`] = dynamic.Content{
-			Styles: []string{
-				string(stripped),
-				string(customize),
-			},
-			Root: utils.Must1(fs.Sub(Root, `static`)),
-		}
+		dynamic.WithRoot(module, utils.Must1(fs.Sub(Root, `static`)))
+		dynamic.WithStyles(module, katexDir, `katex.min.stripped.css`, `style.css`)
 		sass.WatchDefaultAsync(dir.SourceAbsoluteDir().Join(`katex`))
 	})
 }

@@ -28,17 +28,14 @@ var SourceRelativeDir = dir.SourceRelativeDir()
 //go:embed player.html script.js style.css style.css.map
 var _root embed.FS
 
-//go:generate sass --style compressed style.scss style.css
+//go:generate sass --style compressed --no-source-map style.scss style.css
 
 func init() {
-	dynamic.Dynamic[`media_tags`] = dynamic.Content{
-		Styles: []string{
-			string(utils.Must1(_root.ReadFile(`style.css`))),
-		},
-		Scripts: []string{
-			string(utils.Must1(_root.ReadFile(`script.js`))),
-		},
-	}
+	dynamic.RegisterInit(func() {
+		const module = `media_tags`
+		dynamic.WithStyles(module, _root, `style.css`)
+		dynamic.WithScripts(module, _root, `script.js`)
+	})
 }
 
 type MediaTags struct {

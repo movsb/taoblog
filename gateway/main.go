@@ -71,7 +71,7 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 	// 可跨进程使用。
 	{
 		// 扩展功能动态生成的样式、脚本、文件。
-		mc.Handle(`GET /v3/dynamic/`, http.StripPrefix(`/v3/dynamic`, dynamic.New()))
+		mc.Handle(dynamic.PrefixSlashed, http.StripPrefix(dynamic.Prefix, dynamic.New()))
 
 		// 博客功能集
 		mc.Handle(`GET /v3/features/{theme}`, features.New())

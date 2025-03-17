@@ -390,7 +390,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		katex.New(),
 		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
 		friends.New(s.friendsTask, int(postId)),
-		emojis.New(),
+		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
 		extension.GFM,
 		extension.NewFootnote(

@@ -12,18 +12,15 @@ import (
 	"github.com/yuin/goldmark/parser"
 )
 
-//go:generate sass --no-source-map style.scss style.css
+//go:generate sass --style compressed --no-source-map style.scss style.css
 
 //go:embed style.css
 var _root embed.FS
 
 func init() {
 	dynamic.RegisterInit(func() {
-		dynamic.Dynamic[`pikchr`] = dynamic.Content{
-			Styles: []string{
-				string(utils.Must1(_root.ReadFile(`style.css`))),
-			},
-		}
+		const module = `pikchr`
+		dynamic.WithStyles(module, _root, `style.css`)
 		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
 	})
 }

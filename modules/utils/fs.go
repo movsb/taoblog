@@ -109,6 +109,8 @@ func ListFiles(fsys fs.FS) ([]*proto.FileSpec, error) {
 	return nil, errors.New(`fs.ListFiles: unimplemented`)
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 type _OverlayFS struct {
 	layers []fs.FS
 }
