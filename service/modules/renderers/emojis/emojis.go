@@ -4,9 +4,11 @@ import (
 	"embed"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -17,7 +19,9 @@ import (
 
 var (
 	//go:embed assets style.css
-	_root embed.FS
+	_embed embed.FS
+
+	_root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 	// 映射：狗头 → assets/weixin/doge.png
 	_refs = map[string]string{}
@@ -44,8 +48,8 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `emojis`
 
-		dynamic.WithRoot(module, _root)
-		dynamic.WithStyles(module, _root, `style.css`)
+		dynamic.WithRoot(module, _embed, _root)
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
 
 		weixin := func(fileName string, aliases ...string) {
 			// NOTE：emoji 用的单数

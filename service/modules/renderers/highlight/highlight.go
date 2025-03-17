@@ -4,10 +4,12 @@ import (
 	"embed"
 	"fmt"
 	"html"
+	"os"
 	"sync"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
@@ -17,13 +19,14 @@ import (
 //go:generate sass --no-source-map --style compressed style.scss style.css
 
 //go:embed style.css script.js
-var _root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `highlight`
-		dynamic.WithStyles(module, _root, `style.css`)
-		dynamic.WithScripts(module, _root, `script.js`)
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
+		dynamic.WithScripts(module, _embed, _root, `script.js`)
 	})
 }
 

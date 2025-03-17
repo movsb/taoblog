@@ -3,12 +3,12 @@ package task_list
 import (
 	"embed"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
-	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -23,13 +23,13 @@ import (
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
 //go:embed style.css
-var _root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `task-list`
-		dynamic.WithStyles(module, _root, `style.css`)
-		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
 	})
 }
 

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -25,11 +26,16 @@ func WatchDefaultAsync(dir string) {
 // NOTE: 只在 DevMode 下执行。
 func Watch(dir string, input, output string) {
 	if !version.DevMode() {
-		// log.Println(`非开发模式，不观察样式：`, dir)
-		return
+		log.Fatalln(`非开发模式，不能观察样式：`, dir)
 	}
 
-	log.Println(`动态样式观察：`, dir, input)
+	// 去掉可能的绝对路径前缀，用于日志打印。
+	dirStripped := dir
+	if _, after, found := strings.Cut(dir, version.NameLowercase); found {
+		dirStripped = after[1:]
+	}
+
+	log.Println(`动态样式观察：`, dirStripped, input)
 	exitOnError := true
 
 	bundle := func() {
@@ -40,12 +46,12 @@ func Watch(dir string, input, output string) {
 		cmd.Dir = dir
 		if err := cmd.Run(); err != nil {
 			if exitOnError {
-				log.Fatalln(err)
+				log.Fatalln(dirStripped, err)
 			} else {
-				log.Println(err)
+				log.Println(dirStripped, err)
 			}
 		} else {
-			log.Println(`样式更新：`, dir)
+			log.Println(`样式更新：`, dirStripped)
 		}
 	}
 

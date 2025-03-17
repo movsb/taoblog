@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"io/fs"
+	"os"
 	"sync"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/phuslu/lru"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -23,15 +23,18 @@ import (
 //go:generate sass --style compressed --no-source-map katex/style.scss katex/style.css
 
 //go:embed static katex/katex.min.stripped.css katex/style.css
-var Root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `katex`
-		katexDir := utils.Must1(fs.Sub(Root, `katex`))
-		dynamic.WithRoot(module, utils.Must1(fs.Sub(Root, `static`)))
-		dynamic.WithStyles(module, katexDir, `katex.min.stripped.css`, `style.css`)
-		sass.WatchDefaultAsync(dir.SourceAbsoluteDir().Join(`katex`))
+		katexDirRoot := utils.Must1(fs.Sub(_root, `katex`))
+		katexDirEmbed := utils.Must1(fs.Sub(_embed, `katex`))
+		staticDirRoot := utils.Must1(fs.Sub(_root, `static`))
+		staticDirEmbed := utils.Must1(fs.Sub(_embed, `static`))
+		dynamic.WithRoot(module, staticDirEmbed, staticDirRoot)
+		dynamic.WithStyles(module, katexDirEmbed, katexDirRoot, `katex.min.stripped.css`, `style.css`)
 	})
 }
 

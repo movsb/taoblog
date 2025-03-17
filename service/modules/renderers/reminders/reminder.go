@@ -3,26 +3,27 @@ package reminders
 import (
 	"embed"
 	"fmt"
-	"html/template"
 	"io"
+	"io/fs"
+	"os"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/yuin/goldmark/parser"
 )
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
 //go:embed reminder.html style.css
-var _root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `reminders`
-		dynamic.WithStyles(module, _root, `style.css`)
-		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
 	})
 }
 
@@ -52,7 +53,7 @@ func New(options ...RemindersOption) *Reminders {
 	return f
 }
 
-var tmpl = template.Must(template.New(`reminder`).Parse(string(utils.Must1(_root.ReadFile(`reminder.html`)))))
+var t = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
 
 func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {
 	defer utils.CatchAsError(&outErr)
@@ -72,5 +73,5 @@ func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 		*r.out = append(*r.out, rm)
 	}
 
-	return tmpl.Execute(w, rm)
+	return t.GetNamed(`reminder.html`).Execute(w, rm)
 }

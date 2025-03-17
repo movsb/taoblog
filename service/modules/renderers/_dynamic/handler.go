@@ -34,4 +34,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func InitAll() {
 	onceInits.Do(callInits)
 	once.Do(initContents)
+
+	if reloadAll.Load() {
+		reloadLock.Lock()
+		defer reloadLock.Unlock()
+		reloadAll.Store(false)
+		initContents()
+	}
 }

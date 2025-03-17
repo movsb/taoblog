@@ -9,8 +9,10 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -18,6 +20,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
 	"golang.org/x/net/html/atom"
@@ -26,15 +29,16 @@ import (
 var SourceRelativeDir = dir.SourceRelativeDir()
 
 //go:embed player.html script.js style.css style.css.map
-var _root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `media_tags`
-		dynamic.WithStyles(module, _root, `style.css`)
-		dynamic.WithScripts(module, _root, `script.js`)
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
+		dynamic.WithScripts(module, _embed, _root, `script.js`)
 	})
 }
 
@@ -73,7 +77,7 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 			if tag.devMode {
 				_gTmpl = utils.NewTemplateLoader(utils.NewDirFSWithNotify(string(SourceRelativeDir)), nil, tag.themeChanged)
 			} else {
-				_gTmpl = utils.NewTemplateLoader(_root, nil, nil)
+				_gTmpl = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, nil)
 			}
 		})
 	}

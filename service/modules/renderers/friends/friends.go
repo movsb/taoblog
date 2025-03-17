@@ -6,29 +6,31 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	"github.com/movsb/taoblog/theme/modules/sass"
 	"gopkg.in/yaml.v2"
 )
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
 //go:embed friend.html style.css
-var _root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `friends`
-		dynamic.WithStyles(module, _root, `style.css`)
-		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
 	})
 }
 
@@ -72,7 +74,7 @@ func (f Friend) DarkDataURL() template.URL {
 	return template.URL(f.iconDataURLs[1])
 }
 
-var tmpl = template.Must(template.New(`friend`).Parse(string(utils.Must1(_root.ReadFile(`friend.html`)))))
+var t = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
 
 func (f *Friends) TransformHtml(doc *goquery.Document) error {
 	// TODO 这个写法太泛了，容易 match 到意外的东西。
@@ -94,7 +96,7 @@ func (f *Friends) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`div.friends`).Each(func(_ int, s *goquery.Selection) {
 		for _, f := range bundle.Friends {
 			buf := bytes.NewBuffer(nil)
-			utils.Must(tmpl.Execute(buf, f))
+			utils.Must(t.GetNamed(`friend.html`).Execute(buf, f))
 			s.AppendHtml(buf.String())
 		}
 	})

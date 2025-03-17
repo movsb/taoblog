@@ -3,25 +3,25 @@ package pikchr
 import (
 	"embed"
 	"io"
+	"os"
 
 	"github.com/gopikchr/gopikchr"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/yuin/goldmark/parser"
 )
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
 //go:embed style.css
-var _root embed.FS
+var _embed embed.FS
+var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `pikchr`
-		dynamic.WithStyles(module, _root, `style.css`)
-		sass.WatchDefaultAsync(string(dir.SourceAbsoluteDir()))
+		dynamic.WithStyles(module, _embed, _root, `style.css`)
 	})
 }
 
