@@ -30,6 +30,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	gvz "github.com/movsb/taoblog/service/modules/renderers/graphviz"
 	"github.com/movsb/taoblog/service/modules/renderers/highlight"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/invalid_scheme"
@@ -415,6 +416,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			}),
 		)),
 		renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
+		renderers.WithFencedCodeBlockRenderer(`dot`, gvz.New()),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

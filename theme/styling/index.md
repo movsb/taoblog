@@ -220,3 +220,42 @@ spline same from .4cm below start of previous <->
 # Label the whole diagram
 text "Examples Of Pikchr Objects" big bold  at .8cm above north of AllObjects
 ```
+
+### GraphViz
+
+```dot
+digraph FamilyTree {
+    rankdir=TB;
+    node [shape=box, style=filled];
+
+    "爷爷" [fillcolor=lightblue];
+    "奶奶" [fillcolor=pink];
+    "爸爸" [fillcolor=lightblue];
+    "妈妈" [fillcolor=pink];
+    "叔叔" [fillcolor=lightblue];
+    "婶婶" [fillcolor=pink];
+    "我" [fillcolor=lightblue];
+    "堂兄" [fillcolor=lightblue];
+    "堂妹" [fillcolor=pink];
+    "孩子1" [fillcolor=lightblue];
+    "孩子2" [fillcolor=pink];
+
+    "爷爷" -> "爸爸";
+    "爷爷" -> "叔叔";
+    "奶奶" -> "爸爸";
+    "奶奶" -> "叔叔";
+
+    "爸爸" -> "我";
+    "妈妈" -> "我";
+    
+    "叔叔" -> "堂兄";
+    "叔叔" -> "堂妹";
+
+    "我" -> "孩子1";
+    "我" -> "孩子2";
+    
+    "爷爷" -> "奶奶" [style=dashed];
+    "爸爸" -> "妈妈" [style=dashed];
+    "叔叔" -> "婶婶" [style=dashed];
+}
+```
