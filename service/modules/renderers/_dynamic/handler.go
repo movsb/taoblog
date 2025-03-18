@@ -17,6 +17,7 @@ var (
 )
 
 func New() http.Handler {
+	InitAll()
 	return &Handler{}
 }
 
