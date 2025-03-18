@@ -263,3 +263,17 @@ digraph FamilyTree {
     "叔叔" -> "婶婶" [style=dashed];
 }
 ```
+
+### 族谱图
+
+```genealogy
+- id: 1
+  name: 😄
+- id: 2
+  name: 💧
+  spouse: 1
+- id: 3
+  name: 😅
+  father: 1
+  mother: 2
+```
