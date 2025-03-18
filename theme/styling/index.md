@@ -165,7 +165,11 @@
 
 行内公式：$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$
 
-块级公式：$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+块级公式：
+
+$$
+x = {-b \pm \sqrt{b^2-4ac} \over 2a}.
+$$
 
 ### PlantUML
 

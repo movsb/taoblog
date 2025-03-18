@@ -151,7 +151,7 @@ func (r *Resp) String() string {
 
 func fetch(ctx context.Context, ip string) (*Resp, error) {
 	if parsed, err := netip.ParseAddr(ip); err == nil {
-		if !parsed.IsGlobalUnicast() {
+		if !parsed.IsGlobalUnicast() || parsed.IsPrivate() {
 			return &Resp{Message: `私有地址。`}, nil
 		}
 	}
