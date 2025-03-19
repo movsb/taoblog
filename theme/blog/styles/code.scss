@@ -1,10 +1,13 @@
-/* 代码块 */
+// 不管是行内、块级代码，都保留空白。
+code {
+	white-space: pre;
+}
+
 pre > code {
 	// display: inline-block;
 	background: none;
 	font-family: var(--mono-font);
 	text-align: left;
-	white-space: pre;
 	word-spacing: normal;
 	word-break: normal;
 	word-wrap: normal;
