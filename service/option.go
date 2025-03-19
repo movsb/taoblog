@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"strconv"
@@ -200,4 +201,22 @@ func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateR
 	time.AfterFunc(time.Minute, s.cancel)
 
 	return &proto.ScheduleUpdateResponse{}, nil
+}
+
+func (s *Service) SetFavicon(ctx context.Context, in *proto.SetFaviconRequest) (*proto.SetFaviconResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	const maxData = 100 * 1024
+
+	if len(in.Data) > maxData {
+		return nil, status.Error(codes.InvalidArgument, `图标太大。`)
+	}
+
+	s.options.SetString(`favicon`, base64.RawURLEncoding.EncodeToString(in.Data))
+
+	if s.favicon != nil {
+		s.favicon.SetData(time.Now(), in.Data)
+	}
+
+	return &proto.SetFaviconResponse{}, nil
 }

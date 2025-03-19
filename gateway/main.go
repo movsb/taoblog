@@ -15,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/assets"
 	"github.com/movsb/taoblog/gateway/handlers/avatar"
 	"github.com/movsb/taoblog/gateway/handlers/debug"
+	"github.com/movsb/taoblog/gateway/handlers/favicon"
 	"github.com/movsb/taoblog/gateway/handlers/features"
 	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
@@ -62,6 +63,11 @@ func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, 
 	return g
 }
 
+func (g *Gateway) SetFavicon(f *favicon.Favicon) {
+	// 网站头像
+	g.mux.Handle(`/favicon.ico`, f)
+}
+
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
 	mc := utils.ServeMuxChain{ServeMux: mux}
 
@@ -70,6 +76,9 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 	// 无需鉴权的部分
 	// 可跨进程使用。
 	{
+		// 网站头像
+		// mc.Handle(`/favicon.ico`, favicon.NewFavicon())
+
 		// 扩展功能动态生成的样式、脚本、文件。
 		mc.Handle(dynamic.PrefixSlashed, http.StripPrefix(dynamic.Prefix, dynamic.New()))
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/base64"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway/addons"
+	"github.com/movsb/taoblog/gateway/handlers/favicon"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
@@ -112,6 +114,8 @@ type Service struct {
 
 	// 服务内有插件的更新可能会影响到内容渲染。
 	themeChangedAt time.Time
+	// 网站图标，临时放这儿。
+	favicon *favicon.Favicon
 
 	exporter *_Exporter
 	// 证书剩余天数。
@@ -126,6 +130,10 @@ type Service struct {
 	proto.ManagementServer
 	proto.SearchServer
 	proto.UtilsServer
+}
+
+func (s *Service) Favicon() *favicon.Favicon {
+	return s.favicon
 }
 
 func (s *Service) ThemeChangedAt() time.Time {
@@ -150,7 +158,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		tdb:  taorm.NewDB(db),
 		auth: auther,
 
-		cache:                lru.NewTTLCache[string, any](128),
+		cache:                lru.NewTTLCache[string, any](1024),
 		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](10240),
@@ -159,6 +167,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		maintenance: utils.NewMaintenance(),
 
 		themeChangedAt: time.Now(),
+		favicon:        favicon.NewFavicon(),
 	}
 
 	for _, opt := range options {
@@ -213,6 +222,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)
 	s.exporter = _NewExporter(s)
+
+	if value, err := s.options.GetString(`favicon`); err == nil {
+		d, _ := base64.RawURLEncoding.DecodeString(value)
+		s.favicon.SetData(time.Now(), d)
+	}
 
 	proto.RegisterUtilsServer(sr, s)
 	proto.RegisterAuthServer(sr, s)

@@ -122,6 +122,9 @@ service Management {
 	// 置“镜像需要更新”状态，守护进程获取此状态后更新镜像并重启。
 	// 此状态在 GetInfo 的接口的字段中标识。
 	rpc ScheduleUpdate(ScheduleUpdateRequest) returns (ScheduleUpdateResponse) {}
+
+	// 修改网站图标。
+	rpc SetFavicon (SetFaviconRequest) returns (SetFaviconResponse) {}
 }
 
 service Search {

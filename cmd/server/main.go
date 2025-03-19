@@ -189,6 +189,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.metrics.MustRegister(theService.Exporter())
 
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
+	s.gateway.SetFavicon(theService.Favicon())
+
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
 	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth, filesStore)

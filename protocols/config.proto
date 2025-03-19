@@ -60,3 +60,8 @@ message RestartResponse {
 
 message ScheduleUpdateRequest {}
 message ScheduleUpdateResponse {}
+
+message SetFaviconRequest {
+	bytes data = 1;
+}
+message SetFaviconResponse {}
