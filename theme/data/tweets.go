@@ -20,6 +20,7 @@ const TweetName = `碎碎念`
 func NewDataForTweets(ctx context.Context, svc proto.TaoBlogServer) *Data {
 	d := &Data{
 		Context: ctx,
+		User:    auth.Context(ctx).User,
 		svc:     svc,
 	}
 

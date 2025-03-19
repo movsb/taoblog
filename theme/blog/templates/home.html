@@ -47,6 +47,7 @@
 	<ul>没有评论。</ul>
 {{ end }}
 
+{{ if or .User.IsAdmin .User.IsGuest }}
 <div class="status">
 	<h2>服务状态</h2>
 	<ul id="status-list">
@@ -67,5 +68,6 @@
 		{{ end }}
 	</ul>
 </div>
+{{ end }}
 
 {{ render "footer" . }}

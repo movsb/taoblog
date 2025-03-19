@@ -158,7 +158,7 @@ func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User,
 	}
 
 	if user.Nickname == `` {
-		return nil, fmt.Errorf(`昵称不能为空。`)
+		return nil, status.Error(codes.InvalidArgument, `昵称不能为空。`)
 	}
 
 	if err := p.db.Model(&user).Create(); err != nil {

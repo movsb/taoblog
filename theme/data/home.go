@@ -24,14 +24,14 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 	d := &Data{
 		Context: ctx,
 		svc:     service,
+		User:    auth.Context(ctx).User,
 	}
 	home := &HomeData{
 		PostCount:    impl.GetDefaultIntegerOption("post_count", 0),
 		PageCount:    impl.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
-	user := auth.Context(ctx).User
-	ownership := utils.IIF(user.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
+	ownership := utils.IIF(d.User.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
 	rsp, err := service.ListPosts(ctx,
 		&proto.ListPostsRequest{
 			Limit:          15,

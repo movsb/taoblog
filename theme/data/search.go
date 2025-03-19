@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -36,6 +37,7 @@ func NewDataForSearch(ctx context.Context, service proto.TaoBlogServer, searcher
 	q := r.URL.Query().Get(`q`)
 	d := &Data{
 		Context: ctx,
+		User:    auth.Context(ctx).User,
 		Meta: MetaData{
 			Title: fmt.Sprintf("%s - 搜索结果", q),
 		},

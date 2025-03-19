@@ -26,6 +26,7 @@ type PostsData struct {
 func NewDataForPosts(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
 		Context: ctx,
+		User:    auth.Context(ctx).User,
 	}
 
 	postsData := &PostsData{

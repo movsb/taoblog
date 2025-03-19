@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -16,6 +17,7 @@ type TagData struct {
 func NewDataForTag(ctx context.Context, service proto.TaoBlogServer, tags []string) *Data {
 	d := &Data{
 		Context: ctx,
+		User:    auth.Context(ctx).User,
 	}
 	td := &TagData{
 		Names: tags,
