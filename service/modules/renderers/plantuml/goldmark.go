@@ -3,16 +3,32 @@ package plantuml
 import (
 	"bytes"
 	"context"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"sync"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils/dir"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark/parser"
 )
+
+//go:generate sass --style compressed --no-source-map style.scss style.css
+
+//go:embed style.css
+var _embed embed.FS
+var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
+
+func init() {
+	dynamic.RegisterInit(func() {
+		dynamic.WithStyles(`plantuml`, _embed, _root, `style.css`)
+	})
+}
 
 type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀

@@ -1,0 +1,21 @@
+svg.plantuml {
+	&.transparent { background-color: unset !important; }
+
+	padding: 1em !important;
+	box-sizing: border-box;
+
+	// 不加会有奇怪的 margin-bottom，不知道哪里来的
+	display: block;
+	
+	// 黑色主题下的背景图。
+	// 隐藏：1. 继承主题背景 2. 事件传给 svg 本身。
+	&.dark > g > rect:first-child {
+		display: none;
+	}
+	
+	// 日夜轮换显示。
+	@media (prefers-color-scheme: dark) {
+		&:not(.dark) { display: none;}
+		&.dark { display: block !important; }
+	}
+}
