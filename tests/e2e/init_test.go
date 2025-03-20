@@ -26,7 +26,7 @@ type R struct {
 // 会在服务启动后快速返回。
 func Serve(ctx context.Context, options ...server.With) *R {
 	// 测试环境应该不依赖本地系统。
-	version.EnableDevMode = false
+	version.ForceEnableDevMode = `0`
 
 	cfg := config.DefaultConfig()
 	cfg.Database.Posts = "" // 使用内存

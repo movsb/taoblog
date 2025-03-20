@@ -3,9 +3,11 @@ package version
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -19,11 +21,25 @@ var Time = time.Now()
 
 // 在运行时控制开发者模式。
 // 只对部分可修改的配置生效，方便用于测试。
-var EnableDevMode = true
+var ForceEnableDevMode string
 
 // 是否是开发模式
 func DevMode() bool {
-	return EnableDevMode && (GitCommit == "" || strings.EqualFold(GitCommit, `head`))
+	if ForceEnableDevMode != `` {
+		return slices.Contains([]string{`1`, `yes`, `true`}, ForceEnableDevMode)
+	}
+
+	var envDev bool
+	switch {
+	case GitCommit == ``:
+		envDev = true
+	case strings.EqualFold(GitCommit, `head`):
+		envDev = true
+	case utils.DropLast1(os.Stat(`go.mod`)) != nil:
+		envDev = true
+	}
+
+	return envDev
 }
 
 // 在编译脚本里面被注入进来。
@@ -53,9 +69,13 @@ func AddCommands(rootCmd *cobra.Command) {
 				"Built At  : %s\n"+
 				"Go Version: %s\n"+
 				"Git Author: %s\n"+
-				"Git Commit: %s\n",
+				"Git Commit: %s\n"+
+				"\n"+
+				"Dev Mode  : %v"+
+				"\n",
 				BuiltOn, BuiltAt,
 				GoVersion, GitAuthor, GitCommit,
+				DevMode(),
 			)
 		},
 	}

@@ -52,9 +52,17 @@ func WithRoots(module string, publicEmbed, publicRoot, privateEmbed, privateRoot
 	c.public = utils.IIF(version.DevMode(), publicRoot, publicEmbed)
 }
 
+func filesExists(f fs.FS, paths ...string) {
+	for _, p := range paths {
+		f := utils.Must1(f.Open(p))
+		f.Close()
+	}
+}
+
 func WithStyles(module string, paths ...string) {
 	c := initModule(module)
 	c.styleFiles = paths
+	filesExists(c.private, paths...)
 	if version.DevMode() {
 		// 可能是 os.DirFS，但由于是未导出类型，只能自己作判断。
 		value := reflect.ValueOf(c.private)
@@ -79,6 +87,7 @@ func WithStyles(module string, paths ...string) {
 func WithScripts(module string, paths ...string) {
 	c := initModule(module)
 	c.scriptFiles = paths
+	filesExists(c.private, paths...)
 	if version.DevMode() {
 		// 可能是 os.DirFS，但由于是未导出类型，只能自己作判断。
 		value := reflect.ValueOf(c.private)
