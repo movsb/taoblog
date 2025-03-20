@@ -1,4 +1,4 @@
-package katex_test
+package math_test
 
 import (
 	_ "embed"

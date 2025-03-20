@@ -11,7 +11,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers"
-	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 )
 
 //go:embed test_data/player.html

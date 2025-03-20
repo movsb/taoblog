@@ -1,0 +1,42 @@
+@counter-style square-enclosed {
+	system: numeric;
+	symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
+	prefix: "[";
+	suffix: "] ";
+}
+
+.footnotes {
+	font-size: 80%;
+	ol {
+		list-style-type: square-enclosed;
+	}
+	li {
+		&::marker {
+			color: inherit;
+			font-family: monospace;
+		}
+		&:target {
+			position: relative;
+			&::before {
+				content: "";
+				background-color: var(--highlight-color);
+				position: absolute;
+				left: -3px;
+				bottom: 0;
+				right: 0;
+				top: 0;
+			}
+		}
+		p {
+			position: relative;
+			margin: 0;
+			padding-left: 1em;
+			// 学维斯百科放前面
+			.footnote-backref {
+				position: absolute;
+				left: 0;
+				top: 0;
+			}
+		}
+	}
+}

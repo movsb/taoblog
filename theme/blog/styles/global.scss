@@ -185,29 +185,6 @@ hr {
 	border-bottom: 1px dashed var(--border-color);
 }
 
-// https://blog.twofei.com/914/
-// https://developer.mozilla.org/en-US/docs/Web/CSS/@counter-style
-@counter-style parenthesis {
-	system: numeric;
-	symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
-	suffix: ") ";
-}
-@counter-style square-enclosed {
-	system: numeric;
-	symbols: "0" "1" "2" "3" "4" "5" "6" "7" "8" "9";
-	prefix: "[";
-	suffix: "] ";
-}
-ul, ol {
-	&.marker-minus          { list-style-type: "- ";        }
-	&.marker-plus           { list-style-type: "+ ";        }
-	&.marker-asterisk       { list-style-type: "* ";        }
-	&.marker-period         { list-style-type: decimal;     }
-	&.marker-parenthesis    { list-style-type: parenthesis; }
-}
-.reset-list-style-type      { list-style-type: initial;     }
-li::marker                  { color: var(--accent-color);   }
-
 audio, iframe, img, svg, video {
 	border-radius: var(--border-radius);
 }
@@ -266,72 +243,3 @@ dialog {
 
 // SVG
 text { cursor: text; }
-
-// 分割线扩展
-div.divider {
-	margin: 1.5em 0;
-	border-top: 1px dashed var(--border-color);
-	text-align: center;
-	line-height: 0;
-	overflow: visible;
-}
-.divider span {
-	padding: 0 .3em;
-	background-color: var(--color-bg);
-	transition: background-color .2s linear;
-	color: var(--border-color);
-	text-shadow: none;
-	font-weight: bold;
-	border-radius: var(--border-radius);
-}
-@media (prefers-color-scheme: dark) {
-	.divider span {
-		background-color: var(--code-bg);
-	}
-}
-@container (min-width: 850px) {
-	div.divider {
-		text-align: left;
-		span {
-			position: relative;
-			left: 1em;
-		}
-	}
-}
-
-// 脚注
-.footnotes {
-	font-size: 80%;
-	ol {
-		list-style-type: square-enclosed;
-	}
-	li {
-		&::marker {
-			color: inherit;
-			font-family: monospace;
-		}
-		&:target {
-			position: relative;
-			&::before {
-				content: "";
-				background-color: var(--highlight-color);
-				position: absolute;
-				left: -3px;
-				bottom: 0;
-				right: 0;
-				top: 0;
-			}
-		}
-		p {
-			position: relative;
-			margin: 0;
-			padding-left: 1em;
-			// 学维斯百科放前面
-			.footnote-backref {
-				position: absolute;
-				left: 0;
-				top: 0;
-			}
-		}
-	}
-}

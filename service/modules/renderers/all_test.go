@@ -15,13 +15,14 @@ import (
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
-	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
+	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/imaging"
-	katex "github.com/movsb/taoblog/service/modules/renderers/math"
+	"github.com/movsb/taoblog/service/modules/renderers/lazying"
+	"github.com/movsb/taoblog/service/modules/renderers/link_target"
+	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
-	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
-	"github.com/yuin/goldmark/extension"
 )
 
 func TestMarkdown(t *testing.T) {
@@ -54,14 +55,14 @@ func TestMarkdownAll(t *testing.T) {
 			ID:       1,
 			Markdown: `![avatar](avatar.jpg?scale=0.3)`,
 			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
-			Html:     `<p><img src="avatar.jpg" alt="avatar" loading="lazy" width="138" height="138"/></p>`,
+			Html:     `<p><img src="avatar.jpg" alt="avatar" width="138" height="138"/></p>`,
 		},
 		{
 			ID:       2,
 			Markdown: `- ![avatar](avatar.jpg?scale=0.3)`,
 			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
 			Html: `<ul>
-<li><img src="avatar.jpg" alt="avatar" loading="lazy" width="138" height="138"/></li>
+<li><img src="avatar.jpg" alt="avatar" width="138" height="138"/></li>
 </ul>`,
 		},
 		{
@@ -69,7 +70,7 @@ func TestMarkdownAll(t *testing.T) {
 			Markdown: `- ![avatar](中文.jpg?scale=0.3)`,
 			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
 			Html: `<ul>
-<li><img src="%E4%B8%AD%E6%96%87.jpg" alt="avatar" loading="lazy" width="138" height="138"/></li>
+<li><img src="%E4%B8%AD%E6%96%87.jpg" alt="avatar" width="138" height="138"/></li>
 </ul>`,
 		},
 		{
@@ -77,7 +78,7 @@ func TestMarkdownAll(t *testing.T) {
 			Description: `支持网络图片的缩放`,
 			Markdown:    fmt.Sprintf(`![](%s/avatar.jpg?scale=0.1)`, host),
 			Options:     []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
-			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" loading="lazy" width="46" height="46"/></p>`, host),
+			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" width="46" height="46"/></p>`, host),
 		},
 		{
 			ID:          4,
@@ -114,7 +115,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID: 5.1,
 			Options: []renderers.Option2{
-				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
+				link_target.New(link_target.OpenLinksInNewTabKindAll),
 			},
 			Markdown: `[](/foo)`,
 			Html:     `<p><a href="/foo" class="external" target="_blank"></a></p>`,
@@ -122,7 +123,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID: 5.2,
 			Options: []renderers.Option2{
-				renderers.WithOpenLinksInNewTab(renderers.OpenLinksInNewTabKindAll),
+				link_target.New(link_target.OpenLinksInNewTabKindAll),
 			},
 			Markdown: `[](#section)`,
 			Html:     `<p><a href="#section"></a></p>`,
@@ -133,14 +134,14 @@ func TestMarkdownAll(t *testing.T) {
 ![样式1](1.jpg "样式1")
 ![样式2](2.jpg "样式2")
 ![样式3](3.jpg '样式3"><a>"')`,
-			Html: `<p><img src="1.jpg" alt="样式1" title="样式1" loading="lazy"/>
-<img src="2.jpg" alt="样式2" title="样式2" loading="lazy"/>
-<img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;" loading="lazy"/></p>`,
+			Html: `<p><img src="1.jpg" alt="样式1" title="样式1">
+<img src="2.jpg" alt="样式2" title="样式2">
+<img src="3.jpg" alt="样式3" title="样式3&quot;&gt;&lt;a&gt;&quot;"></p>`,
 		},
 		{
 			ID:       8.0,
 			Markdown: `- item`,
-			Options:  []renderers.Option2{renderers.WithReserveListItemMarkerStyle()},
+			Options:  []renderers.Option2{list_markers.New()},
 			Html: `<ul class="marker-minus">
 <li>item</li>
 </ul>`,
@@ -148,7 +149,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       9.0,
 			Markdown: `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
-			Options:  []renderers.Option2{renderers.WithLazyLoadingFrames()},
+			Options:  []renderers.Option2{lazying.New()},
 			Html:     `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="" loading="lazy"></iframe>`,
 		},
 		{
@@ -160,11 +161,11 @@ func TestMarkdownAll(t *testing.T) {
 ![](2.jpg)
 
 </Gallery>`,
-			Html: `<div class="gallery"><img src="1.jpg" alt="" loading="lazy"/><img src="2.jpg" alt="" loading="lazy"/></div>`,
+			Html: `<div class="gallery"><img src="1.jpg" alt=""/><img src="2.jpg" alt=""/></div>`,
 		},
 		{
 			ID: 11.0,
-			Options: []renderers.Option2{renderers.WithHashTags(func(tag string) string {
+			Options: []renderers.Option2{hashtags.New(func(tag string) string {
 				return utils.DropLast1(url.Parse(`http://localhost/tags`)).JoinPath(tag).String()
 			}, &outputTags)},
 			Markdown: `a #b c #桃子`,
@@ -181,7 +182,7 @@ func TestMarkdownAll(t *testing.T) {
 		if tc.ID == 10.0 {
 			log.Println(`debug`)
 		}
-		options := []renderers.Option2{renderers.WithImageRenderer()}
+		options := []renderers.Option2{}
 		options = append(options, tc.Options...)
 		md := renderers.NewMarkdown(options...)
 		html, err := md.Render(tc.Markdown)
@@ -191,143 +192,6 @@ func TestMarkdownAll(t *testing.T) {
 		sep := strings.Repeat("-", 128)
 		if strings.TrimSpace(html) != strings.TrimSpace(tc.Html) {
 			t.Fatalf("not equal %v:\n%s\n%s\n%s\n%s\n%s\n\n", tc.ID, tc.Markdown, sep, tc.Html, sep, html)
-		}
-	}
-}
-
-func TestPrettifier(t *testing.T) {
-	cases := []struct {
-		ID          float32
-		Options     []renderers.Option2
-		Description string
-		Markdown    string
-		Text        string
-	}{
-		{
-			ID:       1,
-			Markdown: `![文本](/URL)`,
-			Text:     `[图片]`,
-		},
-		{
-			ID:       2,
-			Markdown: `[文本](链接)`,
-			Text:     `文本`,
-		},
-		{
-			ID:       2.1,
-			Markdown: `[https://a](https://a)`,
-			Text:     `[链接]`,
-		},
-		{
-			ID:       2.2,
-			Markdown: `<https://a>`,
-			Text:     `[链接]`,
-		},
-		{
-			ID:       3,
-			Options:  []renderers.Option2{},
-			Markdown: "代码：\n\n```go\npackage main\n```",
-			Text:     "代码：\n[代码]",
-		},
-		{
-			ID: 4,
-			Markdown: `|h1|h2|
-|-|-|
-|1|2|
-`,
-			Text: `[表格]`,
-		},
-		{
-			ID: 5,
-			Markdown: `
-光看歌词怎么行？必须种草易仁莲：
-
-<iframe></iframe>
-<video></video>
-<audio></audio>
-<canvas></canvas>
-<embed></embed>
-<map></map>
-<object></object>
-<script></script>
-<svg></svg>
-<code></code>
-`,
-			Text: `光看歌词怎么行？必须种草易仁莲：
-[页面]
-[视频]
-[音频]
-[画布]
-[对象]
-[地图]
-[对象]
-[脚本]
-[图片]
-[代码]
-`,
-		},
-		{
-			ID:       6,
-			Markdown: "一直用 `@media screen`，今天才知道有 [`@container`][mdn] 这么个神器\n\n[mdn]: http://mdn",
-			Text:     `一直用 @media screen，今天才知道有 @container 这么个神器`,
-		},
-		{
-			ID:       7.1,
-			Markdown: `[https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3](https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3)`,
-			Text:     `[链接]`,
-		},
-		{
-			ID:       7.2,
-			Markdown: `[万物死](https://blog.twofei.com/118/%e4%b8%87%e7%89%a9%e6%ad%bb%208-bit.mp3)`,
-			Text:     `万物死`,
-		},
-		{
-			ID:       8.0,
-			Markdown: "用 `<script>` 嵌入 JSON 的正规做法[^1]：\n\n[^1]: https://",
-			Text:     `用 <script> 嵌入 JSON 的正规做法：`,
-		},
-		{
-			ID:       9.0,
-			Options:  []renderers.Option2{katex.New()},
-			Markdown: `$a$`,
-			Text:     `[公式]`,
-		},
-		{
-			ID:       10.0,
-			Markdown: `[狗头]`,
-			Text:     `[狗头]`, // 其实直接用表情图片本身也是很好的。
-			Options: []renderers.Option2{
-				emojis.New(utils.Must1(url.Parse(`/`))),
-			},
-		},
-		{
-			ID: 11.0,
-			Options: []renderers.Option2{
-				media_tags.New(gold_utils.NewWebFileSystem(os.DirFS(`media_tags/test_data`), &url.URL{Path: `/`})),
-			},
-			Markdown: `
-万物死
-
-<audio controls>
-	<source src="杨晚晚 - 片片相思赋予谁.mp3" />
-</audio>
-`,
-			Text: `万物死
-[音乐]`,
-		},
-	}
-	for _, tc := range cases {
-		options := append(tc.Options, renderers.WithHtmlPrettifier(), extension.GFM, extension.Footnote)
-		md := renderers.NewMarkdown(options...)
-		if tc.ID == 9 {
-			log.Println(`debug`)
-		}
-		text, err := md.Render(tc.Markdown)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if strings.TrimSpace(text) != strings.TrimSpace(tc.Text) {
-			t.Fatalf("not equal %v:\nMarkdown:%s\nExpected:%s\nGot     :%s\n\n", tc.ID, tc.Markdown, tc.Text, text)
 		}
 	}
 }

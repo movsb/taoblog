@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/PuerkitoBio/goquery"
-	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 )
 
 type _RootedPaths struct {

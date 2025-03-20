@@ -1,4 +1,4 @@
-package gvz
+package graph_viz
 
 import (
 	"bytes"

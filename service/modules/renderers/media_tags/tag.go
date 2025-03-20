@@ -22,7 +22,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
-	gold_utils "github.com/movsb/taoblog/service/modules/renderers/goldutils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"golang.org/x/net/html/atom"
 )
 

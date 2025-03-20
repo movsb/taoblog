@@ -1,10 +1,14 @@
 package custom_break
 
 import (
+	"embed"
 	"html"
+	"os"
 	"regexp"
 	"strings"
 
+	"github.com/movsb/taoblog/modules/utils/dir"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -12,6 +16,18 @@ import (
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 )
+
+//go:generate sass --style compressed --no-source-map style.scss style.css
+
+//go:embed style.css
+var _embed embed.FS
+var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
+
+func init() {
+	dynamic.RegisterInit(func() {
+		dynamic.WithStyles(`custom_break`, _embed, _root, `style.css`)
+	})
+}
 
 // A CustomBreak struct represents a thematic break of Markdown text.
 type CustomBreak struct {

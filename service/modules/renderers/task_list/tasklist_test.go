@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
-	task_list "github.com/movsb/taoblog/service/modules/renderers/tasklist"
+	"github.com/movsb/taoblog/service/modules/renderers/task_list"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/renderer/html"
 )

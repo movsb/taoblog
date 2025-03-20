@@ -1,4 +1,4 @@
-package katex
+package math
 
 import (
 	"context"
