@@ -84,6 +84,9 @@ body.wide #header .content {
 		}
 		.search {
 			margin: .5em;
+			input::placeholder {
+				text-align: center;
+			}
 		}
 		.nav {
 			li:first-child {
