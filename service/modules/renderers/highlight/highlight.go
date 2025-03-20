@@ -25,8 +25,9 @@ var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `highlight`
-		dynamic.WithStyles(module, _embed, _root, `style.css`)
-		dynamic.WithScripts(module, _embed, _root, `script.js`)
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(module, `style.css`)
+		dynamic.WithScripts(module, `script.js`)
 	})
 }
 

@@ -41,6 +41,7 @@ import (
 
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	_ "github.com/movsb/taoblog/theme/share/image_viewer"
+	_ "github.com/movsb/taoblog/theme/share/vim"
 )
 
 // 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。

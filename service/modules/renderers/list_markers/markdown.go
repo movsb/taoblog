@@ -18,7 +18,9 @@ var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {
-		dynamic.WithStyles(`list-markers`, _embed, _root, `style.css`)
+		const module = `list-markers`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(`list-markers`, `style.css`)
 	})
 }
 

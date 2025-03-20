@@ -3,11 +3,13 @@ package emojis
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"os"
 	"regexp"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
@@ -23,7 +25,7 @@ var (
 
 	_root = os.DirFS(string(dir.SourceAbsoluteDir()))
 
-	// 映射：狗头 → assets/weixin/doge.png
+	// 映射：狗头 → weixin/doge.png
 	_refs = map[string]string{}
 )
 
@@ -48,13 +50,16 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `emojis`
 
-		dynamic.WithRoot(module, _embed, _root)
-		dynamic.WithStyles(module, _embed, _root, `style.css`)
+		assetsDirEmbed := utils.Must1(fs.Sub(_embed, `assets`))
+		assetsDirRoot := utils.Must1(fs.Sub(_root, `assets`))
+
+		dynamic.WithRoots(module, assetsDirEmbed, assetsDirRoot, _embed, _root)
+		dynamic.WithStyles(module, `style.css`)
 
 		weixin := func(fileName string, aliases ...string) {
 			// NOTE：emoji 用的单数
 			// NOTE：没有转码，图简单。
-			dest := fmt.Sprintf(`assets/weixin/%s`, fileName)
+			dest := fmt.Sprintf(`weixin/%s`, fileName)
 			for _, a := range aliases {
 				_refs[a] = dest
 			}

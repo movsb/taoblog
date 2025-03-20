@@ -28,8 +28,8 @@ func init() {
 		katexDirEmbed := utils.Must1(fs.Sub(_embed, `katex`))
 		staticDirRoot := utils.Must1(fs.Sub(_root, `static`))
 		staticDirEmbed := utils.Must1(fs.Sub(_embed, `static`))
-		dynamic.WithRoot(module, staticDirEmbed, staticDirRoot)
-		dynamic.WithStyles(module, katexDirEmbed, katexDirRoot, `katex.min.stripped.css`, `style.css`)
+		dynamic.WithRoots(module, staticDirEmbed, staticDirRoot, katexDirEmbed, katexDirRoot)
+		dynamic.WithStyles(module, `katex.min.stripped.css`, `style.css`)
 	})
 }
 

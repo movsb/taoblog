@@ -25,7 +25,9 @@ var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {
-		dynamic.WithStyles(`custom_break`, _embed, _root, `style.css`)
+		const module = `custom_break`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(`custom_break`, `style.css`)
 	})
 }
 

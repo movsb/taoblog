@@ -26,7 +26,9 @@ var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {
-		dynamic.WithStyles(`plantuml`, _embed, _root, `style.css`)
+		const module = `plantuml`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(`plantuml`, `style.css`)
 	})
 }
 

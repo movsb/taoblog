@@ -23,7 +23,8 @@ var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `graphviz`
-		dynamic.WithStyles(module, _embed, _root, `style.css`)
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(module, `style.css`)
 	})
 }
 

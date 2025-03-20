@@ -18,7 +18,9 @@ var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {
-		dynamic.WithStyles(`footnotes`, _embed, _root, `style.css`)
+		const module = `footnotes`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(`footnotes`, `style.css`)
 	})
 }
 
