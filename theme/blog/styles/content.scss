@@ -1,4 +1,23 @@
-/* 内容 */
+body#error {
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	display: flex;
+	background-color: var(--code-bg);
+	@media (prefers-color-scheme: dark) {
+		background-color: var(--color-bg);
+	}
+	#wrapper {
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		padding: 2em;
+		margin: auto;
+		background-color: var(--color-bg);
+		@media (prefers-color-scheme: dark) {
+			background-color: var(--code-bg);
+		}
+	}
+}
 
 #content {
     min-width: 200px;
