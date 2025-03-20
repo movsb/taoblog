@@ -20,6 +20,7 @@ import (
 	client_common "github.com/movsb/taoblog/cmd/client/common"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/spf13/cobra"
@@ -27,7 +28,6 @@ import (
 )
 
 // 如果当前在开发目录下，则默认为 blog.local，否则为 blog。
-// 在开发目录时仍然可以用环境变量 LIVE=1 来使用 blog。
 func InitHostConfigs() HostConfig {
 	usr, err := user.Current()
 	if err != nil {
@@ -50,10 +50,8 @@ func InitHostConfigs() HostConfig {
 	host := os.Getenv("HOST")
 	if host == "" {
 		host = "blog"
-		if _, err := os.Stat(`go.mod`); err == nil {
-			if os.Getenv(`LIVE`) != `1` {
-				host = `blog.local`
-			}
+		if version.DevMode() {
+			host = `blog.local`
 		}
 	}
 	hostConfig, ok := hostConfigs[host]
