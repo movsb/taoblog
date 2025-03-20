@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"reflect"
 	"slices"
@@ -92,7 +91,7 @@ func WithScripts(module string, embed, root fs.FS, paths ...string) {
 				for e := range n.Changed() {
 					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, value.String()), `/`)
 					if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
-						log.Println(`需要重新加载脚本`, e)
+						// log.Println(`需要重新加载脚本`, e)
 						reloadAll.Store(true)
 					}
 				}
