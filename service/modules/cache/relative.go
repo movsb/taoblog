@@ -33,3 +33,9 @@ func (c *RelativeCacheKeys[PrimaryKey, SecondStageKey]) Delete(key PrimaryKey, f
 	delete(c.keys, key)
 	c.lock.Unlock()
 }
+
+func (c *RelativeCacheKeys[PrimaryKey, SecondStageKey]) Clear() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	clear(c.keys)
+}

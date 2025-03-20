@@ -315,27 +315,15 @@ class ImageViewUI {
 			title += `${md[i+0]}：${md[i+1]}\n`;
 		}
 		this.obj.title = title;
-
-		/*
-		let table = document.createElement('table');
-		table.classList.add('metadata');
-		for(let i=0; i<md.length; i+=2) {
-			let tr = document.createElement('tr');
-			let td1 = document.createElement('td');
-			td1.innerText = md[i+0];
-			let td2 = document.createElement('td');
-			td2.innerText = md[i+1];
-			tr.appendChild(td1);
-			tr.appendChild(td2);
-			table.appendChild(tr);
-		}
-		this.root.appendChild(table);
-		*/
 	}
 }
 
 class ImageView {
 	constructor() {
+		document.addEventListener(`DOMContentLoaded`, this.init.bind(this));
+	}
+
+	init() {
 		let images = document.querySelectorAll('.entry img:not(.no-zoom)');
 		images.forEach(img => img.addEventListener('click', e => {
 			if (!img.complete) {
@@ -367,4 +355,4 @@ class ImageView {
 	}
 }
 
-TaoBlog.imgView = new ImageView();
+(TaoBlog||window).imgView = new ImageView();

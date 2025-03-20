@@ -6,7 +6,6 @@ import (
 	"html"
 	"time"
 
-	wikitable "github.com/movsb/goldmark-wiki-table"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -39,6 +38,9 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
 	"github.com/yuin/goldmark/extension"
+
+	wikitable "github.com/movsb/goldmark-wiki-table"
+	_ "github.com/movsb/taoblog/theme/share/image_viewer"
 )
 
 // 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。

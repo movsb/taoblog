@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
+	"github.com/phuslu/lru"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -285,6 +286,17 @@ func (s *Service) getPostTagsCached(ctx context.Context, id int64) ([]string, er
 		return tags, time.Hour, nil
 	})
 	return tags.([]string), err
+}
+
+func (s *Service) DropAllPostAndCommentCache() {
+	s.postCaches.Clear()
+	s.commentCaches.Clear()
+
+	// 竟然不能清空？
+	s.postContentCaches = lru.NewTTLCache[_PostContentCacheKey, string](10240)
+	s.commentContentCaches = lru.NewTTLCache[_PostContentCacheKey, string](10240)
+
+	log.Println(`已清空所有文章和评论缓存`)
 }
 
 func (s *Service) deletePostContentCacheFor(id int64) {

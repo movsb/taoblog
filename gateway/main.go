@@ -63,9 +63,14 @@ func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, 
 	return g
 }
 
+// 网站头像
 func (g *Gateway) SetFavicon(f *favicon.Favicon) {
-	// 网站头像
 	g.mux.Handle(`/favicon.ico`, f)
+}
+
+// 扩展功能动态生成的样式、脚本、文件。
+func (g *Gateway) SetDynamic(invalidate func()) {
+	g.mux.Handle(dynamic.PrefixSlashed, http.StripPrefix(dynamic.Prefix, dynamic.New(invalidate)))
 }
 
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
@@ -76,12 +81,6 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 	// 无需鉴权的部分
 	// 可跨进程使用。
 	{
-		// 网站头像
-		// mc.Handle(`/favicon.ico`, favicon.NewFavicon())
-
-		// 扩展功能动态生成的样式、脚本、文件。
-		mc.Handle(dynamic.PrefixSlashed, http.StripPrefix(dynamic.Prefix, dynamic.New()))
-
 		// 博客功能集
 		mc.Handle(`GET /v3/features/{theme}`, features.New())
 

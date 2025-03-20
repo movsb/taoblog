@@ -190,6 +190,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
+	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
 
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
