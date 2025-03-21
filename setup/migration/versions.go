@@ -536,3 +536,7 @@ func v39(tx *sql.Tx) {
 func v40(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE comments ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
 }
+
+func v41(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0")
+}

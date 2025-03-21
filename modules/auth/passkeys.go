@@ -144,6 +144,8 @@ func ToWebAuthnUser(u *User) webauthn.User {
 }
 
 func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User, error) {
+	MustBeAdmin(ctx)
+
 	var password [16]byte
 	utils.Must1(rand.Read(password[:]))
 	passwordString := fmt.Sprintf(`%x`, password)
@@ -166,4 +168,28 @@ func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User,
 	}
 
 	return user.ToProto(), nil
+}
+
+func (p *Passkeys) ListUsers(ctx context.Context, in *proto.ListUsersRequest) (_ *proto.ListUsersResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	MustBeAdmin(ctx)
+
+	var users []*models.User
+
+	stmt := p.db.Select(`*`)
+
+	if !in.WithUnnamed {
+		stmt = stmt.Where(`nickname!=''`)
+	}
+
+	if !in.WithHidden {
+		stmt = stmt.Where(`hidden=0`)
+	}
+
+	stmt.MustFind(&users)
+
+	return &proto.ListUsersResponse{
+		Users: utils.Map(users, func(u *models.User) *proto.User { return u.ToProto() }),
+	}, nil
 }

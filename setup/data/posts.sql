@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS users (
     `password` TEXT NOT NULL,
     `credentials` TEXT NOT NULL,
     `google_user_id` TEXT NOT NULL,
-    `github_user_id` INTEGER NOT NULL
+    `github_user_id` INTEGER NOT NULL,
+    `hidden` INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS acl (

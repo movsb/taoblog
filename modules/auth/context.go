@@ -357,3 +357,14 @@ func MustNotBeGuest(ctx context.Context) *AuthContext {
 	}
 	return ac
 }
+
+func MustBeAdmin(ctx context.Context) *AuthContext {
+	ac := Context(ctx)
+	if ac == nil {
+		panic("AuthContext 不应为 nil")
+	}
+	if ac.User.IsAdmin() {
+		return ac
+	}
+	panic(status.Error(codes.PermissionDenied, noPerm))
+}
