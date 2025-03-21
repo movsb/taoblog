@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -44,7 +45,7 @@ func Migrate(gdb *sql.DB) {
 		for ; begin < len(gVersions); begin++ {
 			v := gVersions[begin]
 			if v.update != nil {
-				fmt.Printf("updating to DB version %d ...\n", v.version)
+				log.Printf("updating to DB version %d ...\n", v.version)
 				v.update(tx)
 			}
 		}

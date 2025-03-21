@@ -35,5 +35,28 @@ func createUsersCommands() *cobra.Command {
 	createCmd.Flags().StringP(`nickname`, `n`, ``, `昵称（不能为空）`)
 	usersCmd.AddCommand(createCmd)
 
+	listCmd := &cobra.Command{
+		Use:   `list`,
+		Short: `列举所有用户`,
+		Run: func(cmd *cobra.Command, args []string) {
+			hidden := utils.Must1(cmd.Flags().GetBool(`hidden`))
+			unnamed := utils.Must1(cmd.Flags().GetBool(`unnamed`))
+			u, err := client.Auth.ListUsers(client.Context(),
+				&proto.ListUsersRequest{
+					WithHidden:  hidden,
+					WithUnnamed: unnamed,
+				},
+			)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			yaml.NewEncoder(os.Stdout).Encode(u)
+		},
+	}
+	listCmd.Flags().Bool(`hidden`, false, ``)
+	listCmd.Flags().MarkHidden(`hidden`)
+	listCmd.Flags().Bool(`unnamed`, false, `包含未使用的`)
+	usersCmd.AddCommand(listCmd)
+
 	return usersCmd
 }

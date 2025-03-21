@@ -24,7 +24,7 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	} else {
-		http.Error(w, `用户名/密码不正确。`, http.StatusUnauthorized)
+		http.Error(w, `用户名不存在/密码不正确。`, http.StatusUnauthorized)
 		return
 	}
 }

@@ -30,6 +30,8 @@ type User struct {
 	// 小写 GitHub 是为了使默认数据库字段名为：github_user_id
 	// 否则默认的蛇形规则可能是 git_hub_user_id
 	GithubUserID string
+
+	Hidden bool
 }
 
 type Credentials []webauthn.Credential
@@ -63,6 +65,7 @@ func (u *User) ToProto() *proto.User {
 		UpdatedAt: u.UpdatedAt,
 		Nickname:  u.Nickname,
 		Password:  u.Password,
+		// hidden
 	}
 }
 

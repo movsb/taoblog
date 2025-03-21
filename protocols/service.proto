@@ -61,6 +61,14 @@ service Auth {
 			description: "创建用户。";
 		};
 	}
+	rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {
+		option (google.api.http) = {
+			get: "/v3/users";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "列举用户。";
+		};
+	}
 }
 
 service Management {

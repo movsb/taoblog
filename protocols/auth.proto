@@ -62,3 +62,12 @@ message User {
 	// 自动生成，输出参数。
 	string password = 5;
 }
+
+message ListUsersRequest {
+	bool with_hidden = 1;
+	bool with_unnamed = 2;
+}
+
+message ListUsersResponse {
+	repeated User users = 1;
+}
