@@ -4,9 +4,65 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
+	"time"
 
 	graphviz "github.com/goccy/go-graphviz"
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders/lunar"
 )
+
+type Date struct {
+	Solar lunar.SolarDate
+	Lunar lunar.LunarDate
+}
+
+func (d *Date) String() string {
+	t := time.Time(d.Solar)
+	if !t.IsZero() {
+		return t.Format(time.DateOnly)
+	}
+	if !d.Lunar.IsZero() {
+		return d.Lunar.DateString()
+	}
+	return ``
+}
+
+func (d *Date) UnmarshalYAML(unmarshal func(any) error) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	var raw string
+	utils.Must(unmarshal(&raw))
+
+	if strings.TrimSpace(raw) == `` {
+		return nil
+	}
+
+	if dd, err := reminders.NewUserDateFromString(raw); err == nil {
+		d.Solar = lunar.SolarDate(dd.Time)
+		return nil
+	}
+
+	dates := strings.Split(raw, `,`)
+	for _, date := range dates {
+		if dd, err := reminders.NewUserDateFromString(date); err == nil {
+			d.Solar = lunar.SolarDate(dd.Time)
+			continue
+		}
+		if dd, err := lunar.ParseLunarDate(date); err == nil {
+			d.Lunar = *dd
+			continue
+		}
+		return fmt.Errorf(`无法解析日期：%s`, date)
+	}
+
+	if time.Time(d.Solar).IsZero() && d.Lunar.IsZero() {
+		return fmt.Errorf(`无法解析日期：%s`, raw)
+	}
+
+	return nil
+}
 
 type Individual struct {
 	// 唯一标识。
@@ -22,6 +78,10 @@ type Individual struct {
 	// 直系亲属（上级）。
 	Father string `yaml:"father"`
 	Mother string `yaml:"mother"`
+
+	// 生日 & 逝世
+	Birth Date `yaml:"birth"`
+	Death Date `yaml:"death"`
 }
 
 // 从测试代码偷过来的，写得很乱。

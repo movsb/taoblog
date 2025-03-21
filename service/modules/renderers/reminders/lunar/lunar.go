@@ -7,6 +7,8 @@ import (
 	"github.com/Lofanmi/chinese-calendar-golang/calendar"
 )
 
+type SolarDate time.Time
+
 // 农历日期，及相关计算。
 type LunarDate struct {
 	c *calendar.Calendar
@@ -16,6 +18,10 @@ func NewLunarDate(year, month, day int, hour, minute, second int, leapMonth bool
 	return LunarDate{
 		c: calendar.ByLunar(int64(year), int64(month), int64(day), int64(hour), int64(minute), int64(second), leapMonth),
 	}
+}
+
+func (d LunarDate) IsZero() bool {
+	return d.c == nil || d.SolarTime().IsZero()
 }
 
 // 返回形如“二零零五年三月初八”的农历日期显示。
