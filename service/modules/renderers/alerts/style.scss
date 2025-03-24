@@ -2,9 +2,13 @@ p.alert {
 	display: flex;
 	align-items: center;
 	font-weight: bold;
+	margin-bottom: -.5em;
 	
 	svg {
-		margin-right: .3em;
+		// 与非宽屏模式的 svg only child 冲突了
+		// margin-right: .3em;
+		margin: 0 .3em 0 0 !important;
+		display: inline-block;
 		fill: currentColor;
 	}
 }
