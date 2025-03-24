@@ -11,6 +11,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/alerts"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
@@ -124,6 +125,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		wikitable.New(),
 		extension.GFM,
 		footnotes.New(),
+		alerts.New(),
 
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
 		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.New(
