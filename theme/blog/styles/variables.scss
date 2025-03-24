@@ -1,8 +1,15 @@
+@font-face {
+	font-family: 'MapleMonoNL-Light';
+	src: url(fonts/MapleMonoNL-Light.woff2) format('woff2');
+	font-weight: normal;
+	font-style: normal;
+}
+
 :root {
 --accent-color:             #ac53ac;
 --highlight-color:          #ac53ac8f;
 --font-size:                15px;
---mono-font:                "LXGW WenKai Mono", Monaco, Consolas, monospace;
+--mono-font:                "MapleMonoNL-Light", Monaco, Consolas, monospace;
 --max-width:                850px;
 --border-radius:            4px;
 --code-color:               rgba(60,60,60,0.6);
