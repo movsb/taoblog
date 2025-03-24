@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/syncer"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/storage"
+	"github.com/movsb/taoblog/setup/migration"
 	"github.com/spf13/cobra"
 )
 
@@ -185,7 +185,7 @@ func (c *Client) BackupFiles(cmd *cobra.Command, name string) {
 
 	log.Printf(`Local: list files...`)
 
-	localDB := server.InitDatabase(name, server.InitForFiles())
+	localDB := migration.InitFiles(name)
 	localStore := storage.NewSQLite(localDB)
 	localFiles, err := localStore.AllFiles()
 	if err != nil {

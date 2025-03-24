@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/service/modules/notify/instant"
+	"github.com/movsb/taoblog/setup/migration"
 )
 
 type _RandomErrorNotify struct{}
@@ -22,7 +22,7 @@ func (n *_RandomErrorNotify) Notify(title, message string) error {
 }
 
 func TestNotify(t *testing.T) {
-	db := server.InitDatabase(``, server.InitForPosts(false))
+	db := migration.InitPosts(``, false)
 	defer db.Close()
 
 	n := instant.NewNotifyLogger(logs.NewLogStore(db))

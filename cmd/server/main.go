@@ -21,7 +21,6 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
@@ -160,7 +159,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	rc := runtime_config.NewRuntime()
 	ctx = runtime_config.Context(ctx, rc)
 
-	db := InitDatabase(cfg.Database.Posts, InitForPosts(s.createFirstPost))
+	db := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
 	defer db.Close()
 
 	s.db = taorm.NewDB(db)
@@ -180,7 +179,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 	s.noAuthClient = clients.NewProtoClientFromAddress(s.GRPCAddr())
 
-	filesStore := theme_fs.FS(storage.NewSQLite(InitDatabase(cfg.Database.Files, InitForFiles())))
+	filesStore := theme_fs.FS(storage.NewSQLite(migration.InitFiles(cfg.Database.Files)))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
 	s.notify = notify
 
@@ -584,103 +583,6 @@ func liveCheck(s *service.Service, cc proto.NotifyServer) {
 			s.MaintenanceMode().Leave()
 			return true
 		}() {
-		}
-	}
-}
-
-// 如果路径为空，使用内存数据库。
-func InitDatabase(path string, init func(db *sql.DB)) *sql.DB {
-	var db *sql.DB
-	var err error
-
-	v := url.Values{}
-	v.Set(`cache`, `shared`)
-	v.Set(`mode`, `rwc`)
-
-	if path == `` {
-		// 内存数据库
-		// NOTE: 测试的时候同名路径会引用同一个内存数据库，
-		// 所以需要取不同的路径名。
-		path = fmt.Sprintf(`%s@%d`,
-			`no-matter-what-path-used`,
-			time.Now().UnixNano(),
-		)
-		v.Set(`mode`, `memory`)
-	}
-
-	u := url.URL{
-		Scheme:   `file`,
-		Opaque:   url.PathEscape(path),
-		RawQuery: v.Encode(),
-	}
-
-	dsn := u.String()
-	// log.Println(`数据库连接字符串：`, dsn)
-	db, err = sql.Open(`sqlite3`, dsn)
-	if err == nil {
-		db.SetMaxOpenConns(1)
-	}
-	if err != nil {
-		panic(err)
-	}
-
-	init(db)
-
-	return db
-}
-
-func InitForPosts(createFirstPost bool) func(db *sql.DB) {
-	return func(db *sql.DB) {
-		var count int
-		row := db.QueryRow(`select count(1) from options`)
-		if err := row.Scan(&count); err != nil {
-			if se, ok := err.(sqlite3.Error); ok {
-				if strings.Contains(se.Error(), `no such table`) {
-					migration.InitPosts(db)
-
-					tdb := taorm.NewDB(db)
-					now := time.Now().Unix()
-
-					if createFirstPost {
-						tdb.MustTxCall(func(tx *taorm.DB) {
-							tx.Model(&models.Post{
-								UserID:     int32(auth.AdminID),
-								Date:       int32(now),
-								Modified:   int32(now),
-								Title:      `你好，世界`,
-								Type:       `post`,
-								Category:   0,
-								Status:     `public`,
-								SourceType: `markdown`,
-								Source:     `你好，世界！这是您的第一篇文章。`,
-
-								// TODO 用配置时区。
-								DateTimezone: ``,
-								// TODO 用配置时区。
-								ModifiedTimezone: ``,
-							}).MustCreate()
-						})
-					}
-					return
-				}
-			}
-			panic(err)
-		}
-	}
-}
-
-func InitForFiles() func(db *sql.DB) {
-	return func(db *sql.DB) {
-		var count int
-		row := db.QueryRow(`select count(1) from files`)
-		if err := row.Scan(&count); err != nil {
-			if se, ok := err.(sqlite3.Error); ok {
-				if strings.Contains(se.Error(), `no such table`) {
-					migration.InitFiles(db)
-					return
-				}
-			}
-			panic(err)
 		}
 	}
 }
