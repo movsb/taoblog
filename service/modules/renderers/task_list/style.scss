@@ -2,7 +2,8 @@ ul, ol {
 	&.task-list {
 		// 见下面的 margin-left 说明。
 		padding-left: 21.5px;
-		list-style-type: none;
+		// important: 与 .marker-minus 之类的冲突
+		list-style-type: none !important;
 		// 划掉已经完成的任务
 		// 为什么注释了？
 		// 导入的日记里面没有特别标记（<!-- todo -->），所有任务都是任务列表，
