@@ -175,8 +175,8 @@ GitHub 的 Alerts。
 <label><input type=checkbox />选项三</label>
 
 单选框：<label><input type=radio name="r" />选项一</label>
-<label><input type=radio name="r" />选项一</label>
-<label><input type=radio name="r" />选项一</label>
+<label><input type=radio name="r" />选项二</label>
+<label><input type=radio name="r" />选项三</label>
 
 ## 其它
 
@@ -209,6 +209,12 @@ GitHub 的 Alerts。
 
 $$
 x = {-b \pm \sqrt{b^2-4ac} \over 2a}.
+$$
+
+化学式：
+
+$$
+\ce{CO2 + C -> 2 CO}
 $$
 
 ### PlantUML
