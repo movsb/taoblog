@@ -17,8 +17,8 @@ import (
 	"github.com/yuin/goldmark/util"
 )
 
-//go:embed assets
-var _assets embed.FS
+//go:embed assets style.css
+var _embed embed.FS
 var _static = os.DirFS(dir.SourceAbsoluteDir().Join())
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
@@ -26,7 +26,7 @@ var _static = os.DirFS(dir.SourceAbsoluteDir().Join())
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `alerts`
-		dynamic.WithRoots(module, nil, nil, _assets, _static)
+		dynamic.WithRoots(module, nil, nil, _embed, _static)
 		dynamic.WithStyles(module, `style.css`)
 	})
 }
@@ -100,7 +100,7 @@ func (e *Alerts) Transform(node *ast.Paragraph, reader text.Reader, pc parser.Co
 func (e *Alerts) RenderAlert(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
 	a := n.(*Alert)
 	if entering {
-		svg, _ := _assets.ReadFile(fmt.Sprintf(`assets/%s.svg`, strings.ToLower(a.text)))
+		svg, _ := _embed.ReadFile(fmt.Sprintf(`assets/%s.svg`, strings.ToLower(a.text)))
 		fmt.Fprintf(writer, `<p class="alert alert-%s">%s%s`, strings.ToLower(a.text), svg, strings.Title(a.text))
 		return ast.WalkSkipChildren, nil
 	} else {

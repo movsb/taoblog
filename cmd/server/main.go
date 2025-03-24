@@ -142,6 +142,9 @@ func (s *Server) DB() *taorm.DB {
 func (s *Server) Gateway() *gateway.Gateway {
 	return s.gateway
 }
+func (s *Server) NoAuthClient() *clients.ProtoClient {
+	return s.noAuthClient
+}
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
 	if s.httpAddr != `` {
