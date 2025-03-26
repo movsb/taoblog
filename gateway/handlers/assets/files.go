@@ -28,7 +28,7 @@ func New(auther *auth.Auth, kind string, client *clients.ProtoClient) http.Handl
 
 		id := utils.MustToInt64(r.PathValue(`id`))
 
-		ctx := auther.NewContextForRequestAsGateway(r)
+		ctx := auth.NewContextForRequestAsGateway(r)
 		fs, err := client.Management.FileSystem(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

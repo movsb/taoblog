@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/server"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -254,7 +255,7 @@ func TestRSS(t *testing.T) {
 
 	fixed := time.FixedZone(`TEST`, 3600)
 
-	r := Serve(ctx, server.WithTimezone(fixed))
+	r := Serve(ctx, server.WithTimezone(fixed), server.WithRSS(true))
 
 	create := func(user context.Context, p *proto.Post) *proto.Post {
 		return utils.Must1(r.client.Blog.CreatePost(user, p))
@@ -263,21 +264,32 @@ func TestRSS(t *testing.T) {
 	now := time.Date(2025, time.March, 27, 0, 0, 0, 0, fixed)
 
 	p1 := create(r.user1, &proto.Post{Status: models.PostStatusPublic, Date: int32(now.Unix()), Source: `# user1`, SourceType: `markdown`})
-	p2 := create(r.user2, &proto.Post{Status: models.PostStatusPrivate, Source: `# user2`, SourceType: `markdown`})
-	p3 := create(r.admin, &proto.Post{Status: models.PostStatusPartial, Source: `# admin`, SourceType: `markdown`})
+	p2 := create(r.user2, &proto.Post{Status: models.PostStatusPrivate, Date: int32(now.Unix()), Source: `# user2`, SourceType: `markdown`})
+	p3 := create(r.admin, &proto.Post{Status: models.PostStatusPartial, Date: int32(now.Unix()), Source: `# admin`, SourceType: `markdown`})
 	_, _, _ = p1, p2, p3
 
 	r.server.Main().TestingSetLastPostedAt(now.Add(time.Hour))
 
-	rssURL := fmt.Sprintf(`http://%s/rss`, r.server.HTTPAddr())
-	rsp := utils.Must1(http.Get(rssURL))
-	if rsp.StatusCode != 200 {
-		t.Fatal(`statusCode != 200`)
+	request := func(pri bool) *http.Response {
+		r.server.RSS().TestingEnablePrivate(pri)
+
+		rssURL := fmt.Sprintf(`http://%s/rss`, r.server.HTTPAddr())
+		req := utils.Must1(http.NewRequestWithContext(
+			context.Background(),
+			http.MethodGet, rssURL, nil))
+		req.Header.Add(`Authorization`, `token `+auth.SystemToken())
+		rsp := utils.Must1(http.DefaultClient.Do(req))
+		if rsp.StatusCode != 200 {
+			t.Fatal(`statusCode != 200`)
+		}
+		return rsp
 	}
 
-	defer rsp.Body.Close()
+	{
+		rsp := request(false)
+		defer rsp.Body.Close()
 
-	const expectedOutput = `<?xml version="1.0" encoding="UTF-8"?>
+		const expectedOutput = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
 	<title>未命名</title>
@@ -294,10 +306,52 @@ func TestRSS(t *testing.T) {
 </rss>
 `
 
-	buf := bytes.NewBuffer(nil)
-	io.Copy(buf, rsp.Body)
+		buf := bytes.NewBuffer(nil)
+		io.Copy(buf, rsp.Body)
 
-	if buf.String() != expectedOutput {
-		t.Fatalf("RSS 输出不相等：\ngot:%s\nwant:%s\n", buf.String(), expectedOutput)
+		if buf.String() != expectedOutput {
+			t.Fatalf("RSS 输出不相等：\ngot:%s\nwant:%s\n", buf.String(), expectedOutput)
+		}
+	}
+
+	{
+		rsp := request(true)
+		defer rsp.Body.Close()
+
+		const expectedOutput = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+	<title>未命名</title>
+	<link>http://localhost:2564</link>
+	<description></description>
+	<lastBuildDate>Thu, 27 Mar 2025 01:00:00 TEST</lastBuildDate>
+	<item>
+		<title>user1</title>
+		<link>http://localhost:2564/1/</link>
+		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
+		<description><![CDATA[]]></description>
+	</item>
+	<item>
+		<title>user2</title>
+		<link>http://localhost:2564/2/</link>
+		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
+		<description><![CDATA[]]></description>
+	</item>
+	<item>
+		<title>admin</title>
+		<link>http://localhost:2564/3/</link>
+		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
+		<description><![CDATA[]]></description>
+	</item>
+</channel>
+</rss>
+`
+
+		buf := bytes.NewBuffer(nil)
+		io.Copy(buf, rsp.Body)
+
+		if buf.String() != expectedOutput {
+			t.Fatalf("RSS 输出不相等：\ngot:%s\nwant:%s\n", buf.String(), expectedOutput)
+		}
 	}
 }

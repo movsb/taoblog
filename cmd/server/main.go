@@ -25,6 +25,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/addons"
+	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/backups"
 	backups_git "github.com/movsb/taoblog/modules/backups/git"
@@ -72,6 +73,8 @@ func AddCommands(rootCmd *cobra.Command) {
 
 // 服务器实例。
 type Server struct {
+	testing bool
+
 	httpAddr   string
 	httpServer *http.Server
 
@@ -85,11 +88,13 @@ type Server struct {
 	initialTimezone *time.Location
 	initGitSyncTask bool
 	initBackupTasks bool
+	initRssTasks    bool
 
 	db      *taorm.DB
 	auth    *auth.Auth
 	main    *service.Service
 	gateway *gateway.Gateway
+	rss     *rss.RSS
 
 	metrics *metrics.Registry
 
@@ -102,6 +107,7 @@ func NewDefaultServer() *Server {
 		WithCreateFirstPost(),
 		WithGitSyncTask(true),
 		WithBackupTasks(true),
+		WithRSS(true),
 	)
 }
 
@@ -133,9 +139,15 @@ func (s *Server) GRPCAddr() string {
 }
 
 func (s *Server) Auth() *auth.Auth {
+	if s.auth == nil {
+		panic(`auth service is not created`)
+	}
 	return s.auth
 }
 func (s *Server) Main() *service.Service {
+	if s.main == nil {
+		panic(`main service is not created`)
+	}
 	return s.main
 }
 func (s *Server) DB() *taorm.DB {
@@ -144,11 +156,19 @@ func (s *Server) DB() *taorm.DB {
 func (s *Server) Gateway() *gateway.Gateway {
 	return s.gateway
 }
+func (s *Server) RSS() *rss.RSS {
+	if s.rss == nil {
+		panic(`rss is not created`)
+	}
+	return s.rss
+}
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
 	if s.httpAddr != `` {
 		panic(`server is already running`)
 	}
+
+	s.testing = testing
 
 	log.Println(`DevMode:`, version.DevMode())
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
@@ -196,7 +216,10 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
-	s.gateway.SetRSS(theService)
+
+	if s.initRssTasks {
+		s.initRSS()
+	}
 
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
@@ -257,6 +280,16 @@ func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
 		log.Println(`加载配置：`, path)
 	})
 	return nil
+}
+
+func (s *Server) initRSS() {
+	client := clients.NewFromAddress(s.GRPCAddr(), ``)
+	rss := rss.New(s.auth, client,
+		rss.WithArticleCount(10),
+		rss.WithCurrentLocationGetter(s.Main()),
+	)
+	s.gateway.SetRSS(rss)
+	s.rss = rss
 }
 
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {

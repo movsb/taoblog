@@ -76,7 +76,7 @@ type _Config struct {
 	articleCount int
 }
 
-func New(auther *auth.Auth, client *clients.ProtoClient, options ...Option) http.Handler {
+func New(auther *auth.Auth, client *clients.ProtoClient, options ...Option) *RSS {
 	r := &RSS{
 		config: _Config{
 			articleCount: 10,
@@ -95,11 +95,18 @@ func New(auther *auth.Auth, client *clients.ProtoClient, options ...Option) http
 		r.loc = utils.LocalTimezoneGetter{}
 	}
 
-	return utils.IIF[http.Handler](r.onlyPublic, utils.StripCredentialsHandler(r), r)
+	return r
 }
 
-// ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if r.onlyPublic {
+		utils.StripCredentialsHandler(http.HandlerFunc(r.serveHTTP)).ServeHTTP(w, req)
+	} else {
+		r.serveHTTP(w, req)
+	}
+}
+
+func (r *RSS) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	info := utils.Must1(r.client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 
 	data := Data{
@@ -110,9 +117,7 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	rsp, err := r.client.Blog.ListPosts(
-		// 默认应该是移除了凭证信息的，查看 http.Handler 实现。
-		// 否则单测过不了。
-		req.Context(),
+		auth.NewContextForRequestAsGateway(req),
 		&proto.ListPostsRequest{
 			Limit:          int32(r.config.articleCount),
 			OrderBy:        `date desc`,
@@ -149,4 +154,8 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func cdata(s string) string {
 	s = strings.Replace(s, "]]>", "]]]]><!CDATA[>", -1)
 	return "<![CDATA[" + s + "]]>"
+}
+
+func (r *RSS) TestingEnablePrivate(b bool) {
+	r.onlyPublic = !b
 }

@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func New(auther *auth.Auth, notify proto.NotifyClient) http.Handler {
+func New(notify proto.NotifyClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rc := http.MaxBytesReader(w, r.Body, 1<<20)
 		defer rc.Close()
@@ -23,7 +23,7 @@ func New(auther *auth.Auth, notify proto.NotifyClient) http.Handler {
 		if x, ok := m[`message`]; ok {
 			message, _ = x.(string)
 		}
-		ctx := auther.NewContextForRequestAsGateway(r)
+		ctx := auth.NewContextForRequestAsGateway(r)
 		_, err := notify.SendInstant(ctx, &proto.SendInstantRequest{
 			Subject: `监控告警`,
 			// https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/

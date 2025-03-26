@@ -122,7 +122,7 @@ func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 // 并不是特别完善，是否应该参考 runtime.AnnotateContext？
 //
 // TODO 移除
-func (a *Auth) NewContextForRequestAsGateway(r *http.Request) context.Context {
+func NewContextForRequestAsGateway(r *http.Request) context.Context {
 	md := metadata.Pairs()
 	for _, cookie := range r.Header.Values(`cookie`) {
 		md.Append(GatewayCookie, cookie)

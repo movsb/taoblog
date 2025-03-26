@@ -40,3 +40,9 @@ func WithBackupTasks(b bool) With {
 		s.initBackupTasks = b
 	}
 }
+
+func WithRSS(b bool) With {
+	return func(s *Server) {
+		s.initRssTasks = b
+	}
+}
