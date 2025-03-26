@@ -8,14 +8,16 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-func proxy(ctx context.Context, listen string, home, username, password string) {
+func proxy(ctx context.Context, listen string, home, token string) {
 	const ua = `taoblog/proxy`
 	parsedHome := utils.Must1(url.Parse(home))
-	req := utils.Must1(http.NewRequest(http.MethodPost,
+	username, password, _ := strings.Cut(token, `:`)
+	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodPost,
 		parsedHome.JoinPath(`/admin/login/basic`).String(),
 		bytes.NewReader(utils.Must1(json.Marshal(map[string]string{
 			`username`: username,

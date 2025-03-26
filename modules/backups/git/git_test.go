@@ -14,7 +14,7 @@ func TestAll(t *testing.T) {
 	t.SkipNow()
 	home := `https://blog.home.twofei.com`
 	token := `12345678`
-	client := clients.NewProtoClientFromHome(home, token)
+	client := clients.NewFromHome(home, token)
 	g := New(context.Background(), client, false)
 	posts, err := g.getUpdatedPosts(time.Now(), time.Now())
 	log.Println(posts, err)

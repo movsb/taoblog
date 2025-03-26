@@ -12,8 +12,7 @@ import (
 )
 
 type _Protos struct {
-	mux *runtime.ServeMux
-	http.Handler
+	*runtime.ServeMux
 }
 
 func New(ctx context.Context, client *clients.ProtoClient) http.Handler {
@@ -34,14 +33,7 @@ func New(ctx context.Context, client *clients.ProtoClient) http.Handler {
 	utils.Must(proto.RegisterSearchHandlerClient(ctx, mux, client.Search))
 	utils.Must(proto.RegisterNotifyHandlerClient(ctx, mux, client.Notify))
 
-	// 为了限制 Gateway 接口调用内部接口，特地给来自 Gateway 的接口加一个签名。
-	sig := func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Add(runtime.MetadataHeaderPrefix+`X-TaoBlog-Gateway`, `1`)
-		mux.ServeHTTP(w, r)
-	}
-
 	return &_Protos{
-		mux:     mux,
-		Handler: http.HandlerFunc(sig),
+		ServeMux: mux,
 	}
 }

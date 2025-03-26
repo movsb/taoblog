@@ -9,7 +9,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -25,7 +24,7 @@ type _Throttler struct {
 }
 
 func (t *_Throttler) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	ac := auth.Context(ctx)
+	// ac := auth.Context(ctx)
 	key := throttlerKeyOf(ctx)
 	ti, ok := methodThrottlerInfo[info.FullMethod]
 	if ok {
@@ -34,18 +33,6 @@ func (t *_Throttler) throttlerGatewayInterceptor(ctx context.Context, req any, i
 				msg := utils.IIF(ti.Message != "", ti.Message, `你被节流了，请稍候再试。You've been throttled.`)
 				return nil, status.Error(codes.Aborted, msg)
 			}
-		}
-		isFromGateway := func() bool {
-			md, _ := metadata.FromIncomingContext(ctx)
-			if md == nil {
-				return false
-			}
-			ss := md.Get(`X-TaoBlog-Gateway`)
-			return len(ss) > 0 && ss[0] == `1`
-		}()
-		// 可以排除 grpc-client 的调用。
-		if ti.Internal && (isFromGateway && !ac.User.IsAdmin()) {
-			return nil, status.Error(codes.FailedPrecondition, `此接口限管理员或内部调用。`)
 		}
 	}
 
@@ -65,12 +52,6 @@ var methodThrottlerInfo = map[string]struct {
 	// 仅节流返回正确错误码的接口。
 	// 如果接口返回错误，不更新。
 	OnSuccess bool
-
-	// 是否应该保留为内部调用接口。
-	// 限制接口应该尽量被内部调用。
-	// 如果不是，也不严重，无权限问题），只是没必要暴露。
-	// 主要是对外非管理员接口，管理员接口不受此限制。
-	Internal bool
 }{
 	`/protocols.TaoBlog/CreateComment`: {
 		Interval:  time.Second * 10,
@@ -82,25 +63,10 @@ var methodThrottlerInfo = map[string]struct {
 		Message:   `评论更新过于频繁，请稍等几秒后再试。`,
 		OnSuccess: true,
 	},
-	`/protocols.TaoBlog/GetComment`: {
-		Internal: true,
-	},
-	`/protocols.TaoBlog/ListComments`: {
-		Internal: true,
-	},
 	`/protocols.TaoBlog/CheckCommentTaskListItems`: {
 		Interval:  time.Second * 5,
 		Message:   `任务完成得过于频繁？`,
 		OnSuccess: false,
-	},
-	`/protocols.TaoBlog/GetPost`: {
-		Internal: true,
-	},
-	`/protocols.TaoBlog/ListPosts`: {
-		Internal: true,
-	},
-	`/protocols.TaoBlog/GetPostsByTags`: {
-		Internal: true,
 	},
 }
 

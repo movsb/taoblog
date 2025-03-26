@@ -93,7 +93,7 @@ func (t *Task) getUpdatedPosts(ctx context.Context) ([]*proto.Post, error) {
 
 	// now := time.Now().Unix()
 
-	rsp, err := t.svc.ListPosts(auth.SystemAdmin(ctx), &proto.ListPostsRequest{
+	rsp, err := t.svc.ListPosts(auth.SystemForLocal(ctx), &proto.ListPostsRequest{
 		ContentOptions:    &proto.PostContentOptions{},
 		ModifiedNotBefore: int32(lastCheckTime),
 	})

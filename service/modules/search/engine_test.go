@@ -22,7 +22,7 @@ func TestEngine(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	result, err := engine.SearchPosts(auth.GuestContext(context.TODO()), `杨柳依依`)
+	result, err := engine.SearchPosts(auth.GuestForLocal(context.TODO()), `杨柳依依`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -90,7 +90,7 @@ func (s *Service) monitorCert(notifier proto.NotifyServer) {
 		if left <= 0 {
 			log.Println(`已过期`)
 			notifier.SendInstant(
-				auth.SystemAdmin(s.ctx),
+				auth.SystemForLocal(s.ctx),
 				&proto.SendInstantRequest{
 					Subject: `证书`,
 					Body:    `已经过期`,
@@ -105,7 +105,7 @@ func (s *Service) monitorCert(notifier proto.NotifyServer) {
 		}
 		log.Println(`剩余天数：`, daysLeft)
 		notifier.SendInstant(
-			auth.SystemAdmin(s.ctx),
+			auth.SystemForLocal(s.ctx),
 			&proto.SendInstantRequest{
 				Subject: `证书`,
 				Body:    fmt.Sprintf(`剩余天数：%v`, daysLeft),
@@ -204,7 +204,7 @@ func (s *Service) monitorDomain(notifier proto.NotifyServer) {
 		log.Println(`剩余天数：`, daysLeft)
 		if daysLeft < 15 {
 			notifier.SendInstant(
-				auth.SystemAdmin(s.ctx),
+				auth.SystemForLocal(s.ctx),
 				&proto.SendInstantRequest{
 					Subject: `域名`,
 					Body:    fmt.Sprintf(`剩余天数：%v`, daysLeft),

@@ -26,7 +26,14 @@ func (u *User) IsAdmin() bool {
 }
 
 func (u *User) IsSystem() bool {
-	return u.ID == int64(SystemID)
+	return u.ID == int64(systemID)
+}
+
+func (u *User) tokenValue() string {
+	if u.IsSystem() {
+		return fmt.Sprintf(`%d:%s`, u.ID, systemKey)
+	}
+	return fmt.Sprintf(`%d:%s`, u.ID, u.Password)
 }
 
 var _ webauthn.User = (*WebAuthnUser)(nil)
@@ -72,12 +79,17 @@ var (
 		},
 	}
 	// TODO 怎么确保程序重启后一定不一样？
-	SystemKey = randomKey()
-	SystemID  = 1
+	systemKey = randomKey()
+	systemID  = 1
 	system    = &User{
 		User: &models.User{
-			ID: int64(SystemID),
+			ID: int64(systemID),
 		},
 	}
 	AdminID = 2
 )
+
+// 仅能同进程内使用。
+func SystemToken() string {
+	return system.tokenValue()
+}

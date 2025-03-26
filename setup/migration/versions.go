@@ -493,7 +493,7 @@ var AdminID = 2
 
 // 密码是随机生成的，会同时使用配置文件里面的 key 和此 password，
 // 待到后续移除 key 后，就仅使用此 password 了。
-// ID 总是 2；1 留给 SystemAdmin 了。
+// ID 总是 2；1 留给 System 了。
 func v34(tx *sql.Tx) {
 	var r [16]byte
 	utils.Must1(rand.Read(r[:]))

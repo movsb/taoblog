@@ -46,7 +46,7 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 		switch w.Conclusion {
 		case `success`:
 			_, err := g.client.Management.ScheduleUpdate(
-				auth.SystemAdminForGateway(context.Background()),
+				auth.SystemForGateway(context.Background()),
 				&proto.ScheduleUpdateRequest{},
 			)
 			if err != nil {

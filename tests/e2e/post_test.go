@@ -10,7 +10,9 @@ import (
 	"runtime"
 	"slices"
 	"testing"
+	"time"
 
+	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -243,4 +245,59 @@ func TestGetPost(t *testing.T) {
 	eq(`用户2自己的`, r.user2, int32(p2.Id), true)
 	eq(`用户1访问用户2的分享`, r.user1, int32(p2.Id), true)
 	eq(`用户2访问用户1的公开`, r.user2, int32(p2.Id), true)
+}
+
+// TODO 测试即便在添加了凭证的情况下仍然只返回公开文章。
+func TestRSS(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	fixed := time.FixedZone(`TEST`, 3600)
+
+	r := Serve(ctx, server.WithTimezone(fixed))
+
+	create := func(user context.Context, p *proto.Post) *proto.Post {
+		return utils.Must1(r.client.Blog.CreatePost(user, p))
+	}
+
+	now := time.Date(2025, time.March, 27, 0, 0, 0, 0, fixed)
+
+	p1 := create(r.user1, &proto.Post{Status: models.PostStatusPublic, Date: int32(now.Unix()), Source: `# user1`, SourceType: `markdown`})
+	p2 := create(r.user2, &proto.Post{Status: models.PostStatusPrivate, Source: `# user2`, SourceType: `markdown`})
+	p3 := create(r.admin, &proto.Post{Status: models.PostStatusPartial, Source: `# admin`, SourceType: `markdown`})
+	_, _, _ = p1, p2, p3
+
+	r.server.Main().TestingSetLastPostedAt(now.Add(time.Hour))
+
+	rssURL := fmt.Sprintf(`http://%s/rss`, r.server.HTTPAddr())
+	rsp := utils.Must1(http.Get(rssURL))
+	if rsp.StatusCode != 200 {
+		t.Fatal(`statusCode != 200`)
+	}
+
+	defer rsp.Body.Close()
+
+	const expectedOutput = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+	<title>未命名</title>
+	<link>http://localhost:2564</link>
+	<description></description>
+	<lastBuildDate>Thu, 27 Mar 2025 01:00:00 TEST</lastBuildDate>
+	<item>
+		<title>user1</title>
+		<link>http://localhost:2564/1/</link>
+		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
+		<description><![CDATA[]]></description>
+	</item>
+</channel>
+</rss>
+`
+
+	buf := bytes.NewBuffer(nil)
+	io.Copy(buf, rsp.Body)
+
+	if buf.String() != expectedOutput {
+		t.Fatalf("RSS 输出不相等：\ngot:%s\nwant:%s\n", buf.String(), expectedOutput)
+	}
 }

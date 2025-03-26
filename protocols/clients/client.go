@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/movsb/http2tcp"
@@ -20,21 +19,14 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func NewProtoClientFromHome(home string, token string) *ProtoClient {
+func NewFromHome(home string, token string) *ProtoClient {
 	cc := _NewConn(home, ``)
 	return _NewFromCC(cc, token)
 }
 
-func NewProtoClientFromAddress(grpcAddress string) *ProtoClient {
+func NewFromAddress(grpcAddress string, token string) *ProtoClient {
 	cc := _NewConn(``, grpcAddress)
-	return _NewFromCC(cc, ``)
-}
-
-// TODO: 临时用的，需要更好的办法
-// TODO: 仅能同进程内使用，因为 key 是临时生成的。
-func NewProtoClientAsSystemAdmin(grpcAddress string) *ProtoClient {
-	cc := _NewConn(``, grpcAddress)
-	return _NewFromCC(cc, fmt.Sprintf(`%d:%s`, auth.SystemID, auth.SystemKey))
+	return _NewFromCC(cc, token)
 }
 
 func _NewFromCC(cc *grpc.ClientConn, token string) *ProtoClient {
@@ -66,27 +58,16 @@ func (c *ProtoClient) Context() context.Context {
 	return c.ContextFrom(context.Background())
 }
 
-// 为了基于不带默认 token 的 client 创建基于父级 ctx 的认证。
-//
-// TODO: [go的grpc client可以携带默认凭证吗？](https://chatgpt.com/share/67d4858b-d004-8008-9627-8d738d00e0e4)
-func ContextFrom(parent context.Context, token string) context.Context {
-	tokenValue := token
-	if !strings.Contains(token, `:`) {
-		tokenValue = fmt.Sprintf(`%d:%s`, auth.AdminID, token)
-	}
-	authValue := fmt.Sprintf(`%s %s`, auth.TokenName, tokenValue)
-	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, authValue))
-}
-
 // TODO 配置文件中写/传完整的 ID:TOKEN 格式，而不是假定是 AdminID。
+// TODO: [go的grpc client可以携带默认凭证吗？](https://chatgpt.com/share/67d4858b-d004-8008-9627-8d738d00e0e4)
 func (c *ProtoClient) ContextFrom(parent context.Context) context.Context {
 	if c.token == "" {
 		return parent
 	}
-	return ContextFrom(parent, c.token)
+	authValue := fmt.Sprintf(`%s %s`, auth.TokenName, c.token)
+	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, authValue))
 }
 
-// grpcAddress 可以为空，表示使用 api 同一地址。
 // TODO 私有化，并把 token 设置到 default call options
 func _NewConn(home, orGrpcAddress string) *grpc.ClientConn {
 	options := []grpc.DialOption{

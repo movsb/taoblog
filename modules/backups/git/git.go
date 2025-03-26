@@ -32,9 +32,9 @@ import (
 const skewedDurationForUpdating = time.Minute * 15
 
 type GitSync struct {
-	ctx   context.Context
-	rc    *RuntimeConfig
-	proto *clients.ProtoClient
+	ctx    context.Context
+	rc     *RuntimeConfig
+	client *clients.ProtoClient
 
 	// 上一次获取更新的时间。
 	// 下一次获取时从此时间继续增量获取。
@@ -68,6 +68,7 @@ func (c *RuntimeConfig) AfterSet(paths config.Segments, obj any) {
 }
 
 // full: 初次备份是否需要全量扫描备份。如果不设置，则默认为最近 7 天。
+// ctx 用于进程控制，client 应包含凭证。
 func New(ctx context.Context, client *clients.ProtoClient, full bool) *GitSync {
 	lastCheckedAt := time.Unix(0, 0)
 	if !full {
@@ -82,9 +83,9 @@ func New(ctx context.Context, client *clients.ProtoClient, full bool) *GitSync {
 	}
 
 	return &GitSync{
-		ctx:   ctx,
-		rc:    rc,
-		proto: client,
+		ctx:    ctx,
+		rc:     rc,
+		client: client,
 
 		lastCheckedAt: lastCheckedAt,
 		pathCache:     map[int]string{},
@@ -142,7 +143,10 @@ func (g *GitSync) Sync() error {
 func (g *GitSync) prepare() (_ *git.Repository, _ *git.Worktree, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	config := utils.Must1(g.proto.Management.GetSyncConfig(g.ctx, &proto.GetSyncConfigRequest{}))
+	config := utils.Must1(g.client.Management.GetSyncConfig(
+		g.client.ContextFrom(g.ctx),
+		&proto.GetSyncConfigRequest{}),
+	)
 
 	g.config = config
 	g.auth = &http.BasicAuth{
@@ -326,8 +330,8 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) (outErr error) {
 // TODO 可选触发立即调用（比如强制归档保留版本的需求），而不是被动周期触发。
 // NOTE：时间范围是：
 func (g *GitSync) getUpdatedPosts(notBefore, notAfter time.Time) ([]*proto.Post, error) {
-	rsp, err := g.proto.Blog.ListPosts(
-		g.ctx,
+	rsp, err := g.client.Blog.ListPosts(
+		g.client.ContextFrom(g.ctx),
 		&proto.ListPostsRequest{
 			ModifiedNotBefore: int32(notBefore.Unix()),
 			ModifiedNotAfter:  int32(notAfter.Unix()),

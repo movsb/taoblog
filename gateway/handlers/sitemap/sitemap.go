@@ -1,6 +1,7 @@
 package sitemap
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -27,16 +28,13 @@ type Article struct {
 type Sitemap struct {
 	Articles []*Article
 
-	auther *auth.Auth
 	tmpl   *template.Template
 	client *clients.ProtoClient
 	impl   service.ToBeImplementedByRpc
 }
 
-// New ...
-func New(auther *auth.Auth, client *clients.ProtoClient, impl service.ToBeImplementedByRpc) http.Handler {
+func New(client *clients.ProtoClient, impl service.ToBeImplementedByRpc) http.Handler {
 	s := &Sitemap{
-		auther: auther,
 		client: client,
 		impl:   impl,
 		tmpl:   template.Must(template.New(`sitemap`).Parse(tmpl)),
@@ -46,16 +44,13 @@ func New(auther *auth.Auth, client *clients.ProtoClient, impl service.ToBeImplem
 }
 
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := s.impl.ListAllPostsIds(auth.SystemAdmin(req.Context()))
+	rsp, err := s.impl.ListAllPostsIds(auth.SystemForLocal(req.Context()))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	ctx := s.auther.NewContextForRequestAsGateway(req)
-
-	info := utils.Must1(s.client.Blog.GetInfo(ctx, &proto.GetInfoRequest{}))
-
+	info := utils.Must1(s.client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{}))
 	rssArticles := make([]*Article, 0, len(rsp))
 	for _, article := range rsp {
 		rssArticle := Article{

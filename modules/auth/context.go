@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -23,6 +22,8 @@ import (
 
 type ctxAuthKey struct{}
 
+// 鉴权后保存的用户信息。
+// 进程内使用（不含 Gateway）。
 type AuthContext struct {
 	// 当前请求所引用的用户。
 	// 不会随不同的请求改变。
@@ -36,34 +37,6 @@ type AuthContext struct {
 
 	// 用户使用的代理端名字。
 	UserAgent string
-}
-
-// 从 Context 里面提取出当前的用户信息。
-//
-// Note：在当前的实现下，非登录用户/无权限用户被表示为 Guest（id==0）的用户。所以此函数的返回值始终不为空。
-func Context(ctx context.Context) *AuthContext {
-	if ac := _Context(ctx); ac != nil {
-		return ac
-	}
-	panic(`Context 中未包含登录用户信息。`)
-}
-
-// 系统管理员身份。相当于后台任务执行者。拥有所有权限。
-// 不用 == Admin：一个是真人，一个是拟人。
-// 权限可以一样，也可以不一样。
-// 比如 System 不允许真实登录，只是后台操作。
-// 只能进程内/本地使用，不能跨网络使用（包括 gateway 也不行）。
-func SystemAdmin(ctx context.Context) context.Context {
-	return _NewContext(ctx, system, netip.AddrFrom4([4]byte{127, 0, 0, 1}), `system_admin`)
-}
-
-func GuestContext(ctx context.Context) context.Context {
-	return _NewContext(ctx, guest, netip.AddrFrom4([4]byte{127, 0, 0, 1}), `guest_context`)
-}
-
-// 不要保存到变量中，直接使用！
-func SystemAdminForGateway(ctx context.Context) context.Context {
-	return metadata.NewOutgoingContext(ctx, metadata.Pairs(`Authorization`, `token `+fmt.Sprintf(`%d:%s`, system.ID, SystemKey)))
 }
 
 // 只获取不添加默认。
@@ -87,31 +60,68 @@ func _NewContext(parent context.Context, user *User, remoteAddr netip.Addr, user
 	return context.WithValue(parent, ctxAuthKey{}, &ac)
 }
 
-// 把 Cookie 转换成已登录用户。
+// 从 Context 里面提取出当前的用户信息。
+//
+// Note：在当前的实现下，非登录用户/无权限用户被表示为 Guest（id==0）的用户，
+// 所以此函数的返回值始终不为空。因此，如果取不到用户信息，会 panic。
+func Context(ctx context.Context) *AuthContext {
+	if ac := _Context(ctx); ac != nil {
+		return ac
+	}
+	panic(`Context 中未包含登录用户信息。`)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+var localhost = netip.AddrFrom4([4]byte{127, 0, 0, 1})
+
+// 系统管理员身份。相当于后台任务执行者。拥有所有权限。
+// 不用 == Admin：一个是真人，一个是拟人。
+// 权限可以一样，也可以不一样。
+// 比如 System 不允许真实登录，只是后台操作。
+// 只能进程内/本地使用，不能跨网络使用（包括 gateway 也不行）。
+func SystemForLocal(ctx context.Context) context.Context {
+	return _NewContext(ctx, system, localhost, `system_admin`)
+}
+
+// 访客身份。
+// 只能进程内/本地使用，不能跨网络使用（包括 gateway 也不行）。
+func GuestForLocal(ctx context.Context) context.Context {
+	return _NewContext(ctx, guest, localhost, `guest_context`)
+}
+
+// 只能用于 Gateway，充当 System 用户。
+func SystemForGateway(ctx context.Context) context.Context {
+	md := metadata.Pairs(`Authorization`, `token `+system.tokenValue())
+	return metadata.NewOutgoingContext(ctx, md)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// 把 Cookie/Authorization 转换成已登录用户。
+//
 // 适用于浏览器登录的用户。
 //
-// Note: Cookie 同样会被带给 Grpc Gateway，在那里通过 Interceptor 转换成用户。
+// Note: Cookie/Authorization 同样会被带给 Grpc Gateway，在那里通过 Interceptor 转换成用户。
+//
 // 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ac := a.NewContextForRequestLocal(r)
+		user := a.AuthRequest(r)
+		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
+		userAgent := r.Header.Get(`User-Agent`)
+		ac := _NewContext(r.Context(), user, remoteAddr, userAgent)
 		h.ServeHTTP(w, r.WithContext(ac))
 	})
-}
-
-// 返回的是能代表用户的本地 auth context，不能跨网络传输。
-func (a *Auth) NewContextForRequestLocal(r *http.Request) context.Context {
-	user := a.AuthRequest(r)
-	remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
-	userAgent := r.Header.Get(`User-Agent`)
-	return _NewContext(r.Context(), user, remoteAddr, userAgent)
 }
 
 // 把请求中的 Cookie 等信息转换成 Gateway 要求格式以通过 grpc-client 传递给 server。
 // server 然后转换成 local auth context 以表示用户。
 //
 // 并不是特别完善，是否应该参考 runtime.AnnotateContext？
+//
+// TODO 移除
 func (a *Auth) NewContextForRequestAsGateway(r *http.Request) context.Context {
 	md := metadata.Pairs()
 	for _, cookie := range r.Header.Values(`cookie`) {
@@ -234,7 +244,7 @@ func (a *Auth) userByKey(id int, key string) (*models.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	if u.ID == int64(SystemID) && constantEqual(key, SystemKey) {
+	if u.ID == int64(systemID) && constantEqual(key, systemKey) {
 		return u, nil
 	}
 
@@ -324,6 +334,7 @@ func parseRemoteAddrFromMetadata(ctx context.Context, md metadata.MD) netip.Addr
 	return parseRemoteAddr(f)
 }
 
+// TODO x-forwarded-for 可能是伪造的
 func parseRemoteAddrFromHeader(hdr http.Header, remoteAddr string) netip.Addr {
 	var f string
 	if fs := hdr.Values(`x-forwarded-for`); len(fs) > 0 {

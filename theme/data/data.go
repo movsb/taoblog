@@ -64,7 +64,7 @@ func (d *Data) ShowHeader() bool {
 
 func (d *Data) Info() (*proto.GetInfoResponse, error) {
 	if d.Context == nil {
-		d.Context = auth.GuestContext(context.TODO())
+		d.Context = auth.GuestForLocal(context.TODO())
 	}
 	return d.svc.GetInfo(d.Context, &proto.GetInfoRequest{})
 }

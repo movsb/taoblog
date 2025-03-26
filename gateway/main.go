@@ -36,6 +36,7 @@ import (
 
 type Gateway struct {
 	mux     *http.ServeMux
+	mc      *utils.ServeMuxChain
 	service *service.Service
 	auther  *auth.Auth
 
@@ -48,10 +49,11 @@ type Gateway struct {
 func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, mux *http.ServeMux, notify proto.NotifyServer) *Gateway {
 	g := &Gateway{
 		mux:     mux,
+		mc:      &utils.ServeMuxChain{ServeMux: mux},
 		service: service,
 		auther:  auther,
 
-		client: clients.NewProtoClientFromAddress(serverAddr),
+		client: clients.NewFromAddress(serverAddr, ``),
 
 		notify: notify,
 	}
@@ -71,6 +73,11 @@ func (g *Gateway) SetFavicon(f *favicon.Favicon) {
 // 扩展功能动态生成的样式、脚本、文件。
 func (g *Gateway) SetDynamic(invalidate func()) {
 	g.mux.Handle(dynamic.PrefixSlashed, http.StripPrefix(dynamic.Prefix, dynamic.New(invalidate)))
+}
+
+// 订阅：rss
+func (g *Gateway) SetRSS(loc utils.CurrentTimezoneGetter) {
+	g.mc.Handle(`GET /rss`, rss.New(g.auther, g.client, rss.WithArticleCount(10), rss.WithCurrentLocationGetter(loc)), g.lastPostTimeHandler)
 }
 
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
@@ -125,10 +132,7 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		mc.Handle(`GET /v3/posts/{id}/files`, assets.New(g.auther, `post`, g.client))
 
 		// 站点地图：sitemap.xml
-		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.auther, g.client, g.service), g.lastPostTimeHandler)
-
-		// 订阅：rss
-		mc.Handle(`GET /rss`, rss.New(g.auther, g.client, rss.WithArticleCount(10)), g.lastPostTimeHandler)
+		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.client, g.service), g.lastPostTimeHandler)
 
 		// 调试相关
 		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler(userFromRequestContext, userFromRequestQuery))

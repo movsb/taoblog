@@ -22,33 +22,40 @@ import (
 //go:embed rss.xml
 var tmpl string
 
-// Article ...
 type Article struct {
 	*proto.Post
 	Date    Date
 	Content template.HTML
 }
 
-type Date int
+type Date time.Time
 
 func (d Date) String() string {
-	return time.Unix(int64(d), 0).Local().Format(time.RFC1123)
+	return time.Time(d).Format(time.RFC1123)
 }
 
-// RSS ...
+func dateFrom(t int32, l *time.Location) Date {
+	return Date(time.Unix(int64(t), 0).In(l))
+}
+
+type Data struct {
+	Name          string
+	Description   string
+	Home          string
+	LastBuildDate Date
+	Articles      []*Article
+}
+
 type RSS struct {
 	config _Config
 
-	Name        string
-	Description string
-	Home        string
-	Articles    []*Article
-
-	LastBuildDate Date
-
 	tmpl   *template.Template
 	client *clients.ProtoClient
-	auther *auth.Auth
+
+	loc utils.CurrentTimezoneGetter
+
+	// 是否仅列出公开文章，默认是。
+	onlyPublic bool
 }
 
 type Option func(r *RSS)
@@ -59,42 +66,53 @@ func WithArticleCount(n int) Option {
 	}
 }
 
+func WithCurrentLocationGetter(loc utils.CurrentTimezoneGetter) Option {
+	return func(r *RSS) {
+		r.loc = loc
+	}
+}
+
 type _Config struct {
 	articleCount int
 }
 
 func New(auther *auth.Auth, client *clients.ProtoClient, options ...Option) http.Handler {
-	info := utils.Must1(client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{}))
-
 	r := &RSS{
 		config: _Config{
 			articleCount: 10,
 		},
-
-		Name:          info.Name,
-		Description:   info.Description,
-		Home:          info.Home,
-		LastBuildDate: Date(info.LastPostedAt),
-
+		tmpl:   template.Must(template.New(`rss`).Parse(tmpl)),
 		client: client,
-		auther: auther,
+
+		onlyPublic: true,
 	}
 
 	for _, opt := range options {
 		opt(r)
 	}
 
-	r.tmpl = template.Must(template.New(`rss`).Parse(tmpl))
+	if r.loc == nil {
+		r.loc = utils.LocalTimezoneGetter{}
+	}
 
-	return r
+	return utils.IIF[http.Handler](r.onlyPublic, utils.StripCredentialsHandler(r), r)
 }
 
 // ServeHTTP ...
 func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// TODO 这里没法列出管理员可看的文章。
-	// 没有调用 runtime.AnnotateContext
+	info := utils.Must1(r.client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{}))
+
+	data := Data{
+		Name:          info.Name,
+		Description:   info.Description,
+		Home:          info.Home,
+		LastBuildDate: dateFrom(info.LastPostedAt, r.loc.GetCurrentTimezone()),
+	}
+
 	rsp, err := r.client.Blog.ListPosts(
-		r.auther.NewContextForRequestAsGateway(req),
+		// 默认应该是移除了凭证信息的，查看 http.Handler 实现。
+		// 否则单测过不了。
+		req.Context(),
 		&proto.ListPostsRequest{
 			Limit:          int32(r.config.articleCount),
 			OrderBy:        `date desc`,
@@ -110,20 +128,20 @@ func (r *RSS) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	rssArticles := make([]*Article, 0, len(rsp.Posts))
 	for _, article := range rsp.Posts {
 		rssArticle := Article{
-			Post:    article,
-			Date:    Date(article.Date),
+			Post: article,
+			// TODO 尊重文章本身的时区。
+			Date:    dateFrom(article.Date, r.loc.GetCurrentTimezone()),
 			Content: template.HTML(cdata(article.Content)),
 		}
 		rssArticles = append(rssArticles, &rssArticle)
 	}
 
-	cr := *r
-	cr.Articles = rssArticles
+	data.Articles = rssArticles
 
 	w.Header().Set("Content-Type", "application/xml")
 	fmt.Fprintln(w, `<?xml version="1.0" encoding="UTF-8"?>`)
 
-	if err := cr.tmpl.Execute(w, cr); err != nil {
+	if err := r.tmpl.Execute(w, data); err != nil {
 		log.Println("failed to write rss", err)
 	}
 }

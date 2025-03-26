@@ -18,7 +18,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	client_common "github.com/movsb/taoblog/cmd/client/common"
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -548,7 +547,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short:            `代理网络请求，自动登录。`,
 		PersistentPreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			proxy(cmd.Context(), `localhost:2564`, config.Home, fmt.Sprint(auth.AdminID), config.Token)
+			proxy(cmd.Context(), `localhost:2564`, config.Home, config.Token)
 		},
 	}
 	rootCmd.AddCommand(proxyCmd)

@@ -61,7 +61,7 @@ func AddCommands(parent *cobra.Command) {
 }
 
 func remoteDialer(home string, token string) {
-	client := clients.NewProtoClientFromHome(home, token)
+	client := clients.NewFromHome(home, token)
 	drc, err := client.Utils.DialRemote(client.Context())
 	if err != nil {
 		panic(err)
@@ -115,7 +115,7 @@ func remoteDialer(home string, token string) {
 }
 
 func update(home string, token string) {
-	client := clients.NewProtoClientFromHome(home, token)
+	client := clients.NewFromHome(home, token)
 	for {
 		time.Sleep(time.Second * 15)
 		info, err := client.Blog.GetInfo(context.Background(), &proto.GetInfoRequest{})

@@ -23,9 +23,9 @@ type Remote interface {
 }
 
 type Backup struct {
-	ctx   context.Context
-	cc    *clients.ProtoClient
-	store utils.PluginStorage
+	ctx    context.Context
+	client *clients.ProtoClient
+	store  utils.PluginStorage
 
 	remote   Remote
 	identity string
@@ -52,13 +52,13 @@ func WithEncoderAge(identity string) Option {
 
 // NOTE: grpc stream 无法直接使用 Server，只能从地址注册 client 使用
 // NOTE：然而 storage 又是本地进程的。
-func New(ctx context.Context, store utils.PluginStorage, grpcAddress string, options ...Option) (outB *Backup, outErr error) {
+func New(ctx context.Context, store utils.PluginStorage, client *clients.ProtoClient, options ...Option) (outB *Backup, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
 	b := Backup{
-		ctx:   ctx,
-		store: store,
-		cc:    clients.NewProtoClientAsSystemAdmin(grpcAddress),
+		ctx:    ctx,
+		store:  store,
+		client: client,
 	}
 
 	for _, opt := range options {
@@ -110,7 +110,7 @@ func (b *Backup) createWriter() (_ *_RW, outErr error) {
 // TODO 使用临时文件缓存替代内存
 func (b *Backup) BackupPosts(ctx context.Context) (outErr error) {
 	defer utils.CatchAsError(&outErr)
-	bb := begin.NewBackupClient(b.cc)
+	bb := begin.NewBackupClient(b.client)
 	wc := utils.Must1(b.createWriter())
 	utils.Must(bb.BackupPosts(wc.Writer()))
 	r := utils.Must1(wc.Close())
@@ -133,14 +133,14 @@ func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
 
 	now := time.Now()
 
-	updatedPosts := utils.Must1(b.cc.Blog.ListPosts(
-		b.cc.Context(),
+	updatedPosts := utils.Must1(b.client.Blog.ListPosts(
+		b.client.Context(),
 		&proto.ListPostsRequest{
 			ModifiedNotBefore: int32(lastTime),
 		},
 	)).GetPosts()
 
-	bb := begin.NewBackupClient(b.cc)
+	bb := begin.NewBackupClient(b.client)
 	for _, post := range updatedPosts {
 		select {
 		case <-ctx.Done():

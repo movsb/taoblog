@@ -77,14 +77,14 @@ type Server struct {
 
 	grpcAddr string
 
-	// 不带默认认证。
-	noAuthClient *clients.ProtoClient
-
 	// 请求节流器。
 	throttler        grpc.UnaryServerInterceptor
 	throttlerEnabled atomic.Bool
 
 	createFirstPost bool
+	initialTimezone *time.Location
+	initGitSyncTask bool
+	initBackupTasks bool
 
 	db      *taorm.DB
 	auth    *auth.Auth
@@ -93,16 +93,19 @@ type Server struct {
 
 	metrics *metrics.Registry
 
-	notify proto.NotifyServer
+	notifyServer proto.NotifyServer
 }
 
 func NewDefaultServer() *Server {
 	return NewServer(
 		WithRequestThrottler(request_throttler.New()),
 		WithCreateFirstPost(),
+		WithGitSyncTask(true),
+		WithBackupTasks(true),
 	)
 }
 
+// 主要用于测试启动。
 func NewServer(with ...With) *Server {
 	s := &Server{}
 	for _, w := range with {
@@ -141,9 +144,6 @@ func (s *Server) DB() *taorm.DB {
 func (s *Server) Gateway() *gateway.Gateway {
 	return s.gateway
 }
-func (s *Server) NoAuthClient() *clients.ProtoClient {
-	return s.noAuthClient
-}
 
 func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, ready chan<- struct{}) {
 	if s.httpAddr != `` {
@@ -177,14 +177,17 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
-	s.noAuthClient = clients.NewProtoClientFromAddress(s.GRPCAddr())
 
 	filesStore := theme_fs.FS(storage.NewSQLite(migration.InitFiles(cfg.Database.Files)))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
-	s.notify = notify
+	s.notifyServer = notify
 
 	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore, rc)
 	s.main = theService
+
+	if testing && s.initialTimezone != nil {
+		theService.TestingSetTimezone(s.initialTimezone)
+	}
 
 	go startGRPC()
 
@@ -193,6 +196,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
+	s.gateway.SetRSS(theService)
 
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
@@ -202,17 +206,16 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
 
-	notify.SendInstant(
-		auth.SystemAdmin(ctx),
-		&proto.SendInstantRequest{
-			Subject: `博客状态`,
-			Body:    `已经开始运行`,
-		},
-	)
+	s.sendNotify(`网站状态`, `现在开始运行。`)
 
-	go liveCheck(theService, notify)
-	go s.createBackupTasks(ctx, cfg)
-	go s.createGitSyncTasks(ctx, s.noAuthClient)
+	go liveCheck(ctx, s, theService)
+
+	if s.initBackupTasks {
+		go s.createBackupTasks(ctx, cfg)
+	}
+	if s.initGitSyncTask {
+		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemToken()))
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -286,8 +289,8 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 }
 
 func (s *Server) sendNotify(title, message string) {
-	s.notify.SendInstant(
-		auth.SystemAdmin(context.Background()),
+	s.notifyServer.SendInstant(
+		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
 			Subject: title,
 			Body:    message,
@@ -299,7 +302,6 @@ func (s *Server) createGitSyncTasks(
 	ctx context.Context,
 	client *clients.ProtoClient,
 ) {
-	ctx = clients.ContextFrom(ctx, fmt.Sprintf(`%d:%s`, auth.SystemID, auth.SystemKey))
 	gs := backups_git.New(ctx, client, false)
 
 	sync := func() error {
@@ -344,9 +346,11 @@ func (s *Server) createBackupTasks(
 	ctx context.Context,
 	cfg *config.Config,
 ) {
+	client := clients.NewFromAddress(s.GRPCAddr(), auth.SystemToken())
+	ctx = auth.SystemForGateway(ctx)
 	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled && !version.DevMode() {
 		b := utils.Must1(backups.New(
-			ctx, s.main.GetPluginStorage(`backups.r2`), s.GRPCAddr(),
+			ctx, s.main.GetPluginStorage(`backups.r2`), client,
 			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
 			backups.WithEncoderAge(r2.AgeKey),
 		))
@@ -561,26 +565,21 @@ func grpcLogger(ctx context.Context, method string) {
 // TODO 文章 1 必须存在。可以是非公开状态。
 // TODO 放在服务里面 tasks.go
 // TODO 放在 daemon 里面（同 webhooks）
-func liveCheck(s *service.Service, cc proto.NotifyServer) {
+func liveCheck(ctx context.Context, s *Server, svc *service.Service) {
 	t := time.NewTicker(time.Minute * 1)
 	defer t.Stop()
 
 	for range t.C {
 		for !func() bool {
 			now := time.Now()
-			s.GetPost(auth.SystemAdmin(context.TODO()), &proto.GetPostRequest{Id: 1})
+			svc.GetPost(auth.SystemForLocal(context.TODO()), &proto.GetPostRequest{Id: 1})
 			if elapsed := time.Since(now); elapsed > time.Second*10 {
-				s.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
+				svc.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)
-				if cc != nil {
-					cc.SendInstant(auth.SystemAdmin(context.Background()), &proto.SendInstantRequest{
-						Subject: `服务不可用`,
-						Body:    `保活检测卡住了。`,
-					})
-				}
+				s.sendNotify(`服务不可用`, `保活检测卡住了`)
 				return false
 			}
-			s.MaintenanceMode().Leave()
+			svc.MaintenanceMode().Leave()
 			return true
 		}() {
 		}

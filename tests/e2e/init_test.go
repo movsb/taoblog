@@ -43,7 +43,7 @@ func Serve(ctx context.Context, options ...server.With) *R {
 	// 测试的时候默认禁用限流器；测试限流器相关函数会手动开启。
 	r.server.TestEnableRequestThrottler(false)
 
-	r.client = clients.NewProtoClientFromAddress(r.server.GRPCAddr())
+	r.client = clients.NewFromAddress(r.server.GRPCAddr(), ``)
 
 	r.admin = onBehalfOf(r, int64(auth.AdminID))
 	r.guest = context.Background()

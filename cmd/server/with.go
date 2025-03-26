@@ -1,6 +1,10 @@
 package server
 
-import "google.golang.org/grpc"
+import (
+	"time"
+
+	"google.golang.org/grpc"
+)
 
 type With func(s *Server)
 
@@ -16,5 +20,23 @@ func WithRequestThrottler(throttler grpc.UnaryServerInterceptor) With {
 func WithCreateFirstPost() With {
 	return func(s *Server) {
 		s.createFirstPost = true
+	}
+}
+
+func WithTimezone(loc *time.Location) With {
+	return func(s *Server) {
+		s.initialTimezone = loc
+	}
+}
+
+func WithGitSyncTask(b bool) With {
+	return func(s *Server) {
+		s.initGitSyncTask = b
+	}
+}
+
+func WithBackupTasks(b bool) With {
+	return func(s *Server) {
+		s.initBackupTasks = b
 	}
 }

@@ -45,7 +45,7 @@ func (a *Auth) Config() *config.AuthConfig {
 
 // TODO: 改成接口。
 func (o *Auth) GetUserByID(id int64) (*models.User, error) {
-	if id == int64(SystemID) {
+	if id == int64(systemID) {
 		return system.User, nil
 	}
 

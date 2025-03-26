@@ -335,3 +335,7 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 
 	return out, nil
 }
+
+func (s *Service) GetCurrentTimezone() *time.Location {
+	return s.timeLocation
+}

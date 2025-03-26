@@ -64,7 +64,7 @@ func (cn *CommentNotifier) NotifyPostAuthor(data *AdminData, name string, email 
 	buf.Reset()
 	chanifyTmpl.Execute(buf, data)
 	cn.notifier.SendInstant(
-		auth.SystemAdmin(context.Background()),
+		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
 			Subject: subject,
 			Body:    buf.String(),
@@ -74,7 +74,7 @@ func (cn *CommentNotifier) NotifyPostAuthor(data *AdminData, name string, email 
 	buf.Reset()
 	adminTmpl.Execute(buf, data)
 	cn.notifier.SendEmail(
-		auth.SystemAdmin(context.Background()),
+		auth.SystemForLocal(context.Background()),
 		&proto.SendEmailRequest{
 			Subject:  subject,
 			Body:     buf.String(),
@@ -95,9 +95,9 @@ func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipie
 		panic(err)
 	}
 	subject := fmt.Sprintf(`%s %s`, guestPrefix, data.Title)
-	for i := 0; i < len(names); i++ {
+	for i := range names {
 		cn.notifier.SendEmail(
-			auth.SystemAdmin(context.Background()),
+			auth.SystemForLocal(context.Background()),
 			&proto.SendEmailRequest{
 				Subject:  subject,
 				Body:     buf.String(),

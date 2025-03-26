@@ -89,7 +89,7 @@ func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 
 func (s *Service) reIndex(ctx context.Context, engine *search.Engine, lastCheck *int64) {
 	now := time.Now()
-	rsp, err := s.ListPosts(auth.SystemAdmin(ctx), &proto.ListPostsRequest{
+	rsp, err := s.ListPosts(auth.SystemForLocal(ctx), &proto.ListPostsRequest{
 		ContentOptions:    co.For(co.SearchIndex),
 		WithLink:          proto.LinkKind_LinkKindRooted,
 		ModifiedNotBefore: int32(*lastCheck),
