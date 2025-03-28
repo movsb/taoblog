@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -56,6 +55,7 @@ func (fsys *OSDirFS) Sub(dir string) (fs.FS, error) {
 	return NewOSDirFS(path.Join(fsys.root, dir)), nil
 }
 
+// TODO 改成通过 context 退出，而不是返回 close 方法。
 func (fsys *OSDirFS) Watch() (<-chan fsnotify.Event, func(), error) {
 	if _, err := fsys.Open("."); err != nil {
 		panic(fmt.Sprintf(`err: %v, cwd: %v, root: %v`, err, Must1(os.Getwd()), fsys.root))
@@ -72,8 +72,7 @@ func (fsys *OSDirFS) Watch() (<-chan fsnotify.Event, func(), error) {
 		for {
 			select {
 			case err := <-watcher.Errors:
-				log.Println(err)
-				time.Sleep(time.Second)
+				log.Println("Watch Error:", err, fsys.root)
 				return
 			case event := <-watcher.Events:
 				// log.Println(event)

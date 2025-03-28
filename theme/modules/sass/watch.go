@@ -39,7 +39,6 @@ func Watch(dir string, input, output string) {
 	exitOnError := true
 
 	bundle := func() {
-		// TODO 不要忽略警告。
 		cmd := exec.Command(`sass`, `-q`, `--no-source-map`, input, output)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -68,7 +67,7 @@ func Watch(dir string, input, output string) {
 			if event.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
 				// 只关心 .scss 文件
 				if path.Ext(event.Name) != `.scss` {
-					break
+					continue
 				}
 				debouncer.Enter()
 			}

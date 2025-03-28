@@ -38,11 +38,11 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 	bundle()
 
 	if watchFS, ok := fsys.(WatchFS); ok {
-		events, close := Must2(watchFS.Watch())
-		defer close()
-
 		log.Println(`Listening for template changes`)
 		go func() {
+			events, close := Must2(watchFS.Watch())
+			defer close()
+
 			debouncer := NewDebouncer(time.Second, func() {
 				bundle()
 				log.Println(`Re-parsed all partial and named templates`)
