@@ -3,10 +3,10 @@ package alerts
 import (
 	"embed"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
@@ -19,7 +19,7 @@ import (
 
 //go:embed assets style.css
 var _embed embed.FS
-var _static = os.DirFS(dir.SourceAbsoluteDir().Join())
+var _static = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 

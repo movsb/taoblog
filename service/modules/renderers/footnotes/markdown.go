@@ -2,8 +2,8 @@ package footnotes
 
 import (
 	"embed"
-	"os"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark"
@@ -14,7 +14,7 @@ import (
 
 //go:embed style.css
 var _embed embed.FS
-var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
+var _root = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {

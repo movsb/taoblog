@@ -84,11 +84,13 @@ type Server struct {
 	throttler        grpc.UnaryServerInterceptor
 	throttlerEnabled atomic.Bool
 
-	createFirstPost bool
-	initialTimezone *time.Location
-	initGitSyncTask bool
-	initBackupTasks bool
-	initRssTasks    bool
+	createFirstPost   bool
+	initialTimezone   *time.Location
+	initGitSyncTask   bool
+	initBackupTasks   bool
+	initRssTasks      bool
+	initMonitorCerts  bool
+	initMonitorDomain bool
 
 	db      *taorm.DB
 	auth    *auth.Auth
@@ -108,6 +110,8 @@ func NewDefaultServer() *Server {
 		WithGitSyncTask(true),
 		WithBackupTasks(true),
 		WithRSS(true),
+		WithMonitorCerts(true),
+		WithMonitorDomain(true),
 	)
 }
 
@@ -202,7 +206,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
 	s.notifyServer = notify
 
-	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, testing, filesStore, rc)
+	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, rc)
 	s.main = theService
 
 	if testing && s.initialTimezone != nil {
@@ -238,6 +242,18 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}
 	if s.initGitSyncTask {
 		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemToken()))
+	}
+	if s.initMonitorDomain {
+		theService.SetDomainDays(-1)
+		go monitorDomain(ctx, cfg.Site.Home, notify, cfg.Others.Whois.ApiLayer.Key, func(days int) {
+			theService.SetDomainDays(days)
+		})
+	}
+	if s.initMonitorCerts {
+		theService.SetCertDays(-1)
+		go monitorCert(ctx, cfg.Site.Home, notify, func(days int) {
+			theService.SetCertDays(days)
+		})
 	}
 
 	quit := make(chan os.Signal, 1)
@@ -424,7 +440,6 @@ func (s *Server) createMainServices(
 	notifier proto.NotifyServer,
 	cancel func(),
 	auth *auth.Auth,
-	testing bool,
 	filesStore theme_fs.FS,
 	rc *runtime_config.Runtime,
 ) *service.Service {
@@ -433,7 +448,6 @@ func (s *Server) createMainServices(
 		service.WithPostDataFileSystem(filesStore),
 		service.WithNotifier(notifier),
 		service.WithCancel(cancel),
-		service.WithTesting(testing),
 	}
 
 	addons.New()

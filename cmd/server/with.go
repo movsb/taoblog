@@ -46,3 +46,15 @@ func WithRSS(b bool) With {
 		s.initRssTasks = b
 	}
 }
+
+func WithMonitorDomain(b bool) With {
+	return func(s *Server) {
+		s.initMonitorDomain = b
+	}
+}
+
+func WithMonitorCerts(b bool) With {
+	return func(s *Server) {
+		s.initMonitorCerts = b
+	}
+}

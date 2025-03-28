@@ -4,7 +4,6 @@ import (
 	"embed"
 	"fmt"
 	"html"
-	"os"
 	"sync"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
@@ -20,7 +19,7 @@ import (
 
 //go:embed style.css script.js
 var _embed embed.FS
-var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {

@@ -12,7 +12,6 @@ import (
 	"io/fs"
 	"log"
 	"net/url"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -30,7 +29,7 @@ var SourceRelativeDir = dir.SourceRelativeDir()
 
 //go:embed player.html script.js style.css
 var _embed embed.FS
-var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
@@ -46,9 +45,6 @@ func init() {
 type MediaTags struct {
 	web  gold_utils.WebFileSystem
 	tmpl *utils.TemplateLoader
-
-	devMode      bool
-	themeChanged func()
 }
 
 var _gOnceTmpl sync.Once
@@ -56,12 +52,7 @@ var _gTmpl *utils.TemplateLoader
 
 type Option func(*MediaTags)
 
-func WithDevMode(themeChanged func()) Option {
-	return func(mt *MediaTags) {
-		mt.devMode = true
-		mt.themeChanged = themeChanged
-	}
-}
+var t = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
 
 func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 	tag := &MediaTags{
@@ -75,11 +66,7 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 	// 判断为空的目的是测试里面可能会预初始化。
 	if _gTmpl == nil {
 		_gOnceTmpl.Do(func() {
-			if tag.devMode {
-				_gTmpl = utils.NewTemplateLoader(utils.NewDirFSWithNotify(string(SourceRelativeDir)), nil, tag.themeChanged)
-			} else {
-				_gTmpl = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, nil)
-			}
+			_gTmpl = t
 		})
 	}
 

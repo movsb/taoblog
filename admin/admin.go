@@ -69,7 +69,7 @@ func NewAdmin(devMode bool, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix st
 	if devMode {
 		dir := dir.SourceRelativeDir()
 		rootFS = os.DirFS(dir.Join(`statics`))
-		tmplFS = utils.NewDirFSWithNotify(dir.Join(`templates`))
+		tmplFS = utils.NewOSDirFS(dir.Join(`templates`))
 	} else {
 		rootFS = utils.Must1(fs.Sub(root, `statics`))
 		tmplFS = utils.Must1(fs.Sub(root, `templates`))

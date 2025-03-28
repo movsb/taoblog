@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"net/url"
-	"os"
 	"regexp"
 
 	"github.com/PuerkitoBio/goquery"
@@ -23,7 +22,7 @@ var (
 	//go:embed assets style.css
 	_embed embed.FS
 
-	_root = os.DirFS(string(dir.SourceAbsoluteDir()))
+	_root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 	// 映射：狗头 → weixin/doge.png
 	_refs = map[string]string{}

@@ -61,10 +61,11 @@ func Watch(dir string, input, output string) {
 
 	go func() {
 		debouncer := utils.NewDebouncer(time.Second, bundle)
-		fsDir := utils.NewDirFSWithNotify(dir).(utils.FsWithChangeNotify)
-		for event := range fsDir.Changed() {
-			switch event.Op {
-			case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
+		watchFS := utils.NewOSDirFS(dir).(utils.WatchFS)
+		events, close := utils.Must2(watchFS.Watch())
+		defer close()
+		for event := range events {
+			if event.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
 				// 只关心 .scss 文件
 				if path.Ext(event.Name) != `.scss` {
 					break

@@ -2,8 +2,8 @@ package image_viewer
 
 import (
 	"embed"
-	"os"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 )
@@ -12,7 +12,7 @@ import (
 
 //go:embed zoom-1.0.7.min.iife.js image-view.js style.css
 var _embed embed.FS
-var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {

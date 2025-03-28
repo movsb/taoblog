@@ -43,7 +43,6 @@ type ToBeImplementedByRpc interface {
 	GetPlainLink(ID int64) string
 	Config() *config.Config
 	IncrementViewCount(m map[int]int)
-	ThemeChangedAt() time.Time
 	GetCommentEmailById(id int) string
 }
 
@@ -53,8 +52,6 @@ type Service struct {
 
 	// 用于主动关闭服务并重启。
 	cancel func()
-
-	testing bool
 
 	// 计划重启。
 	scheduledUpdate atomic.Bool
@@ -112,8 +109,6 @@ type Service struct {
 
 	maintenance *utils.Maintenance
 
-	// 服务内有插件的更新可能会影响到内容渲染。
-	themeChangedAt time.Time
 	// 网站图标，临时放这儿。
 	favicon *favicon.Favicon
 
@@ -134,10 +129,6 @@ type Service struct {
 
 func (s *Service) Favicon() *favicon.Favicon {
 	return s.favicon
-}
-
-func (s *Service) ThemeChangedAt() time.Time {
-	return s.themeChangedAt
 }
 
 func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, rc *runtime_config.Runtime, auther *auth.Auth, options ...With) *Service {
@@ -166,8 +157,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 		maintenance: utils.NewMaintenance(),
 
-		themeChangedAt: time.Now(),
-		favicon:        favicon.NewFavicon(),
+		favicon: favicon.NewFavicon(),
 	}
 
 	for _, opt := range options {
@@ -234,17 +224,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	proto.RegisterManagementServer(sr, s)
 	proto.RegisterSearchServer(sr, s)
 
-	if !s.testing && !version.DevMode() {
-		go s.monitorCert(s.notifier)
-		go s.monitorDomain(s.notifier)
-	}
-
-	s.exportVars()
-
 	return s
 }
-
-func (s *Service) exportVars() {}
 
 const noPerm = `此操作无权限。`
 
@@ -338,4 +319,13 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 
 func (s *Service) GetCurrentTimezone() *time.Location {
 	return s.timeLocation
+}
+
+func (s *Service) SetCertDays(n int) {
+	s.certDaysLeft.Store(int32(n))
+	s.exporter.certDaysLeft.Set(float64(n))
+}
+func (s *Service) SetDomainDays(n int) {
+	s.domainExpirationDaysLeft.Store(int32(n))
+	s.exporter.domainDaysLeft.Set(float64(n))
 }

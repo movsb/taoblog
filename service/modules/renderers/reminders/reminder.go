@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -18,7 +17,7 @@ import (
 
 //go:embed reminder.html style.css
 var _embed embed.FS
-var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {

@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"log"
 	"net/url"
-	"os"
 	"strings"
 	"unicode/utf8"
 
@@ -25,7 +24,7 @@ import (
 
 //go:embed friend.html style.css
 var _embed embed.FS
-var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {

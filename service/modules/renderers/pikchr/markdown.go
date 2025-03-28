@@ -3,7 +3,6 @@ package pikchr
 import (
 	"embed"
 	"io"
-	"os"
 
 	"github.com/gopikchr/gopikchr"
 	"github.com/movsb/taoblog/modules/utils"
@@ -16,7 +15,7 @@ import (
 
 //go:embed style.css
 var _embed embed.FS
-var _root = os.DirFS(string(dir.SourceAbsoluteDir()))
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {

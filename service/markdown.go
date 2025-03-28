@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -73,13 +72,7 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
 
-		var mediaTagOptions []media_tags.Option
-		if version.DevMode() {
-			mediaTagOptions = append(mediaTagOptions,
-				media_tags.WithDevMode(func() { s.themeChangedAt = time.Now() }),
-			)
-		}
-		options = append(options, media_tags.New(s.OpenAsset(postId), mediaTagOptions...))
+		options = append(options, media_tags.New(s.OpenAsset(postId)))
 		options = append(options, scoped_css.New(fmt.Sprintf(`article.post-%d .entry .content`, postId)))
 	}
 	if !secure {

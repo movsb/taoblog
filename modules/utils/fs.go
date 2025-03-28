@@ -7,47 +7,64 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
-type FsWithChangeNotify interface {
-	fs.FS
-	Changed() <-chan fsnotify.Event
+type WatchFS interface {
+	Watch() (<-chan fsnotify.Event, func(), error)
 }
 
-type DirFSWithNotify struct {
+// 扩展了 os.DirFS，支持 SubFS 和 WatchFS。
+type OSDirFS struct {
 	root string
 	fs.FS
-	ch chan fsnotify.Event
 }
 
-var _ FsWithChangeNotify = (*DirFSWithNotify)(nil)
+var _ interface {
+	fs.FS
+	WatchFS
+	fs.SubFS
+} = (*OSDirFS)(nil)
 
-func NewDirFSWithNotify(root string) fs.FS {
-	l := &DirFSWithNotify{
+// 扩展了 os.DirFS，支持 SubFS 和 WatchFS。
+func NewOSDirFS(root string) fs.FS {
+	return &OSDirFS{
 		root: root,
 		FS:   os.DirFS(root),
 	}
-	l.ch = l.watch()
-	return l
 }
 
-func (l *DirFSWithNotify) Changed() <-chan fsnotify.Event {
-	return l.ch
+func (fsys *OSDirFS) Root() string {
+	return fsys.root
 }
 
-func (l *DirFSWithNotify) watch() chan fsnotify.Event {
-	if _, err := l.FS.Open("."); err != nil {
-		panic(fmt.Sprintf(`err: %v, cwd: %v, root: %v`, err, Must1(os.Getwd()), l.root))
+func (fsys *OSDirFS) Sub(dir string) (fs.FS, error) {
+	if !fs.ValidPath(dir) {
+		return nil, &fs.PathError{
+			Op:   `sub`,
+			Path: dir,
+			Err:  errors.New(`invalid path`),
+		}
+	}
+	if dir == `.` {
+		return fsys, nil
+	}
+	return NewOSDirFS(path.Join(fsys.root, dir)), nil
+}
+
+func (fsys *OSDirFS) Watch() (<-chan fsnotify.Event, func(), error) {
+	if _, err := fsys.Open("."); err != nil {
+		panic(fmt.Sprintf(`err: %v, cwd: %v, root: %v`, err, Must1(os.Getwd()), fsys.root))
 	}
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, nil, err
 	}
-	// defer watcher.Close()
 
 	ch := make(chan fsnotify.Event)
 
@@ -56,6 +73,7 @@ func (l *DirFSWithNotify) watch() chan fsnotify.Event {
 			select {
 			case err := <-watcher.Errors:
 				log.Println(err)
+				time.Sleep(time.Second)
 				return
 			case event := <-watcher.Events:
 				// log.Println(event)
@@ -64,13 +82,11 @@ func (l *DirFSWithNotify) watch() chan fsnotify.Event {
 		}
 	}()
 
-	if err := watcher.Add(l.root); err != nil {
-		panic(err)
-	} else {
-		log.Println(`Started watching`, l.root)
+	if err := watcher.Add(fsys.root); err != nil {
+		return nil, nil, err
 	}
 
-	return ch
+	return ch, func() { watcher.Close() }, nil
 }
 
 // 作为对 fs.FS 的补充。

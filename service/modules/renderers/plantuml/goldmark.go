@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"sync"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark/parser"
@@ -22,7 +22,7 @@ import (
 
 //go:embed style.css
 var _embed embed.FS
-var _root = os.DirFS(dir.SourceAbsoluteDir().Join())
+var _root = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {

@@ -67,8 +67,8 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 
 	if devMode {
 		dir := blog.SourceRelativeDir
-		rootFS = os.DirFS(dir.Join(`statics`))
-		tmplFS = utils.NewDirFSWithNotify(dir.Join(`templates`))
+		rootFS = utils.NewOSDirFS(dir.Join(`statics`))
+		tmplFS = utils.NewOSDirFS(dir.Join(`templates`))
 		sass.WatchAsync(dir.Join(`styles`), `style.scss`, `../statics/style.css`)
 	} else {
 		// TODO 硬编码成 blog 了。
@@ -238,7 +238,7 @@ func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
 		info := utils.Must1(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
 		h3 := handle304.New(nil,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
-			handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, info.LastPostedAt),
+			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt),
 		)
 		if h3.Match(w, r) {
 			return
@@ -292,7 +292,7 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 
 	handle304.New(real,
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
+		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
 	).ServeHTTP(w, r)
 }
 
@@ -317,7 +317,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 
 	handle304.New(real,
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.impl.ThemeChangedAt, t.ChangedAt, p.Modified, p.LastCommentedAt),
+		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
 	).ServeHTTP(w, r)
 
 	return p.Id, nil

@@ -33,9 +33,3 @@ func WithCancel(cancel func()) With {
 		s.cancel = cancel
 	}
 }
-
-func WithTesting(t bool) With {
-	return func(s *Service) {
-		s.testing = t
-	}
-}

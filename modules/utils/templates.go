@@ -37,7 +37,10 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 
 	bundle()
 
-	if changed, ok := fsys.(FsWithChangeNotify); ok {
+	if watchFS, ok := fsys.(WatchFS); ok {
+		events, close := Must2(watchFS.Watch())
+		defer close()
+
 		log.Println(`Listening for template changes`)
 		go func() {
 			debouncer := NewDebouncer(time.Second, func() {
@@ -47,9 +50,8 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 					refreshed()
 				}
 			})
-			for event := range changed.Changed() {
-				switch event.Op {
-				case fsnotify.Create, fsnotify.Remove, fsnotify.Write:
+			for event := range events {
+				if event.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
 					debouncer.Enter()
 				}
 			}

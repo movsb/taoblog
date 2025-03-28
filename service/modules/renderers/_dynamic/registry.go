@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"reflect"
+	"path"
 	"slices"
 	"strings"
 	"sync"
@@ -62,24 +62,24 @@ func filesExists(f fs.FS, paths ...string) {
 func WithStyles(module string, paths ...string) {
 	c := initModule(module)
 	c.styleFiles = paths
+
 	filesExists(c.private, paths...)
-	if version.DevMode() {
-		// 可能是 os.DirFS，但由于是未导出类型，只能自己作判断。
-		value := reflect.ValueOf(c.private)
-		if value.Kind() == reflect.String {
-			if _, err := fs.Stat(c.private, `style.scss`); err == nil {
-				sass.WatchDefaultAsync(value.String())
-				go func() {
-					n := utils.NewDirFSWithNotify(value.String()).(utils.FsWithChangeNotify)
-					for e := range n.Changed() {
-						name := strings.TrimPrefix(strings.TrimPrefix(e.Name, value.String()), `/`)
-						if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
-							log.Println(`需要重新加载样式`, e)
-							reloadAll.Store(true)
-						}
+
+	if dirFS, ok := c.private.(*utils.OSDirFS); ok {
+		if _, err := fs.Stat(c.private, `style.scss`); err == nil {
+			root := path.Clean(dirFS.Root())
+			sass.WatchDefaultAsync(root)
+			go func() {
+				events, close := utils.Must2(dirFS.Watch())
+				defer close()
+				for e := range events {
+					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
+					if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
+						log.Println(`需要重新加载样式`, e)
+						reloadAll.Store(true)
 					}
-				}()
-			}
+				}
+			}()
 		}
 	}
 }
@@ -87,15 +87,18 @@ func WithStyles(module string, paths ...string) {
 func WithScripts(module string, paths ...string) {
 	c := initModule(module)
 	c.scriptFiles = paths
+
 	filesExists(c.private, paths...)
-	if version.DevMode() {
-		// 可能是 os.DirFS，但由于是未导出类型，只能自己作判断。
-		value := reflect.ValueOf(c.private)
-		if value.Kind() == reflect.String {
+
+	if dirFS, ok := c.private.(*utils.OSDirFS); ok {
+		if _, err := fs.Stat(c.private, `style.scss`); err == nil {
+			root := path.Clean(dirFS.Root())
+			sass.WatchDefaultAsync(root)
 			go func() {
-				n := utils.NewDirFSWithNotify(value.String()).(utils.FsWithChangeNotify)
-				for e := range n.Changed() {
-					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, value.String()), `/`)
+				events, close := utils.Must2(dirFS.Watch())
+				defer close()
+				for e := range events {
+					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
 					if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
 						log.Println(`需要重新加载脚本`, e)
 						reloadAll.Store(true)
