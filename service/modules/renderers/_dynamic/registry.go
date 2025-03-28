@@ -68,7 +68,9 @@ func WithStyles(module string, paths ...string) {
 	if dirFS, ok := c.private.(*utils.OSDirFS); ok {
 		if _, err := fs.Stat(c.private, `style.scss`); err == nil {
 			root := path.Clean(dirFS.Root())
-			sass.WatchDefaultAsync(root)
+			if version.DevMode() {
+				sass.WatchDefaultAsync(root)
+			}
 			go func() {
 				events, close := utils.Must2(dirFS.Watch())
 				defer close()
