@@ -441,7 +441,7 @@ func AddCommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(configCmd)
 	configGetCmd := &cobra.Command{
 		Use:   `get`,
-		Short: `get [path.to.config]`,
+		Short: `get [/][path.to.config]`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			path := ""
@@ -455,7 +455,7 @@ func AddCommands(rootCmd *cobra.Command) {
 	configCmd.AddCommand(configGetCmd)
 	configSetCmd := &cobra.Command{
 		Use:   `set`,
-		Short: `set <path.to.config> value`,
+		Short: `set [/]<path.to.config> value`,
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			path, value := args[0], args[1]
@@ -465,7 +465,7 @@ func AddCommands(rootCmd *cobra.Command) {
 	configCmd.AddCommand(configSetCmd)
 	configEditCmd := &cobra.Command{
 		Use:   `edit`,
-		Short: `edit [path.to.config]`,
+		Short: `edit [/][path.to.config]`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			path := ""

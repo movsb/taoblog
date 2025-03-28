@@ -206,7 +206,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
 	s.notifyServer = notify
 
-	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, rc)
+	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, rc, mux)
 	s.main = theService
 
 	if testing && s.initialTimezone != nil {
@@ -442,6 +442,7 @@ func (s *Server) createMainServices(
 	auth *auth.Auth,
 	filesStore theme_fs.FS,
 	rc *runtime_config.Runtime,
+	mux *http.ServeMux,
 ) *service.Service {
 	serviceOptions := []service.With{
 		// service.WithThemeRootFileSystem(),
@@ -452,7 +453,7 @@ func (s *Server) createMainServices(
 
 	addons.New()
 
-	return service.New(ctx, sr, cfg, db, rc, auth, serviceOptions...)
+	return service.New(ctx, sr, cfg, db, rc, auth, mux, serviceOptions...)
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {

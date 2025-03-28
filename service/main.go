@@ -16,6 +16,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/favicon"
+	"github.com/movsb/taoblog/gateway/handlers/roots"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
@@ -70,10 +71,13 @@ type Service struct {
 	// 所以需要用到主题相关的根文件系统。
 	themeRootFS fs.FS
 	postDataFS  theme_fs.FS
+	// 动态管理的静态文件。
+	userRoots *roots.Root
 
 	db   *sql.DB
 	tdb  *taorm.DB
 	auth *auth.Auth
+	mux  *http.ServeMux
 
 	notifier      proto.NotifyServer
 	cmtntf        *comment_notify.CommentNotifier
@@ -131,7 +135,7 @@ func (s *Service) Favicon() *favicon.Favicon {
 	return s.favicon
 }
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, rc *runtime_config.Runtime, auther *auth.Auth, options ...With) *Service {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, rc *runtime_config.Runtime, auther *auth.Auth, mux *http.ServeMux, options ...With) *Service {
 	s := &Service{
 		ctx: ctx,
 
@@ -148,6 +152,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		db:   db,
 		tdb:  taorm.NewDB(db),
 		auth: auther,
+		mux:  mux,
 
 		cache:                lru.NewTTLCache[string, any](1024),
 		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
@@ -168,6 +173,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		ss:     s,
 		prefix: ``,
 	}
+
+	s.userRoots = roots.New(s.GetPluginStorage(`roots`), s.mux)
 
 	utilsService := NewUtils()
 	s.UtilsServer = utilsService

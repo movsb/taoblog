@@ -10,3 +10,7 @@ func StripCredentialsHandler(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	})
 }
+
+type HTTPMux interface {
+	Handle(pattern string, handler http.Handler)
+}

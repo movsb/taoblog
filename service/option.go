@@ -74,6 +74,26 @@ func (s *Service) setOption(name string, value string) error {
 	return nil
 }
 
+// https://blog.twofei.com/869/
+var _sqlEscapeReplacer = strings.NewReplacer(`%`, `\%`, `_`, `\_`, `\`, `\\`)
+
+// prefix：要么空，要么带冒号。
+func (s *Service) rangeOptions(prefix string, iter func(key string)) error {
+	var options []*models.Option
+	var like string
+	if prefix == `` {
+		like = `%%`
+	} else {
+		like = _sqlEscapeReplacer.Replace(prefix)
+		like = fmt.Sprintf(`%s%%`, like)
+	}
+	s.tdb.Select(`name`).Where(`name like ?`, like).MustFind(&options)
+	for _, opt := range options {
+		iter(opt.Name)
+	}
+	return nil
+}
+
 func (s *Service) GetDefaultIntegerOption(name string, def int64) int64 {
 	return utils.Must1(s.options.GetIntegerDefault(name, def))
 }
@@ -83,6 +103,10 @@ func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*
 
 	if strings.HasPrefix(req.Path, runtime_config.Prefix) || req.Path+`.` == runtime_config.Prefix {
 		return s.runtime.GetConfig(ctx, req)
+	}
+
+	if strings.HasPrefix(req.Path, `/`) {
+		return s.userRoots.GetConfig(ctx, req)
 	}
 
 	u := config.NewUpdater(s.cfg)
@@ -103,6 +127,10 @@ func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*
 
 	if strings.HasPrefix(req.Path, runtime_config.Prefix) {
 		return s.runtime.SetConfig(ctx, req)
+	}
+
+	if strings.HasPrefix(req.Path, `/`) {
+		return s.userRoots.SetConfig(ctx, req)
 	}
 
 	u := config.NewUpdater(s.cfg)
@@ -158,6 +186,12 @@ func (s *_PluginStorage) GetIntegerDefault(key string, def int64) (int64, error)
 		return def, nil
 	}
 	return 0, err
+}
+
+func (s *_PluginStorage) Range(iter func(key string)) {
+	s.ss.rangeOptions(s.prefix, func(key string) {
+		iter(strings.TrimPrefix(key, s.prefix))
+	})
 }
 
 func (s *Service) GetPluginStorage(name string) utils.PluginStorage {

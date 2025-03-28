@@ -146,6 +146,7 @@ type PluginStorage interface {
 	SetInteger(key string, value int64) error
 	GetInteger(key string) (int64, error)
 	GetIntegerDefault(key string, def int64) (int64, error)
+	Range(func(key string))
 }
 
 type InMemoryStorage struct {
@@ -194,6 +195,12 @@ func (s *InMemoryStorage) GetIntegerDefault(key string, def int64) (int64, error
 		}
 	}
 	return def, nil
+}
+
+func (s *InMemoryStorage) Range(iter func(key string)) {
+	for k := range s.m {
+		iter(k)
+	}
 }
 
 func NewInMemoryStorage() PluginStorage {
