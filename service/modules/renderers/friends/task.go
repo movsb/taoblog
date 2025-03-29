@@ -88,7 +88,7 @@ func (t *Task) save() {
 	m := map[string]CacheValue{}
 	existingKeys := make(map[CacheKey]struct{})
 	for k := range t.keys {
-		if value, ok := t.cache.Get(k); ok {
+		if value, _, ok := t.cache.Peek(k); ok {
 			m[k.String()] = value
 			existingKeys[k] = struct{}{}
 		}

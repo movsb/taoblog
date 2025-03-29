@@ -86,7 +86,7 @@ func (t *Task) save() {
 	m := map[string]CacheValue{}
 	existingKeys := []CacheKey{}
 	for _, k := range t.keys {
-		if value, ok := t.cache.Get(k); ok {
+		if value, _, ok := t.cache.Peek(k); ok {
 			m[k.String()] = value
 			existingKeys = append(existingKeys, k)
 		}

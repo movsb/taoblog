@@ -76,7 +76,7 @@ func (t *Task) save() {
 	defer t.lock.Unlock()
 	m := map[string]string{}
 	for _, k := range t.allKeys {
-		if value, ok := t.cache.Get(k); ok {
+		if value, _, ok := t.cache.Peek(k); ok {
 			m[k.String()] = value
 		}
 	}
