@@ -460,10 +460,18 @@ func AddCommands(rootCmd *cobra.Command) {
 	configCmd.AddCommand(configGetCmd)
 	configSetCmd := &cobra.Command{
 		Use:   `set`,
-		Short: `set [/]<path.to.config> value`,
-		Args:  cobra.ExactArgs(2),
+		Short: `set [/]<path.to.config> [value/stdin]`,
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			path, value := args[0], args[1]
+			var (
+				path  = args[0]
+				value = ""
+			)
+			if len(args) >= 2 {
+				value = args[1]
+			} else {
+				value = string(utils.Must1(io.ReadAll(os.Stdin)))
+			}
 			client.SetConfig(path, value)
 		},
 	}
