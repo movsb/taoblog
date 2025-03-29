@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
@@ -74,7 +75,9 @@ func (f Friend) DarkDataURL() template.URL {
 	return template.URL(f.iconDataURLs[1])
 }
 
-var t = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+var t = sync.OnceValue(func() *utils.TemplateLoader {
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+})
 
 func (f *Friends) TransformHtml(doc *goquery.Document) error {
 	// TODO 这个写法太泛了，容易 match 到意外的东西。
@@ -96,7 +99,7 @@ func (f *Friends) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`div.friends`).Each(func(_ int, s *goquery.Selection) {
 		for _, f := range bundle.Friends {
 			buf := bytes.NewBuffer(nil)
-			utils.Must(t.GetNamed(`friend.html`).Execute(buf, f))
+			utils.Must(t().GetNamed(`friend.html`).Execute(buf, f))
 			s.AppendHtml(buf.String())
 		}
 	})

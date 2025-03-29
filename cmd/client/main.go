@@ -23,6 +23,8 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 )
 
@@ -448,7 +450,10 @@ func AddCommands(rootCmd *cobra.Command) {
 			if len(args) > 0 {
 				path = args[0]
 			}
-			value := client.GetConfig(path)
+			value, err := client.GetConfig(path)
+			if err != nil {
+				log.Fatalln(err)
+			}
 			fmt.Println(value)
 		},
 	}
@@ -472,8 +477,19 @@ func AddCommands(rootCmd *cobra.Command) {
 			if len(args) > 0 {
 				path = args[0]
 			}
-			value := client.GetConfig(path)
-			if editedValue, edited := edit(value, `.yaml`); edited {
+			value, err := client.GetConfig(path)
+			if err != nil {
+				if status.Code(err) == codes.NotFound && strings.HasPrefix(path, `/`) {
+					value = ""
+				} else {
+					log.Fatalln(err)
+				}
+			}
+			ext := `.yaml`
+			if strings.HasPrefix(path, `/`) {
+				ext = filepath.Ext(path)
+			}
+			if editedValue, edited := edit(value, ext); edited {
 				client.SetConfig(path, editedValue)
 			}
 		},

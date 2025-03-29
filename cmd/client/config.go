@@ -15,14 +15,14 @@ type HostConfig struct {
 	Token string `yaml:"token"`
 }
 
-func (c *Client) GetConfig(path string) string {
+func (c *Client) GetConfig(path string) (string, error) {
 	rsp, err := c.Management.GetConfig(c.Context(), &proto.GetConfigRequest{
 		Path: path,
 	})
 	if err != nil {
-		log.Fatalln(err)
+		return ``, err
 	}
-	return rsp.Yaml
+	return rsp.Yaml, nil
 }
 
 func (c *Client) SetConfig(path string, value string) {

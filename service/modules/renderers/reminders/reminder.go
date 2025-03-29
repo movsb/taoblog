@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"sync"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -53,7 +54,9 @@ func New(options ...RemindersOption) *Reminders {
 	return f
 }
 
-var t = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+var t = sync.OnceValue(func() *utils.TemplateLoader {
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+})
 
 func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {
 	defer utils.CatchAsError(&outErr)
@@ -73,5 +76,5 @@ func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 		*r.out = append(*r.out, rm)
 	}
 
-	return t.GetNamed(`reminder.html`).Execute(w, rm)
+	return t().GetNamed(`reminder.html`).Execute(w, rm)
 }

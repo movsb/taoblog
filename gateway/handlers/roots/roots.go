@@ -126,6 +126,9 @@ func (r *Root) Open(name string) (fs.File, error) {
 func (r *Root) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
 	f, err := r.Open(req.Path[1:])
 	if err != nil {
+		if os.IsNotExist(err) {
+			err = status.Error(codes.NotFound, err.Error())
+		}
 		return nil, err
 	}
 	defer f.Close()

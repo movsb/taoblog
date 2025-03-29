@@ -47,12 +47,13 @@ type MediaTags struct {
 	tmpl *utils.TemplateLoader
 }
 
-var _gOnceTmpl sync.Once
 var _gTmpl *utils.TemplateLoader
 
 type Option func(*MediaTags)
 
-var t = utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+var t = sync.OnceValue(func() *utils.TemplateLoader {
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+})
 
 func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 	tag := &MediaTags{
@@ -65,9 +66,7 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 
 	// 判断为空的目的是测试里面可能会预初始化。
 	if _gTmpl == nil {
-		_gOnceTmpl.Do(func() {
-			_gTmpl = t
-		})
+		_gTmpl = t()
 	}
 
 	return &MediaTags{
