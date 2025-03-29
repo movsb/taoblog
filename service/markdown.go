@@ -113,13 +113,13 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		lazying.New(),
 		math.New(),
 		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
-		friends.New(s.friendsTask, int(postId)),
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
 		extension.GFM,
 		footnotes.New(),
 		alerts.New(),
 
+		renderers.WithFencedCodeBlockRenderer(`friends`, friends.New(s.friendsTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
 		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.New(
 			`https://www.plantuml.com/plantuml`, `svg`,

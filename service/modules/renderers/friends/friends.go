@@ -1,11 +1,11 @@
 package friends
 
 import (
-	"bytes"
 	"embed"
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
 	"net/url"
@@ -13,11 +13,11 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/yuin/goldmark/parser"
 	"gopkg.in/yaml.v2"
 )
 
@@ -79,30 +79,22 @@ var t = sync.OnceValue(func() *utils.TemplateLoader {
 	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
 })
 
-func (f *Friends) TransformHtml(doc *goquery.Document) error {
-	// TODO 这个写法太泛了，容易 match 到意外的东西。
-	list := doc.Find(`script[type="application/yaml"]`)
-	if list.Length() == 0 {
-		return nil
-	}
-	content := list.Nodes[0].FirstChild.Data
+func (f *Friends) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.Attributes, source []byte) error {
 	var bundle struct {
 		Friends []*Friend `yaml:"friends"`
 	}
-	if err := yaml.Unmarshal([]byte(content), &bundle); err != nil {
+	if err := yaml.Unmarshal([]byte(source), &bundle); err != nil {
 		log.Println(err)
 		return nil
 	}
 
 	f.prepareIconURL(bundle.Friends)
 
-	doc.Find(`div.friends`).Each(func(_ int, s *goquery.Selection) {
-		for _, f := range bundle.Friends {
-			buf := bytes.NewBuffer(nil)
-			utils.Must(t().GetNamed(`friend.html`).Execute(buf, f))
-			s.AppendHtml(buf.String())
-		}
-	})
+	w.Write([]byte(`<div class="friends">`))
+	for _, f := range bundle.Friends {
+		utils.Must(t().GetNamed(`friend.html`).Execute(w, f))
+	}
+	w.Write([]byte(`</div>`))
 
 	return nil
 }
