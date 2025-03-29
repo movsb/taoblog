@@ -32,11 +32,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.61
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.0
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
+	github.com/dop251/goja v0.0.0-20240627195025-eb1f15ee67d2
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-git/go-git/v5 v5.13.2
 	github.com/go-webauthn/webauthn v0.10.2
+	github.com/goccy/go-graphviz v0.2.9
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
-	github.com/libkush/goldmark-katex v0.3.4
+	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
 	github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2
 	github.com/phuslu/lru v1.0.18
@@ -68,12 +70,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.29.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.16 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
-	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
-	github.com/dop251/goja v0.0.0-20240627195025-eb1f15ee67d2 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
@@ -83,7 +83,6 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-webauthn/x v0.1.9 // indirect
-	github.com/goccy/go-graphviz v0.2.9 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -92,7 +91,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect

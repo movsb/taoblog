@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/syncer"
@@ -50,11 +49,8 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 		panic(err)
 	}
 	if !bStdout {
-		localDir := `./posts`
-		if err := os.MkdirAll(localDir, 0755); err != nil {
-			panic(err)
-		}
-		name := time.Now().Format(`taoblog.2006-01-02.db`)
+		localDir := `.`
+		name := `posts.db`
 		localPath := filepath.Join(localDir, name)
 		fp, err := os.Create(localPath)
 		if err != nil {
@@ -63,25 +59,6 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 		defer fmt.Printf("Filename: %s\n", localPath)
 		defer fp.Close()
 		w = fp
-
-		bNoLink, err := cmd.Flags().GetBool((`no-link`))
-		if err != nil {
-			panic(err)
-		}
-		if !bNoLink {
-			defer func() {
-				link := `posts.db`
-				if _, err := os.Stat(link); err == nil {
-					os.Remove(link)
-				}
-				err := os.Symlink(localPath, link)
-				if err != nil {
-					fmt.Println(err.Error())
-					return
-				}
-				fmt.Printf("Symlinked to %s\n", link)
-			}()
-		}
 	} else {
 		w = os.Stdout
 	}

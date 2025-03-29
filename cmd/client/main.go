@@ -421,7 +421,6 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	backupPostsCmd.Flags().Bool(`stdout`, false, `Output to stdout`)
-	backupPostsCmd.Flags().Bool(`no-link`, false, `Don't link to posts.db`)
 	backupCmd.AddCommand(backupPostsCmd)
 	backupFilesCmd := &cobra.Command{
 		Use:   `files`,
