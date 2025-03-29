@@ -95,9 +95,15 @@ func (r *Root) load() {
 }
 
 func (r *Root) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	path := req.URL.Path
+	if strings.HasSuffix(path, `/`) {
+		utils.HTTPError(w, http.StatusForbidden)
+		return
+	}
 	http.ServeFileFS(w, req, r, req.URL.Path)
 }
 
+// TODO lazy read
 func (r *Root) Open(name string) (fs.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: `open`, Path: name, Err: errors.New(`invalid path`)}

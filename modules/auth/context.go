@@ -321,6 +321,9 @@ func ParseAuthorizationValue(v string) (int, string, bool) {
 // https://en.wikipedia.org/wiki/X-Forwarded-For#Format
 // https://github.com/grpc-ecosystem/grpc-gateway/blob/20f268a412e5b342ebfb1a0eef7c3b7bd6c260ea/runtime/context.go#L103
 // TODO md 也是从 ctx 来的。
+//
+// 此 Header 未必可信。
+// https://httptoolkit.com/blog/what-is-x-forwarded-for/#can-you-trust-x-forwarded-for
 func parseRemoteAddrFromMetadata(ctx context.Context, md metadata.MD) netip.Addr {
 	var f string
 	if fs, ok := md[`x-forwarded-for`]; ok && len(fs) > 0 {
