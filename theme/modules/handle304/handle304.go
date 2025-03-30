@@ -9,11 +9,7 @@ import (
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#force_revalidation
 func MustRevalidate(w http.ResponseWriter) {
-	w.Header().Add(`Cache-Control`, `max-age=0, must-revalidate`)
-}
-
-func CacheShortly(w http.ResponseWriter) {
-	w.Header().Add(`Cache-Control`, `max-age=600, must-revalidate`)
+	w.Header().Add(`Cache-Control`, `private, no-cache, must-revalidate`)
 }
 
 type Handler interface {
@@ -48,8 +44,10 @@ func (b *_Bundle) Respond(w http.ResponseWriter) {
 	for _, h := range b.handlers {
 		h.Respond(w)
 	}
+	MustRevalidate(w)
 }
 
+// NOTE: 调用此方法必须 h 不为空。
 func (b *_Bundle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if b.Match(w, r) {
 		return
@@ -57,7 +55,6 @@ func (b *_Bundle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b.Respond(w)
 	// TODO 移除到独立的缓存处理器中。
 	MustRevalidate(w)
-	// NOTE: 调用此方法必须 h 不为空。
 	b.h.ServeHTTP(w, r)
 }
 

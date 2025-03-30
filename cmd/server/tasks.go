@@ -56,7 +56,7 @@ func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, 
 		if daysLeft >= 15 {
 			return
 		}
-		log.Println(`剩余天数：`, daysLeft)
+		log.Println(`证书剩余天数：`, daysLeft)
 		notifier.SendInstant(
 			auth.SystemForLocal(ctx),
 			&proto.SendInstantRequest{
@@ -150,7 +150,7 @@ func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer
 
 		daysLeft := int(time.Until(t) / time.Hour / 24)
 		update(daysLeft)
-		log.Println(`剩余天数：`, daysLeft)
+		log.Println(`域名剩余天数：`, daysLeft)
 		if daysLeft < 15 {
 			notifier.SendInstant(
 				auth.SystemForLocal(ctx),

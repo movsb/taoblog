@@ -107,8 +107,8 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 	// TODO:  严重：切换登录后会显示上一个用户的全部文章
 	// 一个解决办法是在 etag 里面加上用户编号。
 	// 以及必须验证缓存。
-	m.Handle(`GET /posts`, t.LastPostTime304HandlerFunc(t.queryPosts))
-	m.Handle(`GET /tweets`, t.LastPostTime304HandlerFunc(t.queryTweets))
+	m.Handle(`GET /posts`, t.lastPostTime304HandlerFunc(t.queryPosts))
+	m.Handle(`GET /tweets`, t.lastPostTime304HandlerFunc(t.queryTweets))
 
 	t.loadTemplates()
 
@@ -225,20 +225,24 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`search.html`, w, d)
 }
 
-func (t *Theme) LastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
-	return t.LastPostTime304Handler(h)
-}
-
 func (t *Theme) ChangedAt() time.Time {
 	return t.themeChangedAt
 }
 
-func (t *Theme) LastPostTime304Handler(h http.Handler) http.Handler {
+////////////////////////////////////////////////////////////////////////////////
+
+func (t *Theme) lastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
+	return t.lastPostTime304Handler(h)
+}
+
+// NOTE: user.id: 用于区别同一页面对不同用户的缓存行为。
+func (t *Theme) lastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		info := utils.Must1(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
+		ac := auth.Context(r.Context())
 		h3 := handle304.New(nil,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
-			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt),
+			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt, ac.User.ID),
 		)
 		if h3.Match(w, r) {
 			return
@@ -259,6 +263,20 @@ func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`tweets.html`, w, d)
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+func (t *Theme) post304Handler(w http.ResponseWriter, r *http.Request, p *proto.Post) (handle304.BundleHandler, bool) {
+	ac := auth.Context(r.Context())
+	h3 := handle304.New(nil,
+		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
+		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt, ac.User.ID),
+	)
+	if h3.Match(w, r) {
+		return h3, true
+	}
+	return h3, false
+}
+
 func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 	p, err := t.service.GetPost(r.Context(),
 		&proto.GetPostRequest{
@@ -273,6 +291,11 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 		panic(err)
 	}
 
+	h3, handled := t.post304Handler(w, r, p)
+	if handled {
+		return
+	}
+
 	if p.Type == `page` {
 		link := t.impl.GetLink(id)
 		// 因为只处理了一层页面路径，所以要判断一下。
@@ -285,15 +308,9 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 		return
 	}
 
-	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.incViewDebouncer.Increase(int(p.Id))
-		t.tempRenderPost(w, r, p)
-	})
-
-	handle304.New(real,
-		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
-	).ServeHTTP(w, r)
+	t.incViewDebouncer.Increase(int(p.Id))
+	h3.Respond(w)
+	t.tempRenderPost(w, r, p)
 }
 
 func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string) (int64, error) {
@@ -310,15 +327,14 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 		panic(err)
 	}
 
-	real := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.incViewDebouncer.Increase(int(p.Id))
-		t.tempRenderPost(w, r, p)
-	})
+	h3, handled := t.post304Handler(w, r, p)
+	if handled {
+		return p.Id, nil
+	}
 
-	handle304.New(real,
-		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt),
-	).ServeHTTP(w, r)
+	t.incViewDebouncer.Increase(int(p.Id))
+	h3.Respond(w)
+	t.tempRenderPost(w, r, p)
 
 	return p.Id, nil
 }
@@ -381,11 +397,7 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 
 // TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
-	if version.DevMode() {
-		handle304.MustRevalidate(w)
-	} else {
-		handle304.CacheShortly(w)
-	}
+	handle304.MustRevalidate(w)
 
 	// fs.FS 要求不能以 / 开头。
 	// http 包会自动去除。

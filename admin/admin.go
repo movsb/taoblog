@@ -19,10 +19,8 @@ import (
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
-	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taoblog/theme/modules/handle304"
 )
 
 //go:embed statics templates
@@ -113,7 +111,7 @@ func (a *Admin) Handler() http.Handler {
 	m := http.NewServeMux()
 
 	// 奇怪，这里不能写 GET /，会冲突。
-	m.Handle(`/`, a.cachedHandler(http.FileServerFS(a.rootFS)))
+	m.Handle(`/`, http.FileServerFS(a.rootFS))
 	m.Handle(`GET /{$}`, a.requireLogin(a.getRoot))
 
 	m.HandleFunc(`GET /login`, a.getLogin)
@@ -131,17 +129,6 @@ func (a *Admin) Handler() http.Handler {
 	m.Handle(webAuthnPrefix, a.webAuthn.Handler(webAuthnPrefix))
 
 	return http.StripPrefix(strings.TrimSuffix(a.prefix, "/"), m)
-}
-
-func (a *Admin) cachedHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if version.DevMode() {
-			handle304.MustRevalidate(w)
-		} else {
-			handle304.CacheShortly(w)
-		}
-		h.ServeHTTP(w, r)
-	})
 }
 
 func (a *Admin) prefixed(s string) string {
