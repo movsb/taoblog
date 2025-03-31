@@ -3,6 +3,7 @@ class PostFormUI {
 		this._form = document.querySelector('#main');
 		this._previewCallbackReturned = true;
 		this._files = this._form.querySelector('#files');
+		this._users = [];
 		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
 			e.preventDefault();
@@ -24,6 +25,26 @@ class PostFormUI {
 				},
 			);
 		});
+
+		this.elemStatus.addEventListener('change', ()=> {
+			let value = this.elemStatus.value;
+			let p = this._form.querySelector('p.status');
+			p.classList.remove('status-public', 'status-draft', 'status-partial');
+			p.classList.add('status-'+value);
+		});
+
+		this.elemSetACL.addEventListener('click', (e)=>{
+			e.stopPropagation();
+			e.preventDefault();
+
+			const dialog = this.elemACLDialog;
+			dialog.showModal();
+		});
+		this.elemACLDialog.querySelector('button').addEventListener('click', (e)=> {
+			e.stopPropagation();
+			e.preventDefault();
+			this.elemACLDialog.close();
+		})
 
 		if (typeof TinyMDE != 'undefined') {
 			this.editor = new TinyMDE.Editor({
@@ -50,10 +71,6 @@ class PostFormUI {
 						title: `上传图片/视频/文件`,
 						innerHTML: `⏫`,
 						action: editor => {
-							if (!TaoBlog.post_id) {
-								alert('新建文章暂不支持上传文件，请先发表。');
-								return;
-							}
 							let files = document.getElementById('files');
 							files.click();
 						},
@@ -78,8 +95,10 @@ class PostFormUI {
 	get elemSource()    { return this._form['source'];  }
 	get elemTime()      { return this._form['time'];    }
 	get elemPreviewContainer() { return this._form.querySelector('#preview-container'); }
-	get elemType()          { return this._form['type'];    }
-	get elemStatus()        { return this._form['status'];  }
+	get elemType()      { return this._form['type'];    }
+	get elemStatus()    { return this._form['status'];  }
+	get elemSetACL()    { return this._form['set-acl']; }
+	get elemACLDialog() { return this._form.querySelector("[name='set-acl-dialog']"); }
 	
 	get geo() {
 		const values = this._form['geo_location'].value.trim().split(',');
@@ -107,6 +126,37 @@ class PostFormUI {
 		this._form['geo_name'].value = g.name ?? '';
 		// 按 GeoJSON 来，经度在前，纬度在后。
 		this._form['geo_location'].value = `${g.longitude},${g.latitude}`;
+	}
+
+	get usersForRequest() {
+		const inputs = this.elemACLDialog.querySelectorAll('.list input[type=checkbox]');
+		let users = [];
+		inputs.forEach(i => {
+			if(i.checked) {
+				users.push(+i.value);
+			}
+		});
+		return users;
+	}
+	set users(users) {
+		this._users = users || [];
+
+		const dialog = this.elemACLDialog;
+		const list = dialog.querySelector('.list');
+		list.innerHTML = '';
+		this._users.forEach((u) => {
+			const label = document.createElement('label');
+			const input = document.createElement('input');
+			input.type = 'checkbox';
+			input.checked = u.can_read;
+			input.value = u.user_id;
+			label.appendChild(input);
+			const name = document.createTextNode(u.user_name);
+			label.appendChild(name);
+			const li = document.createElement('li');
+			li.appendChild(label)
+			list.appendChild(li);
+		});
 	}
 
 	get source()    { return this.elemSource.value;     }
@@ -346,33 +396,18 @@ let formUI = (() => {
 })();
 formUI.submit(async (done) => {
 	try {
-		let post = undefined;
-		if (TaoBlog.post_id > 0) {
-			let p = TaoBlog.posts[TaoBlog.post_id];
-			p.metas.geo = formUI.geo;
-			post = await postAPI.updatePost({
-				id: TaoBlog.post_id,
-				date: formUI.time,
-				modified: p.modified,
-				modified_timezone: TimeWithZone.getTimezone(),
-				type: formUI.type,
-				status: formUI.status,
-				source: formUI.source,
-				metas: p.metas,
-			});
-		} else {
-			const metas = {
-				geo: formUI.geo,
-			};
-			post = await postAPI.createPost({
-				date: formUI.time,
-				date_timezone: TimeWithZone.getTimezone(),
-				type: formUI.type,
-				status: formUI.status,
-				source: formUI.source,
-				metas: metas,
-			});
-		}
+		let p = TaoBlog.posts[TaoBlog.post_id];
+		p.metas.geo = formUI.geo;
+		let post = await postAPI.updatePost({
+			id: TaoBlog.post_id,
+			date: formUI.time,
+			modified: p.modified,
+			modified_timezone: TimeWithZone.getTimezone(),
+			type: formUI.type,
+			status: formUI.status,
+			source: formUI.source,
+			metas: p.metas,
+		}, formUI.usersForRequest);
 		window.location = `/${post.id}/`;
 	} catch(e) {
 		alert(e);
@@ -380,7 +415,8 @@ formUI.submit(async (done) => {
 		done();
 	}
 });
-if (TaoBlog.post_id > 0) {
+
+(function(){
 	let p = TaoBlog.posts[TaoBlog.post_id];
 	formUI.time = p.date * 1000;
 	formUI.status = p.status;
@@ -388,7 +424,9 @@ if (TaoBlog.post_id > 0) {
 	if (p.metas && p.metas.geo) {
 		formUI.geo = p.metas.geo;
 	}
-}
+	formUI.users = p.user_perms || [];
+})();
+
 formUI.filesChanged(async files => {
 	if (files.length <= 0) { return; }
 	Array.from(files).forEach(async f => {

@@ -3,15 +3,15 @@ package admin
 import (
 	"embed"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
 	"log"
 	"net/http"
-	"net/url"
+	urlpkg "net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -120,6 +120,7 @@ func (a *Admin) Handler() http.Handler {
 
 	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
 	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
+	m.Handle(`POST /editor`, a.requireLogin(a.postEditor))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -136,10 +137,10 @@ func (a *Admin) prefixed(s string) string {
 }
 
 func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to string) {
-	args := url.Values{}
+	args := urlpkg.Values{}
 	args.Set(`u`, to)
 
-	u, err := url.Parse(a.prefixed(`/login`))
+	u, err := urlpkg.Parse(a.prefixed(`/login`))
 	if err != nil {
 		panic(err)
 	}
@@ -242,23 +243,32 @@ type EditorData struct {
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
-	d := &EditorData{
-		User: a.auth.AuthRequest(r),
+	pid := utils.MustToInt64(r.URL.Query().Get(`id`))
+	rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
+		Id:             int32(pid),
+		ContentOptions: co.For(co.Editor),
+		WithUserPerms:  true,
+	})
+	if err != nil {
+		panic(err)
 	}
-
-	if pidStr := r.URL.Query().Get(`id`); pidStr != "" {
-		pid, err := strconv.Atoi(pidStr)
-		if err != nil {
-			panic(err)
-		}
-		rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
-			Id:             int32(pid),
-			ContentOptions: co.For(co.Editor),
-		})
-		if err != nil {
-			panic(err)
-		}
-		d.Post = rsp
+	d := EditorData{
+		User: a.auth.AuthRequest(r),
+		Post: rsp,
 	}
 	a.executeTemplate(w, `editor.html`, &d)
+}
+
+func (a *Admin) postEditor(w http.ResponseWriter, r *http.Request) {
+	post := utils.Must1(a.svc.CreatePost(r.Context(),
+		&proto.Post{
+			Type:       `post`,
+			SourceType: `markdown`,
+			Source:     "# 无标题\n\n",
+		},
+	))
+	args := urlpkg.Values{}
+	args.Set(`id`, fmt.Sprint(post.Id))
+	url := a.prefixed(`editor`) + `?` + args.Encode()
+	http.Redirect(w, r, url, http.StatusFound)
 }

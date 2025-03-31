@@ -15,17 +15,13 @@
 </head>
 <body class="admin editor">
 <script>
-{{ if not $.Post }}
-	TaoBlog.post_id =  0;
-{{ else }}
-	TaoBlog.post_id = +"{{$.Post.Id}}";
-	TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
-{{ end }}
+TaoBlog.post_id = +"{{$.Post.Id}}";
+TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 </script>
 <form id="main">
 	<div id="container">
 		<div id="editor-container">
-			<textarea name="source" style="display: none;">{{with $.Post}}{{.Source}}{{end}}</textarea>
+			<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
 		</div>
 		<div id="preview-container"></div>
 	</div>
@@ -35,22 +31,35 @@
 			日期：
 			<input type="datetime-local" name="time" value="" />
 		</label>
+	</p>
+	<p>
 		<label>
 			类型：
 			<select name="type">
-				<option value="tweet">碎碎念</option>
 				<option value="post">文章</option>
+				<option value="tweet">碎碎念</option>
 				<option value="page">页面</option>
 			</select>
 		</label>
+	</p>
+	<p class="status status-{{$.Post.Status}}">
 		<label>
-			状态：
-			<select name="status">
-				<option value="draft">私有</option>
-				<option value="public">公开</option>
+			权限：
+			<select name="status" autocomplete="off">
+				<option value="draft">🔒 仅自己可见</option>
+				<option value="public">👀 所有人可见</option>
+				<option value="partial">📢 部分人可见</option>
 			</select>
 		</label>
+		<button name="set-acl">选择可见的人</button>
 	</p>
+	<dialog name="set-acl-dialog">
+		<ol class="list">
+		</ol>
+		<div>
+			<button>✅ 确定</button>
+		</div>
+	</dialog>
 	<p>
 		<label>位置：
 			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off"/>

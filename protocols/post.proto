@@ -101,6 +101,14 @@ message Post {
 	// 名字被上面的占用了，记得把上面的改名。
 	// 仅在 GetPost 时指定选项后返回。
 	repeated Comment comment_list = 23;
+
+	// 用户权限。
+	message UserPerms {
+		int32 user_id = 1;
+		string user_name = 2;
+		bool can_read = 10;
+	}
+	repeated UserPerms user_perms = 24;
 }
 
 enum LinkKind {
@@ -120,15 +128,23 @@ message GetPostRequest {
 	LinkKind with_link = 101;
 	// 是否返回评论列表。
 	bool with_comments = 102;
+
+	// 是否返回权限用户。
+	bool with_user_perms = 103;
 }
 
 message UpdatePostRequest {
 	Post post = 1;
 	google.protobuf.FieldMask update_mask = 2;
+
 	// 默认 modified 已被用作防冲突的版本号。
 	// touch 可以用来控制是否更新 modified 为当前时间。
 	// 默认为 false，表示要更新。
 	bool do_not_touch = 3;
+
+	// 是否更新用户权限。
+	bool update_user_perms = 101;
+	repeated int32 user_perms = 102;
 }
 
 message DeletePostRequest {

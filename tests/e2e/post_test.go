@@ -19,24 +19,8 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
-func TestListPosts(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	r := Serve(ctx)
-
-	create := func(user context.Context, p *proto.Post) *proto.Post {
-		return utils.Must1(r.client.Blog.CreatePost(user, p))
-	}
-
-	p1 := create(r.admin, &proto.Post{Source: `# admin`, SourceType: `markdown`})
-	p2 := create(r.user1, &proto.Post{Source: `# user1`, SourceType: `markdown`})
-	p3 := create(r.user2, &proto.Post{Source: `# user2`, SourceType: `markdown`})
-	if p1.Id != 1 {
-		panic(`应该=1`)
-	}
-
-	eq := func(p string, u context.Context, ownership proto.Ownership, list []int64) {
+func listPostsEq(r *R, t *testing.T) func(p string, u context.Context, ownership proto.Ownership, list []int64) {
+	return func(p string, u context.Context, ownership proto.Ownership, list []int64) {
 		_, file, line, _ := runtime.Caller(1)
 		ps := utils.Must1(r.client.Blog.ListPosts(u, &proto.ListPostsRequest{
 			Ownership: ownership,
@@ -48,34 +32,54 @@ func TestListPosts(t *testing.T) {
 			t.Fatalf(`[%s:%d] %s: got: %v, expect: %v`, file, line, p, utils.Map(ps, func(p *proto.Post) int64 { return p.Id }), list)
 		}
 	}
+}
 
-	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{p1.Id})
-	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p2.Id})
-	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p3.Id})
+func TestListPosts(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r := Serve(ctx)
+
+	create := func(user context.Context, p *proto.Post) *proto.Post {
+		return utils.Must1(r.client.Blog.CreatePost(user, p))
+	}
+
+	pa := create(r.admin, &proto.Post{Source: `# admin`, SourceType: `markdown`})
+	p1 := create(r.user1, &proto.Post{Source: `# user1`, SourceType: `markdown`})
+	p2 := create(r.user2, &proto.Post{Source: `# user2`, SourceType: `markdown`})
+	if pa.Id != 1 {
+		panic(`应该=1`)
+	}
+
+	eq := listPostsEq(r, t)
+
+	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{pa.Id})
+	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p1.Id})
+	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p2.Id})
 
 	eq(`管理员看别人公开和分享的`, r.admin, proto.Ownership_OwnershipTheir, []int64{})
 	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{})
 	eq(`用户2看别人公开和分享的`, r.user2, proto.Ownership_OwnershipTheir, []int64{})
 
-	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id})
-	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
-	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p3.Id})
+	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id})
+	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id})
+	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
 
-	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{p1.Id})
-	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p2.Id})
-	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p3.Id})
+	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id})
+	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p1.Id})
+	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p2.Id})
 
+	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
+		Id:     pa.Id,
+		Status: models.PostStatusPartial,
+	}))
 	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
 		Id:     p1.Id,
 		Status: models.PostStatusPartial,
 	}))
-	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
-		Id:     p2.Id,
-		Status: models.PostStatusPartial,
-	}))
 
 	utils.Must1(r.client.Blog.SetPostACL(r.admin, &proto.SetPostACLRequest{
-		PostId: p1.Id,
+		PostId: pa.Id,
 		Users: map[int32]*proto.UserPerm{
 			int32(r.user1ID): {
 				Perms: []proto.Perm{
@@ -86,7 +90,7 @@ func TestListPosts(t *testing.T) {
 	}))
 
 	utils.Must1(r.client.Blog.SetPostACL(r.admin, &proto.SetPostACLRequest{
-		PostId: p2.Id,
+		PostId: p1.Id,
 		Users: map[int32]*proto.UserPerm{
 			int32(r.user2ID): {
 				Perms: []proto.Perm{
@@ -96,63 +100,75 @@ func TestListPosts(t *testing.T) {
 		},
 	}))
 
-	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{p1.Id})
-	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p2.Id})
-	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p3.Id})
+	// 当前权限：
+	//
+	// pa → u1, p1 → u2, p2 公开
+
+	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{pa.Id})
+	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p1.Id})
+	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p2.Id})
 
 	eq(`管理员看别人公开和分享的`, r.admin, proto.Ownership_OwnershipTheir, []int64{})
-	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{p1.Id})
-	eq(`用户2看别人公开和分享的`, r.user2, proto.Ownership_OwnershipTheir, []int64{p2.Id})
+	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{pa.Id})
+	eq(`用户2看别人公开和分享的`, r.user2, proto.Ownership_OwnershipTheir, []int64{p1.Id})
 
-	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id})
-	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id, p2.Id})
-	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id, p3.Id})
+	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id})
+	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id, p1.Id})
+	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id, p2.Id})
 
-	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{p1.Id})
-	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
-	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p2.Id, p3.Id})
+	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id})
+	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
+	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
 
 	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
-		Id:     p2.Id,
+		Id:     p1.Id,
 		Status: models.PostStatusPrivate,
 	}))
 
-	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{p1.Id})
-	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p2.Id})
-	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p3.Id})
+	// 当前权限：
+	//
+	// pa → u1, p1 → 私有, p2 → 公开
+
+	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{pa.Id})
+	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p1.Id})
+	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p2.Id})
 
 	eq(`管理员看别人公开和分享的`, r.admin, proto.Ownership_OwnershipTheir, []int64{})
-	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{p1.Id})
+	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{pa.Id})
 	eq(`用户2看别人公开和分享的`, r.user2, proto.Ownership_OwnershipTheir, []int64{})
 
-	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id})
-	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id, p2.Id})
-	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p3.Id})
+	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id})
+	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id, p1.Id})
+	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
 
-	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{p1.Id})
-	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
-	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p3.Id})
+	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id})
+	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
+	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p2.Id})
 
 	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
-		Id:     p2.Id,
+		Id:     p1.Id,
 		Status: models.PostStatusPublic,
 	}))
 
-	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{p1.Id})
-	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p2.Id})
-	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p3.Id})
+	// 当前权限：
+	//
+	// pa → u1, p1 → 公开, p2 → 公开
 
-	eq(`管理员看别人公开和分享的`, r.admin, proto.Ownership_OwnershipTheir, []int64{p2.Id})
-	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{p1.Id})
-	eq(`用户2看别人公开和分享的`, r.user2, proto.Ownership_OwnershipTheir, []int64{p2.Id})
+	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{pa.Id})
+	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p1.Id})
+	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p2.Id})
 
-	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id})
-	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id, p2.Id})
-	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p3.Id})
+	eq(`管理员看别人公开和分享的`, r.admin, proto.Ownership_OwnershipTheir, []int64{p1.Id})
+	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{pa.Id})
+	eq(`用户2看别人公开和分享的`, r.user2, proto.Ownership_OwnershipTheir, []int64{p1.Id})
 
-	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
-	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
-	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p2.Id, p3.Id})
+	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id})
+	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id, p1.Id})
+	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
+
+	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
+	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
+	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
 }
 
 // 测试只可访问公开的文章。

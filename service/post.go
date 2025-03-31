@@ -51,6 +51,7 @@ func (s *Service) posts() *taorm.Stmt {
 //
 // TODO: 具体的 permission 没用上。
 // TODO: 好像对于登录用于 status=public 没用上。
+// TODO: distinct posts.* 是正确的用法吗？
 func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*proto.ListPostsResponse, error) {
 	ac := auth.Context(ctx)
 
@@ -66,21 +67,21 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 		case proto.Ownership_OwnershipMine:
 			stmt.Where(`user_id=?`, ac.User.ID)
 		case proto.Ownership_OwnershipTheir:
-			stmt.Select(`posts.*`)
+			stmt.Select(`distinct posts.*`)
 			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id!=? AND (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
 				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
 			)
 		case proto.Ownership_OwnershipMineAndShared:
-			stmt.Select(`posts.*`)
+			stmt.Select(`distinct posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id=? OR (acl.user_id=? AND posts.status = ?)`,
 				ac.User.ID, ac.User.ID, models.PostStatusPartial,
 			)
 		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
-			stmt.Select(`posts.*`)
+			stmt.Select(`distinct posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id=? OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
@@ -133,7 +134,9 @@ func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
 // 获取指定编号的文章。
 //
 // NOTE：如果是访客用户，会过滤掉敏感字段。
-func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto.Post, error) {
+func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *proto.Post, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
 	ac := auth.Context(ctx)
 
 	var p models.Post
@@ -200,6 +203,34 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (*proto
 			return nil, err
 		}
 		out.CommentList = list
+	}
+
+	if in.WithUserPerms {
+		ac := auth.MustNotBeGuest(ctx)
+		userPerms := utils.Must1(s.GetPostACL(
+			auth.SystemForLocal(ctx),
+			&proto.GetPostACLRequest{PostId: int64(in.Id)}),
+		).Users
+		canRead := func(userID int32) bool {
+			if p, ok := userPerms[userID]; ok {
+				return slices.Contains(p.Perms, proto.Perm_PermRead)
+			}
+			return false
+		}
+		allUsers := utils.Must1(s.ListUsers(
+			auth.SystemForLocal(ctx),
+			&proto.ListUsersRequest{}),
+		).Users
+		allUsers = slices.DeleteFunc(allUsers, func(u *proto.User) bool {
+			return u.Id == ac.User.ID
+		})
+		out.UserPerms = utils.Map(allUsers, func(u *proto.User) *proto.Post_UserPerms {
+			return &proto.Post_UserPerms{
+				UserId:   int32(u.Id),
+				UserName: u.Nickname,
+				CanRead:  canRead(int32(u.Id)),
+			}
+		})
 	}
 
 	return out, nil
@@ -558,8 +589,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		return nil, err
 	}
 
-	// 管理员可编辑所有文章，其他用户可编辑自己的文章。
-	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(oldPost.UserID)) {
+	// 仅可编辑自己的文章。
+	if !(ac.User.IsSystem() || ac.User.ID == int64(oldPost.UserID)) {
 		panic(status.Error(codes.PermissionDenied, noPerm))
 	}
 
@@ -686,11 +717,38 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		}
 		txs.updateLastPostTime(time.Now())
 		txs.deletePostContentCacheFor(p.ID)
+
 		return nil
 	})
 
+	// TODO TODO TODO 事务冲突，暂时放外面！！
+	if in.UpdateUserPerms {
+		s.setPostACL(in.Post.Id, in.UserPerms)
+	}
+
 	// TODO Update 接口没有 ContentOptions。
-	return s.GetPost(ctx, &proto.GetPostRequest{Id: int32(in.Post.Id)})
+	req := proto.GetPostRequest{
+		Id: int32(in.Post.Id),
+	}
+	if in.UpdateUserPerms {
+		req.WithUserPerms = true
+	}
+	return s.GetPost(ctx, &req)
+}
+
+func (s *Service) setPostACL(postID int64, users []int32) {
+	m := map[int32]*proto.UserPerm{}
+	for _, id := range users {
+		m[id] = &proto.UserPerm{
+			Perms: []proto.Perm{proto.Perm_PermRead},
+		}
+	}
+	utils.Must1(s.SetPostACL(auth.SystemForLocal(context.Background()),
+		&proto.SetPostACLRequest{
+			PostId: postID,
+			Users:  m,
+		},
+	))
 }
 
 // 只是用来在创建文章和更新文章的时候从正文里面提取。

@@ -179,54 +179,33 @@ class PostManagementAPI
 {
 	constructor() { }
 
-	// 创建一条文章。
-	async createPost(p) {
-		let path = `/v3/posts`;
-		let rsp = await fetch(path, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
+	// 更新/“编辑”文章。
+	// 返回更新后的。
+	async updatePost(p, users) {
+		let path = `/v3/posts/${p.id}`;
+		let obj = {
+			post: {
 				date: p.date,
-				date_timezone: p.date_timezone,
+				modified: p.modified,
+				modified_timezone: p.modified_timezone,
 				type: p.type ?? 'tweet',
 				status: p.status ?? 'public',
 				source: p.source,
-				source_type: 'markdown',
 				metas: p.metas,
-			}),
-		});
-		if (!rsp.ok) {
-			throw new Error('发表失败：' + await rsp.text());
+				source_type: 'markdown',
+			},
+			update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas'
+		};
+		if(obj.post.status == 'partial') {
+			obj.update_user_perms = true;
+			obj.user_perms = users;
 		}
-		let c = await rsp.json();
-		console.log(c);
-		return c;
-	}
-
-	// 更新/“编辑”文章。
-	// 返回更新后的。
-	async updatePost(p) {
-		let path = `/v3/posts/${p.id}`;
 		let rsp = await fetch(path, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({
-				post: {
-					date: p.date,
-					modified: p.modified,
-					modified_timezone: p.modified_timezone,
-					type: p.type ?? 'tweet',
-					status: p.status ?? 'public',
-					source: p.source,
-					metas: p.metas,
-					source_type: 'markdown',
-				},
-				update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas'
-			})
+			body: JSON.stringify(obj),
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }
 		let c = await rsp.json();

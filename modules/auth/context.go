@@ -377,7 +377,7 @@ func MustBeAdmin(ctx context.Context) *AuthContext {
 	if ac == nil {
 		panic("AuthContext 不应为 nil")
 	}
-	if ac.User.IsAdmin() {
+	if ac.User.IsAdmin() || ac.User.IsSystem() {
 		return ac
 	}
 	panic(status.Error(codes.PermissionDenied, noPerm))

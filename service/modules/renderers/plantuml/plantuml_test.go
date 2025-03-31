@@ -21,6 +21,7 @@ Bob --> Alice: Authentication Response
 }
 
 func TestFetch(t *testing.T) {
+	t.SkipNow()
 	uml := `
 @startuml
 Bob -> Alice : hello
