@@ -109,6 +109,8 @@ func (p *Post) StatusString() string {
 		return ``
 	case `draft`:
 		return `[私密] `
+	case `partial`:
+		return `[部分可见]`
 	default:
 		panic(`unknown post status`)
 	}

@@ -207,26 +207,31 @@ class PostManagementAPI
 
 	// 更新/“编辑”文章。
 	// 返回更新后的。
-	async updatePost(p) {
+	async updatePost(p, users) {
 		let path = `/v3/posts/${p.id}`;
+		let obj = {
+			post: {
+				date: p.date,
+				modified: p.modified,
+				modified_timezone: p.modified_timezone,
+				type: p.type ?? 'tweet',
+				status: p.status ?? 'public',
+				source: p.source,
+				metas: p.metas,
+				source_type: 'markdown',
+			},
+			update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas'
+		};
+		if(obj.post.status == 'partial') {
+			obj.update_user_perms = true;
+			obj.user_perms = users;
+		}
 		let rsp = await fetch(path, {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({
-				post: {
-					date: p.date,
-					modified: p.modified,
-					modified_timezone: p.modified_timezone,
-					type: p.type ?? 'tweet',
-					status: p.status ?? 'public',
-					source: p.source,
-					metas: p.metas,
-					source_type: 'markdown',
-				},
-				update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas'
-			})
+			body: JSON.stringify(obj),
 		});
 		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }
 		let c = await rsp.json();

@@ -72,6 +72,7 @@ input[type=text],input[type=password],input[type=email],input[type=url],textarea
 }
 
 select {
-	height: 2em;
+	// 2px: 比同为 2em 的按钮要窄一点
+	height: calc(2em + 2px);
 	padding: var(--input-padding);
 }
