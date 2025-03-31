@@ -15,17 +15,13 @@
 </head>
 <body class="admin editor">
 <script>
-{{ if not $.Post }}
-	TaoBlog.post_id =  0;
-{{ else }}
-	TaoBlog.post_id = +"{{$.Post.Id}}";
-	TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
-{{ end }}
+TaoBlog.post_id = +"{{$.Post.Id}}";
+TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 </script>
 <form id="main">
 	<div id="container">
 		<div id="editor-container">
-			<textarea name="source" style="display: none;">{{with $.Post}}{{.Source}}{{end}}</textarea>
+			<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
 		</div>
 		<div id="preview-container"></div>
 	</div>
@@ -46,7 +42,7 @@
 			</select>
 		</label>
 	</p>
-	<p class="status{{with $.Post}} status-{{.Status}}{{end}}">
+	<p class="status status-{{$.Post.Status}}">
 		<label>
 			权限：
 			<select name="status" autocomplete="off">

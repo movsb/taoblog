@@ -37,11 +37,6 @@ class PostFormUI {
 			e.stopPropagation();
 			e.preventDefault();
 
-			if(TaoBlog.post_id <= 0) {
-				alert('文章未保存。');
-				return;
-			}
-
 			const dialog = this.elemACLDialog;
 			dialog.showModal();
 		});
@@ -76,10 +71,6 @@ class PostFormUI {
 						title: `上传图片/视频/文件`,
 						innerHTML: `⏫`,
 						action: editor => {
-							if (!TaoBlog.post_id) {
-								alert('新建文章暂不支持上传文件，请先发表。');
-								return;
-							}
 							let files = document.getElementById('files');
 							files.click();
 						},
@@ -405,33 +396,18 @@ let formUI = (() => {
 })();
 formUI.submit(async (done) => {
 	try {
-		let post = undefined;
-		if (TaoBlog.post_id > 0) {
-			let p = TaoBlog.posts[TaoBlog.post_id];
-			p.metas.geo = formUI.geo;
-			post = await postAPI.updatePost({
-				id: TaoBlog.post_id,
-				date: formUI.time,
-				modified: p.modified,
-				modified_timezone: TimeWithZone.getTimezone(),
-				type: formUI.type,
-				status: formUI.status,
-				source: formUI.source,
-				metas: p.metas,
-			}, formUI.usersForRequest);
-		} else {
-			const metas = {
-				geo: formUI.geo,
-			};
-			post = await postAPI.createPost({
-				date: formUI.time,
-				date_timezone: TimeWithZone.getTimezone(),
-				type: formUI.type,
-				status: formUI.status,
-				source: formUI.source,
-				metas: metas,
-			});
-		}
+		let p = TaoBlog.posts[TaoBlog.post_id];
+		p.metas.geo = formUI.geo;
+		let post = await postAPI.updatePost({
+			id: TaoBlog.post_id,
+			date: formUI.time,
+			modified: p.modified,
+			modified_timezone: TimeWithZone.getTimezone(),
+			type: formUI.type,
+			status: formUI.status,
+			source: formUI.source,
+			metas: p.metas,
+		}, formUI.usersForRequest);
 		window.location = `/${post.id}/`;
 	} catch(e) {
 		alert(e);
@@ -439,7 +415,8 @@ formUI.submit(async (done) => {
 		done();
 	}
 });
-if (TaoBlog.post_id > 0) {
+
+(function(){
 	let p = TaoBlog.posts[TaoBlog.post_id];
 	formUI.time = p.date * 1000;
 	formUI.status = p.status;
@@ -448,7 +425,8 @@ if (TaoBlog.post_id > 0) {
 		formUI.geo = p.metas.geo;
 	}
 	formUI.users = p.user_perms || [];
-}
+})();
+
 formUI.filesChanged(async files => {
 	if (files.length <= 0) { return; }
 	Array.from(files).forEach(async f => {

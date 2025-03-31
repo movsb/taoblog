@@ -179,32 +179,6 @@ class PostManagementAPI
 {
 	constructor() { }
 
-	// 创建一条文章。
-	async createPost(p) {
-		let path = `/v3/posts`;
-		let rsp = await fetch(path, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				date: p.date,
-				date_timezone: p.date_timezone,
-				type: p.type ?? 'tweet',
-				status: p.status ?? 'public',
-				source: p.source,
-				source_type: 'markdown',
-				metas: p.metas,
-			}),
-		});
-		if (!rsp.ok) {
-			throw new Error('发表失败：' + await rsp.text());
-		}
-		let c = await rsp.json();
-		console.log(c);
-		return c;
-	}
-
 	// 更新/“编辑”文章。
 	// 返回更新后的。
 	async updatePost(p, users) {
