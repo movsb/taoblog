@@ -51,6 +51,7 @@ func (s *Service) posts() *taorm.Stmt {
 //
 // TODO: 具体的 permission 没用上。
 // TODO: 好像对于登录用于 status=public 没用上。
+// TODO: distinct posts.* 是正确的用法吗？
 func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*proto.ListPostsResponse, error) {
 	ac := auth.Context(ctx)
 
@@ -66,21 +67,21 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 		case proto.Ownership_OwnershipMine:
 			stmt.Where(`user_id=?`, ac.User.ID)
 		case proto.Ownership_OwnershipTheir:
-			stmt.Select(`posts.*`)
+			stmt.Select(`distinct posts.*`)
 			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id!=? AND (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
 				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
 			)
 		case proto.Ownership_OwnershipMineAndShared:
-			stmt.Select(`posts.*`)
+			stmt.Select(`distinct posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id=? OR (acl.user_id=? AND posts.status = ?)`,
 				ac.User.ID, ac.User.ID, models.PostStatusPartial,
 			)
 		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
-			stmt.Select(`posts.*`)
+			stmt.Select(`distinct posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id=? OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
