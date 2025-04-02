@@ -18,7 +18,7 @@
 <h1>{{ $.Title }}</h1>
 <p>
 	<span class="go-home"><a href="/">{{ siteName }}</a></span>
-	<span class="comments"><a href="/admin/editor">新建</a></span>
+	<span class="create-new"><a href="/admin/editor?new=1">新建</a></span>
 </p>
 <div class="tweets">
 {{ range $i, $t := .Data.Tweets }}

@@ -12,6 +12,7 @@ import (
 	urlpkg "net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -120,7 +121,6 @@ func (a *Admin) Handler() http.Handler {
 
 	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
 	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
-	m.Handle(`POST /editor`, a.requireLogin(a.postEditor))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -243,32 +243,35 @@ type EditorData struct {
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
-	pid := utils.MustToInt64(r.URL.Query().Get(`id`))
-	rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
-		Id:             int32(pid),
-		ContentOptions: co.For(co.Editor),
-		WithUserPerms:  true,
-	})
-	if err != nil {
-		panic(err)
+	if isNew := r.URL.Query().Get(`new`) == `1`; isNew {
+		post := utils.Must1(a.svc.CreatePost(r.Context(),
+			&proto.Post{
+				Type:       `post`,
+				SourceType: `markdown`,
+				Source:     "# 无标题\n\n",
+			},
+		))
+		args := urlpkg.Values{}
+		args.Set(`id`, fmt.Sprint(post.Id))
+		url := a.prefixed(`editor`) + `?` + args.Encode()
+		http.Redirect(w, r, url, http.StatusFound)
+		return
 	}
-	d := EditorData{
-		User: a.auth.AuthRequest(r),
-		Post: rsp,
+	if pid, _ := strconv.Atoi(r.URL.Query().Get(`id`)); pid > 0 {
+		rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
+			Id:             int32(pid),
+			ContentOptions: co.For(co.Editor),
+			WithUserPerms:  true,
+		})
+		if err != nil {
+			panic(err)
+		}
+		d := EditorData{
+			User: a.auth.AuthRequest(r),
+			Post: rsp,
+		}
+		a.executeTemplate(w, `editor.html`, &d)
+		return
 	}
-	a.executeTemplate(w, `editor.html`, &d)
-}
-
-func (a *Admin) postEditor(w http.ResponseWriter, r *http.Request) {
-	post := utils.Must1(a.svc.CreatePost(r.Context(),
-		&proto.Post{
-			Type:       `post`,
-			SourceType: `markdown`,
-			Source:     "# 无标题\n\n",
-		},
-	))
-	args := urlpkg.Values{}
-	args.Set(`id`, fmt.Sprint(post.Id))
-	url := a.prefixed(`editor`) + `?` + args.Encode()
-	http.Redirect(w, r, url, http.StatusFound)
+	utils.HTTPError(w, http.StatusBadRequest)
 }

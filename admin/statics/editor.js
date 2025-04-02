@@ -471,10 +471,6 @@ formUI.sourceChanged(async (content) => {
 });
 updatePreview(formUI.source);
 (async function() {
-	if (!TaoBlog.post_id) {
-		console.log('新建文章不支持查询文件列表。');
-		return;
-	}
 	let fm = new FilesManager(TaoBlog.post_id);
 	try {
 		await fm.connect();
