@@ -141,4 +141,12 @@ body.admin.editor {
 			margin-right: 8px;
 		}
 	}
+	p.geo {
+		label {
+			display: block;
+		}
+		input[type=text] {
+			max-width: 200px;
+		}
+	}
 }
