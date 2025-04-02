@@ -95,7 +95,7 @@ func (m *Metadata) String() []string {
 		lenInfo = append(lenInfo, m.FocalLength)
 	}
 	if m.ExposureTime != "" {
-		lenInfo = append(lenInfo, m.ExposureTime)
+		lenInfo = append(lenInfo, m.ExposureTime+`s`)
 	}
 	if m.ISO > 0 {
 		lenInfo = append(lenInfo, fmt.Sprintf(`ISO/%v`, m.ISO))

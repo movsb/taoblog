@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -48,6 +49,9 @@ func (fs *FileSystemWrapper) fileServer(ctx context.Context, ws *websocket.Conn,
 		for {
 			ty, r, err := ws.Reader(ctx)
 			if err != nil {
+				if strings.Contains(err.Error(), `StatusGoingAway`) {
+					return
+				}
 				log.Println(err)
 				return
 			}
