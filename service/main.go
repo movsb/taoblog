@@ -176,7 +176,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 	s.userRoots = roots.New(s.GetPluginStorage(`roots`), s.mux)
 
-	utilsService := NewUtils()
+	utilOptions := []UtilOption{}
+	if ak := cfg.Others.Geo.Baidu.AccessKey; ak != `` {
+		utilOptions = append(utilOptions, WithBaidu(ak, cfg.Site.Home))
+	}
+	utilsService := NewUtils(utilOptions...)
 	s.UtilsServer = utilsService
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {

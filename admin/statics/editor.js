@@ -16,6 +16,7 @@ class PostFormUI {
 					const s = `${longitude},${latitude}`;
 					console.log('位置：', s);
 					document.querySelector('#geo_location').value = s;
+					this.updateGeoLocations(latitude, longitude);
 				},
 				()=> {
 					alert('获取位置失败。');
@@ -296,6 +297,29 @@ class PostFormUI {
 				}, 500);
 			});
 		}
+	}
+
+	async updateGeoLocations(latitude, longitude) {
+		// const { latitude, longitude } = this.geo;
+		const api = `/v3/utils/geo/resolve?latitude=${latitude}&longitude=${longitude}`;
+		const rsp = await fetch(api);
+		if (!rsp.ok) {
+			let exception = await rsp.json();
+			try {
+				exception = JSON.parse(exception);
+				exception = exception.message ?? exception;
+			}
+			catch {}
+			throw exception;
+		}
+		const { names } = await rsp.json();
+		const datalist = this._form.querySelector('.geo datalist');
+		datalist.innerHTML = '';
+		(names || []).forEach(name => {
+			const option = document.createElement('option');
+			option.value = name;
+			datalist.appendChild(option);
+		});
 	}
 }
 

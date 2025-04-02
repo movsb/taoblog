@@ -63,7 +63,8 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	</dialog>
 	<p class="geo">
 		<label>位置：
-			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off"/>
+			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off" list="resolved_geo_locations"/>
+			<datalist id="resolved_geo_locations"></datalist>
 		</label>
 		<label><span style="visibility: hidden;">位置：</span>
 			<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off"/>

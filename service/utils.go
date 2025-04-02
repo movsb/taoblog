@@ -7,20 +7,39 @@ import (
 	_ "time/tzdata"
 
 	"github.com/movsb/taoblog/modules/dialers"
+	"github.com/movsb/taoblog/modules/geo"
 	"github.com/movsb/taoblog/modules/globals"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/xeonx/timeago"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var fixedZone = time.Now().Local().Location()
 
 type Utils struct {
 	proto.UnimplementedUtilsServer
+
+	geoLocationResolver geo.GeoLocationResolver
 }
 
-func NewUtils() *Utils {
+func NewUtils(options ...UtilOption) *Utils {
 	u := &Utils{}
+
+	for _, opt := range options {
+		opt(u)
+	}
+
 	return u
+}
+
+type UtilOption func(u *Utils)
+
+func WithBaidu(ak, ref string) UtilOption {
+	return func(u *Utils) {
+		u.geoLocationResolver = geo.NewBaidu(ak, ref)
+	}
 }
 
 func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*proto.FormatTimeResponse, error) {
@@ -56,4 +75,15 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 func (u *Utils) DialRemote(s proto.Utils_DialRemoteServer) error {
 	dialer := dialers.NewRemoteDialerManager(s)
 	return dialer.Run()
+}
+
+func (u *Utils) ResolveGeoLocation(ctx context.Context, in *proto.ResolveGeoLocationRequest) (_ *proto.ResolveGeoLocationResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	if u.geoLocationResolver == nil {
+		panic(status.Errorf(codes.Unavailable, `未初始化。`))
+	}
+
+	names := utils.Must1(u.geoLocationResolver.ResolveGeoLocation(ctx, in.Latitude, in.Longitude))
+	return &proto.ResolveGeoLocationResponse{Names: names}, nil
 }

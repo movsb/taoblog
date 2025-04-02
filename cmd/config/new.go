@@ -7,6 +7,7 @@ import (
 
 type OthersConfig struct {
 	Whois WhoisConfig `json:"whois" yaml:"whois"`
+	Geo   GeoConfig   `json:"geo" yaml:"geo"`
 }
 
 type WhoisConfig struct {
@@ -30,3 +31,13 @@ func (c *WhoisApiLayerConfig) BeforeSet(paths Segments, obj any) error {
 	}
 	return nil
 }
+
+type GeoConfig struct {
+	Baidu BaiduConfig `json:"baidu" yaml:"baidu"`
+}
+
+type BaiduConfig struct {
+	AccessKey string `json:"access_key" yaml:"access_key"`
+}
+
+func (BaiduConfig) CanSave() {}
