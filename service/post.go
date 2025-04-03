@@ -938,7 +938,7 @@ func truncateTitle(title string, length int) string {
 
 // 请保持文章和评论的代码同步。
 func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckTaskListItemsRequest) (*proto.CheckTaskListItemsResponse, error) {
-	s.MustBeAdmin(ctx)
+	auth.MustNotBeGuest(ctx)
 
 	p, err := s.GetPost(ctx,
 		&proto.GetPostRequest{
