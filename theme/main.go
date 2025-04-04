@@ -27,6 +27,7 @@ import (
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/sass"
+	"github.com/movsb/taoblog/theme/share/variables"
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -111,6 +112,8 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 	m.Handle(`GET /tweets`, t.lastPostTime304HandlerFunc(t.queryTweets))
 
 	t.loadTemplates()
+
+	variables.SetConfig(&cfg.Theme.Variables)
 
 	return t
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-// JavaScript 运行时，必须时移出去作为公共模块。
+// JavaScript 运行时，必要时移出去作为公共模块。
 type Runtime struct {
 	vm *goja.Runtime
 }

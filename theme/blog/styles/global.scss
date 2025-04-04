@@ -10,7 +10,7 @@ body {
 	margin: 0px auto;
 	padding: 0px;
 	font-size: var(--font-size);
-	font-family: "LXGW WenKai", "Trebuchet MS","Microsoft YaHei",'Noto Sans',sans-serif;
+	font-family: var(--font-normal);
 	font-weight: normal;
 	transition: background-color .2s linear;
 	line-height: var(--line-height-tight);
@@ -38,7 +38,7 @@ body.tweet, body.tweets {
 }
 
 .mono, tt, code {
-	font-family: var(--mono-font);
+	font-family: var(--font-mono);
 }
 
 h1, h2, h3, h4, h5, h6 {

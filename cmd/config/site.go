@@ -52,13 +52,13 @@ func DefaultSiteConfig() SiteConfig {
 
 type ThemeConfig struct {
 	Stylesheets ThemeStylesheetsConfig `json:"stylesheets" yaml:"stylesheets"`
+	Variables   ThemeVariablesConfig   `json:"variables" yaml:"variables"`
 }
-
-func (ThemeConfig) CanSave() {}
 
 func DefaultThemeConfig() ThemeConfig {
 	return ThemeConfig{
 		Stylesheets: DefaultThemeStylesheetsConfig(),
+		Variables:   DefaultThemeVariablesConfig(),
 	}
 }
 
@@ -68,6 +68,8 @@ type ThemeStylesheetsConfig struct {
 		Source string `json:"source" yaml:"source"`
 	} `json:"stylesheets" yaml:"stylesheets"`
 }
+
+func (ThemeStylesheetsConfig) CanSave() {}
 
 func DefaultThemeStylesheetsConfig() ThemeStylesheetsConfig {
 	return ThemeStylesheetsConfig{
@@ -83,4 +85,38 @@ func (c *ThemeStylesheetsConfig) Render() string {
 		fmt.Fprintln(w)
 	}
 	return w.String()
+}
+
+type ThemeVariablesConfig struct {
+	Font struct {
+		Family string `json:"family" yaml:"family"`
+		Mono   string `json:"mono" yaml:"mono"`
+		Size   string `json:"size" yaml:"size"`
+	} `json:"font" yaml:"font"`
+	Colors struct {
+		Accent    string `json:"accent" yaml:"accent"`
+		Highlight string `json:"highlight" yaml:"highlight"`
+		Selection string `json:"selection" yaml:"selection"`
+	} `json:"colors" yaml:"colors"`
+
+	changed chan struct{}
+}
+
+func DefaultThemeVariablesConfig() ThemeVariablesConfig {
+	return ThemeVariablesConfig{
+		changed: make(chan struct{}),
+	}
+}
+
+func (ThemeVariablesConfig) CanSave() {}
+
+func (c ThemeVariablesConfig) AfterSet(paths Segments, obj any) {
+	select {
+	case c.changed <- struct{}{}:
+	default:
+	}
+}
+
+func (c *ThemeVariablesConfig) Reload() <-chan struct{} {
+	return c.changed
 }

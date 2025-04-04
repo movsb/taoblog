@@ -36,6 +36,10 @@ var (
 	reloadLock sync.RWMutex
 )
 
+type ContentChanged interface {
+	Reload() <-chan struct{}
+}
+
 func initModule(module string) *_Content {
 	c := _Dynamic[module]
 	if c != nil {
@@ -84,6 +88,15 @@ func WithStyles(module string, paths ...string) {
 			}()
 		}
 	}
+
+	if cc, ok := c.private.(ContentChanged); ok {
+		go func() {
+			for range cc.Reload() {
+				log.Println(`需要重新加载样式`, module)
+				reloadAll.Store(true)
+			}
+		}()
+	}
 }
 
 func WithScripts(module string, paths ...string) {
@@ -107,6 +120,15 @@ func WithScripts(module string, paths ...string) {
 				}
 			}()
 		}
+	}
+
+	if cc, ok := c.private.(ContentChanged); ok {
+		go func() {
+			for range cc.Reload() {
+				log.Println(`需要重新加载脚本`, module)
+				reloadAll.Store(true)
+			}
+		}()
 	}
 }
 
@@ -171,11 +193,16 @@ func initContents() {
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
-	inits     []func()
-	onceInits sync.Once
+	inits       []func()
+	onceInits   sync.Once
+	initsCalled atomic.Bool
 )
 
 func RegisterInit(init func()) {
+	if initsCalled.Load() {
+		init()
+		return
+	}
 	inits = append(inits, init)
 }
 
@@ -183,4 +210,5 @@ func callInits() {
 	for _, init := range inits {
 		init()
 	}
+	initsCalled.Store(true)
 }

@@ -39,7 +39,7 @@
 
 .TMMark_TMCode {
 	font-family: monospace;
-	font-family: var(--mono-font);
+	font-family: var(--font-mono);
 	/* font-size: .9em */
 }
 .TMMark_TMCode, .TMCode {
@@ -51,7 +51,7 @@
 .TMIndentedCode {
 	/* background-color: #e0e0e0; */
 	font-family: monospace;
-	font-family: var(--mono-font);
+	font-family: var(--font-mono);
 	color: #a50;
 }
 
@@ -59,7 +59,7 @@
 .TMCodeFenceTildeOpen {
 	/* border-bottom: 1px solid silver; */
 	font-family: monospace;
-	font-family: var(--mono-font);
+	font-family: var(--font-mono);
 	/* font-size: .9em */
 }
 
@@ -67,7 +67,7 @@
 .TMCodeFenceTildeClose {
 	/* border-top: 1px solid silver; */
 	font-family: monospace;
-	font-family: var(--mono-font);
+	font-family: var(--font-mono);
 	/* font-size: .9em */
 }
 
@@ -152,7 +152,7 @@
 .TMHTMLBlock {
 	color: #e06c75;
 	font-family: monospace;
-	font-family: var(--mono-font);
+	font-family: var(--font-mono);
 	/* font-size: .9em */
 }
 

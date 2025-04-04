@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,8 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -142,4 +145,57 @@ func (fsys *_OverlayFS) Open(name string) (fs.File, error) {
 // 前面参数的层先被打开（也即：前面的是上层）。
 func NewOverlayFS(layers ...fs.FS) fs.FS {
 	return &_OverlayFS{layers: layers}
+}
+
+type StringFile struct {
+	Name string `json:"name" yaml:"name"`
+	Time int64  `json:"time" yaml:"time"`
+	Data []byte `json:"data" yaml:"data"`
+
+	io.ReadSeeker `json:"-" yaml:"-"`
+}
+
+func NewStringFile(name string, mod time.Time, data []byte) *StringFile {
+	return &StringFile{
+		Name:       name,
+		Time:       mod.Unix(),
+		Data:       data,
+		ReadSeeker: bytes.NewReader(data),
+	}
+}
+
+var _ interface {
+	fs.File
+} = (*StringFile)(nil)
+
+func (f *StringFile) Stat() (fs.FileInfo, error) {
+	return &_FileInfo{f: f}, nil
+}
+func (f *StringFile) Close() error { return nil }
+
+type _FileInfo struct {
+	f *StringFile
+}
+
+var _ interface {
+	fs.FileInfo
+} = (*_FileInfo)(nil)
+
+func (f *_FileInfo) Name() string {
+	return filepath.Base(f.f.Name)
+}
+func (f *_FileInfo) Size() int64 {
+	return int64(len(f.f.Data))
+}
+func (f *_FileInfo) Mode() fs.FileMode {
+	return 0 | 0600
+}
+func (f *_FileInfo) ModTime() time.Time {
+	return time.Unix(f.f.Time, 0)
+}
+func (f *_FileInfo) IsDir() bool {
+	return f.Mode().IsDir()
+}
+func (f *_FileInfo) Sys() any {
+	return nil
 }
