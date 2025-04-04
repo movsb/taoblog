@@ -1,7 +1,10 @@
 .graphviz {
 	svg {
+		display: block;
+		margin: 0 auto;
 		text {
-			font-family: inherit;
+			// 会使字体超出边界，暂时禁用
+			// font-family: inherit;
 		}
 	}
 }
