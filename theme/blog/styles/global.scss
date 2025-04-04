@@ -10,6 +10,7 @@ body {
 	margin: 0px auto;
 	padding: 0px;
 	font-size: var(--font-size);
+	font-size-adjust: var(--font-size-adjust);
 	font-family: var(--font-normal);
 	font-weight: normal;
 	transition: background-color .2s linear;

@@ -91,7 +91,10 @@ type ThemeVariablesConfig struct {
 	Font struct {
 		Family string `json:"family" yaml:"family"`
 		Mono   string `json:"mono" yaml:"mono"`
-		Size   string `json:"size" yaml:"size"`
+		// font-size: 1.2rem;
+		Size string `json:"size" yaml:"size"`
+		// font-size-adjust: 0.5;
+		Adjust string `json:"adjust" yaml:"adjust"`
 	} `json:"font" yaml:"font"`
 	Colors struct {
 		Accent    string `json:"accent" yaml:"accent"`

@@ -21,6 +21,7 @@ button, input, select, textarea {
 	// 字体
 	font-family: inherit;
 	font-size: inherit;
+	font-size-adjust: var(--font-size-adjust);
 }
 
 // 内边距 & 行高
