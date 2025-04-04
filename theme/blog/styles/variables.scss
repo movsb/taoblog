@@ -1,16 +1,34 @@
 @font-face {
-	font-family: 'MapleMonoNL-Light';
+	font-family: 'MapleMonoNL';
 	src: url(fonts/MapleMonoNL-Light.woff2) format('woff2');
 	font-weight: normal;
 	font-style: normal;
+}
+@font-face {
+	font-family: 'MapleMonoNL';
+	src: url(fonts/MapleMonoNL-LightItalic.woff2) format('woff2');
+	font-weight: normal;
+	font-style: italic;
+}
+@font-face {
+	font-family: 'MapleMonoNL';
+	src: url(fonts/MapleMonoNL-Bold.woff2) format('woff2');
+	font-weight: bold;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'MapleMonoNL';
+	src: url(fonts/MapleMonoNL-BoldItalic.woff2) format('woff2');
+	font-weight: bold;
+	font-style: italic;
 }
 
 :root {
 --accent-color:             #ac53ac;
 --highlight-color:          #ac53ac8f;
 --font-size:                15px;
---font-mono:                "MapleMonoNL-Light", Monaco, Consolas, monospace;
---font-normal:              "Verdana",Helvetica,Verdana,"Microsoft YaHei",'Noto Sans',sans-serif;
+--font-mono:                "MapleMonoNL", Monaco, Consolas, monospace;
+--font-normal:              "MapleMonoNL", Helvetica,Verdana,"Microsoft YaHei",'Noto Sans',sans-serif;
 --max-width:                850px;
 --border-radius:            4px;
 --code-color:               rgba(60,60,60,0.6);
