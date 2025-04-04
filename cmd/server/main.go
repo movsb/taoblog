@@ -360,11 +360,11 @@ func (s *Server) createGitSyncTasks(
 		}
 
 		if err := gs.Sync(); err != nil {
-			s.SendNotify("同步失败", err.Error())
+			s.sendNotify("同步失败", err.Error())
 			return err
 		}
 
-		s.SendNotify(`同步成功`, `全部完成，没有错误。`)
+		s.sendNotify(`同步成功`, `全部完成，没有错误。`)
 		return nil
 	}
 
