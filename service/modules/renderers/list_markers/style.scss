@@ -14,4 +14,7 @@ ul, ol {
 	&.marker-parenthesis    { list-style-type: parenthesis; }
 }
 .reset-list-style-type      { list-style-type: initial;     }
-li::marker                  { color: var(--accent-color);   }
+li::marker                  {
+	color: var(--accent-color);
+	font-family: var(--font-mono);
+}
