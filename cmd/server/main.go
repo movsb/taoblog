@@ -360,11 +360,11 @@ func (s *Server) createGitSyncTasks(
 		}
 
 		if err := gs.Sync(); err != nil {
-			client.SendInstant(ctx, "同步失败", err.Error())
+			s.SendNotify("同步失败", err.Error())
 			return err
 		}
 
-		client.SendInstant(ctx, `同步成功`, `全部完成，没有错误。`)
+		s.SendNotify(`同步成功`, `全部完成，没有错误。`)
 		return nil
 	}
 
@@ -372,6 +372,7 @@ func (s *Server) createGitSyncTasks(
 
 	const every = time.Hour * 1
 	ticker := time.NewTicker(every)
+	defer ticker.Stop()
 
 	for {
 		select {
