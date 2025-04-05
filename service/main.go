@@ -128,7 +128,6 @@ type Service struct {
 	proto.TaoBlogServer
 	proto.ManagementServer
 	proto.SearchServer
-	proto.UtilsServer
 }
 
 func (s *Service) Favicon() *favicon.Favicon {
@@ -175,13 +174,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	}
 
 	s.userRoots = roots.New(s.GetPluginStorage(`roots`), s.mux)
-
-	utilOptions := []UtilOption{}
-	if ak := cfg.Others.Geo.Baidu.AccessKey; ak != `` {
-		utilOptions = append(utilOptions, WithBaidu(ak, cfg.Site.Home))
-	}
-	utilsService := NewUtils(utilOptions...)
-	s.UtilsServer = utilsService
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
 		panic(err)
@@ -230,11 +222,17 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.favicon.SetData(time.Now(), d)
 	}
 
-	proto.RegisterUtilsServer(sr, s)
 	proto.RegisterAuthServer(sr, s)
 	proto.RegisterTaoBlogServer(sr, s)
 	proto.RegisterManagementServer(sr, s)
 	proto.RegisterSearchServer(sr, s)
+
+	utilOptions := []UtilOption{}
+	if ak := cfg.Others.Geo.Baidu.AccessKey; ak != `` {
+		utilOptions = append(utilOptions, WithBaidu(ak, cfg.Site.Home))
+	}
+	utilsService := NewUtils(utilOptions...)
+	proto.RegisterUtilsServer(sr, utilsService)
 
 	return s
 }

@@ -158,6 +158,7 @@ func (t *Task) runOnce(ctx context.Context) error {
 		}
 	}
 
+	// 前面在没有文章的时候提前退出了，此处不需要更新。
 	t.store.SetInteger(lastCheckTimeName, time.Now().Unix())
 
 	return nil
