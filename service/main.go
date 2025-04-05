@@ -216,6 +216,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 			s.deletePostContentCacheFor(int64(id))
 			s.updatePostMetadataTime(int64(id), time.Now())
 		},
+		s.GetPluginStorage(`reminders`),
 	)
 	// TODO 注册到全局的，可能会导致测试冲突
 	addons.Handle(`/reminders/`, http.StripPrefix(`/reminders`, s.remindersTask.CalenderService()))

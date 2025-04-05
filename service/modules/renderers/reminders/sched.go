@@ -227,8 +227,6 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 		s.lock.Unlock()
 	}
 
-	log.Println(`提醒：处理完成：`, r.Title)
-
 	return nil
 }
 
