@@ -27,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
+	"github.com/movsb/taoblog/service/modules/renderers/rss"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/search"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
@@ -92,6 +93,8 @@ type Service struct {
 	friendsTask *friends.Task
 	// 提醒事项任务
 	remindersTask *reminders.Task
+	// rss 任务
+	rssTask *rss.Task
 
 	// 文章内容缓存。
 	// NOTE：缓存 Key 是跟文章编号和内容选项相关的（因为内容选项不同内容也就不同），
@@ -212,6 +215,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	)
 	// TODO 注册到全局的，可能会导致测试冲突
 	addons.Handle(`/reminders/`, http.StripPrefix(`/reminders`, s.remindersTask.CalenderService()))
+
+	s.rssTask = rss.NewTask(ctx, s.GetPluginStorage(`rss`), func(pid int) {
+		s.deletePostContentCacheFor(int64(pid))
+		s.updatePostMetadataTime(int64(pid), time.Now())
+	})
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)

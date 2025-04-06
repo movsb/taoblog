@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+    <head>
+        <title>momo</title>
+    </head>
+    <body>
+        <outline text="FC;NES" title="FC;NES">
+            <outline type="rss" text="Cah4e3's Blog" title="Cah4e3's Blog" xmlUrl="http://cah4e3.wordpress.com/feed/" htmlUrl="https://cah4e3.wordpress.com"/>
+        </outline>
+        <outline type="rss" text="陪她去流浪" title="陪她去流浪" xmlUrl="https://blog.twofei.com/rss" htmlUrl="https://blog.twofei.com"/>
+    </body>
+</opml>

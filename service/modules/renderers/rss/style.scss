@@ -1,0 +1,12 @@
+div.rss-post {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	margin: 1em 0;
+	padding: 0 1em;
+	a:visited {
+		color: inherit;
+	}
+	p.meta {
+		font-size: 80%;
+	}
+}

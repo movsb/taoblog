@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>阮一峰的网络日志</title>
+    <link rel="alternate" type="text/html" href="http://www.ruanyifeng.com/blog/" />
+    <link rel="self" type="application/atom+xml" href="http://www.ruanyifeng.com/blog/atom.xml" />
+    <id>tag:www.ruanyifeng.com,2010-04-11:/blog//1</id>
+    <updated>2025-04-03T08:02:39Z</updated>
+    <subtitle>Ruan YiFeng&apos;s Blog</subtitle>
+    <generator uri="http://www.sixapart.com/movabletype/">Movable Type 5.2.2</generator>
+
+<entry>
+    <title>科技爱好者周刊（第 343 期）：如何阻止 AI 爬虫</title>
+    <link rel="alternate" type="text/html" href="http://www.ruanyifeng.com/blog/2025/03/weekly-issue-343.html" />
+    <id>tag:www.ruanyifeng.com,2025:/blog//1.2466</id>
+
+    <published>2025-03-28T00:09:51Z</published>
+    <updated>2025-04-03T08:02:39Z</updated>
+
+    <summary>这里记录每周值得分享的科技内容，周五发布。（[通知] 下周清明假期，周刊休息。）...</summary>
+    <author>
+        <name>阮一峰</name>
+        <uri>http://www.ruanyifeng.com</uri>
+    </author>
+    
+        <category term="Weekly" scheme="http://www.sixapart.com/ns/types#category" />
+    
+    
+    <content type="html" xml:lang="en" xml:base="http://www.ruanyifeng.com/blog/">
+        <![CDATA[<p>这里记的科技内容，周五发布。</p>]]>
+    </content>
+</entry>
+</feed>
