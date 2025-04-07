@@ -108,7 +108,7 @@ func (p *Post) StatusString() string {
 	case `public`:
 		return ``
 	case `draft`:
-		return `[私密] `
+		return `[私密]`
 	case `partial`:
 		return `[部分可见]`
 	default:
