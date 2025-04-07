@@ -236,7 +236,7 @@ class PostFormUI {
 			let insert = '';
 			if (/^image\//.test(f.type)) {
 				text = '🏞️';
-				insert = `![${f.path}](${encodePathAsURL(f.path)})`;
+				insert = `![](${encodePathAsURL(f.path)})`;
 			} else if (/^video\//.test(f.type)) {
 				text = '🎬';
 				insert = `<video controls src="${h2a(encodePathAsURL(f.path))}"></video>`;

@@ -15,7 +15,6 @@ TaoBlog.posts["{{$p.ID}}"] = {{ $.Strip $p }};
 			{{ . }}
 		{{ end }}
 		<span class="comments"><a href="{{ $p.Link }}">{{ $p.CommentString }}</a></span>
-		<span class="edit"><a href="/admin/editor?id={{$p.Id}}">编辑</a></span>
 		<a href="#content">页首</a>
 	</div>
 </div>

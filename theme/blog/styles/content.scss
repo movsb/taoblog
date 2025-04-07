@@ -46,12 +46,14 @@ body:not(.wide) {
     /* 文章标题 */
     h1 {
         color: var(--title-fg);
-        font-size: 2em;
+		// 和页面两边的边距保持一致。
+		margin-top: 1rem;
     }
 
     /* 文章元数据 */
     .meta1, .meta2 { 
 		opacity: 0.5;
+		font-size: 85%;
         a {
             color: inherit;
 

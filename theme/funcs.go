@@ -71,5 +71,13 @@ func (t *Theme) funcs() map[string]any {
 			}
 			return name
 		},
+		`editLinkHTML`: func(d *data.Data) template.HTML {
+			if p, ok := d.Data.(*data.PostData); ok {
+				if p.Post.UserId == int32(d.User.ID) {
+					return template.HTML(fmt.Sprintf(`<span class="edit-button"><a href="/admin/editor?id=%d">编辑</a></span>`, p.Post.ID))
+				}
+			}
+			return ``
+		},
 	}
 }

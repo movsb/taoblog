@@ -143,3 +143,9 @@ table.lntable {
 .chroma .line.hl > span {
 	text-decoration: var(--border-color) underline wavy;
 }
+
+.chroma {
+	.nf, .fm, .gi {
+		font-weight: normal;
+	}
+}

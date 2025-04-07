@@ -12,7 +12,7 @@
 
 /* 评论标题 */
 #comment-title {
-	font-size: 1.4em;
+	font-size: 1.2em;
 	margin: 1rem 0px;
 	border-bottom: 1px solid var(--border-color);
 	display: flex;
@@ -116,7 +116,6 @@ body.signed-in {
 		color: inherit;
 	}
 	.nickname, .author {
-		font-size: 1.1em;
 		font-weight: bold;
 	}
 	.author::after {

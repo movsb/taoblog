@@ -35,7 +35,7 @@ TaoBlog.posts["{{.Data.Post.Id}}"] = {{ $.Strip .Data.Post }};
 			{{- with .Data.Post.Origin }}
 			<a class="origin" title="{{.Description}}" href="{{.URL}}" target="_blank">来源</a>
 			{{- end }}
-			<span class="edit"><a href="/admin/editor?id={{.Data.Post.Id}}">编辑</a></span>
+			{{ editLinkHTML $ }}
 		</div>
 	</div>
 	<!-- comments begin -->

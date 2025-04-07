@@ -1,6 +1,6 @@
 // 不管是行内、块级代码，都保留空白。
-code {
-	white-space: pre;
+p > code {
+	white-space: pre-wrap;
 }
 
 pre > code {
@@ -11,6 +11,7 @@ pre > code {
 	word-spacing: normal;
 	word-break: normal;
 	word-wrap: normal;
+	white-space: pre;
 	line-height: 1.5;
 	max-height: 500px;
 	max-height: 50vh;
