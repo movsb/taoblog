@@ -28,3 +28,9 @@ func TestNoAccessToPost(t *testing.T) {
 	}))
 	expectHTTPGetWithStatusCode(r, fmt.Sprintf(`/%d/`, p.Id), 404)
 }
+
+func TestModTime(t *testing.T) {
+	r := Serve(context.Background())
+	expect304(r, `/style.css`)
+	expect304(r, `/admin/script.js`)
+}

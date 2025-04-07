@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -37,10 +36,9 @@ import (
 type Theme struct {
 	ctx context.Context
 
-	localRootFS fs.FS
-	rootFS      fs.FS
-	tmplFS      fs.FS
-	postFS      theme_fs.FS
+	rootFS fs.FS
+	tmplFS fs.FS
+	postFS theme_fs.FS
 
 	cfg *config.Config
 
@@ -84,9 +82,6 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 		tmplFS: tmplFS,
 
 		postFS: fsys,
-
-		//始终相对于运行目录下的 root 目录。
-		localRootFS: os.DirFS("./root"),
 
 		cfg:      cfg,
 		service:  service,
@@ -401,16 +396,5 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 // TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	handle304.MustRevalidate(w)
-
-	// fs.FS 要求不能以 / 开头。
-	// http 包会自动去除。
-	file = file[1:]
-
-	fs := t.localRootFS
-	if fp, err := t.rootFS.Open(file); err == nil {
-		fp.Close()
-		fs = t.rootFS
-	}
-
-	http.ServeFileFS(w, req, fs, file)
+	utils.ServeFSWithModTime(w, req, t.rootFS, version.Time, file)
 }

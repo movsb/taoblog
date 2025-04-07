@@ -15,11 +15,13 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -113,7 +115,10 @@ func (a *Admin) Handler() http.Handler {
 	m := http.NewServeMux()
 
 	// 奇怪，这里不能写 GET /，会冲突。
-	m.Handle(`/`, http.FileServerFS(a.rootFS))
+	m.HandleFunc(`/`, func(w http.ResponseWriter, r *http.Request) {
+		t := utils.IIF(version.DevMode(), time.Time{}, version.Time)
+		utils.ServeFSWithModTime(w, r, a.rootFS, t, r.URL.Path)
+	})
 	m.Handle(`GET /{$}`, a.requireLogin(a.getRoot))
 
 	m.HandleFunc(`GET /login`, a.getLogin)
