@@ -5,6 +5,10 @@
 	suffix: "] ";
 }
 
+sup:has(>.footnote-ref) {
+	margin: 0 .3em;
+}
+
 .footnotes {
 	font-size: 80%;
 	ol {
