@@ -18,6 +18,7 @@ import (
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils/db"
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
@@ -232,13 +233,14 @@ func cookieValue(userAgent, username, password string) string {
 func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	agent := r.Header.Get("User-Agent")
 	cookie := cookieValue(agent, fmt.Sprint(u.ID), u.Password)
+	secure := !version.DevMode()
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    cookie,
 		MaxAge:   0,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -249,7 +251,7 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 		MaxAge:   0,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -273,13 +275,14 @@ func (a *Auth) GenCookieForPasskeys(u *User, agent string) []*proto.FinishPasske
 
 // RemoveCookie ...
 func (a *Auth) RemoveCookie(w http.ResponseWriter) {
+	secure := !version.DevMode()
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    ``,
 		MaxAge:   -1,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -289,7 +292,7 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 		MaxAge:   -1,
 		Path:     `/`,
 		Domain:   ``,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
