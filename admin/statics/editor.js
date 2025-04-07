@@ -59,18 +59,18 @@ class PostFormUI {
 					{
 						name: `divider`,
 						title: `插入当时时间分割线`,
-						innerHTML: `✂️`,
+						innerHTML: `✂️ 插入分隔符`,
 						action: editor => {
 							const date = new Date();
 							let formatted = date.toLocaleString().replaceAll('/', '-');
-							formatted = `\n\n--- ${formatted} ---\n\n`;
+							formatted = `\n--- ${formatted} ---\n\n`;
 							editor.paste(formatted);
 						},
 					},
 					{
 						name: `insertImage`,
 						title: `上传图片/视频/文件`,
-						innerHTML: `⏫`,
+						innerHTML: `⏫ 上传文件`,
 						action: editor => {
 							let files = document.getElementById('files');
 							files.click();
@@ -79,10 +79,18 @@ class PostFormUI {
 					{
 						name: `insertGallery`,
 						title: `插入九宫格图`,
-						innerHTML: `🧩`,
+						innerHTML: `🧩 插入九宫格图`,
 						action: editor => {
 							const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
 							editor.paste(s);
+						},
+					},
+					{
+						name: `insertTaskItem`,
+						title: `插入任务`,
+						innerHTML: `☑️ 插入任务`,
+						action: editor => {
+							editor.paste('- [ ] ');
 						},
 					},
 				],

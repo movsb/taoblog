@@ -236,3 +236,19 @@ code.TMCode {
 	border-radius: unset;
 	background-color: unset;
 }
+
+.TMCommandBar {
+	height: unset;
+	display: unset;
+}
+
+.TMCommandButton {
+	width: unset;
+	height: unset;
+	line-height: unset;
+	font-size: unset;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	padding: var(--input-padding);
+	margin: 2px;
+}
