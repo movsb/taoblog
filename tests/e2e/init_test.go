@@ -59,6 +59,6 @@ func Serve(ctx context.Context, options ...server.With) *R {
 }
 
 func onBehalfOf(r *R, user int64) context.Context {
-	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(user))}
+	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(context.TODO(), user))}
 	return auth.TestingUserContext(u, "go_test")
 }

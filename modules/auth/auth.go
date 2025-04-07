@@ -17,6 +17,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
@@ -43,15 +44,19 @@ func (a *Auth) Config() *config.AuthConfig {
 	return &a.cfg
 }
 
+func (o *Auth) getDB(ctx context.Context) *taorm.DB {
+	return db.FromContextDefault(ctx, o.db)
+}
+
 // TODO: 改成接口。
-func (o *Auth) GetUserByID(id int64) (*models.User, error) {
+func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
 	if id == int64(systemID) {
 		return system.User, nil
 	}
 
 	var user models.User
-	if err := o.db.Where(`id=?`, id).Find(&user); err != nil {
-		return nil, err
+	if err := o.getDB(ctx).Where(`id=?`, id).Find(&user); err != nil {
+		return nil, fmt.Errorf(`GetUserByID: %w`, err)
 	}
 	return &user, nil
 }
@@ -131,7 +136,7 @@ func (o *Auth) authCookie(login string, userAgent string) *User {
 	if err != nil {
 		return guest
 	}
-	u, err := o.GetUserByID(int64(id))
+	u, err := o.GetUserByID(context.TODO(), int64(id))
 	if err != nil {
 		return guest
 	}

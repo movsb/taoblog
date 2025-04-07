@@ -371,6 +371,27 @@ func AddCommands(rootCmd *cobra.Command) {
 	postsCreateStylingPageCmd.Flags().StringP(`source`, `s`, ``, `文章源内容路径，支持指定网页。`)
 	postsCmd.AddCommand(postsCreateStylingPageCmd)
 
+	postsTransferCmd := &cobra.Command{
+		Use:              `transfer <post-id> <user-id>`,
+		Short:            `转移文章给用户。`,
+		PersistentPreRun: preRun,
+		Args:             cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			var (
+				postID = utils.MustToInt64(args[0])
+				userID = utils.MustToInt64(args[1])
+			)
+			utils.Must1(client.Blog.SetPostUserID(
+				client.Context(),
+				&proto.SetPostUserIDRequest{
+					PostId: postID,
+					UserId: int32(userID),
+				},
+			))
+		},
+	}
+	postsCmd.AddCommand(postsTransferCmd)
+
 	commentsCmd := &cobra.Command{
 		Use:              `comments`,
 		Short:            `Commands for managing comments`,

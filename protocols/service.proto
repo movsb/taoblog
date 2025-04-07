@@ -270,6 +270,11 @@ service TaoBlog {
 			description: "获取文章权限。";
 		};
 	}
+	rpc SetPostUserID (SetPostUserIDRequest) returns (SetPostUserIDResponse) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "转移文章给用户。";
+		};
+	}
 
 	// Comments
 

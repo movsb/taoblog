@@ -18,6 +18,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/db"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -820,9 +821,9 @@ func (s *Service) updatePostPageCount() {
 func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequest) (*proto.SetPostStatusResponse, error) {
 	s.MustBeAdmin(ctx)
 
-	s.MustTxCall(func(txs *Service) error {
+	s.MustTxCall(func(s *Service) error {
 		var post models.Post
-		txs.tdb.Select("id").Where("id=?", in.Id).MustFind(&post)
+		s.tdb.Select("id").Where("id=?", in.Id).MustFind(&post)
 
 		if !slices.Contains([]string{
 			models.PostStatusPublic,
@@ -845,7 +846,7 @@ func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequ
 
 		m[`last_commented_at`] = now
 
-		txs.tdb.Model(&post).MustUpdateMap(m)
+		s.tdb.Model(&post).MustUpdateMap(m)
 		return nil
 	})
 	return &proto.SetPostStatusResponse{}, nil
@@ -1159,4 +1160,61 @@ func (s *Service) GetPostACL(ctx context.Context, in *proto.GetPostACLRequest) (
 	}
 
 	return &proto.GetPostACLResponse{Users: users}, nil
+}
+
+// 将文章转移到用户名下。
+//
+// NOTE: 仅管理员可操作。
+//
+// 前置条件：
+func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequest) (_ *proto.SetPostUserIDResponse, outErr error) {
+	s.MustBeAdmin(ctx)
+
+	s.MustTxCallNoError(func(s *Service) {
+		p := utils.Must1(s.getPost(int(in.PostId)))
+		if p.UserID == in.UserId {
+			panic(`当前用户已是文章作者，无需转移。`)
+		}
+
+		// 确保用户存在。
+		// 应该 LOCK FOR UPDATE
+		utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(in.UserId)))
+
+		// 没有使用 UpdatePost 函数，有事务冲突。
+		s.tdb.Model(p).MustUpdateMap(taorm.M{
+			`modified`: time.Now().Unix(),
+			`user_id`:  in.UserId,
+		})
+
+		// 修改权限列表。
+		// 1. 把新作者从已有权限中删去（如果有的话）
+		// 2. 无需把原作者添加到权限列表。
+		acl := utils.Must1(s.GetPostACL(ctx, &proto.GetPostACLRequest{PostId: p.ID}))
+
+		_, sharedToNewUser := acl.Users[in.UserId]
+		onlyShare := len(acl.Users) == 1
+
+		delete(acl.Users, in.UserId)
+		utils.Must1(s.SetPostACL(ctx, &proto.SetPostACLRequest{
+			PostId: p.ID,
+			Users:  acl.Users,
+		}))
+
+		// 如果是部分可见且仅分享过给新作者，则设置为私有。
+		if p.Status == models.PostStatusPartial && sharedToNewUser && onlyShare {
+			utils.Must1(s.SetPostStatus(
+				db.WithContext(ctx, s.tdb),
+				&proto.SetPostStatusRequest{
+					Id:     p.ID,
+					Status: models.PostStatusPrivate,
+					Touch:  false,
+				},
+			))
+		}
+	})
+
+	s.deletePostContentCacheFor(in.PostId)
+	s.updatePostMetadataTime(in.PostId, time.Now())
+
+	return &proto.SetPostUserIDResponse{}, nil
 }

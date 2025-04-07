@@ -625,7 +625,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
 
 	if c.UserID != post.UserId {
-		pu, err := t.s.auth.GetUserByID(int64(post.UserId))
+		pu, err := t.s.auth.GetUserByID(context.TODO(), int64(post.UserId))
 		if err != nil {
 			return err
 		}

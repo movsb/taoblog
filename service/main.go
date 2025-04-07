@@ -286,14 +286,26 @@ func (s *Service) Config() *config.Config {
 	return s.cfg
 }
 
-func (s *Service) MustTxCall(callback func(txs *Service) error) {
+func (s *Service) MustTxCall(callback func(s *Service) error) {
 	if err := s.TxCall(callback); err != nil {
 		panic(err)
 	}
 }
 
+func (s *Service) MustTxCallNoError(callback func(s *Service)) {
+	if err := s.TxCall(func(txs *Service) error {
+		callback(txs)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+}
+
 // TODO 去掉，复制 s 非常有问题。
-func (s *Service) TxCall(callback func(txs *Service) error) error {
+func (s *Service) TxCall(callback func(s *Service) error) error {
+	if s.tdb.IsTx() {
+		return callback(s)
+	}
 	return s.tdb.TxCall(func(tx *taorm.DB) error {
 		txs := *s
 		txs.tdb = tx

@@ -257,6 +257,13 @@ message GetPostACLRequest {
 	int64 post_id = 1;
 }
 
+message SetPostUserIDRequest {
+	int64 post_id = 1;
+	int32 user_id = 2;
+}
+
+message SetPostUserIDResponse {}
+
 message GetPostACLResponse {
 	map<int32, UserPerm> users = 1;
 }

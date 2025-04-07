@@ -240,7 +240,7 @@ func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerIntercept
 }
 
 func (a *Auth) userByKey(id int, key string) (*models.User, error) {
-	u, err := a.GetUserByID(int64(id))
+	u, err := a.GetUserByID(context.TODO(), int64(id))
 	if err != nil {
 		return nil, err
 	}

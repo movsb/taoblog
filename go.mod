@@ -8,7 +8,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
-	github.com/movsb/taorm v0.0.0-20250130043711-709693a27578
+	github.com/movsb/taorm v0.0.0-20250407075433-0864813bbb6d
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
@@ -52,7 +52,6 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
-	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
@@ -124,7 +123,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/golang/glog v1.2.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
