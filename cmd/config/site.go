@@ -37,6 +37,8 @@ type SiteConfig struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 	Since       _Since `yaml:"since,omitempty"`
+
+	Notify SiteNotifyConfig `json:"notify" yaml:"notify"`
 }
 
 // DefaultSiteConfig ...
@@ -47,6 +49,17 @@ func DefaultSiteConfig() SiteConfig {
 		Name:        `未命名`,
 		Description: ``,
 		Since:       since,
+		Notify:      DefaultSiteNotifyConfig(),
+	}
+}
+
+type SiteNotifyConfig struct {
+	NewPost bool `json:"new_post" yaml:"new_post"`
+}
+
+func DefaultSiteNotifyConfig() SiteNotifyConfig {
+	return SiteNotifyConfig{
+		NewPost: true,
 	}
 }
 

@@ -727,6 +727,17 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		s.setPostACL(in.Post.Id, in.UserPerms)
 	}
 
+	// 通知新文章创建
+	if oldPost.Date == oldPost.Modified && oldPost.Title == models.Untitled &&
+		s.cfg.Site.Notify.NewPost &&
+		oldPost.UserID != int32(auth.AdminID) {
+		title, _ := m[`title`].(string)
+		s.notifier.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
+			Subject: `新文章发表`,
+			Body:    fmt.Sprintf(`%s 发表了新文章 %s`, ac.User.Nickname, title),
+		})
+	}
+
 	// TODO Update 接口没有 ContentOptions。
 	req := proto.GetPostRequest{
 		Id: int32(in.Post.Id),

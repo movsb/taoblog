@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"log"
 	text_template "text/template"
 
 	"github.com/movsb/taoblog/modules/auth"
@@ -70,6 +71,11 @@ func (cn *CommentNotifier) NotifyPostAuthor(data *AdminData, name string, email 
 			Body:    buf.String(),
 		},
 	)
+
+	if email == `` {
+		log.Println(`文章作者没有邮箱地址，不发送邮件通知。`)
+		return
+	}
 
 	buf.Reset()
 	adminTmpl.Execute(buf, data)

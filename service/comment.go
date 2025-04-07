@@ -629,20 +629,16 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 		if err != nil {
 			return err
 		}
-		if pu.Email == `` {
-			log.Println(`文章作者没有邮箱地址，不发送邮件通知。`)
-		} else {
-			data := &comment_notify.AdminData{
-				Title:    post.Title,
-				Link:     link,
-				Date:     time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
-				Author:   c.Author,
-				Content:  c.Source,
-				Email:    c.Email,
-				HomePage: c.URL,
-			}
-			t.s.cmtntf.NotifyPostAuthor(data, pu.Nickname, pu.Email)
+		data := &comment_notify.AdminData{
+			Title:    post.Title,
+			Link:     link,
+			Date:     time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
+			Author:   c.Author,
+			Content:  c.Source,
+			Email:    c.Email,
+			HomePage: c.URL,
 		}
+		t.s.cmtntf.NotifyPostAuthor(data, pu.Nickname, pu.Email)
 	}
 
 	var parents []models.Comment

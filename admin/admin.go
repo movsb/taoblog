@@ -22,6 +22,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils/dir"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 )
 
 //go:embed statics templates
@@ -248,7 +249,7 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 			&proto.Post{
 				Type:       `post`,
 				SourceType: `markdown`,
-				Source:     "# 无标题\n\n",
+				Source:     fmt.Sprintf("# %s\n\n", models.Untitled),
 			},
 		))
 		args := urlpkg.Values{}
