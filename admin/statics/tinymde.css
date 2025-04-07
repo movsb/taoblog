@@ -249,6 +249,10 @@ code.TMCode {
 	font-size: unset;
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
-	padding: var(--input-padding);
+	padding: 2px 5px;
 	margin: 2px;
+}
+
+.TMUL > .TMInlineFormatted:nth-child(2) > .TMLinkLabel {
+	text-decoration: none;
 }

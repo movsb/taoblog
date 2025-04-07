@@ -87,6 +87,10 @@ body.admin.editor {
 			min-width: 300px;
 			min-height: 300px;
 			max-height: 80vh;
+			// 简单限制一下在手机上的高度。
+			@media screen and (max-width: 650px) {
+				max-height: 40vh;
+			}
 		}
 		#editor-container {
 			font-family: var(--font-mono);
