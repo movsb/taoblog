@@ -256,3 +256,8 @@ code.TMCode {
 .TMUL > .TMInlineFormatted:nth-child(2) > .TMLinkLabel {
 	text-decoration: none;
 }
+
+#editor-container.no-wrap textarea,
+#editor-container.no-wrap div.TinyMDE {
+	white-space: pre !important;
+}

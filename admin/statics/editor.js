@@ -47,6 +47,21 @@ class PostFormUI {
 			this.elemACLDialog.close();
 		})
 
+		this.checkBoxTogglePreview.addEventListener('click', e=>{
+			this.showPreview(e.target.checked);
+		});
+		this.checkBoxWrap.addEventListener('click', e=>{
+			this.setWrap(e.target.checked);
+		});
+
+		const showPreview = localStorage.getItem('editor-config-show-preview') != '0';
+		this.checkBoxTogglePreview.checked = showPreview;
+		this.showPreview(showPreview);
+
+		const setWrap = localStorage.getItem('editor-config-wrap') != '0';
+		this.checkBoxWrap.checked = setWrap;
+		this.setWrap(setWrap);
+
 		if (typeof TinyMDE != 'undefined') {
 			this.editor = new TinyMDE.Editor({
 				element: document.querySelector('#editor-container'),
@@ -108,6 +123,8 @@ class PostFormUI {
 	get elemStatus()    { return this._form['status'];  }
 	get elemSetACL()    { return this._form['set-acl']; }
 	get elemACLDialog() { return this._form.querySelector("[name='set-acl-dialog']"); }
+	get checkBoxTogglePreview()     { return this._form.querySelector('#toggle-preview'); }
+	get checkBoxWrap()              { return this._form.querySelector('#toggle-wrap'); }
 	
 	get geo() {
 		const values = this._form['geo_location'].value.trim().split(',');
@@ -328,6 +345,17 @@ class PostFormUI {
 			option.value = name;
 			datalist.appendChild(option);
 		});
+	}
+
+	showPreview(show) {
+		this.elemPreviewContainer.style.display = show ? 'block' : 'none';
+		localStorage.setItem('editor-config-show-preview', show?'1':'0');
+	}
+	setWrap(wrap) {
+		const editorContainer = this._form.querySelector('#editor-container');
+		if(wrap) editorContainer.classList.remove('no-wrap');
+		else editorContainer.classList.add('no-wrap');
+		localStorage.setItem('editor-config-wrap', wrap?'1':'0');
 	}
 }
 

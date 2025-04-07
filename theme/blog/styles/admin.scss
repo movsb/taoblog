@@ -116,8 +116,6 @@ body.admin.editor {
 			border-radius: var(--border-radius);
 			tab-size: 4;
 			overflow: auto;
-			// 覆盖默认的自动换行。
-			white-space: pre !important;
 		}
 	}
 	#command-container {
