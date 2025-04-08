@@ -82,3 +82,14 @@ select {
 // 	display: inline-flex;
 // 	align-items: center;
 // }
+
+.icon-loading::before {
+	display: inline-block;
+	vertical-align: middle;
+	height: 24px;
+	width: 24px;
+	// https://github.com/n3r4zzurr0/svg-spinners/blob/main/svg-css/90-ring-with-bg.svg
+	background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48c3R5bGU+LnNwaW5uZXJfYWpQWXt0cmFuc2Zvcm0tb3JpZ2luOmNlbnRlcjthbmltYXRpb246c3Bpbm5lcl9BdGFCIC43NXMgaW5maW5pdGUgbGluZWFyfUBrZXlmcmFtZXMgc3Bpbm5lcl9BdGFCezEwMCV7dHJhbnNmb3JtOnJvdGF0ZSgzNjBkZWcpfX08L3N0eWxlPjxwYXRoIGQ9Ik0xMiwxQTExLDExLDAsMSwwLDIzLDEyLDExLDExLDAsMCwwLDEyLDFabTAsMTlhOCw4LDAsMSwxLDgtOEE4LDgsMCwwLDEsMTIsMjBaIiBvcGFjaXR5PSIuMjUiLz48cGF0aCBkPSJNMTAuMTQsMS4xNmExMSwxMSwwLDAsMC05LDguOTJBMS41OSwxLjU5LDAsMCwwLDIuNDYsMTIsMS41MiwxLjUyLDAsMCwwLDQuMTEsMTAuN2E4LDgsMCwwLDEsNi42Ni02LjYxQTEuNDIsMS40MiwwLDAsMCwxMiwyLjY5aDBBMS41NywxLjU3LDAsMCwwLDEwLjE0LDEuMTZaIiBjbGFzcz0ic3Bpbm5lcl9halBZIi8+PC9zdmc+');
+	filter: invert(50%);
+	content: "";
+}

@@ -345,26 +345,31 @@ class PostFormUI {
 	}
 
 	async updateGeoLocations(latitude, longitude) {
-		// const { latitude, longitude } = this.geo;
-		const api = `/v3/utils/geo/resolve?latitude=${latitude}&longitude=${longitude}`;
-		const rsp = await fetch(api);
-		if (!rsp.ok) {
-			let exception = await rsp.json();
-			try {
-				exception = JSON.parse(exception);
-				exception = exception.message ?? exception;
+		const loading = this._form.querySelector('#geo_location_loading');
+		loading.classList.add('icon-loading');
+		try {
+			const api = `/v3/utils/geo/resolve?latitude=${latitude}&longitude=${longitude}`;
+			const rsp = await fetch(api);
+			if (!rsp.ok) {
+				let exception = await rsp.json();
+				try {
+					exception = JSON.parse(exception);
+					exception = exception.message ?? exception;
+				}
+				catch {}
+				throw exception;
 			}
-			catch {}
-			throw exception;
+			const { names } = await rsp.json();
+			const datalist = this._form.querySelector('.geo datalist');
+			datalist.innerHTML = '';
+			(names || []).forEach(name => {
+				const option = document.createElement('option');
+				option.value = name;
+				datalist.appendChild(option);
+			});
+		} finally {
+			loading.classList.remove('icon-loading');
 		}
-		const { names } = await rsp.json();
-		const datalist = this._form.querySelector('.geo datalist');
-		datalist.innerHTML = '';
-		(names || []).forEach(name => {
-			const option = document.createElement('option');
-			option.value = name;
-			datalist.appendChild(option);
-		});
 	}
 
 	showPreview(show) {
