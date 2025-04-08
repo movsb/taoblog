@@ -201,6 +201,7 @@ var (
 func RegisterInit(init func()) {
 	if initsCalled.Load() {
 		init()
+		reloadAll.Store(true)
 		return
 	}
 	inits = append(inits, init)
