@@ -24,13 +24,15 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
 		</div>
 		<div id="preview-container"></div>
+		<div id="diff-container"></div>
 	</div>
 	<div id="command-container"></div>
 	<hr>
 	<div>
 		选项：
-		<label><input type="checkbox" id="toggle-preview" checked autocomplete="off" />显示预览</label>
 		<label><input type="checkbox" id="toggle-wrap" checked autocomplete="off"/>自动折行</label>
+		<label><input type="checkbox" id="toggle-preview" checked autocomplete="off" />显示预览</label>
+		<label><input type="checkbox" id="toggle-diff" autocomplete="off"/>显示变更</label>
 	<hr>
 	<p>
 		<label>

@@ -53,6 +53,9 @@ class PostFormUI {
 		this.checkBoxWrap.addEventListener('click', e=>{
 			this.setWrap(e.target.checked);
 		});
+		this.checkBoxToggleDiff.addEventListener('click', e => {
+			this.showDiff(e.target.checked);
+		})
 
 		const showPreview = localStorage.getItem('editor-config-show-preview') != '0';
 		this.checkBoxTogglePreview.checked = showPreview;
@@ -118,13 +121,15 @@ class PostFormUI {
 
 	get elemSource()    { return this._form['source'];  }
 	get elemTime()      { return this._form['time'];    }
-	get elemPreviewContainer() { return this._form.querySelector('#preview-container'); }
+	get elemPreviewContainer()  { return this._form.querySelector('#preview-container'); }
+	get elemDiffContainer()     { return this._form.querySelector('#diff-container'); }
 	get elemType()      { return this._form['type'];    }
 	get elemStatus()    { return this._form['status'];  }
 	get elemSetACL()    { return this._form['set-acl']; }
 	get elemACLDialog() { return this._form.querySelector("[name='set-acl-dialog']"); }
 	get checkBoxTogglePreview()     { return this._form.querySelector('#toggle-preview'); }
 	get checkBoxWrap()              { return this._form.querySelector('#toggle-wrap'); }
+	get checkBoxToggleDiff()        { return this._form.querySelector('#toggle-diff'); }
 	
 	get geo() {
 		const values = this._form['geo_location'].value.trim().split(',');
@@ -221,6 +226,9 @@ class PostFormUI {
 			this.elemPreviewContainer.innerHTML = v;
 		}
 		this._previewCallbackReturned = true;
+	}
+	setDiff(v)  {
+		this.elemDiffContainer.innerHTML = v;
 	}
 
 	/**
@@ -353,9 +361,19 @@ class PostFormUI {
 	}
 	setWrap(wrap) {
 		const editorContainer = this._form.querySelector('#editor-container');
-		if(wrap) editorContainer.classList.remove('no-wrap');
-		else editorContainer.classList.add('no-wrap');
+		const diffContainer = this._form.querySelector('#diff-container');
+
+		if(wrap) {
+			editorContainer.classList.remove('no-wrap');
+			diffContainer.classList.remove('no-wrap');
+		} else {
+			editorContainer.classList.add('no-wrap');
+			diffContainer.classList.add('no-wrap');
+		}
 		localStorage.setItem('editor-config-wrap', wrap?'1':'0');
+	}
+	showDiff(show) {
+		this.elemDiffContainer.style.display = show ? 'block' : 'none';
 	}
 }
 
@@ -522,6 +540,7 @@ let updatePreview = async (content) => {
 	try {
 		let rsp = await postAPI.previewPost(TaoBlog.post_id, content);
 		formUI.setPreview(rsp.html, true);
+		formUI.setDiff(rsp.diff);
 	} catch (e) {
 		formUI.setPreview(e, false);
 	}

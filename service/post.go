@@ -1,9 +1,11 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"html"
 	"io/fs"
 	"log"
 	"net/url"
@@ -28,6 +30,7 @@ import (
 	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -284,10 +287,6 @@ func (f _OpenPostFile) Open(name string) (fs.File, error) {
 	return fs.Open(after)
 }
 
-func (s *Service) GetPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
-	return s.getPostContentCached(ctx, id, co)
-}
-
 func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
 	key := _PostContentCacheKey{
 		ID:      id,
@@ -309,6 +308,32 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.
 		return ``, err
 	}
 	return content, nil
+}
+
+// 用于预览文章的时候快速 diff。
+// 编辑操作很频繁，不需要一直刷数据库。
+// 只能原作者获取。
+func (s *Service) getPostSourceCached(ctx context.Context, id int64) (_ string, outErr error) {
+	defer utils.CatchAsError(&outErr)
+	type _SourceCacheKey struct {
+		UserID int
+		Source string
+	}
+	ac := auth.Context(ctx)
+	key := fmt.Sprintf(`post_source:%d`, id)
+	cache := utils.Must1(utils.DropLast2(s.cache.GetOrLoad(ctx, key, func(ctx context.Context, _ string) (any, time.Duration, error) {
+		log.Println(`无 source 缓存，从数据库加载……`)
+		db := db.FromContextDefault(ctx, s.tdb)
+		var p models.Post
+		if err := db.Where(`id=?`, id).Select(`user_id,source`).Find(&p); err != nil {
+			return nil, 0, err
+		}
+		return _SourceCacheKey{UserID: int(p.UserID), Source: p.Source}, time.Minute * 10, nil
+	}))).(_SourceCacheKey)
+	if cache.UserID != int(ac.User.ID) {
+		panic(noPerm)
+	}
+	return cache.Source, nil
 }
 
 func (s *Service) getPostTagsCached(ctx context.Context, id int64) ([]string, error) {
@@ -336,6 +361,7 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 		s.postContentCaches.Delete(second)
 		log.Println(`删除文章缓存：`, second)
 	})
+	s.cache.Delete(fmt.Sprintf(`post_source:%d`, id))
 }
 
 func withEmojiFilter(node *goquery.Selection) bool {
@@ -808,9 +834,36 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 // TODO 文章编号可能是 0️⃣
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	auth.MustNotBeGuest(ctx)
-	// ac := auth.Context(ctx)
+
 	content, err := s.renderMarkdown(true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
-	return &proto.PreviewPostResponse{Html: content}, err
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	source, err := s.getPostSourceCached(ctx, int64(in.Id))
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// 不太清楚这个 check lines 参数是干啥的。
+	diffs := diffmatchpatch.New().DiffMain(source, in.Markdown, true)
+	var buf bytes.Buffer
+	for _, diff := range diffs {
+		text := html.EscapeString(diff.Text)
+		switch diff.Type {
+		case diffmatchpatch.DiffInsert:
+			fmt.Fprint(&buf, `<ins>`, text, `</ins>`)
+		case diffmatchpatch.DiffDelete:
+			fmt.Fprint(&buf, `<del>`, text, `</del>`)
+		case diffmatchpatch.DiffEqual:
+			fmt.Fprint(&buf, text)
+		}
+	}
+
+	return &proto.PreviewPostResponse{
+		Html: content,
+		Diff: buf.String(),
+	}, nil
 }
 
 // updateLastPostTime updates last_post_time in options.

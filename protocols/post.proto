@@ -212,6 +212,7 @@ message PreviewPostRequest {
 
 message PreviewPostResponse {
 	string html = 1;
+	string diff = 2;
 }
 
 message CreateStylingPageRequest {

@@ -257,7 +257,11 @@ code.TMCode {
 	text-decoration: none;
 }
 
+#diff-container {
+	white-space: pre-wrap;
+}
 #editor-container.no-wrap textarea,
-#editor-container.no-wrap div.TinyMDE {
+#editor-container.no-wrap div.TinyMDE,
+#diff-container.no-wrap {
 	white-space: pre !important;
 }
