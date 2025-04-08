@@ -3,7 +3,6 @@ package rss
 import (
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -219,19 +218,8 @@ func (t *Task) fetch(ctx context.Context, url string) (_ *PerSiteData, outErr er
 	if rsp.StatusCode != 200 {
 		panic(fmt.Sprintf(`rss: statusCode: %s, %s`, rsp.Status, url))
 	}
-	parse := func() any {
-		dup := utils.MemDupReader(io.LimitReader(rsp.Body, 10<<20))
-		var sub rss_parser.RSS
-		var feed rss_parser.Feed
-		if err := xml.NewDecoder(dup()).Decode(&sub); err == nil {
-			return &sub
-		}
-		if err := xml.NewDecoder(dup()).Decode(&feed); err == nil {
-			return &feed
-		}
-		return nil
-	}
-	switch typed := parse().(type) {
+	parsed := utils.Must1(rss_parser.Parse(io.LimitReader(rsp.Body, 10<<20)))
+	switch typed := parsed.(type) {
 	case *rss_parser.RSS:
 		data := PerSiteData{
 			Name: typed.Channel.Title.String(),

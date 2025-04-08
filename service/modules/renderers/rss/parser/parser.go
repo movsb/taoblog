@@ -2,9 +2,13 @@ package rss_parser
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
+
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 type Trimmed string
@@ -34,6 +38,10 @@ type RSS struct {
 
 type Date struct {
 	time.Time
+}
+
+func (t Date) String() string {
+	return t.Format(time.RFC3339)
 }
 
 func (t *Date) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -98,6 +106,7 @@ type Feed struct {
 			Href string `xml:"href,attr"`
 		} `xml:"link"`
 		Published Date `xml:"published"`
+		Updated   Date `xml:"updated"`
 		Summary   struct {
 			Type string  `xml:"type,attr"`
 			Data Trimmed `xml:",chardata"`
@@ -107,4 +116,33 @@ type Feed struct {
 			Data Trimmed `xml:",chardata"`
 		} `xml:"content"`
 	} `xml:"entry"`
+}
+
+func Parse(r io.Reader) (any, error) {
+	dup := utils.MemDupReader(r)
+	var sub RSS
+	var feed Feed
+	err1 := xml.NewDecoder(dup()).Decode(&sub)
+	if err1 == nil {
+		return &sub, nil
+	}
+	err2 := xml.NewDecoder(dup()).Decode(&feed)
+	if err2 == nil {
+		fixFeed(&feed)
+		return &feed, nil
+	}
+	return nil, errors.Join(err1, err2)
+}
+
+// 有些博客没有 Published，仅有 Updated。
+//
+// https://www.worldhello.net/atom.xml
+//
+// 看起来不太规范，简单把它复制给 Published。
+func fixFeed(f *Feed) {
+	for i, e := range f.Entries {
+		if e.Published.IsZero() && !e.Updated.IsZero() {
+			f.Entries[i].Published = e.Updated
+		}
+	}
 }
