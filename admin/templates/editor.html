@@ -28,11 +28,12 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	</div>
 	<div id="command-container"></div>
 	<hr>
-	<div>
+	<p>
 		选项：
 		<label><input type="checkbox" id="toggle-wrap" checked autocomplete="off"/>自动折行</label>
 		<label><input type="checkbox" id="toggle-preview" checked autocomplete="off" />显示预览</label>
 		<label><input type="checkbox" id="toggle-diff" autocomplete="off"/>显示变更</label>
+	</p>
 	<hr>
 	<p>
 		<label>
@@ -62,11 +63,8 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 		<button name="set-acl">选择可见的人</button>
 	</p>
 	<dialog name="set-acl-dialog">
-		<ol class="list">
-		</ol>
-		<div>
-			<button>✅ 确定</button>
-		</div>
+		<ol class="list"></ol>
+		<div><button>✅ 确定</button></div>
 	</dialog>
 	<p class="geo">
 		<label><span>位置：</span>

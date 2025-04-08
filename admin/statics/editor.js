@@ -4,6 +4,7 @@ class PostFormUI {
 		this._previewCallbackReturned = true;
 		this._files = this._form.querySelector('#files');
 		this._users = [];
+		this._contentChanged = false;
 		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
 			e.preventDefault();
@@ -64,6 +65,8 @@ class PostFormUI {
 		const setWrap = localStorage.getItem('editor-config-wrap') != '0';
 		this.checkBoxWrap.checked = setWrap;
 		this.setWrap(setWrap);
+
+		window.addEventListener('beforeunload', (e)=>{ return this.beforeUnload(e); });
 
 		if (typeof TinyMDE != 'undefined') {
 			this.editor = new TinyMDE.Editor({
@@ -315,6 +318,7 @@ class PostFormUI {
 		let debouncing = undefined;
 		if (this.editor) {
 			this.editor.addEventListener('change', (e)=>{
+				this._contentChanged = true;
 				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
@@ -323,12 +327,20 @@ class PostFormUI {
 			});
 		} else {
 			this.elemSource.addEventListener('input', (e)=>{
+				this._contentChanged = true;
 				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
 					callback(this.elemSource.value);
 				}, 500);
 			});
+		}
+	}
+
+	beforeUnload(e) {
+		if(this._contentChanged) {
+			e.preventDefault();
+			return '';
 		}
 	}
 

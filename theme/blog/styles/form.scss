@@ -77,3 +77,8 @@ select {
 	height: calc(2em + 2px);
 	padding: var(--input-padding);
 }
+
+// label:has(>input) {
+// 	display: inline-flex;
+// 	align-items: center;
+// }
