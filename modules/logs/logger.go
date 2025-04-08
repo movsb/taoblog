@@ -43,6 +43,10 @@ func NewLogStore(db *sql.DB) *_LogStore {
 	}
 }
 
+func (s *_LogStore) DeleteAllLogs(ctx context.Context) {
+	s.tdb.From(models.Log{}).MustDeleteAnyway()
+}
+
 func (s *_LogStore) CreateLog(ctx context.Context, ty, subType string, version int, data any) {
 	d := utils.Must1(toJSON(data))
 	l := models.Log{

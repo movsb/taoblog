@@ -7,12 +7,13 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/setup/migration"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,37 +23,47 @@ type _ReadCloseSizer struct {
 	Size func() int
 }
 
-// Backup ...
-func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupServer) error {
+func (s *Service) BackupPosts(req *proto.BackupPostsRequest, srv proto.Management_BackupPostsServer) error {
 	s.MustBeAdmin(srv.Context())
 
 	sendPreparingProgress := func(progress float32) error {
-		return srv.Send(&proto.BackupResponse{
-			BackupResponseMessage: &proto.BackupResponse_Preparing_{
-				Preparing: &proto.BackupResponse_Preparing{
+		return srv.Send(&proto.BackupPostsResponse{
+			BackupResponseMessage: &proto.BackupPostsResponse_Preparing_{
+				Preparing: &proto.BackupPostsResponse_Preparing{
 					Progress: progress,
 				},
 			},
 		})
 	}
 
-	var rcs _ReadCloseSizer
-
 	path, err := s.backupSQLite3(srv.Context(), sendPreparingProgress)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(path)
+
+	if req.RemoveLogs {
+		func() {
+			db := migration.InitPosts(path, false)
+			defer db.Close()
+			logs := logs.NewLogStore(db)
+			logs.DeleteAllLogs(context.Background())
+			log.Println(`备份：删除所有日志`)
+		}()
+	}
+
 	fp, err := os.Open(path)
 	if err != nil {
 		return err
 	}
-	rcs.ReadCloser = fp
-	rcs.Size = func() int {
-		stat, _ := fp.Stat()
-		return int(stat.Size())
-	}
 
+	rcs := _ReadCloseSizer{
+		ReadCloser: fp,
+		Size: func() int {
+			stat, _ := fp.Stat()
+			return int(stat.Size())
+		},
+	}
 	defer rcs.Close()
 
 	if req.Compress {
@@ -71,7 +82,7 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 			panic(`close failed`)
 		}
 		log.Printf(`compress completed: before: %v, after: %v`, n, buf.Len())
-		rcs.ReadCloser = ioutil.NopCloser(buf)
+		rcs.ReadCloser = io.NopCloser(buf)
 		rcs.Size = func() int {
 			return buf.Len()
 		}
@@ -91,9 +102,9 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 	}
 
 	sendTransfer := func(data []byte, progress float32) error {
-		return srv.Send(&proto.BackupResponse{
-			BackupResponseMessage: &proto.BackupResponse_Transfering_{
-				Transfering: &proto.BackupResponse_Transfering{
+		return srv.Send(&proto.BackupPostsResponse{
+			BackupResponseMessage: &proto.BackupPostsResponse_Transferring_{
+				Transferring: &proto.BackupPostsResponse_Transferring{
 					Progress: progress,
 					Data:     data,
 				},
@@ -122,7 +133,7 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 
 // https://www.sqlite.org/c3ref/backup_finish.html
 func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage float32) error) (string, error) {
-	tmpFile, err := ioutil.TempFile(``, `taoblog-*`)
+	tmpFile, err := os.CreateTemp(``, `taoblog-*`)
 	if err != nil {
 		return ``, err
 	}

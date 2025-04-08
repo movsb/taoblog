@@ -103,12 +103,9 @@ service Management {
 
 	// Backup
 
-	rpc Backup(BackupRequest) returns (stream BackupResponse) {
-		option (google.api.http) = {
-			get: "/v3/backup";
-		};
+	rpc BackupPosts(BackupPostsRequest) returns (stream BackupPostsResponse) {
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "导出数据库（拖库）。";
+			description: "导出数据库。";
 		};
 	}
 

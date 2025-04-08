@@ -4,22 +4,25 @@ option go_package = "github.com/movsb/taoblog/proto";
 
 import "post.proto";
 
-message BackupRequest {
+message BackupPostsRequest {
 	// 是否需要压缩数据（zlib）
 	bool compress = 1;
+	// 是否需要去除日志（邮件、通知……）
+	// 本地备份用于测试的时候不需要线上的日志。
+	bool remove_logs = 2;
 }
 
-message BackupResponse {
+message BackupPostsResponse {
 	message Preparing {
 		float progress = 1;
 	}
-	message Transfering {
+	message Transferring {
 		float progress = 1;
 		bytes data = 2;
 	}
 	oneof BackupResponseMessage {
 		Preparing preparing = 1;
-		Transfering transfering = 2;
+		Transferring transferring = 2;
 	}
 }
 

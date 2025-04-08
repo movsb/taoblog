@@ -23,9 +23,9 @@ func NewBackupClient(cc *clients.ProtoClient) *BackupClient {
 func (b *BackupClient) BackupPosts(w io.Writer) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	client := utils.Must1(b.cc.Management.Backup(
+	client := utils.Must1(b.cc.Management.BackupPosts(
 		b.cc.Context(),
-		&proto.BackupRequest{Compress: false},
+		&proto.BackupPostsRequest{Compress: false},
 	))
 	defer client.CloseSend()
 
@@ -34,7 +34,7 @@ func (b *BackupClient) BackupPosts(w io.Writer) (outErr error) {
 }
 
 type _BackupProgressReader struct {
-	c proto.Management_BackupClient
+	c proto.Management_BackupPostsClient
 	d []byte
 }
 
@@ -44,8 +44,8 @@ func (r *_BackupProgressReader) Read(p []byte) (outN int, outErr error) {
 	if len(r.d) == 0 {
 		rsp := utils.Must1(r.c.Recv())
 		switch typed := rsp.BackupResponseMessage.(type) {
-		case *proto.BackupResponse_Transfering_:
-			r.d = typed.Transfering.Data
+		case *proto.BackupPostsResponse_Transferring_:
+			r.d = typed.Transferring.Data
 		}
 	}
 

@@ -438,10 +438,14 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short: `backup posts and comments`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			client.BackupPosts(cmd)
+			compress := utils.Must1(cmd.Flags().GetBool(`compress`))
+			keepLogs := utils.Must1(cmd.Flags().GetBool(`keep-logs`))
+			client.BackupPosts(cmd, compress, !keepLogs)
 		},
 	}
 	backupPostsCmd.Flags().Bool(`stdout`, false, `Output to stdout`)
+	backupPostsCmd.Flags().Bool(`compress`, true, `是否压缩传输。`)
+	backupPostsCmd.Flags().Bool(`keep-logs`, false, `是否保留未处理的日志（通知、邮件等）。`)
 	backupCmd.AddCommand(backupPostsCmd)
 	backupFilesCmd := &cobra.Command{
 		Use:   `files`,

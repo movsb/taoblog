@@ -20,12 +20,13 @@ import (
 )
 
 // BackupPosts backups all blog database.
-func (c *Client) BackupPosts(cmd *cobra.Command) {
-	compress := true
-
-	backupClient, err := c.Management.Backup(c.Context(), &proto.BackupRequest{Compress: compress})
+func (c *Client) BackupPosts(cmd *cobra.Command, compress bool, removeLogs bool) {
+	backupClient, err := c.Management.BackupPosts(c.Context(), &proto.BackupPostsRequest{
+		Compress:   compress,
+		RemoveLogs: removeLogs,
+	})
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	defer backupClient.CloseSend()
 
@@ -71,7 +72,7 @@ func (c *Client) BackupPosts(cmd *cobra.Command) {
 }
 
 type _BackupProgressReader struct {
-	c         proto.Management_BackupClient
+	c         proto.Management_BackupPostsClient
 	d         []byte
 	preparing bool
 }
@@ -87,16 +88,16 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 			log.Fatalln(err)
 		}
 		switch typed := rsp.BackupResponseMessage.(type) {
-		case *proto.BackupResponse_Preparing_:
+		case *proto.BackupPostsResponse_Preparing_:
 			fmt.Printf("\r\033[KPreparing... %.2f%%", typed.Preparing.Progress*100)
 			r.preparing = true
-		case *proto.BackupResponse_Transfering_:
+		case *proto.BackupPostsResponse_Transferring_:
 			if r.preparing {
 				fmt.Println()
 				r.preparing = false
 			}
-			fmt.Printf("\r\033[KTransfering... %.2f%%", typed.Transfering.Progress*100)
-			r.d = typed.Transfering.Data
+			fmt.Printf("\r\033[KTransferring... %.2f%%", typed.Transferring.Progress*100)
+			r.d = typed.Transferring.Data
 		}
 	}
 
