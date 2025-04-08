@@ -265,3 +265,8 @@ code.TMCode {
 #diff-container.no-wrap {
 	white-space: pre !important;
 }
+
+.TMCommandButton_Inactive {
+	fill: #a0a0a0;
+	color: #a0a0a0;
+}
