@@ -424,7 +424,7 @@ func (s *Server) createBackupTasks(
 			s.sendNotify(`文章和附件备份`, strings.Join(messages, "\n"))
 		}
 
-		time.Sleep(time.Minute)
+		time.Sleep(time.Minute * 10)
 		execute()
 
 		ticker := time.NewTicker(time.Hour)

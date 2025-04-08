@@ -278,12 +278,6 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) (outErr error) {
 		path = filepath.Join(dir, client_common.ConfigFileName)
 		config = &client_common.PostConfig{}
 	}
-	if p.Modified == config.Modified {
-		return nil
-	}
-	if p.Modified < config.Modified {
-		return fmt.Errorf(`本地比远程文件更新？：%v`, path)
-	}
 
 	config.ID = p.Id
 	config.Metas = *models.PostMetaFrom(p.Metas)
@@ -298,14 +292,6 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) (outErr error) {
 	// TODO 没用 fsys。
 	fullPath := filepath.Join(g.tmpDir, filepath.Dir(path), client_common.IndexFileName)
 
-	// 正在编辑且并没提交的文件可能会比远程更新，此时不能覆盖本地的文件。
-	// TODO 用文件系统而不是 os.
-	if stat, err := os.Stat(fullPath); err == nil {
-		if stat.ModTime().After(time.Unix(int64(p.Modified), 0)) {
-			return fmt.Errorf(`本地的文件更新，没有覆盖：%s`, path)
-		}
-	}
-
 	utils.Must(os.WriteFile(fullPath, []byte(p.Source), 0644))
 
 	log.Println(`正在写入更新：`, fullPath)
@@ -319,8 +305,10 @@ func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) (outErr error) {
 			When:  time.Unix(int64(p.Modified), 0),
 		},
 	}); err != nil {
-		log.Println(`提交失败：`, err)
-		return err
+		if !errors.Is(err, git.ErrEmptyCommit) {
+			log.Println(`提交失败：`, err)
+			return err
+		}
 	}
 
 	return nil
