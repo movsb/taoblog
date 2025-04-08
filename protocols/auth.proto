@@ -61,6 +61,9 @@ message User {
 	// 密码。
 	// 自动生成，输出参数。
 	string password = 5;
+
+	// 头像 DataURL。
+	string avatar = 6;
 }
 
 message ListUsersRequest {
@@ -71,3 +74,11 @@ message ListUsersRequest {
 message ListUsersResponse {
 	repeated User users = 1;
 }
+
+message UpdateUserRequest {
+	User user = 1;
+
+	bool update_avatar = 10;
+}
+
+message UpdateUserResponse {}

@@ -5,8 +5,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,6 +20,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -56,6 +59,7 @@ func (o *Auth) getDB(ctx context.Context) *taorm.DB {
 }
 
 // TODO: 改成接口。
+// NOTE: 错误的时候也会存，nil 值，以避免不必要的查询。
 func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
 	if id == int64(systemID) {
 		return system.User, nil
@@ -63,13 +67,49 @@ func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) 
 
 	user, err, _ := o.userCache.GetOrLoad(ctx, int(id), func(ctx context.Context, i int) (*models.User, time.Duration, error) {
 		var user models.User
-		if err := o.getDB(ctx).Where(`id=?`, id).Find(&user); err != nil {
-			return nil, 0, fmt.Errorf(`GetUserByID: %w`, err)
+		err := o.getDB(ctx).Where(`id=?`, id).Find(&user)
+		if err != nil {
+			if !taorm.IsNotFoundError(err) {
+				return nil, 0, fmt.Errorf(`GetUserByID: %w`, err)
+			}
+			// NOTE: 错误的时候也会存，nil 值，以避免不必要的查询。
+			// 但是最终会返回错误；CreateUser 的时候清除。
+			return nil, time.Minute * 10, nil
 		}
 		return &user, time.Minute * 10, nil
 	})
 
+	if user == nil {
+		err = sql.ErrNoRows
+	}
+
 	return user, err
+}
+
+// 通过用户ID查询头像。
+func (o *Auth) AvatarFS() fs.FS {
+	return _AvatarByID{a: o}
+}
+
+type _AvatarByID struct {
+	a *Auth
+}
+
+func (fsys _AvatarByID) Open(name string) (_ fs.File, outErr error) {
+	defer utils.CatchAsError(&outErr)
+	userID := utils.Must1(strconv.Atoi(name))
+	user, err := fsys.a.GetUserByID(context.Background(), int64(userID))
+	if err != nil {
+		if taorm.IsNotFoundError(err) {
+			// NOTE: 错误埋没了。
+			return nil, fs.ErrNotExist
+		}
+		return nil, err
+	}
+	if len(user.Avatar.Data) <= 0 {
+		return nil, fs.ErrNotExist
+	}
+	return utils.NewStringFile(name, time.Unix(user.UpdatedAt, 0), user.Avatar.Data), nil
 }
 
 func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
@@ -86,7 +126,11 @@ func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
 	o.getDB(context.Background()).Model(user.User).Where(`id=?`, user.ID).MustUpdateMap(taorm.M{
 		`credentials`: user.Credentials,
 	})
-	o.userCache.Delete(int(user.ID))
+	o.DropUserCache(int(user.ID))
+}
+
+func (o *Auth) DropUserCache(id int) {
+	o.userCache.Delete(id)
 }
 
 func login(username, password string) string {
@@ -232,8 +276,9 @@ func (o *Auth) AuthGitHub(code string) *User {
 }
 
 const (
-	CookieNameLogin  = `taoblog.login`
-	CookieNameUserID = `taoblog.user_id`
+	CookieNameLogin    = `taoblog.login`
+	CookieNameUserID   = `taoblog.user_id`
+	CookieNameNickname = `taoblog.nickname`
 )
 
 func cookieValue(userAgent, username, password string) string {
@@ -266,6 +311,16 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     CookieNameNickname,
+		Value:    url.PathEscape(u.Nickname),
+		MaxAge:   0,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   secure,
+		HttpOnly: false,
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 func (a *Auth) GenCookieForPasskeys(u *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie {
@@ -279,6 +334,11 @@ func (a *Auth) GenCookieForPasskeys(u *User, agent string) []*proto.FinishPasske
 		{
 			Name:     CookieNameUserID,
 			Value:    fmt.Sprint(u.ID),
+			HttpOnly: false,
+		},
+		{
+			Name:     CookieNameNickname,
+			Value:    url.PathEscape(u.Nickname),
 			HttpOnly: false,
 		},
 	}
@@ -299,6 +359,16 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameUserID,
+		Value:    ``,
+		MaxAge:   -1,
+		Path:     `/`,
+		Domain:   ``,
+		Secure:   secure,
+		HttpOnly: false,
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     CookieNameNickname,
 		Value:    ``,
 		MaxAge:   -1,
 		Path:     `/`,

@@ -135,14 +135,23 @@ type _OverlayFS struct {
 
 func (fsys *_OverlayFS) Open(name string) (fs.File, error) {
 	for _, layer := range fsys.layers {
-		if fp, err := layer.Open(name); err == nil {
-			return fp, nil
+		if layer == nil {
+			continue
 		}
+		fp, err := layer.Open(name)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
+			return nil, err
+		}
+		return fp, nil
 	}
 	return nil, &fs.PathError{Op: `open`, Path: name, Err: fs.ErrNotExist}
 }
 
 // 前面参数的层先被打开（也即：前面的是上层）。
+// nil 会被忽略。
 func NewOverlayFS(layers ...fs.FS) fs.FS {
 	return &_OverlayFS{layers: layers}
 }

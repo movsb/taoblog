@@ -56,8 +56,27 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
 	ac := auth.Context(ctx)
 
-	return func(c *proto.Comment) {
+	setAvatar := func(c *proto.Comment) {
+		// 默认值。
 		c.Avatar = int32(s.avatarCache.ID(c.Email))
+
+		// 从用户资料取。
+		if c.UserId > 0 {
+			user, err := s.auth.GetUserByID(ctx, int64(c.UserId))
+			if err == nil {
+				if len(user.Avatar.Data) > 0 {
+					c.Avatar = -int32(user.ID)
+					return
+				}
+				if user.Email != `` {
+					c.Avatar = int32(s.avatarCache.ID(user.Email))
+				}
+			}
+		}
+	}
+
+	return func(c *proto.Comment) {
+		setAvatar(c)
 
 		// （同 IP 用户 & 5️⃣分钟内） 可编辑。
 		// TODO: IP：并不严格判断，比如网吧、办公室可能具有相同 IP。所以限制了时间范围。
@@ -371,6 +390,14 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		Date:       0,
 		SourceType: in.SourceType,
 		Source:     in.Source,
+	}
+
+	if ac.User.ID > 0 {
+		c.Author = ac.User.Nickname
+		if ac.User.Email != `` {
+			c.Email = ac.User.Email
+		}
+		c.URL = ``
 	}
 
 	c.ModifiedTimezone = in.ModifiedTimezone

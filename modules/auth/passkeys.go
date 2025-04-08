@@ -27,6 +27,7 @@ type Passkeys struct {
 	db        *taorm.DB
 	wa        *webauthn.WebAuthn
 	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie
+	dropCache func(id int)
 
 	loginSessions *lru.TTLCache[string, *webauthn.SessionData]
 
@@ -37,11 +38,13 @@ func NewPasskeys(
 	db *taorm.DB,
 	wa *webauthn.WebAuthn,
 	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie,
+	dropCache func(id int),
 ) *Passkeys {
 	return &Passkeys{
 		db:            db,
 		wa:            wa,
 		cookieGen:     cookieGen,
+		dropCache:     dropCache,
 		loginSessions: lru.NewTTLCache[string, *webauthn.SessionData](8),
 	}
 }
@@ -167,7 +170,43 @@ func (p *Passkeys) CreateUser(ctx context.Context, in *proto.User) (*proto.User,
 		return nil, err
 	}
 
+	// userCache 会缓存不存在的用户，这里也要清理。
+	p.dropCache(int(user.ID))
+
 	return user.ToProto(), nil
+}
+
+func (p *Passkeys) UpdateUser(ctx context.Context, in *proto.UpdateUserRequest) (_ *proto.UpdateUserResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := Context(ctx)
+	if !(ac.User.IsAdmin() || ac.User.IsSystem() || (in.User.Id > 0 && ac.User.ID == in.User.Id)) {
+		panic(noPerm)
+	}
+
+	m := taorm.M{}
+
+	if in.UpdateAvatar {
+		d := utils.Must1(utils.ParseDataURL(in.User.Avatar))
+		if len(d.Data) > 100<<10 {
+			panic(`头像太大。`)
+		}
+		if !strings.HasPrefix(d.Type, `image/`) {
+			panic(`不是图片文件。`)
+		}
+		m[`avatar`] = in.User.Avatar
+	}
+
+	if len(m) > 0 {
+		r := p.db.Model(models.User{ID: in.User.Id}).MustUpdateMap(m)
+		n := utils.Must1(r.RowsAffected())
+		if n != 1 {
+			panic(`更新失败。`)
+		}
+		p.dropCache(int(in.User.Id))
+	}
+
+	return &proto.UpdateUserResponse{}, nil
 }
 
 func (p *Passkeys) ListUsers(ctx context.Context, in *proto.ListUsersRequest) (_ *proto.ListUsersResponse, outErr error) {

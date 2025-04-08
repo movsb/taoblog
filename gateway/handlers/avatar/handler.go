@@ -1,52 +1,42 @@
 package avatar
 
 import (
-	"fmt"
+	"io/fs"
 	"net/http"
-
-	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/service"
+	"strconv"
 )
 
-func New(task *Task, impl service.ToBeImplementedByRpc) http.Handler {
+// userAvatars: 通过以邮箱作为文件名查询头像。
+func New(task *Task, userAvatars fs.FS) *_Avatar {
 	return &_Avatar{
-		task: task,
-		impl: impl,
+		task:        task,
+		userAvatars: userAvatars,
 	}
 }
 
 type _Avatar struct {
-	task *Task
-	impl service.ToBeImplementedByRpc
+	task        *Task
+	userAvatars fs.FS
 }
 
-func (h *_Avatar) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	email := h.impl.GetCommentEmailById(int(utils.MustToInt64(r.PathValue(`id`))))
-	if email == "" {
-		http.Error(w, `找不到对应的邮箱。`, http.StatusNotFound)
-		return
-	}
+func (h *_Avatar) Ephemeral() http.Handler {
+	return http.HandlerFunc(serve(h.task.FS()))
+}
+func (h *_Avatar) UserID() http.Handler {
+	return http.HandlerFunc(serve(h.userAvatars))
+}
 
-	l, ct, c, found := h.task.Get(email)
-	if !found {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
+func serve(fs fs.FS) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if _, err := strconv.Atoi(r.PathValue(`id`)); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-	rl := r.Header.Get(`If-Modified-Since`)
-	if rl != `` && rl == l {
-		w.WriteHeader(http.StatusNotModified)
-		return
-	}
+		// 客户端缓存失效了也可以继续用，后台慢慢刷新就行。
+		// 如果失败，会被 ServeFileFS 自动删除。
+		w.Header().Set(`Cache-Control`, `max-age=604800, stale-while-revalidate=604800`)
 
-	// 客户端缓存失效了也可以继续用，后台慢慢刷新就行。
-	w.Header().Set(`Cache-Control`, `max-age=604800, stale-while-revalidate=604800`)
-	if l != `` {
-		w.Header().Set(`Last-Modified`, l)
+		http.ServeFileFS(w, r, fs, r.PathValue(`id`))
 	}
-	if ct != `` {
-		w.Header().Set(`Content-Type`, ct)
-	}
-	w.Header().Set(`Content-Length`, fmt.Sprint(len(c)))
-	w.Write(c)
 }

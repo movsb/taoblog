@@ -130,8 +130,10 @@ class CommentAPI
 	}
 
 	// 返回头像链接。
-	avatarURLOf(ephemeral) {
-		return `/v3/avatar/${ephemeral}`;
+	avatarURLOf(ephemeralOrUserID) {
+		return ephemeralOrUserID > 0 
+		? `/v3/avatar/${ephemeralOrUserID}`
+		: `/v3/users/${-ephemeralOrUserID}/avatar`;
 	}
 	
 
@@ -530,6 +532,22 @@ class Comment {
 			{
 				this.form.restore();
 
+				inputs[0].disabled = false;
+
+				// 新发表，使用登录用户信息。
+				if (this.being_edited <= 0) {
+					const userID = TaoBlog.fn.getUserID();
+					const nickname = TaoBlog.fn.getNickname();
+					if (userID > 0 && nickname != ``) {
+						this.form.author = nickname;
+						this.form.email = 'unused@example.com';
+						this.form.url = '';
+						inputs[1].style.display = 'none';
+						inputs[2].style.display = 'none';
+						inputs[0].disabled= true;
+					}
+				}
+
 				// 其它时候（未提交之前）不应该修改编辑的内容
 				if (this.being_edited > 0) {
 					this.setContent(this.list.comments[this.being_edited].source);
@@ -587,6 +605,7 @@ class Comment {
 		let info = '';
 		if (loggedin) {
 			info = `编号：${cmt.id}
+用户：${cmt.user_id}
 邮箱：${cmt.email}
 地址：${cmt.ip}
 位置：${cmt.geo_location}
@@ -641,7 +660,9 @@ class Comment {
 		this.being_replied = +p;
 		this.move_to_center();
 		this.preview.show(false);
-		this.showCommentBox(true, () => this.focus());
+		this.showCommentBox(true, () => this.focus(), {
+			allowEditingInfo: true,
+		});
 	}
 	edit(c) {
 		if (this.being_replied > -1) {
@@ -825,8 +846,6 @@ class Comment {
 		try {
 			await wa.login();
 			document.body.classList.add('signed-in');
-			TaoBlog.userID = TaoBlog.fn.getUserID();
-			// alert('登录成功。');
 		} catch(e) {
 			if (e instanceof DOMException && e.name == "AbortError") {
 				console.log('已取消登录。');

@@ -85,16 +85,21 @@ TaoBlog.fn._fadeOut = function(elem, callback, name) {
 	elem.classList.add(name);
 };
 
+TaoBlog.fn.parseCookies = function() {
+	return Object.fromEntries(
+	  document.cookie
+		.split('; ')
+		.map(cookie => cookie.split('=').map(decodeURIComponent))
+	);
+}
 TaoBlog.fn.getUserID = function() {
-	let matches = /taoblog\.user_id=(\d+)/.exec(document.cookie);
-	if (matches && matches.length == 2) {
-		return +matches[1];
-	}
-	return 0;
+	return +(TaoBlog.fn.parseCookies()['taoblog.user_id'] || 0);
+};
+TaoBlog.fn.getNickname = function() {
+	return TaoBlog.fn.parseCookies()['taoblog.nickname'] || '';
 };
 
-TaoBlog.userID = TaoBlog.fn.getUserID();
-if (TaoBlog.userID > 0) {
+if (TaoBlog.fn.getUserID() > 0) {
 	document.addEventListener('DOMContentLoaded', ()=>{
 		document.body.classList.add('signed-in');
 	});

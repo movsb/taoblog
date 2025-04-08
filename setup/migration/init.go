@@ -112,6 +112,7 @@ func initPosts(db *sql.DB) {
 			ID:        2,
 			CreatedAt: int64(now),
 			UpdatedAt: int64(now),
+			Nickname:  `管理员`,
 			Password:  fmt.Sprintf(`%x`, r),
 		}
 		tx.Model(&user).MustCreate()

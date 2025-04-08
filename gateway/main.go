@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"time"
@@ -80,6 +81,14 @@ func (g *Gateway) SetRSS(rss *rss.RSS) {
 	g.mc.Handle(`GET /rss`, rss, g.lastPostTimeHandler)
 }
 
+// 头像服务
+func (g *Gateway) SetAvatar(userAvatars fs.FS) {
+	task := avatar.NewTask(g.service.GetPluginStorage(`avatar`), g.service)
+	a := avatar.New(task, userAvatars)
+	g.mc.Handle(`GET /v3/avatar/{id}`, a.Ephemeral())
+	g.mc.Handle(`GET /v3/users/{id}/avatar`, a.UserID())
+}
+
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
 	mc := utils.ServeMuxChain{ServeMux: mux}
 
@@ -112,14 +121,6 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 
 		// GRPC 走 HTTP 通信。少暴露一个端口，降低架构复杂性。
 		mc.Handle(`GET /v3/grpc`, grpc_proxy.New(serverAddr))
-	}
-
-	// 使用系统帐号鉴权的部分
-	// 只能在进程内使用。
-	{
-		// 头像服务
-		task := avatar.NewTask(g.service.GetPluginStorage(`avatar`))
-		mc.Handle(`GET /v3/avatar/{id}`, avatar.New(task, g.service))
 	}
 
 	// 使用登录身份鉴权的部分

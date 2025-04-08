@@ -70,6 +70,15 @@ service Auth {
 			description: "创建用户。";
 		};
 	}
+	rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse) {
+		option (google.api.http) = {
+			patch: "/v3/users/{user.id=*}";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "更新用户。";
+		};
+	}
 	rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {
 		option (google.api.http) = {
 			get: "/v3/users";

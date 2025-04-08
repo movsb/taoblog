@@ -220,6 +220,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
+	s.initAvatar(s.Auth())
 
 	if s.initRssTasks {
 		s.initRSS()
@@ -308,6 +309,10 @@ func (s *Server) initRSS() {
 	s.rss = rss
 }
 
+func (s *Server) initAvatar(a *auth.Auth) {
+	s.gateway.SetAvatar(a.AvatarFS())
+}
+
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
 	prefix := `/admin/`
 
@@ -334,6 +339,7 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 	theService.AuthServer = auth.NewPasskeys(
 		taorm.NewDB(db), wa,
 		theAuth.GenCookieForPasskeys,
+		theAuth.DropUserCache,
 	)
 }
 

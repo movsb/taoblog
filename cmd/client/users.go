@@ -1,8 +1,10 @@
 package client
 
 import (
+	"io"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -57,6 +59,38 @@ func createUsersCommands() *cobra.Command {
 	listCmd.Flags().MarkHidden(`hidden`)
 	listCmd.Flags().Bool(`unnamed`, false, `包含未使用的`)
 	usersCmd.AddCommand(listCmd)
+
+	updateCmd := &cobra.Command{
+		Use:   `update <id>`,
+		Short: `更新用户`,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			id := utils.Must1(strconv.Atoi(args[0]))
+
+			req := &proto.UpdateUserRequest{
+				User: &proto.User{
+					Id: int64(id),
+				},
+			}
+
+			if cmd.Flags().Changed(`avatar`) {
+				path := utils.Must1(cmd.Flags().GetString(`avatar`))
+				f := utils.Must1(os.Open(path))
+				defer f.Close()
+				st := utils.Must1(f.Stat())
+				if st.Size() > 100<<10 {
+					log.Fatalln(`文件太大。`)
+				}
+				d := utils.CreateDataURL(utils.Must1(io.ReadAll(f)))
+				req.User.Avatar = d.String()
+				req.UpdateAvatar = true
+			}
+
+			utils.Must1(client.Auth.UpdateUser(client.Context(), req))
+		},
+	}
+	updateCmd.Flags().String(`avatar`, ``, `头像文件路径。`)
+	usersCmd.AddCommand(updateCmd)
 
 	return usersCmd
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/avatar/github"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/gravatar"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service"
 	"github.com/phuslu/lru"
 )
 
@@ -42,12 +45,14 @@ type Task struct {
 	keys  []CacheKey
 	store utils.PluginStorage
 	deb   *utils.Debouncer
+	impl  service.ToBeImplementedByRpc
 }
 
-func NewTask(storage utils.PluginStorage) *Task {
+func NewTask(storage utils.PluginStorage, impl service.ToBeImplementedByRpc) *Task {
 	t := &Task{
 		cache: lru.NewTTLCache[CacheKey, CacheValue](1024),
 		store: storage,
+		impl:  impl,
 	}
 	t.deb = utils.NewDebouncer(time.Second*10, t.save)
 	t.load()
@@ -195,4 +200,22 @@ func get(email string) (lastModified string, contentType string, content []byte,
 	}
 
 	return lastModified, contentType, body, nil
+}
+
+type _TaskFS struct {
+	t *Task
+}
+
+func (t _TaskFS) Open(name string) (fs.File, error) {
+	email := t.t.impl.GetCommentEmailById(utils.Must1(strconv.Atoi(name)))
+	l, _, c, found := t.t.Get(email)
+	if !found {
+		return nil, fs.ErrNotExist
+	}
+	mod, _ := time.Parse(http.TimeFormat, l)
+	return utils.NewStringFile(name, mod, c), nil
+}
+
+func (t *Task) FS() fs.FS {
+	return _TaskFS{t}
 }

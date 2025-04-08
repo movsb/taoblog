@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -32,6 +33,29 @@ type User struct {
 	GithubUserID string
 
 	Hidden bool
+
+	Avatar Avatar
+}
+
+type Avatar utils.DataURL
+
+func (a Avatar) Value() (driver.Value, error) {
+	return utils.DataURL(a).String(), nil
+}
+func (a *Avatar) Scan(v any) error {
+	var d []byte
+	switch val := v.(type) {
+	case string:
+		d = []byte(val)
+	case []byte:
+		d = val
+	}
+	if len(d) == 0 {
+		return nil
+	}
+	u, err := utils.ParseDataURL(string(d))
+	*a = Avatar(*u)
+	return err
 }
 
 type Credentials []webauthn.Credential

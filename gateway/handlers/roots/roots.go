@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// TODO 改成 utils.StringFile
 type File struct {
 	Path string `json:"path" yaml:"path"`
 	Time int64  `json:"time" yaml:"time"`

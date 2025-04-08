@@ -540,3 +540,7 @@ func v40(tx *sql.Tx) {
 func v41(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE users ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0")
 }
+
+func v42(tx *sql.Tx) {
+	mustExec(tx, "ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT ''")
+}
