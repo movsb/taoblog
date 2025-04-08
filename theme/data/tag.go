@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service"
 )
 
 // TagData ...
@@ -14,7 +14,7 @@ type TagData struct {
 }
 
 // NewDataForTag ...
-func NewDataForTag(ctx context.Context, service proto.TaoBlogServer, tags []string) *Data {
+func NewDataForTag(ctx context.Context, service service.ToBeImplementedByRpc, tags []string) *Data {
 	d := &Data{
 		Context: ctx,
 		User:    auth.Context(ctx).User,
@@ -22,16 +22,11 @@ func NewDataForTag(ctx context.Context, service proto.TaoBlogServer, tags []stri
 	td := &TagData{
 		Names: tags,
 	}
-	posts, err := service.GetPostsByTags(ctx,
-		&proto.GetPostsByTagsRequest{
-			Tags:     tags,
-			WithLink: proto.LinkKind_LinkKindRooted,
-		},
-	)
+	posts, err := service.GetPostsByTags(ctx, tags)
 	if err != nil {
 		panic(err)
 	}
-	for _, p := range posts.Posts {
+	for _, p := range posts {
 		pp := newPost(p)
 		td.Posts = append(td.Posts, pp)
 	}

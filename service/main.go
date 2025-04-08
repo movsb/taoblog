@@ -46,6 +46,7 @@ type ToBeImplementedByRpc interface {
 	Config() *config.Config
 	IncrementViewCount(m map[int]int)
 	GetCommentEmailById(id int) string
+	GetPostsByTags(ctx context.Context, tagNames []string) ([]*proto.Post, error)
 }
 
 // Service implements IServer.

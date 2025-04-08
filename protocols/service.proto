@@ -227,14 +227,6 @@ service TaoBlog {
 			description: "是否公开文章。";
 		};
 	}
-	rpc GetPostsByTags(GetPostsByTagsRequest) returns (GetPostsByTagsResponse) {
-		option (google.api.http) = {
-			get: "/v3/posts:tags";
-		};
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "根据标签列表获取全部的相关文章。";
-		};
-	}
 	rpc PreviewPost (PreviewPostRequest) returns (PreviewPostResponse) {
 		option (google.api.http) = {
 			post: "/v3/posts:preview";

@@ -351,7 +351,7 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
-	d := data.NewDataForTag(req.Context(), t.service, tags)
+	d := data.NewDataForTag(req.Context(), t.impl, tags)
 	t.executeTemplate(`tag.html`, w, d)
 }
 

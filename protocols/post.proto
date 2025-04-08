@@ -196,15 +196,6 @@ message SetPostStatusResponse {
 
 }
 
-message GetPostsByTagsRequest {
-	repeated string tags = 1;
-	PostContentOptions content_options = 2;
-	LinkKind with_link = 3;
-}
-message GetPostsByTagsResponse {
-	repeated Post posts = 1;
-}
-
 message PreviewPostRequest {
 	int32 id = 1;
 	string markdown = 2;

@@ -403,11 +403,11 @@ func (s *Service) IncrementViewCount(m map[int]int) {
 	})
 }
 
-// GetPostsByTags gets tag posts.
-func (s *Service) GetPostsByTags(ctx context.Context, req *proto.GetPostsByTagsRequest) (*proto.GetPostsByTagsResponse, error) {
+// 只能获取公开的或自己创建的。
+func (s *Service) GetPostsByTags(ctx context.Context, tagNames []string) ([]*proto.Post, error) {
 	ac := auth.Context(ctx)
 	var ids []int64
-	for _, tag := range req.Tags {
+	for _, tag := range tagNames {
 		t := s.GetTagByName(tag)
 		ids = append(ids, t.ID)
 	}
@@ -417,19 +417,11 @@ func (s *Service) GetPostsByTags(ctx context.Context, req *proto.GetPostsByTagsR
 		Where("posts.id=post_tags.post_id").
 		Where("post_tags.tag_id in (?)", tagIDs).
 		WhereIf(ac.User.IsGuest(), `posts.status='public'`).
+		WhereIf(!ac.User.IsGuest(), `posts.status=? OR posts.user_id=?`, models.PostStatusPublic, ac.User.ID).
 		GroupBy(`posts.id`).
 		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
-	outs, err := posts.ToProto(s.setPostExtraFields(ctx, req.ContentOptions))
-	if err != nil {
-		return nil, err
-	}
-	if req.WithLink != proto.LinkKind_LinkKindNone {
-		for _, p := range outs {
-			s.setPostLink(p, req.WithLink)
-		}
-	}
-	return &proto.GetPostsByTagsResponse{Posts: outs}, nil
+	return posts.ToProto(s.setPostExtraFields(ctx, &co.CO{}))
 }
 
 func (s *Service) getPageParentID(parents string) int64 {
@@ -471,6 +463,7 @@ func (s *Service) getPageParentID(parents string) int64 {
 
 // TODO cache
 // TODO 添加权限测试
+// 只能获取公开的或自己创建的。
 func (s *Service) getRelatedPosts(ctx context.Context, id int64) ([]*proto.Post, error) {
 	ac := auth.Context(ctx)
 
@@ -489,7 +482,8 @@ func (s *Service) getRelatedPosts(ctx context.Context, id int64) ([]*proto.Post,
 		Where("post_tags.post_id != ?", id).
 		Where("posts.id = post_tags.post_id").
 		Where("post_tags.tag_id IN (?)", tagIDs).
-		WhereIf(!(ac.User.IsAdmin() || ac.User.IsSystem()), `posts.status = 'public'`).
+		WhereIf(ac.User.IsGuest(), `posts.status=?`, models.PostStatusPublic).
+		WhereIf(!ac.User.IsGuest(), `posts.status=? OR posts.user_id=?`, models.PostStatusPublic, ac.User.ID).
 		GroupBy("posts.id").
 		OrderBy("relevance DESC").
 		Limit(9).
