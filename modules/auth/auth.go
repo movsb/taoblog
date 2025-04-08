@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
@@ -22,6 +23,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
+	"github.com/phuslu/lru"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -29,6 +31,8 @@ type Auth struct {
 	db *taorm.DB
 
 	cfg config.AuthConfig
+
+	userCache *lru.TTLCache[int, *models.User]
 }
 
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
@@ -36,6 +40,8 @@ func New(cfg config.AuthConfig, db *taorm.DB) *Auth {
 	a := Auth{
 		db:  db,
 		cfg: cfg,
+
+		userCache: lru.NewTTLCache[int, *models.User](16),
 	}
 	return &a
 }
@@ -55,11 +61,15 @@ func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) 
 		return system.User, nil
 	}
 
-	var user models.User
-	if err := o.getDB(ctx).Where(`id=?`, id).Find(&user); err != nil {
-		return nil, fmt.Errorf(`GetUserByID: %w`, err)
-	}
-	return &user, nil
+	user, err, _ := o.userCache.GetOrLoad(ctx, int(id), func(ctx context.Context, i int) (*models.User, time.Duration, error) {
+		var user models.User
+		if err := o.getDB(ctx).Where(`id=?`, id).Find(&user); err != nil {
+			return nil, 0, fmt.Errorf(`GetUserByID: %w`, err)
+		}
+		return &user, time.Minute * 10, nil
+	})
+
+	return user, err
 }
 
 func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
@@ -73,9 +83,10 @@ func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
 	} else {
 		user.Credentials = append(user.Credentials, *cred)
 	}
-	o.db.Model(user.User).Where(`id=?`, user.ID).MustUpdateMap(taorm.M{
+	o.getDB(context.Background()).Model(user.User).Where(`id=?`, user.ID).MustUpdateMap(taorm.M{
 		`credentials`: user.Credentials,
 	})
+	o.userCache.Delete(int(user.ID))
 }
 
 func login(username, password string) string {

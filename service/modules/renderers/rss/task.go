@@ -122,6 +122,8 @@ func (t *Task) GetLatestPosts(postID int, urls []string) []*PostData {
 }
 
 func (t *Task) refresh(ctx context.Context) {
+	// 防止测试环境经常刷新。
+	time.Sleep(time.Minute * 15)
 	t.doRefresh(ctx)
 	for {
 		select {
