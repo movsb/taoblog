@@ -503,6 +503,7 @@ formUI.submit(async (done) => {
 			source: formUI.source,
 			metas: p.metas,
 		}, formUI.usersForRequest);
+		formUI._contentChanged = false;
 		window.location = `/${post.id}/`;
 	} catch(e) {
 		alert(e);
