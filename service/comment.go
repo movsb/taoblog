@@ -260,7 +260,7 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 
 	// TODO ensure that fields must include root etc to be used later.
 	// TODO verify fields that are sanitized.
-	stmt := s.tdb.Select(`comments.*`)
+	stmt := s.tdb.Select(`distinct comments.*`)
 	stmt.WhereIf(in.PostId > 0, "post_id=?", in.PostId)
 	stmt.Limit(in.Limit).Offset(in.Offset).OrderBy(in.OrderBy)
 	if ac.User.IsGuest() {
