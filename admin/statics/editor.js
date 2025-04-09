@@ -78,17 +78,6 @@ class PostFormUI {
 				editor: this.editor,
 				commands: [
 					{
-						name: `divider`,
-						title: `插入当时时间分割线`,
-						innerHTML: `✂️ 插入分隔符`,
-						action: editor => {
-							const date = new Date();
-							let formatted = date.toLocaleString().replaceAll('/', '-');
-							formatted = `\n--- ${formatted} ---\n\n`;
-							editor.paste(formatted);
-						},
-					},
-					{
 						name: `insertImage`,
 						title: `上传图片/视频/文件`,
 						innerHTML: `⏫ 上传文件`,
@@ -112,6 +101,22 @@ class PostFormUI {
 						innerHTML: `☑️ 插入任务`,
 						action: editor => {
 							editor.paste('- [ ] ');
+						},
+					},
+					{
+						name: `blockquote`,
+						title: `切换选中文本为块引用`,
+						innerHTML: `➡️ 插入块引用`,
+					},
+					{
+						name: `divider`,
+						title: `插入当时时间分割线`,
+						innerHTML: `✂️ 插入分隔符`,
+						action: editor => {
+							const date = new Date();
+							let formatted = date.toLocaleString().replaceAll('/', '-');
+							formatted = `\n--- ${formatted} ---\n\n`;
+							editor.paste(formatted);
 						},
 					},
 				],
