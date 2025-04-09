@@ -23,9 +23,11 @@ import (
 )
 
 func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceType, source string, postID int64, co *proto.PostContentOptions) (string, error) {
+	ac := auth.Context(ctx)
 	key := _PostContentCacheKey{
 		ID:      id,
 		Options: co.String(),
+		UserID:  int(ac.User.ID),
 	}
 	content, err, _ := s.commentContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {

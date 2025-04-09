@@ -43,8 +43,11 @@ type _PostContentCacheKey struct {
 	// 除开最基本的文章编号和渲染选项的不同之外，
 	// 可能还有其它的 Vary 特性，比如：如果同一篇文章，管理员和访客看到的内容不一样（角色），
 	// 这部分就属于 Vary 应该标记出来的。暂时不使用相关标记。只是备用。
-	// TODO 由于增加了用户系统，不同用于看不同用户的文章时应该有不同的缓存。
 	Vary struct{}
+
+	// NOTE 由于增加了用户系统，不同用于看不同用户的文章时应该有不同的缓存。
+	// 见隔离测试：TestIsolatedPostCache
+	UserID int
 }
 
 func (s *Service) posts() *taorm.Stmt {
@@ -288,9 +291,11 @@ func (f _OpenPostFile) Open(name string) (fs.File, error) {
 }
 
 func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
+	ac := auth.Context(ctx)
 	key := _PostContentCacheKey{
 		ID:      id,
 		Options: co.String(),
+		UserID:  int(ac.User.ID),
 	}
 	content, err, _ := s.postContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
@@ -564,6 +569,11 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		return nil, status.Error(codes.InvalidArgument, `页面必须要有路径名（slug）。`)
 	}
 
+	if p.SourceType == `` {
+		in.SourceType = `markdown`
+		p.SourceType = in.SourceType
+	}
+
 	title, hashtags, err := s.parsePostDerived(in.SourceType, in.Source)
 	if err != nil {
 		return nil, err
@@ -797,7 +807,7 @@ func (s *Service) parsePostDerived(sourceType, source string) (string, []string,
 			hashtags.New(s.hashtagResolver, &tags),
 		)
 	default:
-		return "", nil, status.Error(codes.InvalidArgument, "no renderer was found")
+		return "", nil, status.Errorf(codes.InvalidArgument, "no renderer was found for: %q", sourceType)
 	}
 	_, err := tr.Render(source)
 	if err != nil {

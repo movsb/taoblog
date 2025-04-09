@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -369,5 +370,53 @@ func TestRSS(t *testing.T) {
 		if buf.String() != expectedOutput {
 			t.Fatalf("RSS 输出不相等：\ngot:%s\nwant:%s\n", buf.String(), expectedOutput)
 		}
+	}
+}
+
+// 测试文章缓存权限的隔离。
+// 案例：一篇公开的文章引用（通过page-link）了一篇私有文章。
+//
+//	那么，作者应该可见引用名，访客则不可见。
+//
+// TODO 评论区登录后没有动态刷新。
+func TestIsolatedPostCache(t *testing.T) {
+	r := Serve(context.Background())
+	privatePost := utils.Must1(r.client.Blog.CreatePost(r.user1,
+		&proto.Post{
+			Status: models.PostStatusPrivate,
+			Title:  `PRIVATE`,
+			Source: `123`,
+		},
+	))
+	publicPost := utils.Must1(r.client.Blog.CreatePost(r.user1,
+		&proto.Post{
+			Status: models.PostStatusPublic,
+			Title:  `PUBLIC`,
+			Source: fmt.Sprintf(`[[%d]]`, privatePost.Id),
+		},
+	))
+
+	// TODO 应该 GET /ID/ 来判断，而不是 API，否则不够 E2E
+	rendered := utils.Must1(r.client.Blog.GetPost(r.user1,
+		&proto.GetPostRequest{
+			Id: int32(publicPost.Id),
+			ContentOptions: &proto.PostContentOptions{
+				WithContent: true,
+			},
+		},
+	))
+	if !strings.Contains(rendered.Content, `PRIVATE`) {
+		panic(`user1 不可见？`)
+	}
+	rendered = utils.Must1(r.client.Blog.GetPost(r.user2,
+		&proto.GetPostRequest{
+			Id: int32(publicPost.Id),
+			ContentOptions: &proto.PostContentOptions{
+				WithContent: true,
+			},
+		},
+	))
+	if strings.Contains(rendered.Content, `PRIVATE`) {
+		panic(`user2 可见？`)
 	}
 }
