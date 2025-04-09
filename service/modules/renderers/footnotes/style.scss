@@ -6,13 +6,24 @@
 }
 
 sup:has(>.footnote-ref) {
-	margin: 0 .3em;
+	color: var(--a-fg);
+	font-family: monospace;
+	font-weight: normal;
+	font-size: 80%;
+	// margin-left: .3em;
+	&::before {
+		content: "[";
+	}
+	&::after {
+		content: "]";
+	}
 }
 
 .footnotes {
 	font-size: 80%;
 	ol {
 		list-style-type: square-enclosed;
+		padding-left: 30px;
 	}
 	li {
 		&::marker {
