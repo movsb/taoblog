@@ -626,6 +626,8 @@ class Comment {
 			}
 		}
 
+		const isAuthor = cmt.user_id == TaoBlog.posts[+TaoBlog.post_id].user_id;
+
 		let html = `
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
@@ -634,7 +636,7 @@ class Comment {
 		</a>
 	</div>
 	<div class="comment-meta">
-		<span class="${cmt.user_id > 0 ? "author" : "nickname"}">${h2t(cmt.author)}</span>
+		<span class="nickname${isAuthor ? " author" : ""}">${h2t(cmt.author)}</span>
 		${urlContent}
 		<time class="date" datetime="${date.toJSON()}" data-timezone="${date.zone}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
 	</div>

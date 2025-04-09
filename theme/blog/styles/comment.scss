@@ -115,11 +115,11 @@ body.signed-in {
 	a {
 		color: inherit;
 	}
-	.nickname, .author {
+	.nickname {
 		font-weight: bold;
-	}
-	.author::after {
-		content: "[作者]";
+		&.author::after {
+			content: "[作者]";
+		}
 	}
 	.date, .home {
 		margin-left: 0.2em;

@@ -19,6 +19,11 @@ ul, ol {
 				// 但感觉也只是按当前字体大小凑巧的写法。
 				margin-left: -21.5px;
 			}
+			// 复选框和文字看起来有点没有水平对齐。
+			> input[type=checkbox] {
+				position: relative;
+				top: 1.5px;
+			}
 		}
 	}
 }

@@ -129,6 +129,7 @@ func (d *Data) Strip(obj any) (any, error) {
 			Id:       typed.Id,
 			Date:     typed.Date,
 			Modified: typed.Modified,
+			UserId:   typed.UserId,
 		}, nil
 	}
 	return "", fmt.Errorf(`不知道如何列集：%v`, reflect.TypeOf(obj).String())
