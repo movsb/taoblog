@@ -31,7 +31,7 @@ func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceT
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			// NOTE：带缓存的，默认认识总是安全的
 			// TODO：用户的评论不应该渲染 #hashtags，好像没有意义。
-			content, err := s.renderMarkdown(true, postID, id, sourceType, source, models.PostMeta{}, co)
+			content, err := s.renderMarkdown(ctx, true, postID, id, sourceType, source, models.PostMeta{}, co)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -211,7 +211,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 			}
 			// NOTE：管理员如果修改用户评论后如果带 HTML，则用户无法再提交保存。
 			// 是不是应该限制下呢？
-			if _, err := s.renderMarkdown(ac.User.IsAdmin(), cmtOld.PostID, comment.ID, req.Comment.SourceType, req.Comment.Source, models.PostMeta{}, co.For(co.UpdateCommentCheck)); err != nil {
+			if _, err := s.renderMarkdown(ctx, ac.User.IsAdmin(), cmtOld.PostID, comment.ID, req.Comment.SourceType, req.Comment.Source, models.PostMeta{}, co.For(co.UpdateCommentCheck)); err != nil {
 				return nil, err
 			}
 		}
@@ -464,7 +464,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	}
 
 	if c.SourceType == `markdown` {
-		if _, err := s.renderMarkdown(ac.User.IsAdmin(), c.PostID, 0, c.SourceType, c.Source, models.PostMeta{}, co.For(co.CreateCommentCheck)); err != nil {
+		if _, err := s.renderMarkdown(ctx, ac.User.IsAdmin(), c.PostID, 0, c.SourceType, c.Source, models.PostMeta{}, co.For(co.CreateCommentCheck)); err != nil {
 			return nil, err
 		}
 	}
@@ -536,7 +536,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPost
 
 func (s *Service) PreviewComment(ctx context.Context, in *proto.PreviewCommentRequest) (*proto.PreviewCommentResponse, error) {
 	ac := auth.Context(ctx)
-	content, err := s.renderMarkdown(ac.User.IsAdmin(), int64(in.PostId), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewComment))
+	content, err := s.renderMarkdown(ctx, ac.User.IsAdmin(), int64(in.PostId), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewComment))
 	return &proto.PreviewCommentResponse{Html: content}, err
 }
 

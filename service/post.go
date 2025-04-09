@@ -296,7 +296,7 @@ func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			var p models.Post
 			s.posts().Where("id = ?", id).MustFind(&p)
-			content, err := s.renderMarkdown(true, id, 0, p.SourceType, p.Source, p.Metas, co)
+			content, err := s.renderMarkdown(ctx, true, id, 0, p.SourceType, p.Source, p.Metas, co)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -829,7 +829,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	auth.MustNotBeGuest(ctx)
 
-	content, err := s.renderMarkdown(true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
+	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.CreatePost))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

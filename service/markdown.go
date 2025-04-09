@@ -30,6 +30,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	"github.com/movsb/taoblog/service/modules/renderers/page_link"
 	"github.com/movsb/taoblog/service/modules/renderers/pikchr"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
@@ -50,7 +51,7 @@ import (
 //
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
 // 前者用请求身份，后者不限身份。
-func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
+func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
 	var tr renderers.Renderer
 	switch sourceType {
 	case `html`:
@@ -119,6 +120,14 @@ func (s *Service) renderMarkdown(secure bool, postId, commentId int64, sourceTyp
 		extension.GFM,
 		footnotes.New(),
 		alerts.New(),
+
+		page_link.New(ctx, func(ctx context.Context, id int) (string, error) {
+			post, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
+			if err != nil {
+				return ``, fmt.Errorf(`page_link: %w`, err)
+			}
+			return post.Title, nil
+		}),
 
 		renderers.WithFencedCodeBlockRenderer(`friends`, friends.New(s.friendsTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
