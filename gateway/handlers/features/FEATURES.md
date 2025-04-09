@@ -30,6 +30,7 @@
       * 同时支持日间/夜间主题，自动切换
      * GraphViz
      * 族谱图
+     * Apache ECharts
 **** HTML
 *** 渲染
 **** 延迟加载

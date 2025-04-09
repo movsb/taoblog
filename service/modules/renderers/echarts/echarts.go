@@ -5,6 +5,7 @@ package echarts
 import (
 	"context"
 	"embed"
+	"fmt"
 	"io"
 	"sync"
 
@@ -33,7 +34,12 @@ func New() gold_utils.FencedCodeBlockRenderer {
 }
 
 func (e *_ECharts) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.Attributes, source []byte) error {
-	svg, err := render(context.Background(), string(source))
+	var (
+		width  = gold_utils.AttrIntOrDefault(attrs, `width`, 800)
+		height = gold_utils.AttrIntOrDefault(attrs, `height`, 500)
+	)
+
+	svg, err := render(context.Background(), string(source), width, height)
 	if err != nil {
 		return err
 	}
@@ -42,25 +48,25 @@ func (e *_ECharts) RenderFencedCodeBlock(w io.Writer, language string, attrs par
 }
 
 // https://echarts.apache.org/handbook/zh/how-to/cross-platform/server
-func render(ctx context.Context, option string) (string, error) {
-	script := `
+func render(ctx context.Context, option string, width, height int) (string, error) {
+	script := fmt.Sprintf(`
 (function() {
-let option;
-` + option + `
+%s
 let chart = echarts.init(null,null, {
 	renderer: 'svg',
 	ssr: true,
-	width: 800,
-	height: 500,
+	width: %d,
+	height: %d,
 });
-chart.setOption(option);
+typeof option != 'undefined' && chart.setOption(option);
 return chart.renderToSVGString();
 })();
-`
+`, option, width, height)
 
 	val, err := runtime().Execute(ctx, script)
 	if err != nil {
 		return ``, err
 	}
+
 	return val.Export().(string), nil
 }

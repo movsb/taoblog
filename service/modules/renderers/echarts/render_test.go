@@ -6,5 +6,5 @@ import (
 )
 
 func TestRender(t *testing.T) {
-	t.Log(render(context.Background(), `let option = {};`))
+	t.Log(render(context.Background(), `let option = {};`, 220, 220))
 }

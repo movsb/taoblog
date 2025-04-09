@@ -10,6 +10,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/parser"
 )
 
 type NodeFilter func(node *goquery.Selection) bool
@@ -142,4 +143,13 @@ func ApplyHtmlTransformers(raw []byte, trs ...HtmlTransformer) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func AttrIntOrDefault(attrs parser.Attributes, name string, def int) int {
+	if a, ok := attrs.Find([]byte(name)); ok {
+		if i, ok := a.(float64); ok {
+			return int(i)
+		}
+	}
+	return def
 }
