@@ -12,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/alerts"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
+	"github.com/movsb/taoblog/service/modules/renderers/echarts"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/footnotes"
@@ -149,6 +150,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		renderers.WithFencedCodeBlockRenderer(`dot`, graph_viz.New()),
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),
 		renderers.WithFencedCodeBlockRenderer(`rss`, rss.New(s.rssTask, int(postId))),
+		renderers.WithFencedCodeBlockRenderer(`echarts`, echarts.New()),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
