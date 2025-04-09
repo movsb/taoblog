@@ -3,6 +3,9 @@ svg.pikchr {
 	padding: 1em !important;
 	box-sizing: border-box;
 
+	// 自带的 font-size: initial; 会显示很奇怪。
+	font-size: unset !important;
+
 	// 不加会有奇怪的 margin-bottom，不知道哪里来的
 	display: block;
 

@@ -277,6 +277,101 @@ spline same from .4cm below start of previous <->
 text "Examples Of Pikchr Objects" big bold  at .8cm above north of AllObjects
 ```
 
+<!-- https://sqlite.org/docsrc/file?name=art/syntax/create-table-stmt.pikchr&ci=tip&txt=1 -->
+
+```pikchr
+     linerad = 10px
+     linewid *= 0.5
+     $h = 0.21
+
+     circle radius 10%
+A0:  arrow 2*arrowht
+CR:  oval "CREATE" fit
+T1:  oval "TEMP" fit with .w at (linewid right of CR.e,.8*$h below CR)
+T2:  oval "TEMPORARY" fit with .w at 1.25*$h below T1.w
+TBL: oval "TABLE" fit with .w at (linewid right of T2.e,CR)
+     arrow from CR.e right even with T2; arrow to TBL.w
+     arrow from CR.e right linerad then down even with T1 then to T1.w
+     arrow from CR.e right linerad then down even with T2 then to T2.w
+     line from T2.e right linerad then up even with TBL \
+        then to arrowht left of TBL.w
+     line from T1.e right even with linerad right of T2.e then up linerad
+     arrow from TBL.e right
+     oval "IF" fit
+     arrow right 2*arrowht
+     oval "NOT" fit
+     arrow 2*arrowht
+ETS: oval "EXISTS" fit
+
+     # IF NOT EXISTS bypass
+Y1:  .5*$h below T2.s  # vertical position of back-arrow
+     arrow from TBL.e right linerad then down even with Y1 then left even with T2
+     arrow from ETS.e right linerad then down even with Y1 \
+        then left even with ETS.w
+     line left even with TBL.w
+
+     # second row
+     arrow left even with first circle then down $h*1.25 then right 2*arrowht
+SN:  oval "schema-name" fit
+     arrow 2*arrowht
+DOT: oval "." bold fit
+     arrow
+TN:  oval "table-name" fit
+
+     # schema-name bypass
+     arrow from (first circle,SN.n) down even with $h below SN \
+       then right even with SN
+     line right even with arrowht right of DOT.e then up even with DOT \
+        then right linerad
+
+     # Loop back from table-name 
+     arrow from TN.e right linerad then down even with DOT.s-(0,2*$h) \
+       then left even with DOT
+
+     # third row
+     arrow left even with first circle then down $h*1.25 then right 2*arrowht
+LP:  oval "(" bold fit
+     arrow
+CD:  box "column-def" fit
+TC:  box "table-constraint" fit with .w at CD.e+(1.5*linewid,-1.25*$h)
+     arrow <- from TC.e right 1.5*arrowht
+C2:  oval "," bold fit
+RP:  oval ")" bold fit at (2*linewid right of C2,LP)
+     arrow from RP.e right 3*arrowht
+TO:  box "table-options" fit
+
+     # column-def loop
+C1:  oval "," bold fit at 1.25*$h below CD
+     arrow from CD.e right linerad then down even with C1 then to C1.e
+     line from C1.w left even with 2*arrowht left of CD.w then up even with CD \
+       then to arrowht left of CD.w
+
+     # table-constraint bypass
+     arrow from CD.e right
+     arrow to RP.w
+
+     # table-constraint loop
+     arrow from (C2.e,RP) right 2*arrowht then down even with C2 then to C2.e
+     line from TC.w left linerad then up even with RP then right 2*arrowht
+
+     # exit circle and table-options bypass
+     arrow from RP.e right linerad then up 1.5*$h then right even with TO.n
+     arrow right even with TO.e then right 3*arrowht
+EC:  circle same
+
+     # table-options exit
+     arrow from TO.e right linerad then up 1.5*$h then right even with EC.w
+
+     # AS select clause
+     arrow from TN.e right 250%
+     oval "AS" fit
+     arrow 2*arrowht
+     box "select-stmt" fit
+     arrow right
+     line right even with linerad right of TO.e then down even with last circle \
+        then right linerad
+```
+
 ### GraphViz
 
 ```dot
