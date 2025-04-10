@@ -96,7 +96,6 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 	options = append(options,
 		media_size.New(s.OpenAsset(postId),
 			media_size.WithLocalOnly(),
-			media_size.WithDimensionLimiter(350),
 			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
 		),
 		image.New(func(path string) (name string, url string, description string, found bool) {

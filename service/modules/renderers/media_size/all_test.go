@@ -19,14 +19,13 @@ func TestRender(t *testing.T) {
 	}{
 		{
 			Markdown: `<iframe width=560 height=315></iframe>`,
-			HTML:     `<iframe width="560" height="315" style="aspect-ratio:16/9;" class="landscape  too-wide"></iframe>`,
+			HTML:     `<iframe width="560" height="315" style="aspect-ratio: 1.777778;"></iframe>`,
 		},
 	}
 
 	for i, tc := range testCases {
 		ext := media_size.New(
 			gold_utils.NewWebFileSystem(os.DirFS(`test_data`), utils.Must1(url.Parse(`/`))),
-			media_size.WithDimensionLimiter(350),
 		)
 		md := renderers.NewMarkdown(ext)
 		html, err := md.Render(tc.Markdown)

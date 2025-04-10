@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	urlpkg "net/url"
 	"strconv"
 	"strings"
@@ -23,7 +22,6 @@ type MediaSize struct {
 	web gold_utils.WebFileSystem
 
 	localOnly bool
-	sizeLimit int
 	filter    gold_utils.NodeFilter
 }
 
@@ -32,13 +30,6 @@ type Option func(*MediaSize)
 func WithLocalOnly() Option {
 	return func(ms *MediaSize) {
 		ms.localOnly = true
-	}
-}
-
-// 图片/视频/大小限制器。
-func WithDimensionLimiter(size int) Option {
-	return func(ms *MediaSize) {
-		ms.sizeLimit = size
 	}
 }
 
@@ -52,7 +43,8 @@ func WithNodeFilter(f gold_utils.NodeFilter) Option {
 // NOTE: 本地文件直接用相对路径指定，不要用 file://。
 func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
 	ms := &MediaSize{
-		web: web,
+		web:    web,
+		filter: func(node *goquery.Selection) bool { return true },
 	}
 	for _, opt := range options {
 		opt(ms)
@@ -62,9 +54,6 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
 
 func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`img`).FilterFunction(func(i int, s *goquery.Selection) bool {
-		if ms.filter == nil {
-			return true
-		}
 		return ms.filter(s)
 	}).Each(func(i int, s *goquery.Selection) {
 		url := s.AttrOr(`src`, ``)
@@ -88,6 +77,14 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		if n, err := strconv.ParseFloat(q.Get(`s`), 64); err == nil && n > 0 {
 			scale = n
 			q.Del(`s`)
+		}
+		if q.Has(`cover`) {
+			cover := `300px`
+			n := utils.DropLast1(strconv.Atoi(q.Get(`cover`)))
+			if n > 0 {
+				cover = fmt.Sprintf(`%dpx`, n)
+			}
+			gold_utils.AddStyle(s, fmt.Sprintf(`object-fit: cover; aspect-ratio: 1; width: %s`, cover))
 		}
 		parsedURL.RawQuery = q.Encode()
 		s.SetAttr(`src`, parsedURL.String())
@@ -117,10 +114,11 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		s.SetAttr(`width`, fmt.Sprint(w))
 		s.SetAttr(`height`, fmt.Sprint(h))
 
-		limit(s, ms.sizeLimit, w, h)
+		// aspect-ratio 对图片无效。
 	})
 	doc.Find(`svg`).Each(func(i int, s *goquery.Selection) {
 		buf := bytes.NewBuffer(nil)
+		// TODO 这里效率可能有点低，直接检测根元素即可。
 		goquery.Render(buf, s)
 		md, err := svg(buf)
 		if err != nil {
@@ -133,10 +131,9 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		if _, ok := s.Attr(`height`); !ok {
 			s.SetAttr(`height`, fmt.Sprintf(`%d`, md.Height))
 		}
-		var width, height int
-		fmt.Sscanf(s.AttrOr(`width`, `0`), "%d", &width)
-		fmt.Sscanf(s.AttrOr(`height`, `0`), "%d", &height)
-		limit(s, ms.sizeLimit, width, height)
+
+		// aspect-ratio 对 svg 无效。
+		// 它是响应式的。
 	})
 	doc.Find(`iframe`).Each(func(i int, s *goquery.Selection) {
 		// 目前只能处理这种大小：<iframe width="560" height="315" ...
@@ -145,44 +142,17 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		if width <= 0 || height <= 0 {
 			return
 		}
-		style := s.AttrOr(`style`, ``)
-		style += `aspect-ratio:` + ratio(width, height)
-		s.SetAttr(`style`, style)
-		limit(s, ms.sizeLimit, width, height)
+		gold_utils.AddStyle(s, ratio(width, height))
 	})
 	return nil
 }
 
 func ratio(width, height int) string {
-	// 欧几里德法求最大公约数
-	gcd := func(a, b int) int {
-		for b != 0 {
-			a, b = b, a%b
-		}
-		return a
-	}(width, height)
-	return fmt.Sprintf(`%d/%d;`, width/gcd, height/gcd)
-}
-
-func limit(s *goquery.Selection, limit, width, height int) {
-	if limit > 0 {
-		// == 的情况也一起处理了。
-		if width >= height {
-			s.AddClass(`landscape`)
-			if width > limit {
-				s.AddClass(`too-wide`)
-			}
-		} else {
-			s.AddClass(`portrait`)
-			if height > limit {
-				s.AddClass(`too-high`)
-			}
-		}
-	}
+	return fmt.Sprintf(`aspect-ratio: %.6f;`, float32(width)/float32(height))
 }
 
 // root: 如果 url 是相对路径，用于指定根文件系统。
-func size(fs gold_utils.WebFileSystem, parsedURL *url.URL, localOnly bool) (*Metadata, error) {
+func size(fs gold_utils.WebFileSystem, parsedURL *urlpkg.URL, localOnly bool) (*Metadata, error) {
 	if (parsedURL.Scheme != "" || parsedURL.Host != "") && localOnly {
 		return nil, gold_utils.ErrCrossOrigin
 	}

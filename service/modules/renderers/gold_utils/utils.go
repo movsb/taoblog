@@ -13,7 +13,7 @@ import (
 	"github.com/yuin/goldmark/parser"
 )
 
-type NodeFilter func(node *goquery.Selection) bool
+type NodeFilter = func(node *goquery.Selection) bool
 
 func NegateNodeFilter(f NodeFilter) NodeFilter {
 	return func(node *goquery.Selection) bool {
@@ -152,4 +152,13 @@ func AttrIntOrDefault(attrs parser.Attributes, name string, def int) int {
 		}
 	}
 	return def
+}
+
+func AddStyle(s *goquery.Selection, style string) {
+	old := strings.TrimSpace(s.AttrOr(`style`, ``))
+	if old != `` && !strings.HasSuffix(old, `;`) {
+		old += `;`
+	}
+	old += style
+	s.SetAttr(`style`, old)
 }
