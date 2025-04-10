@@ -91,7 +91,7 @@ TaoBlog.events.add('comment', 'post', () => { update(); });
 					console.log('已取消操作。');
 					return;
 				}
-				console.log(e);
+				alert(e);
 			}
 		});
 	}

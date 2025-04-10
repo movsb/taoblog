@@ -65,6 +65,9 @@ func (e *_ECharts) RenderFencedCodeBlock(w io.Writer, language string, attrs par
 // https://echarts.apache.org/handbook/zh/how-to/cross-platform/server
 func render(ctx context.Context, option string, width, height int) (string, error) {
 	script := fmt.Sprintf(`
+// 从 ECharts 官网拷过来的示例代码没有 let 定义，为了避免重复定义或清空
+// 后图表没有重置，这里强制置空。
+(function() { option={}; })();
 (function() {
 %s
 let chart = echarts.init(null,null, {
