@@ -10,12 +10,25 @@ import (
 	"sync"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark/parser"
 )
 
-//go:embed echarts.min.js
+//go:generate sass --style compressed --no-source-map style.scss style.css
+
+func init() {
+	dynamic.RegisterInit(func() {
+		const module = `echarts`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(module, `style.css`)
+	})
+}
+
+//go:embed echarts.min.js style.css
 var _embed embed.FS
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 var runtime = sync.OnceValue(func() *Runtime {
 	rt, err := NewRuntime(context.Background(),
@@ -43,7 +56,9 @@ func (e *_ECharts) RenderFencedCodeBlock(w io.Writer, language string, attrs par
 	if err != nil {
 		return err
 	}
-	w.Write([]byte(svg))
+	// <svg ... ➡️ <svg class="echarts"
+	w.Write([]byte(`<svg class="echarts"`))
+	w.Write([]byte(svg[len(`<svg`):]))
 	return nil
 }
 

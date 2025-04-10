@@ -30,3 +30,11 @@
 		cursor: text;
 	}
 }
+
+// TODO 应该在 img 的事件绑定上加 class，
+// 因为有过滤器，不是所有图片都需要如此。
+.entry {
+	img /*, svg */{
+		cursor: zoom-in;
+	}
+}
