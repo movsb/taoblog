@@ -30,6 +30,7 @@
 <div>
 	<p><button onclick="location.href='editor?new=1'">发表文章</button></p>
 	<p><button onclick="location.href='/'">返回首页</button></p>
+	<p><button onclick="switchUser()">切换账号</button></p>
 	<p><button onclick="location.href='logout'">退出登录</button></p>
 </div>
 	
@@ -40,6 +41,19 @@ async function register() {
 	try {
 		await wa.register();
 		alert('新的通行密钥注册成功。');
+	} catch(e) {
+		if (e instanceof DOMException && e.name == "AbortError") {
+			console.log('已取消操作。');
+			return;
+		}
+		alert(e);
+	}
+}
+async function switchUser() {
+	let wa = new WebAuthn();
+	try {
+		await wa.login();
+		location.reload();
 	} catch(e) {
 		if (e instanceof DOMException && e.name == "AbortError") {
 			console.log('已取消操作。');
