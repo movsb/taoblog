@@ -321,7 +321,7 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 		panic(err)
 	}
 
-	a := admin.NewAdmin(version.DevMode(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
+	a := admin.NewAdmin(version.DevMode(), s.Gateway(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
 		admin.WithCustomThemes(&cfg.Theme),
 	)
 	log.Println(`admin on`, prefix)

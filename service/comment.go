@@ -57,34 +57,28 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 	})
 }
 
-func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
-	ac := auth.Context(ctx)
-
-	setAvatar := func(c *proto.Comment) {
-		defer func() {
-			if c.Avatar == 0 {
-				c.Avatar = s.avatarCache.Email(c.Email)
+func (s *Service) UserAvatarEphemeral(ctx context.Context, uid int, email string) uint32 {
+	if uid > 0 {
+		user, err := s.auth.GetUserByID(ctx, int64(uid))
+		if err == nil {
+			if len(user.Avatar.Data) > 0 {
+				return s.avatarCache.User(int(user.ID))
 			}
-		}()
-
-		if c.UserId > 0 {
-			user, err := s.auth.GetUserByID(ctx, int64(c.UserId))
-			if err == nil {
-				if len(user.Avatar.Data) > 0 {
-					c.Avatar = s.avatarCache.User(int(user.ID))
-					return
-				}
-				// 如果用记有邮箱，始终使用用户邮箱，而不是评论的邮箱。
-				if user.Email != `` {
-					c.Avatar = s.avatarCache.Email(user.Email)
-					return
-				}
+			// 如果用记有邮箱，始终使用用户邮箱，而不是评论的邮箱。
+			if user.Email != `` {
+				return s.avatarCache.Email(user.Email)
 			}
 		}
 	}
 
+	return s.avatarCache.Email(email)
+}
+
+func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
+	ac := auth.Context(ctx)
+
 	return func(c *proto.Comment) {
-		setAvatar(c)
+		c.Avatar = s.UserAvatarEphemeral(ctx, int(c.UserId), c.Email)
 
 		// （同 IP 用户 & 5️⃣分钟内） 可编辑。
 		// TODO: IP：并不严格判断，比如网吧、办公室可能具有相同 IP。所以限制了时间范围。

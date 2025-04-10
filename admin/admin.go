@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -51,7 +52,8 @@ type Admin struct {
 
 	// NOTE：这是进程内直接调用的。
 	// 如果改成连接，需要考虑 metadata 转发问题。
-	svc proto.TaoBlogServer
+	svc     proto.TaoBlogServer
+	gateway *gateway.Gateway
 
 	customTheme *config.ThemeConfig
 
@@ -60,7 +62,7 @@ type Admin struct {
 	displayName string
 }
 
-func NewAdmin(devMode bool, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string, options ...Option) *Admin {
+func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
@@ -81,6 +83,7 @@ func NewAdmin(devMode bool, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix st
 		rootFS:      rootFS,
 		tmplFS:      tmplFS,
 		svc:         svc,
+		gateway:     gateway,
 		prefix:      prefix,
 		auth:        auth1,
 		displayName: displayName,
@@ -222,6 +225,7 @@ func (a *Admin) postLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 type ProfileData struct {
+	a    *Admin
 	Name string
 	User *auth.User
 }
@@ -235,8 +239,13 @@ func (d *ProfileData) PublicKeys() []string {
 	return ss
 }
 
+func (d *ProfileData) AvatarURL() string {
+	return d.a.gateway.AvatarURL(int(d.User.ID))
+}
+
 func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 	d := &ProfileData{
+		a:    a,
 		Name: a.displayName,
 		User: a.auth.AuthRequest(r),
 	}

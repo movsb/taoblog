@@ -80,6 +80,11 @@ func (g *Gateway) SetRSS(rss *rss.RSS) {
 	g.mc.Handle(`GET /rss`, rss, g.lastPostTimeHandler)
 }
 
+func (g *Gateway) AvatarURL(uid int) string {
+	e := g.service.UserAvatarEphemeral(context.TODO(), uid, "")
+	return fmt.Sprintf(`/v3/avatar/%d`, e)
+}
+
 // 头像服务
 func (g *Gateway) SetAvatar(resolve avatar.ResolveFunc) {
 	task := avatar.NewTask(g.service.GetPluginStorage(`avatar`))

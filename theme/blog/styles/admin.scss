@@ -10,6 +10,13 @@ body.admin {
 	}
 }
 
+body.admin.profile {
+	.avatar {
+		width: 120px;
+		height: 120px;
+	}
+}
+
 body.admin.login {
 	margin: 0;
 	padding: 0;
