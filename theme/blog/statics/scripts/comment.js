@@ -846,8 +846,8 @@ class Comment {
 			await wa.login();
 			document.body.classList.add('signed-in');
 		} catch(e) {
-			if (e instanceof DOMException && e.name == "AbortError") {
-				console.log('已取消登录。');
+			if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+				console.log('已取消操作。');
 				return;
 			}
 			alert(e);

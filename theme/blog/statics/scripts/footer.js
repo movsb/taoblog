@@ -78,3 +78,21 @@ update();
 TaoBlog.events.add('comment', 'post', () => { update(); });
 
 })();
+
+(function() {
+	if (TaoBlog && TaoBlog.vim) {
+		TaoBlog.vim.bind('a', async ()=>{
+			let wa = new WebAuthn();
+			try {
+				await wa.login();
+				location.reload();
+			} catch(e) {
+				if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+					console.log('已取消操作。');
+					return;
+				}
+				console.log(e);
+			}
+		});
+	}
+})();

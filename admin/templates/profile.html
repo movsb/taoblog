@@ -42,7 +42,7 @@ async function register() {
 		await wa.register();
 		alert('新的通行密钥注册成功。');
 	} catch(e) {
-		if (e instanceof DOMException && e.name == "AbortError") {
+		if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
 			console.log('已取消操作。');
 			return;
 		}
@@ -55,7 +55,7 @@ async function switchUser() {
 		await wa.login();
 		location.reload();
 	} catch(e) {
-		if (e instanceof DOMException && e.name == "AbortError") {
+		if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
 			console.log('已取消操作。');
 			return;
 		}
