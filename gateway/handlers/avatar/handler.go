@@ -1,34 +1,32 @@
 package avatar
 
 import (
-	"io/fs"
+	"bytes"
+	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
+type ResolveFunc func(id uint32) (email string, mod time.Time, file io.ReadSeekCloser)
+
 // userAvatars: 通过以邮箱作为文件名查询头像。
-func New(task *Task, userAvatars fs.FS) *_Avatar {
+func New(task *Task, resolve ResolveFunc) *_Avatar {
 	return &_Avatar{
-		task:        task,
-		userAvatars: userAvatars,
+		task:    task,
+		resolve: resolve,
 	}
 }
 
 type _Avatar struct {
-	task        *Task
-	userAvatars fs.FS
+	task    *Task
+	resolve ResolveFunc
 }
 
-func (h *_Avatar) Ephemeral() http.Handler {
-	return http.HandlerFunc(serve(h.task.FS()))
-}
-func (h *_Avatar) UserID() http.Handler {
-	return http.HandlerFunc(serve(h.userAvatars))
-}
-
-func serve(fs fs.FS) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if _, err := strconv.Atoi(r.PathValue(`id`)); err != nil {
+func (h *_Avatar) Handler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseUint(r.PathValue(`id`), 10, 64)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -37,6 +35,18 @@ func serve(fs fs.FS) func(w http.ResponseWriter, r *http.Request) {
 		// 如果失败，会被 ServeFileFS 自动删除。
 		w.Header().Set(`Cache-Control`, `max-age=604800, stale-while-revalidate=604800`)
 
-		http.ServeFileFS(w, r, fs, r.PathValue(`id`))
-	}
+		email, mod, user := h.resolve(uint32(id))
+		if email != `` {
+			l, c, found := h.task.Get(email)
+			if found {
+				http.ServeContent(w, r, `avatar`, l, bytes.NewReader(c))
+				return
+			}
+		} else if user != nil {
+			defer user.Close()
+			http.ServeContent(w, r, `avatar`, mod, user)
+			return
+		}
+		http.NotFound(w, r)
+	})
 }

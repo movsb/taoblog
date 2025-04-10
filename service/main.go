@@ -45,7 +45,6 @@ type ToBeImplementedByRpc interface {
 	GetPlainLink(ID int64) string
 	Config() *config.Config
 	IncrementViewCount(m map[int]int)
-	GetCommentEmailById(id int) string
 	GetPostsByTags(ctx context.Context, tagNames []string) ([]*proto.Post, error)
 }
 

@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,7 +19,6 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -84,32 +82,6 @@ func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) 
 	}
 
 	return user, err
-}
-
-// 通过用户ID查询头像。
-func (o *Auth) AvatarFS() fs.FS {
-	return _AvatarByID{a: o}
-}
-
-type _AvatarByID struct {
-	a *Auth
-}
-
-func (fsys _AvatarByID) Open(name string) (_ fs.File, outErr error) {
-	defer utils.CatchAsError(&outErr)
-	userID := utils.Must1(strconv.Atoi(name))
-	user, err := fsys.a.GetUserByID(context.Background(), int64(userID))
-	if err != nil {
-		if taorm.IsNotFoundError(err) {
-			// NOTE: 错误埋没了。
-			return nil, fs.ErrNotExist
-		}
-		return nil, err
-	}
-	if len(user.Avatar.Data) <= 0 {
-		return nil, fs.ErrNotExist
-	}
-	return utils.NewStringFile(name, time.Unix(user.UpdatedAt, 0), user.Avatar.Data), nil
 }
 
 func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {

@@ -130,12 +130,9 @@ class CommentAPI
 	}
 
 	// 返回头像链接。
-	avatarURLOf(ephemeralOrUserID) {
-		return ephemeralOrUserID > 0 
-		? `/v3/avatar/${ephemeralOrUserID}`
-		: `/v3/users/${-ephemeralOrUserID}/avatar`;
+	avatarURLOf(ephemeral) {
+		return `/v3/avatar/${ephemeral}`;
 	}
-	
 
 	// 删除一条评论。
 	async deleteComment(id) {

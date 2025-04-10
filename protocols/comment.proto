@@ -52,7 +52,7 @@ message Comment {
 	// 仅在 list/create 接口中返回。
 	bool can_edit = 17;
 	// 头像内部临时ID
-	int32 avatar = 18;
+	uint32 avatar = 18;
 
 	int32 modified = 19;
 

@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"net/url"
 	"time"
@@ -82,11 +81,10 @@ func (g *Gateway) SetRSS(rss *rss.RSS) {
 }
 
 // 头像服务
-func (g *Gateway) SetAvatar(userAvatars fs.FS) {
-	task := avatar.NewTask(g.service.GetPluginStorage(`avatar`), g.service)
-	a := avatar.New(task, userAvatars)
-	g.mc.Handle(`GET /v3/avatar/{id}`, a.Ephemeral())
-	g.mc.Handle(`GET /v3/users/{id}/avatar`, a.UserID())
+func (g *Gateway) SetAvatar(resolve avatar.ResolveFunc) {
+	task := avatar.NewTask(g.service.GetPluginStorage(`avatar`))
+	a := avatar.New(task, resolve)
+	g.mc.Handle(`GET /v3/avatar/{id}`, a.Handler())
 }
 
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {

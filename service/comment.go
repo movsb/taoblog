@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"strings"
@@ -59,19 +61,23 @@ func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostConte
 	ac := auth.Context(ctx)
 
 	setAvatar := func(c *proto.Comment) {
-		// 默认值。
-		c.Avatar = int32(s.avatarCache.ID(c.Email))
+		defer func() {
+			if c.Avatar == 0 {
+				c.Avatar = s.avatarCache.Email(c.Email)
+			}
+		}()
 
-		// 从用户资料取。
 		if c.UserId > 0 {
 			user, err := s.auth.GetUserByID(ctx, int64(c.UserId))
 			if err == nil {
 				if len(user.Avatar.Data) > 0 {
-					c.Avatar = -int32(user.ID)
+					c.Avatar = s.avatarCache.User(int(user.ID))
 					return
 				}
+				// 如果用记有邮箱，始终使用用户邮箱，而不是评论的邮箱。
 				if user.Email != `` {
-					c.Avatar = int32(s.avatarCache.ID(user.Email))
+					c.Avatar = s.avatarCache.Email(user.Email)
+					return
 				}
 			}
 		}
@@ -129,7 +135,7 @@ func (s *Service) cacheAllCommenterData() {
 	for _, c := range comments {
 		if _, ok := dup[c.Email]; !ok {
 			dup[c.Email] = struct{}{}
-			s.avatarCache.ID(c.Email)
+			_ = s.avatarCache.Email(c.Email)
 		}
 		if _, ok := dup[c.IP]; !ok {
 			dup[c.IP] = struct{}{}
@@ -763,7 +769,22 @@ func (s *Service) CheckCommentTaskListItems(ctx context.Context, in *proto.Check
 	}, nil
 }
 
-// TODO 改个名字，这个 ID 实际上是 ephemeral。
-func (s *Service) GetCommentEmailById(id int) string {
-	return s.avatarCache.Email(id)
+func (s *Service) ResolveAvatar(id uint32) (string, time.Time, io.ReadSeekCloser) {
+	userID, email := s.avatarCache.Resolve(id)
+	if email != `` {
+		return email, time.Time{}, nil
+	}
+	user, err := s.auth.GetUserByID(context.Background(), int64(userID))
+	if err != nil || len(user.Avatar.Data) <= 0 {
+		return ``, time.Time{}, nil
+	}
+	return ``, time.Unix(user.UpdatedAt, 0), _ByteReadCloser{
+		Reader: bytes.NewReader(user.Avatar.Data),
+	}
 }
+
+type _ByteReadCloser struct {
+	*bytes.Reader
+}
+
+func (_ByteReadCloser) Close() error { return nil }

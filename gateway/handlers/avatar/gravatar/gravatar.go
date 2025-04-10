@@ -3,7 +3,6 @@ package gravatar
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -98,6 +97,6 @@ func get(ctx context.Context, endpoint string, hash [32]byte) (*http.Response, e
 	case 200:
 		return resp, nil
 	default:
-		return nil, errors.New(`statusCode != 200`)
+		return nil, fmt.Errorf(`statusCode != 200: %s`, u)
 	}
 }

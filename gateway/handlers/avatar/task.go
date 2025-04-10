@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +13,6 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/avatar/github"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/gravatar"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/service"
 	"github.com/phuslu/lru"
 )
 
@@ -34,9 +31,8 @@ func CacheKeyFromString(s string) CacheKey {
 }
 
 type CacheValue struct {
-	ContentType  string
 	Content      []byte
-	LastModified string
+	LastModified time.Time
 }
 
 type Task struct {
@@ -45,14 +41,12 @@ type Task struct {
 	keys  []CacheKey
 	store utils.PluginStorage
 	deb   *utils.Debouncer
-	impl  service.ToBeImplementedByRpc
 }
 
-func NewTask(storage utils.PluginStorage, impl service.ToBeImplementedByRpc) *Task {
+func NewTask(storage utils.PluginStorage) *Task {
 	t := &Task{
 		cache: lru.NewTTLCache[CacheKey, CacheValue](1024),
 		store: storage,
-		impl:  impl,
 	}
 	t.deb = utils.NewDebouncer(time.Second*10, t.save)
 	t.load()
@@ -104,27 +98,26 @@ func (t *Task) save() {
 	log.Println(`已存储头像数据`)
 }
 
-func (t *Task) Get(email string) (lastModified string, contentType string, content []byte, found bool) {
+func (t *Task) Get(email string) (lastModified time.Time, content []byte, found bool) {
 	ck := CacheKey{Email: strings.ToLower(email)}
 
 	value, err, found := t.cache.GetOrLoad(
 		context.Background(), ck,
 		func(ctx context.Context, ck CacheKey) (CacheValue, time.Duration, error) {
-			l, t, c, err := get(email)
+			l, c, err := get(email)
 			if err != nil {
 				log.Println(err, email)
 				return CacheValue{}, ttl, err
 			}
 			return CacheValue{
 				LastModified: l,
-				ContentType:  t,
 				Content:      c,
 			}, ttl, nil
 		},
 	)
 
 	if err != nil {
-		return ``, ``, nil, false
+		return time.Time{}, nil, false
 	}
 
 	if !found {
@@ -134,7 +127,7 @@ func (t *Task) Get(email string) (lastModified string, contentType string, conte
 		t.deb.Enter()
 	}
 
-	return value.LastModified, value.ContentType, value.Content, true
+	return value.LastModified, value.Content, true
 }
 
 const refreshTTL = time.Hour * 24
@@ -151,13 +144,12 @@ func (t *Task) refreshLoop(ctx context.Context) {
 		for _, k := range keys {
 			// 顺序更新，没必要异步？
 			func() {
-				l, ct, c, err := get(k.Email)
+				l, c, err := get(k.Email)
 				if err != nil {
 					log.Println(err)
 					return
 				}
 				t.cache.Set(CacheKey{Email: k.Email}, CacheValue{
-					ContentType:  ct,
 					Content:      c,
 					LastModified: l,
 				}, ttl)
@@ -178,44 +170,27 @@ func (t *Task) refreshLoop(ctx context.Context) {
 
 const maxBodySize = 50 << 10
 
-func get(email string) (lastModified string, contentType string, content []byte, err error) {
+func get(email string) (_ time.Time, _ []byte, outErr error) {
 	rsp, err := github.Get(context.Background(), email)
 	if err != nil {
 		rsp, err = gravatar.Get(context.Background(), email)
 	}
 	if err != nil {
 		log.Println(`头像获取失败：`, err)
-		return ``, ``, nil, err
+		outErr = err
+		return
 	}
 
-	lastModified = rsp.Header.Get(`Last-Modified`)
-	contentType = rsp.Header.Get(`Content-Type`)
+	lastModified, _ := time.Parse(http.TimeFormat, rsp.Header.Get(`Last-Modified`))
 
 	rc := http.MaxBytesReader(nil, rsp.Body, maxBodySize)
 	defer rc.Close()
 
 	body, err := io.ReadAll(rc)
 	if err != nil {
-		return ``, ``, nil, err
+		outErr = err
+		return
 	}
 
-	return lastModified, contentType, body, nil
-}
-
-type _TaskFS struct {
-	t *Task
-}
-
-func (t _TaskFS) Open(name string) (fs.File, error) {
-	email := t.t.impl.GetCommentEmailById(utils.Must1(strconv.Atoi(name)))
-	l, _, c, found := t.t.Get(email)
-	if !found {
-		return nil, fs.ErrNotExist
-	}
-	mod, _ := time.Parse(http.TimeFormat, l)
-	return utils.NewStringFile(name, mod, c), nil
-}
-
-func (t *Task) FS() fs.FS {
-	return _TaskFS{t}
+	return lastModified, body, nil
 }
