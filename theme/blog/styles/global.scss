@@ -188,6 +188,7 @@ dialog {
 	color: var(--color-fg);
 	background-color: var(--code-bg);
 	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
 }
 
 @keyframes fadeIn {

@@ -85,6 +85,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 				cover = fmt.Sprintf(`%dpx`, n)
 			}
 			gold_utils.AddStyle(s, fmt.Sprintf(`object-fit: cover; aspect-ratio: 1; width: %s`, cover))
+			q.Del(`cover`)
 		}
 		parsedURL.RawQuery = q.Encode()
 		s.SetAttr(`src`, parsedURL.String())
