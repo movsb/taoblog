@@ -19,7 +19,7 @@ type Logger interface {
 	DeleteLog(ctx context.Context, id int64)
 }
 
-var _ Logger = (*_LogStore)(nil)
+var _ Logger = (*LogStore)(nil)
 
 func toJSON(data any) (string, error) {
 	d, err := json.Marshal(data)
@@ -33,21 +33,28 @@ func fromJSON(j string, data any) error {
 	return json.Unmarshal([]byte(j), data)
 }
 
-type _LogStore struct {
+type LogStore struct {
 	tdb *taorm.DB
 }
 
-func NewLogStore(db *sql.DB) *_LogStore {
-	return &_LogStore{
+func NewLogStore(db *sql.DB) *LogStore {
+	return &LogStore{
 		tdb: taorm.NewDB(db),
 	}
 }
 
-func (s *_LogStore) DeleteAllLogs(ctx context.Context) {
+func (s *LogStore) DeleteAllLogs(ctx context.Context) {
 	s.tdb.From(models.Log{}).MustDeleteAnyway()
 }
 
-func (s *_LogStore) CreateLog(ctx context.Context, ty, subType string, version int, data any) {
+func (s *LogStore) CountStaleLogs(ago time.Duration) int {
+	minutesAgo := time.Now().Add(-ago)
+	var count int
+	s.tdb.From(models.Log{}).Where(`time < ?`, minutesAgo.Unix()).Count(&count)
+	return count
+}
+
+func (s *LogStore) CreateLog(ctx context.Context, ty, subType string, version int, data any) {
 	d := utils.Must1(toJSON(data))
 	l := models.Log{
 		Time:    time.Now().Unix(),
@@ -61,7 +68,7 @@ func (s *_LogStore) CreateLog(ctx context.Context, ty, subType string, version i
 }
 
 // 找不到时返回 nil
-func (s *_LogStore) FindLog(ctx context.Context, ty, subType string, data any) *models.Log {
+func (s *LogStore) FindLog(ctx context.Context, ty, subType string, data any) *models.Log {
 	var log models.Log
 	err := s.tdb.Where(`type=? AND sub_type=?`, ty, subType).OrderBy(`time asc`).Find(&log)
 	if err == nil {
@@ -77,7 +84,7 @@ func (s *_LogStore) FindLog(ctx context.Context, ty, subType string, data any) *
 	return nil
 }
 
-func (s *_LogStore) DeleteLog(ctx context.Context, id int64) {
+func (s *LogStore) DeleteLog(ctx context.Context, id int64) {
 	var l models.Log
 	s.tdb.Select(`id`).Where(`id=?`, id).MustFind(&l)
 	s.tdb.Model(&l).MustDelete()

@@ -3,13 +3,11 @@ package mailer
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"mime"
 	"net"
 	"net/smtp"
-	"net/textproto"
 	"strings"
 	"time"
 
@@ -90,7 +88,7 @@ func NewMailerLogger(store logs.Logger, mailer Mailer) *MailerLogger {
 		store:  store,
 		mailer: mailer,
 	}
-	n.SetPullInterval(time.Second * 5)
+	n.SetPullInterval(time.Minute)
 	go n.process(context.Background())
 	return n
 }
@@ -109,8 +107,8 @@ type _Message struct {
 }
 
 func (n *MailerLogger) SetPullInterval(d time.Duration) {
-	if d <= time.Millisecond*100 {
-		d = time.Millisecond * 100
+	if d <= time.Second*10 {
+		d = time.Second * 10
 	}
 	n.pullInterval = d
 }
@@ -135,14 +133,18 @@ func (n *MailerLogger) process(ctx context.Context) {
 
 				// 有些错误不可重试
 				// ChatGPT：smtp 错误码？
-				var te *textproto.Error
-				if errors.As(err, &te) {
-					if te.Code >= 500 {
-						log.Println(`不可重试错误，将删除邮件。`)
-						n.store.DeleteLog(ctx, l.ID)
-						continue
-					}
-				}
+				//
+				// 白痴QQ邮箱连续发送几封邮件就报未登录错误，宛若智障。
+				// MailError: 535 Login Fail. Please enter your authorization code to login.
+				// More information in https://service.mail.qq.com/detail/0/53
+				// var te *textproto.Error
+				// if errors.As(err, &te) {
+				// 	if te.Code >= 500 {
+				// 		log.Println(`不可重试错误，将删除邮件。`)
+				// 		n.store.DeleteLog(ctx, l.ID)
+				// 		continue
+				// 	}
+				// }
 
 				time.Sleep(n.pullInterval)
 				continue

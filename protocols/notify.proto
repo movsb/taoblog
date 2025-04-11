@@ -30,6 +30,8 @@ message SendEmailResponse {
 message SendInstantRequest {
 	string subject = 1;
 	string body = 2;
+	// 是否入队等待发送，否则立即发送。
+	bool immediately = 3;
 }
 
 message SendInstantResponse {}

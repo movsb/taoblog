@@ -481,6 +481,24 @@ func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *confi
 	}
 
 	n := notify.New(ctx, sr, options...)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Minute * 10):
+				if c := store.CountStaleLogs(time.Minute * 10); c > 0 {
+					n.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
+						Subject:     `有堆积的日志未处理`,
+						Body:        fmt.Sprintf(`条数：%d`, c),
+						Immediately: true,
+					})
+				}
+			}
+		}
+	}()
+
 	return n
 }
 

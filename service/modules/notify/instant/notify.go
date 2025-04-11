@@ -54,6 +54,13 @@ func (n *NotifyLogger) Notify(title, message string) error {
 	return nil
 }
 
+func (n *NotifyLogger) NotifyImmediately(title, message string) {
+	backend, _ := n.notifier.Load().(Notifier)
+	if backend != nil {
+		backend.Notify(title, message)
+	}
+}
+
 func (n *NotifyLogger) process(ctx context.Context) {
 	for {
 		var msg _Message
