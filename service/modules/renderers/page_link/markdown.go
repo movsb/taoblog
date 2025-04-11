@@ -27,7 +27,7 @@ var _local = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
 func init() {
 	dynamic.RegisterInit(func() {
-		const module = `alerts`
+		const module = `page-link`
 		dynamic.WithRoots(module, nil, nil, _embed, _local)
 		dynamic.WithStyles(module, `style.css`)
 	})
