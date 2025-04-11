@@ -68,7 +68,7 @@ func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) 
 	return &proto.SendInstantResponse{}, err
 }
 
-func WithMailerLogger(store logs.Logger, mail mailer.MailerConfig) With {
+func WithMailerLogger(store logs.Logger, mail mailer.Mailer) With {
 	return func(n *Notify) {
 		n.mailer = mailer.NewMailerLogger(store, mail)
 	}

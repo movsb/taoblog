@@ -1,8 +1,8 @@
 package mailer
 
 import (
+	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -10,130 +10,26 @@ import (
 	"net"
 	"net/smtp"
 	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/logs"
+	"github.com/movsb/taoblog/modules/utils"
 )
 
-// Mailer is a SMTP mail sender.
 type Mailer struct {
-	conn     net.Conn
-	c        *smtp.Client
-	host     string
-	fromMail string
-	fromName string
-	toEmails []string
-	toNames  []string
-}
-
-// DialTLS dials mail server.
-func DialTLS(host string) (*Mailer, error) {
-	conn, err := tls.Dial("tcp", host, nil)
-	if err != nil {
-		return nil, err
-	}
-	h, _, _ := net.SplitHostPort(host)
-	return New(conn, h)
-}
-
-// conn 必须是 tls.Conn
-func New(conn net.Conn, host string) (*Mailer, error) {
-	if _, ok := conn.(*tls.Conn); !ok {
-		panic(`not tls`)
-	}
-	c, err := smtp.NewClient(conn, host)
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-
-	return &Mailer{
-		host: host,
-		conn: conn,
-		c:    c,
-	}, nil
-}
-
-// Auth authenticates
-func (m *Mailer) Auth(username string, password string) error {
-	auth := smtp.PlainAuth("", username, password, m.host)
-	return m.c.Auth(auth)
-}
-
-func (m *Mailer) SetFrom(name string, from string) error {
-	if err := m.c.Mail(from); err != nil {
-		return err
-	}
-	m.fromName = name
-	m.fromMail = from
-	return nil
-}
-
-func (m *Mailer) AddTo(name string, to string) error {
-	if err := m.c.Rcpt(to); err != nil {
-		return err
-	}
-
-	m.toNames = append(m.toNames, name)
-	m.toEmails = append(m.toEmails, to)
-	return nil
-}
-
-func (m *Mailer) Send(subject string, body string) error {
-	wc, err := m.c.Data()
-	if err != nil {
-		return err
-	}
-
-	write := func(f string, a ...any) {
-		if err != nil {
-			return
-		}
-
-		_, err = wc.Write([]byte(fmt.Sprintf(f+"\r\n", a...)))
-	}
-
-	write("Subject: %s", mime.BEncoding.Encode("utf-8", subject))
-
-	write("From: %s <%s>", mime.BEncoding.Encode("utf-8", m.fromName), m.fromMail)
-
-	for i := 0; i < len(m.toNames); i++ {
-		write("To: %s <%s>", mime.BEncoding.Encode("utf-8", m.toNames[i]), m.toEmails[i])
-	}
-
-	write("Content-Type: text/html; charset=utf-8")
-	write("")
-
-	write("%s", body)
-
-	if err != nil {
-		return err
-	}
-
-	if err = wc.Close(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Mailer) Quit() error {
-	m.c.Quit()
-	m.c.Close()
-	m.conn.Close()
-	return nil
-}
-
-type MailerConfig struct {
 	server             string
 	username, password string
+	auth               smtp.Auth
 }
 
-func NewMailerConfig(server string, username, password string) MailerConfig {
-	return MailerConfig{
+func NewMailer(server string, username, password string) Mailer {
+	host, _, _ := net.SplitHostPort(server)
+	return Mailer{
 		server:   server,
 		username: username,
 		password: password,
+		auth:     smtp.PlainAuth(``, username, password, host),
 	}
 }
 
@@ -142,37 +38,54 @@ type User struct {
 	Address string
 }
 
-func (c *MailerConfig) Send(subject, body string, fromName string, tos []User) error {
-	mc, err := DialTLS(c.server)
+func (u User) String() string {
+	return fmt.Sprintf(`%s <%s>`, encode(u.Name), u.Address)
+}
+
+func encode(s string) string {
+	return mime.BEncoding.Encode(`utf-8`, string(s))
+}
+
+func (c *Mailer) Send(subject, body string, fromName string, tos []User) error {
+	mailBody := writeBody(subject, body, User{Name: fromName, Address: c.username}, tos)
+	to := utils.Map(tos, func(u User) string { return u.Address })
+	err := smtp.SendMail(c.server, c.auth, c.username, to, mailBody)
+	// fix for qq mail
 	if err != nil {
-		return err
-	}
-	defer mc.Quit()
-	if err := mc.Auth(c.username, c.password); err != nil {
-		return err
-	}
-	if err := mc.SetFrom(fromName, c.username); err != nil {
-		return err
-	}
-	for _, to := range tos {
-		if err := mc.AddTo(to.Name, to.Address); err != nil {
-			return err
+		if strings.HasSuffix(err.Error(), "\x00\x00\x00\x1a\x00\x00\x00") {
+			err = nil
 		}
 	}
-	if err := mc.Send(subject, body); err != nil {
-		return err
+	return err
+}
+
+func writeBody(subject, body string, from User, tos []User) []byte {
+	w := bytes.NewBuffer(nil)
+	f := func(ss ...string) {
+		for _, s := range ss {
+			fmt.Fprint(w, s)
+		}
+		fmt.Fprint(w, "\r\n")
 	}
-	return nil
+	f(`Subject: `, subject)
+	f(`From: `, from.String())
+	for _, to := range tos {
+		f(`To: `, to.String())
+	}
+	f(`Content-Type: text/html; charset=utf-8`)
+	f()
+	f(body)
+	return w.Bytes()
 }
 
 type MailerLogger struct {
 	store logs.Logger
 
-	mailer       MailerConfig
+	mailer       Mailer
 	pullInterval time.Duration
 }
 
-func NewMailerLogger(store logs.Logger, mailer MailerConfig) *MailerLogger {
+func NewMailerLogger(store logs.Logger, mailer Mailer) *MailerLogger {
 	n := &MailerLogger{
 		store:  store,
 		mailer: mailer,

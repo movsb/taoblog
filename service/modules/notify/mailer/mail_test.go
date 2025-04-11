@@ -1,34 +1,16 @@
-package mailer
+package mailer_test
 
 import (
 	"testing"
+
+	"github.com/movsb/taoblog/service/modules/notify/mailer"
 )
 
 func Test(t *testing.T) {
 	t.SkipNow()
 
-	m, err := DialTLS("smtp.qq.com:465")
-	if err != nil {
+	m := mailer.NewMailer(`smtp.qq.com:587`, `blog@twofei.com`, `***`)
+	if err := m.Send(`主题`, `标题`, `博客评论`, []mailer.User{{`自己`, `anhbk@qq.com`}}); err != nil {
 		t.Fatal(err)
 	}
-
-	defer m.Quit()
-
-	if err = m.Auth("blog@twofei.com", "***"); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = m.SetFrom("博客评论", "blog@twofei.com"); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = m.AddTo("自己", "anhbk@qq.com"); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = m.Send("主题", "内容"); err != nil {
-		t.Fatal(err)
-	}
-
-	m.Quit()
 }

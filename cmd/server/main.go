@@ -477,7 +477,7 @@ func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *confi
 	}
 
 	if m := cfg.Notify.Mailer; m.Account != `` && m.Server != `` {
-		options = append(options, notify.WithMailerLogger(store, mailer.NewMailerConfig(m.Server, m.Account, m.Password)))
+		options = append(options, notify.WithMailerLogger(store, mailer.NewMailer(m.Server, m.Account, m.Password)))
 	}
 
 	n := notify.New(ctx, sr, options...)
