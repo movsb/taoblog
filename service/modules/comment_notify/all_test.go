@@ -8,7 +8,7 @@ import (
 )
 
 func TestTemplates(t *testing.T) {
-	utils.Must(adminTmpl.Execute(io.Discard, AdminData{}))
-	utils.Must(guestTmpl.Execute(io.Discard, GuestData{}))
+	utils.Must(authorTmpl.Execute(io.Discard, Data{}))
+	utils.Must(guestTmpl.Execute(io.Discard, Data{}))
 	utils.Must(chanifyTmpl.Execute(io.Discard, AdminData{}))
 }

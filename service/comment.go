@@ -649,29 +649,40 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	if err != nil {
 		return err
 	}
-
-	loc := globals.LoadTimezoneOrDefault(c.DateTimezone, time.Local)
-	link := fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID)
-
-	if c.UserID != post.UserId {
-		pu, err := t.s.auth.GetUserByID(context.TODO(), int64(post.UserId))
-		if err != nil {
-			return err
-		}
-		data := &comment_notify.AdminData{
-			Title:    post.Title,
-			Link:     link,
-			Date:     time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
-			Author:   c.Author,
-			Content:  c.Source,
-			Email:    c.Email,
-			HomePage: c.URL,
-		}
-		t.s.cmtntf.NotifyPostAuthor(data, pu.Nickname, pu.Email)
+	pu, err := t.s.auth.GetUserByID(context.TODO(), int64(post.UserId))
+	if err != nil {
+		log.Println(`获取文章作者失败：`, err)
+		return err
 	}
 
-	var parents []models.Comment
+	loc := globals.LoadTimezoneOrDefault(c.DateTimezone, time.Local)
 
+	data := comment_notify.AdminData{
+		Data: comment_notify.Data{
+			Title:   post.Title,
+			Link:    fmt.Sprintf(`%s#comment-%d`, post.Link, c.ID),
+			Date:    time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
+			Author:  c.Author,
+			Content: c.Source,
+		},
+		Email:    c.Email,
+		HomePage: c.URL,
+	}
+
+	// 通知管理员。
+	t.s.cmtntf.NotifyAdmin(&data)
+
+	// 通知文章作者：访客或者非自己
+	if c.UserID == 0 || c.UserID != post.UserId {
+		if pu.Email == `` {
+			log.Println(`文章作者没有邮箱地址，不发送邮件通知。`)
+		} else {
+			t.s.cmtntf.NotifyPostAuthor(&data.Data, pu.Nickname, pu.Email)
+		}
+	}
+
+	// 通知其它上级回复：所有上级中排除特定人后……
+	var parents []models.Comment
 	for parentID := c.Parent; parentID > 0; {
 		var parent models.Comment
 		t.s.tdb.From(parent).
@@ -681,41 +692,67 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 		parents = append(parents, parent)
 		parentID = parent.Parent
 	}
-
-	// not a reply to some comment
 	if len(parents) == 0 {
 		return nil
 	}
 
-	var distinctNames []string
-	var distinctEmails []string
-
+	// 有几类特定人需要排除：
+	// 1. 管理员（已经发过即时通知）
+	// 2. 文章作者，前面已经通知过。
+	// 3. 没有邮箱的
+	// 4. 评论者自己
+	//    1. 如果没有登录，判断邮箱相同
+	//    2. 如果已经登录，判断用户ID相同
 	distinct := map[string]bool{}
+	recipients := []comment_notify.Recipient{}
 	for _, parent := range parents {
-		if parent.UserID == c.UserID {
+		if parent.UserID == int32(auth.AdminID) {
 			continue
 		}
-		email := strings.ToLower(parent.Email)
+		if parent.UserID == post.UserId {
+			continue
+		}
+		if parent.Email == `` {
+			continue
+		}
+		if parent.UserID == 0 {
+			if parent.Email == c.Email {
+				continue
+			}
+		} else {
+			if parent.UserID == c.UserID {
+				continue
+			}
+		}
+
+		// 首先从评论本身拿邮件，
+		email := parent.Email
+
+		// 而如果是登录用户，则优先使用配置的邮箱
+		if parent.UserID > 0 {
+			parentUser, err := t.s.auth.GetUserByID(context.TODO(), int64(parent.UserID))
+			if err == nil && parentUser.Email != `` {
+				email = parentUser.Email
+			}
+		}
+
+		email = strings.ToLower(email)
+
 		if _, ok := distinct[email]; !ok {
 			distinct[email] = true
-			distinctNames = append(distinctNames, parent.Author)
-			distinctEmails = append(distinctEmails, parent.Email)
+			recipients = append(recipients, comment_notify.Recipient{
+				Name:    parent.Author,
+				Address: email,
+			})
 		}
 	}
 
-	if len(distinctNames) == 0 {
+	if len(recipients) == 0 {
 		return nil
 	}
 
-	guestData := comment_notify.GuestData{
-		Title:   post.Title,
-		Link:    link,
-		Date:    time.Unix(int64(c.Date), 0).In(loc).Format(time.RFC3339),
-		Author:  c.Author,
-		Content: c.Source,
-	}
+	t.s.cmtntf.NotifyGuests(&data.Data, recipients)
 
-	t.s.cmtntf.NotifyGuests(&guestData, distinctNames, distinctEmails)
 	return nil
 }
 

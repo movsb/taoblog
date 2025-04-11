@@ -6,45 +6,39 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
-	"log"
 	text_template "text/template"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
 var (
-	//go:embed admin.html chanify.md guest.html
+	//go:embed author.html chanify.md guest.html
 	_root embed.FS
 
-	adminTmpl   = template.Must(template.New(`admin`).ParseFS(_root, `admin.html`)).Lookup(`admin.html`)
+	authorTmpl  = template.Must(template.New(`author`).ParseFS(_root, `author.html`)).Lookup(`author.html`)
 	guestTmpl   = template.Must(template.New(`guest`).ParseFS(_root, `guest.html`)).Lookup(`guest.html`)
 	chanifyTmpl = text_template.Must(text_template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
 
-	adminPrefix  = `[新的评论]`
+	authorPrefix = `[新的评论]`
 	guestPrefix  = `[回复评论]`
-	mailFromName = `博客评论`
+	mailFromName = `文章评论`
 )
 
-// TODO prettify 内容。
-type AdminData struct {
-	Title   string `yaml:"title"`
-	Link    string `yaml:"link"`
-	Date    string `yaml:"date"`
-	Author  string `yaml:"author"`
-	Content string `yaml:"content"`
-
-	Email    string `yaml:"email"`
-	HomePage string `yaml:"home_page"`
-}
-
-// TODO prettify 内容。
-type GuestData struct {
+type Data struct {
 	Title   string
 	Link    string
 	Date    string
 	Author  string
 	Content string
+}
+
+type AdminData struct {
+	Data
+
+	Email    string
+	HomePage string
 }
 
 type CommentNotifier struct {
@@ -57,64 +51,50 @@ func New(notifier proto.NotifyServer) *CommentNotifier {
 	}
 }
 
-func (cn *CommentNotifier) NotifyPostAuthor(data *AdminData, name string, email string) {
-	subject := fmt.Sprintf(`%s %s`, adminPrefix, data.Title)
-
+func (cn *CommentNotifier) NotifyAdmin(d *AdminData) {
 	buf := bytes.NewBuffer(nil)
-
-	buf.Reset()
-	chanifyTmpl.Execute(buf, data)
+	chanifyTmpl.Execute(buf, d)
 	cn.notifier.SendInstant(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
-			Subject: subject,
+			Subject: fmt.Sprintf(`%s%s`, authorPrefix, d.Title),
 			Body:    buf.String(),
-		},
-	)
-
-	if email == `` {
-		log.Println(`文章作者没有邮箱地址，不发送邮件通知。`)
-		return
-	}
-
-	buf.Reset()
-	adminTmpl.Execute(buf, data)
-	cn.notifier.SendEmail(
-		auth.SystemForLocal(context.Background()),
-		&proto.SendEmailRequest{
-			Subject:  subject,
-			Body:     buf.String(),
-			FromName: mailFromName,
-			Users: []*proto.SendEmailRequest_User{
-				{
-					Name:    name,
-					Address: email,
-				},
-			},
 		},
 	)
 }
 
-func (cn *CommentNotifier) NotifyGuests(data *GuestData, names []string, recipients []string) {
+type Recipient struct {
+	Name    string
+	Address string
+}
+
+func (cn *CommentNotifier) NotifyPostAuthor(data *Data, name string, email string) {
 	buf := bytes.NewBuffer(nil)
-	if err := guestTmpl.Execute(buf, data); err != nil {
-		panic(err)
-	}
+	authorTmpl.Execute(buf, data)
+	subject := fmt.Sprintf(`%s %s`, authorPrefix, data.Title)
+	cn.sendEmails(subject, buf.String(), []Recipient{{Name: name, Address: email}})
+}
+
+func (cn *CommentNotifier) NotifyGuests(data *Data, recipients []Recipient) {
+	buf := bytes.NewBuffer(nil)
+	guestTmpl.Execute(buf, data)
 	subject := fmt.Sprintf(`%s %s`, guestPrefix, data.Title)
-	for i := range names {
-		cn.notifier.SendEmail(
-			auth.SystemForLocal(context.Background()),
-			&proto.SendEmailRequest{
-				Subject:  subject,
-				Body:     buf.String(),
-				FromName: mailFromName,
-				Users: []*proto.SendEmailRequest_User{
-					{
-						Name:    names[i],
-						Address: recipients[i],
-					},
-				},
-			},
-		)
-	}
+	cn.sendEmails(subject, buf.String(), recipients)
+}
+
+func (cn *CommentNotifier) sendEmails(subject, body string, recipients []Recipient) {
+	cn.notifier.SendEmail(
+		auth.SystemForLocal(context.Background()),
+		&proto.SendEmailRequest{
+			Subject:  subject,
+			Body:     body,
+			FromName: mailFromName,
+			Users: utils.Map(recipients, func(r Recipient) *proto.SendEmailRequest_User {
+				return &proto.SendEmailRequest_User{
+					Name:    r.Name,
+					Address: r.Address,
+				}
+			}),
+		},
+	)
 }

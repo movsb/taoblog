@@ -30,7 +30,9 @@ message SendEmailResponse {
 message SendInstantRequest {
 	string subject = 1;
 	string body = 2;
-	// 是否入队等待发送，否则立即发送。
+	// 是否立即发送，否则入队发送。
+	// * 立即发送如果失败，消息会丢失。
+	// * 入队发送会自动重试。
 	bool immediately = 3;
 }
 
