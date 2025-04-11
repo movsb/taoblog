@@ -1,0 +1,65 @@
+.live-photo {
+	// 必须在代码里面计算并设置在 inline style 上。
+	// width: 252px;
+	// height: 336px;
+	// 允许子元素为 absolute
+	position: relative;
+	// 允许缩放
+	overflow: hidden;
+	border-radius: var(--border-radius);
+
+	.container {
+		// 使重叠，并占满
+		position: absolute;
+		width: 100%;
+		height: 100%;
+
+		img, video {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+		}
+
+		img {
+			transition: opacity 1s ease, transform 1s ease;
+		}
+		video {
+			// 不管是否和图片大小有多不一致，始终保持一致
+			object-fit: fill;
+			transition: transform 1s ease;
+		}
+
+		&.zoom {
+			img, video {
+				transform: scale(1.1);
+			}
+			img {
+				opacity: 0;
+			}
+		}
+	}
+
+	.icon {
+		display: inline-flex;
+		align-items: center;
+		padding: 2px;
+		border-radius: var(--border-radius);
+		position: relative;
+		left: 10px;
+		top: 10px;
+		height: 22px;
+		background-color: #f0ffffab;
+		cursor: pointer;
+		user-select: none;
+
+		img {
+			width: 22px;
+			height: 22px;
+		}
+		span {
+			padding: 4px;
+			color: #606060;
+			font-size: 80%;
+		}
+	}
+}

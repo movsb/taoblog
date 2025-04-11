@@ -28,6 +28,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/lazying"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
+	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
@@ -115,6 +116,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		lazying.New(),
 		math.New(),
 		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
+		live_photo.New(ctx, s.OpenAsset(postId)),
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
 		extension.GFM,

@@ -31,6 +31,7 @@
      * GraphViz
      * 族谱图
      * Apache ECharts
+     * 实况照片 LivePhoto
 **** HTML
 *** 渲染
 **** 延迟加载
@@ -111,6 +112,7 @@ Passkeys
 **** 头像
 ***** GitHub
 ***** Gravatar
+***** 自定义上传
 
 ** 代码&部署
 *** 自动重新加载样式文件
