@@ -138,6 +138,7 @@ class PostFormUI {
 	get checkBoxTogglePreview()     { return this._form.querySelector('#toggle-preview'); }
 	get checkBoxWrap()              { return this._form.querySelector('#toggle-wrap'); }
 	get checkBoxToggleDiff()        { return this._form.querySelector('#toggle-diff'); }
+	get elemToc()       { return this._form['toc'];     }
 	
 	get geo() {
 		const values = this._form['geo_location'].value.trim().split(',');
@@ -224,6 +225,8 @@ class PostFormUI {
 	set type(t) { this.elemType.value = t; }
 	get status() { return this.elemStatus.value; }
 	set status(s) { this.elemStatus.value = s; }
+	get toc() { return this.elemToc.value; }
+	set toc(s) { return this.elemToc.value = s; }
 
 
 	set source(v)   { this.elemSource.value = v;        }
@@ -498,6 +501,7 @@ formUI.submit(async (done) => {
 	try {
 		let p = TaoBlog.posts[TaoBlog.post_id];
 		p.metas.geo = formUI.geo;
+		p.metas.toc = !!+formUI.toc;
 		let post = await postAPI.updatePost({
 			id: TaoBlog.post_id,
 			date: formUI.time,
@@ -525,6 +529,7 @@ formUI.submit(async (done) => {
 	if (p.metas && p.metas.geo) {
 		formUI.geo = p.metas.geo;
 	}
+	formUI.toc = p.metas.toc ? "1" : "0";
 	formUI.users = p.user_perms || [];
 })();
 

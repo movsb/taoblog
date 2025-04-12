@@ -38,6 +38,11 @@ type LatestCommentsByPost struct {
 	Comments []*Comment
 }
 
+func (d *PostData) TOC() template.HTML {
+	// GetPost 的时候已经根据喜好决定是否输出目录了。
+	return template.HTML(d.Post.Toc)
+}
+
 func (d *PostData) CommentsAsJsonArray() template.JS {
 	if d.Comments == nil {
 		d.Comments = make([]*proto.Comment, 0)

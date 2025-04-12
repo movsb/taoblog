@@ -19,7 +19,6 @@ const (
 	PostStatusPartial = `partial` // 仅对指定的人可见。
 )
 
-// Post ...
 type Post struct {
 	ID              int64
 	UserID          int32
@@ -56,6 +55,8 @@ type PostMeta struct {
 	Geo *Geo `json:"geo,omitempty" yaml:"geo,omitempty"`
 
 	Origin *proto.Metas_Origin `json:"origin:omitempty" yaml:"origin,omitempty"`
+
+	Toc bool `json:"toc,omitempty" yaml:"toc,omitempty"`
 }
 
 type PostMetaSource struct {
@@ -103,6 +104,7 @@ func (m *PostMeta) ToProto() *proto.Metas {
 		Wide:     m.Wide,
 		Weixin:   m.Weixin,
 		Sources:  make(map[string]*proto.Metas_Source),
+		Toc:      m.Toc,
 	}
 	for name, src := range m.Sources {
 		p.Sources[name] = &proto.Metas_Source{
@@ -130,7 +132,8 @@ func (m *PostMeta) IsEmpty() bool {
 		!m.Wide &&
 		m.Weixin == "" &&
 		len(m.Sources) == 0 &&
-		(m.Geo == nil || (m.Geo.Longitude == 0 && m.Geo.Latitude == 0))
+		(m.Geo == nil || (m.Geo.Longitude == 0 && m.Geo.Latitude == 0)) &&
+		!m.Toc
 }
 
 func PostMetaFrom(p *proto.Metas) *PostMeta {
@@ -144,6 +147,7 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 		Wide:     p.Wide,
 		Weixin:   p.Weixin,
 		Sources:  make(map[string]*PostMetaSource),
+		Toc:      p.Toc,
 	}
 	for name, src := range p.Sources {
 		m.Sources[name] = &PostMetaSource{
@@ -164,7 +168,6 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 	return &m
 }
 
-// TableName ...
 func (Post) TableName() string {
 	return `posts`
 }
@@ -200,10 +203,8 @@ func (p *Post) ToProto(redact func(p *proto.Post) error) (*proto.Post, error) {
 	return &out, err
 }
 
-// Posts ...
 type Posts []*Post
 
-// ToProtocols ...
 func (ps Posts) ToProto(redact func(p *proto.Post) error) (posts []*proto.Post, err error) {
 	for _, post := range ps {
 		if p, err := post.ToProto(redact); err != nil {

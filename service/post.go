@@ -27,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
+	"github.com/movsb/taoblog/service/modules/renderers/toc"
 	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
@@ -240,6 +241,11 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *pro
 		})
 	}
 
+	// TODO 再根据主题设置决定要不要全局开。
+	if (in.WithToc == 1 && p.Metas.Toc) || in.WithToc == 2 {
+		out.Toc = s.getPostTocCached(int(p.ID), p.Source)
+	}
+
 	return out, nil
 }
 
@@ -350,6 +356,20 @@ func (s *Service) getPostTagsCached(ctx context.Context, id int64) ([]string, er
 	return tags.([]string), err
 }
 
+func (s *Service) getPostTocCached(id int, source string) string {
+	key := fmt.Sprintf(`post_toc:%d`, id)
+	toc, err, _ := s.cache.GetOrLoad(context.Background(), key, func(ctx context.Context, s string) (any, time.Duration, error) {
+		var html []byte
+		md := renderers.NewMarkdown(toc.New(&html))
+		md.Render(source)
+		return html, time.Hour, nil
+	})
+	if err != nil {
+		return ``
+	}
+	return string(toc.([]byte))
+}
+
 func (s *Service) DropAllPostAndCommentCache() {
 	s.postCaches.Clear()
 	s.commentCaches.Clear()
@@ -367,6 +387,7 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 		log.Println(`删除文章缓存：`, second)
 	})
 	s.cache.Delete(fmt.Sprintf(`post_source:%d`, id))
+	s.cache.Delete(fmt.Sprintf(`post_toc:%d`, id))
 }
 
 func withEmojiFilter(node *goquery.Selection) bool {

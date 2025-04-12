@@ -55,6 +55,10 @@ message Metas {
 	// 微信短链接。形如："-UWZEu5Z74DZgRzKksTBtw"。
 	// TODO 合并进 Origin。
 	string weixin = 100;
+
+	// 是否开启目录。
+	// 主题可以忽略此配置而选择总是开启或关闭。
+	bool toc = 101;
 }
 
 message Post {
@@ -109,6 +113,9 @@ message Post {
 		bool can_read = 10;
 	}
 	repeated UserPerms user_perms = 24;
+
+	// 目录。
+	string toc = 25;
 }
 
 enum LinkKind {
@@ -131,6 +138,10 @@ message GetPostRequest {
 
 	// 是否返回权限用户。
 	bool with_user_perms = 103;
+
+	// 是否返回目录 HTML 内容。
+	// 0: 不要，1:要（文章自己可以决定不要），2:一定要
+	int32 with_toc = 104;
 }
 
 message UpdatePostRequest {

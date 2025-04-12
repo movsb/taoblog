@@ -20,8 +20,27 @@ body#error {
 }
 
 #content {
-    min-width: 200px;
+	min-width: 200px;
 	max-width: var(--max-width);
+	// 开启侧栏后开启
+	// article {
+	// 	flex: 1;
+	// }
+	aside.right  {
+		// 固定宽度不缩小。
+		width: 250px;
+		flex-shrink: 0;
+		// 不滚动。
+		position: sticky;
+		top: 0;
+		align-self: flex-start;
+	}
+	// &.post {
+		// 开启侧栏后开启
+		// 左边文章，右边侧栏。
+		// display: flex;
+		// flex-direction: row;
+	// }
 }
 body.wide #content {
 	max-width: unset;

@@ -330,6 +330,7 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 }
 
 // 由 GetPostComments 改写而来，私有函数，不鉴权。
+// TODO 缓存。
 func (s *Service) getPostComments(ctx context.Context, postID int64) ([]*proto.Comment, error) {
 	var comments models.Comments
 	s.tdb.Where("post_id=?", postID).MustFind(&comments)

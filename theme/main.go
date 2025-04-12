@@ -283,6 +283,7 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 			WithLink:       proto.LinkKind_LinkKindRooted,
 			ContentOptions: co.For(co.QueryByID),
 			WithComments:   true,
+			WithToc:        1,
 		},
 	)
 	if err != nil {
@@ -319,6 +320,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 			WithLink:       proto.LinkKind_LinkKindRooted,
 			ContentOptions: co.For(co.QueryByPage),
 			WithComments:   true,
+			WithToc:        1,
 		},
 	)
 	if err != nil {

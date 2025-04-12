@@ -65,6 +65,16 @@ TaoBlog.post_id = +"{{.Data.Post.Id}}";
 	<script src="/scripts/comment.js"></script>
     <!-- comments end -->
 </article>
+{{ if $dot.ShowAsideRight }}
+<aside class="right">
+	{{ with $dot.Data.TOC }}
+	<div class="toc">
+		{{ . }}
+	</div>
+	{{ end }}
+</aside>
+{{ end }}
+
 {{ render "footer" . }}
 
 {{define "custom_footer"}}

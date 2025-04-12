@@ -66,6 +66,15 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 		<ol class="list"></ol>
 		<div><button>✅ 确定</button></div>
 	</dialog>
+	<p class="toc" style="display: none;">
+		<label>
+			<span>目录：</span>
+			<select name="toc">
+				<option value="0">📚 关闭</option>
+				<option value="1">📖 开启</option>
+			</select>
+		</label>
+	</p>
 	<p class="geo">
 		<label><span>位置：</span>
 			<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off"/>

@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/yuin/goldmark v1.7.4
+	github.com/yuin/goldmark v1.7.8
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/grpc v1.68.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
@@ -99,6 +99,7 @@ require (
 	github.com/tetratelabs/wazero v1.8.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	go.abhg.dev/goldmark/toc v0.11.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/mod v0.19.0 // indirect

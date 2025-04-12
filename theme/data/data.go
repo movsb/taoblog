@@ -62,6 +62,30 @@ func (d *Data) ShowHeader() bool {
 	return true
 }
 
+// 暂时全局关闭，排版不太优雅，侧栏数据少，需要目录的文章少。
+func (d *Data) ShowAsideRight() bool {
+	return false
+	n := 0
+	switch typed := d.Data.(type) {
+	case *PostData:
+		if typed.TOC() != `` {
+			n++
+		}
+	}
+	return n > 0
+}
+
+// 给 header 用于指示页面类型。
+func (d *Data) Kind() string {
+	switch d.Data.(type) {
+	case *PostData:
+		return `post`
+	case *HomeData:
+		return `home`
+	}
+	return `unknown`
+}
+
 func (d *Data) Info() (*proto.GetInfoResponse, error) {
 	if d.Context == nil {
 		d.Context = auth.GuestForLocal(context.TODO())
