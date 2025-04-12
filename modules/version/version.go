@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -29,13 +28,18 @@ func DevMode() bool {
 		return slices.Contains([]string{`1`, `yes`, `true`}, ForceEnableDevMode)
 	}
 
+	exists := func(f string) bool {
+		_, err := os.Stat(f)
+		return err == nil
+	}
+
 	var envDev bool
 	switch {
 	case GitCommit == ``:
 		envDev = true
 	case strings.EqualFold(GitCommit, `head`):
 		envDev = true
-	case utils.DropLast1(os.Stat(`go.mod`)) != nil:
+	case exists(`go.mod`):
 		envDev = true
 	}
 

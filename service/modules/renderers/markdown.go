@@ -11,7 +11,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	xnethtml "golang.org/x/net/html"
@@ -151,9 +150,6 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
 	options := []goldmark.Option{
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
 		goldmark.WithRendererOptions(
 			html.WithUnsafe(),
 		),

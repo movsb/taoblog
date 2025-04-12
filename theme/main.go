@@ -398,5 +398,5 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 // TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	handle304.MustRevalidate(w)
-	utils.ServeFSWithModTime(w, req, t.rootFS, version.Time, file)
+	utils.ServeFSWithAutoModTime(w, req, t.rootFS, file)
 }

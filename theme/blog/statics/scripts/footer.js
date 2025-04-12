@@ -73,7 +73,7 @@ let update = async function() {
 	setTimeout(update, 60000);
 }
 
-update();
+setTimeout(update, 3000);
 
 TaoBlog.events.add('comment', 'post', () => { update(); });
 

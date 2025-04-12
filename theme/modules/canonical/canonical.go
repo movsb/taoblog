@@ -59,7 +59,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if req.Method == http.MethodGet || req.Method == http.MethodOptions {
+	if req.Method == http.MethodGet || req.Method == http.MethodHead || req.Method == http.MethodOptions {
 		if regexpHome.MatchString(path) {
 			if c.renderer.ProcessHomeQueries(w, req, req.URL.Query()) {
 				return

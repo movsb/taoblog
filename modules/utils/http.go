@@ -7,7 +7,8 @@ import (
 	"net/http"
 	urlpkg "net/url"
 	"strings"
-	"time"
+
+	"github.com/movsb/taoblog/modules/version"
 )
 
 // 类似 RSS 这种总是应该只输出公开文章，完全不用管当前是否登录。
@@ -27,10 +28,20 @@ func HTTPError(w http.ResponseWriter, code int) {
 	http.Error(w, fmt.Sprintf(`%d %s`, code, http.StatusText(code)), code)
 }
 
-func ServeFSWithModTime(w http.ResponseWriter, r *http.Request, fs fs.FS, t time.Time, file string) {
+// 如果文件有时间，使用文件时间（本地环境）；
+// 否则使用运行起始时间（线上环境，fix embed 没有时间的问题）。
+// file: 带 / 前缀。
+// 不适合动态生成的且没有时间的内容，务必附带当前时间。或者不要使用。
+func ServeFSWithAutoModTime(w http.ResponseWriter, r *http.Request, fs fs.FS, file string) {
 	fp, err := http.FS(fs).Open(file)
 	if err == nil {
 		defer fp.Close()
+		t := version.Time
+		if st, err := fp.Stat(); err == nil {
+			if mod := st.ModTime(); !mod.IsZero() {
+				t = mod
+			}
+		}
 		http.ServeContent(w, r, file, t, fp)
 		return
 	}
