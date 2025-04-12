@@ -50,18 +50,21 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 				&proto.ScheduleUpdateRequest{},
 			)
 			if err != nil {
-				g.notify(r.Context(), `持续集成`, fmt.Sprintf(`启动计划任务失败：%v`, err))
+				g.notify(`持续集成`, fmt.Sprintf(`启动计划任务失败：%v`, err))
 				return
 			}
 		default:
-			g.notify(r.Context(), `持续集成`, fmt.Sprintf("结果未知：%s", w.Conclusion))
+			g.notify(`持续集成`, fmt.Sprintf("结果未知：%s", w.Conclusion))
 		}
 	}
 }
 
-func (g *_GitHub) notify(ctx context.Context, subject, body string) {
-	g.notifier.SendInstant(ctx, &proto.SendInstantRequest{
-		Subject: subject,
-		Body:    body,
-	})
+func (g *_GitHub) notify(subject, body string) {
+	g.notifier.SendInstant(
+		auth.SystemForLocal(context.Background()),
+		&proto.SendInstantRequest{
+			Subject: subject,
+			Body:    body,
+		},
+	)
 }
