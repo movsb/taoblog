@@ -101,6 +101,7 @@ type Data struct {
 	Width, Height int
 	ImageElement  template.HTML
 	Video         string
+	Ratio         float32
 }
 
 func (e *LivePhoto) render(s *goquery.Selection, width, height int, video string) []byte {
@@ -111,6 +112,7 @@ func (e *LivePhoto) render(s *goquery.Selection, width, height int, video string
 		Height:       height,
 		ImageElement: template.HTML(buf.Bytes()),
 		Video:        video,
+		Ratio:        float32(width) / float32(height),
 	}
 	buf.Reset()
 	t().GetNamed(`template.html`).Execute(buf, d)

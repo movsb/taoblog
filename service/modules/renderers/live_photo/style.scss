@@ -8,6 +8,11 @@
 	overflow: hidden;
 	border-radius: var(--border-radius);
 
+	// 强制限宽限高限比例
+	// 必须要求设置 aspect-ratio
+	max-width: 100%;
+	height: auto !important;
+
 	.container {
 		// 使重叠，并占满
 		position: absolute;
