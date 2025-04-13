@@ -35,7 +35,7 @@ func WithCancel(cancel func()) With {
 	}
 }
 
-func WithFileCache(cache cache.FileCache) With {
+func WithFileCache(cache *cache.FileCache) With {
 	return func(s *Service) {
 		s.fileCache = cache
 	}

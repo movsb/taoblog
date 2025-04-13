@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"hash/fnv"
 	"reflect"
 	"sync"
@@ -11,18 +12,16 @@ import (
 	"github.com/movsb/taorm"
 )
 
-const (
-	OneDay   = time.Hour * 24
-	OneWeek  = OneDay * 7
-	OneMonth = OneDay * 30
-)
-
 // Loader 不带 Key 和 Context，因为 GetOrLoad 的时候使用闭包均已知，无需再传过来。
-type Loader = func() (value []byte, ttl time.Duration, err error)
+type Loader = func() (any, error)
+type Getter = func(key any, ttl time.Duration, out any, loader Loader) error
 
-type FileCache interface {
-	GetOrLoad(key FileCacheKey, loader Loader) ([]byte, error)
-	Delete(key FileCacheKey)
+func DirectLoader(key any, ttl time.Duration, out any, loader Loader) error {
+	val, err := loader()
+	if err == nil {
+		reflect.ValueOf(out).Elem().Set(reflect.ValueOf(val))
+	}
+	return err
 }
 
 type _FileCacheItem struct {
@@ -38,25 +37,21 @@ func (_FileCacheItem) TableName() string {
 	return `cache`
 }
 
-type _FileCache struct {
+type FileCache struct {
 	db   *taorm.DB
 	lock sync.Mutex
 }
 
-type FileCacheKey interface {
-	CacheKey() []byte
-}
-
-func NewFileCache(ctx context.Context, path string) FileCache {
+func NewFileCache(ctx context.Context, path string) *FileCache {
 	db := migration.InitCache(path)
-	cc := &_FileCache{
+	cc := &FileCache{
 		db: taorm.NewDB(db),
 	}
 	go cc.deleteExpired(ctx)
 	return cc
 }
 
-func (c *_FileCache) deleteExpired(ctx context.Context) {
+func (c *FileCache) deleteExpired(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -67,52 +62,65 @@ func (c *_FileCache) deleteExpired(ctx context.Context) {
 	}
 }
 
-func (c *_FileCache) GetOrLoad(key FileCacheKey, loader Loader) ([]byte, error) {
-	if val, err := c.getFromDB(key); err == nil {
-		return val, nil
+// key 应该为结构体，并可被 json 化。
+func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader) error {
+	if err := c.getFromDB(key, out); err == nil {
+		return nil
 	} else if !taorm.IsNotFoundError(err) {
-		return nil, err
+		return err
 	}
 
 	// TODO 全局锁
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if val, err := c.getFromDB(key); err == nil {
-		return val, nil
+	if err := c.getFromDB(key, out); err == nil {
+		return nil
 	} else if !taorm.IsNotFoundError(err) {
-		return nil, err
+		return err
 	}
 
-	value, ttl, err := loader()
+	value, err := loader()
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	// reflect.ValueOf(out).Elem().Set(reflect.ValueOf(value))
+
 	item := _FileCacheItem{
 		Hash:       typeHash(key),
 		CreatedAt:  time.Now().Unix(),
 		ExpiringAt: time.Now().Add(ttl).Unix(),
-		Key:        key.CacheKey(),
-		Data:       value,
+		Key:        encode(key),
+		Data:       encode(value),
 	}
 	if err := c.db.Model(&item).Create(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return value, nil
+	return c.getFromDB(key, out)
 }
 
-func (c *_FileCache) getFromDB(key FileCacheKey) ([]byte, error) {
+func (c *FileCache) getFromDB(key any, out any) error {
 	var item _FileCacheItem
-	err := c.db.Where(`hash=? AND key=?`, typeHash(key), key.CacheKey()).Find(&item)
+	err := c.db.Where(`hash=? AND key=?`, typeHash(key), encode(key)).Find(&item)
 	if err == nil {
-		return item.Data, nil
+		decode(item.Data, out)
+		return nil
 	}
-	return nil, err
+	return err
 }
 
-func (c *_FileCache) Delete(key FileCacheKey) {
-	c.db.Model(_FileCacheItem{}).Where(`hash=? AND key=?`, typeHash(key), key.CacheKey()).Delete()
+func (c *FileCache) Delete(key any) {
+	c.db.Model(_FileCacheItem{}).Where(`hash=? AND key=?`, typeHash(key), encode(key)).Delete()
+}
+
+func encode(k any) []byte {
+	j, _ := json.Marshal(k)
+	return j
+}
+func decode(d []byte, out any) {
+	json.Unmarshal(d, out)
 }
 
 var (

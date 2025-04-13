@@ -88,7 +88,7 @@ type Service struct {
 	// 通用内存缓存
 	cache *lru.TTLCache[string, any]
 	// 通用基于文件的缓存
-	fileCache cache.FileCache
+	fileCache *cache.FileCache
 
 	// 图片元数据缓存任务。
 	exifTask *exif.Task

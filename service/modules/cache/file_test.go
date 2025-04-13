@@ -28,23 +28,36 @@ func TestTypes(t *testing.T) {
 
 	h := NewFileCache(context.Background(), ``)
 	c := C{}
-	val, err := h.GetOrLoad(c, func() (value []byte, ttl time.Duration, err error) {
-		return []byte(`data`), time.Second * 10, nil
+	var out []byte
+	// 无缓存
+	err := h.GetOrLoad(c, time.Second, &out, func() (any, error) {
+		return []byte(`data`), nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(val) != `data` {
+	if string(out) != `data` {
+		panic(`not data`)
+	}
+	// 从缓存
+	out = []byte{}
+	err = h.GetOrLoad(c, time.Second, &out, func() (any, error) {
+		return []byte(`data`), nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(out) != `data` {
 		panic(`not data`)
 	}
 	h.Delete(c)
-	val, err = h.GetOrLoad(c, func() (value []byte, ttl time.Duration, err error) {
-		return []byte(`xxxx`), time.Second * 10, nil
+	err = h.GetOrLoad(c, time.Second, &out, func() (any, error) {
+		return []byte(`xxxx`), nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(val) != `xxxx` {
+	if string(out) != `xxxx` {
 		panic(`not xxxx`)
 	}
 }

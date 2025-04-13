@@ -99,7 +99,7 @@ type Server struct {
 	gateway *gateway.Gateway
 	rss     *rss.RSS
 
-	fileCache cache.FileCache
+	fileCache *cache.FileCache
 
 	metrics *metrics.Registry
 

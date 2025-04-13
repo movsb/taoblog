@@ -1,10 +1,8 @@
 package plantuml
 
 import (
-	"bytes"
 	"context"
 	"embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +12,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/service/modules/cache"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/yuin/goldmark/parser"
 )
@@ -36,7 +35,7 @@ type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀
 	format string
 
-	cache func(key CacheKey, loader func() ([]byte, error)) ([]byte, error)
+	cache cache.Getter
 }
 
 func NewDefaultSVG(options ...Option) *_PlantUMLRenderer {
@@ -47,15 +46,11 @@ func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	p := &_PlantUMLRenderer{
 		server: server,
 		format: format,
+
+		cache: cache.DirectLoader,
 	}
 	for _, opt := range options {
 		opt(p)
-	}
-
-	if p.cache == nil {
-		p.cache = func(key CacheKey, loader func() ([]byte, error)) ([]byte, error) {
-			return loader()
-		}
 	}
 
 	return p
@@ -70,31 +65,24 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 		return nil
 	}
 
-	got, err := p.cache(CacheKey{compressed}, func() ([]byte, error) {
-		light, dark, err := p.fetch(context.Background(), compressed)
-		if err != nil {
-			return nil, err
-		}
-		log.Println(`not using cache for plantuml ...`)
-		buf := bytes.NewBuffer(nil)
-		if err := json.NewEncoder(buf).Encode(_Cache{Light: light, Dark: dark}); err != nil {
-			return nil, err
-		}
-		return buf.Bytes(), nil
-	})
-	if err != nil {
+	var value _CacheValue
+	if err := p.cache(
+		CacheKey{compressed}, time.Hour*24*7, &value,
+		func() (any, error) {
+			log.Println(`未使用缓存渲染 PlantUML`)
+			light, dark, err := p.fetch(context.Background(), compressed)
+			if err != nil {
+				return nil, err
+			}
+			return _CacheValue{Light: light, Dark: dark}, nil
+		}); err != nil {
 		p.error(w)
 		log.Println(`渲染失败`, err)
 		return nil
 	}
 
-	var cache _Cache
-	if err := json.NewDecoder(bytes.NewReader(got)).Decode(&cache); err != nil {
-		return err
-	}
-
-	w.Write(cache.Light)
-	w.Write(cache.Dark)
+	w.Write(value.Light)
+	w.Write(value.Dark)
 
 	return nil
 }

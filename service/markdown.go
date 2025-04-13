@@ -131,12 +131,12 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 
 		renderers.WithFencedCodeBlockRenderer(`friends`, friends.New(s.friendsTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
-		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.NewDefaultSVG(plantuml.WithFileCache(s.fileCache))),
+		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.NewDefaultSVG(plantuml.WithFileCache(s.fileCache.GetOrLoad))),
 		renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
 		renderers.WithFencedCodeBlockRenderer(`dot`, graph_viz.New()),
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),
 		renderers.WithFencedCodeBlockRenderer(`rss`, rss.New(s.rssTask, int(postId))),
-		renderers.WithFencedCodeBlockRenderer(`echarts`, echarts.New()),
+		renderers.WithFencedCodeBlockRenderer(`echarts`, echarts.New(s.fileCache.GetOrLoad)),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),

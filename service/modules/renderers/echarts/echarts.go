@@ -7,10 +7,13 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"log"
 	"sync"
+	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/service/modules/cache"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark/parser"
@@ -30,20 +33,22 @@ func init() {
 var _embed embed.FS
 var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
-var runtime = sync.OnceValue(func() *Runtime {
-	rt, err := NewRuntime(context.Background(),
-		utils.Must1(_embed.ReadFile(`echarts.min.js`)),
-	)
-	if err != nil {
-		panic(err)
+type _ECharts struct {
+	cache cache.Getter
+}
+
+func New(cache cache.Getter) gold_utils.FencedCodeBlockRenderer {
+	return &_ECharts{
+		cache: cache,
 	}
-	return rt
-})
+}
 
-type _ECharts struct{}
+type CacheKey struct {
+	Source string
+}
 
-func New() gold_utils.FencedCodeBlockRenderer {
-	return &_ECharts{}
+type _CacheValue struct {
+	SVG string
 }
 
 func (e *_ECharts) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.Attributes, source []byte) error {
@@ -52,13 +57,24 @@ func (e *_ECharts) RenderFencedCodeBlock(w io.Writer, language string, attrs par
 		height = gold_utils.AttrIntOrDefault(attrs, `height`, 500)
 	)
 
-	svg, err := render(context.Background(), string(source), width, height)
-	if err != nil {
+	var value _CacheValue
+	if err := e.cache(
+		CacheKey{string(source)}, time.Hour*24*7, &value,
+		func() (any, error) {
+			log.Println(`未使用缓存渲染 ECharts`)
+			svg, err := render(context.Background(), string(source), width, height)
+			return _CacheValue{SVG: svg}, err
+		}); err != nil {
 		return err
 	}
+
+	if len(value.SVG) < 4 {
+		return nil
+	}
+
 	// <svg ... ➡️ <svg class="echarts"
 	w.Write([]byte(`<svg class="echarts"`))
-	w.Write([]byte(svg[len(`<svg`):]))
+	w.Write([]byte(value.SVG[len(`<svg`):]))
 	return nil
 }
 
@@ -88,3 +104,13 @@ return chart.renderToSVGString();
 
 	return val.Export().(string), nil
 }
+
+var runtime = sync.OnceValue(func() *Runtime {
+	rt, err := NewRuntime(context.Background(),
+		utils.Must1(_embed.ReadFile(`echarts.min.js`)),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return rt
+})
