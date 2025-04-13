@@ -37,6 +37,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/notify"
 	"github.com/movsb/taoblog/service/modules/notify/instant"
 	"github.com/movsb/taoblog/service/modules/notify/mailer"
@@ -97,6 +98,8 @@ type Server struct {
 	main    *service.Service
 	gateway *gateway.Gateway
 	rss     *rss.RSS
+
+	fileCache cache.FileCache
 
 	metrics *metrics.Registry
 
@@ -182,6 +185,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	rc := runtime_config.NewRuntime()
 	ctx = runtime_config.Context(ctx, rc)
+
+	s.fileCache = cache.NewFileCache(ctx, cfg.Database.Cache)
 
 	db := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
 	defer db.Close()
@@ -456,6 +461,7 @@ func (s *Server) createMainServices(
 		service.WithPostDataFileSystem(filesStore),
 		service.WithNotifier(notifier),
 		service.WithCancel(cancel),
+		service.WithFileCache(s.fileCache),
 	}
 
 	addons.New()

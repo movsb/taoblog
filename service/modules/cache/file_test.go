@@ -28,7 +28,7 @@ func TestTypes(t *testing.T) {
 
 	h := NewFileCache(context.Background(), ``)
 	c := C{}
-	val, err := h.GetOrLoad(context.Background(), c, func(ctx context.Context, key FileCacheKey) (value []byte, ttl time.Duration, err error) {
+	val, err := h.GetOrLoad(c, func() (value []byte, ttl time.Duration, err error) {
 		return []byte(`data`), time.Second * 10, nil
 	})
 	if err != nil {
@@ -38,7 +38,7 @@ func TestTypes(t *testing.T) {
 		panic(`not data`)
 	}
 	h.Delete(c)
-	val, err = h.GetOrLoad(context.Background(), c, func(ctx context.Context, key FileCacheKey) (value []byte, ttl time.Duration, err error) {
+	val, err = h.GetOrLoad(c, func() (value []byte, ttl time.Duration, err error) {
 		return []byte(`xxxx`), time.Second * 10, nil
 	})
 	if err != nil {

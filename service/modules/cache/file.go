@@ -11,10 +11,17 @@ import (
 	"github.com/movsb/taorm"
 )
 
-type Loader = func(ctx context.Context, key FileCacheKey) (value []byte, ttl time.Duration, err error)
+const (
+	OneDay   = time.Hour * 24
+	OneWeek  = OneDay * 7
+	OneMonth = OneDay * 30
+)
+
+// Loader 不带 Key 和 Context，因为 GetOrLoad 的时候使用闭包均已知，无需再传过来。
+type Loader = func() (value []byte, ttl time.Duration, err error)
 
 type FileCache interface {
-	GetOrLoad(ctx context.Context, key FileCacheKey, loader Loader) ([]byte, error)
+	GetOrLoad(key FileCacheKey, loader Loader) ([]byte, error)
 	Delete(key FileCacheKey)
 }
 
@@ -60,7 +67,7 @@ func (c *_FileCache) deleteExpired(ctx context.Context) {
 	}
 }
 
-func (c *_FileCache) GetOrLoad(ctx context.Context, key FileCacheKey, loader Loader) ([]byte, error) {
+func (c *_FileCache) GetOrLoad(key FileCacheKey, loader Loader) ([]byte, error) {
 	if val, err := c.getFromDB(key); err == nil {
 		return val, nil
 	} else if !taorm.IsNotFoundError(err) {
@@ -77,7 +84,7 @@ func (c *_FileCache) GetOrLoad(ctx context.Context, key FileCacheKey, loader Loa
 		return nil, err
 	}
 
-	value, ttl, err := loader(ctx, key)
+	value, ttl, err := loader()
 	if err != nil {
 		return nil, err
 	}

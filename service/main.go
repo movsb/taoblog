@@ -85,8 +85,11 @@ type Service struct {
 	cmtNotifyTask *_CommentNotificationTask
 	cmtgeo        *commentgeo.Task
 
-	// 通用缓存
+	// 通用内存缓存
 	cache *lru.TTLCache[string, any]
+	// 通用基于文件的缓存
+	fileCache cache.FileCache
+
 	// 图片元数据缓存任务。
 	exifTask *exif.Task
 	// 朋友头像数据缓存任务
@@ -106,8 +109,7 @@ type Service struct {
 	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
 	commentCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
-	avatarCache   *cache.AvatarHash
-	plantumlCache *lru.TTLCache[string, []byte]
+	avatarCache *cache.AvatarHash
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
@@ -156,7 +158,9 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		auth: auther,
 		mux:  mux,
 
-		cache:                lru.NewTTLCache[string, any](1024),
+		cache:     lru.NewTTLCache[string, any](10240),
+		fileCache: cache.NewFileCache(ctx, ``),
+
 		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](10240),
@@ -185,7 +189,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	}
 
 	s.avatarCache = cache.NewAvatarHash()
-	s.plantumlCache = lru.NewTTLCache[string, []byte](32)
 
 	s.cmtntf = comment_notify.New(s.notifier)
 	s.cmtNotifyTask = NewCommentNotificationTask(s, s.GetPluginStorage(`comment_notify`))

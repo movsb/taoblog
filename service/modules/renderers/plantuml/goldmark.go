@@ -36,7 +36,11 @@ type _PlantUMLRenderer struct {
 	server string // 可以是 api 前缀
 	format string
 
-	cache func(key string, loader func(context.Context) ([]byte, error)) ([]byte, error)
+	cache func(key CacheKey, loader func() ([]byte, error)) ([]byte, error)
+}
+
+func NewDefaultSVG(options ...Option) *_PlantUMLRenderer {
+	return New(`https://www.plantuml.com/plantuml`, `svg`, options...)
 }
 
 func New(server string, format string, options ...Option) *_PlantUMLRenderer {
@@ -49,8 +53,8 @@ func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	}
 
 	if p.cache == nil {
-		p.cache = func(key string, loader func(ctx context.Context) ([]byte, error)) ([]byte, error) {
-			return loader(context.Background())
+		p.cache = func(key CacheKey, loader func() ([]byte, error)) ([]byte, error) {
+			return loader()
 		}
 	}
 
@@ -66,8 +70,8 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 		return nil
 	}
 
-	got, err := p.cache(compressed, func(ctx context.Context) ([]byte, error) {
-		light, dark, err := p.fetch(ctx, compressed)
+	got, err := p.cache(CacheKey{compressed}, func() ([]byte, error) {
+		light, dark, err := p.fetch(context.Background(), compressed)
 		if err != nil {
 			return nil, err
 		}

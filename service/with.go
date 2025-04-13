@@ -4,6 +4,7 @@ import (
 	"io/fs"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/modules/cache"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 )
 
@@ -31,5 +32,11 @@ func WithNotifier(notifier proto.NotifyServer) With {
 func WithCancel(cancel func()) With {
 	return func(s *Service) {
 		s.cancel = cancel
+	}
+}
+
+func WithFileCache(cache cache.FileCache) With {
+	return func(s *Service) {
+		s.fileCache = cache
 	}
 }

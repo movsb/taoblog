@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"time"
 
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -133,20 +131,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 
 		renderers.WithFencedCodeBlockRenderer(`friends`, friends.New(s.friendsTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
-		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.New(
-			`https://www.plantuml.com/plantuml`, `svg`,
-			plantuml.WithCache(func(key string, loader func(ctx context.Context) ([]byte, error)) ([]byte, error) {
-				return utils.DropLast2(
-					s.plantumlCache.GetOrLoad(
-						s.ctx, key,
-						func(ctx context.Context, _ string) ([]byte, time.Duration, error) {
-							r, err := loader(ctx)
-							return r, time.Hour, err
-						},
-					),
-				)
-			}),
-		)),
+		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.NewDefaultSVG(plantuml.WithFileCache(s.fileCache))),
 		renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
 		renderers.WithFencedCodeBlockRenderer(`dot`, graph_viz.New()),
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),

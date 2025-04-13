@@ -81,7 +81,7 @@ func WithStyles(module string, paths ...string) {
 				for e := range events {
 					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
 					if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
-						log.Println(`需要重新加载样式`, e)
+						// log.Println(`需要重新加载样式`, e)
 						reloadAll.Store(true)
 					}
 				}
@@ -92,7 +92,7 @@ func WithStyles(module string, paths ...string) {
 	if cc, ok := c.private.(ContentChanged); ok {
 		go func() {
 			for range cc.Reload() {
-				log.Println(`需要重新加载样式`, module)
+				// log.Println(`需要重新加载样式`, module)
 				reloadAll.Store(true)
 			}
 		}()
