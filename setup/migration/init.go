@@ -32,6 +32,13 @@ func InitFiles(path string) *sql.DB {
 	return db
 }
 
+// 初始化缓存数据库。
+func InitCache(path string) *sql.DB {
+	db := createDatabase(path)
+	testCache(db)
+	return db
+}
+
 // 如果路径为空，使用内存数据库。
 func createDatabase(path string) *sql.DB {
 	var db *sql.DB
@@ -75,28 +82,11 @@ func createDatabase(path string) *sql.DB {
 // 会自动创建管理员用户。
 // TODO 移除用户创建。
 func initPosts(db *sql.DB) {
-	var err error
-
-	fp, err := setup_data.Root.Open(`posts.sql`)
-	if err != nil {
-		panic(err)
-	}
-	defer fp.Close()
-
-	all, err := io.ReadAll(fp)
-	if err != nil {
-		panic(err)
-	}
-
-	tdb := taorm.NewDB(db)
-
-	result, err := tdb.Exec(string(all))
-	if err != nil {
-		panic(err)
-	}
-	_ = result
+	_initSQL(db, `posts.sql`)
 
 	now := int32(time.Now().Unix())
+
+	tdb := taorm.NewDB(db)
 
 	tdb.MustTxCall(func(tx *taorm.DB) {
 		tx.Model(&models.Option{
@@ -121,9 +111,16 @@ func initPosts(db *sql.DB) {
 }
 
 func initFiles(db *sql.DB) {
-	var err error
+	_initSQL(db, `files.sql`)
+}
 
-	fp, err := setup_data.Root.Open(`files.sql`)
+func initCache(db *sql.DB) {
+	_initSQL(db, `cache.sql`)
+}
+
+func _initSQL(db *sql.DB, file string) {
+	var err error
+	fp, err := setup_data.Root.Open(file)
 	if err != nil {
 		panic(err)
 	}
@@ -188,6 +185,20 @@ func testFiles(db *sql.DB) {
 		if se, ok := err.(sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
 				initFiles(db)
+				return
+			}
+		}
+		panic(err)
+	}
+}
+
+func testCache(db *sql.DB) {
+	var count int
+	row := db.QueryRow(`select count(1) from cache`)
+	if err := row.Scan(&count); err != nil {
+		if se, ok := err.(sqlite3.Error); ok {
+			if strings.Contains(se.Error(), `no such table`) {
+				initCache(db)
 				return
 			}
 		}

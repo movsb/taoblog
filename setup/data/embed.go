@@ -4,5 +4,5 @@ import (
 	"embed"
 )
 
-//go:embed posts.sql files.sql
+//go:embed *.sql
 var Root embed.FS
