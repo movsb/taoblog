@@ -242,14 +242,8 @@ class PostFormUI {
 		this.elemDiffContainer.innerHTML = v;
 	}
 
-	/**
-	 * @param {any[]} list
-	 */
-	set files(list) {
-		console.log(list);
-		let ol = this._form.querySelector('.files .list');
-		ol.innerHTML = '';
-		
+	// 会自动去重。
+	_addFile(ol, f, append) {
 		/**
 		 * @param {string} s
 		 */
@@ -267,46 +261,85 @@ class PostFormUI {
 			return h.replace(/[&'"]/g, c => map[c]);
 		};
 
-		list.forEach(f => {
-			let li = document.createElement('li');
+		let li = document.createElement('li');
 
-			let name = document.createElement('span');
-			name.innerText = f.path;
-			li.appendChild(name);
+		let name = document.createElement('span');
+		name.innerText = f.path;
+		li.appendChild(name);
 
-			let insertButton = document.createElement('button');
-			let text = '';
-			let editor = this.editor;
-			let insert = '';
-			if (/^image\//.test(f.type)) {
-				text = '🏞️';
-				insert = `![](${encodePathAsURL(f.path)})`;
-			} else if (/^video\//.test(f.type)) {
-				text = '🎬';
-				insert = `<video controls src="${h2a(encodePathAsURL(f.path))}"></video>`;
-			} else if (/^audio\//.test(f.type)) {
-				text = '🎵';
-				insert = `<audio controls src="${h2a(encodePathAsURL(f.path))}"></audio>`;
-			} else {
-				text = '🔗';
-				insert = `[${f.path}](${encodePathAsURL(f.path)})`;
-			}
-			insertButton.innerText = text;
-			insertButton.addEventListener('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				editor.paste(insert);
-			});
-			li.appendChild(insertButton);
-
-			ol.appendChild(li);
+		let insertButton = document.createElement('button');
+		let text = '';
+		let editor = this.editor;
+		let insert = '';
+		if (/^image\//.test(f.type)) {
+			text = '🏞️';
+			insert = `![](${encodePathAsURL(f.path)})\n`;
+		} else if (/^video\//.test(f.type)) {
+			text = '🎬';
+			insert = `<video controls src="${h2a(encodePathAsURL(f.path))}"></video>\n`;
+		} else if (/^audio\//.test(f.type)) {
+			text = '🎵';
+			insert = `<audio controls src="${h2a(encodePathAsURL(f.path))}"></audio>\n`;
+		} else {
+			text = '🔗';
+			insert = `[${f.path}](${encodePathAsURL(f.path)})\n`;
+		}
+		insertButton.innerText = text;
+		insertButton.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			editor.paste(insert);
 		});
+		li.appendChild(insertButton);
+
+		if (append) {
+			ol.appendChild(li);
+		} else {
+			ol.prepend(li);
+		}
+
+		return li;
+	}
+
+	/**
+	 * @param {any[]} list
+	 */
+	set files(list) {
+		console.log(list);
+		let ol = this._form.querySelector('.files .list');
+		ol.innerHTML = '';
+		list.forEach(f => this._addFile(ol, f, true));
 	}
 	filesChanged(callback) {
 		this._files.addEventListener('change', (e)=> {
 			console.log('选中文件列表：', this._files.files);
 			callback(this._files.files);
 		});
+	}
+
+	static UploadingFile = class {
+		constructor(formUI, spec) {
+			const list = formUI._form.querySelector('.files .uploading');
+
+			list.querySelectorAll(`li`).forEach(li=> {
+				if(li._path == spec.path) {
+					li.remove();
+				}
+			});
+
+			this.li = formUI._addFile(list, spec, false);
+			this.li._path = spec.path;
+
+			this.name = spec.path;
+			this.span = this.li.querySelector('span');
+		}
+		set progress(v) {
+			this.span.innerText = `${this.name}(${v}%)`;
+		}
+	}
+
+	tmpFile(spec) {
+		return new PostFormUI.UploadingFile(this, spec);
 	}
 
 	submit(callback) {
@@ -517,12 +550,17 @@ formUI.filesChanged(async files => {
 			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
 			return;
 		}
+		let up = formUI.tmpFile({
+			path: f.name,
+			type: f.type,
+		});
 		try {
 			let fm = new FilesManager(TaoBlog.post_id);
 			await fm.create(f, (p)=> {
 				console.log(f.name, `${p}%`);
+				up.progress = p;
 			});
-			alert(`文件 ${f.name} 上传成功。`);
+			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。
 			formUI.files = await fm.list();

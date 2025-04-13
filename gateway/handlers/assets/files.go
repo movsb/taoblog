@@ -58,6 +58,7 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 				},
 			},
 		}))
+		utils.Must1(fsc.Recv())
 
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 
@@ -92,5 +93,6 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 				},
 			},
 		}))
+		utils.Must1(fsc.Recv())
 	})
 }
