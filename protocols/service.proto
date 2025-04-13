@@ -274,6 +274,15 @@ service TaoBlog {
 		};
 	}
 
+	rpc ListPostFiles (ListPostFilesRequest) returns (ListPostFilesResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts/{post_id=*}/files";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取文件列表。";
+		};
+	}
+
 	// Comments
 
 	rpc CreateComment (Comment) returns (Comment) {

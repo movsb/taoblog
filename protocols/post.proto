@@ -283,6 +283,13 @@ message FileSpec {
 	string type = 5;
 }
 
+message ListPostFilesRequest {
+	int32 post_id = 1;
+}
+message ListPostFilesResponse {
+	repeated FileSpec files = 1;
+}
+
 message FileSystemRequest {
 	message InitRequest {
 		message Post {

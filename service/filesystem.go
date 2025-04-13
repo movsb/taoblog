@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"io/fs"
@@ -118,4 +119,20 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr erro
 			}))
 		}
 	}
+}
+
+func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequest) (_ *proto.ListPostFilesResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+	po := utils.Must1(s.getPost(int(in.PostId)))
+	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+		panic(noPerm)
+	}
+
+	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
+	files := utils.Must1(utils.ListFiles(pfs))
+	return &proto.ListPostFilesResponse{
+		Files: files,
+	}, nil
 }

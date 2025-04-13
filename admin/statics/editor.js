@@ -267,7 +267,7 @@ class PostFormUI {
 			return h.replace(/[&'"]/g, c => map[c]);
 		};
 
-		list.files.forEach(f => {
+		list.forEach(f => {
 			let li = document.createElement('li');
 
 			let name = document.createElement('span');
@@ -448,8 +448,13 @@ class FilesManager {
 	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
 	// 用 name 表示 path 容易误解。
 	async list() {
-		let data = { list_files: {}};
-		return this._promise(data, obj => obj?.list_files);
+		const url = `/v3/posts/${this._post_id}/files`;
+		let rsp = await fetch(url);
+		if (!rsp.ok) {
+			throw new Error(`获取列表失败：`, rsp.statusText);
+		}
+		rsp = await rsp.json();
+		return rsp.files;
 	}
 
 	// 创建一个文件。
@@ -578,11 +583,9 @@ formUI.sourceChanged(async (content) => {
 });
 updatePreview(formUI.source);
 (async function() {
-	let fm = new FilesManager(TaoBlog.post_id);
 	try {
-		await fm.connect();
+		let fm = new FilesManager(TaoBlog.post_id);
 		formUI.files = await fm.list();
-		fm.close();
 	} catch(e) {
 		alert(e);
 	}
