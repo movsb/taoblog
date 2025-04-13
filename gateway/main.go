@@ -12,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/api"
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
+	"github.com/movsb/taoblog/gateway/handlers/assets"
 	"github.com/movsb/taoblog/gateway/handlers/avatar"
 	"github.com/movsb/taoblog/gateway/handlers/debug"
 	"github.com/movsb/taoblog/gateway/handlers/favicon"
@@ -131,8 +132,8 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		// GRPC API 转接层
 		mc.Handle(`/v3/`, api.New(ctx, g.client))
 
-		// 文件服务：/123/a.txt
-		// mc.Handle(`GET /v3/posts/{id}/files`, assets.New(g.auther, `post`, g.client))
+		// 文件服务
+		mc.Handle(`POST /v3/posts/{id}/files`, assets.CreateFile(g.client))
 
 		// 站点地图：sitemap.xml
 		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.client, g.service), g.lastPostTimeHandler)

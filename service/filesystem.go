@@ -48,6 +48,7 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr erro
 		} else if initReq != nil {
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
+				// TODO 没鉴权。
 				pfs, err = s.postDataFS.ForPost(int(init.Id))
 			}
 			if err != nil {

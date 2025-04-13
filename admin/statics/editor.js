@@ -407,42 +407,6 @@ class FilesManager {
 		if (!id) { throw new Error('无效文章编号。'); }
 		this._post_id = +id;
 	}
-	connect() {
-		// 火狐官网文档异常小节明明写了 url 如果不是 ws:// 或者 wss:// 会有异常，结果火狐没抛，
-		// 谷歌浏览器抛了，真有你的🔥🦊！
-		// https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket#url
-		const prefix = (location.protocol == 'https:' ? 'wss://' : 'ws://') + location.host;
-		this._ws = new WebSocket(`${prefix}/v3/posts/${this._post_id}/files`);
-		return new Promise((resolve, reject) => {
-			this._ws.onclose = () => { console.log('ws closed'); reject("ws closed"); };
-			this._ws.onerror = (e) => { console.log(e); reject(e); };
-			this._ws.onmessage = console.log;
-			this._ws.onopen = () => resolve(this);
-		});
-	}
-	close() {
-		this._ws && this._ws.close();
-	}
-	
-	_promise(data, callback) {
-		if (this._ws.readyState != WebSocket.OPEN) {
-			throw new Error('WebSocket 连接不正确。');
-		}
-		this._ws.send(JSON.stringify(data));
-		return new Promise((resolve, reject) => {
-			this._ws.onmessage = (m) => {
-				console.log(m);
-				resolve(callback(JSON.parse(m.data)));
-				this._ws.onmessage = console.log;
-			};
-			this._ws.onerror = (e) => {
-				console.error(e);
-				reject(e);
-				this._ws.onerror = alert;
-			};
-		});
-	}
-	
 	// 列举所有的文件列表。
 	// NOTE: 返回的文件用 path 代表 name。
 	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
@@ -459,38 +423,42 @@ class FilesManager {
 
 	// 创建一个文件。
 	// f: <input type="file" /> 中拿来的文件。
-	async create(f) {
-		let r = new FileReader();
-		r.readAsDataURL(f);
-		return new Promise((resolve, reject) => {
-			r.onerror = (e) => {
-				console.error('读文件失败：', r.error);
-				reject(r.error);
-			}
-			r.onload = async () => {
-				const data = {
-					write_file: {
-						spec: {
-							path: f.name,
-							mode: 0o644,
-							size: f.size,
-							time: Math.floor(f.lastModified/1000),
-						},
-						data: r.result.slice(r.result.indexOf(',')+1),
-					},
-				};
-				try {
-					resolve(await this._promise(data, obj => obj.write_file));
-				} catch(e) {
-					reject(e);
+	async create(f, progress) {
+		return new Promise((success, failure) => {
+			let form = new FormData();
+			form.set(`spec`, JSON.stringify({
+				path: f.name,
+				mode: 0o644,
+				size: f.size,
+				time: Math.floor(f.lastModified/1000),
+			}));
+			form.set(`data`, f)
+
+			let xhr = new XMLHttpRequest();
+			xhr.open('POST', `/v3/posts/${this._post_id}/files`);
+			xhr.addEventListener('abort', ()=>{
+				failure('xhr: aborted');
+			});
+			xhr.addEventListener('error', ()=>{
+				failure('xhr: error');
+			});
+			xhr.addEventListener('load', ()=> {
+				if(xhr.readyState != XMLHttpRequest.DONE) {
+					failure('readystate error');
+					return;
 				}
-			};
+				if(xhr.status >= 200 && xhr.status < 300) {
+					success();
+					return;
+				}
+				console.log(xhr);
+				failure('xhr: unknown');
+			});
+			xhr.upload.addEventListener('progress', (e)=> {
+				progress((e.loaded / e.total * 100).toFixed(0));
+			});
+			xhr.send(form);
 		});
-	}
-	
-	// 删除一个文件。
-	async delete(path) {
-		
 	}
 }
 
@@ -550,15 +518,10 @@ formUI.filesChanged(async files => {
 			return;
 		}
 		try {
-			let fm = undefined;
-			try {
-				fm = new FilesManager(TaoBlog.post_id);
-				await fm.connect();
-			} catch(e) {
-				alert(e);
-				return;
-			}
-			await fm.create(f);
+			let fm = new FilesManager(TaoBlog.post_id);
+			await fm.create(f, (p)=> {
+				console.log(f.name, `${p}%`);
+			});
 			alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。

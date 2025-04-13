@@ -1,61 +1,96 @@
 package assets
 
 import (
-	"log"
+	"encoding/json"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"nhooyr.io/websocket"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-func New(auther *auth.Auth, kind string, client *clients.ProtoClient) http.Handler {
-	if kind != `post` {
-		panic(`only for post currently`)
-	}
+func CreateFile(client *clients.ProtoClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 这里没鉴权，后端会鉴权。
-		// 鉴权了会比较好，可以少打开一个到后端的连接。
-		ws, err := websocket.Accept(w, r, nil)
+		ac := auth.Context(r.Context())
+		id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
+		po, err := client.Blog.GetPost(
+			auth.NewContextForRequestAsGateway(r),
+			&proto.GetPostRequest{
+				Id: int32(id),
+			},
+		)
 		if err != nil {
-			log.Println(err)
+			if se, ok := status.FromError(err); ok {
+				if se.Code() == codes.NotFound {
+					utils.HTTPError(w, 404)
+					return
+				}
+			}
+			utils.HTTPError(w, http.StatusBadRequest)
 			return
 		}
-		defer ws.CloseNow()
-		ws.SetReadLimit(-1)
-
-		id := utils.MustToInt64(r.PathValue(`id`))
-
-		ctx := auth.NewContextForRequestAsGateway(r)
-		fs, err := client.Management.FileSystem(ctx)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if ac.User.ID != int64(po.UserId) {
+			utils.HTTPError(w, http.StatusForbidden)
 			return
 		}
 
-		initReq := proto.FileSystemRequest_InitRequest{
-			For: &proto.FileSystemRequest_InitRequest_Post_{
-				Post: &proto.FileSystemRequest_InitRequest_Post{
-					Id: id,
+		fsc, err := client.Management.FileSystem(
+			auth.NewContextForRequestAsGateway(r),
+		)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		defer fsc.CloseSend()
+
+		utils.Must(fsc.Send(&proto.FileSystemRequest{
+			Init: &proto.FileSystemRequest_InitRequest{
+				For: &proto.FileSystemRequest_InitRequest_Post_{
+					Post: &proto.FileSystemRequest_InitRequest_Post{
+						Id: int64(id),
+					},
 				},
 			},
-		}
-		if err := fs.Send(&proto.FileSystemRequest{Init: &initReq}); err != nil {
-			log.Println(err)
-			return
-		}
-		initRsp, err := fs.Recv()
-		if err != nil {
-			log.Println("init failed:", err)
-			return
-		}
-		if initRsp.GetInit() == nil {
-			log.Println(`init error`)
+		}))
+
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+
+		specValue := r.FormValue(`spec`)
+		var spec proto.FileSpec
+		// NOTE 普通 json
+		dec := json.NewDecoder(strings.NewReader(specValue))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&spec); err != nil {
+			utils.HTTPError(w, http.StatusBadRequest)
 			return
 		}
 
-		NewFileSystemWrapper().fileServer(r.Context(), ws, fs)
+		data, _, err := r.FormFile(`data`)
+		if err != nil {
+			utils.HTTPError(w, http.StatusBadRequest)
+			return
+		}
+		defer data.Close()
+
+		all, err := io.ReadAll(data)
+		if err != nil {
+			utils.HTTPError(w, http.StatusBadRequest)
+			return
+		}
+
+		utils.Must(fsc.Send(&proto.FileSystemRequest{
+			Request: &proto.FileSystemRequest_WriteFile{
+				WriteFile: &proto.FileSystemRequest_WriteFileRequest{
+					Spec: &spec,
+					Data: all,
+				},
+			},
+		}))
 	})
 }

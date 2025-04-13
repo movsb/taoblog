@@ -175,6 +175,9 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *pro
 	}
 
 	if err := stmt.Find(&p); err != nil {
+		if taorm.IsNotFoundError(err) {
+			return nil, status.Error(codes.NotFound, `文章未找到`)
+		}
 		return nil, err
 	}
 
