@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"hash/fnv"
+	"log"
 	"reflect"
 	"sync"
 	"time"
@@ -38,33 +39,35 @@ func (_FileCacheItem) TableName() string {
 }
 
 type FileCache struct {
-	db   *taorm.DB
-	lock sync.Mutex
+	db      *taorm.DB
+	lock    sync.Mutex
+	touched map[int]int64
 }
 
 func NewFileCache(ctx context.Context, path string) *FileCache {
 	db := migration.InitCache(path)
 	cc := &FileCache{
-		db: taorm.NewDB(db),
+		db:      taorm.NewDB(db),
+		touched: make(map[int]int64),
 	}
-	go cc.deleteExpired(ctx)
+	go cc.run(ctx)
 	return cc
 }
 
-func (c *FileCache) deleteExpired(ctx context.Context) {
+func (c *FileCache) run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(time.Minute * 10):
-			c.db.Model(_FileCacheItem{}).Where(`expiring_at<?`, time.Now().Unix()).Delete()
+			c.sync()
 		}
 	}
 }
 
 // key 应该为结构体，并可被 json 化。
 func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader) error {
-	if err := c.getFromDB(key, out); err == nil {
+	if err := c.getFromDB(key, ttl, out, false); err == nil {
 		return nil
 	} else if !taorm.IsNotFoundError(err) {
 		return err
@@ -74,7 +77,7 @@ func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if err := c.getFromDB(key, out); err == nil {
+	if err := c.getFromDB(key, ttl, out, true); err == nil {
 		return nil
 	} else if !taorm.IsNotFoundError(err) {
 		return err
@@ -98,17 +101,42 @@ func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader
 		return err
 	}
 
-	return c.getFromDB(key, out)
+	return c.getFromDB(key, ttl, out, true)
 }
 
-func (c *FileCache) getFromDB(key any, out any) error {
+func (c *FileCache) getFromDB(key any, ttl time.Duration, out any, locked bool) error {
 	var item _FileCacheItem
 	err := c.db.Where(`hash=? AND key=?`, typeHash(key), encode(key)).Find(&item)
 	if err == nil {
 		decode(item.Data, out)
+		c.touch(item.ID, ttl, locked)
 		return nil
 	}
 	return err
+}
+
+func (c *FileCache) touch(id int, ttl time.Duration, locked bool) {
+	if !locked {
+		c.lock.Lock()
+		defer c.lock.Unlock()
+	}
+
+	c.touched[id] = time.Now().Add(ttl).Unix()
+}
+
+func (c *FileCache) sync() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	for id, t := range c.touched {
+		c.db.From(_FileCacheItem{}).Where(`id=?`, id).UpdateMap(taorm.M{
+			`expiring_at`: t,
+		})
+	}
+	log.Println(`更新文件缓存并清空已过期缓存：`, len(c.touched))
+
+	clear(c.touched)
+	c.db.Model(_FileCacheItem{}).Where(`expiring_at<?`, time.Now().Unix()).Delete()
 }
 
 func (c *FileCache) Delete(key any) {
