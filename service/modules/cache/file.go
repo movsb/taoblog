@@ -88,19 +88,12 @@ func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader
 		return err
 	}
 
-	// reflect.ValueOf(out).Elem().Set(reflect.ValueOf(value))
-
-	item := _FileCacheItem{
-		Hash:       typeHash(key),
-		CreatedAt:  time.Now().Unix(),
-		ExpiringAt: time.Now().Add(ttl).Unix(),
-		Key:        encode(key),
-		Data:       encode(value),
-	}
-	if err := c.db.Model(&item).Create(); err != nil {
+	if err := c.create(key, value, ttl); err != nil {
 		return err
 	}
 
+	// 确保数据是正常获取的。
+	// reflect.ValueOf(out).Elem().Set(reflect.ValueOf(value))
 	return c.getFromDB(key, ttl, out, true)
 }
 
@@ -141,6 +134,39 @@ func (c *FileCache) sync() {
 
 func (c *FileCache) Delete(key any) {
 	c.db.Model(_FileCacheItem{}).Where(`hash=? AND key=?`, typeHash(key), encode(key)).Delete()
+}
+
+func (c *FileCache) create(key any, value any, ttl time.Duration) error {
+	item := _FileCacheItem{
+		Hash:       typeHash(key),
+		CreatedAt:  time.Now().Unix(),
+		ExpiringAt: time.Now().Add(ttl).Unix(),
+		Key:        encode(key),
+		Data:       encode(value),
+	}
+	return c.db.Model(&item).Create()
+}
+
+func (c *FileCache) Set(key, value any, ttl time.Duration) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	typ := typeHash(key)
+	enc := encode(key)
+
+	var item _FileCacheItem
+	if err := c.db.Select(`id`).Where(`hash=? AND key=?`, typ, enc).Find(&item); err != nil {
+		if !taorm.IsNotFoundError(err) {
+			return err
+		}
+		return c.create(key, value, ttl)
+	} else {
+		_, err := c.db.Model(_FileCacheItem{}).Where(`id=?`, item.ID).UpdateMap(taorm.M{
+			`expiring_at`: time.Now().Add(ttl).Unix(),
+			`data`:        encode(value),
+		})
+		return err
+	}
 }
 
 func encode(k any) []byte {

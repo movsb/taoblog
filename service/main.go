@@ -200,9 +200,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.deletePostContentCacheFor(int64(id))
 		s.updatePostMetadataTime(int64(id), time.Now())
 	})
-	s.exifTask = exif.NewTask(s.GetPluginStorage(`exif`), func(id int) {
-		exifDebouncer.Enter(id)
-	})
+	s.exifTask = exif.NewTask(s.fileCache, exifDebouncer.Enter)
 
 	s.friendsTask = friends.NewTask(s.GetPluginStorage(`friends`), func(postID int) {
 		s.deletePostContentCacheFor(int64(postID))

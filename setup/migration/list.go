@@ -10,7 +10,7 @@ type VersionUpdater struct {
 	update  func(tx *sql.Tx)
 }
 
-var gVersions = []VersionUpdater{
+var gVersions = [...]VersionUpdater{
 	{0, v0},
 	{1, v1},
 	{2, v2},
@@ -54,6 +54,7 @@ var gVersions = []VersionUpdater{
 	{40, v40},
 	{41, v41},
 	{42, v42},
+	{43, v43},
 }
 
 // MaxVersionNumber ...

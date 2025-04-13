@@ -544,3 +544,7 @@ func v41(tx *sql.Tx) {
 func v42(tx *sql.Tx) {
 	mustExec(tx, "ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT ''")
 }
+
+func v43(tx *sql.Tx) {
+	mustExec(tx, "DELETE FROM options WHERE name='exif:cache'")
+}
