@@ -2,124 +2,81 @@ package friends
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"mime"
 	"net/http"
-	"sync"
+	"slices"
 	"time"
 
-	"github.com/movsb/taoblog/modules/utils"
-	"github.com/phuslu/lru"
+	"github.com/movsb/taoblog/service/modules/cache"
 )
 
-type CacheKey struct {
+type _CacheKey struct {
 	PostID     int
 	FaviconURL string
 }
 
-func (k CacheKey) String() string {
-	return string(utils.Must1(json.Marshal(k)))
-}
-
-func CacheKeyFromString(s string) CacheKey {
-	var k CacheKey
-	json.Unmarshal([]byte(s), &k)
-	return k
-}
-
-type CacheValue struct {
+type _CacheValue struct {
 	ContentType string
 	Content     []byte
 }
 
 type Task struct {
-	cache      *lru.TTLCache[CacheKey, CacheValue]
-	lock       sync.Mutex
-	keys       map[CacheKey]struct{}
-	store      utils.PluginStorage
-	deb        *utils.Debouncer
+	cache      *cache.FileCache
 	invalidate func(postID int)
 }
 
-func NewTask(storage utils.PluginStorage, invalidate func(postID int)) *Task {
+func NewTask(cache *cache.FileCache, invalidate func(postID int)) *Task {
 	t := &Task{
-		cache:      lru.NewTTLCache[CacheKey, CacheValue](1024),
-		keys:       map[CacheKey]struct{}{},
-		store:      storage,
+		cache:      cache,
 		invalidate: invalidate,
 	}
-	t.deb = utils.NewDebouncer(time.Second*10, t.save)
-	t.load()
 	go t.refreshLoop(context.Background())
 	return t
 }
 
 const ttl = time.Hour * 24 * 7
 
-func (t *Task) load() {
-	cached, err := t.store.GetString(`cache`)
-	if err != nil {
-		log.Println(err)
-		return
+func (t *Task) Get(postID int, faviconURL string) (string, []byte, bool) {
+	var value _CacheValue
+	if err := t.cache.GetOrLoad(
+		_CacheKey{postID, faviconURL}, ttl, &value,
+		func() (any, error) {
+			go t.update(postID, faviconURL)
+			return nil, fmt.Errorf(`async`)
+		},
+	); err != nil {
+		return ``, nil, false
 	}
-
-	m := map[string]CacheValue{}
-	if err := json.Unmarshal([]byte(cached), &m); err != nil {
-		log.Println(err)
-		return
-	}
-
-	for k, v := range m {
-		ck := CacheKeyFromString(k)
-		t.cache.Set(ck, v, ttl)
-		t.keys[ck] = struct{}{}
-	}
-
-	log.Println(`已恢复朋友头像数据`)
+	return value.ContentType, value.Content, true
 }
 
-func (t *Task) save() {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-
-	m := map[string]CacheValue{}
-	existingKeys := make(map[CacheKey]struct{})
-	for k := range t.keys {
-		if value, _, ok := t.cache.Peek(k); ok {
-			m[k.String()] = value
-			existingKeys[k] = struct{}{}
+func (t *Task) KeepInUse(postID int, urls []string) {
+	var keys []_CacheKey
+	t.cache.GetAllKeysFor(&keys)
+	for _, k := range keys {
+		if k.PostID != postID {
+			continue
+		}
+		if !slices.Contains(urls, k.FaviconURL) {
+			t.cache.Delete(k)
+			log.Println(`删除不存在的头像：`, k)
 		}
 	}
-
-	data := string(utils.Must1(json.Marshal(m)))
-	t.store.SetString(`cache`, data)
-	t.keys = existingKeys
-
-	log.Println(`已存储朋友头像数据`)
 }
 
-func (t *Task) Get(postID int, faviconURL string) (string, []byte, bool) {
-	if value, found := t.cache.Get(CacheKey{postID, faviconURL}); found {
-		return value.ContentType, value.Content, true
-	}
-
-	go t.update(postID, faviconURL)
-
-	return ``, nil, false
-}
-
-const refreshTTL = time.Hour * 6
+const refreshTTL = time.Hour * 24
 
 func (t *Task) refreshLoop(ctx context.Context) {
 	refresh := func() {
 		log.Println(`即将更新朋友头像`)
-		t.lock.Lock()
-		defer t.lock.Unlock()
 
-		for k := range t.keys {
+		var keys []_CacheKey
+		t.cache.GetAllKeysFor(&keys)
+
+		for _, k := range keys {
 			go t.update(k.PostID, k.FaviconURL)
 		}
 	}
@@ -136,34 +93,25 @@ func (t *Task) refreshLoop(ctx context.Context) {
 	}
 }
 
-// 会重复多次尝试获取。
 func (t *Task) update(postID int, faviconURL string) {
 	var (
 		contentType string
 		content     []byte
 		err         error
 	)
-	for range 3 {
-		contentType, content, err = t.get(faviconURL)
-		if err != nil {
-			log.Println(faviconURL, err)
-			time.Sleep(time.Second * 10)
-			continue
-		}
-		break
-	}
+	contentType, content, err = t.get(faviconURL)
 	if err != nil {
+		log.Println(faviconURL, err)
 		return
 	}
-	t.cache.Set(CacheKey{postID, faviconURL}, CacheValue{
-		ContentType: contentType,
-		Content:     content,
-	}, ttl)
-	t.lock.Lock()
-	t.keys[CacheKey{postID, faviconURL}] = struct{}{}
-	t.lock.Unlock()
+	t.cache.Set(
+		_CacheKey{postID, faviconURL},
+		_CacheValue{
+			ContentType: contentType,
+			Content:     content,
+		}, ttl,
+	)
 	t.invalidate(postID)
-	t.deb.Enter()
 	log.Println(`已更新朋友头像数据：`, faviconURL)
 }
 

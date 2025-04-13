@@ -27,7 +27,7 @@ func DirectLoader(key any, ttl time.Duration, out any, loader Loader) error {
 
 type _FileCacheItem struct {
 	ID         int
-	Hash       int64
+	Type       int64
 	CreatedAt  int64
 	ExpiringAt int64
 	Key        []byte
@@ -99,7 +99,7 @@ func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader
 
 func (c *FileCache) getFromDB(key any, ttl time.Duration, out any, locked bool) error {
 	var item _FileCacheItem
-	err := c.db.Where(`hash=? AND key=?`, typeHash(key), encode(key)).Find(&item)
+	err := c.db.Where(`type=? AND key=?`, typeHash(key), encode(key)).Find(&item)
 	if err == nil {
 		decode(item.Data, out)
 		c.touch(item.ID, ttl, locked)
@@ -133,12 +133,12 @@ func (c *FileCache) sync() {
 }
 
 func (c *FileCache) Delete(key any) {
-	c.db.Model(_FileCacheItem{}).Where(`hash=? AND key=?`, typeHash(key), encode(key)).Delete()
+	c.db.Model(_FileCacheItem{}).Where(`type=? AND key=?`, typeHash(key), encode(key)).Delete()
 }
 
 func (c *FileCache) create(key any, value any, ttl time.Duration) error {
 	item := _FileCacheItem{
-		Hash:       typeHash(key),
+		Type:       typeHash(key),
 		CreatedAt:  time.Now().Unix(),
 		ExpiringAt: time.Now().Add(ttl).Unix(),
 		Key:        encode(key),
@@ -155,7 +155,7 @@ func (c *FileCache) Set(key, value any, ttl time.Duration) error {
 	enc := encode(key)
 
 	var item _FileCacheItem
-	if err := c.db.Select(`id`).Where(`hash=? AND key=?`, typ, enc).Find(&item); err != nil {
+	if err := c.db.Select(`id`).Where(`type=? AND key=?`, typ, enc).Find(&item); err != nil {
 		if !taorm.IsNotFoundError(err) {
 			return err
 		}
@@ -167,6 +167,41 @@ func (c *FileCache) Set(key, value any, ttl time.Duration) error {
 		})
 		return err
 	}
+}
+
+// 获取某种特定类型的 key 的所有 keys。
+// 并不是全部数据库的所有 key。
+func (c *FileCache) GetAllKeysFor(out any) {
+	t := reflect.TypeOf(out)
+	if t.Kind() != reflect.Pointer {
+		panic(`not pointer`)
+	}
+	t = t.Elem()
+	if t.Kind() != reflect.Slice {
+		panic(`not slice`)
+	}
+	sliceType := t
+	keyType := sliceType.Elem()
+	if keyType.Kind() == reflect.Pointer {
+		keyType = keyType.Elem()
+	}
+	keyVal := reflect.New(keyType).Elem().Interface()
+
+	var items []*_FileCacheItem
+	c.db.Where(`type=?`, typeHash(keyVal)).MustFind(&items)
+
+	ss := reflect.MakeSlice(sliceType, len(items), len(items))
+	for i, item := range items {
+		k := reflect.New(keyType)
+		decode(item.Key, k.Interface())
+
+		if sliceType.Elem().Kind() == reflect.Pointer {
+			ss.Index(i).Set(k)
+		} else {
+			ss.Index(i).Set(k.Elem())
+		}
+	}
+	reflect.ValueOf(out).Elem().Set(ss)
 }
 
 func encode(k any) []byte {
@@ -186,11 +221,14 @@ var (
 // 如果不同类型名得到相同hash，会panic
 func typeHash(key any) int64 {
 	ti := reflect.TypeOf(key)
+	if ti.Kind() == reflect.Pointer {
+		ti = ti.Elem()
+	}
 	pp, name := ti.PkgPath(), ti.Name()
 	if pp == `` || name == `` {
 		panic(`无效的缓存键类型`)
 	}
-	tt := pp + name // 没写“，”，问题不大。
+	tt := pp + "." + name
 
 	hh := fnv.New64a()
 	hh.Write([]byte(tt))
@@ -204,6 +242,7 @@ func typeHash(key any) int64 {
 		}
 	} else {
 		typesRegistry[sum] = tt
+		log.Println(`注册类型：`, tt, sum)
 	}
 
 	return int64(sum)

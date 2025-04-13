@@ -138,6 +138,7 @@ func resolveIconURL(siteURL, faviconURL string) (string, error) {
 }
 
 func (f *Friends) prepareIconURL(fs []*Friend) {
+	var inUse []string
 	for _, fr := range fs {
 		if fr.Icons[0] == `` {
 			fr.Icons[0] = fr.Icon
@@ -158,6 +159,8 @@ func (f *Friends) prepareIconURL(fs []*Friend) {
 			} else {
 				fr.iconDataURLs[i] = fmt.Sprintf(`data:%s;base64,%s`, contentType, base64.StdEncoding.EncodeToString(content))
 			}
+			inUse = append(inUse, u)
 		}
 	}
+	f.task.KeepInUse(f.postID, inUse)
 }

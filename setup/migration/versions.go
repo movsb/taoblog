@@ -548,3 +548,6 @@ func v42(tx *sql.Tx) {
 func v43(tx *sql.Tx) {
 	mustExec(tx, "DELETE FROM options WHERE name='exif:cache'")
 }
+func v44(tx *sql.Tx) {
+	mustExec(tx, "DELETE FROM options WHERE name='friends:cache'")
+}

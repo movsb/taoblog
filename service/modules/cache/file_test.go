@@ -14,10 +14,6 @@ type C struct {
 	N int
 }
 
-func (c C) CacheKey() []byte {
-	return []byte(`CC`)
-}
-
 func TestTypes(t *testing.T) {
 	ti := reflect.TypeFor[A]()
 	t.Log(ti.PkgPath())
@@ -51,7 +47,8 @@ func TestTypes(t *testing.T) {
 		panic(`not data`)
 	}
 	h.Delete(c)
-	err = h.GetOrLoad(c, time.Second, &out, func() (any, error) {
+	c.N = 10
+	err = h.GetOrLoad(&c, time.Second, &out, func() (any, error) {
 		return []byte(`xxxx`), nil
 	})
 	if err != nil {
@@ -59,6 +56,18 @@ func TestTypes(t *testing.T) {
 	}
 	if string(out) != `xxxx` {
 		panic(`not xxxx`)
+	}
+
+	var cs []*C
+	h.GetAllKeysFor(&cs)
+	if !reflect.DeepEqual(cs, []*C{{N: 10}}) {
+		t.Fatal(`not equal`)
+	}
+
+	var cs2 []C
+	h.GetAllKeysFor(&cs2)
+	if !reflect.DeepEqual(cs2, []C{{N: 10}}) {
+		t.Fatal(`not equal`)
 	}
 }
 
