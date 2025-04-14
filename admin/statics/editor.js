@@ -78,6 +78,28 @@ class PostFormUI {
 				editor: this.editor,
 				commands: [
 					{
+						name: `undo`,
+						title: `撤销`,
+						innerHTML: `↩️ 撤销`,
+						action: editor => {
+							let e = editor._stack.undo();
+							if (e !== undefined) {
+								editor.setContent(e);
+							}
+						},
+					},
+					{
+						name: `redo`,
+						title: `重做`,
+						innerHTML: `↪️ 重做`,
+						action: editor => {
+							let e = editor._stack.redo();
+							if (e !== undefined) {
+								editor.setContent(e);
+							}
+						},
+					},
+					{
 						name: `insertImage`,
 						title: `上传图片/视频/文件`,
 						innerHTML: `⏫ 上传文件`,
@@ -121,6 +143,51 @@ class PostFormUI {
 					},
 				],
 			});
+			class UndoRedoStack {
+				constructor(editor) {
+					this._undo = [];
+					this._redo = [];
+					
+					this._maxUndo = 100;
+					this._debouncing;
+					this._ignore = true;
+					this._oldest = editor.getContent();
+
+					editor.addEventListener('change', (e) => {
+						if (this._ignore) {
+							this._ignore = false;
+							return;
+						}
+						clearInterval(this._debouncing);
+						this._debouncing = setTimeout(() => {
+							this.edit(e.content);
+						}, 1000);
+					});
+				}
+				edit(e) {
+					this._undo.push(e);
+					this._redo = [];
+				}
+				undo() {
+					if (this._undo.length <= 0) { return; }
+					let current = this._undo.pop();
+					this._redo.push(current);
+					let last = this._oldest;
+					if (this._undo.length > 0) {
+						last = this._undo[this._undo.length - 1];
+					}
+					this._ignore = true;
+					return last;
+				}
+				redo() {
+					if (this._redo.length < 1) { return; }
+					let e = this._redo.pop();
+					this._undo.push(e);
+					this._ignore = true;
+					return e;
+				}
+			}
+			this.editor._stack = new UndoRedoStack(this.editor);
 		} else {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
