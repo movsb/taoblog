@@ -59,7 +59,7 @@ func (c *FileCache) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Minute * 10):
+		case <-time.After(time.Hour):
 			c.sync()
 		}
 	}
