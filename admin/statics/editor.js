@@ -140,6 +140,8 @@ class PostFormUI {
 			class UndoRedoStack {
 				constructor(editor) {
 					this._editor = editor;
+					this._editor._stack = this;
+
 					this._stack = [];
 					this._max= 100;
 					this._debouncing;
@@ -148,7 +150,7 @@ class PostFormUI {
 
 					// initial content
 					this._index = -1;
-					this._save(editor.getContent(), { row: 0, col: 0 });
+					this._save(editor.getContent(), {row:0,col:0},{row:0,col:0});
 
 					editor.addEventListener('change', (e) => {
 						if (this._ignore_content) {
@@ -200,7 +202,7 @@ class PostFormUI {
 					this._editor.setSelection(e.end, e.start);
 				}
 			}
-			this.editor._stack = new UndoRedoStack(this.editor);
+			new UndoRedoStack(this.editor);
 		} else {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
