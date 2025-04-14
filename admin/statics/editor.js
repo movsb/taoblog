@@ -84,7 +84,8 @@ class PostFormUI {
 						action: editor => {
 							let e = editor._stack.undo();
 							if (e !== undefined) {
-								editor.setContent(e);
+								editor.setContent(e.content);
+								editor.setSelection(e.cursor);
 							}
 						},
 					},
@@ -94,8 +95,9 @@ class PostFormUI {
 						innerHTML: `↪️ 重做`,
 						action: editor => {
 							let e = editor._stack.redo();
-							if (e !== undefined) {
-								editor.setContent(e);
+							if (e) {
+								editor.setContent(e.content);
+								editor.setSelection(e.cursor);
 							}
 						},
 					},
@@ -145,13 +147,22 @@ class PostFormUI {
 			});
 			class UndoRedoStack {
 				constructor(editor) {
+					// 包含所有编辑历史。
+					// { content: string, cursor: { row: number, col: number } }
 					this._undo = [];
 					this._redo = [];
 					
 					this._maxUndo = 100;
 					this._debouncing;
 					this._ignore = true;
-					this._oldest = editor.getContent();
+
+					this._oldest = {
+						content: editor.getContent(),
+						cursor: {
+							row: 0,
+							col: 0,
+						},
+					};
 
 					editor.addEventListener('change', (e) => {
 						if (this._ignore) {
@@ -160,12 +171,15 @@ class PostFormUI {
 						}
 						clearInterval(this._debouncing);
 						this._debouncing = setTimeout(() => {
-							this.edit(e.content);
+							this.edit(e.content, editor.getSelection());
 						}, 1000);
 					});
 				}
-				edit(e) {
-					this._undo.push(e);
+				edit(content, cursor) {
+					this._undo.push({ content, cursor });
+					if (this.undo.length > this._maxUndo) {
+						this._undo.shift();
+					}
 					this._redo = [];
 				}
 				undo() {
@@ -181,10 +195,10 @@ class PostFormUI {
 				}
 				redo() {
 					if (this._redo.length < 1) { return; }
-					let e = this._redo.pop();
-					this._undo.push(e);
+					let last = this._redo.pop();
+					this._undo.push(last);
 					this._ignore = true;
-					return e;
+					return last;
 				}
 			}
 			this.editor._stack = new UndoRedoStack(this.editor);
