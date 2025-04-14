@@ -147,58 +147,48 @@ class PostFormUI {
 			});
 			class UndoRedoStack {
 				constructor(editor) {
-					// 包含所有编辑历史。
 					// { content: string, cursor: { row: number, col: number } }
-					this._undo = [];
-					this._redo = [];
-					
-					this._maxUndo = 100;
+					this._stack = [];
+					this._max= 100;
 					this._debouncing;
-					this._ignore = true;
+					this._ignore = false;
 
-					this._oldest = {
-						content: editor.getContent(),
-						cursor: {
-							row: 0,
-							col: 0,
-						},
-					};
+					// initial content
+					this._index = -1;
+					this._save(editor.getContent(), { row: 0, col: 0 });
 
 					editor.addEventListener('change', (e) => {
+						console.log("change");
 						if (this._ignore) {
 							this._ignore = false;
 							return;
 						}
 						clearInterval(this._debouncing);
 						this._debouncing = setTimeout(() => {
-							this.edit(e.content, editor.getSelection());
+							this._save(e.content, editor.getSelection());
 						}, 1000);
 					});
 				}
-				edit(content, cursor) {
-					this._undo.push({ content, cursor });
-					if (this.undo.length > this._maxUndo) {
-						this._undo.shift();
+				_save(content, cursor) {
+					// save undo stack
+					this._stack[++this._index] = { content, cursor };
+					// clear redo stack
+					this._stack.length = this._index+1;
+
+					if (this._stack.length > this._max) {
+						this._stack.shift();
+						this._index--;
 					}
-					this._redo = [];
 				}
 				undo() {
-					if (this._undo.length <= 0) { return; }
-					let current = this._undo.pop();
-					this._redo.push(current);
-					let last = this._oldest;
-					if (this._undo.length > 0) {
-						last = this._undo[this._undo.length - 1];
-					}
+					if (this._index <= 0) { return; }
 					this._ignore = true;
-					return last;
+					return this._stack[--this._index];
 				}
 				redo() {
-					if (this._redo.length < 1) { return; }
-					let last = this._redo.pop();
-					this._undo.push(last);
+					if(this._index+1 >= this._stack.length) { return; }
 					this._ignore = true;
-					return last;
+					return this._stack[++this._index];
 				}
 			}
 			this.editor._stack = new UndoRedoStack(this.editor);
