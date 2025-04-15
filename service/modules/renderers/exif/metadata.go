@@ -13,6 +13,7 @@ type Metadata struct {
 	FileName     string  `json:"File:FileName"`         // 文件名字
 	FileSize     string  `json:"File:FileSize"`         // 文件大小
 	ImageSize    string  `json:"Composite:ImageSize"`   // 尺寸
+	Orientation  string  `json:"Composite:Orientation"` // 方向
 	MimeType     string  `json:"File:MIMEType"`         // 类型：image/avif
 	Artist       string  `json:"EXIF:Artist"`           // 作者
 	Copyright    string  `json:"EXIF:Copyright"`        // 版权

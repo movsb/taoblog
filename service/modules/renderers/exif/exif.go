@@ -59,6 +59,7 @@ func (m *Exif) TransformHtml(doc *goquery.Document) error {
 		// get 会负责关闭文件。
 		// defer fp.Close()
 		if m.task == nil {
+			fp.Close()
 			return
 		}
 

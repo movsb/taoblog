@@ -100,28 +100,33 @@ func (t *Task) get(id int, u string, f fs.File) string {
 func (t *Task) extract(id int, name string, stat fs.FileInfo, key _CacheKey, r io.ReadCloser) {
 	defer r.Close()
 
+	md, err := extract(r)
+	if err != nil {
+		log.Println(`exif.task.extract`, err)
+		return
+	}
+	md.FileName = name
+	md.FileSize = utils.ByteCountIEC(stat.Size())
+
+	t.cache.Set(key, _CacheValue{Metadata: *md}, ttl)
+	log.Println(`更新图片元数据：`, key)
+
+	t.invalidate(id)
+}
+
+func extract(r io.ReadCloser) (*Metadata, error) {
 	cmd := exec.CommandContext(context.TODO(), `exiftool`, `-G`, `-s`, `-json`, `-`)
 	cmd.Stdin = r
 	output, err := cmd.Output()
 	if err != nil {
-		log.Println(id, name, err)
-		return
+		return nil, err
 	}
 	var md []*Metadata
 	if err := json.Unmarshal(output, &md); err != nil {
-		log.Println(id, name, err)
-		return
+		return nil, err
 	}
 	if len(md) <= 0 {
-		log.Println(id, name, `没有提取到元数据。`)
-		return
+		return nil, fmt.Errorf(`没有提取到元数据`)
 	}
-
-	md[0].FileName = name
-	md[0].FileSize = utils.ByteCountIEC(stat.Size())
-
-	t.cache.Set(key, _CacheValue{Metadata: *md[0]}, ttl)
-	log.Println(`更新图片元数据：`, key)
-
-	t.invalidate(id)
+	return md[0], nil
 }
