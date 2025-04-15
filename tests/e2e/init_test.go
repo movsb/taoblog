@@ -31,6 +31,7 @@ func Serve(ctx context.Context, options ...server.With) *R {
 	cfg := config.DefaultConfig()
 	cfg.Database.Posts = "" // 使用内存
 	cfg.Database.Files = "" // 使用内存
+	cfg.Database.Cache = "" // 使用内存
 	cfg.Server.HTTPListen = `localhost:0`
 
 	r := &R{}
