@@ -643,9 +643,11 @@ func (t *_CommentNotificationTask) getNewComment() (*models.Comment, error) {
 
 func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	post, err := t.s.GetPost(auth.SystemForLocal(context.Background()), &proto.GetPostRequest{
-		Id:             int32(c.PostID),
-		WithLink:       proto.LinkKind_LinkKindFull,
-		ContentOptions: co.For(co.CreateCommentGetPost),
+		Id: int32(c.PostID),
+		GetPostOptions: &proto.GetPostOptions{
+			WithLink:       proto.LinkKind_LinkKindFull,
+			ContentOptions: co.For(co.CreateCommentGetPost),
+		},
 	})
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -109,20 +110,12 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 		panic(err)
 	}
 
-	out, err := posts.ToProto(s.setPostExtraFields(ctx, in.ContentOptions))
+	out, err := posts.ToProto(s.setPostExtraFields(ctx, in.GetPostOptions))
 	if err != nil {
 		return nil, err
 	}
 
-	if in.WithLink != proto.LinkKind_LinkKindNone {
-		for _, p := range out {
-			s.setPostLink(p, in.WithLink)
-		}
-	}
-
-	return &proto.ListPostsResponse{
-		Posts: out,
-	}, nil
+	return &proto.ListPostsResponse{Posts: out}, nil
 }
 
 // 只会列出公开的。
@@ -181,75 +174,7 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *pro
 		return nil, err
 	}
 
-	out, err := p.ToProto(s.setPostExtraFields(ctx, in.ContentOptions))
-	if err != nil {
-		return nil, err
-	}
-
-	if in.WithLink != proto.LinkKind_LinkKindNone {
-		s.setPostLink(out, in.WithLink)
-	}
-
-	if in.WithRelates {
-		relates, err := s.getRelatedPosts(ctx, int64(in.Id))
-		if err != nil {
-			return nil, err
-		}
-		for _, r := range relates {
-			out.Relates = append(out.Relates, &proto.Post{
-				Id:    r.Id,
-				Title: r.Title,
-			})
-		}
-		if in.WithLink != proto.LinkKind_LinkKindNone {
-			for _, p := range out.Relates {
-				s.setPostLink(p, in.WithLink)
-			}
-		}
-	}
-
-	if in.WithComments {
-		list, err := s.getPostComments(ctx, p.ID)
-		if err != nil {
-			return nil, err
-		}
-		out.CommentList = list
-	}
-
-	if in.WithUserPerms {
-		ac := auth.MustNotBeGuest(ctx)
-		userPerms := utils.Must1(s.GetPostACL(
-			auth.SystemForLocal(ctx),
-			&proto.GetPostACLRequest{PostId: int64(in.Id)}),
-		).Users
-		canRead := func(userID int32) bool {
-			if p, ok := userPerms[userID]; ok {
-				return slices.Contains(p.Perms, proto.Perm_PermRead)
-			}
-			return false
-		}
-		allUsers := utils.Must1(s.ListUsers(
-			auth.SystemForLocal(ctx),
-			&proto.ListUsersRequest{}),
-		).Users
-		allUsers = slices.DeleteFunc(allUsers, func(u *proto.User) bool {
-			return u.Id == ac.User.ID
-		})
-		out.UserPerms = utils.Map(allUsers, func(u *proto.User) *proto.Post_UserPerms {
-			return &proto.Post_UserPerms{
-				UserId:   int32(u.Id),
-				UserName: u.Nickname,
-				CanRead:  canRead(int32(u.Id)),
-			}
-		})
-	}
-
-	// TODO 再根据主题设置决定要不要全局开。
-	if (in.WithToc == 1 && p.Metas.Toc) || in.WithToc == 2 {
-		out.Toc = s.getPostTocCached(int(p.ID), p.Source)
-	}
-
-	return out, nil
+	return p.ToProto(s.setPostExtraFields(ctx, in.GetPostOptions))
 }
 
 func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
@@ -450,7 +375,7 @@ func (s *Service) GetPostsByTags(ctx context.Context, tagNames []string) ([]*pro
 		GroupBy(`posts.id`).
 		Having(fmt.Sprintf(`COUNT(posts.id) >= %d`, len(ids))).
 		MustFind(&posts)
-	return posts.ToProto(s.setPostExtraFields(ctx, &co.CO{}))
+	return posts.ToProto(s.setPostExtraFields(ctx, &proto.GetPostOptions{}))
 }
 
 func (s *Service) getPageParentID(parents string) int64 {
@@ -620,6 +545,8 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		return nil
 	})
 
+	s.updateUserTopPosts(int(ac.User.ID), int(p.ID), in.Top)
+
 	// TODO 暂时没提供选项。
 	return p.ToProto(s.setPostExtraFields(ctx, nil))
 }
@@ -781,6 +708,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		s.setPostACL(in.Post.Id, in.UserPerms)
 	}
 
+	if in.UpdateTop {
+		s.updateUserTopPosts(int(ac.User.ID), int(in.Post.Id), in.Post.Top)
+	}
+
 	// 通知新文章创建
 	if oldPost.Date == oldPost.Modified && oldPost.Title == models.Untitled &&
 		s.cfg.Site.Notify.NewPost &&
@@ -792,14 +723,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		})
 	}
 
-	// TODO Update 接口没有 ContentOptions。
-	req := proto.GetPostRequest{
-		Id: int32(in.Post.Id),
-	}
-	if in.UpdateUserPerms {
-		req.WithUserPerms = true
-	}
-	return s.GetPost(ctx, &req)
+	return s.GetPost(ctx, &proto.GetPostRequest{
+		Id:             int32(in.Post.Id),
+		GetPostOptions: in.GetPostOptions,
+	})
 }
 
 func (s *Service) setPostACL(postID int64, users []int32) {
@@ -845,8 +772,9 @@ func (s *Service) parsePostDerived(sourceType, source string) (string, []string,
 func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (*empty.Empty, error) {
 	s.MustBeAdmin(ctx)
 
+	var p models.Post
+
 	s.MustTxCall(func(txs *Service) error {
-		var p models.Post
 		txs.tdb.Select(`id`).Where(`id=?`, in.Id).MustFind(&p)
 		txs.tdb.Model(&p).MustDelete()
 		txs.deletePostComments(ctx, int64(in.Id))
@@ -856,6 +784,9 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 		txs.updateCommentsCount()
 		return nil
 	})
+
+	s.updateUserTopPosts(int(p.UserID), int(p.ID), false)
+
 	return &empty.Empty{}, nil
 }
 
@@ -953,9 +884,81 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *proto.GetPostCom
 	}, nil
 }
 
-// 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
-func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostContentOptions) func(c *proto.Post) error {
+// 最后更新的文章在最后。
+// TODO 缓存。其实不用，options 自己有缓存。
+func (s *Service) getUserTopPosts(id int) []int {
+	if id <= 0 {
+		return nil
+	}
+	var posts []int
+	j := utils.Must1(s.options.GetStringDefault(fmt.Sprintf(`user_top_posts:%d`, id), `[]`))
+	json.Unmarshal([]byte(j), &posts)
+	return posts
+}
+
+func (s *Service) updateUserTopPosts(id int, postID int, top bool) {
+	old := s.getUserTopPosts(id)
+	updated := false
+	if top {
+		// 更新文章的时候如果已经置顶过了，这个列表的顺序不会变。
+		if !slices.Contains(old, postID) {
+			old = append(old, postID)
+			updated = true
+		}
+	} else {
+		if slices.Contains(old, postID) {
+			old = slices.DeleteFunc(old, func(p int) bool { return p == postID })
+			updated = true
+		}
+	}
+	if updated {
+		s.options.SetString(fmt.Sprintf(`user_top_posts:%d`, id), string(utils.Must1(json.Marshal(old))))
+	}
+}
+
+// TODO 不需要公开 api
+func (s *Service) GetTopPosts(ctx context.Context, opts *proto.GetPostOptions) ([]*proto.Post, error) {
 	ac := auth.Context(ctx)
+	if ac.User.IsGuest() {
+		return nil, nil
+	}
+	// 依次调用 GetPost 来获取：
+	// 0. 由于是独立维护的，可能有脏数据。
+	// 1. 可以判断权限（如果发生变更）
+	//    1. 包含文章转移后（没清理干净？）
+	//    2. 分享权限发生变更
+	// 2. 比 List 的时候 IN (ids) 更快
+	posts := []*proto.Post{}
+	ids := s.getUserTopPosts(int(ac.User.ID))
+	for _, id := range ids {
+		p, err := s.GetPost(ctx, &proto.GetPostRequest{
+			Id:             int32(id),
+			GetPostOptions: opts,
+		})
+		if err != nil {
+			if status.Code(err) == codes.NotFound {
+				continue
+			}
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
+
+	return posts, nil
+}
+
+// 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
+func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOptions) func(c *proto.Post) error {
+	ac := auth.Context(ctx)
+
+	if opts == nil {
+		opts = &proto.GetPostOptions{}
+	}
+	if opts.ContentOptions == nil {
+		opts.ContentOptions = &proto.PostContentOptions{}
+	}
+
+	topPosts := s.getUserTopPosts(int(ac.User.ID))
 
 	return func(p *proto.Post) error {
 		if ac.User.IsGuest() {
@@ -964,8 +967,8 @@ func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostConten
 			}
 		}
 
-		if copt != nil && copt.WithContent {
-			content, err := s.getPostContentCached(ctx, p.Id, copt)
+		if opts.ContentOptions.WithContent {
+			content, err := s.getPostContentCached(ctx, p.Id, opts.ContentOptions)
 			if err != nil {
 				return err
 			}
@@ -992,6 +995,71 @@ func (s *Service) setPostExtraFields(ctx context.Context, copt *proto.PostConten
 		} else {
 			p.Tags = tags
 		}
+
+		if opts.WithLink != proto.LinkKind_LinkKindNone {
+			s.setPostLink(p, opts.WithLink)
+		}
+
+		if opts.WithRelates {
+			relates, err := s.getRelatedPosts(ctx, int64(p.Id))
+			if err != nil {
+				return err
+			}
+			for _, r := range relates {
+				p.Relates = append(p.Relates, &proto.Post{
+					Id:    r.Id,
+					Title: r.Title,
+				})
+			}
+			if opts.WithLink != proto.LinkKind_LinkKindNone {
+				for _, p := range p.Relates {
+					s.setPostLink(p, opts.WithLink)
+				}
+			}
+		}
+
+		if opts.WithComments {
+			list, err := s.getPostComments(ctx, p.Id)
+			if err != nil {
+				return err
+			}
+			p.CommentList = list
+		}
+
+		if opts.WithUserPerms {
+			ac := auth.MustNotBeGuest(ctx)
+			userPerms := utils.Must1(s.GetPostACL(
+				auth.SystemForLocal(ctx),
+				&proto.GetPostACLRequest{PostId: int64(p.Id)}),
+			).Users
+			canRead := func(userID int32) bool {
+				if p, ok := userPerms[userID]; ok {
+					return slices.Contains(p.Perms, proto.Perm_PermRead)
+				}
+				return false
+			}
+			allUsers := utils.Must1(s.ListUsers(
+				auth.SystemForLocal(ctx),
+				&proto.ListUsersRequest{}),
+			).Users
+			allUsers = slices.DeleteFunc(allUsers, func(u *proto.User) bool {
+				return u.Id == ac.User.ID
+			})
+			p.UserPerms = utils.Map(allUsers, func(u *proto.User) *proto.Post_UserPerms {
+				return &proto.Post_UserPerms{
+					UserId:   int32(u.Id),
+					UserName: u.Nickname,
+					CanRead:  canRead(int32(u.Id)),
+				}
+			})
+		}
+
+		// TODO 再根据主题设置决定要不要全局开。
+		if (opts.WithToc == 1 && p.Metas.Toc) || opts.WithToc == 2 {
+			p.Toc = s.getPostTocCached(int(p.Id), p.Source)
+		}
+
+		p.Top = slices.Contains(topPosts, int(p.Id))
 
 		return nil
 	}
@@ -1035,8 +1103,10 @@ func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckTas
 
 	p, err := s.GetPost(ctx,
 		&proto.GetPostRequest{
-			Id:             in.Id,
-			ContentOptions: co.For(co.CheckPostTaskListItems),
+			Id: in.Id,
+			GetPostOptions: &proto.GetPostOptions{
+				ContentOptions: co.For(co.CheckPostTaskListItems),
+			},
 		},
 	)
 	if err != nil {
@@ -1268,6 +1338,9 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 			panic(`当前用户已是文章作者，无需转移。`)
 		}
 
+		// Update() 接口会理想这个字段吗？不确定，先备份一下。
+		oldUserID := p.UserID
+
 		// 确保用户存在。
 		// 应该 LOCK FOR UPDATE
 		utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(in.UserId)))
@@ -1292,6 +1365,8 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 			Users:  acl.Users,
 		}))
 
+		shouldRemoveTop := false
+
 		// 如果是部分可见且仅分享过给新作者，则设置为私有。
 		if p.Status == models.PostStatusPartial && sharedToNewUser && onlyShare {
 			utils.Must1(s.SetPostStatus(
@@ -1302,6 +1377,13 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 					Touch:  false,
 				},
 			))
+			shouldRemoveTop = true
+		} else if p.Status == models.PostStatusPrivate {
+			shouldRemoveTop = true
+		}
+
+		if shouldRemoveTop {
+			s.updateUserTopPosts(int(oldUserID), int(p.ID), false)
 		}
 	})
 

@@ -181,7 +181,7 @@ class PostManagementAPI
 
 	// 更新/“编辑”文章。
 	// 返回更新后的。
-	async updatePost(p, users) {
+	async updatePost(p, extra) {
 		let path = `/v3/posts/${p.id}`;
 		let obj = {
 			post: {
@@ -193,13 +193,21 @@ class PostManagementAPI
 				source: p.source,
 				metas: p.metas,
 				source_type: 'markdown',
+				top: p.top,
 			},
-			update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas'
+			update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas',
+			get_post_options: {
+				with_user_perms: true,
+			},
 		};
+
 		if(obj.post.status == 'partial') {
 			obj.update_user_perms = true;
-			obj.user_perms = users;
+			obj.user_perms = extra.users;
 		}
+
+		obj.update_top = true;
+
 		let rsp = await fetch(path, {
 			method: 'PATCH',
 			headers: {

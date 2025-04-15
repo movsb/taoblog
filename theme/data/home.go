@@ -11,6 +11,7 @@ import (
 )
 
 type HomeData struct {
+	Tops     []*Post
 	Posts    []*Post
 	Tweets   []*Post
 	Comments []*LatestCommentsByPost
@@ -26,20 +27,35 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		svc:     service,
 		User:    auth.Context(ctx).User,
 	}
+
 	home := &HomeData{
 		PostCount:    impl.GetDefaultIntegerOption("post_count", 0),
 		PageCount:    impl.GetDefaultIntegerOption("page_count", 0),
 		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
+
+	{
+		topPosts := utils.Must1(impl.GetTopPosts(ctx, &proto.GetPostOptions{
+			WithLink:       proto.LinkKind_LinkKindRooted,
+			ContentOptions: co.For(co.HomeLatestPosts),
+		}))
+		for _, p := range topPosts {
+			pp := newPost(p)
+			home.Tops = append(home.Tops, pp)
+		}
+	}
+
 	ownership := utils.IIF(d.User.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
 	rsp, err := service.ListPosts(ctx,
 		&proto.ListPostsRequest{
-			Limit:          15,
-			OrderBy:        "date DESC",
-			Kinds:          []string{`post`},
-			WithLink:       proto.LinkKind_LinkKindRooted,
-			ContentOptions: co.For(co.HomeLatestPosts),
-			Ownership:      ownership,
+			Limit:     15,
+			OrderBy:   "date DESC",
+			Kinds:     []string{`post`},
+			Ownership: ownership,
+			GetPostOptions: &proto.GetPostOptions{
+				WithLink:       proto.LinkKind_LinkKindRooted,
+				ContentOptions: co.For(co.HomeLatestPosts),
+			},
 		},
 	)
 	if err != nil {
@@ -54,12 +70,14 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 	{
 		tweets, err := service.ListPosts(ctx,
 			&proto.ListPostsRequest{
-				Limit:          15,
-				OrderBy:        `date desc`,
-				Kinds:          []string{`tweet`},
-				WithLink:       proto.LinkKind_LinkKindRooted,
-				ContentOptions: co.For(co.HomeLatestTweets),
-				Ownership:      ownership,
+				Limit:     15,
+				OrderBy:   `date desc`,
+				Kinds:     []string{`tweet`},
+				Ownership: ownership,
+				GetPostOptions: &proto.GetPostOptions{
+					WithLink:       proto.LinkKind_LinkKindRooted,
+					ContentOptions: co.For(co.HomeLatestTweets),
+				},
 			},
 		)
 		if err != nil {
@@ -89,8 +107,10 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		if !ok {
 			post, err := d.svc.GetPost(ctx,
 				&proto.GetPostRequest{
-					Id:             int32(c.PostId),
-					ContentOptions: co.For(co.HomeLatestCommentsPosts),
+					Id: int32(c.PostId),
+					GetPostOptions: &proto.GetPostOptions{
+						ContentOptions: co.For(co.HomeLatestCommentsPosts),
+					},
 				},
 			)
 			if err != nil {

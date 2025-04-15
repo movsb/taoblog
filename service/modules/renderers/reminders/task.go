@@ -75,8 +75,7 @@ func (t *Task) load() {
 		pp, err := t.svc.GetPost(
 			auth.SystemForLocal(t.ctx),
 			&proto.GetPostRequest{
-				Id:             int32(p),
-				ContentOptions: &proto.PostContentOptions{},
+				Id: int32(p),
 			},
 		)
 		if err != nil {
@@ -188,7 +187,6 @@ func (t *Task) getUpdatedPosts(ctx context.Context) ([]*proto.Post, error) {
 	// now := time.Now().Unix()
 
 	rsp, err := t.svc.ListPosts(auth.SystemForLocal(ctx), &proto.ListPostsRequest{
-		ContentOptions:    &proto.PostContentOptions{},
 		ModifiedNotBefore: int32(lastCheckTime),
 	})
 	if err != nil {

@@ -271,9 +271,11 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 	}
 	if pid, _ := strconv.Atoi(r.URL.Query().Get(`id`)); pid > 0 {
 		rsp, err := a.svc.GetPost(r.Context(), &proto.GetPostRequest{
-			Id:             int32(pid),
-			ContentOptions: co.For(co.Editor),
-			WithUserPerms:  true,
+			Id: int32(pid),
+			GetPostOptions: &proto.GetPostOptions{
+				ContentOptions: co.For(co.Editor),
+				WithUserPerms:  true,
+			},
 		})
 		if err != nil {
 			panic(err)

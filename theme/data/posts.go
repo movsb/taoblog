@@ -58,8 +58,10 @@ func NewDataForPosts(ctx context.Context, service proto.TaoBlogServer, impl serv
 		&proto.ListPostsRequest{
 			OrderBy:   fmt.Sprintf(`%s %s`, sort[0], sort[1]),
 			Kinds:     []string{`post`},
-			WithLink:  proto.LinkKind_LinkKindRooted,
 			Ownership: ownership,
+			GetPostOptions: &proto.GetPostOptions{
+				WithLink: proto.LinkKind_LinkKindRooted,
+			},
 		},
 	)
 	if err != nil {

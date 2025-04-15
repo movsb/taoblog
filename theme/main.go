@@ -278,12 +278,14 @@ func (t *Theme) post304Handler(w http.ResponseWriter, r *http.Request, p *proto.
 func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 	p, err := t.service.GetPost(r.Context(),
 		&proto.GetPostRequest{
-			Id:             int32(id),
-			WithRelates:    true,
-			WithLink:       proto.LinkKind_LinkKindRooted,
-			ContentOptions: co.For(co.QueryByID),
-			WithComments:   true,
-			WithToc:        1,
+			Id: int32(id),
+			GetPostOptions: &proto.GetPostOptions{
+				WithRelates:    true,
+				WithLink:       proto.LinkKind_LinkKindRooted,
+				ContentOptions: co.For(co.QueryByID),
+				WithComments:   true,
+				WithToc:        1,
+			},
 		},
 	)
 	if err != nil {
@@ -315,12 +317,14 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string) (int64, error) {
 	p, err := t.service.GetPost(r.Context(),
 		&proto.GetPostRequest{
-			Page:           path,
-			WithRelates:    false, // 页面总是不是显示相关文章。
-			WithLink:       proto.LinkKind_LinkKindRooted,
-			ContentOptions: co.For(co.QueryByPage),
-			WithComments:   true,
-			WithToc:        1,
+			Page: path,
+			GetPostOptions: &proto.GetPostOptions{
+				WithRelates:    false, // 页面总是不是显示相关文章。
+				WithLink:       proto.LinkKind_LinkKindRooted,
+				ContentOptions: co.For(co.QueryByPage),
+				WithComments:   true,
+				WithToc:        1,
+			},
 		},
 	)
 	if err != nil {

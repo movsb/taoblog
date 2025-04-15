@@ -116,6 +116,9 @@ message Post {
 
 	// 目录。
 	string toc = 25;
+
+	// 是否置顶。
+	bool top = 26;
 }
 
 enum LinkKind {
@@ -124,34 +127,47 @@ enum LinkKind {
 	LinkKindFull = 2;
 }
 
+message GetPostOptions {
+	// 渲染内容选项。
+	PostContentOptions content_options = 1;
+
+	// 是否包含文章链接。
+	LinkKind with_link = 20;
+
+	// 是否包含“相关文章”。
+	bool with_relates = 100;
+
+	// 是否返回文章的目录。
+	// 0: 不要，1:要（文章自己可以决定不要），2:一定要
+	int32 with_toc = 101;
+
+	// 是否返回权限用户。
+	bool with_user_perms = 102;
+
+	// 是否返回文章的评论列表。
+	bool with_comments = 103;
+}
+
 message GetPostRequest {
 	// 选择其一。
 	int32 id = 1;
-	string page = 3;
+	string page = 2;
 
-	// 是否包含“相关文章”。
-	bool with_relates = 99;
-	PostContentOptions content_options = 100;
-	LinkKind with_link = 101;
-	// 是否返回评论列表。
-	bool with_comments = 102;
-
-	// 是否返回权限用户。
-	bool with_user_perms = 103;
-
-	// 是否返回目录 HTML 内容。
-	// 0: 不要，1:要（文章自己可以决定不要），2:一定要
-	int32 with_toc = 104;
+	GetPostOptions get_post_options = 10;
 }
 
 message UpdatePostRequest {
 	Post post = 1;
 	google.protobuf.FieldMask update_mask = 2;
 
+	GetPostOptions get_post_options = 3;
+
 	// 默认 modified 已被用作防冲突的版本号。
 	// touch 可以用来控制是否更新 modified 为当前时间。
 	// 默认为 false，表示要更新。
-	bool do_not_touch = 3;
+	bool do_not_touch = 4;
+
+	bool update_top = 5;
 
 	// 是否更新用户权限。
 	bool update_user_perms = 101;
@@ -163,22 +179,22 @@ message DeletePostRequest {
 }
 
 message ListPostsRequest {
-	int32 limit = 1;
-	string order_by = 2;
-	PostContentOptions content_options = 3;
+	GetPostOptions get_post_options = 1;
+
+	int32 limit = 2;
+	string order_by = 3;
 	repeated string kinds = 4;
-	LinkKind with_link = 5;
 
 	// 如果 > 0，则只会列出从这个时间点开始、结束的文章。
 	// 以后有过更新的文章，适用于备份用。
 	// 时间范围：[NotBefore, NotAfter)。
-	int32 modified_not_before = 6;
-	int32 modified_not_after = 7;
+	int32 modified_not_before = 5;
+	int32 modified_not_after = 6;
 
 	// 文章的所有者。
 	// 如果不指定，默认为 All。
 	// 只对已登录用户有效，未登录用户始终只能看公开文章。
-	Ownership ownership = 8;
+	Ownership ownership = 7;
 }
 
 message ListPostsResponse {

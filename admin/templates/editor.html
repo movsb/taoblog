@@ -66,6 +66,15 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 		<ol class="list"></ol>
 		<div><button>✅ 确定</button></div>
 	</dialog>
+	<p class="top">
+		<label>
+			<span>置顶：</span>
+			<select name="top" autocomplete="off">
+				<option value="0">否</option>
+				<option value="1">是</option>
+			</select>
+		</label>
+	</p>
 	<p class="toc" style="display: none;">
 		<label>
 			<span>目录：</span>

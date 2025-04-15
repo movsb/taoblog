@@ -27,7 +27,7 @@
 }
 
 @media screen and (max-width: variables.$max_width) {
-	#latest-comment-list, #latest-post-list, #latest-tweet-list, #status-list, #all-posts, #all-tweets {
+	#latest-comment-list, #latest-post-list, #latest-tweet-list, #top-post-list, #status-list, #all-posts, #all-tweets {
 		padding-left: 1em;
 	}
 }

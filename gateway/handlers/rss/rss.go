@@ -119,11 +119,13 @@ func (r *RSS) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	rsp, err := r.client.Blog.ListPosts(
 		auth.NewContextForRequestAsGateway(req),
 		&proto.ListPostsRequest{
-			Limit:          int32(r.config.articleCount),
-			OrderBy:        `date desc`,
-			Kinds:          []string{`post`},
-			WithLink:       proto.LinkKind_LinkKindFull,
-			ContentOptions: co.For(co.Rss),
+			Limit:   int32(r.config.articleCount),
+			OrderBy: `date desc`,
+			Kinds:   []string{`post`},
+			GetPostOptions: &proto.GetPostOptions{
+				WithLink:       proto.LinkKind_LinkKindFull,
+				ContentOptions: co.For(co.Rss),
+			},
 		},
 	)
 	if err != nil {

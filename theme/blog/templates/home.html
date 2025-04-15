@@ -6,6 +6,17 @@
 {{end -}}
 
 {{- render "header" . }}
+
+{{ with .Data.Tops }}
+<h2>置顶文章</h2>
+<ul id=top-post-list>
+{{- range .}}
+	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
+{{- end}}
+</ul>
+
+{{ end }}
+
 <h2>近期文章</h2>
 <ul id=latest-post-list>
 {{- range .Data.Posts}}

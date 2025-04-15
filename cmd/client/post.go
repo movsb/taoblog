@@ -98,8 +98,10 @@ func (c *Client) GetPost() {
 		panic("must not be created")
 	}
 	post, err := c.Blog.GetPost(c.Context(), &proto.GetPostRequest{
-		Id:             int32(cfg.ID),
-		ContentOptions: co.For(co.ClientGetPost),
+		Id: int32(cfg.ID),
+		GetPostOptions: &proto.GetPostOptions{
+			ContentOptions: co.For(co.ClientGetPost),
+		},
 	})
 	if err != nil {
 		panic(err)

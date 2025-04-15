@@ -31,12 +31,14 @@ func NewDataForTweets(ctx context.Context, svc proto.TaoBlogServer) *Data {
 
 	posts, err := svc.ListPosts(ctx,
 		&proto.ListPostsRequest{
-			Limit:          1000,
-			Kinds:          []string{`tweet`},
-			OrderBy:        `date desc`,
-			WithLink:       proto.LinkKind_LinkKindRooted,
-			ContentOptions: co.For(co.Tweets),
-			Ownership:      ownership,
+			Limit:     1000,
+			Kinds:     []string{`tweet`},
+			OrderBy:   `date desc`,
+			Ownership: ownership,
+			GetPostOptions: &proto.GetPostOptions{
+				WithLink:       proto.LinkKind_LinkKindRooted,
+				ContentOptions: co.For(co.Tweets),
+			},
 		},
 	)
 	if err != nil {
