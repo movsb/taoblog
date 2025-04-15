@@ -10,6 +10,7 @@ import (
 	"github.com/blugelabs/bluge"
 	"github.com/blugelabs/bluge/search"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
@@ -69,6 +70,11 @@ func (e *Engine) IndexPosts(ctx context.Context, posts []*proto.Post) (err error
 			statusField.FieldOptions = bluge.Index | bluge.Store
 			doc.AddField(statusField)
 		}
+		{
+			userIDField := bluge.NewNumericField(`user_id`, float64(post.UserId))
+			userIDField.FieldOptions = bluge.Index | bluge.Store
+			doc.AddField(userIDField)
+		}
 		batch.Update(doc.ID(), doc)
 	}
 	if err = writer.Batch(batch); err != nil {
@@ -111,6 +117,7 @@ func (e *Engine) getWriter() (*bluge.Writer, error) {
 	return writer, nil
 }
 
+// 只能搜索公开文章和自己的文章，不包含分享的。
 func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*SearchResult, err error) {
 	writer, err := e.getWriter()
 	if err != nil {
@@ -127,16 +134,32 @@ func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*Searc
 
 	matchTitle := bluge.NewMatchQuery(search)
 	matchTitle.SetField(`title`)
+	matchTitle.SetBoost(2.0)
 	query.AddShould(matchTitle)
 
 	matchContent := bluge.NewMatchQuery(search)
 	matchContent.SetField(`source`)
 	query.AddShould(matchContent)
 
-	if user := auth.Context(ctx).User; !user.IsAdmin() && !user.IsSystem() {
+	user := auth.Context(ctx).User
+	if user.IsGuest() {
 		matchStatus := bluge.NewTermQuery(`public`)
 		matchStatus.SetField(`status`)
 		query.AddMust(matchStatus)
+	} else {
+		andQuery := bluge.NewBooleanQuery()
+
+		publicQuery := bluge.NewTermQuery(`public`)
+		publicQuery.SetField(`status`)
+		andQuery.AddShould(publicQuery)
+
+		// 不包含 max，所以加了 0.5
+		userQuery := bluge.NewNumericRangeQuery(float64(user.ID), float64(user.ID)+0.5)
+		userQuery.SetField(`user_id`)
+		andQuery.AddShould(userQuery)
+
+		andQuery.SetMinShould(1)
+		query.AddMust(andQuery)
 	}
 
 	searchRequest := bluge.NewTopNSearch(10, query).IncludeLocations()
@@ -159,6 +182,8 @@ func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*Searc
 				post.Post.Source = string(value)
 			case `status`:
 				post.Post.Status = string(value)
+			case `user_id`:
+				post.Post.UserId = int32(utils.DropLast1(bluge.DecodeNumericFloat64(value)))
 			}
 			return true
 		})

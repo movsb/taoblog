@@ -353,10 +353,19 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 
 // 仅用于测试的帐号。
 // 可同时用于 HTTP 和 GRPC 请求。
-func TestingUserContext(user *User, userAgent string) context.Context {
+func TestingUserContextForClient(user *User) context.Context {
+	const userAgent = `go_test`
 	md := metadata.Pairs()
 	md.Append(GatewayCookie, cookieValue(userAgent, fmt.Sprint(user.ID), user.Password))
 	md.Append(GatewayUserAgent, userAgent)
 	md.Append(`Authorization`, fmt.Sprintf(`token %d:%s`, user.ID, user.Password))
 	return metadata.NewOutgoingContext(context.TODO(), md)
+}
+
+func TestingUserContextForServer(user *User) context.Context {
+	return context.WithValue(context.Background(), ctxAuthKey{}, &AuthContext{
+		User:       user,
+		UserAgent:  `go_test`,
+		RemoteAddr: localhost,
+	})
 }
