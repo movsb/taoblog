@@ -136,6 +136,10 @@ func (c *FileCache) Delete(key any) {
 	c.db.Model(_FileCacheItem{}).Where(`type=? AND key=?`, typeHash(key), encode(key)).Delete()
 }
 
+func (c *FileCache) DeleteForType(keyZero any) {
+	c.db.Model(_FileCacheItem{}).Where(`type=?`, typeHash(keyZero)).Delete()
+}
+
 func (c *FileCache) create(key any, value any, ttl time.Duration) error {
 	item := _FileCacheItem{
 		Type:       typeHash(key),
