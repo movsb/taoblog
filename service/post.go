@@ -928,6 +928,8 @@ func (s *Service) ReorderTopPosts(ctx context.Context, in *proto.ReorderTopPosts
 		panic(status.Errorf(codes.InvalidArgument, "无效的置顶文章列表。"))
 	}
 
+	slices.Reverse(in.Ids)
+
 	s.options.SetString(fmt.Sprintf(`user_top_posts:%d`, ac.User.ID), string(utils.Must1(json.Marshal(in.Ids))))
 
 	return &empty.Empty{}, nil
@@ -937,7 +939,7 @@ func (s *Service) ReorderTopPosts(ctx context.Context, in *proto.ReorderTopPosts
 func (s *Service) GetTopPosts(ctx context.Context, in *proto.GetTopPostsRequest) (*proto.GetTopPostsResponse, error) {
 	ac := auth.Context(ctx)
 	if ac.User.IsGuest() {
-		return nil, nil
+		return &proto.GetTopPostsResponse{}, nil
 	}
 	// 依次调用 GetPost 来获取：
 	// 0. 由于是独立维护的，可能有脏数据。
@@ -960,6 +962,9 @@ func (s *Service) GetTopPosts(ctx context.Context, in *proto.GetTopPostsRequest)
 		}
 		posts = append(posts, p)
 	}
+
+	// ID 是反向保存的，所以要反转。
+	slices.Reverse(posts)
 
 	return &proto.GetTopPostsResponse{Posts: posts}, nil
 }
