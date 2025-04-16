@@ -2,6 +2,7 @@ package rss
 
 import (
 	"embed"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -25,6 +26,7 @@ func init() {
 	dynamic.RegisterInit(func() {
 		dynamic.WithRoots(module, nil, nil, _embed, _local)
 		dynamic.WithStyles(module, `style.css`)
+		dynamic.WithScripts(module, `script.js`)
 	})
 }
 
@@ -45,7 +47,7 @@ func New(task *Task, postID int) *Rss {
 	return &r
 }
 
-//go:embed post.html style.css
+//go:embed post.html style.css script.js
 var _embed embed.FS
 var _local = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
@@ -67,11 +69,16 @@ func (r *Rss) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.A
 
 	// TODO 未保存的预览也会影响此结果
 	data := r.task.GetLatestPosts(r.post, urls)
+
+	fmt.Fprintln(w, `<div class="rss-post-list">`)
+
 	for _, d := range data {
 		if err := tmpl().GetNamed(`post.html`).Execute(w, d); err != nil {
 			log.Println(err)
 		}
 	}
+
+	fmt.Fprintln(w, `</div>`)
 
 	return nil
 }

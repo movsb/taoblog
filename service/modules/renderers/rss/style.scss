@@ -5,6 +5,10 @@ div.rss-post {
 	padding: 0 1em;
 	p.meta {
 		font-size: 80%;
+		.mark-read {
+			color: currentColor;
+			cursor: pointer;
+		}
 	}
 	&.read a {
 		color: inherit;

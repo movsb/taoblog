@@ -20,7 +20,10 @@ func NewHandler(t *Task) http.Handler {
 
 func (h *Handler) open(w http.ResponseWriter, r *http.Request) {
 	u := r.URL.Query().Get(`url`)
-	http.Redirect(w, r, u, http.StatusTemporaryRedirect)
+	m := r.URL.Query().Get(`r`)
+	if m == `` {
+		http.Redirect(w, r, u, http.StatusTemporaryRedirect)
+	}
 	go h.markRead(u)
 }
 

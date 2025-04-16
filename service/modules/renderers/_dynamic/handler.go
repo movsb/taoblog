@@ -50,7 +50,7 @@ func initAll() {
 	if reloadAll.Load() {
 		reloadLock.Lock()
 		defer reloadLock.Unlock()
-		reloadAll.Store(false)
+		defer reloadAll.Store(false)
 		initContents()
 	}
 }

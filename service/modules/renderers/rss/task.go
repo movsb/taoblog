@@ -125,7 +125,7 @@ func (t *Task) GetLatestPosts(postID int, urls []string) []*PostData {
 	}
 
 	// 按最新发表时间排序。
-	tooOld := time.Now().Add(-time.Hour * 24)
+	tooOld := time.Now().Add(-time.Minute * 10)
 	posts := []*PostData{}
 	for _, site := range sites {
 		for _, p := range site {
