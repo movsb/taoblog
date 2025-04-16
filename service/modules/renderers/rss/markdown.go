@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io"
 	"io/fs"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -18,9 +19,10 @@ import (
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
+const module = `rss`
+
 func init() {
 	dynamic.RegisterInit(func() {
-		const module = `rss`
 		dynamic.WithRoots(module, nil, nil, _embed, _local)
 		dynamic.WithStyles(module, `style.css`)
 	})
@@ -66,7 +68,9 @@ func (r *Rss) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.A
 	// TODO 未保存的预览也会影响此结果
 	data := r.task.GetLatestPosts(r.post, urls)
 	for _, d := range data {
-		tmpl().GetNamed(`post.html`).Execute(w, d)
+		if err := tmpl().GetNamed(`post.html`).Execute(w, d); err != nil {
+			log.Println(err)
+		}
 	}
 
 	return nil

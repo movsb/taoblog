@@ -1,6 +1,6 @@
-<div class="rss-post">
+<div class="rss-post{{if not .ReadAt.IsZero}} read{{end}}">
 	<p>
-		<a class="post-url" href="{{.PostURL}}" target="_blank">{{.PostName}}</a>
+		<a class="post-url" href="{{.OpenURL}}" target="_blank">{{.PostName}}</a>
 	</p>
 	<p class="meta">
 		<span class="site-name">{{.SiteName}}</span>

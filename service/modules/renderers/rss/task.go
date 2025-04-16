@@ -7,19 +7,23 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"slices"
 	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	rss_parser "github.com/movsb/taoblog/service/modules/renderers/rss/parser"
 )
 
 type Task struct {
 	store utils.PluginStorage
 
-	lock          sync.Mutex
-	posts         map[int]map[string][]*PostData
+	lock sync.Mutex
+
+	posts map[int]map[string][]*PostData
+
 	saveDebouncer *utils.Debouncer
 	invalidate    func(pid int)
 	refreshNow    chan struct{}
@@ -35,6 +39,7 @@ func NewTask(ctx context.Context, store utils.PluginStorage, invalidate func(pid
 	t.saveDebouncer = utils.NewDebouncer(time.Second*10, t.save)
 	go t.load()
 	go t.refresh(ctx)
+	dynamic.WithHandler(module, NewHandler(t))
 	return t
 }
 
@@ -43,6 +48,15 @@ type PostData struct {
 	PostName string
 	PostURL  string
 	PubDate  time.Time
+	ReadAt   time.Time
+}
+
+func (d *PostData) OpenURL() string {
+	u := url.URL{Path: dynamic.URL(`/rss/open`)}
+	q := u.Query()
+	q.Set(`url`, d.PostURL)
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 func (t *Task) load() {
@@ -74,6 +88,7 @@ func (t *Task) GetLatestPosts(postID int, urls []string) []*PostData {
 	defer t.lock.Unlock()
 
 	// 删除已经不存在的网站。
+	// 但不会马上删除已经阅读的文章链接，防止加回来后被标记为未读。
 	sites := t.posts[postID]
 	toDelete := []string{}
 	for site := range sites {
@@ -110,9 +125,16 @@ func (t *Task) GetLatestPosts(postID int, urls []string) []*PostData {
 	}
 
 	// 按最新发表时间排序。
+	tooOld := time.Now().Add(-time.Hour * 24)
 	posts := []*PostData{}
 	for _, site := range sites {
-		posts = append(posts, site...)
+		for _, p := range site {
+			// 只保留未读的文章。
+			if !p.ReadAt.IsZero() && p.ReadAt.Before(tooOld) {
+				continue
+			}
+			posts = append(posts, p)
+		}
 	}
 	slices.SortFunc(posts, func(a, b *PostData) int {
 		return -int(a.PubDate.Unix() - b.PubDate.Unix())
@@ -122,9 +144,11 @@ func (t *Task) GetLatestPosts(postID int, urls []string) []*PostData {
 }
 
 func (t *Task) refresh(ctx context.Context) {
-	// 防止测试环境经常刷新。
-	time.Sleep(time.Minute * 15)
-	t.doRefresh(ctx)
+	// 防止第一次等太久。
+	go func() {
+		time.Sleep(time.Minute * 10)
+		t.refreshNow <- struct{}{}
+	}()
 	for {
 		select {
 		case <-ctx.Done():
@@ -151,12 +175,12 @@ func (t *Task) doRefresh(ctx context.Context) {
 				t.doRefreshAsync(ctx, pid, url, posts)
 			}(pid, url, posts)
 		}
-		go func() {
+		go func(pid int) {
 			// ??? 在线程中等？
 			// 前面加锁冲突所致。
 			wg.Wait()
 			t.invalidate(pid)
-		}()
+		}(pid)
 	}
 }
 
@@ -168,13 +192,16 @@ func (t *Task) doRefreshAsync(ctx context.Context, pid int, url string, old []*P
 		log.Println(url, err)
 		return err
 	}
+
+	copied := slices.Clone(old)
+
 	for _, post := range data.Posts {
-		if !slices.ContainsFunc(old, func(p *PostData) bool {
+		if !slices.ContainsFunc(copied, func(p *PostData) bool {
 			// 仅通过 URL 判断，如果文章后续有过修改（更新过发表时间），
 			// 其将不会被重新添加到这里来。
 			return p.PostURL == post.URL
 		}) {
-			old = append(old, &PostData{
+			copied = append(copied, &PostData{
 				SiteName: data.Name,
 				PostName: post.Name,
 				PostURL:  post.URL,
@@ -182,10 +209,11 @@ func (t *Task) doRefreshAsync(ctx context.Context, pid int, url string, old []*P
 			})
 		}
 	}
-	// 只保留前 20 篇
-	const maxPosts = 20
-	toKeep := min(maxPosts, len(old))
-	old = old[:toKeep]
+
+	// 只保留前 10 篇
+	const maxPosts = 10
+	toKeep := min(maxPosts, len(copied))
+	copied = copied[:toKeep]
 
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -193,9 +221,11 @@ func (t *Task) doRefreshAsync(ctx context.Context, pid int, url string, old []*P
 	// 文章和订阅可能已不存在，需要判断
 	if _, ok := t.posts[pid]; ok {
 		if _, ok := t.posts[pid][url]; ok {
-			t.posts[pid][url] = old
+			t.posts[pid][url] = copied
 		}
 	}
+
+	t.saveDebouncer.Enter()
 
 	return nil
 }

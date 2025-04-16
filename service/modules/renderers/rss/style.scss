@@ -3,10 +3,10 @@ div.rss-post {
 	border-radius: var(--border-radius);
 	margin: 1em 0;
 	padding: 0 1em;
-	a:visited {
-		color: inherit;
-	}
 	p.meta {
 		font-size: 80%;
+	}
+	&.read a {
+		color: inherit;
 	}
 }
