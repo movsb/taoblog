@@ -10,7 +10,7 @@ type DatabaseConfig struct {
 	Files string `yaml:"files"`
 
 	// 缓存数据库。
-	// 如果不指定，使用内在数据库。
+	// 如果不指定，使用内存数据库。
 	Cache string `yaml:"cache"`
 }
 

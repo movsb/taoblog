@@ -16,8 +16,12 @@ var (
 	BaseURL = utils.Must1(url.Parse(PrefixSlashed))
 )
 
+func URL(path string) string {
+	return BaseURL.JoinPath(path).String()
+}
+
 func New(invalidate func()) http.Handler {
-	InitAll()
+	initAll()
 	return &Handler{
 		invalidate: invalidate,
 	}
@@ -34,12 +38,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if reloadAll.Load() && h.invalidate != nil {
 		h.invalidate()
 	}
-	InitAll()
+	initAll()
 	roots.ServeHTTP(w, r)
 }
 
 // 导出的目的主要是给测试用。
-func InitAll() {
+func initAll() {
 	onceInits.Do(callInits)
 	once.Do(initContents)
 

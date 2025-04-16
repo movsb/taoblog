@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/url"
 	"regexp"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
@@ -45,6 +46,23 @@ func New(baseURL *url.URL) *Emojis {
 	}
 }
 
+var initEmojis = sync.OnceFunc(func() {
+	weixin := func(fileName string, aliases ...string) {
+		// NOTE：emoji 用的单数
+		// NOTE：没有转码，图简单。
+		dest := fmt.Sprintf(`weixin/%s`, fileName)
+		for _, a := range aliases {
+			_refs[a] = dest
+		}
+	}
+
+	weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
+	weixin(`机智.png`, `机智`)
+	weixin(`捂脸.png`, `捂脸`)
+	weixin(`耶.png`, `耶`)
+	weixin(`皱眉.png`, `皱眉`, `纠结`, `小纠结`)
+})
+
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `emojis`
@@ -55,20 +73,7 @@ func init() {
 		dynamic.WithRoots(module, assetsDirEmbed, assetsDirRoot, _embed, _root)
 		dynamic.WithStyles(module, `style.css`)
 
-		weixin := func(fileName string, aliases ...string) {
-			// NOTE：emoji 用的单数
-			// NOTE：没有转码，图简单。
-			dest := fmt.Sprintf(`weixin/%s`, fileName)
-			for _, a := range aliases {
-				_refs[a] = dest
-			}
-		}
-
-		weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
-		weixin(`机智.png`, `机智`)
-		weixin(`捂脸.png`, `捂脸`)
-		weixin(`耶.png`, `耶`)
-		weixin(`皱眉.png`, `皱眉`, `纠结`, `小纠结`)
+		initEmojis()
 	})
 }
 

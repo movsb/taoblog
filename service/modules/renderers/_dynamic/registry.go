@@ -25,6 +25,8 @@ type _Content struct {
 
 	private fs.FS
 	public  fs.FS
+
+	handler http.Handler
 }
 
 var (
@@ -132,6 +134,17 @@ func WithScripts(module string, paths ...string) {
 	}
 }
 
+// 线程安全。
+func WithHandler(module string, handler http.Handler) {
+	reloadLock.Lock()
+	defer reloadLock.Unlock()
+
+	c := initModule(module)
+	c.handler = handler
+
+	reloadAll.Store(true)
+}
+
 func initContents() {
 	var (
 		styleBuilder  bytes.Buffer
@@ -142,17 +155,28 @@ func initContents() {
 	roots = http.NewServeMux()
 
 	for module, d := range _Dynamic {
-		if d.public != nil {
+		if d.public != nil || d.handler != nil {
 			handler := func(w http.ResponseWriter, r *http.Request) {
-				// 不直接 ServeFS 是因为 embed.FS 不支持 ModTime.
-				// 进而导致浏览器缓存不生效。
-				f := utils.Must1(http.FS(d.public).Open(r.URL.Path))
-				defer f.Close()
-				if strings.HasSuffix(r.URL.Path, `/`) || utils.Must1(f.Stat()).IsDir() {
-					http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-					return
+				if d.public != nil {
+					// 不直接 ServeFS 是因为 embed.FS 不支持 ModTime.
+					// 进而导致浏览器缓存不生效。
+					f, err := http.FS(d.public).Open(r.URL.Path)
+					if err == nil {
+						defer f.Close()
+						if strings.HasSuffix(r.URL.Path, `/`) || utils.Must1(f.Stat()).IsDir() {
+							http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+							return
+						}
+						http.ServeContent(w, r, r.URL.Path, mod, f)
+						return
+					}
+					// TODO 其它错误被忽略了。
 				}
-				http.ServeContent(w, r, r.URL.Path, mod, f)
+				if d.handler != nil {
+					d.handler.ServeHTTP(w, r)
+				} else {
+					http.NotFound(w, r)
+				}
 			}
 			roots.Handle(
 				fmt.Sprintf(`GET /%s/`, module),

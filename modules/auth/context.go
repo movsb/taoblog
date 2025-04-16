@@ -12,6 +12,7 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -363,9 +364,6 @@ const noPerm = `此操作无权限。`
 
 func MustNotBeGuest(ctx context.Context) *AuthContext {
 	ac := Context(ctx)
-	if ac == nil {
-		panic("AuthContext 不应为 nil")
-	}
 	if ac.User.IsGuest() {
 		panic(status.Error(codes.PermissionDenied, noPerm))
 	}
@@ -374,11 +372,19 @@ func MustNotBeGuest(ctx context.Context) *AuthContext {
 
 func MustBeAdmin(ctx context.Context) *AuthContext {
 	ac := Context(ctx)
-	if ac == nil {
-		panic("AuthContext 不应为 nil")
-	}
 	if ac.User.IsAdmin() || ac.User.IsSystem() {
 		return ac
 	}
 	panic(status.Error(codes.PermissionDenied, noPerm))
+}
+
+func RequireLogin(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ac := Context(r.Context())
+		if !ac.User.IsGuest() {
+			h.ServeHTTP(w, r)
+			return
+		}
+		utils.HTTPError(w, http.StatusForbidden)
+	})
 }

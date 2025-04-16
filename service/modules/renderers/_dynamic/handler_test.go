@@ -12,8 +12,7 @@ import (
 )
 
 func TestModTime(t *testing.T) {
-	dynamic.InitAll()
-	s := httptest.NewServer(http.StripPrefix(dynamic.Prefix, dynamic.New()))
+	s := httptest.NewServer(http.StripPrefix(dynamic.Prefix, dynamic.New(func() {})))
 	defer s.Close()
 
 	baseURL, _ := url.Parse(s.URL)
