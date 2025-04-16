@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>置顶文章重新排序</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<link rel="stylesheet" type="text/css" href="/style.css" />
+{{ apply_site_theme_customs }}
+<script src="script.js"></script>
+<script src="sortable.js"></script>
+</head>
+<body class="admin reorder">
+<div id="wrapper">
+	{{ with .Posts }}
+	<p><b>拖动文章列表以排序：</b></p>
+	<ul id="list">
+		{{ range . }}
+		<li data-id="{{ .Id }}">
+			<div class="handle">
+				<img src="drag.svg"> 
+			</div>
+			<span class="title">{{ .Title }}</span>
+		</li>
+		{{ end }}
+	</ul>
+	<div>
+		<button id="save">保存</button>
+	</div>
+	<script>
+		const sortable = new Sortable(
+			document.getElementById('list'),
+			{
+				handle: 'li',
+				animation: 150,
+			}
+		)
+		document.getElementById('save').addEventListener('click', async () => {
+			try {
+				const order = sortable.toArray();
+				const pm = new PostManagementAPI();
+				await pm.reorderTopPosts(order);
+				alert('置顶文章排序已保存。');
+			} catch (e) {
+				alert(e);
+			}
+		});
+	</script>
+	{{ else }}
+	<p>没有置顶文章。</p>
+	{{ end }}
+</div>
+<script>
+async function reorderTopPosts() {
+	const pm = new PostManagementAPI();
+	let { posts } = await pm.getTopPosts();
+	const dialog = document.getElementById('reorder-top-posts-dialog');
+	const list = dialog.querySelector('ul');
+	posts.forEach(p => {
+		
+	});
+}
+</script>
+</body>
+</html>

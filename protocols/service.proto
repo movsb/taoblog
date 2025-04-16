@@ -283,6 +283,24 @@ service TaoBlog {
 		};
 	}
 
+	rpc GetTopPosts(GetTopPostsRequest) returns (GetTopPostsResponse) {
+		option (google.api.http) = {
+			get: "/v3/posts:top";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取置顶文章列表。";
+		};
+	}
+	rpc ReorderTopPosts(ReorderTopPostsRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			patch: "/v3/posts:top";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "更新置顶文章顺序。";
+		};
+	}
+
 	// Comments
 
 	rpc CreateComment (Comment) returns (Comment) {

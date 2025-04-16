@@ -17,6 +17,38 @@ body.admin.profile {
 	}
 }
 
+body.admin.reorder {
+	#list {
+		padding: 0;
+		list-style-type: none;
+		> li {
+			display: flex;
+			align-items: center;
+			margin: 0.2em;
+			padding: 0.5em;
+			border-radius: var(--border-radius);
+			border: 1px solid var(--border-color);
+			cursor: grab;
+			.handle {
+				flex-shrink: 0;
+				margin-right: .5em;
+				width: 16px;
+				height: 16px;
+				img {
+					filter: invert(50%);
+					user-select: none;
+				}
+			}
+			.title {
+				flex: 1;
+			}
+			&.sortable-drag, &.sortable-ghost {
+				background-color: var(--highlight-color);
+			}
+		}
+	}
+}
+
 body.admin.login {
 	margin: 0;
 	padding: 0;

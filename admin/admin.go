@@ -127,6 +127,7 @@ func (a *Admin) Handler() http.Handler {
 
 	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
 	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
+	m.Handle(`GET /reorder`, a.requireLogin(a.getReorder))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -155,6 +156,8 @@ func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to strin
 	http.Redirect(w, r, u.String(), http.StatusFound)
 }
 
+// TODO 是不是已经有 auth context 了？？？
+// 因为 http 那里加了 user from cookies
 func (a *Admin) requireLogin(h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !a.auth.AuthRequest(r).IsGuest() {
@@ -247,6 +250,17 @@ func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 		User: a.auth.AuthRequest(r),
 	}
 	a.executeTemplate(w, `profile.html`, &d)
+}
+
+type ReorderData struct {
+	Posts []*proto.Post
+}
+
+func (a *Admin) getReorder(w http.ResponseWriter, r *http.Request) {
+	d := &ReorderData{
+		Posts: utils.Must1(a.svc.GetTopPosts(r.Context(), &proto.GetTopPostsRequest{})).Posts,
+	}
+	a.executeTemplate(w, `reorder.html`, &d)
 }
 
 type EditorData struct {

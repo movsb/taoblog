@@ -896,6 +896,7 @@ func (s *Service) getUserTopPosts(id int) []int {
 	return posts
 }
 
+// TODO 没限制最多数量。
 func (s *Service) updateUserTopPosts(id int, postID int, top bool) {
 	old := s.getUserTopPosts(id)
 	updated := false
@@ -916,8 +917,24 @@ func (s *Service) updateUserTopPosts(id int, postID int, top bool) {
 	}
 }
 
+// 无需鉴权，看不到的文章就是看不到。
+func (s *Service) ReorderTopPosts(ctx context.Context, in *proto.ReorderTopPostsRequest) (_ *empty.Empty, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+
+	old := s.getUserTopPosts(int(ac.User.ID))
+	if len(old) != len(in.Ids) {
+		panic(status.Errorf(codes.InvalidArgument, "无效的置顶文章列表。"))
+	}
+
+	s.options.SetString(fmt.Sprintf(`user_top_posts:%d`, ac.User.ID), string(utils.Must1(json.Marshal(in.Ids))))
+
+	return &empty.Empty{}, nil
+}
+
 // TODO 不需要公开 api
-func (s *Service) GetTopPosts(ctx context.Context, opts *proto.GetPostOptions) ([]*proto.Post, error) {
+func (s *Service) GetTopPosts(ctx context.Context, in *proto.GetTopPostsRequest) (*proto.GetTopPostsResponse, error) {
 	ac := auth.Context(ctx)
 	if ac.User.IsGuest() {
 		return nil, nil
@@ -933,7 +950,7 @@ func (s *Service) GetTopPosts(ctx context.Context, opts *proto.GetPostOptions) (
 	for _, id := range ids {
 		p, err := s.GetPost(ctx, &proto.GetPostRequest{
 			Id:             int32(id),
-			GetPostOptions: opts,
+			GetPostOptions: in.GetPostOptions,
 		})
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
@@ -944,7 +961,7 @@ func (s *Service) GetTopPosts(ctx context.Context, opts *proto.GetPostOptions) (
 		posts = append(posts, p)
 	}
 
-	return posts, nil
+	return &proto.GetTopPostsResponse{Posts: posts}, nil
 }
 
 // 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。

@@ -46,7 +46,6 @@ type ToBeImplementedByRpc interface {
 	Config() *config.Config
 	IncrementViewCount(m map[int]int)
 	GetPostsByTags(ctx context.Context, tagNames []string) ([]*proto.Post, error)
-	GetTopPosts(ctx context.Context, opts *proto.GetPostOptions) ([]*proto.Post, error)
 }
 
 // Service implements IServer.

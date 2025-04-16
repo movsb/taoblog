@@ -201,6 +201,16 @@ message ListPostsResponse {
 	repeated Post posts = 1;
 }
 
+message GetTopPostsRequest {
+	GetPostOptions get_post_options = 1;
+}
+message GetTopPostsResponse {
+	repeated Post posts = 1;
+}
+message ReorderTopPostsRequest {
+	repeated int64 ids = 1;
+}
+
 message GetPostCommentsCountRequest {
 	int64 post_id = 1;
 }

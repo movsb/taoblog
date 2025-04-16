@@ -35,10 +35,13 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 	}
 
 	{
-		topPosts := utils.Must1(impl.GetTopPosts(ctx, &proto.GetPostOptions{
-			WithLink:       proto.LinkKind_LinkKindRooted,
-			ContentOptions: co.For(co.HomeLatestPosts),
-		}))
+		topPosts := utils.Must1(service.GetTopPosts(ctx,
+			&proto.GetTopPostsRequest{
+				GetPostOptions: &proto.GetPostOptions{
+					WithLink:       proto.LinkKind_LinkKindRooted,
+					ContentOptions: co.For(co.HomeLatestPosts),
+				},
+			})).Posts
 		for _, p := range topPosts {
 			pp := newPost(p)
 			home.Tops = append(home.Tops, pp)
