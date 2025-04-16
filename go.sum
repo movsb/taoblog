@@ -318,6 +318,8 @@ github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd h1:m6UqxMUSn3LdkI6q
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd/go.mod h1:72PHqKHSMlJ0v209MIb1m4kpXf8NpMtygwDm1O8pPsA=
 github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2 h1:bcjQ3O/xo1Z/5/bQwlaj0WOdWnR4DBIl4D5hMcXQcZc=
 github.com/movsb/pkg v0.0.0-20250103102732-d359456392f2/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
+github.com/movsb/pkg v0.0.0-20250416121452-9b07ebd5b745 h1:H5onZJsNLHFI/fHH+g9HjU06i49xUN3B0Fr1mTG0lD0=
+github.com/movsb/pkg v0.0.0-20250416121452-9b07ebd5b745/go.mod h1:hyHk9U4bOyLwcfLpjUjRI/Kz+lUeHRHL57u2UUDDLcM=
 github.com/movsb/taorm v0.0.0-20250407075433-0864813bbb6d h1:KRn6qXOmci8f1ODQ11k6BdGh9HBryoVYkwGkFVv7I78=
 github.com/movsb/taorm v0.0.0-20250407075433-0864813bbb6d/go.mod h1:Y9dP0nNLY+5t5Zlx4WyNVI8LKQDl4Fk/I8hP/LBtd0I=
 github.com/movsb/taorm v0.0.0-20250413081435-5f9ad0aabc24 h1:21z7T17qFCeYYdn+b1QvkDwPDVdPyPnMgCmWf2/ra0A=
