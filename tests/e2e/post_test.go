@@ -400,8 +400,10 @@ func TestIsolatedPostCache(t *testing.T) {
 	rendered := utils.Must1(r.client.Blog.GetPost(r.user1,
 		&proto.GetPostRequest{
 			Id: int32(publicPost.Id),
-			ContentOptions: &proto.PostContentOptions{
-				WithContent: true,
+			GetPostOptions: &proto.GetPostOptions{
+				ContentOptions: &proto.PostContentOptions{
+					WithContent: true,
+				},
 			},
 		},
 	))
@@ -411,8 +413,10 @@ func TestIsolatedPostCache(t *testing.T) {
 	rendered = utils.Must1(r.client.Blog.GetPost(r.user2,
 		&proto.GetPostRequest{
 			Id: int32(publicPost.Id),
-			ContentOptions: &proto.PostContentOptions{
-				WithContent: true,
+			GetPostOptions: &proto.GetPostOptions{
+				ContentOptions: &proto.PostContentOptions{
+					WithContent: true,
+				},
 			},
 		},
 	))
