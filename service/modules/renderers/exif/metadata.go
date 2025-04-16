@@ -13,7 +13,8 @@ type Metadata struct {
 	FileName     string  `json:"File:FileName"`         // 文件名字
 	FileSize     string  `json:"File:FileSize"`         // 文件大小
 	ImageSize    string  `json:"Composite:ImageSize"`   // 尺寸
-	Orientation  string  `json:"Composite:Orientation"` // 方向
+	Orientation  string  `json:"EXIF:Orientation"`      // 方向
+	Rotation     int     `json:"QuickTime:Rotation"`    // 旋转角度
 	MimeType     string  `json:"File:MIMEType"`         // 类型：image/avif
 	Artist       string  `json:"EXIF:Artist"`           // 作者
 	Copyright    string  `json:"EXIF:Copyright"`        // 版权
@@ -70,6 +71,7 @@ func (m *Metadata) String() []string {
 	add(m.FileName, `名字`)
 	add(m.FileSize, `大小`)
 	add(m.ImageSize, `尺寸`)
+	add(m.Orientation, `方向`)
 	add(m.MimeType, `类型`)
 
 	if t := m.CreationDateTime(); !t.IsZero() {
@@ -107,4 +109,17 @@ func (m *Metadata) String() []string {
 	add(m.GPSAltitude, `海拔`)
 
 	return pairs
+}
+
+// https://blog.twofei.com/1618/
+func (m *Metadata) SwapSizes() bool {
+	switch m.Orientation {
+	case `Rotate 90 CW`, `Rotate 270 CW`:
+		return true
+	}
+	switch m.Rotation {
+	case 90, 270:
+		return true
+	}
+	return false
 }

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	urlpkg "net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -87,6 +86,15 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 			gold_utils.AddStyle(s, fmt.Sprintf(`object-fit: cover; aspect-ratio: 1; width: %s`, cover))
 			q.Del(`cover`)
 		}
+
+		// 临时解决这里的问题（主要是 live-photo）
+		// https://blog.twofei.com/1618/
+		var rotate bool
+		if q.Has(`rotate`) || q.Has(`r`) {
+			rotate = true
+			q.Del(`rotate`)
+			q.Del(`r`)
+		}
 		parsedURL.RawQuery = q.Encode()
 		s.SetAttr(`src`, parsedURL.String())
 
@@ -99,18 +107,10 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		}
 
 		w, h := md.Width, md.Height
-		w, h = int(float64(w)*scale), int(float64(h)*scale)
-
-		// 暴力且不准确地检测是否文件名中带缩放（早期的实现）。
-		// TODO 移除通过 @2x 类似的图片缩放支持。
-		for i := 1; i <= 10; i++ {
-			scaleFmt := fmt.Sprintf(`@%dx.`, i)
-			if strings.Contains(url, scaleFmt) {
-				w /= i
-				h /= i
-				break
-			}
+		if rotate {
+			w, h = h, w
 		}
+		w, h = int(float64(w)*scale), int(float64(h)*scale)
 
 		s.SetAttr(`width`, fmt.Sprint(w))
 		s.SetAttr(`height`, fmt.Sprint(h))
