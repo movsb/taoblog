@@ -53,8 +53,6 @@ func (b *_Bundle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b.Respond(w)
-	// TODO 移除到独立的缓存处理器中。
-	MustRevalidate(w)
 	b.h.ServeHTTP(w, r)
 }
 
