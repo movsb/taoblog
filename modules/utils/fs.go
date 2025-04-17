@@ -127,6 +127,10 @@ func ListFiles(fsys fs.FS) ([]*proto.FileSpec, error) {
 	return nil, errors.New(`fs.ListFiles: unimplemented`)
 }
 
+type ImageDimensionGetter interface {
+	GetImageDimension() (width, height int)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 type _OverlayFS struct {

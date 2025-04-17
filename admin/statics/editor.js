@@ -542,15 +542,25 @@ class FilesManager {
 	// 创建一个文件。
 	// f: <input type="file" /> 中拿来的文件。
 	async create(f, progress) {
+		let dimension = await FilesManager.detectImageSize(f);
+		dimension.width > 0 && console.log(`图片尺寸：`, f.name, dimension);
+
+		let form = new FormData();
+		form.set(`spec`, JSON.stringify({
+			path: f.name,
+			mode: 0o644,
+			size: f.size,
+			time: Math.floor(f.lastModified/1000),
+
+			meta: {
+				width: dimension.width,
+				height: dimension.height,
+			},
+		}));
+
+		form.set(`data`, f)
+
 		return new Promise((success, failure) => {
-			let form = new FormData();
-			form.set(`spec`, JSON.stringify({
-				path: f.name,
-				mode: 0o644,
-				size: f.size,
-				time: Math.floor(f.lastModified/1000),
-			}));
-			form.set(`data`, f)
 
 			let xhr = new XMLHttpRequest();
 			xhr.open('POST', `/v3/posts/${this._post_id}/files`);
@@ -576,6 +586,33 @@ class FilesManager {
 				progress((e.loaded / e.total * 100).toFixed(0));
 			});
 			xhr.send(form);
+		});
+	}
+
+	// 通过浏览器快速判断图片文件的尺寸。
+	// f: <input type="file" /> 中拿来的文件。
+	// 不会抛异常。
+	static detectImageSize(f) {
+		return new Promise((success, failure) => {
+			if (!/^image\//.test(f.type)) {
+				return success({ width: 0, height: 0 });
+			}
+
+			const img = new Image();
+
+			let revoke = (data)=> {
+				URL.revokeObjectURL(img.src);
+				return success(data);
+			}
+
+			img.addEventListener('load', () => {
+				return revoke({ width: img.naturalWidth, height: img.naturalHeight });
+			});
+			img.addEventListener('error', () => {
+				return revoke({ width: 0, height: 0 });
+			});
+
+			img.src = URL.createObjectURL(f);
 		});
 	}
 }
@@ -642,10 +679,12 @@ formUI.filesChanged(async files => {
 			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
 			return;
 		}
+
 		let up = formUI.tmpFile({
 			path: f.name,
 			type: f.type,
 		});
+
 		try {
 			let fm = new FilesManager(TaoBlog.post_id);
 			await fm.create(f, (p)=> {

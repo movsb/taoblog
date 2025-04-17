@@ -189,17 +189,9 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 }
 
 func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
-	// TODO 测试，似乎不需要这个。
-	u := utils.Must1(url.Parse(s.cfg.Site.Home))
-	if u.Path == "" {
-		u.Path = "/"
-	}
 	return gold_utils.NewWebFileSystem(
-		utils.NewOverlayFS(
-			_OpenPostFile{s: s},
-			// s.themeRootFS,
-		),
-		u.JoinPath(fmt.Sprintf("/%d/", id)),
+		_OpenPostFile{s: s},
+		s.home.JoinPath(fmt.Sprintf("/%d/", id)),
 	)
 }
 

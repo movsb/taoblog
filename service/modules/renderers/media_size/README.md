@@ -27,3 +27,8 @@ SVG 的 ViewBox 只是描述原始默认的大小尺寸，其会根据 ViewPort�
 ## iframe
 
 iframe 没法自动响应式大小，需要手动根据 size 计算 aspect-ratio。
+
+## 注意
+
+由于简单地 width/height 并不足以确定图片的显示方向，受 <https://blog.twofei.com/1618/> 的影响，
+这里的大部分代码可以废掉了，直接使用浏览器的计算值。

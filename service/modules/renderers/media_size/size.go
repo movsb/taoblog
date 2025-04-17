@@ -87,14 +87,6 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 			q.Del(`cover`)
 		}
 
-		// 临时解决这里的问题（主要是 live-photo）
-		// https://blog.twofei.com/1618/
-		var rotate bool
-		if q.Has(`rotate`) || q.Has(`r`) {
-			rotate = true
-			q.Del(`rotate`)
-			q.Del(`r`)
-		}
 		parsedURL.RawQuery = q.Encode()
 		s.SetAttr(`src`, parsedURL.String())
 
@@ -107,9 +99,6 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		}
 
 		w, h := md.Width, md.Height
-		if rotate {
-			w, h = h, w
-		}
 		w, h = int(float64(w)*scale), int(float64(h)*scale)
 
 		s.SetAttr(`width`, fmt.Sprint(w))
@@ -166,6 +155,19 @@ func size(fs gold_utils.WebFileSystem, parsedURL *urlpkg.URL, localOnly bool) (*
 			return nil, err
 		}
 		defer f.Close()
+
+		if stat, err := f.Stat(); err == nil {
+			if g, ok := stat.Sys().(utils.ImageDimensionGetter); ok {
+				w, h := g.GetImageDimension()
+				if w > 0 && h > 0 {
+					return &Metadata{
+						Width:  w,
+						Height: h,
+					}, nil
+				}
+			}
+		}
+
 		r = f
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)

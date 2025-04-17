@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS `files` (
     `mode` INTEGER NOT NULL,
     `mod_time` INTEGER  NOT NULL,
     `size` INTEGER  NOT NULL,
+    `meta` BLOB NOT NULL,
     `data` BLOB NOT NULL
 );
 

@@ -71,7 +71,8 @@ type Service struct {
 	// 服务端渲染的时候一些模块会要求解析 URL（包含相对文件和绝对文件），
 	// 所以需要用到主题相关的根文件系统。
 	themeRootFS fs.FS
-	postDataFS  theme_fs.FS
+	// TODO 包装并鉴权。
+	postDataFS theme_fs.FS
 	// 动态管理的静态文件。
 	userRoots *roots.Root
 

@@ -551,3 +551,7 @@ func v43(tx *sql.Tx) {
 func v44(tx *sql.Tx) {
 	mustExec(tx, "DELETE FROM options WHERE name='friends:cache'")
 }
+
+// 有一个给 files 增加 meta 的操作没有记录。
+// 涉及到多数据库，暂时不支持。
+// ALTER TABLE files ADD COLUMN meta BLOB NOT NULL DEFAULT '{}' AFTER `size`;

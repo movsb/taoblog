@@ -53,6 +53,7 @@ func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 			Size: f.Size,
 			Time: uint32(f.ModTime),
 			Type: mime.TypeByExtension(path.Ext(f.Path)),
+			Meta: f.Meta.ToProto(),
 		})
 	}
 	return m, nil
@@ -70,7 +71,7 @@ var _ interface {
 	utils.WriteFS
 } = (*SQLiteForPost)(nil)
 
-const fileFieldsWithoutData = `id,created_at,updated_at,post_id,path,mode,mod_time,size`
+const fileFieldsWithoutData = `id,created_at,updated_at,post_id,path,mode,mod_time,size,meta`
 
 func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	fullName := path.Clean(path.Join(fs.dir, name))
@@ -137,6 +138,7 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 			Size: f.Size,
 			Time: uint32(f.ModTime),
 			Type: mime.TypeByExtension(path.Ext(f.Path)),
+			Meta: f.Meta.ToProto(),
 		})
 	}
 	return specs, nil
@@ -207,6 +209,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			`mod_time`:   spec.Time,
 			`size`:       spec.Size,
 			`data`:       data,
+			`meta`:       models.FileMetaFromProto(spec.Meta),
 		})
 		return err
 	} else {
@@ -218,6 +221,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			Mode:      spec.Mode,
 			ModTime:   int64(spec.Time),
 			Size:      spec.Size,
+			Meta:      models.FileMetaFromProto(spec.Meta),
 			Data:      data,
 		}
 		return fs.s.db.Model(&file).Create()
