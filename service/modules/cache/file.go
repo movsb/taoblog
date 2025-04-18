@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"hash/fnv"
 	"log"
@@ -9,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taorm"
 )
 
@@ -44,8 +44,7 @@ type FileCache struct {
 	touched map[int]int64
 }
 
-func NewFileCache(ctx context.Context, path string) *FileCache {
-	db := migration.InitCache(path)
+func NewFileCache(ctx context.Context, db *sql.DB) *FileCache {
 	cc := &FileCache{
 		db:      taorm.NewDB(db),
 		touched: make(map[int]int64),

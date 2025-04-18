@@ -23,6 +23,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
+	server_sync_tasks "github.com/movsb/taoblog/cmd/server/tasks/sync"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
@@ -186,14 +187,18 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	rc := runtime_config.NewRuntime()
 	ctx = runtime_config.Context(ctx, rc)
 
-	s.fileCache = cache.NewFileCache(ctx, cfg.Database.Cache)
+	cacheDB := migration.InitCache(cfg.Database.Cache)
+	s.fileCache = cache.NewFileCache(ctx, cacheDB)
 
 	db := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
 	defer db.Close()
 
 	s.db = taorm.NewDB(db)
 
-	migration.Migrate(db)
+	filesDB := migration.InitFiles(cfg.Database.Files)
+	filesStore := theme_fs.FS(storage.NewSQLite(filesDB))
+
+	migration.Migrate(db, filesDB, cacheDB)
 
 	utils.Must(s.initConfig(cfg, db))
 
@@ -207,7 +212,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
-	filesStore := theme_fs.FS(storage.NewSQLite(migration.InitFiles(cfg.Database.Files)))
 	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
 	s.notifyServer = notify
 
@@ -233,7 +237,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
-	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth, filesStore)
+	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth, s.Main())
 	canon := canonical.New(theme, s.metrics)
 	mux.Handle(`/`, canon)
 
@@ -260,6 +264,20 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		go monitorCert(ctx, cfg.Site.Home, notify, func(days int) {
 			theService.SetCertDays(days)
 		})
+	}
+
+	if r2c := cfg.Site.Sync.R2; r2c.Enabled {
+		r2, err := server_sync_tasks.NewSyncToR2(
+			ctx, r2c, s.Main(),
+			s.Main().GetPluginStorage(`site.sync.r2`),
+			filesStore,
+		)
+		if err != nil {
+			s.sendNotify(`启动同步到 R2 失败`, err.Error())
+			log.Println(err)
+		}
+		_ = r2
+		s.Main().RegisterFileURLGetter(`r2`, r2)
 	}
 
 	quit := make(chan os.Signal, 1)
@@ -457,7 +475,6 @@ func (s *Server) createMainServices(
 	mux *http.ServeMux,
 ) *service.Service {
 	serviceOptions := []service.With{
-		// service.WithThemeRootFileSystem(),
 		service.WithPostDataFileSystem(filesStore),
 		service.WithNotifier(notifier),
 		service.WithCancel(cancel),

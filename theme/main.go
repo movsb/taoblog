@@ -38,7 +38,6 @@ type Theme struct {
 
 	rootFS fs.FS
 	tmplFS fs.FS
-	postFS theme_fs.FS
 
 	cfg *config.Config
 
@@ -48,6 +47,8 @@ type Theme struct {
 	impl     service.ToBeImplementedByRpc
 	searcher proto.SearchServer
 	auth     *auth.Auth
+
+	postFileHandler theme_fs.PostFileHandler
 
 	templates *utils.TemplateLoader
 
@@ -61,7 +62,7 @@ type Theme struct {
 	incViewDebouncer *_IncViewDebouncer
 }
 
-func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, fsys theme_fs.FS) *Theme {
+func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, postFileHandler theme_fs.PostFileHandler) *Theme {
 	var rootFS, tmplFS fs.FS
 
 	if devMode {
@@ -81,15 +82,14 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 		rootFS: rootFS,
 		tmplFS: tmplFS,
 
-		postFS: fsys,
-
 		cfg:      cfg,
 		service:  service,
 		impl:     impl,
 		searcher: searcher,
 		auth:     auth,
 
-		themeChangedAt: time.Now(),
+		postFileHandler: postFileHandler,
+		themeChangedAt:  time.Now(),
 
 		specialMux: http.NewServeMux(),
 	}
@@ -382,13 +382,7 @@ func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64
 		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
 	}
 
-	fs, err := t.postFS.ForPost(int(postID))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.ServeFileFS(w, req, fs, file)
+	t.postFileHandler.HandlePostFile(w, req, int(postID), file)
 }
 
 func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool {

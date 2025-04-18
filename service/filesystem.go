@@ -7,10 +7,13 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net/http"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
+	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -136,4 +139,31 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 	return &proto.ListPostFilesResponse{
 		Files: files,
 	}, nil
+}
+
+func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
+	s.fileURLGetters.Store(name, g)
+}
+
+func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, pid int, path string) {
+	pfs := utils.Must1(s.postDataFS.ForPost(pid))
+	fp := utils.Must1(pfs.Open(path))
+	defer fp.Close()
+	info := utils.Must1(fp.Stat())
+	file := info.Sys().(*models.File)
+
+	handled := false
+
+	s.fileURLGetters.Range(func(key, value any) bool {
+		if u := value.(theme_fs.FileURLGetter).GetFileURL(pid, path, file.Digest); u != `` {
+			http.Redirect(w, r, u, http.StatusFound)
+			handled = true
+			return false
+		}
+		return true
+	})
+
+	if !handled {
+		http.ServeFileFS(w, r, pfs, path)
+	}
 }
