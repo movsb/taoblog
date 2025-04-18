@@ -418,6 +418,9 @@ class PostFormUI {
 			this.name = spec.path;
 			this.span = this.li.querySelector('span');
 		}
+		/**
+		 * @param {Number} v
+		 */
 		set progress(v) {
 			this.span.innerText = `${this.name}(${v}%)`;
 		}

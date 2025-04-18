@@ -38,7 +38,7 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 	bundle()
 
 	if watchFS, ok := fsys.(WatchFS); ok {
-		log.Println(`Listening for template changes`)
+		// log.Println(`Listening for template changes`)
 		go func() {
 			events, close := Must2(watchFS.Watch())
 			defer close()

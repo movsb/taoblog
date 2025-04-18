@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
+	"golang.org/x/net/html/atom"
 )
 
 //go:embed style.css script.js template.html
@@ -66,8 +67,17 @@ func (e *LivePhoto) TransformHtml(doc *goquery.Document) error {
 		if video == `` {
 			return
 		}
-		html := e.render(s, width, height, video)
-		s.ReplaceWithHtml(string(html))
+
+		// [!NOTE]
+		//
+		// 1. 由于渲染出来有 div 元素，需要把上一级的 p 替换掉。
+		// 2. 由于 Live Photo 一般应保持原始尺寸，所以只处理单张图片的时候。
+		if p := s.Nodes[0].Parent; p != nil && p.DataAtom == atom.P {
+			if self := s.Nodes[0]; self.PrevSibling == nil && self.NextSibling == nil {
+				html := e.render(s, width, height, video)
+				s.Parent().ReplaceWithHtml(string(html))
+			}
+		}
 	})
 	return nil
 }
