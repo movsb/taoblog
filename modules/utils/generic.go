@@ -3,12 +3,10 @@ package utils
 import (
 	"bytes"
 	"crypto/rand"
-	"database/sql"
 	"fmt"
 	"io"
 	mr "math/rand"
 	"net/http"
-	"strconv"
 )
 
 // 搁这套娃🪆🪆🪆？
@@ -147,64 +145,4 @@ type PluginStorage interface {
 	GetInteger(key string) (int64, error)
 	GetIntegerDefault(key string, def int64) (int64, error)
 	Range(func(key string))
-}
-
-type InMemoryStorage struct {
-	m map[string]string
-}
-
-func (s *InMemoryStorage) SetString(key string, value string) error {
-	s.m[key] = value
-	return nil
-}
-
-func (s *InMemoryStorage) SetInteger(key string, i int64) error {
-	s.m[key] = fmt.Sprint(i)
-	return nil
-}
-
-func (s *InMemoryStorage) GetString(key string) (string, error) {
-	if v, ok := s.m[key]; ok {
-		return v, nil
-	}
-	return ``, sql.ErrNoRows
-}
-
-func (s *InMemoryStorage) GetStringDefault(key string, def string) (string, error) {
-	if v, ok := s.m[key]; ok {
-		return v, nil
-	}
-	return def, nil
-}
-func (s *InMemoryStorage) GetInteger(key string) (int64, error) {
-	if v, ok := s.m[key]; ok {
-		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-			return i, nil
-		} else {
-			return 0, err
-		}
-	}
-	return 0, sql.ErrNoRows
-}
-func (s *InMemoryStorage) GetIntegerDefault(key string, def int64) (int64, error) {
-	if v, ok := s.m[key]; ok {
-		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-			return i, nil
-		} else {
-			return 0, err
-		}
-	}
-	return def, nil
-}
-
-func (s *InMemoryStorage) Range(iter func(key string)) {
-	for k := range s.m {
-		iter(k)
-	}
-}
-
-func NewInMemoryStorage() PluginStorage {
-	return &InMemoryStorage{
-		m: map[string]string{},
-	}
 }
