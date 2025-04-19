@@ -98,13 +98,24 @@ func (e *LivePhoto) checkHasVideo(s *goquery.Selection) (video string) {
 	path := url.Path
 	ext := pathpkg.Ext(path)
 	pathNoExt, _ := strings.CutSuffix(path, ext)
-	videoPath := pathNoExt + `.mp4` // 硬编码的
-	fp, err := e.web.OpenURL(videoPath)
-	if err != nil {
-		return
+
+	checkExt := func(ext string) (string, bool) {
+		videoPath := pathNoExt + ext
+		fp, err := e.web.OpenURL(videoPath)
+		if err != nil {
+			return ``, false
+		}
+		fp.Close()
+		return videoPath, true
 	}
-	fp.Close()
-	return videoPath
+
+	for _, ext := range []string{`.mp4`, `.webm`} {
+		if u, ok := checkExt(ext); ok {
+			return u
+		}
+	}
+
+	return ``
 }
 
 type Data struct {
