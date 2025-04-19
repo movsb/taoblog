@@ -52,7 +52,7 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
 }
 
 func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
-	doc.Find(`img`).FilterFunction(func(i int, s *goquery.Selection) bool {
+	doc.Find(`img,video`).FilterFunction(func(i int, s *goquery.Selection) bool {
 		return ms.filter(s)
 	}).Each(func(i int, s *goquery.Selection) {
 		url := s.AttrOr(`src`, ``)

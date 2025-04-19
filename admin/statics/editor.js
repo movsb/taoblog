@@ -546,7 +546,7 @@ class FilesManager {
 	// f: <input type="file" /> 中拿来的文件。
 	async create(f, progress) {
 		let dimension = await FilesManager.detectImageSize(f);
-		dimension.width > 0 && console.log(`图片尺寸：`, f.name, dimension);
+		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
 
 		let form = new FormData();
 		form.set(`spec`, JSON.stringify({
@@ -597,25 +597,42 @@ class FilesManager {
 	// 不会抛异常。
 	static detectImageSize(f) {
 		return new Promise((success, failure) => {
-			if (!/^image\//.test(f.type)) {
+			const isImage = /^image\//.test(f.type);
+			const isVideo = /^video\//.test(f.type);
+
+			if (!isImage && !isVideo) {
 				return success({ width: 0, height: 0 });
 			}
 
-			const img = new Image();
+			const url = URL.createObjectURL(f);
 
 			let revoke = (data)=> {
-				URL.revokeObjectURL(img.src);
+				URL.revokeObjectURL(url);
 				return success(data);
 			}
 
-			img.addEventListener('load', () => {
-				return revoke({ width: img.naturalWidth, height: img.naturalHeight });
-			});
-			img.addEventListener('error', () => {
-				return revoke({ width: 0, height: 0 });
-			});
-
-			img.src = URL.createObjectURL(f);
+			if (isImage) {
+				const img = new Image();
+				img.addEventListener('load', () => {
+					return revoke({ width: img.naturalWidth, height: img.naturalHeight });
+				});
+				img.addEventListener('error', () => {
+					return revoke({ width: 0, height: 0 });
+				});
+				img.src = url;
+			} else if (isVideo) {
+				const video = document.createElement('video');
+				video.preload = 'metadata';
+				video.onloadedmetadata = ()=> {
+					return revoke({ width: video.videoWidth, height: video.videoHeight });
+				};
+				video.onerror = ()=> {
+					return revoke({ width: 0, height: 0});
+				};
+				video.src = url;
+			} else {
+				revoke({ width: 0, height: 0});
+			}
 		});
 	}
 }
