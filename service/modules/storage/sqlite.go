@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"crypto/md5"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -210,6 +211,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			`size`:       spec.Size,
 			`data`:       data,
 			`meta`:       models.FileMetaFromProto(spec.Meta),
+			`digest`:     digest(data),
 		})
 		return err
 	} else {
@@ -222,8 +224,16 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			ModTime:   int64(spec.Time),
 			Size:      spec.Size,
 			Meta:      models.FileMetaFromProto(spec.Meta),
+			Digest:    digest(data),
 			Data:      data,
 		}
 		return fs.s.db.Model(&file).Create()
 	}
+}
+
+func digest(data []byte) string {
+	d := md5.New()
+	fmt.Fprint(d, data)
+	s := d.Sum(nil)
+	return fmt.Sprintf(`%x`, s)
 }

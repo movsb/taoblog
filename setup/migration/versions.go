@@ -572,3 +572,18 @@ func v45(posts, files, cache *taorm.DB) {
 		log.Println(`文件摘要：`, id.ID, x)
 	}
 }
+
+func v46(posts, files, cache *taorm.DB) {
+	var list []struct{ ID int }
+	files.Raw(`SELECT id FROM files WHERE digest=''`).MustFind(&list)
+	for _, file := range list {
+		var data string // []byte
+		files.Raw(`SELECT data FROM files WHERE id=?`, file.ID).MustFind(&data)
+		d := md5.New()
+		fmt.Fprint(d, data)
+		s := d.Sum(nil)
+		x := fmt.Sprintf(`%x`, s)
+		files.MustExec(`UPDATE files SET digest=? WHERE id=?`, x, file.ID)
+		log.Println(`文件摘要：`, file.ID, x)
+	}
+}

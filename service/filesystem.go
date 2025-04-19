@@ -163,7 +163,10 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, pid int
 		s.fileURLs.Delete(key)
 
 		val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (_FileURLCacheValue, error) {
-			fp := utils.Must1(pfs.Open(path))
+			fp, err := pfs.Open(path)
+			if err != nil {
+				return _FileURLCacheValue{}, err
+			}
 			defer fp.Close()
 			info := utils.Must1(fp.Stat())
 			file := info.Sys().(*models.File)
