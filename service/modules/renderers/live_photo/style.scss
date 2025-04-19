@@ -69,4 +69,20 @@
 			font-size: 80%;
 		}
 	}
+
+	.warning {
+		padding: 4px 6px;
+		margin: 10px;
+		color: #9a6700;
+		border-radius: var(--border-radius);
+		position: absolute;
+		left: 0;
+		top: 40px;
+		background-color: #f0ffffab;
+		transition: opacity .5s linear;
+		&.show {
+			opacity: 1 !important;
+			display: inline-block !important;
+		}
+	}
 }
