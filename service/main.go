@@ -74,6 +74,7 @@ type Service struct {
 
 	// 已经注册的外部文件存储。
 	fileURLGetters sync.Map
+	fileURLs       *lru.LRUCache[_FileURLCacheKey, _FileURLCacheValue]
 
 	db   *sql.DB
 	tdb  *taorm.DB
@@ -159,6 +160,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 		cache:     lru.NewTTLCache[string, any](10240),
 		fileCache: cache.NewFileCache(ctx, migration.InitCache(``)),
+		fileURLs:  lru.NewLRUCache[_FileURLCacheKey, _FileURLCacheValue](1024),
 
 		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
