@@ -21,6 +21,7 @@ import (
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
@@ -48,17 +49,9 @@ type Theme struct {
 	searcher proto.SearchServer
 	auth     *auth.Auth
 
-	postFileHandler theme_fs.PostFileHandler
-
-	templates *utils.TemplateLoader
-
-	// 主题的变化应该贡献给 304.
-	// Git 在本地是 head，但是会随时修改主题，
-	// 所以 git 不够用，或者说已经没作用。
-	themeChangedAt time.Time
-
-	specialMux *http.ServeMux
-
+	postFileHandler  theme_fs.PostFileHandler
+	templates        *utils.TemplateLoader
+	specialMux       *http.ServeMux
 	incViewDebouncer *_IncViewDebouncer
 }
 
@@ -89,9 +82,7 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 		auth:     auth,
 
 		postFileHandler: postFileHandler,
-		themeChangedAt:  time.Now(),
-
-		specialMux: http.NewServeMux(),
+		specialMux:      http.NewServeMux(),
 	}
 
 	t.incViewDebouncer = NewIncViewDebouncer(ctx, impl.IncrementViewCount)
@@ -154,9 +145,7 @@ func createMenus(items []config.MenuItem, outer bool) string {
 }
 
 func (t *Theme) loadTemplates() {
-	t.templates = utils.NewTemplateLoader(t.tmplFS, t.funcs(), func() {
-		t.themeChangedAt = time.Now()
-	})
+	t.templates = utils.NewTemplateLoader(t.tmplFS, t.funcs(), dynamic.Reload)
 }
 
 func (t *Theme) executeTemplate(name string, w io.Writer, d *data.Data) {
@@ -223,10 +212,6 @@ func (t *Theme) querySearch(w http.ResponseWriter, r *http.Request) {
 	t.executeTemplate(`search.html`, w, d)
 }
 
-func (t *Theme) ChangedAt() time.Time {
-	return t.themeChangedAt
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 func (t *Theme) lastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
@@ -240,7 +225,7 @@ func (t *Theme) lastPostTime304Handler(h http.Handler) http.Handler {
 		ac := auth.Context(r.Context())
 		h3 := handle304.New(nil,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
-			handle304.WithEntityTag(version.GitCommit, t.ChangedAt, info.LastPostedAt, ac.User.ID),
+			handle304.WithEntityTag(version.GitCommit, dynamic.Mod, info.LastPostedAt, ac.User.ID),
 		)
 		if h3.Match(w, r) {
 			return
@@ -267,7 +252,7 @@ func (t *Theme) post304Handler(w http.ResponseWriter, r *http.Request, p *proto.
 	ac := auth.Context(r.Context())
 	h3 := handle304.New(nil,
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
-		handle304.WithEntityTag(version.GitCommit, t.ChangedAt, p.Modified, p.LastCommentedAt, ac.User.ID),
+		handle304.WithEntityTag(version.GitCommit, dynamic.Mod, p.Modified, p.LastCommentedAt, ac.User.ID),
 	)
 	if h3.Match(w, r) {
 		return h3, true

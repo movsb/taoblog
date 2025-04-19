@@ -52,7 +52,7 @@ var _embed embed.FS
 var _local = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
 var tmpl = sync.OnceValue(func() *utils.TemplateLoader {
-	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _local, fs.FS(_embed)), nil, func() {})
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _local, fs.FS(_embed)), nil, dynamic.Reload)
 })
 
 func (r *Rss) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.Attributes, source []byte) error {

@@ -53,7 +53,7 @@ func New(ctx context.Context, web gold_utils.WebFileSystem) *LivePhoto {
 }
 
 var t = sync.OnceValue(func() *utils.TemplateLoader {
-	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _local, fs.FS(_embed)), nil, func() {})
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _local, fs.FS(_embed)), nil, dynamic.Reload)
 })
 
 func (e *LivePhoto) TransformHtml(doc *goquery.Document) error {

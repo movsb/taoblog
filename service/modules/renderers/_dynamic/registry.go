@@ -30,12 +30,13 @@ type _Content struct {
 }
 
 var (
-	_Dynamic   = map[string]*_Content{}
-	once       sync.Once
-	roots      *http.ServeMux
-	mod        time.Time
-	reloadAll  atomic.Bool
-	reloadLock sync.RWMutex
+	_Dynamic    = map[string]*_Content{}
+	once        sync.Once
+	roots       *http.ServeMux
+	Mod         time.Time
+	reloadAll   atomic.Bool
+	reloadLock  sync.RWMutex
+	_invalidate func()
 )
 
 type ContentChanged interface {
@@ -151,8 +152,9 @@ func initContents() {
 		scriptBuilder bytes.Buffer
 	)
 
-	mod = time.Now()
+	Mod = time.Now()
 	roots = http.NewServeMux()
+	defer _invalidate()
 
 	for module, d := range _Dynamic {
 		if d.public != nil || d.handler != nil {
@@ -167,7 +169,7 @@ func initContents() {
 							http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 							return
 						}
-						http.ServeContent(w, r, r.URL.Path, mod, f)
+						http.ServeContent(w, r, r.URL.Path, Mod, f)
 						return
 					}
 					// TODO 其它错误被忽略了。
@@ -207,10 +209,10 @@ func initContents() {
 	script := bytes.NewReader(scriptBuilder.Bytes())
 
 	roots.HandleFunc(`GET /style.css`, func(w http.ResponseWriter, r *http.Request) {
-		http.ServeContent(w, r, `style.css`, mod, style)
+		http.ServeContent(w, r, `style.css`, Mod, style)
 	})
 	roots.HandleFunc(`GET /script.js`, func(w http.ResponseWriter, r *http.Request) {
-		http.ServeContent(w, r, `script.js`, mod, script)
+		http.ServeContent(w, r, `script.js`, Mod, script)
 	})
 }
 
@@ -236,4 +238,10 @@ func callInits() {
 		init()
 	}
 	initsCalled.Store(true)
+}
+
+// 主题、扩展有变动的时候可以调用此方法更新动态内容。
+func Reload() {
+	reloadAll.Store(true)
+	initAll()
 }

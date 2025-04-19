@@ -52,7 +52,7 @@ var _gTmpl *utils.TemplateLoader
 type Option func(*MediaTags)
 
 var t = sync.OnceValue(func() *utils.TemplateLoader {
-	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, dynamic.Reload)
 })
 
 func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {

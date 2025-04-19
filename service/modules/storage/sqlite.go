@@ -84,13 +84,17 @@ func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 		return nil, err
 	}
 
-	return file.FsFile(&_Reader{db: fs.s.db, pid: fs.pid, path: fullName}), nil
+	return file.FsFile(&_Reader{db: fs.s.db, pid: fs.pid, path: fullName, size: int(file.Size)}), nil
 }
 
 type _Reader struct {
 	db   *taorm.DB
 	pid  int
 	path string
+
+	// 不用再从表里面读一遍。
+	// 以后可能独立出 data 表？
+	size int
 
 	data io.ReadSeeker
 }
@@ -100,6 +104,9 @@ func (r *_Reader) prepare() error {
 		var file models.File
 		if err := r.db.Select(`data`).Where(`post_id=? AND path=?`, r.pid, r.path).Find(&file); err != nil {
 			return err
+		}
+		if len(file.Data) != r.size {
+			return fmt.Errorf(`文件内容数据已损坏。`)
 		}
 		r.data = bytes.NewReader(file.Data)
 	}

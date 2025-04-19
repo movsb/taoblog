@@ -21,23 +21,17 @@ func URL(path string) string {
 }
 
 func New(invalidate func()) http.Handler {
+	_invalidate = invalidate
 	initAll()
-	return &Handler{
-		invalidate: invalidate,
-	}
+	return &Handler{}
 }
 
 // 记录由各渲染扩展/插件动态注册的样式/脚本/资源。
 //
 // TODO 考虑与 gateway/addons 合并？
-type Handler struct {
-	invalidate func()
-}
+type Handler struct{}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if reloadAll.Load() && h.invalidate != nil {
-		h.invalidate()
-	}
 	initAll()
 	roots.ServeHTTP(w, r)
 }

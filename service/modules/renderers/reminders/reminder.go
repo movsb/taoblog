@@ -55,7 +55,7 @@ func New(options ...RemindersOption) *Reminders {
 }
 
 var t = sync.OnceValue(func() *utils.TemplateLoader {
-	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, dynamic.Reload)
 })
 
 func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {

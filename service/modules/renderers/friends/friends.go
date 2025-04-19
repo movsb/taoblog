@@ -76,7 +76,7 @@ func (f Friend) DarkDataURL() template.URL {
 }
 
 var t = sync.OnceValue(func() *utils.TemplateLoader {
-	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, func() {})
+	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, dynamic.Reload)
 })
 
 func (f *Friends) RenderFencedCodeBlock(w io.Writer, language string, attrs parser.Attributes, source []byte) error {
