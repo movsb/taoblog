@@ -24,6 +24,7 @@ type File struct {
 	ModTime   int64
 	Size      uint32
 	Meta      FileMeta
+	Digest    string
 	Data      []byte
 }
 

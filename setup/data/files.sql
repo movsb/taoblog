@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `files` (
     `mod_time` INTEGER  NOT NULL,
     `size` INTEGER  NOT NULL,
     `meta` BLOB NOT NULL,
+    `digest` TEXT NOT NULL,
     `data` BLOB NOT NULL
 );
 

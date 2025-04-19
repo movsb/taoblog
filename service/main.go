@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"encoding/base64"
-	"io/fs"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,6 +28,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/rss"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/search"
+	"github.com/movsb/taoblog/setup/migration"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
@@ -68,13 +67,14 @@ type Service struct {
 	options utils.PluginStorage
 	runtime *runtime_config.Runtime
 
-	// 服务端渲染的时候一些模块会要求解析 URL（包含相对文件和绝对文件），
-	// 所以需要用到主题相关的根文件系统。
-	themeRootFS fs.FS
 	// TODO 包装并鉴权。
 	postDataFS theme_fs.FS
 	// 动态管理的静态文件。
 	userRoots *roots.Root
+
+	// 已经注册的外部文件存储。
+	fileURLGetters sync.Map
+	fileURLs       *lru.LRUCache[_FileURLCacheKey, _FileURLCacheValue]
 
 	db   *sql.DB
 	tdb  *taorm.DB
@@ -146,10 +146,9 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 		notifier: &proto.UnimplementedNotifyServer{},
 
-		cfg:         cfg,
-		runtime:     rc,
-		themeRootFS: embed.FS{},
-		postDataFS:  &theme_fs.Empty{},
+		cfg:        cfg,
+		runtime:    rc,
+		postDataFS: &theme_fs.Empty{},
 
 		// TODO 可配置使用的时区，而不是使用服务器当前时间或者硬编码成+8时区。
 		timeLocation: time.Now().Location(),
@@ -160,7 +159,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		mux:  mux,
 
 		cache:     lru.NewTTLCache[string, any](10240),
-		fileCache: cache.NewFileCache(ctx, ``),
+		fileCache: cache.NewFileCache(ctx, migration.InitCache(``)),
+		fileURLs:  lru.NewLRUCache[_FileURLCacheKey, _FileURLCacheValue](1024),
 
 		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),

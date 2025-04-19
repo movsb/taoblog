@@ -1,13 +1,9 @@
 package migration
 
-import (
-	"database/sql"
-)
-
 // VersionUpdater is
 type VersionUpdater struct {
 	version int
-	update  func(tx *sql.Tx)
+	update  any
 }
 
 var gVersions = [...]VersionUpdater{
@@ -56,6 +52,7 @@ var gVersions = [...]VersionUpdater{
 	{42, v42},
 	{43, v43},
 	{44, v44},
+	{45, v45},
 }
 
 // MaxVersionNumber ...

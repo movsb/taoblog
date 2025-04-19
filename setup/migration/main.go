@@ -2,13 +2,13 @@ package migration
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"strconv"
+
+	"github.com/movsb/taorm"
 )
 
-// Migrate ...
-func Migrate(gdb *sql.DB) {
+func Migrate(gdb, files, cache *sql.DB) {
 	if err := gdb.Ping(); err != nil {
 		panic(err)
 	}
@@ -41,20 +41,33 @@ func Migrate(gdb *sql.DB) {
 		return
 	}
 
-	txCall(gdb, func(tx *sql.Tx) {
-		for ; begin < len(gVersions); begin++ {
-			v := gVersions[begin]
-			if v.update != nil {
-				log.Printf("updating to DB version %d ...\n", v.version)
-				v.update(tx)
-			}
-		}
-		lastVer := gVersions[len(gVersions)-1]
-		if _, err := tx.Exec(
-			`UPDATE options SET VALUE=? WHERE name='db_ver'`,
-			fmt.Sprint(lastVer.version),
-		); err != nil {
-			panic(err)
-		}
+	taorm.NewDB(gdb).MustTxCall(func(txPosts *taorm.DB) {
+		taorm.NewDB(files).MustTxCall(func(txFiles *taorm.DB) {
+			taorm.NewDB(cache).MustTxCall(func(txCache *taorm.DB) {
+				for ; begin < len(gVersions); begin++ {
+					v := gVersions[begin]
+					if v.update != nil {
+						log.Printf("updating to DB version %d ...\n", v.version)
+						switch typed := v.update.(type) {
+						case func(*sql.Tx):
+							panic(`no longer supported`)
+						case func(*taorm.DB, *taorm.DB, *taorm.DB):
+							typed(txPosts, txFiles, txCache)
+						default:
+							panic(`unknown update function`)
+						}
+					}
+				}
+				lastVer := gVersions[len(gVersions)-1]
+				txPosts.MustExec(`UPDATE options SET VALUE=? WHERE name='db_ver'`, lastVer.version)
+			})
+		})
 	})
+}
+
+func mustExec(tx *sql.Tx, query string, args ...any) {
+	_, err := tx.Exec(query, args...)
+	if err != nil {
+		panic(err)
+	}
 }

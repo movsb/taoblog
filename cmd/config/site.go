@@ -39,6 +39,8 @@ type SiteConfig struct {
 	Since       _Since `yaml:"since,omitempty"`
 
 	Notify SiteNotifyConfig `json:"notify" yaml:"notify"`
+
+	Sync SiteSyncConfig `yaml:"sync"`
 }
 
 // DefaultSiteConfig ...
@@ -135,4 +137,21 @@ func (c ThemeVariablesConfig) AfterSet(paths Segments, obj any) {
 
 func (c *ThemeVariablesConfig) Reload() <-chan struct{} {
 	return c.changed
+}
+
+type SiteSyncConfig struct {
+	R2 SiteSyncR2Config `yaml:"r2"`
+}
+
+type SiteSyncR2Config struct {
+	Enabled         bool   `yaml:"enabled"`
+	AccountID       string `yaml:"account_id"`
+	AccessKeyID     string `yaml:"access_key_id"`
+	AccessKeySecret string `yaml:"access_key_secret"`
+	BucketName      string `yaml:"bucket_name"`
+}
+
+func (c *SiteSyncR2Config) CanSave() {}
+func (c *SiteSyncR2Config) BeforeSet(paths Segments, obj any) error {
+	return nil
 }

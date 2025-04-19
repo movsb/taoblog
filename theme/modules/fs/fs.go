@@ -3,6 +3,7 @@ package theme_fs
 import (
 	"embed"
 	"io/fs"
+	"net/http"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -26,4 +27,12 @@ func (Empty) AllFiles() (map[int][]*proto.FileSpec, error) {
 
 func (Empty) ForPost(id int) (fs.FS, error) {
 	return empty, nil
+}
+
+type PostFileHandler interface {
+	HandlePostFile(w http.ResponseWriter, r *http.Request, pid int, file string)
+}
+
+type FileURLGetter interface {
+	GetFileURL(pid int, path string, digest string) string
 }

@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"database/sql"
 	"database/sql/driver"
@@ -555,3 +556,19 @@ func v44(tx *sql.Tx) {
 // 有一个给 files 增加 meta 的操作没有记录。
 // 涉及到多数据库，暂时不支持。
 // ALTER TABLE files ADD COLUMN meta BLOB NOT NULL DEFAULT '{}' AFTER `size`;
+
+func v45(posts, files, cache *taorm.DB) {
+	files.MustExec("ALTER TABLE files ADD COLUMN digest TEXT NOT NULL DEFAULT ''")
+	var ids []struct{ ID int }
+	files.Raw(`SELECT id FROM files`).MustFind(&ids)
+	for _, id := range ids {
+		var data string // []byte
+		files.Raw(`SELECT data FROM files WHERE id=?`, id.ID).MustFind(&data)
+		d := md5.New()
+		fmt.Fprint(d, data)
+		s := d.Sum(nil)
+		x := fmt.Sprintf(`%x`, s)
+		files.MustExec(`UPDATE files SET digest=? WHERE id=?`, x, id.ID)
+		log.Println(`文件摘要：`, id.ID, x)
+	}
+}

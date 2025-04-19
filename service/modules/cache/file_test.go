@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/movsb/taoblog/setup/migration"
 )
 
 type A struct{}
@@ -22,7 +24,8 @@ func TestTypes(t *testing.T) {
 	t.Log(typeHash(A{}))
 	t.Log(typeHash(B{}))
 
-	h := NewFileCache(context.Background(), ``)
+	db := migration.InitCache(``)
+	h := NewFileCache(context.Background(), db)
 	c := C{}
 	var out []byte
 	// 无缓存

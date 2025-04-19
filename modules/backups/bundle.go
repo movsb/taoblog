@@ -19,7 +19,7 @@ import (
 )
 
 type Remote interface {
-	Upload(ctx context.Context, path string, r io.Reader) error
+	Upload(ctx context.Context, path string, r io.Reader, contentType string) error
 }
 
 type Backup struct {
@@ -120,7 +120,7 @@ func (b *Backup) BackupPosts(ctx context.Context) (outErr error) {
 	b.nextPostsFileIndex++
 	name := fmt.Sprintf(`posts-%d.db.gz.age`, next)
 
-	return b.remote.Upload(ctx, name, r)
+	return b.remote.Upload(ctx, name, r, ``)
 }
 
 func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
@@ -178,7 +178,7 @@ func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
 		if fileCount > 0 {
 			f := fmt.Sprintf(`posts.%d.tar.gz.age`, post.Id)
 			log.Println(`正在写入备份文件：`, f)
-			utils.Must(b.remote.Upload(ctx, f, r))
+			utils.Must(b.remote.Upload(ctx, f, r, ``))
 		}
 	}
 

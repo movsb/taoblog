@@ -7,10 +7,14 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
+	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -136,4 +140,68 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 	return &proto.ListPostFilesResponse{
 		Files: files,
 	}, nil
+}
+
+func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
+	s.fileURLGetters.Store(name, g)
+}
+
+func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, pid int, path string) {
+	handled := false
+
+	pfs := utils.Must1(s.postDataFS.ForPost(pid))
+
+	ac := auth.Context(r.Context())
+	// 测试阶段，只给登录用户使用。
+	if !ac.User.IsGuest() {
+		key := _FileURLCacheKey{Pid: pid, Path: path}
+		if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
+			http.Redirect(w, r, val.URL, http.StatusFound)
+			return
+		}
+
+		s.fileURLs.Delete(key)
+
+		val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (_FileURLCacheValue, error) {
+			fp := utils.Must1(pfs.Open(path))
+			defer fp.Close()
+			info := utils.Must1(fp.Stat())
+			file := info.Sys().(*models.File)
+
+			var url string
+
+			s.fileURLGetters.Range(func(key, value any) bool {
+				if u := value.(theme_fs.FileURLGetter).GetFileURL(pid, path, file.Digest); u != `` {
+					url = u
+					return false
+				}
+				return true
+			})
+
+			if url == `` {
+				return _FileURLCacheValue{}, io.EOF
+			}
+
+			return _FileURLCacheValue{URL: url, Time: time.Now()}, nil
+		})
+
+		if err == nil {
+			http.Redirect(w, r, val.URL, http.StatusFound)
+			return
+		}
+	}
+
+	if !handled {
+		http.ServeFileFS(w, r, pfs, path)
+	}
+}
+
+type _FileURLCacheKey struct {
+	Pid  int
+	Path string
+}
+
+type _FileURLCacheValue struct {
+	URL  string
+	Time time.Time
 }
