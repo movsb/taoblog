@@ -351,8 +351,6 @@ class CommentListUI {
 			elem.style.display = 'block';
 		}
 
-		TaoBlog.events.dispatch('comment', 'post', elem, rawComment);
-
 		this._comments[rawComment.id] = rawComment;
 	}
 
@@ -392,7 +390,6 @@ class CommentListUI {
 	update(comment) {
 		let ui = new CommentNodeUI(comment.id);
 		ui.setContent(comment.content);
-		TaoBlog.events.dispatch('comment', 'post', ui.htmlNode, comment);
 		this._comments[comment.id] = comment;
 	}
 
@@ -832,7 +829,6 @@ class Comment {
 		try {
 			let rsp = await this.api.previewComment(+this.post_id, source);
 			this.preview.setHTML(rsp.html);
-			TaoBlog.events.dispatch('comment', 'preview', this.preview.container);
 		} catch (e) {
 			this.preview.setError('预览失败：' + e);
 		}

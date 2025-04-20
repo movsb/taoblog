@@ -37,6 +37,7 @@ async function format(stamps) {
 
 let update = async function() {
 	let { times, stamps, latest } = all();
+	if (!times.length) { return; }
 	let formatted = await format(stamps);
 	if (!formatted) { return; }
 	times.forEach((t, i) => {
@@ -53,13 +54,10 @@ let update = async function() {
 	});
 	let current =  Math.floor(new Date().getTime()/1000);
 	let diff = current - latest;
-	if (diff < 60) { setTimeout(update, 10000); return; }
-	setTimeout(update, 60000);
+	setTimeout(update, diff<60 ? 10000 : 60000)
 }
 
 setTimeout(update, 3000);
-
-TaoBlog.events.add('comment', 'post', () => { update(); });
 
 })();
 
