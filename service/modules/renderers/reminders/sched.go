@@ -284,6 +284,7 @@ func (s *CalenderService) Marshal(now time.Time, w io.Writer) error {
 	cal.SetLastModified(s.sched.LastUpdatedAt())
 	// TODO 写死了
 	cal.SetTimezoneId(`Asia/Shanghai`)
+	// 设置日历的名字为网站名。
 	cal.SetXWRCalName(s.name)
 
 	s.sched.ForEachPost(func(id int, jobs []Job, firsts []Job) {

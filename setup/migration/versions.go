@@ -587,3 +587,7 @@ func v46(posts, files, cache *taorm.DB) {
 		log.Println(`文件摘要：`, file.ID, x)
 	}
 }
+
+func v47(posts, files, cache *taorm.DB) {
+	posts.MustExec("CREATE INDEX `idx_modified` ON `posts` (`modified`)")
+}

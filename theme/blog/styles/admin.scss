@@ -51,9 +51,10 @@ body.admin.reorder {
 
 body.admin.login {
 	margin: 0;
-	padding: 0;
+	padding: 1em;
 	height: 100vh;
 	display: flex;
+	box-sizing: border-box;
 	background-color: var(--code-bg);
 	@media (prefers-color-scheme: dark) {
 		background-color: var(--color-bg);
@@ -65,13 +66,7 @@ body.admin.login {
 		margin: auto;
 		padding: 1em;
 		box-sizing: border-box;
-		min-width: 300px;
-		@media (min-width: 400px) {
-			width: 400px;
-		}
-		@media (max-width: 399px) {
-			width: 90%;
-		}
+		width: 300px;
 		@media (prefers-color-scheme: dark) {
 			background-color: var(--code-bg);
 		}
@@ -84,7 +79,6 @@ body.admin.login {
 				color: inherit;
 				font-size: 90%;
 			}
-			flex: 1;
 		}
 		button {
 			cursor: pointer;

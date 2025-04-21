@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS `posts` (
     `source_type` TEXT NOT NULL
 );
 
+CREATE INDEX `idx_modified` on `posts` (`modified`);
+
 -- 创建表 comments
 CREATE TABLE IF NOT EXISTS `comments` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
