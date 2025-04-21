@@ -52,7 +52,7 @@ func (m *Exif) TransformHtml(doc *goquery.Document) error {
 		fp, err := m.fs.OpenURL(url)
 		if err != nil {
 			if !errors.Is(err, gold_utils.ErrCrossOrigin) {
-				log.Println(err)
+				log.Println(err, m.id, url)
 			}
 			return
 		}

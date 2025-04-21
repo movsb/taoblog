@@ -162,8 +162,8 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *pro
 	} else {
 		stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 		stmt.Where(
-			`posts.user_id=? OR posts.status=? OR (acl.user_id=? AND acl.permission=?)`,
-			ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PermRead,
+			`posts.user_id=? OR posts.status=? OR (acl.user_id=? AND acl.permission=? AND posts.status=?)`,
+			ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PermRead, models.PostStatusPartial,
 		)
 	}
 

@@ -223,10 +223,12 @@ func TestGetPost(t *testing.T) {
 	p1 := create(r.user1, &proto.Post{Status: models.PostStatusPublic, Source: `# user1`, SourceType: `markdown`})
 	p2 := create(r.user2, &proto.Post{Status: models.PostStatusPrivate, Source: `# user2`, SourceType: `markdown`})
 
-	eq := func(p string, u context.Context, id int32, ok bool) {
+	// 当前权限：p1 公开，p2 私有
+
+	eq := func(p string, u context.Context, id int64, ok bool) {
 		_, file, line, _ := runtime.Caller(1)
 		_, err := r.client.Blog.GetPost(u, &proto.GetPostRequest{
-			Id: id,
+			Id: int32(id),
 		})
 		if ok == (err == nil) {
 			return
@@ -234,12 +236,12 @@ func TestGetPost(t *testing.T) {
 		t.Errorf("[%s:%d]%s: %d, %v, %v", file, line, p, id, ok, err)
 	}
 
-	eq(`访客访问公开`, r.guest, int32(p1.Id), true)
-	eq(`访客访问私有`, r.guest, int32(p2.Id), false)
-	eq(`用户1自己的`, r.user1, int32(p1.Id), true)
-	eq(`用户2自己的`, r.user2, int32(p2.Id), true)
-	eq(`用户1访问用户2的私有`, r.user1, int32(p2.Id), false)
-	eq(`用户2访问用户1的公开`, r.user2, int32(p1.Id), true)
+	eq(`访客访问公开`, r.guest, p1.Id, true)
+	eq(`访客访问私有`, r.guest, p2.Id, false)
+	eq(`用户1自己的`, r.user1, p1.Id, true)
+	eq(`用户2自己的`, r.user2, p2.Id, true)
+	eq(`用户1访问用户2的私有`, r.user1, p2.Id, false)
+	eq(`用户2访问用户1的公开`, r.user2, p1.Id, true)
 
 	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
 		Id:     p2.Id,
@@ -257,12 +259,18 @@ func TestGetPost(t *testing.T) {
 		},
 	}))
 
-	eq(`访客访问公开`, r.guest, int32(p1.Id), true)
-	eq(`访客访问分享`, r.guest, int32(p2.Id), false)
-	eq(`用户1自己的`, r.user1, int32(p1.Id), true)
-	eq(`用户2自己的`, r.user2, int32(p2.Id), true)
-	eq(`用户1访问用户2的分享`, r.user1, int32(p2.Id), true)
-	eq(`用户2访问用户1的公开`, r.user2, int32(p2.Id), true)
+	// 当前权限：p1 公开，p2 → u1
+
+	eq(`访客访问分享`, r.guest, p2.Id, false)
+	eq(`用户1访问用户2的分享`, r.user1, p2.Id, true)
+
+	utils.Must1(r.client.Blog.SetPostStatus(r.admin, &proto.SetPostStatusRequest{
+		Id:     p2.Id,
+		Status: models.PostStatusPrivate,
+	}))
+
+	// 当前权限：p1 公开，p2 私有（曾经分享过给 u1，改为私有后不会删除分享记录）
+	eq(`用户1访问用户2曾经分享过而现为私有`, r.user1, p2.Id, false)
 }
 
 // TODO 测试即便在添加了凭证的情况下仍然只返回公开文章。
@@ -408,7 +416,7 @@ func TestIsolatedPostCache(t *testing.T) {
 		},
 	))
 	if !strings.Contains(rendered.Content, `PRIVATE`) {
-		panic(`user1 不可见？`)
+		panic(`user1 应该可见。`)
 	}
 	rendered = utils.Must1(r.client.Blog.GetPost(r.user2,
 		&proto.GetPostRequest{
@@ -421,6 +429,6 @@ func TestIsolatedPostCache(t *testing.T) {
 		},
 	))
 	if strings.Contains(rendered.Content, `PRIVATE`) {
-		panic(`user2 可见？`)
+		panic(`user2 不应该可见。`)
 	}
 }
