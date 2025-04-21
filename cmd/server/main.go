@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -644,9 +644,9 @@ func exceptionRecoveryHandler(e any) error {
 			return st.Err()
 		}
 	}
-	buf := make([]byte, 10<<10)
-	runtime.Stack(buf, false)
-	log.Println("未处理的内部错误：", e, "\n", string(buf))
+
+	stack := debug.Stack()
+	log.Println("未处理的内部错误：", e, "\n", string(stack))
 	return status.New(codes.Internal, fmt.Sprint(e)).Err()
 }
 
