@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"reflect"
 	"runtime"
 	"slices"
 	"strings"
@@ -430,5 +431,79 @@ func TestIsolatedPostCache(t *testing.T) {
 	))
 	if strings.Contains(rendered.Content, `PRIVATE`) {
 		panic(`user2 不应该可见。`)
+	}
+}
+
+func TestReferences(t *testing.T) {
+	r := Serve(context.Background())
+	privatePost := utils.Must1(r.client.Blog.CreatePost(r.user1,
+		&proto.Post{
+			Status: models.PostStatusPrivate,
+			Title:  `PRIVATE`,
+			Source: `123`,
+		},
+	))
+	publicPost := utils.Must1(r.client.Blog.CreatePost(r.user1,
+		&proto.Post{
+			Status: models.PostStatusPublic,
+			Title:  `PUBLIC`,
+			Source: fmt.Sprintf(`[[%d]]`, privatePost.Id),
+		},
+	))
+	publicPost2 := utils.Must1(r.client.Blog.CreatePost(r.user2,
+		&proto.Post{
+			Status: models.PostStatusPublic,
+			Title:  `PUBLIC`,
+			Source: fmt.Sprintf(`[[%d]][[%d]]`, publicPost.Id, privatePost.Id),
+		},
+	))
+
+	gp := func(ctx context.Context, id int64) *proto.Post {
+		p := utils.Must1(r.client.Blog.GetPost(ctx,
+			&proto.GetPostRequest{Id: int32(id)},
+		))
+		if p.References == nil {
+			p.References = &proto.Post_References{}
+		}
+		if p.References.Posts == nil {
+			p.References.Posts = &proto.Post_References_Posts{}
+		}
+		return p
+	}
+
+	eq := func(a []int32, b []int64) {
+		slices.Sort(a)
+		slices.Sort(b)
+		c := utils.Map(b, func(b int64) int32 { return int32(b) })
+		if !reflect.DeepEqual(a, c) {
+			if len(a) == 0 && len(c) == 0 {
+				return
+			}
+			_, file, line, _ := runtime.Caller(1)
+			log.Fatalf(`not equal: %s:%d %v %v`, file, line, a, c)
+		}
+	}
+
+	p1 := gp(r.user1, privatePost.Id)
+	eq(p1.References.Posts.From, []int64{publicPost.Id, publicPost2.Id})
+	eq(p1.References.Posts.To, []int64{})
+	p2 := gp(r.user1, publicPost.Id)
+	eq(p2.References.Posts.From, []int64{publicPost2.Id})
+	eq(p2.References.Posts.To, []int64{privatePost.Id})
+	p3 := gp(r.user2, publicPost2.Id)
+	eq(p3.References.Posts.From, []int64{})
+	eq(p3.References.Posts.To, []int64{privatePost.Id, publicPost.Id})
+
+	{
+		utils.Must1(r.client.Blog.DeletePost(r.admin, &proto.DeletePostRequest{
+			Id: int32(publicPost.Id),
+		}))
+
+		p1 := gp(r.user1, privatePost.Id)
+		eq(p1.References.Posts.From, []int64{publicPost2.Id})
+		eq(p1.References.Posts.To, []int64{})
+		p3 := gp(r.user2, publicPost2.Id)
+		eq(p3.References.Posts.From, []int64{})
+		eq(p3.References.Posts.To, []int64{privatePost.Id})
 	}
 }

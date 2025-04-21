@@ -591,3 +591,7 @@ func v46(posts, files, cache *taorm.DB) {
 func v47(posts, files, cache *taorm.DB) {
 	posts.MustExec("CREATE INDEX `idx_modified` ON `posts` (`modified`)")
 }
+
+func v48(posts, files, cache *taorm.DB) {
+	posts.MustExec("ALTER TABLE posts ADD COLUMN citations TEXT NOT NULL DEFAULT '{}'")
+}

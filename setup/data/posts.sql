@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS `posts` (
     `comments` INTEGER  NOT NULL,
     `metas` TEXT  NOT NULL,
     `source` TEXT NOT NULL,
-    `source_type` TEXT NOT NULL
+    `source_type` TEXT NOT NULL,
+    `citations` TEXT NOT NULL
 );
 
 CREATE INDEX `idx_modified` on `posts` (`modified`);

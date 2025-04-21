@@ -121,13 +121,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		footnotes.New(),
 		alerts.New(),
 
-		page_link.New(ctx, func(ctx context.Context, id int) (string, error) {
-			post, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
-			if err != nil {
-				return ``, fmt.Errorf(`page_link: %w`, err)
-			}
-			return post.Title, nil
-		}),
+		page_link.New(ctx, s.getPostTitle, nil),
 
 		renderers.WithFencedCodeBlockRenderer(`friends`, friends.New(s.friendsTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),

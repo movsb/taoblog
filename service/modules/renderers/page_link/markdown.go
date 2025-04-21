@@ -36,14 +36,16 @@ func init() {
 type PageLink struct {
 	ctx          context.Context
 	getPageTitle GetPageTitle
+	refs         *[]int32
 }
 
-type GetPageTitle func(ctx context.Context, id int) (string, error)
+type GetPageTitle = func(ctx context.Context, id int32) (string, error)
 
-func New(ctx context.Context, getPageTitle GetPageTitle) *PageLink {
+func New(ctx context.Context, getPageTitle GetPageTitle, refs *[]int32) *PageLink {
 	return &PageLink{
 		ctx:          ctx,
 		getPageTitle: getPageTitle,
+		refs:         refs,
 	}
 }
 
@@ -71,9 +73,13 @@ func (e *PageLink) Parse(parent ast.Node, block text.Reader, pc parser.Context) 
 	if indices == nil {
 		return nil
 	}
-	id, _ := strconv.Atoi(string(indices[1]))
 
-	title, err := e.getPageTitle(e.ctx, id)
+	id, _ := strconv.Atoi(string(indices[1]))
+	if e.refs != nil {
+		*e.refs = append(*e.refs, int32(id))
+	}
+
+	title, err := e.getPageTitle(e.ctx, int32(id))
 	if err != nil {
 		log.Println(`获取文章标题失败：`, err)
 		title = `页面不存在`

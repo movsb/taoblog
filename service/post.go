@@ -28,6 +28,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
+	"github.com/movsb/taoblog/service/modules/renderers/page_link"
 	"github.com/movsb/taoblog/service/modules/renderers/toc"
 	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
@@ -142,7 +143,7 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *pro
 
 	var p models.Post
 
-	stmt := s.tdb.Model(p).Select(`posts.*`)
+	stmt := s.tdb.Select(`posts.*`)
 
 	if in.Id > 0 {
 		stmt.Where(`posts.id=?`, in.Id)
@@ -515,13 +516,13 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		p.SourceType = in.SourceType
 	}
 
-	title, hashtags, err := s.parsePostDerived(in.SourceType, in.Source)
+	derived, err := s.parseDerived(ctx, in.SourceType, in.Source)
 	if err != nil {
 		return nil, err
 	}
-	if title != `` {
+	if derived.Title != `` {
 		// 文章中的一级标题优先级大于参数。
-		p.Title = title
+		p.Title = derived.Title
 	}
 	// 除碎碎念外，文章不允许空标题
 	if p.Type != `tweet` && p.Title == "" {
@@ -531,9 +532,10 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	s.MustTxCall(func(txs *Service) error {
 		txs.tdb.Model(&p).MustCreate()
 		in.Id = p.ID
-		txs.UpdateObjectTags(p.ID, append(hashtags, in.Tags...))
+		txs.UpdateObjectTags(p.ID, append(derived.Tags, in.Tags...))
 		txs.updateLastPostTime(time.Unix(int64(p.Modified), 0))
 		txs.updatePostPageCount()
+		txs.updateReferences(ctx, int32(p.ID), nil, derived.References)
 		return nil
 	})
 
@@ -546,6 +548,14 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 func (s *Service) getPost(id int) (*models.Post, error) {
 	var post models.Post
 	return &post, s.tdb.Where(`id=?`, id).Find(&post)
+}
+
+func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
+	post, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
+	if err != nil {
+		return ``, fmt.Errorf(`getPostTitle: %w`, err)
+	}
+	return post.Title, nil
 }
 
 // 更新文章。
@@ -626,18 +636,16 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		panic(`source type and source must be specified`)
 	}
 
-	var hashtags *[]string
+	derived, err := s.parseDerived(ctx, in.Post.SourceType, in.Post.Source)
+	if err != nil {
+		return nil, err
+	}
+
 	if hasSource && hasSourceType {
-		title, htags, err := s.parsePostDerived(in.Post.SourceType, in.Post.Source)
-		if err != nil {
-			return nil, err
-		}
-		// 有些旧文章 MD 内并没有写标题，标题在 config 里面，此处不能强制替换。
-		if title != `` {
+		if derived.Title != `` {
 			// 文章中的一级标题优先级大于配置文件。
-			m[`title`] = title
+			m[`title`] = derived.Title
 		}
-		hashtags = &htags
 	}
 	if hasTitle || (hasSource && hasSourceType) {
 		var ty string
@@ -650,16 +658,12 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			}
 			ty = p.Type
 		}
-		title, _, err := s.parsePostDerived(in.Post.SourceType, in.Post.Source)
-		if err != nil {
-			return nil, err
-		}
-		if title != `` {
+		if derived.Title != `` {
 			// 文章中的一级标题优先级大于参数。
-			m[`title`] = title
+			m[`title`] = derived.Title
 		}
 		// 除碎碎念外，文章不允许空标题
-		if ty != `tweet` && (title == "" && !hasTitle) {
+		if ty != `tweet` && (derived.Title == "" && !hasTitle) {
 			return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
 		}
 	}
@@ -676,21 +680,21 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			txs.tdb.Model(&op).MustFind(&op)
 			return status.Errorf(codes.Aborted, "update failed, modified conflict: %v (modified: %v)", err, op.Modified)
 		}
-		if hasTags || hashtags != nil {
+		if hasTags {
 			var newTags []string
 			if hasTags {
 				newTags = in.Post.Tags
 			} else {
 				newTags = txs.GetObjectTagNames(p.ID)
 			}
-			if hashtags != nil {
-				newTags = append(newTags, *hashtags...)
-			}
+			newTags = append(newTags, derived.Tags...)
 			txs.UpdateObjectTags(p.ID, newTags)
 			s.cache.Delete(fmt.Sprintf(`post_tags:%d`, in.Post.Id))
 		}
 		txs.updateLastPostTime(time.Now())
 		txs.deletePostContentCacheFor(p.ID)
+
+		txs.updateReferences(ctx, int32(p.ID), &oldPost.Citations, derived.References)
 
 		return nil
 	})
@@ -738,25 +742,38 @@ func (s *Service) setPostACL(postID int64, users []int32) {
 
 // 只是用来在创建文章和更新文章的时候从正文里面提取。
 // 返回：标题，话题列表。
-func (s *Service) parsePostDerived(sourceType, source string) (string, []string, error) {
+type _Derived struct {
+	Title      string
+	Tags       []string
+	References []int32
+}
+
+func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (*_Derived, error) {
 	var tr renderers.Renderer
 	var title string
 	var tags []string
+	var refs []int32
 	switch sourceType {
 	case "markdown":
 		tr = renderers.NewMarkdown(
 			renderers.WithoutRendering(),
 			renderers.WithTitle(&title),
 			hashtags.New(s.hashtagResolver, &tags),
+			page_link.New(ctx, s.getPostTitle, &refs),
 		)
 	default:
-		return "", nil, status.Errorf(codes.InvalidArgument, "no renderer was found for: %q", sourceType)
+		return nil, status.Errorf(codes.InvalidArgument, "no renderer was found for: %q", sourceType)
 	}
 	_, err := tr.Render(source)
 	if err != nil {
-		return "", nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	return title, tags, nil
+	d := &_Derived{
+		Title:      title,
+		Tags:       tags,
+		References: refs,
+	}
+	return d, nil
 }
 
 // 用于删除一篇文章。
@@ -767,13 +784,14 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 	var p models.Post
 
 	s.MustTxCall(func(txs *Service) error {
-		txs.tdb.Select(`id`).Where(`id=?`, in.Id).MustFind(&p)
+		txs.tdb.Where(`id=?`, in.Id).MustFind(&p)
 		txs.tdb.Model(&p).MustDelete()
 		txs.deletePostComments(ctx, int64(in.Id))
 		txs.deletePostTags(ctx, int64(in.Id))
 		txs.deletePostContentCacheFor(int64(in.Id))
 		txs.updatePostPageCount()
 		txs.updateCommentsCount()
+		txs.deleteReferences(ctx, int32(p.ID), &p.Citations)
 		return nil
 	})
 
@@ -828,6 +846,144 @@ func (s *Service) updatePostPageCount() {
 	s.tdb.Model(models.Post{}).Select(`count(1) as count`).Where(`type='page'`).MustFind(&pageCount)
 	s.options.SetInteger(`post_count`, int64(postCount))
 	s.options.SetInteger(`page_count`, int64(pageCount))
+}
+
+// 更新文章的引用信息。
+// NOTE: 无须判断权限。无权限的文章不会显示任何信息。
+func (s *Service) updateReferences(ctx context.Context, self int32, refs *models.References, new []int32) {
+	posts := map[int32]*models.Post{}
+
+	// 不存在返回空。
+	getPost := func(pid int32) *models.Post {
+		p, ok := posts[pid]
+		if ok {
+			return p
+		}
+		p, err := s.getPost(int(pid))
+		if err != nil {
+			if taorm.IsNotFoundError(err) {
+				return nil
+			}
+			panic(err)
+		}
+		posts[pid] = p
+		return p
+	}
+
+	var oldTo []int32
+	if refs != nil && refs.Posts != nil {
+		oldTo = refs.Posts.To
+	}
+
+	removed := utils.Filter(oldTo, func(n int32) bool { return !slices.Contains(new, n) })
+	added := utils.Filter(new, func(n int32) bool { return !slices.Contains(oldTo, n) })
+
+	if len(removed)+len(added) == 0 {
+		return
+	}
+
+	now := time.Now().Unix()
+
+	{
+		if refs == nil {
+			refs = &models.References{}
+		}
+		if refs.Posts == nil {
+			refs.Posts = &proto.Post_References_Posts{}
+		}
+		refs.Posts.To = new
+
+		s.tdb.Model(&models.Post{ID: int64(self)}).MustUpdateMap(taorm.M{
+			`last_commented_at`: now,
+			`citations`:         refs,
+		})
+	}
+
+	for _, pid := range removed {
+		p := getPost(pid)
+		if p == nil {
+			// NOTE: 可以 Panic。
+			continue
+		}
+		if p.Citations.Posts == nil {
+			continue
+		}
+		from := &p.Citations.Posts.From
+		*from = slices.DeleteFunc(*from, func(n int32) bool { return n == self })
+		log.Printf(`删除引用：%d → %d`, self, pid)
+	}
+
+	for _, pid := range added {
+		p := getPost(pid)
+		if p == nil {
+			// NOTE: 可以 Panic。
+			continue
+		}
+		// 新添加的时候可能为nil，需要判断。
+		if p := &p.Citations.Posts; *p == nil {
+			*p = &proto.Post_References_Posts{}
+		}
+		from := &p.Citations.Posts.From
+		*from = append(*from, self)
+		log.Printf(`增加引用：%d → %d`, self, pid)
+	}
+
+	for _, p := range posts {
+		s.tdb.Model(p).MustUpdateMap(taorm.M{
+			`last_commented_at`: now,
+			`citations`:         &p.Citations,
+		})
+	}
+}
+
+func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models.References) {
+	now := time.Now().Unix()
+
+	if refs.Posts == nil {
+		return
+	}
+
+	for _, ref := range refs.Posts.To {
+		p, err := s.getPost(int(ref))
+		if err != nil {
+			if taorm.IsNotFoundError(err) {
+				continue
+			}
+			panic(err)
+		}
+		if p.Citations.Posts == nil {
+			panic(`不应该为 nil`)
+		}
+		from := &p.Citations.Posts.From
+		*from = slices.DeleteFunc(*from, func(n int32) bool { return n == self })
+		log.Printf(`删除引用：%d → %d`, self, ref)
+
+		s.tdb.Model(p).MustUpdateMap(taorm.M{
+			`last_commented_at`: now,
+			`citations`:         &p.Citations,
+		})
+	}
+
+	for _, ref := range refs.Posts.From {
+		p, err := s.getPost(int(ref))
+		if err != nil {
+			if taorm.IsNotFoundError(err) {
+				continue
+			}
+			panic(err)
+		}
+		if p.Citations.Posts == nil {
+			panic(`不应该为 nil`)
+		}
+		to := &p.Citations.Posts.To
+		*to = slices.DeleteFunc(*to, func(n int32) bool { return n == self })
+		log.Printf(`删除引用：%d ← %d`, self, ref)
+
+		s.tdb.Model(p).MustUpdateMap(taorm.M{
+			`last_commented_at`: now,
+			`citations`:         &p.Citations,
+		})
+	}
 }
 
 // SetPostStatus sets post status.
@@ -975,7 +1131,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 	topPosts := s.getUserTopPosts(int(ac.User.ID))
 
 	return func(p *proto.Post) error {
-		if ac.User.IsGuest() {
+		if ac.User.ID != int64(p.UserId) {
 			if p.Metas != nil {
 				p.Metas.Geo = nil
 			}

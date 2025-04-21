@@ -11,11 +11,11 @@ import (
 )
 
 func TestRender(t *testing.T) {
-	titles := map[int]string{
+	titles := map[int32]string{
 		123: "123",
 		111: "<p>",
 	}
-	getPageTitle := func(ctx context.Context, id int) (string, error) {
+	getPageTitle := func(ctx context.Context, id int32) (string, error) {
 		if t, ok := titles[id]; ok {
 			return t, nil
 		}
@@ -55,7 +55,7 @@ func TestRender(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		md := renderers.NewMarkdown(page_link.New(context.Background(), getPageTitle))
+		md := renderers.NewMarkdown(page_link.New(context.Background(), getPageTitle, nil))
 		html, err := md.Render(tc.markdown)
 		if err != nil {
 			t.Error(err)

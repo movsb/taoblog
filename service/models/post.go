@@ -37,6 +37,7 @@ type Post struct {
 	Source          string
 	SourceType      string
 
+	Citations        References
 	DateTimezone     string
 	ModifiedTimezone string
 }
@@ -125,6 +126,7 @@ func (m *PostMeta) ToProto() *proto.Metas {
 	return p
 }
 
+// 不重要的函数。可以删除。加字段可以不更新。
 func (m *PostMeta) IsEmpty() bool {
 	return m.Header == "" &&
 		m.Footer == "" &&
@@ -168,6 +170,28 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 	return &m
 }
 
+type References proto.Post_References
+
+var (
+	_ sql.Scanner   = (*References)(nil)
+	_ driver.Valuer = (*References)(nil)
+)
+
+// TODO taorm 有个bug，这里必须为值，不能是指针。
+func (m References) Value() (driver.Value, error) {
+	return json.Marshal(m)
+}
+
+func (m *References) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return json.Unmarshal([]byte(v), m)
+	case []byte:
+		return json.Unmarshal(v, m)
+	}
+	return errors.New(`unsupported type`)
+}
+
 func (Post) TableName() string {
 	return `posts`
 }
@@ -193,6 +217,7 @@ func (p *Post) ToProto(redact func(p *proto.Post) error) (*proto.Post, error) {
 		Metas:         p.Metas.ToProto(),
 		Source:        p.Source,
 		SourceType:    p.SourceType,
+		References:    (*proto.Post_References)(&p.Citations),
 
 		LastCommentedAt: p.LastCommentedAt,
 

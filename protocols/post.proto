@@ -29,7 +29,7 @@ message Metas {
 		// 描述。
 		string description = 3;
 	}
-	
+
 	// TODO：以下两者应该由 style.css 和 script.js 等独立文件实现。
 	// 置于 <head> 最后的。
 	string header = 1;
@@ -59,6 +59,8 @@ message Metas {
 	// 是否开启目录。
 	// 主题可以忽略此配置而选择总是开启或关闭。
 	bool toc = 101;
+
+	// 注意，不要往这里面加仅输出或内部计算并保存的参数。
 }
 
 message Post {
@@ -119,6 +121,23 @@ message Post {
 
 	// 是否置顶。
 	bool top = 26;
+
+	// 引用信息。
+	// 记录文章引用和被引用情况（站内）。
+	message References {
+		message Posts {
+			repeated int32 to = 1;
+			repeated int32 from = 2;
+		}
+		// message Comments {
+		// 	repeated int32 to = 1;
+		// 	repeated int32 from = 2;
+		// }
+		Posts posts = 1;
+		// Comments comments = 2;
+	}
+	// 仅输出。
+	References references = 27;
 }
 
 enum LinkKind {
