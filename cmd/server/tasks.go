@@ -90,7 +90,7 @@ func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer
 		}
 	}
 	if len(suffix) <= 0 {
-		log.Println(`没有已知的域名后缀。`)
+		log.Println(`没有已知的域名后缀：`, home)
 		return
 	}
 

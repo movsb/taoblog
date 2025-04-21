@@ -37,7 +37,7 @@ func TestUpdate(t *testing.T) {
 		Value string
 	}
 	c1, c2 := config.DefaultConfig(), config.DefaultConfig()
-	u := config.NewUpdater(&c2)
+	u := config.NewUpdater(c2)
 	for _, s := range []_kv{
 		{`menus[1]`, `{"name":"后台"}`},
 	} {

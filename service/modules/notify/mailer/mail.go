@@ -15,6 +15,10 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
+type MailSender interface {
+	Send(subject, body string, fromName string, tos []User) error
+}
+
 type Mailer struct {
 	server             string
 	username, password string
@@ -113,13 +117,14 @@ func (n *MailerLogger) SetPullInterval(d time.Duration) {
 	n.pullInterval = d
 }
 
-func (n *MailerLogger) Queue(subject, body string, fromName string, tos []User) {
+func (n *MailerLogger) Send(subject, body string, fromName string, tos []User) error {
 	n.store.CreateLog(context.Background(), ty, sty, 1, _Message{
 		FromName: fromName,
 		Tos:      tos,
 		Subject:  subject,
 		Body:     body,
 	})
+	return nil
 }
 
 func (n *MailerLogger) process(ctx context.Context) {

@@ -13,6 +13,7 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/avatar/github"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/gravatar"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 )
 
@@ -59,7 +60,9 @@ const ttl = time.Hour * 24 * 7
 func (t *Task) load() {
 	cached, err := t.store.GetString(`cache`)
 	if err != nil {
-		log.Println(err)
+		if !taorm.IsNotFoundError(err) {
+			log.Println(err)
+		}
 		return
 	}
 

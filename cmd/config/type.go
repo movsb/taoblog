@@ -25,9 +25,8 @@ type Config struct {
 	Notify NotificationConfig `json:"notify" yaml:"notify"`
 }
 
-// DefaultConfig ...
-func DefaultConfig() Config {
-	return Config{
+func DefaultConfig() *Config {
+	return &Config{
 		Database:    DefaultDatabaseConfig(),
 		Server:      DefaultServerConfig(),
 		Maintenance: DefaultMainMaintenanceConfig(),
@@ -39,7 +38,16 @@ func DefaultConfig() Config {
 	}
 }
 
-// ServerConfig ...
+func DefaultDemoConfig() *Config {
+	c := DefaultConfig()
+	c.Database = DatabaseConfig{
+		Posts: ``,
+		Files: ``,
+		Cache: ``,
+	}
+	return c
+}
+
 type ServerConfig struct {
 	HTTPListen string `yaml:"http_listen"`
 }

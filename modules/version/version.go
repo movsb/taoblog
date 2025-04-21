@@ -25,7 +25,7 @@ var ForceEnableDevMode string
 // 是否是开发模式
 func DevMode() bool {
 	if ForceEnableDevMode != `` {
-		return slices.Contains([]string{`1`, `yes`, `true`}, ForceEnableDevMode)
+		return slices.Contains([]string{`1`, `on`, `yes`, `true`}, ForceEnableDevMode)
 	}
 
 	exists := func(f string) bool {

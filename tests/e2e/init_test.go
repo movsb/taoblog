@@ -38,7 +38,7 @@ func Serve(ctx context.Context, options ...server.With) *R {
 
 	r.server = server.NewServer(options...)
 	ready := make(chan struct{})
-	go r.server.Serve(ctx, true, &cfg, ready)
+	go r.server.Serve(ctx, true, cfg, ready)
 	<-ready
 
 	// 测试的时候默认禁用限流器；测试限流器相关函数会手动开启。

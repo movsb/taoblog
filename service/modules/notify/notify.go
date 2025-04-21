@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/notify/instant"
@@ -17,8 +16,8 @@ import (
 type Notify struct {
 	proto.UnimplementedNotifyServer
 
-	mailer  *mailer.MailerLogger
-	instant *instant.NotifyLogger
+	mailer  mailer.MailSender
+	instant instant.Notifier
 }
 
 var _ proto.NotifyServer = (*Notify)(nil)
@@ -51,7 +50,7 @@ func (n *Notify) SendEmail(ctx context.Context, in *proto.SendEmailRequest) (*pr
 		}
 	})
 
-	n.mailer.Queue(in.Subject, in.Body, in.FromName, users)
+	n.mailer.Send(in.Subject, in.Body, in.FromName, users)
 
 	return &proto.SendEmailResponse{}, nil
 }
@@ -68,16 +67,14 @@ func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) 
 	return &proto.SendInstantResponse{}, err
 }
 
-func WithMailerLogger(store logs.Logger, mail mailer.Mailer) With {
+func WithMailer(mail mailer.MailSender) With {
 	return func(n *Notify) {
-		n.mailer = mailer.NewMailerLogger(store, mail)
+		n.mailer = mail
 	}
 }
 
-func WithInstantLogger(store logs.Logger, inst instant.Notifier) With {
+func WithInstant(inst instant.Notifier) With {
 	return func(n *Notify) {
-		l := instant.NewNotifyLogger(store)
-		l.SetNotifier(inst)
-		n.instant = l
+		n.instant = inst
 	}
 }

@@ -7,26 +7,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// LoadFile ...
-func LoadFile(path string) *Config {
+func LoadFile(path string) (*Config, error) {
 	fp, err := os.Open(path)
 	if err != nil {
-		cfg := DefaultConfig()
-		return &cfg
+		return nil, err
 	}
 	defer fp.Close()
-	c := load(fp)
-	return c
+	return load(fp)
 }
 
-// Load ...
-func load(r io.Reader) *Config {
+func load(r io.Reader) (*Config, error) {
 	c := DefaultConfig()
 	dec := yaml.NewDecoder(r)
 	dec.SetStrict(true)
-	err := dec.Decode(&c)
-	if err != nil {
-		panic(err)
-	}
-	return &c
+	return c, dec.Decode(c)
 }

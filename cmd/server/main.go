@@ -57,18 +57,31 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// AddCommands ...
 func AddCommands(rootCmd *cobra.Command) {
 	serveCommand := &cobra.Command{
 		Use:   `server`,
 		Short: `Run the server`,
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			cfg := config.LoadFile(`taoblog.yml`)
+			var cfg *config.Config
+			demo := utils.Must1(cmd.Flags().GetBool(`demo`))
+			if demo {
+				cfg = config.DefaultDemoConfig()
+				// 并且强制关闭本地环境。
+				version.ForceEnableDevMode = `0`
+			} else {
+				cfg2, err := config.LoadFile(`taoblog.yml`)
+				if err != nil {
+					cfg2 = config.DefaultConfig()
+				}
+				cfg = cfg2
+			}
 			s := NewDefaultServer()
 			s.Serve(context.Background(), false, cfg, nil)
 		},
 	}
+
+	serveCommand.Flags().Bool(`demo`, false, `运行演示实例。`)
 
 	rootCmd.AddCommand(serveCommand)
 }
@@ -489,18 +502,19 @@ func (s *Server) createMainServices(
 func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
 	var options []notify.With
 
-	store := logs.NewLogStore(db)
-
 	if ch := cfg.Notify.Chanify; ch.Token != `` {
-		instant := instant.NewChanifyNotify(ch.Token)
-		options = append(options, notify.WithInstantLogger(store, instant))
+		stored := instant.NewNotifyLogger(logs.NewLogStore(db))
+		stored.SetNotifier(instant.NewChanifyNotify(ch.Token))
+		options = append(options, notify.WithInstant(stored))
 	} else {
 		instant := instant.NewConsoleNotify()
-		options = append(options, notify.WithInstantLogger(store, instant))
+		options = append(options, notify.WithInstant(instant))
 	}
 
 	if m := cfg.Notify.Mailer; m.Account != `` && m.Server != `` {
-		options = append(options, notify.WithMailerLogger(store, mailer.NewMailer(m.Server, m.Account, m.Password)))
+		mail := mailer.NewMailer(m.Server, m.Account, m.Password)
+		stored := mailer.NewMailerLogger(logs.NewLogStore(db), mail)
+		options = append(options, notify.WithMailer(stored))
 	}
 
 	n := notify.New(ctx, sr, options...)
@@ -511,6 +525,7 @@ func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *confi
 			case <-ctx.Done():
 				return
 			case <-time.After(time.Minute * 10):
+				store := logs.NewLogStore(db)
 				if c := store.CountStaleLogs(time.Minute * 10); c > 0 {
 					n.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
 						Subject:     `有堆积的日志未处理`,
@@ -551,7 +566,7 @@ func (s *Server) serveGRPC(ctx context.Context) (func(), grpc.ServiceRegistrar) 
 	}
 
 	s.grpcAddr = l.Addr().String()
-	log.Println(`GRPC listen on:`, s.grpcAddr)
+	log.Println(`GRPC:`, s.grpcAddr)
 
 	go func() {
 		<-ctx.Done()

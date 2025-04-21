@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 )
 
@@ -41,7 +42,9 @@ const ttl = time.Hour * 24 * 30
 func (t *Task) load() {
 	cached, err := t.store.GetString(`cache`)
 	if err != nil {
-		log.Println(err)
+		if !taorm.IsNotFoundError(err) {
+			log.Println(err)
+		}
 		return
 	}
 	m := map[string]string{}
