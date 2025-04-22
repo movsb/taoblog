@@ -595,3 +595,17 @@ func v47(posts, files, cache *taorm.DB) {
 func v48(posts, files, cache *taorm.DB) {
 	posts.MustExec("ALTER TABLE posts ADD COLUMN citations TEXT NOT NULL DEFAULT '{}'")
 }
+
+func v49(posts, files, cache *taorm.DB) {
+	log.Println(`删除索引并创建备份表……`)
+	files.MustExec(`DROP INDEX post_id__path`)
+	files.MustExec("CREATE TABLE `files_copy` (`id` INTEGER  PRIMARY KEY AUTOINCREMENT,`created_at` INTEGER NOT NULL,`updated_at` INTEGER NOT NULL,`post_id` INTEGER NOT NULL,`path` TEXT NOT NULL,`mode` INTEGER NOT NULL,`mod_time` INTEGER  NOT NULL,`size` INTEGER  NOT NULL,`meta` BLOB NOT NULL,`digest` TEXT NOT NULL,`data` BLOB NOT NULL)")
+	log.Println(`正在拷贝旧数据到新表……`)
+	files.MustExec(`INSERT INTO files_copy (id,created_at,updated_at,post_id,path,mode,mod_time,size,meta,digest,data) SELECT id,created_at,updated_at,post_id,path,mode,mod_time,size,meta,digest,data FROM files`)
+	log.Println(`正在删除旧表……`)
+	files.MustExec(`DROP TABLE files`)
+	log.Println(`重命名新表为旧表……`)
+	files.MustExec(`ALTER TABLE files_copy RENAME TO files`)
+	log.Println(`创建新的索引……`)
+	files.MustExec("CREATE UNIQUE INDEX `post_id__path` ON `files` (`post_id`,`path`)")
+}
