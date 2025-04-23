@@ -140,18 +140,24 @@ func (c *ThemeVariablesConfig) Reload() <-chan struct{} {
 }
 
 type SiteSyncConfig struct {
-	R2 SiteSyncR2Config `yaml:"r2"`
+	R2  OSSConfigWithEnabled `yaml:"r2"`
+	COS OSSConfigWithEnabled `yaml:"cos"`
 }
 
-type SiteSyncR2Config struct {
-	Enabled         bool   `yaml:"enabled"`
-	AccountID       string `yaml:"account_id"`
+type OSSConfigWithEnabled struct {
+	Enabled   bool `yaml:"enabled"`
+	OSSConfig `yaml:",inline"`
+}
+
+type OSSConfig struct {
+	Endpoint        string `yaml:"endpoint"`
+	Region          string `yaml:"region"`
 	AccessKeyID     string `yaml:"access_key_id"`
 	AccessKeySecret string `yaml:"access_key_secret"`
 	BucketName      string `yaml:"bucket_name"`
 }
 
-func (c *SiteSyncR2Config) CanSave() {}
-func (c *SiteSyncR2Config) BeforeSet(paths Segments, obj any) error {
+func (c *OSSConfig) CanSave() {}
+func (c *OSSConfig) BeforeSet(paths Segments, obj any) error {
 	return nil
 }

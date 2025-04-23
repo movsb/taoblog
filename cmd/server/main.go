@@ -279,9 +279,22 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		})
 	}
 
+	if cos := cfg.Site.Sync.COS; cos.Enabled {
+		oss, err := server_sync_tasks.NewSyncToOSS(
+			ctx, `cos`, &cos.OSSConfig, s.Main(),
+			s.Main().GetPluginStorage(`site.sync.cos`),
+			filesStore,
+		)
+		if err != nil {
+			s.sendNotify(`启动同步到 COS 失败`, err.Error())
+			log.Println(err)
+		}
+		_ = oss
+		s.Main().RegisterFileURLGetter(`cos`, oss)
+	}
 	if r2c := cfg.Site.Sync.R2; r2c.Enabled {
-		r2, err := server_sync_tasks.NewSyncToR2(
-			ctx, r2c, s.Main(),
+		r2, err := server_sync_tasks.NewSyncToOSS(
+			ctx, `r2`, &r2c.OSSConfig, s.Main(),
 			s.Main().GetPluginStorage(`site.sync.r2`),
 			filesStore,
 		)
@@ -443,7 +456,7 @@ func (s *Server) createBackupTasks(
 	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled && !version.DevMode() {
 		b := utils.Must1(backups.New(
 			ctx, s.main.GetPluginStorage(`backups.r2`), client,
-			backups.WithRemoteR2(r2.AccountID, r2.AccessKeyID, r2.AccessKeySecret, r2.BucketName),
+			backups.WithRemoteOSS(`r2`, &r2.OSSConfig),
 			backups.WithEncoderAge(r2.AgeKey),
 		))
 

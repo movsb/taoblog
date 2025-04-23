@@ -10,9 +10,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/backups/begin"
 	backups_crypto "github.com/movsb/taoblog/modules/backups/crypto"
-	"github.com/movsb/taoblog/modules/backups/r2"
+	"github.com/movsb/taoblog/modules/backups/oss"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -38,9 +39,9 @@ type Backup struct {
 
 type Option func(b *Backup)
 
-func WithRemoteR2(accountID, accessKeyID, accessKeySecret, bucketName string) Option {
+func WithRemoteOSS(provider string, cfg *config.OSSConfig) Option {
 	return func(b *Backup) {
-		b.remote = utils.Must1(r2.New(accountID, accessKeyID, accessKeySecret, bucketName))
+		b.remote = utils.Must1(oss.New(provider, cfg))
 	}
 }
 

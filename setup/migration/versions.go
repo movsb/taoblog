@@ -609,3 +609,54 @@ func v49(posts, files, cache *taorm.DB) {
 	log.Println(`创建新的索引……`)
 	files.MustExec("CREATE UNIQUE INDEX `post_id__path` ON `files` (`post_id`,`path`)")
 }
+
+type v50Option struct {
+	ID    int
+	Name  string
+	Value string
+}
+
+func (v50Option) TableName() string {
+	return `options`
+}
+
+// site.sync.r2
+// {"Enabled":false,"AccountID":"","AccessKeyID":"","AccessKeySecret":"","BucketName":""}
+func v50(posts, files, cache *taorm.DB) {
+	type v50R2Config struct {
+		Enabled         bool
+		AccountID       string
+		AccessKeyID     string
+		AccessKeySecret string
+		BucketName      string
+	}
+	type v50OSSConfig struct {
+		Enabled         bool
+		Endpoint        string
+		Region          string
+		AccessKeyID     string
+		AccessKeySecret string
+		BucketName      string
+	}
+	var opt v50Option
+	if err := posts.From(models.Option{}).Where(`name='site.sync.r2'`).Find(&opt); err != nil {
+		if taorm.IsNotFoundError(err) {
+			return
+		}
+		panic(err)
+	}
+	var r2 v50R2Config
+	utils.Must(json.Unmarshal([]byte(opt.Value), &r2))
+	oss := v50OSSConfig{
+		Enabled:         r2.Enabled,
+		Endpoint:        fmt.Sprintf(`https://%s.r2.cloudflarestorage.com`, r2.AccountID),
+		Region:          `auto`,
+		AccessKeyID:     r2.AccessKeyID,
+		AccessKeySecret: r2.AccessKeySecret,
+		BucketName:      r2.BucketName,
+	}
+	by := utils.Must1(json.Marshal(oss))
+	posts.Model(&opt).MustUpdateMap(taorm.M{
+		`value`: string(by),
+	})
+}
