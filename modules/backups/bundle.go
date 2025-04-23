@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"log"
@@ -19,16 +20,12 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
-type Remote interface {
-	Upload(ctx context.Context, path string, r io.Reader, contentType string) error
-}
-
 type Backup struct {
 	ctx    context.Context
 	client *clients.ProtoClient
 	store  utils.PluginStorage
 
-	remote   Remote
+	remote   oss.Client
 	identity string
 
 	// 由于 R2 目前好像没有版本机制，所以旧文件会覆盖新文件，
@@ -87,12 +84,16 @@ type _RW struct {
 func (r *_RW) Writer() io.Writer {
 	return r.w
 }
-func (r *_RW) Close() (_ io.ReadSeeker, outErr error) {
+func (r *_RW) Close() (_ io.ReadSeeker, digest []byte, outErr error) {
 	defer utils.CatchAsError(&outErr)
 	for _, c := range r.closers {
 		utils.Must(c.Close())
 	}
-	return bytes.NewReader(r.b.Bytes()), nil
+
+	d := md5.New()
+	d.Write(r.b.Bytes())
+
+	return bytes.NewReader(r.b.Bytes()), d.Sum(nil), nil
 }
 
 func (b *Backup) createWriter() (_ *_RW, outErr error) {
@@ -114,14 +115,17 @@ func (b *Backup) BackupPosts(ctx context.Context) (outErr error) {
 	bb := begin.NewBackupClient(b.client)
 	wc := utils.Must1(b.createWriter())
 	utils.Must(bb.BackupPosts(wc.Writer()))
-	r := utils.Must1(wc.Close())
+	r, di := utils.Must2(wc.Close())
 
 	// 1, 2, 3... 循环命名。
 	next := b.nextPostsFileIndex%3 + 1
 	b.nextPostsFileIndex++
 	name := fmt.Sprintf(`posts-%d.db.gz.age`, next)
 
-	return b.remote.Upload(ctx, name, r, ``)
+	size := utils.Must1(r.Seek(0, io.SeekEnd))
+	utils.Must1(r.Seek(0, io.SeekStart))
+
+	return b.remote.Upload(ctx, name, size, r, ``, di)
 }
 
 func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
@@ -174,12 +178,15 @@ func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
 		}))
 
 		utils.Must(tw.Close())
-		r := utils.Must1(wc.Close())
+		r, di := utils.Must2(wc.Close())
+
+		size := utils.Must1(r.Seek(0, io.SeekEnd))
+		utils.Must1(r.Seek(0, io.SeekStart))
 
 		if fileCount > 0 {
 			f := fmt.Sprintf(`posts.%d.tar.gz.age`, post.Id)
 			log.Println(`正在写入备份文件：`, f)
-			utils.Must(b.remote.Upload(ctx, f, r, ``))
+			utils.Must(b.remote.Upload(ctx, f, size, r, ``, di))
 		}
 	}
 

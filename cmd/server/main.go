@@ -279,32 +279,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		})
 	}
 
-	if cos := cfg.Site.Sync.COS; cos.Enabled {
-		oss, err := server_sync_tasks.NewSyncToOSS(
-			ctx, `cos`, &cos.OSSConfig, s.Main(),
-			s.Main().GetPluginStorage(`site.sync.cos`),
-			filesStore,
-		)
-		if err != nil {
-			s.sendNotify(`启动同步到 COS 失败`, err.Error())
-			log.Println(err)
-		}
-		_ = oss
-		s.Main().RegisterFileURLGetter(`cos`, oss)
-	}
-	if r2c := cfg.Site.Sync.R2; r2c.Enabled {
-		r2, err := server_sync_tasks.NewSyncToOSS(
-			ctx, `r2`, &r2c.OSSConfig, s.Main(),
-			s.Main().GetPluginStorage(`site.sync.r2`),
-			filesStore,
-		)
-		if err != nil {
-			s.sendNotify(`启动同步到 R2 失败`, err.Error())
-			log.Println(err)
-		}
-		_ = r2
-		s.Main().RegisterFileURLGetter(`r2`, r2)
-	}
+	s.initSyncs(ctx, cfg, filesStore)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -706,6 +681,45 @@ func liveCheck(ctx context.Context, s *Server, svc *service.Service) {
 			svc.MaintenanceMode().Leave()
 			return true
 		}() {
+		}
+	}
+}
+
+func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore theme_fs.FS) {
+	for _, backend := range []struct {
+		config *config.OSSConfigWithEnabled
+		name   string
+		store  string
+	}{
+		{
+			config: &cfg.Site.Sync.Aliyun,
+			name:   `aliyun`,
+			store:  `site.sync.aliyun`,
+		},
+		{
+			config: &cfg.Site.Sync.COS,
+			name:   `cos`,
+			store:  `site.sync.cos`,
+		},
+		{
+			config: &cfg.Site.Sync.R2,
+			name:   `r2`,
+			store:  `site.sync.r2`,
+		},
+	} {
+		if backend.config.Enabled {
+			oss, err := server_sync_tasks.NewSyncToOSS(
+				ctx, backend.name, &backend.config.OSSConfig, s.Main(),
+				s.Main().GetPluginStorage(backend.store),
+				filesStore,
+			)
+			if err != nil {
+				s.sendNotify(`启动同步失败`, err.Error())
+				log.Println(err)
+				continue
+			}
+			s.Main().RegisterFileURLGetter(backend.name, oss)
+			log.Println(`启动同步：`, backend.name)
 		}
 	}
 }

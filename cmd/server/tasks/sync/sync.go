@@ -14,11 +14,12 @@ import (
 	"github.com/movsb/taoblog/modules/backups/oss"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 )
 
 type SyncToOSS struct {
-	oss     *oss.OSS
+	oss     oss.Client
 	options utils.PluginStorage
 	blog    proto.TaoBlogServer
 	pfs     theme_fs.FS
@@ -86,7 +87,10 @@ func (s *SyncToOSS) upload(ctx context.Context, pfs fs.FS, pid int, path string)
 	// files/文章编号/文件路径，没有前缀 /。
 	fullPath := pathpkg.Join(`files`, fmt.Sprint(pid), path)
 	log.Println(`正在上传文件到对象存储:`, fullPath)
-	if err := s.oss.Upload(ctx, fullPath, fp, mime.TypeByExtension(pathpkg.Ext(fullPath))); err != nil {
+	info := utils.Must1(fp.Stat())
+	var di []byte
+	fmt.Sscanf(info.Sys().(*models.File).Digest, `%x`, &di)
+	if err := s.oss.Upload(ctx, fullPath, info.Size(), fp, mime.TypeByExtension(pathpkg.Ext(fullPath)), di); err != nil {
 		log.Println(`上传失败：`, fullPath, err)
 		return err
 	}
@@ -95,5 +99,7 @@ func (s *SyncToOSS) upload(ctx context.Context, pfs fs.FS, pid int, path string)
 
 func (s *SyncToOSS) GetFileURL(pid int, path string, digest string) string {
 	fullPath := pathpkg.Join(`files`, fmt.Sprint(pid), path)
-	return s.oss.GetFileURL(context.Background(), fullPath, digest)
+	var di []byte
+	fmt.Sscanf(digest, `%x`, &di)
+	return s.oss.GetFileURL(context.Background(), fullPath, di)
 }

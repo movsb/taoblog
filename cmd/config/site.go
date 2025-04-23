@@ -140,8 +140,9 @@ func (c *ThemeVariablesConfig) Reload() <-chan struct{} {
 }
 
 type SiteSyncConfig struct {
-	R2  OSSConfigWithEnabled `yaml:"r2"`
-	COS OSSConfigWithEnabled `yaml:"cos"`
+	R2     OSSConfigWithEnabled `yaml:"r2"`
+	COS    OSSConfigWithEnabled `yaml:"cos"`
+	Aliyun OSSConfigWithEnabled `yaml:"aliyun"`
 }
 
 type OSSConfigWithEnabled struct {
