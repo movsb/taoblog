@@ -14,6 +14,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type Result struct {
+	Path string
+	Err  error
+}
+
 func AddCommands(parent *cobra.Command) {
 	convCmd := cobra.Command{
 		Use:   `conv <files/dirs...>`,
@@ -26,20 +31,31 @@ func AddCommands(parent *cobra.Command) {
 			utils.Must1(exec.LookPath(`ffmpeg`))
 
 			wg := sync.WaitGroup{}
+			results := make(chan Result)
 
 			handleFile := func(ctx context.Context, path string) {
 				switch strings.ToLower(filepath.Ext(path)) {
-				case `.heic`, `.jpeg`, `.jpg`, `png`:
+				case `.heic`, `.jpeg`, `.jpg`, `.png`:
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						convertImage(ctx, path, `.`)
+						if err := convertImage(ctx, path, `.`); err != nil {
+							results <- Result{
+								Path: path,
+								Err:  err,
+							}
+						}
 					}()
 				case `.mov`:
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						convertVideo(ctx, path, `.`)
+						if err := convertVideo(ctx, path, `.`); err != nil {
+							results <- Result{
+								Path: path,
+								Err:  err,
+							}
+						}
 					}()
 				default:
 					log.Println(`忽略文件：`, path)
@@ -66,22 +82,32 @@ func AddCommands(parent *cobra.Command) {
 				}
 			}
 
-			wg.Wait()
+			go func() {
+				wg.Wait()
+				close(results)
+			}()
+
+			var errors []Result
+			for r := range results {
+				errors = append(errors, r)
+			}
+
+			for _, e := range errors {
+				log.Println(e.Path, e.Err)
+			}
 		},
 	}
 	parent.AddCommand(&convCmd)
 }
 
-func run(ctx context.Context, cmd ...string) {
+func run(ctx context.Context, cmd ...string) error {
 	c := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	if err := c.Run(); err != nil {
-		log.Println(err)
-	}
+	return c.Run()
 }
 
-func convertImage(ctx context.Context, path string, outDir string) {
+func convertImage(ctx context.Context, path string, outDir string) error {
 	originPath := path
 
 	if ext := filepath.Ext(path); strings.EqualFold(ext, `.heic`) {
@@ -95,15 +121,26 @@ func convertImage(ctx context.Context, path string, outDir string) {
 
 	outName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + `.avif`
 	fullOutName := filepath.Join(outDir, outName)
-	run(ctx, `avifenc`, path, fullOutName)
+
+	// avifenc ../IMG_0923.JPG 1.avif
+	// Directly copied JPEG pixel data (no YUV conversion): ../IMG_0923.JPG
+	// XMP extraction failed: invalid multiple standard XMP segments
+	// Cannot read input file: ../IMG_0923.JPG
+	err := run(ctx, `avifenc`, path, fullOutName)
+	if err != nil {
+		err = run(ctx, `ffmpeg`, `-y`, `-i`, path, fullOutName)
+	}
+	if err != nil {
+		return err
+	}
 	defer os.Remove(fullOutName + `_original`)
-	run(ctx, `exiftool`, `-tagsFromFile`, originPath, fullOutName)
+	return run(ctx, `exiftool`, `-tagsFromFile`, originPath, fullOutName)
 }
 
-func convertVideo(ctx context.Context, path string, outDir string) {
+func convertVideo(ctx context.Context, path string, outDir string) error {
 	name := filepath.Base(path)
 	name = strings.TrimSuffix(name, filepath.Ext(name)) + `.mp4`
 	outName := filepath.Join(outDir, name)
 	// -i 要放在 -preset 前面，为什么？
-	run(ctx, `ffmpeg`, `-y`, `-i`, path, `-preset`, `veryslow`, outName)
+	return run(ctx, `ffmpeg`, `-y`, `-i`, path, `-preset`, `veryslow`, outName)
 }
