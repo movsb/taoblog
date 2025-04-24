@@ -242,7 +242,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
-	s.initAvatar()
+	s.gateway.SetAvatar(s.fileCache, s.Main().ResolveAvatar)
 
 	if s.initRssTasks {
 		s.initRSS()
@@ -331,10 +331,6 @@ func (s *Server) initRSS() {
 	)
 	s.gateway.SetRSS(rss)
 	s.rss = rss
-}
-
-func (s *Server) initAvatar() {
-	s.gateway.SetAvatar(s.main.ResolveAvatar)
 }
 
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {

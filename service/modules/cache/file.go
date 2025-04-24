@@ -116,6 +116,7 @@ func (c *FileCache) touch(id int, ttl time.Duration, locked bool) {
 	c.touched[id] = time.Now().Add(ttl).Unix()
 }
 
+// TODO 放在事务中。
 func (c *FileCache) sync() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -172,8 +173,23 @@ func (c *FileCache) Set(key, value any, ttl time.Duration) error {
 	}
 }
 
+func (c *FileCache) Peek(key any, out any, expiringAt *time.Time) error {
+	var item _FileCacheItem
+	err := c.db.Where(`type=? AND key=?`, typeHash(key), encode(key)).Find(&item)
+	if err != nil {
+		return err
+	}
+	decode(item.Data, out)
+	if expiringAt != nil {
+		*expiringAt = time.Unix(item.ExpiringAt, 0)
+	}
+	return nil
+}
+
 // 获取某种特定类型的 key 的所有 keys。
 // 并不是全部数据库的所有 key。
+//
+// NOTE: 不会刷新缓存的 TTL 时间。
 func (c *FileCache) GetAllKeysFor(out any) {
 	t := reflect.TypeOf(out)
 	if t.Kind() != reflect.Pointer {

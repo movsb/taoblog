@@ -2,33 +2,19 @@ package avatar
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/gateway/handlers/avatar/github"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/gravatar"
-	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taorm"
-	"github.com/phuslu/lru"
+	"github.com/movsb/taoblog/service/modules/cache"
 )
 
 type CacheKey struct {
 	Email string // 小写的邮箱
-}
-
-func (k CacheKey) String() string {
-	return k.Email
-}
-
-func CacheKeyFromString(s string) CacheKey {
-	var k CacheKey
-	k.Email = s
-	return k
 }
 
 type CacheValue struct {
@@ -37,127 +23,82 @@ type CacheValue struct {
 }
 
 type Task struct {
-	cache *lru.TTLCache[CacheKey, CacheValue]
-	lock  sync.Mutex
-	keys  []CacheKey
-	store utils.PluginStorage
-	deb   *utils.Debouncer
+	cache *cache.FileCache
 }
 
-func NewTask(storage utils.PluginStorage) *Task {
+func NewTask(cache *cache.FileCache) *Task {
 	t := &Task{
-		cache: lru.NewTTLCache[CacheKey, CacheValue](1024),
-		store: storage,
+		cache: cache,
 	}
-	t.deb = utils.NewDebouncer(time.Second*10, t.save)
-	t.load()
 	go t.refreshLoop(context.Background())
 	return t
-}
-
-const ttl = time.Hour * 24 * 7
-
-func (t *Task) load() {
-	cached, err := t.store.GetString(`cache`)
-	if err != nil {
-		if !taorm.IsNotFoundError(err) {
-			log.Println(err)
-		}
-		return
-	}
-
-	m := map[string]CacheValue{}
-	if err := json.Unmarshal([]byte(cached), &m); err != nil {
-		log.Println(err)
-		return
-	}
-
-	for k, v := range m {
-		ck := CacheKeyFromString(k)
-		t.cache.Set(ck, v, ttl)
-		t.keys = append(t.keys, ck)
-	}
-
-	log.Println(`已恢复头像数据`)
-}
-
-func (t *Task) save() {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-
-	m := map[string]CacheValue{}
-	existingKeys := []CacheKey{}
-	for _, k := range t.keys {
-		if value, _, ok := t.cache.Peek(k); ok {
-			m[k.String()] = value
-			existingKeys = append(existingKeys, k)
-		}
-	}
-
-	data := string(utils.Must1(json.Marshal(m)))
-	t.store.SetString(`cache`, data)
-	t.keys = existingKeys
-
-	log.Println(`已存储头像数据`)
 }
 
 func (t *Task) Get(email string) (lastModified time.Time, content []byte, found bool) {
 	ck := CacheKey{Email: strings.ToLower(email)}
 
-	value, err, found := t.cache.GetOrLoad(
-		context.Background(), ck,
-		func(ctx context.Context, ck CacheKey) (CacheValue, time.Duration, error) {
-			l, c, err := get(email)
+	val := CacheValue{}
+
+	if err := t.cache.GetOrLoad(ck, cacheTTL, &val,
+		func() (any, error) {
+			l, c, err := get(context.Background(), email)
 			if err != nil {
 				log.Println(err, email)
-				return CacheValue{}, ttl, err
+				return CacheValue{}, err
 			}
 			return CacheValue{
 				LastModified: l,
 				Content:      c,
-			}, ttl, nil
+			}, nil
 		},
-	)
-
-	if err != nil {
+	); err != nil {
 		return time.Time{}, nil, false
 	}
 
-	if !found {
-		t.lock.Lock()
-		t.keys = append(t.keys, ck)
-		t.lock.Unlock()
-		t.deb.Enter()
-	}
-
-	return value.LastModified, value.Content, true
+	return val.LastModified, val.Content, true
 }
 
 const refreshTTL = time.Hour * 24
+const cacheTTL = refreshTTL * 7
 
-// TODO 某些 email 可能因为删除评论而不复存在，但是由于一直在刷新，会导致缓存一直存在，需要清理。
 func (t *Task) refreshLoop(ctx context.Context) {
 	refresh := func() {
 		log.Println(`即将更新头像`)
 
-		t.lock.Lock()
-		keys := append([]CacheKey{}, t.keys...)
-		t.lock.Unlock()
+		var keys []CacheKey
+		t.cache.GetAllKeysFor(&keys)
 
+		// 顺序更新，没必要异步？
 		for _, k := range keys {
-			// 顺序更新，没必要异步？
-			func() {
-				l, c, err := get(k.Email)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				t.cache.Set(CacheKey{Email: k.Email}, CacheValue{
-					Content:      c,
-					LastModified: l,
-				}, ttl)
-				t.deb.Enter()
-			}()
+			expiringAt := time.Time{}
+			val := CacheValue{}
+			if err := t.cache.Peek(k, &val, &expiringAt); err != nil {
+				log.Println(err)
+				continue
+			}
+
+			// 某些 email 可能因为删除评论而不复存在，但是由于一直在刷新，会导致缓存一直存在，需要清理。
+			// 这里的做法：只刷新最近有 Get 过的头像，其它的任由过过期自动删除。
+			// 因为：每成功 Get/刷新 都会使过期时间延迟缓存时间。
+			// 最近有 Get 过：过期剩余时间 > 刷新时间。
+			if time.Until(expiringAt) < refreshTTL {
+				log.Println(`即将过期，不再刷新：`, k)
+				continue
+			}
+
+			l, c, err := get(ctx, k.Email)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if val.LastModified.Equal(l) {
+				continue
+			}
+			t.cache.Set(k, CacheValue{
+				Content:      c,
+				LastModified: l,
+			}, cacheTTL)
+			log.Println(`保存头像：`, k)
 		}
 	}
 
@@ -173,10 +114,10 @@ func (t *Task) refreshLoop(ctx context.Context) {
 
 const maxBodySize = 50 << 10
 
-func get(email string) (_ time.Time, _ []byte, outErr error) {
-	rsp, err := github.Get(context.Background(), email)
+func get(ctx context.Context, email string) (_ time.Time, _ []byte, outErr error) {
+	rsp, err := github.Get(ctx, email)
 	if err != nil {
-		rsp, err = gravatar.Get(context.Background(), email)
+		rsp, err = gravatar.Get(ctx, email)
 	}
 	if err != nil {
 		log.Println(`头像获取失败：`, err)

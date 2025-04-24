@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 // https://api.github.com/search/users?q=anhbk@qq.com
@@ -27,34 +29,26 @@ type _UserSearchResult struct {
 	} `json:"items"`
 }
 
-func Get(ctx context.Context, email string) (*http.Response, error) {
+func Get(ctx context.Context, email string) (_ *http.Response, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
 	u := fmt.Sprintf(`https://api.github.com/search/users?q=%s`, email)
-	resp, err := http.Get(u)
-	if err != nil {
-		return nil, err
-	}
+	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodGet, u, nil))
+	resp := utils.Must1(http.DefaultClient.Do(req))
 	if resp.StatusCode != 200 {
 		return nil, errors.New(`statusCode != 200`)
 	}
 	defer resp.Body.Close()
 	r := _UserSearchResult{}
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, err
-	}
+	utils.Must(json.NewDecoder(resp.Body).Decode(&r))
 	if len(r.Items) == 0 {
 		return nil, errors.New(`no such github user`)
 	}
 
 	avatarURL := r.Items[0].AvatarURL
 
-	req, err := http.NewRequest(http.MethodGet, avatarURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
+	req = utils.Must1(http.NewRequestWithContext(ctx, http.MethodGet, avatarURL, nil))
+	resp = utils.Must1(http.DefaultClient.Do(req))
 
 	switch resp.StatusCode {
 	case 200:

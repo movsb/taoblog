@@ -48,7 +48,7 @@ func Get(ctx context.Context, email string) (*http.Response, error) {
 	// 并发请求所有源，错误的返回 nil
 	for _, host := range gravatarHosts {
 		go func(host string) {
-			rsp, err := get(ctx, host, sum)
+			rsp, err := get(ctx, host, fmt.Sprintf(`%x`, sum))
 			if err != nil {
 				log.Println(err)
 				ch <- nil
@@ -81,9 +81,9 @@ func Get(ctx context.Context, email string) (*http.Response, error) {
 	return rsp, nil
 }
 
-func get(ctx context.Context, endpoint string, hash [32]byte) (*http.Response, error) {
-	// TODO: 没有检测 endpoint 是否合法。
-	u := fmt.Sprintf(`%s/%x?d=mm&s=100`, endpoint, hash)
+func get(ctx context.Context, endpoint string, hash string) (*http.Response, error) {
+	endpoint = strings.TrimSuffix(endpoint, `/`)
+	u := fmt.Sprintf(`%s/%s?d=mm&s=100`, endpoint, hash)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err

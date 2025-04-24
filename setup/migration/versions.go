@@ -660,3 +660,7 @@ func v50(posts, files, cache *taorm.DB) {
 		`value`: string(by),
 	})
 }
+
+func v51(posts, files, cache *taorm.DB) {
+	posts.MustExec(`DELETE FROM options WHERE name='avatar:cache'`)
+}
