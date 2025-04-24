@@ -1,4 +1,4 @@
-package imaging
+package gallery
 
 import (
 	"log"
@@ -11,7 +11,7 @@ import (
 type Gallery struct {
 }
 
-func WithGallery() *Gallery {
+func New() *Gallery {
 	return &Gallery{}
 }
 

@@ -15,13 +15,13 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/footnotes"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
+	"github.com/movsb/taoblog/service/modules/renderers/gallery"
 	"github.com/movsb/taoblog/service/modules/renderers/genealogy"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/graph_viz"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/highlight"
 	"github.com/movsb/taoblog/service/modules/renderers/image"
-	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/invalid_scheme"
 	"github.com/movsb/taoblog/service/modules/renderers/lazying"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
@@ -106,7 +106,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 			}
 			return
 		}),
-		imaging.WithGallery(),
+		gallery.New(),
 		task_list.New(),
 		hashtags.New(s.hashtagResolver, nil),
 		custom_break.New(),

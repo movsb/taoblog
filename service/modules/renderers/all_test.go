@@ -15,9 +15,9 @@ import (
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
+	"github.com/movsb/taoblog/service/modules/renderers/gallery"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
-	"github.com/movsb/taoblog/service/modules/renderers/imaging"
 	"github.com/movsb/taoblog/service/modules/renderers/lazying"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
@@ -154,7 +154,7 @@ func TestMarkdownAll(t *testing.T) {
 		},
 		{
 			ID:      10.0,
-			Options: []renderers.Option2{imaging.WithGallery()},
+			Options: []renderers.Option2{gallery.New()},
 			Markdown: `<Gallery>
 
 ![](1.jpg)
