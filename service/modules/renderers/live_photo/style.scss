@@ -10,10 +10,14 @@
 
 	// 强制限宽限高限比例
 	// 必须要求设置 aspect-ratio
-	max-width: 100%;
+	max-width: min(400px, 100%);
 	height: auto !important;
 
+	// 居中；但是如果在 gallery 中，会被强制重置。
 	margin: 1em auto;
+
+	// 子元素容器查询。
+	container-type: inline-size;
 
 	.container {
 		// 使重叠，并占满
@@ -25,6 +29,10 @@
 			position: absolute;
 			width: 100%;
 			height: 100%;
+			// 如果被外界容器强制限制了比例，可能出现拉升，修复它。
+			// 正常情况下，有 aspect-ratio，将不影响。
+			// TODO 可能与下面 video fill 有冲突？
+			object-fit: cover;
 		}
 
 		img {
@@ -32,7 +40,9 @@
 		}
 		video {
 			// 不管是否和图片大小有多不一致，始终保持一致
-			object-fit: fill;
+			// 这种场景应该很少，优先使用上面的 cover。
+			// object-fit: fill;
+
 			transition: transform 1s ease;
 		}
 
@@ -67,6 +77,13 @@
 			padding: 4px;
 			color: #606060;
 			font-size: 80%;
+		}
+	}
+
+	// 如果显示大小比较小，隐藏文字 LIVE。
+	@container (max-width: 200px) {
+		.icon span {
+			display: none;
 		}
 	}
 

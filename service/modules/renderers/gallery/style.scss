@@ -1,0 +1,26 @@
+.gallery {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1px;
+	margin: 1rem 0;
+	container-type: inline-size;
+	// 不要改成 > *，LivePhoto 会乱。
+	> img, > div {
+		display: inline-block;
+		box-sizing: border-box;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		width: 200px !important;
+		height: 200px !important;
+		object-fit: cover; // 针对 img
+		margin: unset; // 针对 live photo
+	}
+}
+// @container (max-width: 500px) {
+// 	.gallery {
+// 		> img, > div {
+// 			width: 100px !important;
+// 			height: 100px !important;
+// 		}
+// 	}
+// }

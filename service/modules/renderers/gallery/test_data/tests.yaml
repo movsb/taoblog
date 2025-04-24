@@ -1,0 +1,44 @@
+- markdown: |
+    ![](a.jpg)
+  html: |
+    <p><img src="a.jpg" alt=""/></p>
+
+- markdown: |
+    ![](1.png)
+    ![](1.png)
+  html: |
+    <div class="gallery"><img src="1.png" alt=""/><img src="1.png" alt=""/></div>
+- markdown: |
+    ![](1.png)
+
+    ![](1.png)
+  html: |
+    <p><img src="1.png" alt=""/></p>
+    <p><img src="1.png" alt=""/></p>
+- markdown: |
+    ![](1.png)![](1.png)
+  html: |
+    <div class="gallery"><img src="1.png" alt=""/><img src="1.png" alt=""/></div>
+- markdown: |
+    ![](1.png)   ![](1.png)
+  html: |
+    <div class="gallery"><img src="1.png" alt=""/><img src="1.png" alt=""/></div>
+
+- markdown: |
+    A![](1.png)![](1.png)
+  html: |
+    <p>A<img src="1.png" alt=""/><img src="1.png" alt=""/></p>
+
+- markdown: |
+    ![](1.png)![](1.png)B
+  html: |
+    <p><img src="1.png" alt=""/><img src="1.png" alt=""/>B</p>
+- markdown: |
+    <Gallery>
+
+    ![](1.jpg)
+    ![](2.jpg)
+
+    </Gallery>
+  html: |
+    <div class="gallery"><img src="1.jpg" alt=""/><img src="2.jpg" alt=""/></div>

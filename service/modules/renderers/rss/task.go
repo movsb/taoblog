@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/version"
 	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
 	rss_parser "github.com/movsb/taoblog/service/modules/renderers/rss/parser"
 )
@@ -144,6 +145,10 @@ func (t *Task) GetLatestPosts(postID int, urls []string) []*PostData {
 }
 
 func (t *Task) refresh(ctx context.Context) {
+	if version.DevMode() {
+		log.Println(`开发环境不运行订阅服务`)
+		return
+	}
 	// 防止第一次等太久。
 	go func() {
 		time.Sleep(time.Minute * 10)

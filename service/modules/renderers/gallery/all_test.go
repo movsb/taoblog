@@ -1,16 +1,11 @@
-package live_photo
+package gallery
 
 import (
-	"context"
-	"net/url"
-	"os"
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers"
-	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
-	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 )
 
 func TestRender(t *testing.T) {
@@ -19,16 +14,16 @@ func TestRender(t *testing.T) {
 		HTML     string
 	}
 	cases := test_utils.MustLoadCasesFromYaml[Case](`test_data/tests.yaml`)
-	dir := os.DirFS(`test_data`)
-	web := gold_utils.NewWebFileSystem(dir, utils.Must1(url.Parse(`/`)))
 	for i, tc := range cases {
+		if i == 4 {
+			i += 0
+		}
 		md := renderers.NewMarkdown(
-			media_size.New(web),
-			New(context.Background(), web),
+			New(),
 		)
 		html := utils.Must1(md.Render(tc.Markdown))
 		if html != tc.HTML {
-			t.Fatal(`not equal:`, i, "\n", tc.HTML, "\n", html)
+			t.Fatalf("not equal: #%d\n%s\n\n%s", i, tc.HTML, html)
 		}
 	}
 }

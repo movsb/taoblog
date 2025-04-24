@@ -6,7 +6,24 @@
 - markdown: |
     ![](1.png)
   html: |
-    <div class="live-photo" style="width: 80px; height: 80px; aspect-ratio: 1;">
+    <div><div class="live-photo" style="width: 80px; height: 80px; aspect-ratio: 1;">
+    	<div class="container">
+    		<video src="1.mp4" playsinline=""></video>
+    		<img src="1.png" alt="" width="80" height="80"/>
+    	</div>
+    	<div class="icon">
+    		<img src="/v3/dynamic/live-photo/live.png" class="no-zoom"/>
+    		<span>LIVE</span>
+    	</div>
+    	<div class="warning" style="opacity: 0;"></div>
+    </div>
+    </div>
+
+- markdown: |
+    ![](1.png)
+    ![](1.png)
+  html: |
+    <div><div class="live-photo" style="width: 80px; height: 80px; aspect-ratio: 1;">
     	<div class="container">
     		<video src="1.mp4" playsinline=""></video>
     		<img src="1.png" alt="" width="80" height="80"/>
@@ -18,9 +35,15 @@
     	<div class="warning" style="opacity: 0;"></div>
     </div>
 
-- markdown: |
-    ![](1.png)
-    ![](1.png)
-  html: |
-    <p><img src="1.png" alt="" width="80" height="80"/>
-    <img src="1.png" alt="" width="80" height="80"/></p>
+    <div class="live-photo" style="width: 80px; height: 80px; aspect-ratio: 1;">
+    	<div class="container">
+    		<video src="1.mp4" playsinline=""></video>
+    		<img src="1.png" alt="" width="80" height="80"/>
+    	</div>
+    	<div class="icon">
+    		<img src="/v3/dynamic/live-photo/live.png" class="no-zoom"/>
+    		<span>LIVE</span>
+    	</div>
+    	<div class="warning" style="opacity: 0;"></div>
+    </div>
+    </div>

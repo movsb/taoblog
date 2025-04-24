@@ -49,8 +49,8 @@ body:not(.wide) {
 	&.tweet, &.tweets {
 		#content {
 			// 按照 Gallery 一行四张图片估：
-			// 150px*4 + (gap:1px)*3 + (content padding:1em)*2 + (article padding: 1px)*2
-			max-width: calc(150px*4 + 1px*3 + 1em*2 + 1px*2);
+			// 200px*3 + (gap:1px)*3 + (content padding:1em)*2 + (article padding: 1px)*2
+			max-width: calc(200px*3 + 1px*3 + 1em*2 + 1px*2);
 		}
 	}
 }
@@ -235,37 +235,15 @@ blockquote {
 				display: flex;
 				flex-wrap: wrap;
 				img, video {
-					width: 150px;
-					height: 150px !important; // 跟 49 行冲突了
-					max-width: 150px;
-					max-height: 150px;
+					width: 200px;
+					height: 200px !important; // 跟 49 行冲突了
+					max-width: 200px;
+					max-height: 300px;
 					object-fit: cover;
 					margin: .1rem;
 					border: 1px solid var(--border-color);
 				}
 			}
 		}
-	}
-}
-
-.gallery {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1px;
-	margin: 1rem 0;
-	img {
-		display: inline-block;
-		box-sizing: border-box;
-		border: 1px solid var(--border-color);
-		border-radius: var(--border-radius);
-		width: 150px !important;
-		height: 150px !important;
-		object-fit: cover;
-	}
-}
-@container (max-width: 500px) {
-	.gallery img {
-		width: 100px !important;
-		height: 100px !important;
 	}
 }

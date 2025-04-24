@@ -71,12 +71,15 @@ func (e *LivePhoto) TransformHtml(doc *goquery.Document) error {
 		// [!NOTE]
 		//
 		// 1. 由于渲染出来有 div 元素，需要把上一级的 p 替换掉。
-		// 2. 由于 Live Photo 一般应保持原始尺寸，所以只处理单张图片的时候。
-		if p := s.Nodes[0].Parent; p != nil && p.DataAtom == atom.P {
-			if self := s.Nodes[0]; self.PrevSibling == nil && self.NextSibling == nil {
-				html := e.render(s, width, height, video)
-				s.Parent().ReplaceWithHtml(string(html))
-			}
+
+		p := s.Parent()
+		html := e.render(s, width, height, video)
+		s.ReplaceWithHtml(string(html))
+
+		if p := p.Nodes[0]; p.DataAtom == atom.P {
+			// 直接改？好粗暴。
+			p.DataAtom = atom.Div
+			p.Data = `div`
 		}
 	})
 	return nil
