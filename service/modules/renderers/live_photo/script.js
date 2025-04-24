@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			try {
 				// 尽可能修复 Safari 无法播放的问题
-				if (/WebKit/.test(navigator.userAgent)) {
-					video.load();
-				}
+				// if (/WebKit/.test(navigator.userAgent)) {
+				video.load();
+				// }
 
 				video.currentTime = 0;
 				await video.play();
