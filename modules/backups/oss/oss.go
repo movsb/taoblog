@@ -93,7 +93,7 @@ func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, md5 []byte
 		IfMatch: aws.String(digest2contentMD5(md5)),
 	})
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		return ``
 	}
 	output, err := oss.presign.PresignGetObject(ctx, &s3.GetObjectInput{
@@ -149,6 +149,16 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 }
 
 func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) string {
+	output1, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
+		Bucket:  &oss.bucketName,
+		Key:     &path,
+		IfMatch: alioss.Ptr(digest2contentMD5(md5)),
+	})
+	if err != nil {
+		return ``
+	}
+	_ = output1
+
 	output, err := oss.client.Presign(ctx, &alioss.GetObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
