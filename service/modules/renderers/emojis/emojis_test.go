@@ -23,8 +23,8 @@ func TestEmojis(t *testing.T) {
 			HTML:     `<p>[未知]</p>`,
 		},
 		{
-			Markdown: `[旺柴][旺柴]`,
-			HTML:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="emoji weixin"/><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="emoji weixin"/></p>`,
+			Markdown: `[旺柴][Doge]`,
+			HTML:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="emoji weixin"/><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[Doge]" title="Doge" class="emoji weixin"/></p>`,
 		},
 	}
 	baseURL, _ := url.Parse(`/v3/dynamic/emojis/`)

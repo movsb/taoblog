@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/url"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
@@ -97,7 +98,7 @@ func (e *Emojis) Parse(parent ast.Node, block text.Reader, pc parser.Context) as
 	}
 	link := ast.NewLink()
 	link.Title = emoji[1 : len(emoji)-1]
-	ref := _refs[string(link.Title)]
+	ref := _refs[strings.ToLower(string(link.Title))]
 	if len(ref) == 0 {
 		return nil
 	}
