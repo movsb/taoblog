@@ -103,15 +103,6 @@ class PostFormUI {
 						},
 					},
 					{
-						name: `insertGallery`,
-						title: `插入九宫格图`,
-						innerHTML: `🧩 插入九宫格图`,
-						action: editor => {
-							const s = `\n<Gallery>\n\n\n\n</Gallery>\n`;
-							editor.paste(s);
-						},
-					},
-					{
 						name: `insertTaskItem`,
 						title: `插入任务`,
 						innerHTML: `☑️ 插入任务`,
