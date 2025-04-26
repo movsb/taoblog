@@ -21,9 +21,9 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/graph_viz"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/highlight"
+	"github.com/movsb/taoblog/service/modules/renderers/iframe"
 	"github.com/movsb/taoblog/service/modules/renderers/image"
 	"github.com/movsb/taoblog/service/modules/renderers/invalid_scheme"
-	"github.com/movsb/taoblog/service/modules/renderers/lazying"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
@@ -111,7 +111,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		hashtags.New(s.hashtagResolver, nil),
 		custom_break.New(),
 		list_markers.New(),
-		lazying.New(),
+		iframe.New(!co.NoIframePreview),
 		math.New(),
 		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
 		live_photo.New(ctx, s.OpenAsset(postId)),

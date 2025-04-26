@@ -30,6 +30,9 @@ message PostContentOptions {
 	}
 	// 新窗口打开链接？
 	OpenLinkInNewTabKind open_links_in_new_tab = 6;
+
+	// 禁止显示 iframe 预览？
+	bool no_iframe_preview = 7;
 }
 
 message Comment {

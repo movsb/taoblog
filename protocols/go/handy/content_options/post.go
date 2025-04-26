@@ -33,6 +33,7 @@ const (
 	Editor Kind = iota + 1
 	ClientGetPost
 	CreatePost
+	PreviewPost
 	GetPostComments
 	CheckPostTaskListItems
 	GenerateTweetTitle
@@ -74,6 +75,14 @@ var co = map[Kind]*CO{
 		RenderCodeBlocks:  true,
 		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
 		UseAbsolutePaths:  true,
+	},
+	PreviewPost: {
+		WithContent:       true,
+		KeepTitleHeading:  true,
+		RenderCodeBlocks:  true,
+		OpenLinksInNewTab: proto.PostContentOptions_OpenLinkInNewTabKindAll,
+		UseAbsolutePaths:  true,
+		NoIframePreview:   true,
 	},
 	GetPostComments: {
 		WithContent:       true,

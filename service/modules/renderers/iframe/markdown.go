@@ -1,7 +1,12 @@
-package lazying
+package iframe
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"golang.org/x/net/html"
 )
 
@@ -16,15 +21,33 @@ import (
 // 虽然 iframe 是 inline 类型的元素，但是应该没人放在段落内吧？都是直接粘贴成为一段的。否则不能处理。
 //
 // https://developer.mozilla.org/en-US/docs/Web/Performance/Lazy_loading#loading_attribute
-func New() any {
-	return &_LazyLoadingFrames{}
+func New(show bool) any {
+	return &_LazyLoadingFrames{
+		show: show,
+	}
 }
 
-type _LazyLoadingFrames struct{}
+type _LazyLoadingFrames struct {
+	show bool
+}
 
 func (m *_LazyLoadingFrames) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`iframe`).Each(func(i int, s *goquery.Selection) {
-		s.Nodes[0].Attr = append(s.Nodes[0].Attr, html.Attribute{Key: `loading`, Val: `lazy`})
+		if m.show {
+			s.Nodes[0].Attr = append(s.Nodes[0].Attr, html.Attribute{Key: `loading`, Val: `lazy`})
+		} else {
+			var node *goquery.Selection = utils.Must1(goquery.NewDocumentFromReader(strings.NewReader(replaced))).Selection
+			node = node.Find(`div`)
+			gold_utils.AddStyle(node, fmt.Sprintf(`width: %spx`, s.AttrOr(`width`, `300`)))
+			gold_utils.AddStyle(node, fmt.Sprintf(`height: %spx`, s.AttrOr(`height`, `150`)))
+			s.ReplaceWithNodes(node.Nodes[0])
+		}
 	})
 	return nil
 }
+
+const replaced = `
+<div class="iframe-placeholder" style="border: 1px dashed var(--border-color); text-align: center; vertical-align: middle; display: table-cell; color: var(--border-color);">
+	预览时将不加载内嵌页面。
+</di>
+`

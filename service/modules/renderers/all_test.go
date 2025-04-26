@@ -18,7 +18,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gallery"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
-	"github.com/movsb/taoblog/service/modules/renderers/lazying"
+	"github.com/movsb/taoblog/service/modules/renderers/iframe"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
@@ -149,7 +149,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       9.0,
 			Markdown: `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
-			Options:  []renderers.Option2{lazying.New()},
+			Options:  []renderers.Option2{iframe.New(true)},
 			Html:     `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="" loading="lazy"></iframe>`,
 		},
 		{
