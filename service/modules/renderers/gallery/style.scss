@@ -16,7 +16,8 @@
 	// 人生第一次使用 display: grid
 	display: grid;
 	gap: 1px;
-	grid-template-columns: repeat(auto-fit, 150px);
+	// 本来是 auto-fit，但 Safari 不支持。
+	grid-template-columns: repeat(auto-fill, 150px);
 	> img, > div {
 		display: flex;
 		// important 是针对默认有 ratio 的 live photo 的
