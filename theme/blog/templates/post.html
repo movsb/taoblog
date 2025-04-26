@@ -11,7 +11,7 @@ TaoBlog.post_id = +"{{.Data.Post.Id}}";
 <article class="post post-{{.Data.Post.ID}}" id="{{.Data.Post.Id}}">
 	{{ with .Data.Post }}
 	<h1 class="title">{{.StatusString}}{{ .Title }}</h1>
-	<div class="entry">
+	<div class="entry {{ .EntryClass }}">
 	<div class="meta1">
 		<a class="sitename" href="/" title="回到主页（快捷键：b）">{{ siteName }}</a>
 		<span class="author">{{ authorName $.Data.Post }}</span>

@@ -57,6 +57,9 @@ class PostFormUI {
 		this.checkBoxToggleDiff.addEventListener('click', e => {
 			this.showDiff(e.target.checked);
 		})
+		this.elemIndent.addEventListener('click', ()=>{
+			this.setAutoIndent(this.autoIndent);
+		})
 
 		const showPreview = localStorage.getItem('editor-config-show-preview') != '0';
 		this.checkBoxTogglePreview.checked = showPreview;
@@ -213,6 +216,7 @@ class PostFormUI {
 	get checkBoxToggleDiff()        { return this._form.querySelector('#toggle-diff'); }
 	get elemToc()       { return this._form['toc'];     }
 	get elemTop()       { return this._form['top'];     }
+	get elemIndent()    { return this._form['auto-indent']; }
 	
 	get geo() {
 		const values = this._form['geo_location'].value.trim().split(',');
@@ -303,6 +307,11 @@ class PostFormUI {
 	set toc(s) { return this.elemToc.value = s ? "1": "0"; }
 	get top()   { return this.elemTop.value == 1; }
 	set top(v)  { this.elemTop.value = v ? "1": "0"; }
+	get autoIndent() { return this.elemIndent.checked; }
+	set autoIndent(v) {
+		this.elemIndent.checked = v;
+		this.setAutoIndent(v);
+	}
 
 
 	set source(v)   { this.elemSource.value = v;        }
@@ -512,6 +521,9 @@ class PostFormUI {
 	showDiff(show) {
 		this.elemDiffContainer.style.display = show ? 'block' : 'none';
 	}
+	setAutoIndent(b) {
+		this.elemPreviewContainer.classList.toggle('auto-indent', b);
+	}
 }
 
 class FilesManager {
@@ -641,6 +653,7 @@ formUI.submit(async (done) => {
 		let p = TaoBlog.posts[TaoBlog.post_id];
 		p.metas.geo = formUI.geo;
 		p.metas.toc = !!+formUI.toc;
+		p.metas.text_indent = formUI.autoIndent;
 		let post = await postAPI.updatePost(
 			{
 				id: TaoBlog.post_id,
@@ -674,7 +687,7 @@ formUI.submit(async (done) => {
 	if (p.metas && p.metas.geo) {
 		formUI.geo = p.metas.geo;
 	}
-	formUI.toc = p.metas.toc;
+	formUI.autoIndent = p.metas.text_indent;
 	formUI.top = p.top;
 	formUI.users = p.user_perms || [];
 })();

@@ -247,3 +247,8 @@ blockquote {
 		}
 	}
 }
+
+// 自动段落缩进
+.entry.auto-indent .content > p, #preview-container.auto-indent > p {
+	text-indent: 2em;
+}

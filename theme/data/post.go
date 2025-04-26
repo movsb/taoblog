@@ -121,6 +121,14 @@ func (p *Post) StatusString() string {
 	}
 }
 
+func (p *Post) EntryClass() string {
+	var s []string
+	if p.Metas.TextIndent {
+		s = append(s, `auto-indent`)
+	}
+	return strings.Join(s, " ")
+}
+
 func (p *Post) IsPrivate() bool {
 	return p.Post.Status == models.PostStatusPrivate
 }

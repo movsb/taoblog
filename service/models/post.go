@@ -58,6 +58,8 @@ type PostMeta struct {
 	Origin *proto.Metas_Origin `json:"origin:omitempty" yaml:"origin,omitempty"`
 
 	Toc bool `json:"toc,omitempty" yaml:"toc,omitempty"`
+
+	TextIndent bool `json:"text_indent,omitempty" yaml:"text_indent,omitempty"`
 }
 
 type PostMetaSource struct {
@@ -99,13 +101,14 @@ func (m *PostMeta) Scan(value any) error {
 
 func (m *PostMeta) ToProto() *proto.Metas {
 	p := &proto.Metas{
-		Header:   m.Header,
-		Footer:   m.Footer,
-		Outdated: m.Outdated,
-		Wide:     m.Wide,
-		Weixin:   m.Weixin,
-		Sources:  make(map[string]*proto.Metas_Source),
-		Toc:      m.Toc,
+		Header:     m.Header,
+		Footer:     m.Footer,
+		Outdated:   m.Outdated,
+		Wide:       m.Wide,
+		Weixin:     m.Weixin,
+		Sources:    make(map[string]*proto.Metas_Source),
+		Toc:        m.Toc,
+		TextIndent: m.TextIndent,
 	}
 	for name, src := range m.Sources {
 		p.Sources[name] = &proto.Metas_Source{
@@ -143,13 +146,14 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 		p = &proto.Metas{}
 	}
 	m := PostMeta{
-		Header:   p.Header,
-		Footer:   p.Footer,
-		Outdated: p.Outdated,
-		Wide:     p.Wide,
-		Weixin:   p.Weixin,
-		Sources:  make(map[string]*PostMetaSource),
-		Toc:      p.Toc,
+		Header:     p.Header,
+		Footer:     p.Footer,
+		Outdated:   p.Outdated,
+		Wide:       p.Wide,
+		Weixin:     p.Weixin,
+		Sources:    make(map[string]*PostMetaSource),
+		Toc:        p.Toc,
+		TextIndent: p.TextIndent,
 	}
 	for name, src := range p.Sources {
 		m.Sources[name] = &PostMetaSource{
