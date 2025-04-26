@@ -23,7 +23,7 @@ a > code {
 	color: inherit;
 }
 
-pre, code {
+code {
 	color: var(--code-color);
 }
 
@@ -31,7 +31,7 @@ pre, code {
 	pre > code {
 		background-color: transparent !important;
 	}
-	pre, code {
+	code {
 		color: inherit !important;
 	}
 }
