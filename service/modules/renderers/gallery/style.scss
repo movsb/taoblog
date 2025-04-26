@@ -1,26 +1,35 @@
 .gallery {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1px;
 	margin: 1rem 0;
 	container-type: inline-size;
+
 	// 不要改成 > *，LivePhoto 会乱。
 	> img, > div {
-		display: inline-block;
 		box-sizing: border-box;
 		border: 1px solid var(--border-color);
 		border-radius: var(--border-radius);
-		width: 200px !important;
-		height: 200px !important;
 		object-fit: cover; // 针对 img
 		margin: unset; // 针对 live photo
 	}
 }
-// @container (max-width: 500px) {
-// 	.gallery {
-// 		> img, > div {
-// 			width: 100px !important;
-// 			height: 100px !important;
-// 		}
-// 	}
-// }
+
+.gallery {
+	// 人生第一次使用 display: grid
+	display: grid;
+	gap: 1px;
+	grid-template-columns: repeat(auto-fit, 150px);
+	> img, > div {
+		display: flex;
+		// important 是针对默认有 ratio 的 live photo 的
+		// 对 img 竟然也有效。
+		aspect-ratio: 1 !important;
+		width: 100% !important;
+	}
+}
+
+// 手机上显示3张？
+// 150px * 3 + gap * 2
+@container (max-width: 452px) {
+	.gallery {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
