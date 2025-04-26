@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		// TODO 优化：等图片可用的时候再把视频显示出来，测试出现
 		// 过视频比图片先加载完成，导致 flicker。
 
+		// 尽可能修复 Safari 无法播放的问题
+		// if (/WebKit/.test(navigator.userAgent)) {
+		video.load();
+		// }
+
 		// fix: 鼠标进入 → 开始加载 → 鼠标离开（加载成功前） → 加载失败。
 		let within = false;
 
@@ -19,11 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			within = true;
 
 			try {
-				// 尽可能修复 Safari 无法播放的问题
-				// if (/WebKit/.test(navigator.userAgent)) {
-				video.load();
-				// }
-
 				video.currentTime = 0;
 				await video.play();
 				container.classList.add('zoom');
