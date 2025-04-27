@@ -240,7 +240,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 
 func digest(data []byte) string {
 	d := md5.New()
-	fmt.Fprint(d, data)
+	d.Write(data)
 	s := d.Sum(nil)
 	return fmt.Sprintf(`%x`, s)
 }

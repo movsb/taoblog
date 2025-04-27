@@ -664,3 +664,18 @@ func v50(posts, files, cache *taorm.DB) {
 func v51(posts, files, cache *taorm.DB) {
 	posts.MustExec(`DELETE FROM options WHERE name='avatar:cache'`)
 }
+
+func v52(posts, files, cache *taorm.DB) {
+	var list []struct{ ID int }
+	files.Raw(`SELECT id FROM files`).MustFind(&list)
+	for _, file := range list {
+		var data string // []byte
+		files.Raw(`SELECT data FROM files WHERE id=?`, file.ID).MustFind(&data)
+		d := md5.New()
+		d.Write([]byte(data))
+		s := d.Sum(nil)
+		x := fmt.Sprintf(`%x`, s)
+		files.MustExec(`UPDATE files SET digest=? WHERE id=?`, x, file.ID)
+		log.Println(`文件摘要：`, file.ID, x)
+	}
+}
