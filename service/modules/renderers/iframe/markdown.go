@@ -34,7 +34,23 @@ type _LazyLoadingFrames struct {
 func (m *_LazyLoadingFrames) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`iframe`).Each(func(i int, s *goquery.Selection) {
 		if m.show {
-			s.Nodes[0].Attr = append(s.Nodes[0].Attr, html.Attribute{Key: `loading`, Val: `lazy`})
+			node := s.Nodes[0]
+			node.Attr = append(node.Attr, html.Attribute{Key: `loading`, Val: `lazy`})
+
+			// B站竟然不写尺寸……
+			{
+				src := s.AttrOr(`src`, ``)
+				if src != `` {
+					var width, height int
+					fmt.Sscanf(s.AttrOr(`width`, `0`), `%d`, &width)
+					fmt.Sscanf(s.AttrOr(`height`, `0`), `%d`, &height)
+					if width <= 0 || height <= 0 {
+						gold_utils.AddStyle(s, `width: 100%`)
+						gold_utils.AddStyle(s, `aspect-ratio: 16/9`)
+					}
+				}
+			}
+
 		} else {
 			var node *goquery.Selection = utils.Must1(goquery.NewDocumentFromReader(strings.NewReader(replaced))).Selection
 			node = node.Find(`div`)
