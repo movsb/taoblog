@@ -710,6 +710,11 @@ func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore t
 			name:   `r2`,
 			store:  `site.sync.r2`,
 		},
+		{
+			config: &cfg.Site.Sync.Minio,
+			name:   `minio`,
+			store:  `site.sync.minio`,
+		},
 	} {
 		if backend.config.Enabled {
 			oss, err := server_sync_tasks.NewSyncToOSS(

@@ -32,6 +32,8 @@ func New(provider string, c *cc.OSSConfig) (Client, error) {
 		return NewR2(c)
 	case `aliyun`:
 		return NewAliyun(c)
+	case `minio`:
+		return NewR2(c)
 	default:
 		return nil, fmt.Errorf(`未知存储服务：%s`, provider)
 	}

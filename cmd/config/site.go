@@ -143,6 +143,7 @@ type SiteSyncConfig struct {
 	R2     OSSConfigWithEnabled `yaml:"r2"`
 	COS    OSSConfigWithEnabled `yaml:"cos"`
 	Aliyun OSSConfigWithEnabled `yaml:"aliyun"`
+	Minio  OSSConfigWithEnabled `yaml:"minio"`
 }
 
 type OSSConfigWithEnabled struct {

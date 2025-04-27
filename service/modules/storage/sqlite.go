@@ -72,7 +72,7 @@ var _ interface {
 	utils.WriteFS
 } = (*SQLiteForPost)(nil)
 
-const fileFieldsWithoutData = `id,created_at,updated_at,post_id,path,mode,mod_time,size,meta`
+const fileFieldsWithoutData = `id,created_at,updated_at,post_id,path,mode,mod_time,size,meta,digest`
 
 func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	fullName := path.Clean(path.Join(fs.dir, name))

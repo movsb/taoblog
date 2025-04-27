@@ -7,9 +7,11 @@ import (
 	"hash/fnv"
 	"log"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taorm"
 )
 
@@ -261,6 +263,10 @@ func typeHash(key any) int64 {
 		}
 	} else {
 		typesRegistry[sum] = tt
+		_, after, found := strings.Cut(tt, version.NameLowercase)
+		if found {
+			tt = after[1:]
+		}
 		log.Println(`注册类型：`, tt, sum)
 	}
 
