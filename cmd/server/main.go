@@ -72,7 +72,11 @@ func AddCommands(rootCmd *cobra.Command) {
 			} else {
 				cfg2, err := config.LoadFile(`taoblog.yml`)
 				if err != nil {
-					cfg2 = config.DefaultConfig()
+					if os.IsNotExist(err) {
+						cfg2 = config.DefaultConfig()
+					} else {
+						log.Fatalln(err)
+					}
 				}
 				cfg = cfg2
 			}

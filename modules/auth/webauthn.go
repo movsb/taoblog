@@ -1,10 +1,8 @@
 package auth
 
 import (
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -59,52 +57,7 @@ func (a *WebAuthn) Handler(prefix string) http.Handler {
 	mux.HandleFunc(`POST /login:begin`, a.BeginLogin)
 	mux.HandleFunc(`POST /login:finish`, a.FinishLogin)
 
-	// 垃圾 js，转换个 ArrayBuffer 和 base64都麻烦得要死。
-	mux.HandleFunc(`POST /base64:encode`, a.base64Encode)
-	mux.HandleFunc(`POST /base64:decode`, a.base64Decode)
-
 	return http.StripPrefix(strings.TrimSuffix(prefix, "/"), mux)
-}
-
-// [[1,2,3], ...] => ["XXXXXX", ...]
-// 官方的 protocol.URLEncodedBase64 会把结果把成 JSON 字符串，不好用。
-func (a *WebAuthn) base64Encode(w http.ResponseWriter, r *http.Request) {
-	var bss [][]byte
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&bss); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	ss := make([]string, 0, len(bss))
-	for _, bs := range bss {
-		ss = append(ss, base64.RawURLEncoding.EncodeToString(bs))
-	}
-	json.NewEncoder(w).Encode(ss)
-}
-
-// ["XXXXXX", ...] => [[1,2,3], ...]
-func (a *WebAuthn) base64Decode(w http.ResponseWriter, r *http.Request) {
-	var ss []string
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&ss); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-	bss := make([][]byte, 0, len(ss))
-	for _, s := range ss {
-		bs, err := base64.RawURLEncoding.DecodeString(s)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		bss = append(bss, bs)
-	}
-	ibss := make([][]int, 0, len(bss))
-	for _, bs := range bss {
-		ibs := make([]int, 0, len(bs))
-		for _, b := range bs {
-			ibs = append(ibs, int(b))
-		}
-		ibss = append(ibss, ibs)
-	}
-	json.NewEncoder(w).Encode(ibss)
 }
 
 func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
