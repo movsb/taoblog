@@ -687,7 +687,7 @@ formUI.submit(async (done) => {
 	if (p.metas && p.metas.geo) {
 		formUI.geo = p.metas.geo;
 	}
-	formUI.autoIndent = p.metas.text_indent;
+	formUI.autoIndent = !!p.metas.text_indent;
 	formUI.top = p.top;
 	formUI.users = p.user_perms || [];
 })();
