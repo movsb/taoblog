@@ -5,7 +5,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 )
 
 //go:generate sass --style compressed --no-source-map style.scss style.css

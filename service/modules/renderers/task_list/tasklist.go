@@ -7,7 +7,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"

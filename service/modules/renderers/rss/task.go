@@ -14,7 +14,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	rss_parser "github.com/movsb/taoblog/service/modules/renderers/rss/parser"
 )
 

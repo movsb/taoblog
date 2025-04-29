@@ -8,7 +8,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 )
 
 type Config struct {

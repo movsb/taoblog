@@ -21,7 +21,7 @@ import (
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
-	dynamic "github.com/movsb/taoblog/service/modules/renderers/_dynamic"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 )
 
@@ -16,7 +16,7 @@ func TestModTime(t *testing.T) {
 	defer s.Close()
 
 	baseURL, _ := url.Parse(s.URL)
-	dogeURL := baseURL.JoinPath(emojis.BaseURLForDynamic.JoinPath(`assets/weixin/doge.png`).String())
+	dogeURL := baseURL.JoinPath(emojis.BaseURLForDynamic.JoinPath(`weixin/doge.png`).String())
 	rsp := utils.Must1(http.Get(dogeURL.String()))
 	defer rsp.Body.Close()
 
