@@ -12,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/echarts"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
+	"github.com/movsb/taoblog/service/modules/renderers/encrypted"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/footnotes"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
@@ -120,6 +121,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		extension.GFM,
 		footnotes.New(),
 		alerts.New(),
+		encrypted.New(s.OpenAsset(postId)),
 
 		page_link.New(ctx, s.getPostTitle, nil),
 

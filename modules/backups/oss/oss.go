@@ -23,7 +23,7 @@ import (
 
 type Client interface {
 	Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error
-	GetFileURL(ctx context.Context, path string, di []byte) string
+	GetFileURL(ctx context.Context, path string, digest []byte) string
 }
 
 func New(provider string, c *cc.OSSConfig) (Client, error) {
@@ -114,16 +114,17 @@ func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r 
 	return nil
 }
 
-func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, md5 []byte) string {
-	_, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
+func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, digest []byte) string {
+	headOutput, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: aws.String(Digest(md5).ToETag(false)),
+		IfMatch: aws.String(Digest(digest).ToETag(false)),
 	})
 	if err != nil {
 		// log.Println(err)
 		return ``
 	}
+	_ = headOutput
 	output, err := oss.presign.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: &oss.bucketName,
 		Key:    &path,
@@ -189,11 +190,11 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 	return nil
 }
 
-func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) string {
+func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte) string {
 	output1, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(md5).ToETag(true)),
+		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
 	})
 	if err != nil {
 		return ``
@@ -203,7 +204,7 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) stri
 	output, err := oss.client.Presign(ctx, &alioss.GetObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(md5).ToETag(true)),
+		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
 	})
 	if err != nil {
 		log.Println(err)

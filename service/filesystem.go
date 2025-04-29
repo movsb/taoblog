@@ -146,15 +146,22 @@ func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
 	s.fileURLGetters.Store(name, g)
 }
 
-func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, pid int, path string) {
+func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, post *proto.Post, path string) {
 	handled := false
 
-	pfs := utils.Must1(s.postDataFS.ForPost(pid))
+	pfs := utils.Must1(s.postDataFS.ForPost(int(post.Id)))
+
+	getterCount := 0
+	// 神经，居然不能获取大小。
+	s.fileURLGetters.Range(func(key, value any) bool {
+		getterCount++
+		return true
+	})
 
 	ac := auth.Context(r.Context())
 	// 测试阶段，只给登录用户使用。
-	if !ac.User.IsGuest() {
-		key := _FileURLCacheKey{Pid: pid, Path: path}
+	if !ac.User.IsGuest() && getterCount > 0 {
+		key := _FileURLCacheKey{Pid: int(post.Id), Status: post.Status, Path: path}
 		if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
 			http.Redirect(w, r, val.URL, http.StatusFound)
 			return
@@ -174,7 +181,7 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, pid int
 			var url string
 
 			s.fileURLGetters.Range(func(key, value any) bool {
-				if u := value.(theme_fs.FileURLGetter).GetFileURL(pid, path, file.Digest); u != `` {
+				if u := value.(theme_fs.FileURLGetter).GetFileURL(post, file); u != `` {
 					url = u
 					return false
 				}
@@ -200,8 +207,9 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, pid int
 }
 
 type _FileURLCacheKey struct {
-	Pid  int
-	Path string
+	Pid    int
+	Status string
+	Path   string
 }
 
 type _FileURLCacheValue struct {

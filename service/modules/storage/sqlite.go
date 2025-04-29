@@ -2,7 +2,6 @@ package storage
 
 import (
 	"bytes"
-	"crypto/md5"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -209,6 +208,9 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 
 	now := time.Now()
 
+	meta := models.FileMetaFromProto(spec.Meta)
+	models.Encrypt(&meta.Encryption, data)
+
 	var old models.File
 	if err := fs.s.db.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&old); err == nil {
 		_, err := fs.s.db.Model(&old).UpdateMap(taorm.M{
@@ -217,8 +219,8 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			`mod_time`:   spec.Time,
 			`size`:       spec.Size,
 			`data`:       data,
-			`meta`:       models.FileMetaFromProto(spec.Meta),
-			`digest`:     digest(data),
+			`meta`:       meta,
+			`digest`:     models.Digest(data),
 		})
 		return err
 	} else {
@@ -230,17 +232,10 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			Mode:      spec.Mode,
 			ModTime:   int64(spec.Time),
 			Size:      spec.Size,
-			Meta:      models.FileMetaFromProto(spec.Meta),
-			Digest:    digest(data),
+			Meta:      meta,
+			Digest:    models.Digest(data),
 			Data:      data,
 		}
 		return fs.s.db.Model(&file).Create()
 	}
-}
-
-func digest(data []byte) string {
-	d := md5.New()
-	d.Write(data)
-	s := d.Sum(nil)
-	return fmt.Sprintf(`%x`, s)
 }
