@@ -6,11 +6,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/phuslu/lru"
 )
 
 type WebAuthn struct {
@@ -18,10 +19,12 @@ type WebAuthn struct {
 	auth *Auth
 
 	// 注册/登录过程中临时保存的会话信息。
-	// map[user_id_int64]*webauthn.SessionData
-	registrationSessions sync.Map
-	loginSessions        sync.Map
+	// TOOD 换成 file cache，以不限制容量。
+	registrationSessions *lru.TTLCache[int64, *webauthn.SessionData]
+	loginSessions        *lru.TTLCache[string, *webauthn.SessionData]
 }
+
+const webAuthnSessionTTL = time.Minute * 5
 
 func NewWebAuthn(auth *Auth, domain string, displayName string, origins []string) *WebAuthn {
 	config := &webauthn.Config{
@@ -36,6 +39,9 @@ func NewWebAuthn(auth *Auth, domain string, displayName string, origins []string
 	return &WebAuthn{
 		auth: auth,
 		wa:   wa,
+
+		registrationSessions: lru.NewTTLCache[int64, *webauthn.SessionData](8),
+		loginSessions:        lru.NewTTLCache[string, *webauthn.SessionData](8),
 	}
 }
 
@@ -63,7 +69,6 @@ func (a *WebAuthn) Handler(prefix string) http.Handler {
 func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 	user := a.auth.AuthRequest(r)
 	if user.IsGuest() {
-		// 暂时不允许注册，因为没有用户数据库。管理员是存在选项表中的🥵。
 		http.Error(w, "不允许非管理员用户注册通行密钥。", http.StatusForbidden)
 		return
 	}
@@ -81,7 +86,7 @@ func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.registrationSessions.Store(user.ID, session)
+	a.registrationSessions.Set(user.ID, session, webAuthnSessionTTL)
 }
 
 func (a *WebAuthn) FinishRegistration(w http.ResponseWriter, r *http.Request) {
@@ -91,12 +96,11 @@ func (a *WebAuthn) FinishRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionAny, ok := a.registrationSessions.Load(user.ID)
+	session, ok := a.registrationSessions.Get(user.ID)
 	if !ok {
-		http.Error(w, "会话不存在", http.StatusBadRequest)
+		http.Error(w, "会话不存在或已经过期。", http.StatusBadRequest)
 		return
 	}
-	session := sessionAny.(*webauthn.SessionData)
 	defer a.registrationSessions.Delete(user.ID)
 
 	credential, err := a.wa.FinishRegistration(ToWebAuthnUser(user), *session, r)
@@ -120,17 +124,16 @@ func (a *WebAuthn) BeginLogin(w http.ResponseWriter, r *http.Request) {
 	if err := writeJsonBody(w, options); err != nil {
 		return
 	}
-	a.loginSessions.Store(session.Challenge, session)
+	a.loginSessions.Set(session.Challenge, session, webAuthnSessionTTL)
 }
 
 func (a *WebAuthn) FinishLogin(w http.ResponseWriter, r *http.Request) {
 	challenge := r.URL.Query().Get(`challenge`)
-	sessionAny, ok := a.loginSessions.Load(challenge)
+	session, ok := a.loginSessions.Get(challenge)
 	if !ok {
-		http.Error(w, "会话不存在", http.StatusBadRequest)
+		http.Error(w, "会话不存在或已经过期。", http.StatusBadRequest)
 		return
 	}
-	session := sessionAny.(*webauthn.SessionData)
 	defer a.loginSessions.Delete(challenge)
 
 	var outUser *User
