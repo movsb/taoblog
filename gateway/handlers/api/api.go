@@ -32,6 +32,7 @@ func New(ctx context.Context, client *clients.ProtoClient) http.Handler {
 	utils.Must(proto.RegisterTaoBlogHandlerClient(ctx, mux, client.Blog))
 	utils.Must(proto.RegisterSearchHandlerClient(ctx, mux, client.Search))
 	utils.Must(proto.RegisterNotifyHandlerClient(ctx, mux, client.Notify))
+	utils.Must(proto.RegisterAuthHandlerClient(ctx, mux, client.Auth))
 
 	return &_Protos{
 		ServeMux: mux,

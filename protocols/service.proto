@@ -93,18 +93,11 @@ service Management {
 	// Config
 
 	rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {
-		option (google.api.http) = {
-			get: "/v3/configs/{path}";
-		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "获取配置。";
 		};
 	};
 	rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {
-		option (google.api.http) = {
-			post: "/v3/configs/{path}";
-			body: "yaml";
-		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "设置配置。";
 		};
@@ -183,9 +176,6 @@ service TaoBlog {
 		};
 	}
 	rpc GetPost (GetPostRequest) returns (Post) {
-		option (google.api.http) = {
-			get: "/v3/posts/{id=*}";
-		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "获取某篇文章。";
 		};
@@ -208,9 +198,6 @@ service TaoBlog {
 		};
 	}
 	rpc ListPosts (ListPostsRequest) returns (ListPostsResponse) {
-		option (google.api.http) = {
-			get: "/v3/posts";
-		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "列举文章。";
 		};
@@ -275,9 +262,6 @@ service TaoBlog {
 	}
 
 	rpc GetTopPosts(GetTopPostsRequest) returns (GetTopPostsResponse) {
-		option (google.api.http) = {
-			get: "/v3/posts:top";
-		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "获取置顶文章列表。";
 		};
@@ -321,9 +305,6 @@ service TaoBlog {
 		};
 	}
 	rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse) {
-		option (google.api.http) = {
-			get: "/v3/comments";
-		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "获取评论列表。";
 		};

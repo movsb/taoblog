@@ -49,16 +49,5 @@
 	<p>没有置顶文章。</p>
 	{{ end }}
 </div>
-<script>
-async function reorderTopPosts() {
-	const pm = new PostManagementAPI();
-	let { posts } = await pm.getTopPosts();
-	const dialog = document.getElementById('reorder-top-posts-dialog');
-	const list = dialog.querySelector('ul');
-	posts.forEach(p => {
-		
-	});
-}
-</script>
 </body>
 </html>

@@ -181,14 +181,6 @@ class PostManagementAPI
 		return await rsp.json();
 	}
 
-	async getTopPosts() {
-		let path = `/v3/posts:top`;
-		let rsp = await fetch(path);
-		if (!rsp.ok) {
-			throw new Error('获取置顶文章失败：' + await rsp.text());
-		}
-		return await rsp.json();
-	}
 	async reorderTopPosts(ids) {
 		let path = `/v3/posts:top`;
 		let rsp = await fetch(path, {

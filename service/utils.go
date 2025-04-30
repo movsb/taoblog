@@ -6,6 +6,7 @@ import (
 
 	_ "time/tzdata"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/dialers"
 	"github.com/movsb/taoblog/modules/geo"
 	"github.com/movsb/taoblog/modules/globals"
@@ -79,6 +80,8 @@ func (u *Utils) DialRemote(s proto.Utils_DialRemoteServer) error {
 
 func (u *Utils) ResolveGeoLocation(ctx context.Context, in *proto.ResolveGeoLocationRequest) (_ *proto.ResolveGeoLocationResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
+
+	auth.MustNotBeGuest(ctx)
 
 	if u.geoLocationResolver == nil {
 		panic(status.Errorf(codes.Unavailable, `未初始化。`))
