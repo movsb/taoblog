@@ -11,8 +11,7 @@ class WebAuthnAPI {
 			throw new Error('开始注册失败：' + await rsp.text());
 		}
 		let options = await rsp.json();
-		options.publicKey.challenge = WebAuthnAPI.base64decode(options.publicKey.challenge);
-		options.publicKey.user.id = WebAuthnAPI.base64decode(options.publicKey.user.id);
+		options.publicKey = PublicKeyCredential.parseCreationOptionsFromJSON(options.publicKey);
 		return options;
 	}
 	async finishRegistration(options) {
@@ -34,12 +33,12 @@ class WebAuthnAPI {
 			throw new Error('开始登录失败：' + await rsp.text());
 		}
 		let options = await rsp.json();
-		options.publicKey.challenge = WebAuthnAPI.base64decode(options.publicKey.challenge);
-		return options;
+		let challenge = options.publicKey.challenge;
+		options.publicKey = PublicKeyCredential.parseRequestOptionsFromJSON(options.publicKey);
+		return { options, challenge };
 	}
-	// challenge: 只是用来查找 session 的，肯定不会用作服务端真实 challenge。想啥呢？
 	async finishLogin(options, challenge) {
-		let path = `/admin/login/webauthn/login:finish?challenge=${WebAuthnAPI.base64encode(challenge)}`;
+		let path = `/admin/login/webauthn/login:finish?challenge=${challenge}`;
 		let rsp = await fetch(path, {
 			method: 'POST',
 			body: JSON.stringify(options),
@@ -47,19 +46,6 @@ class WebAuthnAPI {
 		if (!rsp.ok) {
 			throw new Error('结束登录失败：' + await rsp.text());
 		}
-	}
-
-	static base64encode(raw) {
-		let encoded = new Uint8Array(raw).toBase64();
-		encoded = encoded.replaceAll('+', '-');
-		encoded = encoded.replaceAll('/', '_');
-		encoded = encoded.replaceAll('=', '');
-		return encoded;
-	}
-	static base64decode(encoded) {
-		encoded = encoded.replaceAll('-', '+');
-		encoded = encoded.replaceAll('_', '/');
-		return Uint8Array.fromBase64(encoded);
 	}
 }
 
@@ -86,11 +72,11 @@ class WebAuthn {
 	}
 
 	async login() {
-		let options = await this.api.beginLogin();
+		let { options, challenge } = await this.api.beginLogin();
 		console.log('开始登录返回：', options);
 		let credential = await navigator.credentials.get(options);
 		console.log('本地获取凭证：', credential);
-		await this.api.finishLogin(credential.toJSON(), options.publicKey.challenge);
+		await this.api.finishLogin(credential.toJSON(), challenge);
 		console.log('登录成功。');
 	}
 }
