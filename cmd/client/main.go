@@ -175,20 +175,6 @@ func AddCommands(rootCmd *cobra.Command) {
 	createCmd.Flags().StringP(`status`, `s`, `draft`, `状态（public、draft）`)
 	rootCmd.AddCommand(createCmd)
 
-	pingCmd := &cobra.Command{
-		Use:    `ping`,
-		Short:  `Ping server`,
-		Args:   cobra.NoArgs,
-		PreRun: preRun,
-		Run: func(cmd *cobra.Command, args []string) {
-			resp, err := client.Blog.Ping(client.Context(), &proto.PingRequest{})
-			if err != nil {
-				log.Fatalln(err)
-			}
-			fmt.Println(resp.Pong)
-		},
-	}
-	rootCmd.AddCommand(pingCmd)
 	postsCmd := &cobra.Command{
 		Use:              `posts`,
 		Short:            `Commands for managing posts`,
@@ -412,18 +398,6 @@ func AddCommands(rootCmd *cobra.Command) {
 				panic(err)
 			}
 			client.SetCommentPostID(cmtID, postID)
-		},
-	})
-	commentsCmd.AddCommand(&cobra.Command{
-		Use:   `edit`,
-		Short: `Edit some comment`,
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			cmtID, err := strconv.ParseInt(os.Args[3], 10, 0)
-			if err != nil {
-				panic(err)
-			}
-			client.UpdateComment(cmtID)
 		},
 	})
 	backupCmd := &cobra.Command{

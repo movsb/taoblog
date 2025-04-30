@@ -276,13 +276,6 @@ func MustBeAdmin(ctx context.Context) *auth.AuthContext {
 	return ac
 }
 
-// Ping ...
-func (s *Service) Ping(ctx context.Context, in *proto.PingRequest) (*proto.PingResponse, error) {
-	return &proto.PingResponse{
-		Pong: `pong`,
-	}, nil
-}
-
 // Config ...
 func (s *Service) Config() *config.Config {
 	return s.cfg

@@ -162,15 +162,6 @@ service Search {
 }
 
 service TaoBlog {
-	rpc Ping(PingRequest) returns (PingResponse) {
-		option (google.api.http) = {
-			get: "/v3/ping";
-		};
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "Ping 服务器。";
-		};
-	}
-	
 	rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
 		option (google.api.http) = {
 			get: "/v3/info";
@@ -312,14 +303,6 @@ service TaoBlog {
 			description: "创建一条评论。";
 		};
 	}
-	rpc GetComment(GetCommentRequest) returns (Comment) {
-		option (google.api.http) = {
-			get: "/v3/comments/{id=*}";
-		};
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "获取指定编号的评论。";
-		};
-	}
 	rpc UpdateComment(UpdateCommentRequest) returns (Comment) {
 		option (google.api.http) = {
 			patch: "/v3/comments/{comment.id=*}";
@@ -389,12 +372,4 @@ service TaoBlog {
 			description: "创建样式测试页面";
 		};
 	}
-}
-
-message PingRequest {
-
-}
-
-message PingResponse {
-	string pong = 1;
 }

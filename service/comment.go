@@ -77,6 +77,10 @@ func (s *Service) UserAvatarEphemeral(ctx context.Context, uid int, email string
 func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
 	ac := auth.Context(ctx)
 
+	if co == nil {
+		co = &proto.PostContentOptions{}
+	}
+
 	return func(c *proto.Comment) {
 		c.Avatar = s.UserAvatarEphemeral(ctx, int(c.UserId), c.Email)
 
@@ -136,12 +140,6 @@ func (s *Service) cacheAllCommenterData() {
 			s.cmtgeo.Get(c.IP)
 		}
 	}
-}
-
-// GetComment ...
-// TODO perm check
-func (s *Service) GetComment(ctx context.Context, req *proto.GetCommentRequest) (*proto.Comment, error) {
-	return s.getComment2(req.Id).ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{})), nil
 }
 
 func in5min(t int32) bool {
@@ -766,16 +764,7 @@ func (s *Service) deletePostComments(_ context.Context, postID int64) {
 // 请保持文章和评论的代码同步。
 // NOTE：评论不需要检测权限，UpdateComment 会检测。
 func (s *Service) CheckCommentTaskListItems(ctx context.Context, in *proto.CheckTaskListItemsRequest) (*proto.CheckTaskListItemsResponse, error) {
-	// s.MustBeAdmin(ctx)
-	p, err := s.GetComment(ctx,
-		&proto.GetCommentRequest{
-			Id: int64(in.Id),
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
+	p := s.getComment2(int64(in.Id)).ToProto(s.setCommentExtraFields(ctx, &proto.PostContentOptions{}))
 	updated, err := s.applyTaskChecks(p.Modified, p.SourceType, p.Source, in)
 	if err != nil {
 		return nil, err
