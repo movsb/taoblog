@@ -67,7 +67,7 @@ func (a *WebAuthn) Handler(prefix string) http.Handler {
 }
 
 func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
-	user := a.auth.AuthRequest(r)
+	user := a.auth.authRequest(r)
 	if user.IsGuest() {
 		http.Error(w, "不允许非管理员用户注册通行密钥。", http.StatusForbidden)
 		return
@@ -90,7 +90,7 @@ func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *WebAuthn) FinishRegistration(w http.ResponseWriter, r *http.Request) {
-	user := a.auth.AuthRequest(r)
+	user := a.auth.authRequest(r)
 	if user.IsGuest() {
 		w.WriteHeader(http.StatusForbidden)
 		return

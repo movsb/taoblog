@@ -109,7 +109,7 @@ func SystemForGateway(ctx context.Context) context.Context {
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := a.AuthRequest(r)
+		user := a.authRequest(r)
 		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
 		userAgent := r.Header.Get(`User-Agent`)
 		ac := _NewContext(r.Context(), user, remoteAddr, userAgent)
@@ -241,7 +241,7 @@ func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerIntercept
 }
 
 func (a *Auth) userByKey(id int, key string) (*models.User, error) {
-	u, err := a.GetUserByID(context.TODO(), int64(id))
+	u, err := a.GetUserByID(context.Background(), int64(id))
 	if err != nil {
 		return nil, err
 	}

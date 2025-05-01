@@ -1033,7 +1033,6 @@ func (s *Service) GetPostCommentsCount(ctx context.Context, in *proto.GetPostCom
 }
 
 // 最后更新的文章在最后。
-// TODO 缓存。其实不用，options 自己有缓存。
 func (s *Service) getUserTopPosts(id int) []int {
 	if id <= 0 {
 		return nil

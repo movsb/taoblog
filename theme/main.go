@@ -91,9 +91,6 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 
 	m.HandleFunc(`GET /search`, t.querySearch)
 
-	// TODO:  严重：切换登录后会显示上一个用户的全部文章
-	// 一个解决办法是在 etag 里面加上用户编号。
-	// 以及必须验证缓存。
 	m.Handle(`GET /posts`, t.lastPostTime304HandlerFunc(t.queryPosts))
 	m.Handle(`GET /tweets`, t.lastPostTime304HandlerFunc(t.queryTweets))
 

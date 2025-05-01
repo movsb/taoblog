@@ -158,11 +158,9 @@ func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to strin
 	http.Redirect(w, r, u.String(), http.StatusFound)
 }
 
-// TODO 是不是已经有 auth context 了？？？
-// 因为 http 那里加了 user from cookies
 func (a *Admin) requireLogin(h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !a.auth.AuthRequest(r).IsGuest() {
+		if !auth.Context(r.Context()).User.IsGuest() {
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -198,7 +196,7 @@ func (a *Admin) executeTemplate(w io.Writer, name string, data any) {
 }
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
-	if !a.auth.AuthRequest(r).IsGuest() {
+	if !auth.Context(r.Context()).User.IsGuest() {
 		to := a.prefixed(`/profile`)
 		if u := r.URL.Query().Get(`u`); u != "" {
 			to = u
@@ -249,7 +247,7 @@ func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 	d := &ProfileData{
 		a:    a,
 		Name: a.displayName,
-		User: a.auth.AuthRequest(r),
+		User: auth.Context(r.Context()).User,
 	}
 	a.executeTemplate(w, `profile.html`, &d)
 }
@@ -297,7 +295,7 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		d := EditorData{
-			User: a.auth.AuthRequest(r),
+			User: auth.Context(r.Context()).User,
 			Post: rsp,
 		}
 		a.executeTemplate(w, `editor.html`, &d)

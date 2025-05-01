@@ -32,7 +32,7 @@ func (s *Service) Options() utils.PluginStorage {
 }
 
 func (s *Service) getOption(name string) (string, error) {
-	val, err, _ := s.cache.GetOrLoad(context.TODO(), optionCacheKey(name),
+	val, err, _ := s.cache.GetOrLoad(context.Background(), optionCacheKey(name),
 		func(ctx context.Context, _ string) (any, time.Duration, error) {
 			val, err := s._getOption(name)
 			return val, time.Hour, err

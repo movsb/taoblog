@@ -1,4 +1,3 @@
-// TODO 在 _footer.html 有引用到，用于在页面上提供登录按钮。
 class WebAuthnAPI {
 	constructor(){}
 

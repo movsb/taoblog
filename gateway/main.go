@@ -58,7 +58,7 @@ func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, 
 		notify: notify,
 	}
 
-	if err := g.register(context.TODO(), serverAddr, mux); err != nil {
+	if err := g.register(context.Background(), serverAddr, mux); err != nil {
 		panic(err)
 	}
 
@@ -81,7 +81,7 @@ func (g *Gateway) SetRSS(rss *rss.RSS) {
 }
 
 func (g *Gateway) AvatarURL(uid int) string {
-	e := g.service.UserAvatarEphemeral(context.TODO(), uid, "")
+	e := g.service.UserAvatarEphemeral(context.Background(), uid, "")
 	return fmt.Sprintf(`/v3/avatar/%d`, e)
 }
 

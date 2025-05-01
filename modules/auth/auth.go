@@ -124,7 +124,6 @@ func constantEqual(x, y string) bool {
 }
 
 // 增加用户系统后，用户名可以是用户编号。
-// TODO: 防止每次验证都检查数据库，应该限流。
 func (o *Auth) AuthLogin(username string, password string) *User {
 	id, err := strconv.Atoi(username)
 	if err == nil {
@@ -136,7 +135,7 @@ func (o *Auth) AuthLogin(username string, password string) *User {
 	return guest
 }
 
-func (o *Auth) AuthRequest(req *http.Request) *User {
+func (o *Auth) authRequest(req *http.Request) *User {
 	loginCookie, err := req.Cookie(CookieNameLogin)
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
