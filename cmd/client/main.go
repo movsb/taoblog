@@ -556,10 +556,6 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	rootCmd.AddCommand(infoCmd)
 
-	lfs := createLfsCommands()
-	lfs.PersistentPreRun = preRun
-	rootCmd.AddCommand(lfs)
-
 	users := createUsersCommands()
 	users.PersistentPreRun = preRun
 	rootCmd.AddCommand(users)
