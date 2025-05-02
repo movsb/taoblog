@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 )
 
 func LoadFile(path string) (*Config, error) {
@@ -18,7 +18,6 @@ func LoadFile(path string) (*Config, error) {
 
 func load(r io.Reader) (*Config, error) {
 	c := DefaultConfig()
-	dec := yaml.NewDecoder(r)
-	dec.SetStrict(true)
+	dec := yaml.NewDecoder(r, yaml.Strict())
 	return c, dec.Decode(c)
 }

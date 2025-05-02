@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/yuin/goldmark/parser"
-	"gopkg.in/yaml.v2"
 )
 
 type Genealogy struct{}
@@ -19,8 +19,7 @@ func (e *Genealogy) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 	defer utils.CatchAsError(&outErr)
 
 	var individuals []*Individual
-	d := yaml.NewDecoder(bytes.NewReader(source))
-	d.SetStrict(true)
+	d := yaml.NewDecoder(bytes.NewReader(source), yaml.Strict())
 	utils.Must(d.Decode(&individuals))
 
 	for _, p := range individuals {

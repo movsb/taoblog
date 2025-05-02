@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 )
 
 type Settable interface {
@@ -327,7 +327,7 @@ func (*Updater) set(p any, value string) {
 		vpe.SetZero()
 		a := vpe.Interface()
 		_ = a
-		if err := yaml.UnmarshalStrict([]byte(value), vpe.Addr().Interface()); err != nil {
+		if err := yaml.UnmarshalWithOptions([]byte(value), vpe.Addr().Interface(), yaml.Strict()); err != nil {
 			panic(err)
 		}
 	default:

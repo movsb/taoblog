@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"gopkg.in/yaml.v2"
 )
 
 type runtimeKey struct{}

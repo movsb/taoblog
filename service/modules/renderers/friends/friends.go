@@ -13,12 +13,12 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/yuin/goldmark/parser"
-	"gopkg.in/yaml.v2"
 )
 
 //go:generate sass --style compressed --no-source-map style.scss style.css

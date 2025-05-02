@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/status"
-	"gopkg.in/yaml.v2"
 )
 
 // HostConfig is a per host config.

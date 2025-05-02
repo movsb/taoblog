@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/modules/utils"
-	"gopkg.in/yaml.v2"
 )
 
 type UserDate struct {
@@ -117,7 +117,7 @@ func (r *Reminder) Start() string {
 
 func ParseReminder(y []byte) (*Reminder, error) {
 	rm := Reminder{}
-	if err := yaml.UnmarshalStrict(y, &rm); err != nil {
+	if err := yaml.UnmarshalWithOptions(y, &rm, yaml.Strict()); err != nil {
 		return nil, err
 	}
 	return &rm, nil

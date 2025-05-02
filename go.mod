@@ -18,7 +18,7 @@ require (
 	google.golang.org/grpc v1.68.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.35.2
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
@@ -39,6 +39,7 @@ require (
 	github.com/go-git/go-git/v5 v5.13.2
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/goccy/go-graphviz v0.2.9
+	github.com/goccy/go-yaml v1.17.1
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd

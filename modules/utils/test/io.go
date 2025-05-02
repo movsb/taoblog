@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 )
 
 func MustLoadCasesFromYaml[T any](path string) []*T {

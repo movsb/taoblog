@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/goccy/go-yaml"
 	client_common "github.com/movsb/taoblog/cmd/client/common"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
@@ -25,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/yaml.v2"
 )
 
 // 如果当前在开发目录下，则默认为 blog.local，否则为 blog。

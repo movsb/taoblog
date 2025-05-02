@@ -4,8 +4,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/service/models"
-	"gopkg.in/yaml.v2"
 )
 
 const IndexFileName = `README.md`

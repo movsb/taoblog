@@ -35,7 +35,7 @@ func Migrate(gdb, files, cache *sql.DB) {
 		}
 	}
 	if begin == -1 {
-		panic("unknown version")
+		log.Fatalln("unknown database version")
 	}
 	if begin == len(gVersions) {
 		return

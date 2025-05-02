@@ -52,6 +52,9 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 			})
 			for event := range events {
 				if event.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
+					if !strings.HasSuffix(event.Name, `.html`) {
+						continue
+					}
 					debouncer.Enter()
 				}
 			}
