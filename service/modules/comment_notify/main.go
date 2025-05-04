@@ -9,7 +9,6 @@ import (
 	text_template "text/template"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -82,19 +81,26 @@ func (cn *CommentNotifier) NotifyGuests(data *Data, recipients []Recipient) {
 	cn.sendEmails(subject, buf.String(), recipients)
 }
 
+// 重要！ 每封邮件必须独立发送 （To:），否则会相互看到别人地址、所有人的地址。
 func (cn *CommentNotifier) sendEmails(subject, body string, recipients []Recipient) {
+	for _, r := range recipients {
+		cn.sendEmail(subject, body, r)
+	}
+}
+
+func (cn *CommentNotifier) sendEmail(subject, body string, recipient Recipient) {
 	cn.notifier.SendEmail(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendEmailRequest{
 			Subject:  subject,
 			Body:     body,
 			FromName: mailFromName,
-			Users: utils.Map(recipients, func(r Recipient) *proto.SendEmailRequest_User {
-				return &proto.SendEmailRequest_User{
-					Name:    r.Name,
-					Address: r.Address,
-				}
-			}),
+			Users: []*proto.SendEmailRequest_User{
+				{
+					Name:    recipient.Name,
+					Address: recipient.Address,
+				},
+			},
 		},
 	)
 }
