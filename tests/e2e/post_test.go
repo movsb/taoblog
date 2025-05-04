@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 func listPostsEq(r *R, t *testing.T) func(p string, u context.Context, ownership proto.Ownership, list []int64) {
@@ -493,5 +494,32 @@ func TestReferences(t *testing.T) {
 		p3 := gp(r.user2, publicPost2.Id)
 		eq(p3.References.Posts.From, []int64{})
 		eq(p3.References.Posts.To, []int64{privatePost.Id})
+	}
+}
+
+func TestUpdateTags(t *testing.T) {
+	r := Serve(t.Context())
+	p1 := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{Source: "# Tags\n#t1 #t2"}))
+	p1 = utils.Must1(r.client.Blog.GetPost(r.user1, &proto.GetPostRequest{Id: int32(p1.Id), GetPostOptions: &proto.GetPostOptions{}}))
+	tags := p1.Tags
+	slices.Sort(tags)
+	if !reflect.DeepEqual(tags, []string{`t1`, `t2`}) {
+		t.Fatal(`not equal`)
+	}
+	p1.Source = "# Tags\n#t3"
+	utils.Must1(r.client.Blog.UpdatePost(r.user1, &proto.UpdatePostRequest{
+		Post: p1,
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				`source_type`,
+				`source`,
+			},
+		},
+	}))
+	p1 = utils.Must1(r.client.Blog.GetPost(r.user1, &proto.GetPostRequest{Id: int32(p1.Id), GetPostOptions: &proto.GetPostOptions{}}))
+	tags = p1.Tags
+	slices.Sort(tags)
+	if !reflect.DeepEqual(tags, []string{`t3`}) {
+		t.Fatal(`not equal`)
 	}
 }

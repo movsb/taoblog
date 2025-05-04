@@ -82,6 +82,9 @@ message Post {
 	Metas metas = 13;
 	string source = 14;
 	string source_type = 15;
+
+	// 标签#️⃣列表。
+	// 仅输出。
 	repeated string tags = 16;
 
 	// ~~文章最后被评论的时间~~。

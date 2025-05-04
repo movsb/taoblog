@@ -532,7 +532,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	s.MustTxCall(func(txs *Service) error {
 		txs.tdb.Model(&p).MustCreate()
 		in.Id = p.ID
-		txs.UpdateObjectTags(p.ID, append(derived.Tags, in.Tags...))
+		txs.updateObjectTags(p.ID, append(derived.Tags, in.Tags...))
 		txs.updateLastPostTime(time.Unix(int64(p.Modified), 0))
 		txs.updatePostPageCount()
 		txs.updateReferences(ctx, int32(p.ID), nil, derived.References)
@@ -589,7 +589,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	}
 
 	var hasSourceType, hasSource bool
-	var hasTags, hasMetas bool
+	var hasMetas bool
 	var hasTitle bool
 	var hasType bool
 	var hasSlug bool
@@ -608,8 +608,6 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		case `slug`:
 			m[path] = in.Post.Slug
 			hasSlug = true
-		case `tags`:
-			hasTags = true
 		case `metas`:
 			hasMetas = true
 		case `type`:
@@ -633,7 +631,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	}
 
 	if hasSourceType != hasSource {
-		panic(`source type and source must be specified`)
+		return nil, status.Error(codes.InvalidArgument, `source type and source must be specified`)
 	}
 
 	derived, err := s.parseDerived(ctx, in.Post.SourceType, in.Post.Source)
@@ -680,17 +678,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			txs.tdb.Model(&op).MustFind(&op)
 			return status.Errorf(codes.Aborted, "update failed, modified conflict: %v (modified: %v)", err, op.Modified)
 		}
-		if hasTags {
-			var newTags []string
-			if hasTags {
-				newTags = in.Post.Tags
-			} else {
-				newTags = txs.GetObjectTagNames(p.ID)
-			}
-			newTags = append(newTags, derived.Tags...)
-			txs.UpdateObjectTags(p.ID, newTags)
-			s.cache.Delete(fmt.Sprintf(`post_tags:%d`, in.Post.Id))
-		}
+
+		txs.updateObjectTags(p.ID, derived.Tags)
+		s.cache.Delete(fmt.Sprintf(`post_tags:%d`, in.Post.Id))
+
 		txs.updateLastPostTime(time.Now())
 		txs.deletePostContentCacheFor(p.ID)
 
