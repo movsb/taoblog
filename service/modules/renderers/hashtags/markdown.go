@@ -1,6 +1,9 @@
 package hashtags
 
 import (
+	"regexp"
+	"sync"
+
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -14,7 +17,7 @@ import (
 // resolve：把标签解析成链接。
 func New(resolve func(tag string) string, tags *[]string) any {
 	return &_HashTags{
-		resolve: resolve,
+		resolve: dropInvalid(resolve),
 		out:     tags,
 	}
 }
@@ -54,4 +57,29 @@ func (t *_HashTags) Transform(node *ast.Document, reader text.Reader, pc parser.
 		list = append(list, tag)
 	}
 	*t.out = list
+}
+
+var getRegexps = sync.OnceValue(func() []*regexp.Regexp {
+	return []*regexp.Regexp{
+		regexp.MustCompile(`^L\d+$`),
+		regexp.MustCompile(`^L\d+-L\d+`),
+	}
+})
+
+// 丢弃部分可能无效的#️⃣标签。
+//
+// 像 [main.go#L123](https://...) 这种链接的文本中，是允许存在各种内联元素的，
+// 包括但不限于 `code`, **加粗**，当然，#标签 也该是允许的。但是，把此处的 #L123 理解为
+// 标签明显不太合理。
+//
+// 所以目前仅仅是简单地丢弃部分我觉得无效的标签，遇到了就补充。
+func dropInvalid(resolver func(string) string) func(string) string {
+	return func(tag string) string {
+		for _, re := range getRegexps() {
+			if re.MatchString(tag) {
+				return ``
+			}
+		}
+		return resolver(tag)
+	}
 }
