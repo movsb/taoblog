@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -12,7 +11,7 @@ import (
 )
 
 func TestPreviewComment(t *testing.T) {
-	r := Serve(context.Background(), server.WithCreateFirstPost())
+	r := Serve(t.Context(), server.WithCreateFirstPost())
 	rsp, err := r.client.Blog.PreviewComment(r.guest, &proto.PreviewCommentRequest{
 		Markdown: `<a>`,
 		PostId:   1,
@@ -25,7 +24,7 @@ func TestPreviewComment(t *testing.T) {
 const fakeEmailAddress = `fake@twofei.com`
 
 func TestCreateComment(t *testing.T) {
-	r := Serve(context.Background(), server.WithCreateFirstPost())
+	r := Serve(t.Context(), server.WithCreateFirstPost())
 	rsp2, err := r.client.Blog.CreateComment(r.guest, &proto.Comment{
 		PostId:     1,
 		Author:     `昵称`,
@@ -39,7 +38,7 @@ func TestCreateComment(t *testing.T) {
 }
 
 func TestThrottler(t *testing.T) {
-	r := Serve(context.Background(),
+	r := Serve(t.Context(),
 		server.WithCreateFirstPost(),
 		server.WithRequestThrottler(request_throttler.New()),
 	)
@@ -76,7 +75,7 @@ func TestThrottler(t *testing.T) {
 
 // 评论的图片、链接的 scheme 不允许非法内容。
 func TestCommentInvalidLinkScheme(t *testing.T) {
-	r := Serve(context.Background(), server.WithCreateFirstPost())
+	r := Serve(t.Context(), server.WithCreateFirstPost())
 	contents := []string{
 		`<javascript:alert(1);>`,
 		`[](javascript:alert)`,
@@ -106,7 +105,7 @@ func TestCommentInvalidLinkScheme(t *testing.T) {
 
 // 测试递归删除评论。
 func TestDeleteCommentsRecursively(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	post := utils.Must1(r.client.Blog.CreatePost(r.admin, &proto.Post{
 		Type:       `post`,
 		SourceType: `markdown`,

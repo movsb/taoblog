@@ -364,13 +364,13 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:             cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			var (
-				postID = utils.MustToInt64(args[0])
-				userID = utils.MustToInt64(args[1])
+				postID = utils.Must1(strconv.Atoi(args[0]))
+				userID = utils.Must1(strconv.Atoi(args[1]))
 			)
 			utils.Must1(client.Blog.SetPostUserID(
 				client.Context(),
 				&proto.SetPostUserIDRequest{
-					PostId: postID,
+					PostId: int64(postID),
 					UserId: int32(userID),
 				},
 			))

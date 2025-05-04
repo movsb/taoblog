@@ -1,16 +1,13 @@
 package e2e_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
 )
 
 func TestOption(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	r := Serve(ctx)
+	r := Serve(t.Context())
 
 	opt := r.server.Main().Options()
 	opt.SetString(`s1`, `v1`)

@@ -7,6 +7,7 @@ import (
 	"io"
 	mr "math/rand"
 	"net/http"
+	"strings"
 )
 
 // 搁这套娃🪆🪆🪆？
@@ -118,6 +119,10 @@ func Map[T any, S []E, E any](s S, mapper func(e E) T) []T {
 		t = append(t, mapper(a))
 	}
 	return t
+}
+
+func Join[T any](arr []T, sep string) string {
+	return strings.Join(Map(arr, func(e T) string { return fmt.Sprint(e) }), sep)
 }
 
 // https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format/

@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -10,17 +9,17 @@ import (
 )
 
 func TestGetNonExistentPage(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	expectHTTPGetWithStatusCode(r, `/page-that-does-not-exist`, 404)
 }
 
 func TestGetNonExistentPost(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	expectHTTPGetWithStatusCode(r, `/2147483647/`, 404)
 }
 
 func TestNoAccessToPost(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	p := utils.Must1(r.client.Blog.CreatePost(r.admin, &proto.Post{
 		SourceType: `markdown`,
 		Source:     `# 测试私密文章。`,
@@ -30,7 +29,7 @@ func TestNoAccessToPost(t *testing.T) {
 }
 
 func TestModTime(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	expect304(r, `/style.css`)
 	expect304(r, `/admin/script.js`)
 }

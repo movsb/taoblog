@@ -19,3 +19,12 @@ func TestChainFunc(t *testing.T) {
 		t.Fatal(`not equal`)
 	}
 }
+
+func TestJoin(t *testing.T) {
+	if utils.Join([]string{`1`, `2`}, `.`) != `1.2` {
+		t.Error(`not equal`)
+	}
+	if utils.Join([]int{1, 2}, `::`) != `1::2` {
+		t.Error(`not equal`)
+	}
+}

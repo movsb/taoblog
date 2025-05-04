@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/metrics"
@@ -79,7 +80,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				)
 				return
 			}
-			id := utils.MustToInt64(matches[1])
+			id := int64(utils.Must1(strconv.Atoi(matches[1])))
 			if id <= 0 {
 				panic(status.Error(codes.NotFound, ""))
 			}
@@ -91,9 +92,9 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		if regexpFile.MatchString(path) {
 			matches := regexpFile.FindStringSubmatch(path)
-			postID := utils.MustToInt64(matches[1])
+			postID := utils.Must1(strconv.Atoi(matches[1]))
 			file := matches[2]
-			c.renderer.QueryFile(w, req, postID, file)
+			c.renderer.QueryFile(w, req, int64(postID), file)
 			return
 		}
 

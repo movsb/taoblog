@@ -46,7 +46,6 @@ func (s *Service) getObjectTagIDs(postID int64, alias bool) (ids []int64) {
 	return
 }
 
-// GetObjectTagNames ...
 func (s *Service) GetObjectTagNames(postID int64) []string {
 	query := `select tags.name from post_tags,tags where post_tags.post_id=? and post_tags.tag_id=tags.id`
 	args := []any{postID}
@@ -68,10 +67,10 @@ func (s *Service) GetObjectTagNames(postID int64) []string {
 }
 
 func (s *Service) getAliasTagsAll(ids []int64) []int64 {
-	sids := utils.JoinInts(ids, ",")
-	if sids == "" {
+	if len(ids) <= 0 {
 		return ids
 	}
+	sids := utils.Join(ids, `,`)
 
 	sql1 := `SELECT alias FROM tags WHERE id in (?)`
 	sql2 := `SELECT id FROM tags WHERE alias in (?)`
@@ -113,7 +112,6 @@ func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 	return ids
 }
 
-// UpdateObjectTags ...
 // 会自动去重。
 func (s *Service) UpdateObjectTags(pid int64, tags []string) {
 	slices.Sort(tags)

@@ -37,10 +37,7 @@ func listPostsEq(r *R, t *testing.T) func(p string, u context.Context, ownership
 }
 
 func TestListPosts(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	r := Serve(ctx)
+	r := Serve(t.Context())
 
 	create := func(user context.Context, p *proto.Post) *proto.Post {
 		return utils.Must1(r.client.Blog.CreatePost(user, p))
@@ -175,10 +172,7 @@ func TestListPosts(t *testing.T) {
 
 // 测试只可访问公开的文章。
 func TestSitemaps(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	r := Serve(ctx)
+	r := Serve(t.Context())
 
 	create := func(user context.Context, p *proto.Post) *proto.Post {
 		return utils.Must1(r.client.Blog.CreatePost(user, p))
@@ -212,10 +206,7 @@ func TestSitemaps(t *testing.T) {
 }
 
 func TestGetPost(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	r := Serve(ctx)
+	r := Serve(t.Context())
 
 	create := func(user context.Context, p *proto.Post) *proto.Post {
 		return utils.Must1(r.client.Blog.CreatePost(user, p))
@@ -276,12 +267,9 @@ func TestGetPost(t *testing.T) {
 
 // TODO 测试即便在添加了凭证的情况下仍然只返回公开文章。
 func TestRSS(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	fixed := time.FixedZone(`TEST`, 3600)
 
-	r := Serve(ctx, server.WithTimezone(fixed), server.WithRSS(true))
+	r := Serve(t.Context(), server.WithTimezone(fixed), server.WithRSS(true))
 
 	create := func(user context.Context, p *proto.Post) *proto.Post {
 		return utils.Must1(r.client.Blog.CreatePost(user, p))
@@ -389,7 +377,7 @@ func TestRSS(t *testing.T) {
 //
 // TODO 评论区登录后没有动态刷新。
 func TestIsolatedPostCache(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	privatePost := utils.Must1(r.client.Blog.CreatePost(r.user1,
 		&proto.Post{
 			Status: models.PostStatusPrivate,
@@ -435,7 +423,7 @@ func TestIsolatedPostCache(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	r := Serve(context.Background())
+	r := Serve(t.Context())
 	privatePost := utils.Must1(r.client.Blog.CreatePost(r.user1,
 		&proto.Post{
 			Status: models.PostStatusPrivate,
