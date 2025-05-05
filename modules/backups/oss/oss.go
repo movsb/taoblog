@@ -81,6 +81,18 @@ func NewR2(c *cc.OSSConfig) (Client, error) {
 }
 
 func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error {
+	// 先判断是否存在，避免重复上传。
+	// NOTE：不使用 PutObject 的 IfNoneMatch，看文档写的是判断文件不存在才上传，
+	// 无法区别文件变化。
+	_, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket:  &oss.bucketName,
+		Key:     &path,
+		IfMatch: aws.String(Digest(digest).ToETag(false)),
+	})
+	if err == nil {
+		log.Println(`oss.Upload:`, path, `already exists. Won't upload.`)
+		return nil
+	}
 	contentType = utils.IIF(contentType == "", `application/octet-stream`, contentType)
 	output, err := oss.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:        &oss.bucketName,
@@ -143,6 +155,16 @@ func NewAliyun(c *cc.OSSConfig) (Client, error) {
 }
 
 func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error {
+	// 先判断是否存在，避免重复上传。
+	_, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
+		Bucket:  &oss.bucketName,
+		Key:     &path,
+		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
+	})
+	if err == nil {
+		log.Println(`oss.Upload:`, path, `already exists. Won't upload.`)
+		return nil
+	}
 	contentType = utils.IIF(contentType == "", `application/octet-stream`, contentType)
 	output, err := oss.client.PutObject(ctx, &alioss.PutObjectRequest{
 		Bucket:        &oss.bucketName,
