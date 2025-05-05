@@ -29,11 +29,11 @@ type Client interface {
 func New(provider string, c *cc.OSSConfig) (Client, error) {
 	switch provider {
 	case `r2`:
-		return NewR2(c)
+		return NewS3(c, false)
 	case `aliyun`:
 		return NewAliyun(c)
 	case `minio`:
-		return NewR2(c)
+		return NewS3(c, true)
 	default:
 		return nil, fmt.Errorf(`未知存储服务：%s`, provider)
 	}
@@ -59,7 +59,7 @@ type S3Compatible struct {
 	bucketName string
 }
 
-func NewR2(c *cc.OSSConfig) (Client, error) {
+func NewS3(c *cc.OSSConfig, pathStyle bool) (Client, error) {
 	// https://developers.cloudflare.com/r2/examples/aws/aws-sdk-go/
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion("auto"),
@@ -72,6 +72,11 @@ func NewR2(c *cc.OSSConfig) (Client, error) {
 	}
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(c.Endpoint)
+		o.UsePathStyle = pathStyle
+		// o.ClientLogMode = aws.LogRequest
+		// o.Logger = logging.LoggerFunc(func(classification logging.Classification, format string, v ...interface{}) {
+		// 	log.Println(classification, fmt.Sprintf(format, v...))
+		// })
 	})
 	return &S3Compatible{
 		client:     client,
