@@ -39,8 +39,18 @@ func New(provider string, c *cc.OSSConfig) (Client, error) {
 	}
 }
 
-func digest2contentMD5(digest []byte) string {
-	return base64.StdEncoding.EncodeToString(digest)
+type Digest []byte
+
+func (d Digest) ToContentMD5() string {
+	return base64.StdEncoding.EncodeToString([]byte(d))
+}
+
+func (d Digest) ToETag(upperCase bool) string {
+	f := `"%x"`
+	if upperCase {
+		f = `"%X"`
+	}
+	return fmt.Sprintf(f, []byte(d))
 }
 
 type S3Compatible struct {
@@ -78,13 +88,12 @@ func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r 
 		Body:          r,
 		ContentType:   &contentType,
 		ContentLength: &size,
-		ContentMD5:    aws.String(digest2contentMD5(digest)),
+		ContentMD5:    aws.String(Digest(digest).ToContentMD5()),
 	})
 	if err != nil {
 		return err
 	}
-	_ = output
-	// log.Println(*output.ETag)
+	log.Println(`oss.Upload: ETag:`, path, *output.ETag)
 	return nil
 }
 
@@ -92,7 +101,7 @@ func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, md5 []byte
 	_, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: aws.String(digest2contentMD5(md5)),
+		IfMatch: aws.String(Digest(md5).ToETag(false)),
 	})
 	if err != nil {
 		// log.Println(err)
@@ -140,13 +149,16 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 		Key:           &path,
 		Body:          r,
 		ContentLength: &size,
-		ContentMD5:    alioss.Ptr(digest2contentMD5(digest)),
+		ContentMD5:    alioss.Ptr(Digest(digest).ToContentMD5()),
 		ContentType:   &contentType,
+		ProgressFn: func(increment, transferred, total int64) {
+			log.Printf(`oss.Upload: progress: %s (%.2f%%)`, path, float64(transferred)/float64(total)*100)
+		},
 	})
 	if err != nil {
 		return err
 	}
-	_ = output
+	log.Println(`oss.Upload: Content-MD5 & ETag:`, path, *output.ContentMD5, *output.ETag)
 	return nil
 }
 
@@ -154,7 +166,7 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) stri
 	output1, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(digest2contentMD5(md5)),
+		IfMatch: alioss.Ptr(Digest(md5).ToETag(true)),
 	})
 	if err != nil {
 		return ``
@@ -164,11 +176,12 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) stri
 	output, err := oss.client.Presign(ctx, &alioss.GetObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(digest2contentMD5(md5)),
+		IfMatch: alioss.Ptr(Digest(md5).ToETag(true)),
 	})
 	if err != nil {
 		log.Println(err)
 		return ``
 	}
+
 	return output.URL
 }
