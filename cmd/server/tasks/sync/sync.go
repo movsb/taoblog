@@ -148,11 +148,11 @@ func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) string {
 	var digest string
 
 	if post.Status == models.PostStatusPublic {
-		path = pathpkg.Join(`files`, fmt.Sprint(post.Id), path)
 		digest = file.Digest
+		path = pathpkg.Join(`files`, fmt.Sprint(post.Id), file.Path)
 	} else {
 		digest = file.Meta.Encryption.Digest
-		path = fmt.Sprintf(`objects/%d/%s`, post.Id, digest)
+		path = pathpkg.Join(`objects`, fmt.Sprint(post.Id), digest)
 	}
 
 	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest))
