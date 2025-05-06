@@ -84,7 +84,7 @@ type _RW struct {
 func (r *_RW) Writer() io.Writer {
 	return r.w
 }
-func (r *_RW) Close() (_ io.ReadSeeker, digest string, outErr error) {
+func (r *_RW) Close() (_ io.ReadSeeker, digest []byte, outErr error) {
 	defer utils.CatchAsError(&outErr)
 	for _, c := range r.closers {
 		utils.Must(c.Close())
@@ -93,7 +93,7 @@ func (r *_RW) Close() (_ io.ReadSeeker, digest string, outErr error) {
 	d := md5.New()
 	d.Write(r.b.Bytes())
 
-	return bytes.NewReader(r.b.Bytes()), fmt.Sprintf("%x", d.Sum(nil)), nil
+	return bytes.NewReader(r.b.Bytes()), d.Sum(nil), nil
 }
 
 func (b *Backup) createWriter() (_ *_RW, outErr error) {

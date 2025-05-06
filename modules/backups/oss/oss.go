@@ -41,6 +41,20 @@ func New(provider string, c *cc.OSSConfig) (Client, error) {
 
 type Digest []byte
 
+func NewDigestFromString(s string) Digest {
+	if len(s) != 32 {
+		panic(`bad digest:` + s)
+	}
+	var b []byte
+	if _, err := fmt.Sscanf(s, `%x`, &b); err != nil {
+		panic(`bad digest:` + s)
+	}
+	if len(b) != 16 {
+		panic(`bad digest:` + s)
+	}
+	return Digest(b)
+}
+
 func (d Digest) ToContentMD5() string {
 	return base64.StdEncoding.EncodeToString([]byte(d))
 }

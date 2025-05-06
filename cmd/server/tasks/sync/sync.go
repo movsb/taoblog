@@ -119,10 +119,15 @@ func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid
 		reader = bytes.NewReader(data)
 	}
 
-	if err := s.oss.Upload(ctx, fullPath, int64(size), reader, mime.TypeByExtension(pathpkg.Ext(fullPath)), digest); err != nil {
+	if err := s.oss.Upload(
+		ctx, fullPath, int64(size), reader,
+		mime.TypeByExtension(pathpkg.Ext(fullPath)),
+		oss.NewDigestFromString(digest),
+	); err != nil {
 		log.Println(`上传失败：`, fullPath, err)
 		return err
 	}
+
 	return nil
 }
 
@@ -138,5 +143,5 @@ func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) string {
 		path = fmt.Sprintf(`objects/%d/%s`, post.Id, digest)
 	}
 
-	return s.oss.GetFileURL(context.Background(), path, digest)
+	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest))
 }
