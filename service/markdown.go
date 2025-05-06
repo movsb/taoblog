@@ -66,6 +66,8 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		return ``, fmt.Errorf(`unknown source type`)
 	}
 
+	assets := s.OpenAsset(postId)
+
 	options := []renderers.Option2{}
 	if postId > 0 {
 		if link := s.GetLink(postId); link != s.plainLink(postId) {
@@ -75,7 +77,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
 
-		options = append(options, media_tags.New(s.OpenAsset(postId)))
+		options = append(options, media_tags.New(assets))
 		options = append(options, scoped_css.New(fmt.Sprintf(`article.post-%d .entry .content`, postId)))
 	}
 	if !secure {
@@ -91,10 +93,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		options = append(options, renderers.WithHtmlPrettifier(stringify.New()))
 	}
 	if co.UseAbsolutePaths {
-		options = append(options, rooted_path.New(s.OpenAsset(postId)))
+		options = append(options, rooted_path.New(assets))
 	}
 	options = append(options,
-		media_size.New(s.OpenAsset(postId),
+		media_size.New(assets,
 			media_size.WithLocalOnly(),
 			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
 		),
@@ -114,14 +116,14 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		list_markers.New(),
 		iframe.New(!co.NoIframePreview),
 		math.New(),
-		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
-		live_photo.New(ctx, s.OpenAsset(postId)),
+		exif.New(assets, s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
+		live_photo.New(ctx, assets),
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
 		extension.GFM,
 		footnotes.New(),
 		alerts.New(),
-		encrypted.New(s.OpenAsset(postId)),
+		encrypted.New(assets),
 
 		page_link.New(ctx, s.getPostTitle, nil),
 
