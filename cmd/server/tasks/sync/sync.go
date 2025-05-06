@@ -79,6 +79,18 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 		for _, spec := range specs {
 			utils.Must(s.upload(ctx, up, pfs, int(up.Id), spec.Path))
 		}
+		// 删除不再需要的文件：
+		// - 公开后，以前加密的
+		// - 私密后，以前公开的
+		if up.Status == models.PostStatusPublic {
+			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`objects/%d/`, up.Id))
+		} else {
+			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`files/%d/`, up.Id))
+		}
+	}
+
+	if len(updated) > 0 {
+		log.Println(`Finished uploading all.`)
 	}
 
 	utils.Must(s.options.SetInteger(`last`, now.Unix()))

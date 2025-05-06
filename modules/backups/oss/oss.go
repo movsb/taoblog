@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	cc "github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils"
 
@@ -24,6 +25,7 @@ import (
 type Client interface {
 	Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error
 	GetFileURL(ctx context.Context, path string, digest []byte) string
+	DeleteByPrefix(ctx context.Context, prefix string)
 }
 
 func New(provider string, c *cc.OSSConfig) (Client, error) {
@@ -150,6 +152,44 @@ func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, digest []b
 	return output.URL
 }
 
+func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
+	var toDelete []types.ObjectIdentifier
+
+	paginator := s3.NewListObjectsV2Paginator(oss.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(oss.bucketName),
+		Prefix: aws.String(prefix),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			log.Println("ListObjectsV2 error:", err)
+			return
+		}
+		for _, obj := range page.Contents {
+			toDelete = append(toDelete, types.ObjectIdentifier{Key: obj.Key})
+		}
+	}
+
+	if len(toDelete) == 0 {
+		log.Println("No objects to delete.")
+		return
+	}
+
+	// 批量删除会报缺少 ContentMD5，不知道怎么传。
+	for _, del := range toDelete {
+		_, err := oss.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(oss.bucketName),
+			Key:    del.Key,
+		})
+		if err != nil {
+			log.Println("DeleteObject error:", err)
+		} else {
+			log.Println(`DeleteObject:`, *del.Key)
+		}
+	}
+}
+
 type Aliyun struct {
 	client     *alioss.Client
 	bucketName string
@@ -226,4 +266,48 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte) s
 	}
 
 	return output.URL
+}
+
+func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
+	var toDelete []string
+
+	listInput := &alioss.ListObjectsRequest{
+		Bucket: &oss.bucketName,
+		Prefix: &prefix,
+	}
+
+	for {
+		resp, err := oss.client.ListObjects(ctx, listInput)
+		if err != nil {
+			log.Println("ListObjects error:", err)
+			return
+		}
+
+		for _, obj := range resp.Contents {
+			toDelete = append(toDelete, *obj.Key)
+		}
+
+		if !resp.IsTruncated || resp.NextMarker == nil {
+			break
+		}
+
+		listInput.Marker = resp.NextMarker
+	}
+
+	if len(toDelete) == 0 {
+		log.Println("No objects to delete.")
+		return
+	}
+
+	_, err := oss.client.DeleteMultipleObjects(ctx, &alioss.DeleteMultipleObjectsRequest{
+		Bucket: &oss.bucketName,
+		Objects: utils.Map(toDelete, func(key string) alioss.DeleteObject {
+			return alioss.DeleteObject{Key: &key}
+		}),
+	})
+	if err != nil {
+		log.Println("DeleteMultipleObjects error:", err)
+	} else {
+		log.Printf("Deleted %d objects with prefix %s\n", len(toDelete), prefix)
+	}
 }
