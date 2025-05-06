@@ -17,4 +17,5 @@ async function decodeFile(id) {
 	);
 	let obj = URL.createObjectURL(new Blob([decrypted]));
 	img.src = obj;
+	['data-id','data-key','data-nonce','onerror'].forEach(e => { img.removeAttribute(e); });
 }
