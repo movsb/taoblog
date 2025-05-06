@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 )
 
 // 用于对外隐藏存储结构。
@@ -30,9 +31,9 @@ func (Empty) ForPost(id int) (fs.FS, error) {
 }
 
 type PostFileHandler interface {
-	HandlePostFile(w http.ResponseWriter, r *http.Request, pid int, file string)
+	HandlePostFile(w http.ResponseWriter, r *http.Request, p *proto.Post, file string)
 }
 
 type FileURLGetter interface {
-	GetFileURL(pid int, path string, digest string) string
+	GetFileURL(post *proto.Post, file *models.File) string
 }

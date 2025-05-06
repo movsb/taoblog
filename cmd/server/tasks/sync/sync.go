@@ -1,8 +1,12 @@
 package server_sync_tasks
 
 import (
+	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"mime"
@@ -49,7 +53,7 @@ func (s *SyncToOSS) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Minute * 1):
+		case <-time.After(time.Second * 5):
 			if err := s.run(ctx); err != nil {
 				log.Println(err)
 			}
@@ -73,33 +77,83 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 		pfs := utils.Must1(s.pfs.ForPost(int(up.Id)))
 		specs := utils.Must1(utils.ListFiles(pfs))
 		for _, spec := range specs {
-			utils.Must(s.upload(ctx, pfs, int(up.Id), spec.Path))
+			utils.Must(s.upload(ctx, up, pfs, int(up.Id), spec.Path))
 		}
+		// 删除不再需要的文件：
+		// - 公开后，以前加密的
+		// - 私密后，以前公开的
+		if up.Status == models.PostStatusPublic {
+			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`objects/%d/`, up.Id))
+		} else {
+			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`files/%d/`, up.Id))
+		}
+	}
+
+	if len(updated) > 0 {
+		log.Println(`Finished uploading all.`)
 	}
 
 	utils.Must(s.options.SetInteger(`last`, now.Unix()))
 	return
 }
 
-func (s *SyncToOSS) upload(ctx context.Context, pfs fs.FS, pid int, path string) error {
+func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid int, path string) error {
 	fp := utils.Must1(pfs.Open(path))
 	defer fp.Close()
-	// files/文章编号/文件路径，没有前缀 /。
-	fullPath := pathpkg.Join(`files`, fmt.Sprint(pid), path)
-	log.Println(`正在上传文件到对象存储:`, fullPath)
 	info := utils.Must1(fp.Stat())
-	var di []byte
-	fmt.Sscanf(info.Sys().(*models.File).Digest, `%x`, &di)
-	if err := s.oss.Upload(ctx, fullPath, info.Size(), fp, mime.TypeByExtension(pathpkg.Ext(fullPath)), di); err != nil {
+	sysFile := info.Sys().(*models.File)
+
+	log.Println(`正在上传文件到对象存储:`, pid, path)
+
+	var digest string
+	var fullPath string
+	var size int
+	var reader io.Reader
+
+	if post.Status == models.PostStatusPublic {
+		// files/文章编号/文件路径，没有前缀 /。
+		fullPath = pathpkg.Join(`files`, fmt.Sprint(pid), path)
+		digest = sysFile.Digest
+		size = int(info.Size())
+		reader = fp
+	} else {
+		digest = sysFile.Meta.Encryption.Digest
+		fullPath = fmt.Sprintf(`objects/%d/%s`, pid, digest)
+		size = sysFile.Meta.Encryption.Size
+
+		aes := utils.Must1(aes.NewCipher(sysFile.Meta.Encryption.Key))
+		aead := utils.Must1(cipher.NewGCM(aes))
+		data := make([]byte, 0, size)
+		data = aead.Seal(data, sysFile.Meta.Encryption.Nonce, utils.Must1(io.ReadAll(fp)), nil)
+		if len(data) != size {
+			panic(`加密数据长度不一样`)
+		}
+		reader = bytes.NewReader(data)
+	}
+
+	if err := s.oss.Upload(
+		ctx, fullPath, int64(size), reader,
+		mime.TypeByExtension(pathpkg.Ext(fullPath)),
+		oss.NewDigestFromString(digest),
+	); err != nil {
 		log.Println(`上传失败：`, fullPath, err)
 		return err
 	}
+
 	return nil
 }
 
-func (s *SyncToOSS) GetFileURL(pid int, path string, digest string) string {
-	fullPath := pathpkg.Join(`files`, fmt.Sprint(pid), path)
-	var di []byte
-	fmt.Sscanf(digest, `%x`, &di)
-	return s.oss.GetFileURL(context.Background(), fullPath, di)
+func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) string {
+	var path string
+	var digest string
+
+	if post.Status == models.PostStatusPublic {
+		digest = file.Digest
+		path = pathpkg.Join(`files`, fmt.Sprint(post.Id), file.Path)
+	} else {
+		digest = file.Meta.Encryption.Digest
+		path = pathpkg.Join(`objects`, fmt.Sprint(post.Id), digest)
+	}
+
+	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest))
 }

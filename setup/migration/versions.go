@@ -679,3 +679,24 @@ func v52(posts, files, cache *taorm.DB) {
 		log.Println(`文件摘要：`, file.ID, x)
 	}
 }
+
+type v53File struct {
+	Data string
+	Meta models.FileMeta
+}
+
+func (v53File) TableName() string {
+	return `files`
+}
+
+func v53(posts, files, cache *taorm.DB) {
+	var list []struct{ ID int }
+	files.Raw(`SELECT id FROM files`).MustFind(&list)
+	for _, file := range list {
+		var model v53File
+		files.Raw(`SELECT meta,data FROM files WHERE id=?`, file.ID).MustFind(&model)
+		models.Encrypt(&model.Meta.Encryption, []byte(model.Data))
+		files.MustExec(`UPDATE files SET meta=? WHERE id=?`, model.Meta, file.ID)
+		log.Println(`文件摘要：`, file.ID, model.Meta.Encryption)
+	}
+}

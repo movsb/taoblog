@@ -1,6 +1,10 @@
 package models
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/md5"
+	"crypto/rand"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -9,6 +13,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -34,6 +39,35 @@ type FileMeta struct {
 	// 如果是图片，则包含宽高。
 	// 只能是空值。上传的时候浏览器计算。
 	Width, Height int
+
+	Encryption FileEncryptionMeta
+}
+
+type FileEncryptionMeta struct {
+	Key    []byte // 加密密钥（32字节）
+	Nonce  []byte // 初始化向量（12字节）
+	Digest string // 加密后的摘要
+	Size   int    // 加密后的大小
+}
+
+func Encrypt(m *FileEncryptionMeta, data []byte) {
+	m.Key = make([]byte, 32)
+	m.Nonce = make([]byte, 12)
+	rand.Read(m.Key)
+	rand.Read(m.Nonce)
+	aes := utils.Must1(aes.NewCipher(m.Key[:]))
+	aead := utils.Must1(cipher.NewGCM(aes))
+	buf := make([]byte, 0, len(data)+aead.Overhead())
+	encrypted := aead.Seal(buf, m.Nonce[:], data, nil)
+	m.Size = len(encrypted)
+	m.Digest = Digest(encrypted)
+}
+
+func Digest(data []byte) string {
+	d := md5.New()
+	d.Write(data)
+	s := d.Sum(nil)
+	return fmt.Sprintf(`%x`, s)
 }
 
 func (m FileMeta) ToProto() *proto.FileSpec_Meta {

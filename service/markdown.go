@@ -12,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/echarts"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
+	"github.com/movsb/taoblog/service/modules/renderers/encrypted"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/footnotes"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
@@ -51,7 +52,7 @@ import (
 //
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
 // 前者用请求身份，后者不限身份。
-func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
+func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions, publicContent bool) (string, error) {
 	var tr renderers.Renderer
 	switch sourceType {
 	case `html`:
@@ -65,6 +66,8 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		return ``, fmt.Errorf(`unknown source type`)
 	}
 
+	assets := s.OpenAsset(postId)
+
 	options := []renderers.Option2{}
 	if postId > 0 {
 		if link := s.GetLink(postId); link != s.plainLink(postId) {
@@ -74,7 +77,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
 
-		options = append(options, media_tags.New(s.OpenAsset(postId)))
+		options = append(options, media_tags.New(assets))
 		options = append(options, scoped_css.New(fmt.Sprintf(`article.post-%d .entry .content`, postId)))
 	}
 	if !secure {
@@ -90,10 +93,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		options = append(options, renderers.WithHtmlPrettifier(stringify.New()))
 	}
 	if co.UseAbsolutePaths {
-		options = append(options, rooted_path.New(s.OpenAsset(postId)))
+		options = append(options, rooted_path.New(assets))
 	}
 	options = append(options,
-		media_size.New(s.OpenAsset(postId),
+		media_size.New(assets,
 			media_size.WithLocalOnly(),
 			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
 		),
@@ -113,8 +116,8 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		list_markers.New(),
 		iframe.New(!co.NoIframePreview),
 		math.New(),
-		exif.New(s.OpenAsset(postId), s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
-		live_photo.New(ctx, s.OpenAsset(postId)),
+		exif.New(assets, s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
+		live_photo.New(ctx, assets),
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
 		extension.GFM,
@@ -139,6 +142,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
 		link_target.New(link_target.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 	)
+
+	if !publicContent {
+		options = append(options, encrypted.New(assets))
+	}
 
 	tr = renderers.NewMarkdown(options...)
 	rendered, err := tr.Render(source)

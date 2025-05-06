@@ -51,6 +51,10 @@ type _PostContentCacheKey struct {
 	// NOTE 由于增加了用户系统，不同用于看不同用户的文章时应该有不同的缓存。
 	// 见隔离测试：TestIsolatedPostCache
 	UserID int
+
+	// 公开与否时渲染不同，比如加密选项。
+	// NOTE：评论的此状态=文章状态，因为评论目前没有自己的存储。
+	Public bool
 }
 
 func (s *Service) posts() *taorm.Stmt {
@@ -217,18 +221,20 @@ func (f _OpenPostFile) Open(name string) (fs.File, error) {
 	return fs.Open(after)
 }
 
-func (s *Service) getPostContentCached(ctx context.Context, id int64, co *proto.PostContentOptions) (string, error) {
+func (s *Service) getPostContentCached(ctx context.Context, p *proto.Post, co *proto.PostContentOptions) (string, error) {
 	ac := auth.Context(ctx)
+	id := p.Id
 	key := _PostContentCacheKey{
 		ID:      id,
 		Options: co.String(),
 		UserID:  int(ac.User.ID),
+		Public:  p.Status == models.PostStatusPublic,
 	}
 	content, err, _ := s.postContentCaches.GetOrLoad(ctx, key,
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			var p models.Post
 			s.posts().Where("id = ?", id).MustFind(&p)
-			content, err := s.renderMarkdown(ctx, true, id, 0, p.SourceType, p.Source, p.Metas, co)
+			content, err := s.renderMarkdown(ctx, true, id, 0, p.SourceType, p.Source, p.Metas, co, key.Public)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -303,12 +309,14 @@ func (s *Service) DropAllPostAndCommentCache() {
 }
 
 func (s *Service) deletePostContentCacheFor(id int64) {
+	s.postFullCaches.Delete(id)
 	s.postCaches.Delete(id, func(second _PostContentCacheKey) {
 		s.postContentCaches.Delete(second)
 		log.Println(`删除文章缓存：`, second)
 	})
 	s.cache.Delete(fmt.Sprintf(`post_source:%d`, id))
 	s.cache.Delete(fmt.Sprintf(`post_toc:%d`, id))
+	s.cache.Delete(fmt.Sprintf(`post_tags:%d`, id))
 }
 
 func withEmojiFilter(node *goquery.Selection) bool {
@@ -545,9 +553,12 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	return p.ToProto(s.setPostExtraFields(ctx, nil))
 }
 
-func (s *Service) getPost(id int) (*models.Post, error) {
-	var post models.Post
-	return &post, s.tdb.Where(`id=?`, id).Find(&post)
+func (s *Service) getPostCached(ctx context.Context, id int) (*models.Post, error) {
+	p, err, _ := s.postFullCaches.GetOrLoad(ctx, int64(id), func(ctx context.Context, i int64) (*models.Post, time.Duration, error) {
+		var post models.Post
+		return &post, time.Hour, s.tdb.Where(`id=?`, id).Find(&post)
+	})
+	return p, err
 }
 
 func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
@@ -568,7 +579,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	}
 
 	// TODO：放事务中。
-	oldPost, err := s.getPost(int(in.Post.Id))
+	oldPost, err := s.getPostCached(ctx, int(in.Post.Id))
 	if err != nil {
 		return nil, err
 	}
@@ -680,12 +691,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		}
 
 		txs.updateObjectTags(p.ID, derived.Tags)
-		s.cache.Delete(fmt.Sprintf(`post_tags:%d`, in.Post.Id))
-
-		txs.updateLastPostTime(time.Now())
-		txs.deletePostContentCacheFor(p.ID)
-
 		txs.updateReferences(ctx, int32(p.ID), &oldPost.Citations, derived.References)
+		txs.updateLastPostTime(time.Now())
+
+		txs.deletePostContentCacheFor(p.ID)
 
 		return nil
 	})
@@ -795,7 +804,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	auth.MustNotBeGuest(ctx)
 
-	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewPost))
+	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewPost), s.isPostPublic(ctx, int(in.Id)))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -850,7 +859,7 @@ func (s *Service) updateReferences(ctx context.Context, self int32, refs *models
 		if ok {
 			return p
 		}
-		p, err := s.getPost(int(pid))
+		p, err := s.getPostCached(ctx, int(pid))
 		if err != nil {
 			if taorm.IsNotFoundError(err) {
 				return nil
@@ -935,7 +944,7 @@ func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models
 	}
 
 	for _, ref := range refs.Posts.To {
-		p, err := s.getPost(int(ref))
+		p, err := s.getPostCached(ctx, int(ref))
 		if err != nil {
 			if taorm.IsNotFoundError(err) {
 				continue
@@ -956,7 +965,7 @@ func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models
 	}
 
 	for _, ref := range refs.Posts.From {
-		p, err := s.getPost(int(ref))
+		p, err := s.getPostCached(ctx, int(ref))
 		if err != nil {
 			if taorm.IsNotFoundError(err) {
 				continue
@@ -1009,6 +1018,9 @@ func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequ
 		m[`last_commented_at`] = now
 
 		s.tdb.Model(&post).MustUpdateMap(m)
+
+		s.deletePostContentCacheFor(post.ID)
+
 		return nil
 	})
 	return &proto.SetPostStatusResponse{}, nil
@@ -1128,7 +1140,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 		}
 
 		if opts.ContentOptions.WithContent {
-			content, err := s.getPostContentCached(ctx, p.Id, opts.ContentOptions)
+			content, err := s.getPostContentCached(ctx, p, opts.ContentOptions)
 			if err != nil {
 				return err
 			}
@@ -1142,7 +1154,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 		if p.Type == `tweet` {
 			switch p.Title {
 			case ``, `Untitled`, models.Untitled:
-				content, err := s.getPostContentCached(ctx, p.Id, co.For(co.GenerateTweetTitle))
+				content, err := s.getPostContentCached(ctx, p, co.For(co.GenerateTweetTitle))
 				if err != nil {
 					return err
 				}
@@ -1493,7 +1505,7 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 	s.MustBeAdmin(ctx)
 
 	s.MustTxCallNoError(func(s *Service) {
-		p := utils.Must1(s.getPost(int(in.PostId)))
+		p := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
 		if p.UserID == in.UserId {
 			panic(`当前用户已是文章作者，无需转移。`)
 		}
@@ -1551,4 +1563,13 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 	s.updatePostMetadataTime(in.PostId, time.Now())
 
 	return &proto.SetPostUserIDResponse{}, nil
+}
+
+func (s *Service) isPostPublic(ctx context.Context, pid int) bool {
+	p, err := s.getPostCached(ctx, pid)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	return p.Status == models.PostStatusPublic
 }

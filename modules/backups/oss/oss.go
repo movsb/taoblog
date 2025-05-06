@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	cc "github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils"
 
@@ -23,7 +24,8 @@ import (
 
 type Client interface {
 	Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error
-	GetFileURL(ctx context.Context, path string, di []byte) string
+	GetFileURL(ctx context.Context, path string, digest []byte) string
+	DeleteByPrefix(ctx context.Context, prefix string)
 }
 
 func New(provider string, c *cc.OSSConfig) (Client, error) {
@@ -40,6 +42,20 @@ func New(provider string, c *cc.OSSConfig) (Client, error) {
 }
 
 type Digest []byte
+
+func NewDigestFromString(s string) Digest {
+	if len(s) != 32 {
+		panic(`bad digest:` + s)
+	}
+	var b []byte
+	if _, err := fmt.Sscanf(s, `%x`, &b); err != nil {
+		panic(`bad digest:` + s)
+	}
+	if len(b) != 16 {
+		panic(`bad digest:` + s)
+	}
+	return Digest(b)
+}
 
 func (d Digest) ToContentMD5() string {
 	return base64.StdEncoding.EncodeToString([]byte(d))
@@ -114,16 +130,17 @@ func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r 
 	return nil
 }
 
-func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, md5 []byte) string {
-	_, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
+func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, digest []byte) string {
+	headOutput, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: aws.String(Digest(md5).ToETag(false)),
+		IfMatch: aws.String(Digest(digest).ToETag(false)),
 	})
 	if err != nil {
 		// log.Println(err)
 		return ``
 	}
+	_ = headOutput
 	output, err := oss.presign.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: &oss.bucketName,
 		Key:    &path,
@@ -133,6 +150,44 @@ func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, md5 []byte
 		return ``
 	}
 	return output.URL
+}
+
+func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
+	var toDelete []types.ObjectIdentifier
+
+	paginator := s3.NewListObjectsV2Paginator(oss.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(oss.bucketName),
+		Prefix: aws.String(prefix),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			log.Println("ListObjectsV2 error:", err)
+			return
+		}
+		for _, obj := range page.Contents {
+			toDelete = append(toDelete, types.ObjectIdentifier{Key: obj.Key})
+		}
+	}
+
+	if len(toDelete) == 0 {
+		log.Println("No objects to delete.")
+		return
+	}
+
+	// 批量删除会报缺少 ContentMD5，不知道怎么传。
+	for _, del := range toDelete {
+		_, err := oss.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(oss.bucketName),
+			Key:    del.Key,
+		})
+		if err != nil {
+			log.Println("DeleteObject error:", err)
+		} else {
+			log.Println(`DeleteObject:`, *del.Key)
+		}
+	}
 }
 
 type Aliyun struct {
@@ -189,11 +244,11 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 	return nil
 }
 
-func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) string {
+func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte) string {
 	output1, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(md5).ToETag(true)),
+		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
 	})
 	if err != nil {
 		return ``
@@ -203,7 +258,7 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) stri
 	output, err := oss.client.Presign(ctx, &alioss.GetObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(md5).ToETag(true)),
+		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
 	})
 	if err != nil {
 		log.Println(err)
@@ -211,4 +266,48 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, md5 []byte) stri
 	}
 
 	return output.URL
+}
+
+func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
+	var toDelete []string
+
+	listInput := &alioss.ListObjectsRequest{
+		Bucket: &oss.bucketName,
+		Prefix: &prefix,
+	}
+
+	for {
+		resp, err := oss.client.ListObjects(ctx, listInput)
+		if err != nil {
+			log.Println("ListObjects error:", err)
+			return
+		}
+
+		for _, obj := range resp.Contents {
+			toDelete = append(toDelete, *obj.Key)
+		}
+
+		if !resp.IsTruncated || resp.NextMarker == nil {
+			break
+		}
+
+		listInput.Marker = resp.NextMarker
+	}
+
+	if len(toDelete) == 0 {
+		log.Println("No objects to delete.")
+		return
+	}
+
+	_, err := oss.client.DeleteMultipleObjects(ctx, &alioss.DeleteMultipleObjectsRequest{
+		Bucket: &oss.bucketName,
+		Objects: utils.Map(toDelete, func(key string) alioss.DeleteObject {
+			return alioss.DeleteObject{Key: &key}
+		}),
+	})
+	if err != nil {
+		log.Println("DeleteMultipleObjects error:", err)
+	} else {
+		log.Printf("Deleted %d objects with prefix %s\n", len(toDelete), prefix)
+	}
 }
