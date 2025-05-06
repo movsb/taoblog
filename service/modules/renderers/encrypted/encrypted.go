@@ -2,7 +2,7 @@ package encrypted
 
 import (
 	"embed"
-	"encoding/json"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
@@ -57,7 +57,8 @@ func (m *_Encrypted) TransformHtml(doc *goquery.Document) error {
 
 		random := utils.RandomString()
 		s.SetAttr(`data-id`, random)
-		s.SetAttr(`data-encryption`, string(utils.Must1(json.Marshal(sys.Meta.Encryption))))
+		s.SetAttr(`data-key`, base64.StdEncoding.EncodeToString(sys.Meta.Encryption.Key))
+		s.SetAttr(`data-nonce`, base64.StdEncoding.EncodeToString(sys.Meta.Encryption.Nonce))
 		s.SetAttr(`onerror`, fmt.Sprintf(`javascript:decodeFile("%s")`, random))
 	})
 	return nil
