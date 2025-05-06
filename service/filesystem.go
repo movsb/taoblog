@@ -130,7 +130,7 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 	defer utils.CatchAsError(&outErr)
 
 	ac := auth.MustNotBeGuest(ctx)
-	po := utils.Must1(s.getPost(int(in.PostId)))
+	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
 	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		panic(noPerm)
 	}

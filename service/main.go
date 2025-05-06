@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
@@ -105,6 +106,7 @@ type Service struct {
 	// 所以存在一篇文章有多个缓存的问题。所以后面单独加了一个缓存来记录一篇文章对应了哪些
 	// 与之相关的内容缓存。创建/删除内容缓存时，同步更新两个缓存。
 	// TODO 我是不是应该直接缓存 *Post？不过好像也挺好改的。
+	postFullCaches       *lru.TTLCache[int64, *models.Post]
 	postContentCaches    *lru.TTLCache[_PostContentCacheKey, string]
 	postCaches           *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
@@ -162,6 +164,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		fileCache: cache.NewFileCache(ctx, migration.InitCache(``)),
 		fileURLs:  lru.NewLRUCache[_FileURLCacheKey, _FileURLCacheValue](1024),
 
+		postFullCaches:       lru.NewTTLCache[int64, *models.Post](1024),
 		postContentCaches:    lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](10240),

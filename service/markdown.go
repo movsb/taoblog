@@ -52,7 +52,7 @@ import (
 //
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
 // 前者用请求身份，后者不限身份。
-func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions) (string, error) {
+func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions, publicContent bool) (string, error) {
 	var tr renderers.Renderer
 	switch sourceType {
 	case `html`:
@@ -123,7 +123,6 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		extension.GFM,
 		footnotes.New(),
 		alerts.New(),
-		encrypted.New(assets),
 
 		page_link.New(ctx, s.getPostTitle, nil),
 
@@ -143,6 +142,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
 		link_target.New(link_target.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
 	)
+
+	if !publicContent {
+		options = append(options, encrypted.New(assets))
+	}
 
 	tr = renderers.NewMarkdown(options...)
 	rendered, err := tr.Render(source)
