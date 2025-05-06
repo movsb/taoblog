@@ -39,7 +39,7 @@ func New(web gold_utils.WebFileSystem) *_Encrypted {
 }
 
 func (m *_Encrypted) TransformHtml(doc *goquery.Document) error {
-	doc.Find(`img`).Each(func(i int, s *goquery.Selection) {
+	doc.Find(`img,video`).Each(func(i int, s *goquery.Selection) {
 		src := s.AttrOr(`src`, ``)
 		if src == `` {
 			return
