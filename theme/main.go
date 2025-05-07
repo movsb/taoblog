@@ -9,8 +9,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
@@ -23,7 +21,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
-	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/movsb/taoblog/theme/modules/sass"
 	"github.com/movsb/taoblog/theme/share/variables"
@@ -48,13 +45,12 @@ type Theme struct {
 	searcher proto.SearchServer
 	auth     *auth.Auth
 
-	postFileHandler  theme_fs.PostFileHandler
 	templates        *utils.TemplateLoader
 	specialMux       *http.ServeMux
 	incViewDebouncer *_IncViewDebouncer
 }
 
-func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth, postFileHandler theme_fs.PostFileHandler) *Theme {
+func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth) *Theme {
 	var rootFS, tmplFS fs.FS
 
 	if devMode {
@@ -80,8 +76,7 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 		searcher: searcher,
 		auth:     auth,
 
-		postFileHandler: postFileHandler,
-		specialMux:      http.NewServeMux(),
+		specialMux: http.NewServeMux(),
 	}
 
 	t.incViewDebouncer = NewIncViewDebouncer(ctx, impl.IncrementViewCount)
@@ -336,30 +331,6 @@ func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *prot
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {
 	d := data.NewDataForTag(req.Context(), t.impl, tags)
 	t.executeTemplate(`tag.html`, w, d)
-}
-
-// 注意：file 不以 / 开头。
-// TODO 添加权限测试用例。
-func (t *Theme) QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string) {
-	// 权限检查
-	p := utils.Must1(t.service.GetPost(req.Context(), &proto.GetPostRequest{Id: int32(postID)}))
-
-	// 所有人禁止访问特殊文件：以 . 或者 _ 开头的文件或目录。
-	// TODO：以及 config.yaml | README.md
-	switch file[0] {
-	case '.', '_':
-		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
-	}
-	switch path.Base(file)[0] {
-	case '.', '_':
-		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
-	}
-	// 为了不区分大小写，所以没有用 switch。
-	if strings.EqualFold(file, `config.yml`) || strings.EqualFold(file, `config.yaml`) || strings.EqualFold(file, `README.md`) {
-		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
-	}
-
-	t.postFileHandler.HandlePostFile(w, req, p, file)
 }
 
 func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool {

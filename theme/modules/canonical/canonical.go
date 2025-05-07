@@ -13,31 +13,33 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Renderer ...
 type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e any) bool
 	QueryHome(w http.ResponseWriter, req *http.Request) error
 	QueryByID(w http.ResponseWriter, req *http.Request, id int64)
-	QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
 	QueryByTags(w http.ResponseWriter, req *http.Request, tags []string)
 	QueryByPage(w http.ResponseWriter, req *http.Request, path string) (int64, error)
 	QueryStatic(w http.ResponseWriter, req *http.Request, file string)
 	QuerySpecial(w http.ResponseWriter, req *http.Request, file string) bool
 }
 
-// Canonical ...
-type Canonical struct {
-	mux      *http.ServeMux
-	renderer Renderer
-	mr       *metrics.Registry
+// 文件服务接口。
+type FileServer interface {
+	// file: 形如 `123/abc.txt`。不包含最前面的 `/`。
+	ServeFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
 }
 
-// New ...
-func New(renderer Renderer, mr *metrics.Registry) *Canonical {
+type Canonical struct {
+	renderer   Renderer
+	fileServer FileServer
+	mr         *metrics.Registry
+}
+
+func New(renderer Renderer, fileServer FileServer, mr *metrics.Registry) *Canonical {
 	c := &Canonical{
-		mux:      http.NewServeMux(),
-		renderer: renderer,
-		mr:       mr,
+		renderer:   renderer,
+		fileServer: fileServer,
+		mr:         mr,
 	}
 	return c
 }
@@ -89,7 +91,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpFile.FindStringSubmatch(path)
 			postID := utils.Must1(strconv.Atoi(matches[1]))
 			file := matches[2]
-			c.renderer.QueryFile(w, req, int64(postID), file)
+			c.fileServer.ServeFile(w, req, int64(postID), file)
 			return
 		}
 

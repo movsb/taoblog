@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
@@ -146,10 +148,26 @@ func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
 	s.fileURLGetters.Store(name, g)
 }
 
-func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, post *proto.Post, path string) {
-	handled := false
+func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64, file string) {
+	// 权限检查
+	p := utils.Must1(s.GetPost(r.Context(), &proto.GetPostRequest{Id: int32(postID)}))
 
-	pfs := utils.Must1(s.postDataFS.ForPost(int(post.Id)))
+	// 所有人禁止访问特殊文件：以 . 或者 _ 开头的文件或目录。
+	// TODO：以及 config.yaml | README.md
+	switch file[0] {
+	case '.', '_':
+		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	}
+	switch path.Base(file)[0] {
+	case '.', '_':
+		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	}
+	// 为了不区分大小写，所以没有用 switch。
+	if strings.EqualFold(file, `config.yml`) || strings.EqualFold(file, `config.yaml`) || strings.EqualFold(file, `README.md`) {
+		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	}
+
+	pfs := utils.Must1(s.postDataFS.ForPost(int(postID)))
 
 	getterCount := 0
 	// 神经，居然不能获取大小。
@@ -161,7 +179,7 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, post *p
 	ac := auth.Context(r.Context())
 	// 测试阶段，只给登录用户使用。
 	if !ac.User.IsGuest() && getterCount > 0 {
-		key := _FileURLCacheKey{Pid: int(post.Id), Status: post.Status, Path: path}
+		key := _FileURLCacheKey{Pid: int(p.Id), Status: p.Status, Path: file}
 		if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
 			http.Redirect(w, r, val.URL, http.StatusFound)
 			return
@@ -170,7 +188,7 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, post *p
 		s.fileURLs.Delete(key)
 
 		val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (_FileURLCacheValue, error) {
-			fp, err := pfs.Open(path)
+			fp, err := pfs.Open(file)
 			if err != nil {
 				return _FileURLCacheValue{}, err
 			}
@@ -181,7 +199,7 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, post *p
 			var url string
 
 			s.fileURLGetters.Range(func(key, value any) bool {
-				if u := value.(theme_fs.FileURLGetter).GetFileURL(post, file); u != `` {
+				if u := value.(theme_fs.FileURLGetter).GetFileURL(p, file); u != `` {
 					url = u
 					return false
 				}
@@ -201,9 +219,7 @@ func (s *Service) HandlePostFile(w http.ResponseWriter, r *http.Request, post *p
 		}
 	}
 
-	if !handled {
-		http.ServeFileFS(w, r, pfs, path)
-	}
+	http.ServeFileFS(w, r, pfs, file)
 }
 
 type _FileURLCacheKey struct {

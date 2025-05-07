@@ -254,8 +254,8 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
 
-	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth, s.Main())
-	canon := canonical.New(theme, s.metrics)
+	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth)
+	canon := canonical.New(theme, theService, s.metrics)
 	mux.Handle(`/`, canon)
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
