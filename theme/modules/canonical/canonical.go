@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -17,7 +16,6 @@ import (
 // Renderer ...
 type Renderer interface {
 	Exception(w http.ResponseWriter, req *http.Request, e any) bool
-	ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool
 	QueryHome(w http.ResponseWriter, req *http.Request) error
 	QueryByID(w http.ResponseWriter, req *http.Request, id int64)
 	QueryFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
@@ -62,9 +60,6 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method == http.MethodGet || req.Method == http.MethodHead || req.Method == http.MethodOptions {
 		if regexpHome.MatchString(path) {
-			if c.renderer.ProcessHomeQueries(w, req, req.URL.Query()) {
-				return
-			}
 			c.renderer.QueryHome(w, req)
 			c.mr.CountHome()
 			c.mr.UserAgent(req.UserAgent())

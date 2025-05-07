@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -191,10 +190,6 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 			return true
 		}
 	}
-	return false
-}
-
-func (t *Theme) ProcessHomeQueries(w http.ResponseWriter, req *http.Request, query url.Values) bool {
 	return false
 }
 
