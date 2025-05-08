@@ -75,7 +75,8 @@ type Service struct {
 
 	// 已经注册的外部文件存储。
 	fileURLGetters sync.Map
-	fileURLs       *lru.LRUCache[_FileURLCacheKey, _FileURLCacheValue]
+	// 防止每个请求总是生成不同的 URL。
+	fileURLs *lru.LRUCache[_FileURLCacheKey, _FileURLCacheValue]
 
 	db   *sql.DB
 	tdb  *taorm.DB

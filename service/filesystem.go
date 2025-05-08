@@ -182,8 +182,15 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 	if !ac.User.IsGuest() && getterCount > 0 {
 		key := _FileURLCacheKey{Pid: int(p.Id), Status: p.Status, Path: file}
 		if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
-			http.Redirect(w, r, val.URL, http.StatusFound)
-			return
+			// 更改权限会导致文件立即失效，所有总是校验。
+			rsp, err := http.Head(val.URL)
+			if err == nil {
+				defer rsp.Body.Close()
+				if rsp.StatusCode == 200 {
+					http.Redirect(w, r, val.URL, http.StatusFound)
+					return
+				}
+			}
 		}
 
 		s.fileURLs.Delete(key)
