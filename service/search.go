@@ -19,7 +19,7 @@ func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest)
 		s.onceInitSearcher.Do(func() {
 			ch := make(chan struct{})
 			go s.runSearchEngine(s.ctx, ch)
-			for i := 0; i < 10; i++ {
+			for i := range 30 {
 				select {
 				case <-time.After(time.Second):
 					log.Println(`等待搜索引擎初始化完成：`, i+1)
