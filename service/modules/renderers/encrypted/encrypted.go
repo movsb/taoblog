@@ -59,7 +59,7 @@ func (m *_Encrypted) TransformHtml(doc *goquery.Document) error {
 		s.SetAttr(`data-id`, random)
 		s.SetAttr(`data-key`, base64.StdEncoding.EncodeToString(sys.Meta.Encryption.Key))
 		s.SetAttr(`data-nonce`, base64.StdEncoding.EncodeToString(sys.Meta.Encryption.Nonce))
-		s.SetAttr(`onerror`, fmt.Sprintf(`javascript:decodeFile("%s")`, random))
+		s.SetAttr(`onerror`, fmt.Sprintf(`decodeFile("%s")`, random))
 	})
 	return nil
 }
