@@ -101,6 +101,8 @@ func NewS3(c *cc.OSSConfig, pathStyle bool) (Client, error) {
 	}, nil
 }
 
+const privateCache = `private, no-cache, must-revalidate`
+
 func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error {
 	// 先判断是否存在，避免重复上传。
 	// NOTE：不使用 PutObject 的 IfNoneMatch，看文档写的是判断文件不存在才上传，
@@ -122,6 +124,7 @@ func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r 
 		ContentType:   &contentType,
 		ContentLength: &size,
 		ContentMD5:    aws.String(Digest(digest).ToContentMD5()),
+		CacheControl:  aws.String(privateCache),
 	})
 	if err != nil {
 		return err
@@ -233,6 +236,7 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 		ContentLength: &size,
 		ContentMD5:    alioss.Ptr(Digest(digest).ToContentMD5()),
 		ContentType:   &contentType,
+		CacheControl:  alioss.Ptr(privateCache),
 		ProgressFn: func(increment, transferred, total int64) {
 			log.Printf(`oss.Upload: progress: %s (%.2f%%)`, path, float64(transferred)/float64(total)*100)
 		},

@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
+	"github.com/movsb/taoblog/theme/modules/handle304"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -219,6 +220,7 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 		}
 	}
 
+	handle304.MustRevalidate(w)
 	http.ServeFileFS(w, r, pfs, file)
 }
 
