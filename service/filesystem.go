@@ -170,59 +170,16 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 
 	pfs := utils.Must1(s.postDataFS.ForPost(int(postID)))
 
-	getterCount := 0
-	// 神经，居然不能获取大小。
-	s.fileURLGetters.Range(func(key, value any) bool {
-		getterCount++
-		return true
-	})
-
-	ac := auth.Context(r.Context())
-	// 测试阶段，只给登录用户使用。
-	if !ac.User.IsGuest() && getterCount > 0 {
-		key := _FileURLCacheKey{Pid: int(p.Id), Status: p.Status, Path: file}
-		if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
-			// 更改权限会导致文件立即失效，所有总是校验。
-			rsp, err := http.Head(val.URL)
-			if err == nil {
-				defer rsp.Body.Close()
-				if rsp.StatusCode == 200 {
-					http.Redirect(w, r, val.URL, http.StatusFound)
-					return
-				}
-			}
-		}
-
-		s.fileURLs.Delete(key)
-
-		val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (_FileURLCacheValue, error) {
-			fp, err := pfs.Open(file)
-			if err != nil {
-				return _FileURLCacheValue{}, err
-			}
-			defer fp.Close()
-			info := utils.Must1(fp.Stat())
-			file := info.Sys().(*models.File)
-
-			var url string
-
-			s.fileURLGetters.Range(func(key, value any) bool {
-				if u := value.(theme_fs.FileURLGetter).GetFileURL(p, file); u != `` {
-					url = u
-					return false
-				}
-				return true
-			})
-
-			if url == `` {
-				return _FileURLCacheValue{}, io.EOF
-			}
-
-			return _FileURLCacheValue{URL: url, Time: time.Now()}, nil
-		})
-
-		if err == nil {
-			http.Redirect(w, r, val.URL, http.StatusFound)
+	if url, encrypted := s.getFasterFileURL(r, pfs, p, file); url != `` {
+		w.Header().Add(`Cache-Control`, `no-store`)
+		if !encrypted {
+			http.Redirect(w, r, url, http.StatusFound)
+			return
+		} else {
+			// 对于加密情况，直接写 URL，onerror 会处理。
+			// 这样可以尽量减少请求导致的流量，加快速度。
+			w.Header().Set(`Content-Type`, `text/plain`)
+			w.Write([]byte(url))
 			return
 		}
 	}
@@ -238,6 +195,73 @@ type _FileURLCacheKey struct {
 }
 
 type _FileURLCacheValue struct {
-	URL  string
-	Time time.Time
+	URL       string
+	Encrypted bool
+	Time      time.Time
+}
+
+func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, file string) (url string, encrypted bool) {
+	getterCount := 0
+	// 神经，居然不能获取大小。
+	s.fileURLGetters.Range(func(key, value any) bool {
+		getterCount++
+		return true
+	})
+	if getterCount <= 0 {
+		return
+	}
+
+	ac := auth.Context(r.Context())
+	// 测试阶段，只给登录用户使用。
+	if ac.User.IsGuest() {
+		return
+	}
+
+	key := _FileURLCacheKey{Pid: int(p.Id), Status: p.Status, Path: file}
+	if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
+		// 更改权限会导致文件立即失效，所有总是校验。
+		rsp, err := http.Head(val.URL)
+		if err == nil {
+			defer rsp.Body.Close()
+			if rsp.StatusCode == 200 {
+				return val.URL, val.Encrypted
+			}
+		}
+	}
+
+	s.fileURLs.Delete(key)
+
+	val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (_FileURLCacheValue, error) {
+		val := _FileURLCacheValue{
+			Time: time.Now(),
+		}
+		fp, err := pfs.Open(file)
+		if err != nil {
+			return val, err
+		}
+		defer fp.Close()
+		info := utils.Must1(fp.Stat())
+		file := info.Sys().(*models.File)
+
+		s.fileURLGetters.Range(func(key, value any) bool {
+			if u, e := value.(theme_fs.FileURLGetter).GetFileURL(p, file); u != `` {
+				val.URL = u
+				val.Encrypted = e
+				return false
+			}
+			return true
+		})
+
+		if val.URL == `` {
+			return val, io.EOF
+		}
+
+		return val, nil
+	})
+
+	if err == nil {
+		return val.URL, val.Encrypted
+	}
+
+	return
 }

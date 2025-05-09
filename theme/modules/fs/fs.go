@@ -30,5 +30,5 @@ func (Empty) ForPost(id int) (fs.FS, error) {
 }
 
 type FileURLGetter interface {
-	GetFileURL(post *proto.Post, file *models.File) string
+	GetFileURL(post *proto.Post, file *models.File) (string, bool)
 }

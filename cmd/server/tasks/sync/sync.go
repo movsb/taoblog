@@ -143,17 +143,22 @@ func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid
 	return nil
 }
 
-func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) string {
-	var path string
-	var digest string
+func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) (string, bool) {
+	var (
+		path      string
+		digest    string
+		encrypted bool
+	)
 
 	if post.Status == models.PostStatusPublic {
 		digest = file.Digest
 		path = pathpkg.Join(`files`, fmt.Sprint(post.Id), file.Path)
+		encrypted = false
 	} else {
 		digest = file.Meta.Encryption.Digest
 		path = pathpkg.Join(`objects`, fmt.Sprint(post.Id), digest)
+		encrypted = true
 	}
 
-	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest))
+	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest)), encrypted
 }

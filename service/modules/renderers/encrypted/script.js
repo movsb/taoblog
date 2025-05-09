@@ -1,7 +1,8 @@
 async function decodeFile(id) {
 	let img = document.querySelector(`img[data-id=${id}],video[data-id=${id}]`);
 	if (!img) { return; }
-	let data = await (await fetch(img.src)).arrayBuffer();
+	const newURL = await (await fetch(img.src)).text();
+	const data = await (await fetch(newURL)).arrayBuffer();
 	try {
 		const key = await crypto.subtle.importKey(
 			'raw', Uint8Array.fromBase64(img.dataset.key),
