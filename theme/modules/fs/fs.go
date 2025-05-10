@@ -3,6 +3,7 @@ package theme_fs
 import (
 	"embed"
 	"io/fs"
+	"time"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -30,5 +31,5 @@ func (Empty) ForPost(id int) (fs.FS, error) {
 }
 
 type FileURLGetter interface {
-	GetFileURL(post *proto.Post, file *models.File) (string, bool)
+	GetFileURL(post *proto.Post, file *models.File, ttl time.Duration) (string, string, bool, error)
 }

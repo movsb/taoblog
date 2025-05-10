@@ -143,7 +143,7 @@ func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid
 	return nil
 }
 
-func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) (string, bool) {
+func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File, ttl time.Duration) (string, string, bool, error) {
 	var (
 		path      string
 		digest    string
@@ -160,5 +160,9 @@ func (s *SyncToOSS) GetFileURL(post *proto.Post, file *models.File) (string, boo
 		encrypted = true
 	}
 
-	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest)), encrypted
+	get, head, err := s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest), ttl)
+	if err != nil {
+		return ``, ``, false, err
+	}
+	return get, head, encrypted, nil
 }

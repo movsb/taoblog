@@ -195,12 +195,13 @@ type _FileURLCacheKey struct {
 }
 
 type _FileURLCacheValue struct {
-	URL       string
+	Get       string
+	Head      string
 	Encrypted bool
 	Time      time.Time
 }
 
-func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, file string) (url string, encrypted bool) {
+func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, file string) (_ string, encrypted bool) {
 	getterCount := 0
 	// 神经，居然不能获取大小。
 	s.fileURLGetters.Range(func(key, value any) bool {
@@ -217,14 +218,16 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		return
 	}
 
+	const ttl = time.Hour
+
 	key := _FileURLCacheKey{Pid: int(p.Id), Status: p.Status, Path: file}
-	if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < time.Minute*10 {
+	if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < ttl-time.Minute {
 		// 更改权限会导致文件立即失效，所有总是校验。
-		rsp, err := http.Head(val.URL)
+		rsp, err := http.Head(val.Head)
 		if err == nil {
 			defer rsp.Body.Close()
 			if rsp.StatusCode == 200 {
-				return val.URL, val.Encrypted
+				return val.Get, val.Encrypted
 			}
 		}
 	}
@@ -244,15 +247,16 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		file := info.Sys().(*models.File)
 
 		s.fileURLGetters.Range(func(key, value any) bool {
-			if u, e := value.(theme_fs.FileURLGetter).GetFileURL(p, file); u != `` {
-				val.URL = u
-				val.Encrypted = e
+			if get, head, enc, err := value.(theme_fs.FileURLGetter).GetFileURL(p, file, ttl); err == nil {
+				val.Get = get
+				val.Head = head
+				val.Encrypted = enc
 				return false
 			}
 			return true
 		})
 
-		if val.URL == `` {
+		if val.Get == `` {
 			return val, io.EOF
 		}
 
@@ -260,7 +264,7 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 	})
 
 	if err == nil {
-		return val.URL, val.Encrypted
+		return val.Get, val.Encrypted
 	}
 
 	return

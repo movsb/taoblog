@@ -24,7 +24,8 @@ import (
 
 type Client interface {
 	Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error
-	GetFileURL(ctx context.Context, path string, digest []byte) string
+	// 返回：GET URL / HEAD URL
+	GetFileURL(ctx context.Context, path string, digest []byte, ttl time.Duration) (string, string, error)
 	DeleteByPrefix(ctx context.Context, prefix string)
 }
 
@@ -133,26 +134,35 @@ func (oss *S3Compatible) Upload(ctx context.Context, path string, size int64, r 
 	return nil
 }
 
-func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, digest []byte) string {
-	headOutput, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
+func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, digest []byte, ttl time.Duration) (string, string, error) {
+	ifMatch := aws.String(Digest(digest).ToETag(false))
+	_, err := oss.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: aws.String(Digest(digest).ToETag(false)),
+		IfMatch: ifMatch,
 	})
 	if err != nil {
-		// log.Println(err)
-		return ``
+		return ``, ``, fmt.Errorf(`oss.GetFileURL.HeadObject: %w`, err)
 	}
-	_ = headOutput
-	output, err := oss.presign.PresignGetObject(ctx, &s3.GetObjectInput{
+	headOutput, err := oss.presign.PresignHeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: &oss.bucketName,
 		Key:    &path,
-	}, s3.WithPresignExpires(time.Minute*15))
+		// TODO 返回的 URL 不工作，暂时不使用。
+		// IfMatch: ifMatch,
+	}, s3.WithPresignExpires(ttl))
 	if err != nil {
-		log.Println(err)
-		return ``
+		return ``, ``, fmt.Errorf(`oss.GetFileURL.PresignHeadObject: %w`, err)
 	}
-	return output.URL
+	getOutput, err := oss.presign.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: &oss.bucketName,
+		Key:    &path,
+		// TODO 返回的 URL 不工作，暂时不使用。
+		// IfMatch: ifMatch,
+	}, s3.WithPresignExpires(ttl))
+	if err != nil {
+		return ``, ``, fmt.Errorf(`oss.GetFileURL.PresignGetObject: %w`, err)
+	}
+	return getOutput.URL, headOutput.URL, nil
 }
 
 func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
@@ -248,28 +258,33 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 	return nil
 }
 
-func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte) string {
-	output1, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
+func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte, ttl time.Duration) (string, string, error) {
+	ifMatch := alioss.Ptr(Digest(digest).ToETag(true))
+	_, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
+		IfMatch: ifMatch,
 	})
 	if err != nil {
-		return ``
+		return ``, ``, fmt.Errorf(`oss.GetFileURL.HeadObject: %w`, err)
 	}
-	_ = output1
-
-	output, err := oss.client.Presign(ctx, &alioss.GetObjectRequest{
+	headOutput, err := oss.client.Presign(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
+		IfMatch: ifMatch,
 	})
 	if err != nil {
-		log.Println(err)
-		return ``
+		return ``, ``, fmt.Errorf(`oss.GetFileURL.PresignHeadObject: %w`, err)
 	}
-
-	return output.URL
+	getOutput, err := oss.client.Presign(ctx, &alioss.GetObjectRequest{
+		Bucket:  &oss.bucketName,
+		Key:     &path,
+		IfMatch: ifMatch,
+	})
+	if err != nil {
+		return ``, ``, fmt.Errorf(`oss.GetFileURL.PresignGetObject: %w`, err)
+	}
+	return getOutput.URL, headOutput.URL, nil
 }
 
 func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
