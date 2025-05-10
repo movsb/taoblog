@@ -848,8 +848,13 @@ func (s *Service) updatePostPageCount() {
 	s.options.SetInteger(`page_count`, int64(pageCount))
 }
 
-// 更新文章的引用信息。
+// 更新文章的对外引用信息。
+//
 // NOTE: 无须判断权限。无权限的文章不会显示任何信息。
+//
+//   - self: 当前文章编号。
+//   - refs：旧的引用/被引用信息。
+//   - new： 当前文章最新的对外引用信息。
 func (s *Service) updateReferences(ctx context.Context, self int32, refs *models.References, new []int32) {
 	posts := map[int32]*models.Post{}
 
@@ -897,6 +902,8 @@ func (s *Service) updateReferences(ctx context.Context, self int32, refs *models
 			`last_commented_at`: now,
 			`citations`:         refs,
 		})
+
+		s.postFullCaches.Delete(int64(self))
 	}
 
 	for _, pid := range removed {
@@ -934,8 +941,14 @@ func (s *Service) updateReferences(ctx context.Context, self int32, refs *models
 			`citations`:         &p.Citations,
 		})
 	}
+
+	// 文章标题可能有更改，丢弃引用本文章的文章的缓存。
+	for _, from := range refs.Posts.From {
+		s.deletePostContentCacheFor(int64(from))
+	}
 }
 
+// 删除本文章的引用/被引用信息。
 func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models.References) {
 	now := time.Now().Unix()
 
@@ -962,6 +975,8 @@ func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models
 			`last_commented_at`: now,
 			`citations`:         &p.Citations,
 		})
+
+		s.postFullCaches.Delete(int64(ref))
 	}
 
 	for _, ref := range refs.Posts.From {
@@ -983,6 +998,8 @@ func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models
 			`last_commented_at`: now,
 			`citations`:         &p.Citations,
 		})
+
+		s.deletePostContentCacheFor(int64(ref))
 	}
 }
 
