@@ -61,6 +61,7 @@ var gVersions = [...]VersionUpdater{
 	{51, v51},
 	{52, v52},
 	{53, v53},
+	{54, v54},
 }
 
 // MaxVersionNumber ...

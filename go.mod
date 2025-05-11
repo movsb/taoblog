@@ -73,6 +73,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.29.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.16 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
@@ -96,6 +97,7 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
+	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/tetratelabs/wazero v1.8.1 // indirect

@@ -700,3 +700,7 @@ func v53(posts, files, cache *taorm.DB) {
 		log.Println(`文件摘要：`, file.ID, model.Meta.Encryption)
 	}
 }
+
+func v54(posts, files, cache *taorm.DB) {
+	posts.MustExec("ALTER TABLE users ADD COLUMN otp_secret TEXT NOT NULL DEFAULT ''")
+}

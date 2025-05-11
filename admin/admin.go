@@ -1,10 +1,12 @@
 package admin
 
 import (
+	"bytes"
 	"embed"
 	"encoding/base64"
 	"fmt"
 	"html/template"
+	"image/png"
 	"io"
 	"io/fs"
 	"log"
@@ -25,6 +27,8 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/theme/modules/handle304"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 )
 
 //go:embed statics templates
@@ -130,6 +134,8 @@ func (a *Admin) Handler() http.Handler {
 	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
 	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
 	m.Handle(`GET /reorder`, a.requireLogin(a.getReorder))
+	m.Handle(`GET /otp`, a.requireLogin(a.getOTP))
+	m.Handle(`POST /otp`, a.requireLogin(a.postOTP))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -261,6 +267,104 @@ func (a *Admin) getReorder(w http.ResponseWriter, r *http.Request) {
 		Posts: utils.Must1(a.svc.GetTopPosts(r.Context(), &proto.GetTopPostsRequest{})).Posts,
 	}
 	a.executeTemplate(w, `reorder.html`, &d)
+}
+
+type OTPData struct {
+	User *auth.User
+
+	Prompt bool
+
+	Set   bool
+	Image template.URL // base64 data url
+	URL   template.URL // otp url
+
+	Validate bool
+	Error    string
+}
+
+func (a *Admin) getOTP(w http.ResponseWriter, r *http.Request) {
+	ac := auth.MustNotBeGuest(r.Context())
+
+	isPrompt := r.URL.Query().Get(`prompt`) == `1`
+	if isPrompt {
+		d := OTPData{
+			Prompt: true,
+		}
+		a.executeTemplate(w, `otp.html`, &d)
+		return
+	}
+
+	isSet := r.URL.Query().Get(`set`) == `1`
+	if isSet {
+		// 防止重复生成覆盖。
+		if ac.User.OtpSecret != `` {
+			utils.HTTPError(w, http.StatusBadRequest)
+			return
+		}
+
+		key := utils.Must1(totp.Generate(totp.GenerateOpts{
+			Issuer:      a.displayName,
+			AccountName: fmt.Sprint(ac.User.ID),
+		}))
+
+		image := func() string {
+			buf := bytes.NewBuffer(nil)
+			png.Encode(buf, utils.Must1(key.Image(500, 500)))
+			return utils.CreateDataURL(buf.Bytes()).String()
+		}()
+
+		d := OTPData{
+			User:  ac.User,
+			Set:   true,
+			URL:   template.URL(key.URL()),
+			Image: template.URL(image),
+		}
+
+		a.executeTemplate(w, `otp.html`, &d)
+		return
+	}
+
+	utils.HTTPError(w, http.StatusNotFound)
+}
+
+func (a *Admin) postOTP(w http.ResponseWriter, r *http.Request) {
+	ac := auth.MustNotBeGuest(r.Context())
+
+	isValidate := r.URL.Query().Get(`validate`) == `1`
+	if isValidate {
+		// 防止重复生成覆盖。
+		if ac.User.OtpSecret != `` {
+			utils.HTTPError(w, http.StatusForbidden)
+			return
+		}
+
+		var (
+			// TODO: 不要使用前端上传的，内部缓存作 session。
+			url      = r.PostFormValue(`url`)
+			password = r.PostFormValue(`password`)
+		)
+		key := utils.Must1(otp.NewKeyFromURL(url))
+		if !totp.Validate(password, key.Secret()) {
+			w.WriteHeader(http.StatusForbidden)
+			d := OTPData{
+				Validate: true,
+				Error:    `错误：输入的动态密码无法完成验证。`,
+			}
+			a.executeTemplate(w, `otp.html`, &d)
+			return
+		}
+
+		a.auth.SetUserOTPSecret(ac.User, key.Secret())
+
+		d := OTPData{
+			Validate: true,
+			Error:    ``,
+		}
+		a.executeTemplate(w, `otp.html`, &d)
+		return
+	}
+
+	utils.HTTPError(w, http.StatusNotFound)
 }
 
 type EditorData struct {

@@ -10,6 +10,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
+// NOTE: 很多字段并没有输出到 proto 中。
 type User struct {
 	ID        int64
 	CreatedAt int64
@@ -35,6 +36,10 @@ type User struct {
 	Hidden bool
 
 	Avatar Avatar
+
+	// 一次性认证 secret。
+	// 通用算法/长度，所以只保存了 Secret。
+	OtpSecret string
 }
 
 type Avatar utils.DataURL
@@ -90,6 +95,7 @@ func (u *User) ToProto() *proto.User {
 		Nickname:  u.Nickname,
 		Password:  u.Password,
 		// hidden
+		// otp_secret
 	}
 }
 

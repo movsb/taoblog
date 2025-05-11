@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>一次性密码</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<link rel="stylesheet" type="text/css" href="/style.css" />
+{{ apply_site_theme_customs }}
+<script src="script.js"></script>
+</head>
+<body class="admin otp">
+<div id="wrapper">
+{{ if .Prompt }}
+<h1>一次性密码</h1>
+<p><b>您当前正通过固定不变的密码登录。</b></p>
+<p>如果密码泄露，任何获得此密码的人均可以以你的身份登录此帐号，完全访问此帐号的所有数据，非常不安全。</p>
+<p><b>一次性密码</b>会要求你再输入一个随时间变化的六位数密码，就像银行使用的动态密码一样。
+即便固定密码发生泄露，在没有获得一次性密码的情况下，光凭固定密码也完全无法登录，增加了安全性。</p>
+<form>
+	<input type="hidden" name="set" value="1"/>
+	<input type="submit" value="立即设置"/>
+	<button onclick="location.href='profile';return false;">暂不设置</button>
+</form>
+{{ end }}
+
+{{ if .Set }}
+<h1>一次性密码</h1>
+<p>正在为 <b>{{.User.Nickname}}</b> 设置一次性密码。</p>
+<h2>添加到密码管理</h2>
+{{ with .Image }}
+<p>长按或使用手机相机扫描以下二维码完成添加：</p>
+<p><img src="{{.}}" width="250" height="250"></p>
+{{ end }}
+{{ with .URL }}
+<p>或者点击<a href="{{.}}">本链接</a>添加。</p>
+{{ end }}
+<h2>添加后的验证</h2>
+<form action="otp?validate=1" method="post">
+	<p>请输入密码管理设备上显示的六位数动态密码以完成验证。</p>
+	<p>
+		<input type="hidden" name="validate" value="1">
+		<input type="hidden" name="url" value="{{.URL}}">
+		<input type="text" name="password" placeholder="动态密码" pattern="\d{6}" required>
+	</p>
+	<p>
+		<input type="submit" value="验证并保存">
+	</p>
+</form>
+{{ end }}
+
+{{ if .Validate }}
+	{{ with .Error }}
+		<p>{{.}}</p>
+	{{ else }}
+		<p>设置成功。</p>
+		<form>
+			<button onclick="location.href='profile';return false;">返回</button>
+		</form>
+	{{ end }}
+{{ end }}
+</div>
+</body>
+</html>

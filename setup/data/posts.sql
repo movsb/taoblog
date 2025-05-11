@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS users (
     `nickname` TEXT NOT NULL,
     `email` TEXT NOT NULL,
     `password` TEXT NOT NULL,
+    `otp_secret` TEXT NOT NULL,
     `credentials` TEXT NOT NULL,
     `google_user_id` TEXT NOT NULL,
     `github_user_id` INTEGER NOT NULL,

@@ -73,6 +73,8 @@ function redirect(to) {
 		<input type="text" name="user" placeholder="用户名" required />
 		<br />
 		<input type="password" name="passwd" placeholder="密码" required />
+		<br />
+		<input type="text" name="otp" placeholder="动态密码" pattern="\d{6}" style="display: none;"/>
 	</div>	
 	<div>
 		<input type="submit" value="登录" />
@@ -90,14 +92,37 @@ function redirect(to) {
 					body: JSON.stringify({
 						username: form.elements['user'].value,
 						password: form.elements['passwd'].value,
+						otp: form.elements['otp'].value,
 					}),
 				});
+
 				if (resp.status == 200) {
-					redirect();
-				} else {
-					alert('Error: ' + await resp.text());
+					let obj = {};
+					try { obj = await resp.json();}
+					catch (e) { console.log(e); }
+
+					if(obj.otp_not_set) {
+						redirect('otp?prompt=1')
+					} else {
+						redirect();
+					}
+					return true;
+				} else if (resp.status == 400) {
+					let obj = {};
+					try { obj = await resp.json();}
+					catch (e) { console.log(e); }
+
+					if (obj.requires_otp) {
+						let otp = form.elements['otp'];
+						otp.style.display = 'inline';
+						otp.focus();
+						return true;
+					}
+					
+					return true;
 				}
 
+				alert('Error: ' + await resp.text());
 				return true;
 			});
 		})();

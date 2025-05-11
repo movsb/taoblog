@@ -84,6 +84,13 @@ func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) 
 	return user, err
 }
 
+func (o *Auth) SetUserOTPSecret(user *User, secret string) {
+	o.getDB(context.Background()).Model(user.User).Where(`id=?`, user.ID).MustUpdateMap(taorm.M{
+		`otp_secret`: secret,
+	})
+	o.DropUserCache(int(user.ID))
+}
+
 func (o *Auth) AddWebAuthnCredential(user *User, cred *webauthn.Credential) {
 	existed := slices.IndexFunc(user.Credentials, func(c webauthn.Credential) bool {
 		return bytes.Equal(c.PublicKey, cred.PublicKey) ||
@@ -123,7 +130,7 @@ func constantEqual(x, y string) bool {
 	return subtle.ConstantTimeCompare([]byte(x), []byte(y)) == 1
 }
 
-// 增加用户系统后，用户名可以是用户编号。
+// 增加用户系统后，用户名是用户编号。
 func (o *Auth) AuthLogin(username string, password string) *User {
 	id, err := strconv.Atoi(username)
 	if err == nil {

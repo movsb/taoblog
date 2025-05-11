@@ -27,7 +27,7 @@ type ctxAuthKey struct{}
 // 进程内使用（不含 Gateway）。
 type AuthContext struct {
 	// 当前请求所引用的用户。
-	// 不会随不同的请求改变。
+	//
 	// 始终不为空；如果是未登录用户，则为 guest。
 	User *User
 
