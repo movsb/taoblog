@@ -718,7 +718,7 @@ formUI.filesChanged(async files => {
 			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。
-			formUI.files = await fm.list();
+			// formUI.files = await fm.list();
 		} catch(e) {
 			alert(`文件 ${f.name} 上传失败：${e}`);
 			return;
