@@ -43,7 +43,7 @@ require (
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
-	github.com/movsb/pkg v0.0.0-20250416121452-9b07ebd5b745
+	github.com/movsb/pkg v0.0.0-20250514180423-7511870632f7
 	github.com/phuslu/lru v1.0.18
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/tdewolff/parse/v2 v2.7.19

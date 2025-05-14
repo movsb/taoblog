@@ -709,6 +709,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	}
 
 	// 通知新文章创建
+	// TODO 异步执行。
 	if oldPost.Date == oldPost.Modified && oldPost.Title == models.Untitled &&
 		s.cfg.Site.Notify.NewPost &&
 		oldPost.UserID != int32(auth.AdminID) {
@@ -1427,6 +1428,16 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 	// TODO 临时
 	s.MustBeAdmin(ctx)
 
+	// 发通知用。
+	// 为了取得自动生成的标题，不要使用 getPostCached.
+	post := utils.Must1(s.GetPost(
+		auth.SystemForLocal(context.Background()),
+		&proto.GetPostRequest{
+			Id: int32(in.PostId),
+		},
+	))
+	owner := utils.Must1(s.auth.GetUserByID(context.Background(), int64(post.UserId)))
+
 	return &proto.SetPostACLResponse{}, s.TxCall(func(s *Service) error {
 		// 获取当前的。
 		var acl []*models.AccessControlEntry
@@ -1482,6 +1493,30 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 					Permission: ps(b.Perm),
 				}
 				s.tdb.Model(&ace).MustCreate()
+
+				// 发送通知。
+				// TODO 异步任务
+				to := utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(b.UserID)))
+				go func() {
+					// 仅在分享权限下通知。
+					// NOTE：如果更改了受众，但是权限又不是partial，下次更改为 partial 时会丢失分享通知。
+					// 因为权限位和受众是独立存储的。
+					if post.Status != models.PostStatusPartial {
+						return
+					}
+					// TODO s 内部有 db 事务
+					// 异步的时候 goroutine 会拷贝 s 导致事务已提交
+					// 所以部分代码放在了 go 之外。
+					s.notifier.SendInstant(
+						auth.SystemForLocal(context.Background()),
+						&proto.SendInstantRequest{
+							Subject: fmt.Sprintf(`分享了新文章`),
+							Body:    fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, s.home.JoinPath(s.plainLink(post.Id)).String()),
+							// TODO: 没判断为空的情况。如果为空，则分享给了站长。
+							ChanifyToken: to.ChanifyToken,
+						},
+					)
+				}()
 			}
 		}
 
