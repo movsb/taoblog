@@ -65,11 +65,10 @@ func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 		s.searcher.Store(nil)
 	}()
 
-	s.searcher.Store(engine)
-
 	var lastCheck int64
 	s.reIndex(ctx, engine, &lastCheck)
 
+	s.searcher.Store(engine)
 	ch <- struct{}{}
 
 	const scanInterval = time.Minute * 1

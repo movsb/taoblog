@@ -8,12 +8,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/renderers/exif/exif_exports"
+	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taorm"
 )
 
@@ -707,4 +711,35 @@ func v54(posts, files, cache *taorm.DB) {
 
 func v55(posts, files, cache *taorm.DB) {
 	posts.MustExec("ALTER TABLE users ADD COLUMN chanify_token TEXT NOT NULL DEFAULT ''")
+}
+
+func v56(posts, files, cache *taorm.DB) {
+	var list []*models.File
+	files.Select(`id,path,meta`).MustFind(&list)
+	for _, f := range list {
+		if f.Meta.Width != 0 {
+			continue
+		}
+		var d string
+		var w, h int
+		files.Raw(`select data from files where id=?`, f.ID).MustFind(&d)
+		m, err := media_size.All(strings.NewReader(d))
+		if err != nil {
+			m2, err2 := exif_exports.Extract(io.NopCloser(strings.NewReader(d)))
+			if err2 != nil {
+				log.Println(f.ID, f.Path, err)
+				continue
+			}
+			if _, err := fmt.Sscanf(m2.ImageSize, `%dx%d`, &w, &h); err != nil {
+				log.Println(f.ID, f.Path, err)
+				continue
+			}
+		} else {
+			w = m.Width
+			h = m.Height
+		}
+		f.Meta.Width = w
+		f.Meta.Height = h
+		files.MustExec(`update files set meta=? where id=?`, f.Meta, f.ID)
+	}
 }

@@ -1,20 +1,19 @@
 package exif
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
 	"log"
 	"net/url"
-	"os/exec"
 	"path"
 	"sync/atomic"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/cache"
+	"github.com/movsb/taoblog/service/modules/renderers/exif/exif_exports"
 )
 
 // Name 只包含最后一部分，与时间一起，足够区分了吧？
@@ -24,7 +23,7 @@ type _CacheKey struct {
 }
 
 type _CacheValue struct {
-	Metadata Metadata
+	Metadata exif_exports.Metadata
 }
 
 type InvalidateCacheFor func(id int)
@@ -100,7 +99,7 @@ func (t *Task) get(id int, u string, f fs.File) string {
 func (t *Task) extract(id int, name string, stat fs.FileInfo, key _CacheKey, r io.ReadCloser) {
 	defer r.Close()
 
-	md, err := extract(r)
+	md, err := exif_exports.Extract(r)
 	if err != nil {
 		log.Println(`exif.task.extract`, err)
 		return
@@ -112,21 +111,4 @@ func (t *Task) extract(id int, name string, stat fs.FileInfo, key _CacheKey, r i
 	log.Println(`更新图片元数据：`, key)
 
 	t.invalidate(id)
-}
-
-func extract(r io.ReadCloser) (*Metadata, error) {
-	cmd := exec.CommandContext(context.TODO(), `exiftool`, `-G`, `-s`, `-json`, `-`)
-	cmd.Stdin = r
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	var md []*Metadata
-	if err := json.Unmarshal(output, &md); err != nil {
-		return nil, err
-	}
-	if len(md) <= 0 {
-		return nil, fmt.Errorf(`没有提取到元数据`)
-	}
-	return md[0], nil
 }

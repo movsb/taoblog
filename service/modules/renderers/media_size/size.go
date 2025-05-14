@@ -184,7 +184,7 @@ func size(fs gold_utils.WebFileSystem, parsedURL *urlpkg.URL, localOnly bool) (*
 		r = resp.Body
 	}
 
-	md, err := all(r)
+	md, err := All(r)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func size(fs gold_utils.WebFileSystem, parsedURL *urlpkg.URL, localOnly bool) (*
 	return md, nil
 }
 
-func all(r io.Reader) (*Metadata, error) {
+func All(r io.Reader) (*Metadata, error) {
 	dup := utils.MemDupReader(r)
 
 	var errs []error
