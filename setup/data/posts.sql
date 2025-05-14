@@ -91,7 +91,8 @@ CREATE TABLE IF NOT EXISTS users (
     `google_user_id` TEXT NOT NULL,
     `github_user_id` INTEGER NOT NULL,
     `hidden` INTEGER NOT NULL,
-    `avatar` TEXT NOT NULL
+    `avatar` TEXT NOT NULL,
+    `chanify_token` TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS acl (

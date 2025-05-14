@@ -136,6 +136,8 @@ func (a *Admin) Handler() http.Handler {
 	m.Handle(`GET /reorder`, a.requireLogin(a.getReorder))
 	m.Handle(`GET /otp`, a.requireLogin(a.getOTP))
 	m.Handle(`POST /otp`, a.requireLogin(a.postOTP))
+	m.Handle(`GET /notify`, a.requireLogin(a.getNotify))
+	m.Handle(`POST /notify`, a.requireLogin(a.postNotify))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -365,6 +367,46 @@ func (a *Admin) postOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.HTTPError(w, http.StatusNotFound)
+}
+
+type NotifyData struct {
+	Email        string
+	ChanifyToken string
+}
+
+func (a *Admin) getNotify(w http.ResponseWriter, r *http.Request) {
+	ac := auth.MustNotBeGuest(r.Context())
+
+	d := NotifyData{
+		Email:        ac.User.Email,
+		ChanifyToken: ac.User.ChanifyToken,
+	}
+
+	a.executeTemplate(w, `notify.html`, &d)
+}
+
+func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
+	ac := auth.MustNotBeGuest(r.Context())
+
+	var (
+		email        = r.PostFormValue(`email`)
+		chanifyToken = r.PostFormValue(`chanify_token`)
+	)
+
+	utils.Must1(a.auth.Passkeys.UpdateUser(
+		r.Context(),
+		&proto.UpdateUserRequest{
+			User: &proto.User{
+				Id:           ac.User.ID,
+				Email:        email,
+				ChanifyToken: chanifyToken,
+			},
+			UpdateEmail:        true,
+			UpdateChanifyToken: true,
+		}),
+	)
+
+	http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
 }
 
 type EditorData struct {

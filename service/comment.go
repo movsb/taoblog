@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
@@ -560,7 +561,7 @@ func NewCommentNotificationTask(s *Service, storage utils.PluginStorage) *_Comme
 		s:       s,
 		storage: storage,
 
-		scanInterval: time.Second * 5,
+		scanInterval: time.Second * 15,
 		dateDelay:    time.Minute * 1,
 	}
 	if _, err := t.storage.GetInteger(`id`); err != nil {
@@ -651,6 +652,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	if err != nil {
 		return err
 	}
+
 	pu, err := t.s.auth.GetUserByID(context.TODO(), int64(post.UserId))
 	if err != nil {
 		log.Println(`获取文章作者失败：`, err)
@@ -659,6 +661,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 
 	loc := globals.LoadTimezoneOrDefault(c.DateTimezone, time.Local)
 
+	// 始终通知站长。
 	data := comment_notify.AdminData{
 		Data: comment_notify.Data{
 			Title:   post.Title,
@@ -670,17 +673,15 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 		Email:    c.Email,
 		HomePage: c.URL,
 	}
-
-	// 通知管理员。
 	t.s.cmtntf.NotifyAdmin(&data)
 
 	// 通知文章作者：访客或者非自己
 	if c.UserID == 0 || c.UserID != post.UserId {
-		if pu.Email == `` {
-			log.Println(`文章作者没有邮箱地址，不发送邮件通知。`)
-		} else {
-			t.s.cmtntf.NotifyPostAuthor(&data.Data, pu.Nickname, pu.Email)
-		}
+		r := comment_notify.Recipient{}
+		r.ChanifyToken = pu.ChanifyToken
+		r.Email.Name = pu.Nickname
+		r.Email.Address = pu.Email
+		t.s.cmtntf.NotifyPostAuthor(&data.Data, r)
 	}
 
 	// 通知其它上级回复：所有上级中排除特定人后……
@@ -727,25 +728,25 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 			}
 		}
 
+		r := comment_notify.Recipient{}
+
 		// 首先从评论本身拿邮件，
 		email := parent.Email
-
-		// 而如果是登录用户，则优先使用配置的邮箱
+		// 而如果是登录用户，则优先使用配置的邮箱/即时通知。
 		if parent.UserID > 0 {
 			parentUser, err := t.s.auth.GetUserByID(context.TODO(), int64(parent.UserID))
-			if err == nil && parentUser.Email != `` {
+			if err == nil {
 				email = parentUser.Email
+				r.ChanifyToken = parentUser.ChanifyToken
 			}
 		}
+		r.Email.Name = parent.Author // or parentUser.Nickname
+		r.Email.Address = email
 
-		email = strings.ToLower(email)
-
-		if _, ok := distinct[email]; !ok {
-			distinct[email] = true
-			recipients = append(recipients, comment_notify.Recipient{
-				Name:    parent.Author,
-				Address: email,
-			})
+		once := strings.ToLower(cmp.Or(email, r.ChanifyToken))
+		if _, ok := distinct[once]; !ok {
+			distinct[once] = true
+			recipients = append(recipients, r)
 		}
 	}
 

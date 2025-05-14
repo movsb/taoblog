@@ -40,6 +40,8 @@ type User struct {
 	// 一次性认证 secret。
 	// 通用算法/长度，所以只保存了 Secret。
 	OtpSecret string
+
+	ChanifyToken string
 }
 
 type Avatar utils.DataURL
@@ -94,6 +96,9 @@ func (u *User) ToProto() *proto.User {
 		UpdatedAt: u.UpdatedAt,
 		Nickname:  u.Nickname,
 		Password:  u.Password,
+
+		Email:        u.Email,
+		ChanifyToken: u.ChanifyToken,
 		// hidden
 		// otp_secret
 	}

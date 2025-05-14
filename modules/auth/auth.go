@@ -34,6 +34,9 @@ type Auth struct {
 	cfg config.AuthConfig
 
 	userCache *lru.TTLCache[int, *models.User]
+
+	// 临时]
+	Passkeys *Passkeys
 }
 
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
@@ -57,7 +60,7 @@ func (o *Auth) getDB(ctx context.Context) *taorm.DB {
 }
 
 // TODO: 改成接口。
-// NOTE: 错误的时候也会存，nil 值，以避免不必要的查询。
+// NOTE: 错误的时候也会缓存，nil 值，以避免不必要的查询。
 func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
 	if id == int64(systemID) {
 		return system.User, nil

@@ -1,8 +1,6 @@
 package instant
 
 import (
-	"log"
-
 	"github.com/movsb/pkg/notify"
 )
 
@@ -22,15 +20,4 @@ func NewChanifyNotify(token string) Notifier {
 	return &_ChanifyNotify{
 		chanify: notify.NewOfficialChanify(token),
 	}
-}
-
-type _ConsoleNotify struct{}
-
-func (n *_ConsoleNotify) Notify(title, message string) error {
-	log.Println(title, message)
-	return nil
-}
-
-func NewConsoleNotify() Notifier {
-	return &_ConsoleNotify{}
 }

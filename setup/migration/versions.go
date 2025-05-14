@@ -704,3 +704,7 @@ func v53(posts, files, cache *taorm.DB) {
 func v54(posts, files, cache *taorm.DB) {
 	posts.MustExec("ALTER TABLE users ADD COLUMN otp_secret TEXT NOT NULL DEFAULT ''")
 }
+
+func v55(posts, files, cache *taorm.DB) {
+	posts.MustExec("ALTER TABLE users ADD COLUMN chanify_token TEXT NOT NULL DEFAULT ''")
+}

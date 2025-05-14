@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>通知设置</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<link rel="stylesheet" type="text/css" href="/style.css" />
+<script src="script.js"></script>
+</head>
+<body class="admin notify">
+<div id="wrapper">
+<h1>修改通知设置</h1>
+<form method="post">
+	<p><input type="email" name="email" placeholder="邮箱地址" value="{{.Email}}"></p>
+	<p><input type="text" name="chanify_token" placeholder="Chanify Token" value="{{.ChanifyToken}}"></p>
+	<p>
+		<input type="submit" value="保存">
+	</p>
+</form>
+</div>
+</body>
+</html>

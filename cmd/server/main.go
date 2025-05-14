@@ -40,7 +40,6 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/notify"
-	"github.com/movsb/taoblog/service/modules/notify/instant"
 	"github.com/movsb/taoblog/service/modules/notify/mailer"
 	"github.com/movsb/taoblog/service/modules/request_throttler"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
@@ -360,11 +359,13 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 	if err != nil {
 		panic(err)
 	}
-	theService.AuthServer = auth.NewPasskeys(
+	p := auth.NewPasskeys(
 		taorm.NewDB(db), wa,
 		theAuth.GenCookieForPasskeys,
 		theAuth.DropUserCache,
 	)
+	theService.AuthServer = p
+	theAuth.Passkeys = p
 }
 
 func (s *Server) sendNotify(title, message string) {
@@ -491,21 +492,17 @@ func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *confi
 	var options []notify.With
 
 	if ch := cfg.Notify.Chanify; ch.Token != `` {
-		stored := instant.NewNotifyLogger(logs.NewLogStore(db))
-		stored.SetNotifier(instant.NewChanifyNotify(ch.Token))
-		options = append(options, notify.WithInstant(stored))
-	} else {
-		instant := instant.NewConsoleNotify()
-		options = append(options, notify.WithInstant(instant))
+		options = append(options, notify.WithDefaultChanifyToken(ch.Token))
 	}
 
+	// TODO 移动到内部实现。
 	if m := cfg.Notify.Mailer; m.Account != `` && m.Server != `` {
 		mail := mailer.NewMailer(m.Server, m.Account, m.Password)
 		stored := mailer.NewMailerLogger(logs.NewLogStore(db), mail)
 		options = append(options, notify.WithMailer(stored))
 	}
 
-	n := notify.New(ctx, sr, options...)
+	n := notify.New(ctx, sr, db, options...)
 
 	go func() {
 		for {

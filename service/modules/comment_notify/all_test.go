@@ -1,14 +1,28 @@
 package comment_notify
 
 import (
-	"io"
+	"os"
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
 )
 
 func TestTemplates(t *testing.T) {
-	utils.Must(authorTmpl.Execute(io.Discard, Data{}))
-	utils.Must(guestTmpl.Execute(io.Discard, Data{}))
-	utils.Must(chanifyTmpl.Execute(io.Discard, AdminData{}))
+	d := AdminData{
+		Data: Data{
+			Title:   `文章标题`,
+			Link:    `https://example.com/1/`,
+			Date:    `2025-05-14`,
+			Author:  `评论者昵称`,
+			Content: `评论内容`,
+		},
+		Email:    `someone@example.com`,
+		HomePage: `https://example.com`,
+	}
+	t.Log(`给文章作者的邮件通知：`)
+	utils.Must(authorMailTmpl.Execute(os.Stdout, d.Data))
+	t.Log(`能评论者的邮件通知：`)
+	utils.Must(guestMailTmpl.Execute(os.Stdout, d.Data))
+	t.Log(`给站长或者登录者的即时通知：`)
+	utils.Must(chanifyTmpl.Execute(os.Stdout, d))
 }

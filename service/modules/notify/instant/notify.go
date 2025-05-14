@@ -3,7 +3,6 @@ package instant
 import (
 	"context"
 	"log"
-	"sync/atomic"
 	"time"
 
 	"github.com/movsb/taoblog/modules/logs"
@@ -12,7 +11,6 @@ import (
 type NotifyLogger struct {
 	store logs.Logger
 
-	notifier     atomic.Value
 	pullInterval time.Duration
 }
 
@@ -21,6 +19,7 @@ func NewNotifyLogger(store logs.Logger) *NotifyLogger {
 		store: store,
 	}
 	n.SetPullInterval(time.Second * 5)
+	go n.process(context.Background())
 	return n
 }
 
@@ -31,6 +30,8 @@ const (
 
 type _Message struct {
 	Title, Message string
+
+	ChanifyToken string
 }
 
 func (n *NotifyLogger) SetPullInterval(d time.Duration) {
@@ -40,43 +41,36 @@ func (n *NotifyLogger) SetPullInterval(d time.Duration) {
 	n.pullInterval = d
 }
 
-func (n *NotifyLogger) SetNotifier(backend Notifier) {
-	if old := n.notifier.Swap(backend); old == nil {
-		go n.process(context.Background())
-	}
-}
-
-func (n *NotifyLogger) Notify(title, message string) error {
+func (n *NotifyLogger) Notify(title, message string, chanifyToken string) error {
 	n.store.CreateLog(context.Background(), ty, sty, 1, _Message{
 		Title:   title,
 		Message: message,
+
+		ChanifyToken: chanifyToken,
 	})
 	return nil
 }
 
-func (n *NotifyLogger) NotifyImmediately(title, message string) {
-	backend, _ := n.notifier.Load().(Notifier)
-	if backend != nil {
-		backend.Notify(title, message)
-	}
+func (n *NotifyLogger) NotifyImmediately(title, message string, chanifyToken string) {
+	NewChanifyNotify(chanifyToken).Notify(title, message)
 }
 
 func (n *NotifyLogger) process(ctx context.Context) {
 	for {
 		var msg _Message
 		l := n.store.FindLog(ctx, ty, sty, &msg)
-		backend, _ := n.notifier.Load().(Notifier)
-		if l != nil && backend != nil {
-			log.Println(`找到日志：`, l.ID)
-			if err := backend.Notify(msg.Title, msg.Message); err != nil {
-				log.Println(`NotifyError:`, err)
-				time.Sleep(n.pullInterval)
-				continue
-			} else {
-				n.store.DeleteLog(ctx, l.ID)
-			}
-		} else {
+		if l == nil {
 			time.Sleep(n.pullInterval)
+			continue
+		}
+		log.Println(`找到日志：`, l.ID)
+		ch := NewChanifyNotify(msg.ChanifyToken)
+		if err := ch.Notify(msg.Title, msg.Message); err != nil {
+			log.Println(`NotifyError:`, err)
+			time.Sleep(n.pullInterval)
+			continue
+		} else {
+			n.store.DeleteLog(ctx, l.ID)
 		}
 	}
 }

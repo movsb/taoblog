@@ -34,6 +34,10 @@ message SendInstantRequest {
 	// * 立即发送如果失败，消息会丢失。
 	// * 入队发送会自动重试。
 	bool immediately = 3;
+
+	// 接收人的 ChanifyToken。
+	// 可选。默认为站长。
+	string chanify_token = 10;
 }
 
 message SendInstantResponse {}

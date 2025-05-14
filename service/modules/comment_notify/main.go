@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"log"
 	text_template "text/template"
 
 	"github.com/movsb/taoblog/modules/auth"
@@ -16,10 +17,12 @@ var (
 	//go:embed author.html chanify.md guest.html
 	_root embed.FS
 
-	authorTmpl  = template.Must(template.New(`author`).ParseFS(_root, `author.html`)).Lookup(`author.html`)
-	guestTmpl   = template.Must(template.New(`guest`).ParseFS(_root, `guest.html`)).Lookup(`guest.html`)
-	chanifyTmpl = text_template.Must(text_template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
+	authorMailTmpl = template.Must(template.New(`author`).ParseFS(_root, `author.html`)).Lookup(`author.html`)
+	guestMailTmpl  = template.Must(template.New(`guest`).ParseFS(_root, `guest.html`)).Lookup(`guest.html`)
+	chanifyTmpl    = text_template.Must(text_template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
+)
 
+const (
 	authorPrefix = `[新的评论]`
 	guestPrefix  = `[回复评论]`
 	mailFromName = `文章评论`
@@ -50,6 +53,10 @@ func New(notifier proto.NotifyServer) *CommentNotifier {
 	}
 }
 
+// 这是给站长的通知。
+//
+// 会收到所有评论的通知。
+// 只发送即时通知，不发送邮件。
 func (cn *CommentNotifier) NotifyAdmin(d *AdminData) {
 	buf := bytes.NewBuffer(nil)
 	chanifyTmpl.Execute(buf, d)
@@ -63,32 +70,64 @@ func (cn *CommentNotifier) NotifyAdmin(d *AdminData) {
 }
 
 type Recipient struct {
-	Name    string
-	Address string
+	Email struct {
+		Name    string
+		Address string
+	}
+	ChanifyToken string
 }
 
-func (cn *CommentNotifier) NotifyPostAuthor(data *Data, name string, email string) {
-	buf := bytes.NewBuffer(nil)
-	authorTmpl.Execute(buf, data)
+// 通知文章作者。
+//
+//   - 如果有配置即时通知，只发送即时通知。
+//   - 如果有配置邮件通知，只发送邮件通知。
+func (cn *CommentNotifier) NotifyPostAuthor(data *Data, recipient Recipient) {
 	subject := fmt.Sprintf(`%s %s`, authorPrefix, data.Title)
-	cn.sendEmails(subject, buf.String(), []Recipient{{Name: name, Address: email}})
-}
-
-func (cn *CommentNotifier) NotifyGuests(data *Data, recipients []Recipient) {
-	buf := bytes.NewBuffer(nil)
-	guestTmpl.Execute(buf, data)
-	subject := fmt.Sprintf(`%s %s`, guestPrefix, data.Title)
-	cn.sendEmails(subject, buf.String(), recipients)
-}
-
-// 重要！ 每封邮件必须独立发送 （To:），否则会相互看到别人地址、所有人的地址。
-func (cn *CommentNotifier) sendEmails(subject, body string, recipients []Recipient) {
-	for _, r := range recipients {
-		cn.sendEmail(subject, body, r)
+	body := bytes.NewBuffer(nil)
+	if recipient.ChanifyToken != `` {
+		chanifyTmpl.Execute(body, data)
+		cn.sendNotify(subject, body.String(), recipient.ChanifyToken)
+	} else if recipient.Email.Address != `` {
+		authorMailTmpl.Execute(body, data)
+		cn.sendEmail(subject, body.String(), recipient.Email.Name, recipient.Email.Address)
+	} else {
+		log.Println(`文章作者没有通知功能设置，将不发送任何通知。`)
 	}
 }
 
-func (cn *CommentNotifier) sendEmail(subject, body string, recipient Recipient) {
+// 所有除站长和文章本人以外的评论者。
+func (cn *CommentNotifier) NotifyGuests(data *Data, recipients []Recipient) {
+	subject := fmt.Sprintf(`%s %s`, guestPrefix, data.Title)
+
+	body1 := bytes.NewBuffer(nil)
+	body2 := bytes.NewBuffer(nil)
+	chanifyTmpl.Execute(body1, data)
+	guestMailTmpl.Execute(body2, data)
+
+	// 重要！ 每封邮件必须独立发送 （To:），否则会相互看到别人地址、所有人的地址。
+	for _, r := range recipients {
+		if r.ChanifyToken != `` {
+			cn.sendNotify(subject, body1.String(), r.ChanifyToken)
+		} else if r.Email.Address != `` {
+			cn.sendEmail(subject, body2.String(), r.Email.Name, r.Email.Address)
+		} else {
+			log.Println(`评论者没有通知功能设置，将不发送任何通知。`)
+		}
+	}
+}
+
+func (cn *CommentNotifier) sendNotify(subject, body string, token string) {
+	cn.notifier.SendInstant(
+		auth.SystemForLocal(context.Background()),
+		&proto.SendInstantRequest{
+			Subject:      subject,
+			Body:         body,
+			ChanifyToken: token,
+		},
+	)
+}
+
+func (cn *CommentNotifier) sendEmail(subject, body string, name, address string) {
 	cn.notifier.SendEmail(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendEmailRequest{
@@ -97,8 +136,8 @@ func (cn *CommentNotifier) sendEmail(subject, body string, recipient Recipient) 
 			FromName: mailFromName,
 			Users: []*proto.SendEmailRequest_User{
 				{
-					Name:    recipient.Name,
-					Address: recipient.Address,
+					Name:    name,
+					Address: address,
 				},
 			},
 		},

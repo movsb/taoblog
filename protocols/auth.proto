@@ -64,6 +64,10 @@ message User {
 
 	// 头像 DataURL。
 	string avatar = 6;
+
+	// 邮箱
+	string email = 7;
+	string chanify_token = 8;
 }
 
 message ListUsersRequest {
@@ -79,6 +83,8 @@ message UpdateUserRequest {
 	User user = 1;
 
 	bool update_avatar = 10;
+	bool update_email = 11;
+	bool update_chanify_token = 12;
 }
 
 message UpdateUserResponse {}

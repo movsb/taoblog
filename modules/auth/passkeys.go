@@ -196,6 +196,18 @@ func (p *Passkeys) UpdateUser(ctx context.Context, in *proto.UpdateUserRequest) 
 		}
 		m[`avatar`] = in.User.Avatar
 	}
+	if in.UpdateEmail {
+		if in.User.Email != `` && !utils.IsEmail(in.User.Email) {
+			panic(status.Error(codes.InvalidArgument, `邮箱错误。`))
+		}
+		m[`email`] = in.User.Email
+	}
+	if in.UpdateChanifyToken {
+		if in.User.ChanifyToken != `` && len(in.User.ChanifyToken) > 1024 {
+			panic(status.Error(codes.InvalidArgument, `Chanify Token 错误。`))
+		}
+		m[`chanify_token`] = in.User.ChanifyToken
+	}
 
 	if len(m) > 0 {
 		r := p.db.Model(models.User{ID: in.User.Id}).MustUpdateMap(m)
