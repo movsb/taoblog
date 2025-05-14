@@ -144,6 +144,10 @@ message Post {
 	}
 	// 仅输出。
 	References references = 27;
+	
+	// 文章标题是否是自动生成的。
+	// 仅输出。
+	bool title_is_auto_generated = 28;
 }
 
 enum LinkKind {
