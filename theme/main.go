@@ -158,6 +158,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusForbidden)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Context: req.Context(),
+					User:    auth.Context(req.Context()).User,
 					Data: &data.ErrorData{
 						Message: "你无权查看此内容：" + st.Message(),
 					},
@@ -167,6 +168,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusNotFound)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Context: req.Context(),
+					User:    auth.Context(req.Context()).User,
 					Data: &data.ErrorData{
 						Message: `你查看的内容不存在。`,
 					},
@@ -178,6 +180,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 			w.WriteHeader(http.StatusNotFound)
 			t.executeTemplate(`error.html`, w, &data.Data{
 				Context: req.Context(),
+				User:    auth.Context(req.Context()).User,
 				Data: &data.ErrorData{
 					Message: `你查看的内容不存在。`,
 				},
