@@ -272,7 +272,7 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte, t
 		Bucket:  &oss.bucketName,
 		Key:     &path,
 		IfMatch: ifMatch,
-	})
+	}, alioss.PresignExpires(ttl))
 	if err != nil {
 		return ``, ``, fmt.Errorf(`oss.GetFileURL.PresignHeadObject: %w`, err)
 	}
@@ -280,7 +280,7 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte, t
 		Bucket:  &oss.bucketName,
 		Key:     &path,
 		IfMatch: ifMatch,
-	})
+	}, alioss.PresignExpires(ttl))
 	if err != nil {
 		return ``, ``, fmt.Errorf(`oss.GetFileURL.PresignGetObject: %w`, err)
 	}
