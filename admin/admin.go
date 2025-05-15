@@ -438,7 +438,8 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 		if err != nil {
-			panic(err)
+			utils.HTTPError(w, 404)
+			return
 		}
 		d := EditorData{
 			User: auth.Context(r.Context()).User,
