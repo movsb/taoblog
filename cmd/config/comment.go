@@ -8,17 +8,17 @@ import (
 )
 
 type NotificationConfig struct {
-	Chanify NotificationChanifyConfig `json:"chanify" yaml:"chanify"`
-	Mailer  NotificationMailerConfig  `json:"mailer" yaml:"mailer"`
+	Bark   NotificationBarkConfig   `json:"bark" yaml:"bark"`
+	Mailer NotificationMailerConfig `json:"mailer" yaml:"mailer"`
 }
 
-type NotificationChanifyConfig struct {
+type NotificationBarkConfig struct {
 	Token string `json:"token" yaml:"token"`
 }
 
-func (NotificationChanifyConfig) CanSave() {}
+func (NotificationBarkConfig) CanSave() {}
 
-func (c *NotificationChanifyConfig) BeforeSet(paths Segments, obj any) error {
+func (c *NotificationBarkConfig) BeforeSet(paths Segments, obj any) error {
 	switch paths.At(0).Key {
 	case `token`:
 		return nil

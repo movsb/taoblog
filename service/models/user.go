@@ -41,7 +41,7 @@ type User struct {
 	// 通用算法/长度，所以只保存了 Secret。
 	OtpSecret string
 
-	ChanifyToken string
+	BarkToken string
 }
 
 type Avatar utils.DataURL
@@ -97,8 +97,8 @@ func (u *User) ToProto() *proto.User {
 		Nickname:  u.Nickname,
 		Password:  u.Password,
 
-		Email:        u.Email,
-		ChanifyToken: u.ChanifyToken,
+		Email:     u.Email,
+		BarkToken: u.BarkToken,
 		// hidden
 		// otp_secret
 	}

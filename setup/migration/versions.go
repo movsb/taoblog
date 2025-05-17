@@ -743,3 +743,8 @@ func v56(posts, files, cache *taorm.DB) {
 		files.MustExec(`update files set meta=? where id=?`, f.Meta, f.ID)
 	}
 }
+
+func v57(posts, files, cache *taorm.DB) {
+	posts.MustExec(`ALTER TABLE users RENAME COLUMN chanify_token TO bark_token`)
+	posts.MustExec(`DELETE FROM options WHERE name=?`, `notify.chanify`)
+}

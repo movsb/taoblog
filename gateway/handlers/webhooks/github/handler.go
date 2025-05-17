@@ -63,8 +63,8 @@ func (g *_GitHub) notify(subject, body string) {
 	g.notifier.SendInstant(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
-			Subject: subject,
-			Body:    body,
+			Title: subject,
+			Body:  body,
 		},
 	)
 }

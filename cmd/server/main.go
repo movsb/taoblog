@@ -372,8 +372,8 @@ func (s *Server) sendNotify(title, message string) {
 	s.notifyServer.SendInstant(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
-			Subject: title,
-			Body:    message,
+			Title: title,
+			Body:  message,
 		},
 	)
 }
@@ -491,8 +491,8 @@ func (s *Server) createMainServices(
 func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
 	var options []notify.With
 
-	if ch := cfg.Notify.Chanify; ch.Token != `` {
-		options = append(options, notify.WithDefaultChanifyToken(ch.Token))
+	if ch := cfg.Notify.Bark; ch.Token != `` {
+		options = append(options, notify.WithDefaultToken(ch.Token))
 	}
 
 	// TODO 移动到内部实现。
@@ -513,7 +513,7 @@ func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *confi
 				store := logs.NewLogStore(db)
 				if c := store.CountStaleLogs(time.Minute * 10); c > 0 {
 					n.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
-						Subject:     `有堆积的日志未处理`,
+						Title:       `有堆积的日志未处理`,
 						Body:        fmt.Sprintf(`条数：%d`, c),
 						Immediately: true,
 					})

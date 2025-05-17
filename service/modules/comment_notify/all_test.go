@@ -24,5 +24,5 @@ func TestTemplates(t *testing.T) {
 	t.Log(`能评论者的邮件通知：`)
 	utils.Must(guestMailTmpl.Execute(os.Stdout, d.Data))
 	t.Log(`给站长或者登录者的即时通知：`)
-	utils.Must(chanifyTmpl.Execute(os.Stdout, d))
+	utils.Must(barkTmpl.Execute(os.Stdout, d))
 }

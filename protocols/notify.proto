@@ -28,16 +28,38 @@ message SendEmailResponse {
 }
 
 message SendInstantRequest {
-	string subject = 1;
+	string title = 1;
 	string body = 2;
+
+	enum NotifyLevel {
+		NotifyLevelUnspecified = 0;
+		// 重要。静音模式也会响铃。
+		Critical = 1;
+		// 时效性。可在专注模式下显示通知。
+		Sensitive = 2;
+		// 主动。会亮屏。
+		Active = 3;
+		// 被动。不亮屏。
+		Passive = 4;
+	}
+
+	// 通知的紧急程度。
+	NotifyLevel level = 5;
+
+	// 通知分组。
+	string group = 6;
+
+	// URL。点击通知后跳转的链接。
+	string url = 7;
+
 	// 是否立即发送，否则入队发送。
 	// * 立即发送如果失败，消息会丢失。
 	// * 入队发送会自动重试。
-	bool immediately = 3;
+	bool immediately = 9;
 
-	// 接收人的 ChanifyToken。
+	// 接收人的 BarkToken。
 	// 可选。默认为站长。
-	string chanify_token = 10;
+	string bark_token = 10;
 }
 
 message SendInstantResponse {}

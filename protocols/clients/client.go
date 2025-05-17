@@ -123,8 +123,8 @@ func (c *ProtoClient) SendInstant(ctx context.Context, title, message string) {
 	if _, err := c.Notify.SendInstant(
 		ctx,
 		&proto.SendInstantRequest{
-			Subject: title,
-			Body:    message,
+			Title: title,
+			Body:  message,
 		},
 	); err != nil {
 		log.Println(`SendInstant:`, title, message, err)

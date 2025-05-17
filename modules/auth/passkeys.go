@@ -202,11 +202,11 @@ func (p *Passkeys) UpdateUser(ctx context.Context, in *proto.UpdateUserRequest) 
 		}
 		m[`email`] = in.User.Email
 	}
-	if in.UpdateChanifyToken {
-		if in.User.ChanifyToken != `` && len(in.User.ChanifyToken) > 1024 {
-			panic(status.Error(codes.InvalidArgument, `Chanify Token 错误。`))
+	if in.UpdateBarkToken {
+		if in.User.BarkToken != `` && len(in.User.BarkToken) > 1024 {
+			panic(status.Error(codes.InvalidArgument, `Bark Token 错误。`))
 		}
-		m[`chanify_token`] = in.User.ChanifyToken
+		m[`bark_token`] = in.User.BarkToken
 	}
 
 	if len(m) > 0 {

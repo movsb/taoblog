@@ -43,8 +43,8 @@ require (
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
-	github.com/movsb/pkg v0.0.0-20250514180423-7511870632f7
 	github.com/phuslu/lru v1.0.18
+	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/tdewolff/parse/v2 v2.7.19
 	github.com/xtaci/smux v1.5.24
@@ -97,7 +97,6 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
-	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/tetratelabs/wazero v1.8.1 // indirect

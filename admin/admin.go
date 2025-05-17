@@ -370,16 +370,16 @@ func (a *Admin) postOTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type NotifyData struct {
-	Email        string
-	ChanifyToken string
+	Email     string
+	BarkToken string
 }
 
 func (a *Admin) getNotify(w http.ResponseWriter, r *http.Request) {
 	ac := auth.MustNotBeGuest(r.Context())
 
 	d := NotifyData{
-		Email:        ac.User.Email,
-		ChanifyToken: ac.User.ChanifyToken,
+		Email:     ac.User.Email,
+		BarkToken: ac.User.BarkToken,
 	}
 
 	a.executeTemplate(w, `notify.html`, &d)
@@ -389,20 +389,20 @@ func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
 	ac := auth.MustNotBeGuest(r.Context())
 
 	var (
-		email        = r.PostFormValue(`email`)
-		chanifyToken = r.PostFormValue(`chanify_token`)
+		email     = r.PostFormValue(`email`)
+		barkToken = r.PostFormValue(`bark_token`)
 	)
 
 	utils.Must1(a.auth.Passkeys.UpdateUser(
 		r.Context(),
 		&proto.UpdateUserRequest{
 			User: &proto.User{
-				Id:           ac.User.ID,
-				Email:        email,
-				ChanifyToken: chanifyToken,
+				Id:        ac.User.ID,
+				Email:     email,
+				BarkToken: barkToken,
 			},
-			UpdateEmail:        true,
-			UpdateChanifyToken: true,
+			UpdateEmail:     true,
+			UpdateBarkToken: true,
 		}),
 	)
 

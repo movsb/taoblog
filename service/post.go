@@ -715,8 +715,8 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		oldPost.UserID != int32(auth.AdminID) {
 		title, _ := m[`title`].(string)
 		s.notifier.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
-			Subject: `新文章发表`,
-			Body:    fmt.Sprintf(`%s 发表了新文章 %s`, ac.User.Nickname, title),
+			Title: `新文章发表`,
+			Body:  fmt.Sprintf(`%s 发表了新文章 %s`, ac.User.Nickname, title),
 		})
 	}
 
@@ -1510,10 +1510,10 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 					s.notifier.SendInstant(
 						auth.SystemForLocal(context.Background()),
 						&proto.SendInstantRequest{
-							Subject: fmt.Sprintf(`分享了新文章`),
-							Body:    fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, s.home.JoinPath(s.plainLink(post.Id)).String()),
+							Title: fmt.Sprintf(`分享了新文章`),
+							Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, s.home.JoinPath(s.plainLink(post.Id)).String()),
 							// TODO: 没判断为空的情况。如果为空，则分享给了站长。
-							ChanifyToken: to.ChanifyToken,
+							BarkToken: to.BarkToken,
 						},
 					)
 				}()

@@ -25,7 +25,7 @@ func New(notify proto.NotifyClient) http.Handler {
 		}
 		ctx := auth.NewContextForRequestAsGateway(r)
 		_, err := notify.SendInstant(ctx, &proto.SendInstantRequest{
-			Subject: `监控告警`,
+			Title: `监控告警`,
 			// https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/
 			Body: message,
 		})

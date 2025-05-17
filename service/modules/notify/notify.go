@@ -24,7 +24,7 @@ type Notify struct {
 	mailer       mailer.MailSender
 	storedNotify *instant.NotifyLogger
 
-	defaultChanifyToken string
+	defaultBarkToken string
 }
 
 var _ proto.NotifyServer = (*Notify)(nil)
@@ -68,11 +68,30 @@ func (n *Notify) SendEmail(ctx context.Context, in *proto.SendEmailRequest) (*pr
 func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) (*proto.SendInstantResponse, error) {
 	auth.MustNotBeGuest(ctx)
 
-	if n.defaultChanifyToken == `` && in.ChanifyToken == `` {
+	if n.defaultBarkToken == `` && in.BarkToken == `` {
 		return nil, status.Error(codes.Unimplemented, `未实现即时通知服务。`)
 	}
 
-	err := n.storedNotify.Notify(in.Subject, in.Body, cmp.Or(in.ChanifyToken, n.defaultChanifyToken))
+	var level instant.Level
+	switch in.Level {
+	case proto.SendInstantRequest_NotifyLevelUnspecified, proto.SendInstantRequest_Active:
+		level = instant.Active
+	case proto.SendInstantRequest_Critical:
+		level = instant.Critical
+	case proto.SendInstantRequest_Sensitive:
+		level = instant.TimeSensitive
+	case proto.SendInstantRequest_Passive:
+		level = instant.Passive
+	}
+
+	err := n.storedNotify.Notify(cmp.Or(in.BarkToken, n.defaultBarkToken), instant.Message{
+		Title: in.Title,
+		Body:  in.Body,
+
+		Level: level,
+		Group: in.Group,
+		URL:   in.Url,
+	})
 
 	return &proto.SendInstantResponse{}, err
 }
@@ -83,8 +102,8 @@ func WithMailer(mail mailer.MailSender) With {
 	}
 }
 
-func WithDefaultChanifyToken(t string) With {
+func WithDefaultToken(t string) With {
 	return func(n *Notify) {
-		n.defaultChanifyToken = t
+		n.defaultBarkToken = t
 	}
 }

@@ -678,7 +678,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	// 通知文章作者：访客或者非自己
 	if c.UserID == 0 || c.UserID != post.UserId {
 		r := comment_notify.Recipient{}
-		r.ChanifyToken = pu.ChanifyToken
+		r.BarkToken = pu.BarkToken
 		r.Email.Name = pu.Nickname
 		r.Email.Address = pu.Email
 		t.s.cmtntf.NotifyPostAuthor(&data.Data, r)
@@ -737,13 +737,13 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 			parentUser, err := t.s.auth.GetUserByID(context.TODO(), int64(parent.UserID))
 			if err == nil {
 				email = parentUser.Email
-				r.ChanifyToken = parentUser.ChanifyToken
+				r.BarkToken = parentUser.BarkToken
 			}
 		}
 		r.Email.Name = parent.Author // or parentUser.Nickname
 		r.Email.Address = email
 
-		once := strings.ToLower(cmp.Or(email, r.ChanifyToken))
+		once := strings.ToLower(cmp.Or(email, r.BarkToken))
 		if _, ok := distinct[once]; !ok {
 			distinct[once] = true
 			recipients = append(recipients, r)

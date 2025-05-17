@@ -28,12 +28,6 @@ const (
 	sty = `message`
 )
 
-type _Message struct {
-	Title, Message string
-
-	ChanifyToken string
-}
-
 func (n *NotifyLogger) SetPullInterval(d time.Duration) {
 	if d <= time.Millisecond*100 {
 		d = time.Millisecond * 100
@@ -41,18 +35,16 @@ func (n *NotifyLogger) SetPullInterval(d time.Duration) {
 	n.pullInterval = d
 }
 
-func (n *NotifyLogger) Notify(title, message string, chanifyToken string) error {
+func (n *NotifyLogger) Notify(deviceKey string, msg Message) error {
 	n.store.CreateLog(context.Background(), ty, sty, 1, _Message{
-		Title:   title,
-		Message: message,
-
-		ChanifyToken: chanifyToken,
+		Message:   msg,
+		DeviceKey: deviceKey,
 	})
 	return nil
 }
 
-func (n *NotifyLogger) NotifyImmediately(title, message string, chanifyToken string) {
-	NewChanifyNotify(chanifyToken).Notify(title, message)
+func (n *NotifyLogger) NotifyImmediately(deviceKey string, msg Message) {
+	SendBarkMessage(context.Background(), deviceKey, msg)
 }
 
 func (n *NotifyLogger) process(ctx context.Context) {
@@ -64,8 +56,7 @@ func (n *NotifyLogger) process(ctx context.Context) {
 			continue
 		}
 		log.Println(`找到日志：`, l.ID)
-		ch := NewChanifyNotify(msg.ChanifyToken)
-		if err := ch.Notify(msg.Title, msg.Message); err != nil {
+		if err := SendBarkMessage(ctx, msg.DeviceKey, msg.Message); err != nil {
 			log.Println(`NotifyError:`, err)
 			time.Sleep(n.pullInterval)
 			continue

@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	//go:embed author.html chanify.md guest.html
+	//go:embed author.html bark.md guest.html
 	_root embed.FS
 
 	authorMailTmpl = template.Must(template.New(`author`).ParseFS(_root, `author.html`)).Lookup(`author.html`)
 	guestMailTmpl  = template.Must(template.New(`guest`).ParseFS(_root, `guest.html`)).Lookup(`guest.html`)
-	chanifyTmpl    = text_template.Must(text_template.New(`chanify`).ParseFS(_root, `chanify.md`)).Lookup(`chanify.md`)
+	barkTmpl       = text_template.Must(text_template.New(`bark`).ParseFS(_root, `bark.md`)).Lookup(`bark.md`)
 )
 
 const (
@@ -59,12 +59,12 @@ func New(notifier proto.NotifyServer) *CommentNotifier {
 // 只发送即时通知，不发送邮件。
 func (cn *CommentNotifier) NotifyAdmin(d *AdminData) {
 	buf := bytes.NewBuffer(nil)
-	chanifyTmpl.Execute(buf, d)
+	barkTmpl.Execute(buf, d)
 	cn.notifier.SendInstant(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
-			Subject: fmt.Sprintf(`%s%s`, authorPrefix, d.Title),
-			Body:    buf.String(),
+			Title: fmt.Sprintf(`%s%s`, authorPrefix, d.Title),
+			Body:  buf.String(),
 		},
 	)
 }
@@ -74,7 +74,7 @@ type Recipient struct {
 		Name    string
 		Address string
 	}
-	ChanifyToken string
+	BarkToken string
 }
 
 // 通知文章作者。
@@ -84,9 +84,9 @@ type Recipient struct {
 func (cn *CommentNotifier) NotifyPostAuthor(data *Data, recipient Recipient) {
 	subject := fmt.Sprintf(`%s %s`, authorPrefix, data.Title)
 	body := bytes.NewBuffer(nil)
-	if recipient.ChanifyToken != `` {
-		chanifyTmpl.Execute(body, data)
-		cn.sendNotify(subject, body.String(), recipient.ChanifyToken)
+	if recipient.BarkToken != `` {
+		barkTmpl.Execute(body, data)
+		cn.sendNotify(subject, body.String(), recipient.BarkToken)
 	} else if recipient.Email.Address != `` {
 		authorMailTmpl.Execute(body, data)
 		cn.sendEmail(subject, body.String(), recipient.Email.Name, recipient.Email.Address)
@@ -101,13 +101,13 @@ func (cn *CommentNotifier) NotifyGuests(data *Data, recipients []Recipient) {
 
 	body1 := bytes.NewBuffer(nil)
 	body2 := bytes.NewBuffer(nil)
-	chanifyTmpl.Execute(body1, data)
+	barkTmpl.Execute(body1, data)
 	guestMailTmpl.Execute(body2, data)
 
 	// 重要！ 每封邮件必须独立发送 （To:），否则会相互看到别人地址、所有人的地址。
 	for _, r := range recipients {
-		if r.ChanifyToken != `` {
-			cn.sendNotify(subject, body1.String(), r.ChanifyToken)
+		if r.BarkToken != `` {
+			cn.sendNotify(subject, body1.String(), r.BarkToken)
 		} else if r.Email.Address != `` {
 			cn.sendEmail(subject, body2.String(), r.Email.Name, r.Email.Address)
 		} else {
@@ -120,9 +120,9 @@ func (cn *CommentNotifier) sendNotify(subject, body string, token string) {
 	cn.notifier.SendInstant(
 		auth.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
-			Subject:      subject,
-			Body:         body,
-			ChanifyToken: token,
+			Title:     subject,
+			Body:      body,
+			BarkToken: token,
 		},
 	)
 }

@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS users (
     `github_user_id` INTEGER NOT NULL,
     `hidden` INTEGER NOT NULL,
     `avatar` TEXT NOT NULL,
-    `chanify_token` TEXT NOT NULL
+    `bark_token` TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS acl (
