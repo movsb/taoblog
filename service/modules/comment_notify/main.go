@@ -60,12 +60,10 @@ func New(notifier proto.NotifyServer) *CommentNotifier {
 func (cn *CommentNotifier) NotifyAdmin(d *AdminData) {
 	buf := bytes.NewBuffer(nil)
 	barkTmpl.Execute(buf, d)
-	cn.notifier.SendInstant(
-		auth.SystemForLocal(context.Background()),
-		&proto.SendInstantRequest{
-			Title: fmt.Sprintf(`%s%s`, authorPrefix, d.Title),
-			Body:  buf.String(),
-		},
+	cn.sendNotify(
+		fmt.Sprintf(`%s%s`, authorPrefix, d.Title),
+		buf.String(),
+		``,
 	)
 }
 

@@ -390,13 +390,30 @@ func (s *Server) createGitSyncTasks(
 			return nil
 		}
 
-		if err := gs.Sync(); err != nil {
-			s.sendNotify("同步失败", err.Error())
-			return err
+		err := gs.Sync()
+		if err == nil {
+			s.notifyServer.SendInstant(
+				auth.SystemForLocal(context.Background()),
+				&proto.SendInstantRequest{
+					Title: `同步成功`,
+					Body:  `全部完成，没有错误。`,
+					Group: `同步与备份`,
+					Level: proto.SendInstantRequest_Passive,
+				},
+			)
+		} else {
+			s.notifyServer.SendInstant(
+				auth.SystemForLocal(context.Background()),
+				&proto.SendInstantRequest{
+					Title: `同步失败`,
+					Body:  err.Error(),
+					Group: `同步与备份`,
+					Level: proto.SendInstantRequest_Active,
+				},
+			)
 		}
 
-		s.sendNotify(`同步成功`, `全部完成，没有错误。`)
-		return nil
+		return err
 	}
 
 	// log.Println(sync())
@@ -438,9 +455,11 @@ func (s *Server) createBackupTasks(
 
 		execute := func() {
 			var messages []string
+			var hasErr bool
 			if err := b.BackupPosts(ctx); err != nil {
 				log.Println(`备份失败：`, err)
 				messages = append(messages, fmt.Sprintf(`文章备份失败：%v`, err))
+				hasErr = true
 			} else {
 				log.Println(`文章备份成功`)
 				messages = append(messages, `文章备份成功。`)
@@ -448,11 +467,20 @@ func (s *Server) createBackupTasks(
 			if err := b.BackupFiles(ctx); err != nil {
 				log.Println(`备份失败：`, err)
 				messages = append(messages, fmt.Sprintf(`附件备份失败：%v`, err))
+				hasErr = true
 			} else {
 				log.Println(`附件备份成功`)
 				messages = append(messages, `附件备份成功。`)
 			}
-			s.sendNotify(`文章和附件备份`, strings.Join(messages, "\n"))
+			s.notifyServer.SendInstant(
+				auth.SystemForLocal(context.Background()),
+				&proto.SendInstantRequest{
+					Title: `文章和附件备份`,
+					Body:  strings.Join(messages, "\n"),
+					Group: `同步与备份`,
+					Level: utils.IIF(hasErr, proto.SendInstantRequest_Active, proto.SendInstantRequest_Passive),
+				},
+			)
 		}
 
 		time.Sleep(time.Minute * 10)

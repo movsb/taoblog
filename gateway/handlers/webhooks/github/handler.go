@@ -65,6 +65,8 @@ func (g *_GitHub) notify(subject, body string) {
 		&proto.SendInstantRequest{
 			Title: subject,
 			Body:  body,
+			Level: proto.SendInstantRequest_Active,
+			Group: `系统状态`,
 		},
 	)
 }

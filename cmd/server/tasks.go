@@ -46,6 +46,8 @@ func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, 
 				&proto.SendInstantRequest{
 					Title: `证书`,
 					Body:  `已经过期`,
+					Group: `系统状态`,
+					Level: proto.SendInstantRequest_Passive,
 				},
 			)
 		}
@@ -62,6 +64,8 @@ func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, 
 			&proto.SendInstantRequest{
 				Title: `证书`,
 				Body:  fmt.Sprintf(`剩余天数：%v`, daysLeft),
+				Group: `系统状态`,
+				Level: proto.SendInstantRequest_Passive,
 			},
 		)
 	}
@@ -150,13 +154,15 @@ func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer
 
 		daysLeft := int(time.Until(t) / time.Hour / 24)
 		update(daysLeft)
-		log.Println(`域名剩余天数：`, daysLeft)
 		if daysLeft < 15 {
+			log.Println(`域名剩余天数：`, daysLeft)
 			notifier.SendInstant(
 				auth.SystemForLocal(ctx),
 				&proto.SendInstantRequest{
 					Title: `域名`,
 					Body:  fmt.Sprintf(`剩余天数：%v`, daysLeft),
+					Group: `系统状态`,
+					Level: proto.SendInstantRequest_Passive,
 				},
 			)
 		}

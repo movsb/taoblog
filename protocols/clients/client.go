@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/url"
 	"time"
@@ -118,15 +117,3 @@ func (_NetConn) SetReadDeadline(t time.Time) error  { return nil }
 func (_NetConn) SetWriteDeadline(t time.Time) error { return nil }
 
 var _ net.Conn = (*_NetConn)(nil)
-
-func (c *ProtoClient) SendInstant(ctx context.Context, title, message string) {
-	if _, err := c.Notify.SendInstant(
-		ctx,
-		&proto.SendInstantRequest{
-			Title: title,
-			Body:  message,
-		},
-	); err != nil {
-		log.Println(`SendInstant:`, title, message, err)
-	}
-}
