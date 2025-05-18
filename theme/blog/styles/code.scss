@@ -40,6 +40,8 @@ code {
 // 所以为了和普通文字区分，加一个 hover 效果。
 :not(pre) > code:hover {
 	text-decoration: underline var(--accent-color) wavy;
+	// 如果字体 <= 14px，波浪线会非常细，不好看。
+	text-decoration-thickness: 1px;
 }
 // a 本身有下划线，不需要混合。
 a > code:hover {
