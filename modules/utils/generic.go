@@ -2,10 +2,8 @@ package utils
 
 import (
 	"bytes"
-	"crypto/rand"
 	"fmt"
 	"io"
-	mr "math/rand"
 	"net/http"
 	"strings"
 )
@@ -54,16 +52,6 @@ func IIF[Any any](cond bool, first, second Any) Any {
 		return first
 	}
 	return second
-}
-
-func RandomString() string {
-	b := [4]byte{}
-	rand.Read(b[:])
-	return fmt.Sprintf(`xx-%x`, b)
-}
-
-func ReInitTestRandomSeed() {
-	rand.Reader = mr.New(mr.NewSource(0))
 }
 
 func DropLast1[First any, Last any](f First, l Last) First {

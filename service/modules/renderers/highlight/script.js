@@ -1,5 +1,4 @@
-function syncCodeScroll(id) {
-	let img = document.getElementById(id);
+function syncCodeScroll(img) {
 	let container = img.parentElement;
 	let tr = container.querySelector(':scope .lntable tr');
 	let td =  container.querySelector(':scope .lntable .lntd:first-child');

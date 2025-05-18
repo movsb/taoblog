@@ -29,7 +29,6 @@ func TestRender(t *testing.T) {
 	testCases := test_utils.MustLoadCasesFromYaml[_TestCase](`test_data/tests.yaml`)
 
 	for i, tc := range testCases {
-		utils.ReInitTestRandomSeed()
 		tag := New(gold_utils.NewWebFileSystem(
 			os.DirFS("test_data"),
 			utils.Must1(url.Parse(`/`)),

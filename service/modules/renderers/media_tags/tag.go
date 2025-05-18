@@ -164,7 +164,6 @@ func (t *MediaTags) parse(src string) (tag.Metadata, error) {
 type Metadata struct {
 	tag.Metadata
 	Source   string
-	Random   string
 	FileName string
 }
 
@@ -186,7 +185,7 @@ func (t *MediaTags) render(md tag.Metadata, source string) (string, error) {
 	if u, err := url.Parse(source); err == nil {
 		name = filepath.Base(u.Path)
 	}
-	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, utils.RandomString(), name}); err != nil {
+	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, name}); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

@@ -53,10 +53,7 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 					// 另外，鉴于 window.event 是被 deprecated 的，所以也不用。
 					// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
 					// https://stackoverflow.com/q/12614862/3628322
-					w.WriteString(fmt.Sprintf(
-						`<img id="%[1]s" style="display:none;" src="https://" onerror="syncCodeScroll('%[1]s')"/>`,
-						utils.RandomString(),
-					))
+					w.WriteString(`<img style="display:none;" src="https://" onerror="syncCodeScroll(this)"/>`)
 					w.WriteRune('\n')
 				} else {
 					language := string(utils.DropLast1(context.Language()))

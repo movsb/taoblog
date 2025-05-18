@@ -1,5 +1,8 @@
-function handleAudio(r) {
-	let player = document.querySelector(`#${r}`);
+function handleAudio(img) {
+	let player = img;
+	while(player && !player.classList.contains('audio-player')) {
+		player = player.parentElement;
+	}
 	let audio = player.querySelector(':scope audio');
 	let time = player.querySelector('.time');
 	audio.addEventListener('play', e => {
