@@ -3,6 +3,8 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
@@ -170,16 +172,20 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 
 	pfs := utils.Must1(s.postDataFS.ForPost(int(postID)))
 
-	if url, encrypted := s.getFasterFileURL(r, pfs, p, file); url != `` {
+	if cache := s.getFasterFileURL(r, pfs, p, file); cache != nil && cache.Get != `` {
 		w.Header().Add(`Cache-Control`, `no-store`)
-		if !encrypted {
-			http.Redirect(w, r, url, http.StatusFound)
+		if !cache.Encrypted {
+			http.Redirect(w, r, cache.Get, http.StatusFound)
 			return
 		} else {
-			// 对于加密情况，直接写 URL，onerror 会处理。
+			// 对于加密情况，直接写相关加密参数，onerror 会处理。
 			// 这样可以尽量减少请求导致的流量，加快速度。
-			w.Header().Set(`Content-Type`, `text/plain`)
-			w.Write([]byte(url))
+			w.Header().Set(`Content-Type`, `application/json`)
+			json.NewEncoder(w).Encode(map[string]any{
+				`src`:   cache.Get,
+				`key`:   base64.StdEncoding.EncodeToString(cache.Key),
+				`nonce`: base64.StdEncoding.EncodeToString(cache.Nonce),
+			})
 			return
 		}
 	}
@@ -199,9 +205,11 @@ type _FileURLCacheValue struct {
 	Head      string
 	Encrypted bool
 	Time      time.Time
+	Nonce     []byte
+	Key       []byte
 }
 
-func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, file string) (_ string, encrypted bool) {
+func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, file string) *_FileURLCacheValue {
 	getterCount := 0
 	// 神经，居然不能获取大小。
 	s.fileURLGetters.Range(func(key, value any) bool {
@@ -209,13 +217,13 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		return true
 	})
 	if getterCount <= 0 {
-		return
+		return nil
 	}
 
 	ac := auth.Context(r.Context())
 	// 测试阶段，只给登录用户使用。
 	if ac.User.IsGuest() {
-		return
+		return nil
 	}
 
 	const ttl = time.Hour
@@ -227,20 +235,20 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		if err == nil {
 			defer rsp.Body.Close()
 			if rsp.StatusCode == 200 {
-				return val.Get, val.Encrypted
+				return val
 			}
 		}
 	}
 
 	s.fileURLs.Delete(key)
 
-	val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (_FileURLCacheValue, error) {
+	val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (*_FileURLCacheValue, error) {
 		val := _FileURLCacheValue{
 			Time: time.Now(),
 		}
 		fp, err := pfs.Open(file)
 		if err != nil {
-			return val, err
+			return nil, err
 		}
 		defer fp.Close()
 		info := utils.Must1(fp.Stat())
@@ -251,21 +259,25 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 				val.Get = get
 				val.Head = head
 				val.Encrypted = enc
+				if enc {
+					val.Nonce = file.Meta.Encryption.Nonce
+					val.Key = file.Meta.Encryption.Key
+				}
 				return false
 			}
 			return true
 		})
 
 		if val.Get == `` {
-			return val, io.EOF
+			return nil, io.EOF
 		}
 
-		return val, nil
+		return &val, nil
 	})
 
-	if err == nil {
-		return val.Get, val.Encrypted
+	if err != nil {
+		return nil
 	}
 
-	return
+	return val
 }

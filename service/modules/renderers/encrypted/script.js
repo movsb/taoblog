@@ -1,27 +1,24 @@
-async function decodeFile(id) {
-	let img = document.querySelector(`img[data-id=${id}],video[data-id=${id}]`);
-	if (!img) { return; }
-	const newURL = await (await fetch(img.src)).text();
-	const data = await (await fetch(newURL)).arrayBuffer();
+async function decryptFile(img) {
+	const spec = await (await fetch(img.src)).json();
+	const data = await (await fetch(spec.src)).arrayBuffer();
 	try {
 		const key = await crypto.subtle.importKey(
-			'raw', Uint8Array.fromBase64(img.dataset.key),
+			'raw', Uint8Array.fromBase64(spec.key),
 			{ name: 'AES-GCM'},
 			false, ['decrypt']
 		);
 		let decrypted = await crypto.subtle.decrypt(
 			{
 				name: 'AES-GCM',
-				iv: Uint8Array.fromBase64(img.dataset.nonce),
+				iv: Uint8Array.fromBase64(spec.nonce),
 			},
 			key,
 			data,
 		);
 		let obj = URL.createObjectURL(new Blob([decrypted]));
 		img.src = obj;
-		['data-id','data-key','data-nonce','onerror'].forEach(e => { img.removeAttribute(e); });
+		['onerror'].forEach(e => { img.removeAttribute(e); });
 	} catch(e) {
-		console.log(e);
-		console.log(id, img.src, img.dataset.key, img.dataset.nonce, new Uint8Array(data).toBase64());
+		console.log(img, spec, new Uint8Array(data).toBase64());
 	}
 }

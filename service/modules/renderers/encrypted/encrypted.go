@@ -2,15 +2,11 @@ package encrypted
 
 import (
 	"embed"
-	"encoding/base64"
-	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
-	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/dynamic"
-	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 )
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
@@ -28,38 +24,15 @@ func init() {
 var _embed embed.FS
 var _local = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
-type _Encrypted struct {
-	web gold_utils.WebFileSystem
-}
+type _Encrypted struct{}
 
-func New(web gold_utils.WebFileSystem) *_Encrypted {
-	return &_Encrypted{
-		web: web,
-	}
+func New() *_Encrypted {
+	return &_Encrypted{}
 }
 
 func (m *_Encrypted) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`img,video`).Each(func(i int, s *goquery.Selection) {
-		src := s.AttrOr(`src`, ``)
-		if src == `` {
-			return
-		}
-
-		fp, err := m.web.OpenURL(src)
-		if err != nil {
-			return
-		}
-		defer fp.Close()
-		sys, ok := utils.Must1(fp.Stat()).Sys().(*models.File)
-		if !ok {
-			return
-		}
-
-		random := utils.RandomString()
-		s.SetAttr(`data-id`, random)
-		s.SetAttr(`data-key`, base64.StdEncoding.EncodeToString(sys.Meta.Encryption.Key))
-		s.SetAttr(`data-nonce`, base64.StdEncoding.EncodeToString(sys.Meta.Encryption.Nonce))
-		s.SetAttr(`onerror`, fmt.Sprintf(`decodeFile("%s")`, random))
+		s.SetAttr(`onerror`, `decryptFile(this)`)
 	})
 	return nil
 }

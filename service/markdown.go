@@ -144,7 +144,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 	)
 
 	if !publicContent {
-		options = append(options, encrypted.New(assets))
+		options = append(options, encrypted.New())
 	}
 
 	tr = renderers.NewMarkdown(options...)
