@@ -78,7 +78,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 			q.Del(`s`)
 		}
 		if q.Has(`cover`) {
-			cover := `300px`
+			cover := `400px`
 			n := utils.DropLast1(strconv.Atoi(q.Get(`cover`)))
 			if n > 0 {
 				cover = fmt.Sprintf(`%dpx`, n)

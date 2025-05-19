@@ -9,18 +9,15 @@ import (
 	"github.com/movsb/taoblog/service/modules/dynamic"
 )
 
-//go:generate sass --style compressed --no-source-map style.scss style.css
-
 func init() {
 	dynamic.RegisterInit(func() {
 		const module = `encrypted`
 		dynamic.WithRoots(module, nil, nil, _embed, _local)
-		dynamic.WithStyles(module, `style.css`)
 		dynamic.WithScripts(module, `script.js`)
 	})
 }
 
-//go:embed style.css script.js
+//go:embed script.js
 var _embed embed.FS
 var _local = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 

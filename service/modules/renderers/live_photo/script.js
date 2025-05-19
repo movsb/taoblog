@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (['NotAllowedError','AbortError'].includes(e.name)) {
 						warning.innerText = '浏览器未允许视频自动播放权限，无法播放实况照片。';
 					} else if (['NotSupportedError'].includes(e.name)) {
-						warning.innerText = '浏览器不支持播放此视频格式。';
+						warning.innerText = '视频未加载完成或浏览器不支持播放此视频格式。';
 					} else {
 						warning.innerText = `其它错误：${e}`;
 					}
