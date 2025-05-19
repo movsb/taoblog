@@ -18,8 +18,8 @@ func TestRender(t *testing.T) {
 		Markdown string
 		HTML     string
 	}
-	cases := test_utils.MustLoadCasesFromYaml[Case](`test_data/tests.yaml`)
-	dir := os.DirFS(`test_data`)
+	cases := test_utils.MustLoadCasesFromYaml[Case](`testdata/tests.yaml`)
+	dir := os.DirFS(`testdata`)
 	web := gold_utils.NewWebFileSystem(dir, utils.Must1(url.Parse(`/`)))
 	for i, tc := range cases {
 		md := renderers.NewMarkdown(

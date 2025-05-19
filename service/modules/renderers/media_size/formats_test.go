@@ -15,7 +15,7 @@ func TestSvg(t *testing.T) {
 		SVG    string `yaml:"svg"`
 		Output string `yaml:"output"`
 	}
-	tcs := test_utils.MustLoadCasesFromYaml[_Svg]("test_data/svg.yaml")
+	tcs := test_utils.MustLoadCasesFromYaml[_Svg]("testdata/svg.yaml")
 	for i, tc := range tcs {
 		md, err := svg(bytes.NewReader([]byte(tc.SVG)))
 		if err != nil {
@@ -36,7 +36,7 @@ func TestAvif(t *testing.T) {
 		width, height int
 	}{
 		{
-			path:   `test_data/test.avif`,
+			path:   `testdata/test.avif`,
 			width:  168,
 			height: 76,
 		},

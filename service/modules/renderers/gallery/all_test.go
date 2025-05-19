@@ -13,7 +13,7 @@ func TestRender(t *testing.T) {
 		Markdown string
 		HTML     string
 	}
-	cases := test_utils.MustLoadCasesFromYaml[Case](`test_data/tests.yaml`)
+	cases := test_utils.MustLoadCasesFromYaml[Case](`testdata/tests.yaml`)
 	for i, tc := range cases {
 		if i == 4 {
 			i += 0

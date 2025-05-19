@@ -1,6 +1,7 @@
 package stringify_test
 
 import (
+	"context"
 	"log"
 	"net/url"
 	"os"
@@ -11,8 +12,11 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
+	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/renderers/math"
+	"github.com/movsb/taoblog/service/modules/renderers/media_size"
 	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
+	"github.com/movsb/taoblog/service/modules/renderers/pikchr"
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/yuin/goldmark/extension"
 )
@@ -125,7 +129,7 @@ func TestPrettifier(t *testing.T) {
 		{
 			ID: 11.0,
 			Options: []any{
-				media_tags.New(gold_utils.NewWebFileSystem(os.DirFS(`../media_tags/test_data`), &url.URL{Path: `/`})),
+				media_tags.New(gold_utils.NewWebFileSystem(os.DirFS(`../media_tags/testdata`), &url.URL{Path: `/`})),
 			},
 			Markdown: `
 万物死
@@ -137,12 +141,29 @@ func TestPrettifier(t *testing.T) {
 			Text: `万物死
 [音乐]`,
 		},
+		{
+			ID: 12.0,
+			Options: []any{
+				media_size.New(gold_utils.NewWebFileSystem(os.DirFS(`../live_photo/testdata`), &url.URL{Path: `/`})),
+				live_photo.New(context.Background(), gold_utils.NewWebFileSystem(os.DirFS(`../live_photo/testdata`), &url.URL{Path: `/`})),
+			},
+			Markdown: `![](1.png)`,
+			Text:     `[实况照片]`,
+		},
+		{
+			ID: 13.0,
+			Options: []any{
+				renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
+			},
+			Markdown: "```pikchr\nbox\n```",
+			Text:     `[图片]`,
+		},
 	}
 	for _, tc := range cases {
 		options := append(tc.Options, extension.GFM, extension.Footnote)
 		options = append(options, renderers.WithHtmlPrettifier(stringify.New()))
 		md := renderers.NewMarkdown(options...)
-		if tc.ID == 9 {
+		if tc.ID == 12.0 {
 			log.Println(`debug`)
 		}
 		text, err := md.Render(tc.Markdown)

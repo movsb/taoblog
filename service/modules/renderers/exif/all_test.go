@@ -10,7 +10,7 @@ import (
 
 func TestOrientation(t *testing.T) {
 	t.SkipNow()
-	f := utils.Must1(os.Open(`test_data/rotate.avif`))
+	f := utils.Must1(os.Open(`testdata/rotate.avif`))
 	defer f.Close()
 	m := utils.Must1(exif_exports.Extract(f))
 	if !m.SwapSizes() {

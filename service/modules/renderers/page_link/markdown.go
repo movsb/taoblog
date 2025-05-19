@@ -41,6 +41,7 @@ type PageLink struct {
 
 type GetPageTitle = func(ctx context.Context, id int32) (string, error)
 
+// ctx 用于 GetPageTitle
 func New(ctx context.Context, getPageTitle GetPageTitle, refs *[]int32) *PageLink {
 	return &PageLink{
 		ctx:          ctx,

@@ -2,6 +2,7 @@ package renderers_test
 
 import (
 	"compress/gzip"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,13 +16,16 @@ import (
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
+	"github.com/movsb/taoblog/service/modules/renderers/encrypted"
 	"github.com/movsb/taoblog/service/modules/renderers/gallery"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/iframe"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
+	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
+	"github.com/movsb/taoblog/service/modules/renderers/page_link"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 )
 
@@ -35,7 +39,7 @@ $$
 }
 
 func TestMarkdownAll(t *testing.T) {
-	server := httptest.NewServer(http.FileServer(http.Dir("test_data")))
+	server := httptest.NewServer(http.FileServer(http.Dir("testdata")))
 	defer server.Close()
 	host := server.URL
 
@@ -43,6 +47,7 @@ func TestMarkdownAll(t *testing.T) {
 	var outputTags []string
 
 	testDataURL, _ := url.Parse(`/`)
+	web := gold_utils.NewWebFileSystem(os.DirFS(`testdata`), testDataURL)
 
 	cases := []struct {
 		ID          float32
@@ -54,13 +59,13 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       1,
 			Markdown: `![avatar](avatar.jpg?scale=0.3)`,
-			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
+			Options:  []renderers.Option2{media_size.New(web)},
 			Html:     `<p><img src="avatar.jpg" alt="avatar" width="138" height="138"/></p>`,
 		},
 		{
 			ID:       2,
 			Markdown: `- ![avatar](avatar.jpg?scale=0.3)`,
-			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
+			Options:  []renderers.Option2{media_size.New(web)},
 			Html: `<ul>
 <li><img src="avatar.jpg" alt="avatar" width="138" height="138"/></li>
 </ul>`,
@@ -68,7 +73,7 @@ func TestMarkdownAll(t *testing.T) {
 		{
 			ID:       2.1,
 			Markdown: `- ![avatar](中文.jpg?scale=0.3)`,
-			Options:  []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
+			Options:  []renderers.Option2{media_size.New(web)},
 			Html: `<ul>
 <li><img src="%E4%B8%AD%E6%96%87.jpg" alt="avatar" width="138" height="138"/></li>
 </ul>`,
@@ -77,7 +82,7 @@ func TestMarkdownAll(t *testing.T) {
 			ID:          3,
 			Description: `支持网络图片的缩放`,
 			Markdown:    fmt.Sprintf(`![](%s/avatar.jpg?scale=0.1)`, host),
-			Options:     []renderers.Option2{media_size.New(gold_utils.NewWebFileSystem(os.DirFS("test_data"), testDataURL))},
+			Options:     []renderers.Option2{media_size.New(web)},
 			Html:        fmt.Sprintf(`<p><img src="%s/avatar.jpg" alt="" width="46" height="46"/></p>`, host),
 		},
 		{
@@ -177,9 +182,31 @@ func TestMarkdownAll(t *testing.T) {
 			Markdown: `<style>table { min-width: 100px; }</style>`,
 			Html:     `<style>article#123 table{min-width:100px;}</style>`,
 		},
+		{
+			ID: 13.0,
+			Options: []renderers.Option2{
+				media_size.New(web),
+				live_photo.New(context.Background(), web),
+				encrypted.New(),
+			},
+			Markdown: `![](1.jpg)`,
+			Html: `
+<div><div class="live-photo" style="width: 460px; height: 460px; aspect-ratio: 1;">
+	<div class="container">
+		<video src="1.mp4" playsinline="" onerror="decryptFile(this)"></video>
+		<img src="1.jpg" alt="" width="460" height="460" onerror="decryptFile(this)"/>
+	</div>
+	<div class="icon">
+		<img src="/v3/dynamic/live-photo/live.png" class="no-zoom static"/>
+		<span>LIVE</span>
+	</div>
+	<div class="warning" style="opacity: 0;"></div>
+</div>
+</div>`,
+		},
 	}
 	for _, tc := range cases {
-		if tc.ID == 10.0 {
+		if tc.ID == 13.0 {
 			log.Println(`debug`)
 		}
 		options := []renderers.Option2{}
@@ -203,7 +230,7 @@ func TestSpec(t *testing.T) {
 		HTML     string `yaml:"html"`
 	}
 
-	fp := utils.Must1(os.Open(`test_data/spec-0.31.2.json.gz`))
+	fp := utils.Must1(os.Open(`testdata/spec-0.31.2.json.gz`))
 	defer fp.Close()
 	gr := utils.Must1(gzip.NewReader(fp))
 
@@ -212,6 +239,9 @@ func TestSpec(t *testing.T) {
 	for _, tc := range testCases {
 		md := renderers.NewMarkdown(
 			emojis.New(baseURL),
+			page_link.New(context.Background(), func(ctx context.Context, id int32) (string, error) {
+				return fmt.Sprint(id), nil
+			}, nil),
 			renderers.WithXHTML(),
 			renderers.WithoutTransform(),
 		)

@@ -32,6 +32,9 @@ func New() *_Encrypted {
 
 func (m *_Encrypted) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`img,video`).Each(func(i int, s *goquery.Selection) {
+		if s.HasClass(`static`) {
+			return
+		}
 		s.SetAttr(`onerror`, `decryptFile(this)`)
 	})
 	return nil

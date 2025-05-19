@@ -23,8 +23,9 @@ var prettifierStrings = map[string]string{
 	`map`:    `地图`,
 	`object`: `对象`,
 	`script`: `脚本`,
-	`svg`:    `图片`,
 	`code`:   `代码`,
+
+	// `svg`:    `图片`,
 }
 
 var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus{
@@ -54,6 +55,9 @@ var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.Wa
 				} else if strings.Contains(a.Val, `audio-player`) {
 					// TODO 用更好的方式，不要特殊处理。
 					buf.WriteString(`[音乐]`)
+					return ast.WalkSkipChildren
+				} else if strings.Contains(a.Val, `live-photo`) {
+					buf.WriteString(`[实况照片]`)
 					return ast.WalkSkipChildren
 				}
 			}
@@ -96,6 +100,20 @@ var prettifierFuncs = map[string]func(buf *bytes.Buffer, node *html.Node) ast.Wa
 			}
 		}
 		return ast.WalkContinue
+	},
+	`svg`: func(buf *bytes.Buffer, node *html.Node) ast.WalkStatus {
+		// <svg class="pikchr">
+		// <svg class="pikchr dark">
+		for _, a := range node.Attr {
+			if a.Key == `class` {
+				switch {
+				case strings.Contains(a.Val, `pikchr dark`), strings.Contains(a.Val, `plantuml dark`):
+					return ast.WalkSkipChildren
+				}
+			}
+		}
+		buf.WriteString(`[图片]`)
+		return ast.WalkSkipChildren
 	},
 }
 

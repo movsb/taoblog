@@ -14,23 +14,23 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 )
 
-//go:embed test_data/player.html
+//go:embed testdata/player.html
 var player embed.FS
 
 func TestRender(t *testing.T) {
 
-	_gTmpl = utils.NewTemplateLoader(utils.Must1(fs.Sub(player, `test_data`)), nil, nil)
+	_gTmpl = utils.NewTemplateLoader(utils.Must1(fs.Sub(player, `testdata`)), nil, nil)
 
 	type _TestCase struct {
 		Markdown string `yaml:"markdown"`
 		HTML     string `yaml:"html"`
 	}
 
-	testCases := test_utils.MustLoadCasesFromYaml[_TestCase](`test_data/tests.yaml`)
+	testCases := test_utils.MustLoadCasesFromYaml[_TestCase](`testdata/tests.yaml`)
 
 	for i, tc := range testCases {
 		tag := New(gold_utils.NewWebFileSystem(
-			os.DirFS("test_data"),
+			os.DirFS("testdata"),
 			utils.Must1(url.Parse(`/`)),
 		))
 		md := renderers.NewMarkdown(tag)

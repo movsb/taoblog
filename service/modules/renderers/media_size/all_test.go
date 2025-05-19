@@ -25,7 +25,7 @@ func TestRender(t *testing.T) {
 
 	for i, tc := range testCases {
 		ext := media_size.New(
-			gold_utils.NewWebFileSystem(os.DirFS(`test_data`), utils.Must1(url.Parse(`/`))),
+			gold_utils.NewWebFileSystem(os.DirFS(`testdata`), utils.Must1(url.Parse(`/`))),
 		)
 		md := renderers.NewMarkdown(ext)
 		html, err := md.Render(tc.Markdown)
