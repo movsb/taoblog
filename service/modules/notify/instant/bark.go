@@ -35,10 +35,12 @@ type _Message struct {
 	DeviceKey string
 }
 
+// https://blog.twofei.com/1683/
 type _BarkMessage struct {
 	Message `json:",inline"`
 
 	Action string `json:"action"`
+	Badge  int    `json:"badge"`
 }
 
 const endpoint = `https://api.day.app`
@@ -54,6 +56,7 @@ func SendBarkMessage(ctx context.Context, deviceKey string, m Message) error {
 	body := utils.Must1(json.Marshal(_BarkMessage{
 		Message: m,
 		Action:  `none`,
+		Badge:   1, // 随意设置的
 	}))
 	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(body)))
 	req.Header.Set(`Content-Type`, `application/json`)
