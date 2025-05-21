@@ -85,7 +85,7 @@ func (e *Emojis) Extend(md goldmark.Markdown) {
 }
 
 func (e *Emojis) Trigger() []byte {
-	return []byte{'[', ']'}
+	return []byte{'['}
 }
 
 var re = regexp.MustCompile(`(?U:^\[.+\])`)
