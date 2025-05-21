@@ -57,7 +57,7 @@ var _ interface {
 
 func (e *PageLink) Extend(m goldmark.Markdown) {
 	m.Parser().AddOptions(
-		// 优先级高于链接，低于代码。
+		// 优先级高于链接(200)，低于代码(100)。
 		parser.WithInlineParsers(util.Prioritized(e, 150)),
 	)
 }
@@ -66,7 +66,7 @@ func (e *PageLink) Trigger() []byte {
 	return []byte{'['}
 }
 
-var re = regexp.MustCompile(`\[\[(\d+)\]\]`)
+var re = regexp.MustCompile(`^\[\[(\d+)\]\]`)
 
 func (e *PageLink) Parse(parent ast.Node, block text.Reader, pc parser.Context) ast.Node {
 	line, _ := block.PeekLine()

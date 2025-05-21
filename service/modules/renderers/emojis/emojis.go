@@ -42,6 +42,7 @@ var _ interface {
 } = (*Emojis)(nil)
 
 func New(baseURL *url.URL) *Emojis {
+	initEmojis()
 	return &Emojis{
 		baseURL: baseURL,
 	}

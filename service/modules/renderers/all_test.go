@@ -204,9 +204,21 @@ func TestMarkdownAll(t *testing.T) {
 </div>
 </div>`,
 		},
+		{
+			ID:          14.0,
+			Description: `表情和页面嵌入同时使用的时候渲染出错`,
+			Options: []renderers.Option2{
+				emojis.New(emojis.BaseURLForDynamic),
+				page_link.New(context.Background(), func(_ context.Context, id int32) (string, error) {
+					return fmt.Sprint(id), nil
+				}, nil),
+			},
+			Markdown: `[狗头] A [[123]]`,
+			Html:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[狗头]" title="狗头" class="emoji weixin"/> A <a href="/123/">123</a></p>`,
+		},
 	}
 	for _, tc := range cases {
-		if tc.ID == 13.0 {
+		if tc.ID == 14.0 {
 			log.Println(`debug`)
 		}
 		options := []renderers.Option2{}
