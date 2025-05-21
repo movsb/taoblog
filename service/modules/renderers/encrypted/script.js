@@ -17,8 +17,16 @@ async function decryptFile(img) {
 		);
 		let obj = URL.createObjectURL(new Blob([decrypted]));
 		img.src = obj;
-		['onerror'].forEach(e => { img.removeAttribute(e); });
+		['onerror','onended'].forEach(e => { img.removeAttribute(e); });
 	} catch(e) {
 		console.log(img, spec, new Uint8Array(data).toBase64());
+	}
+}
+
+function fixVideoCache(video) {
+	if (video.onerror) {
+		let url = new URL(video.src);
+		url.searchParams.set('_', '');
+		video.src = url.toString();
 	}
 }

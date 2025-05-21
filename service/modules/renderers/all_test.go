@@ -193,7 +193,7 @@ func TestMarkdownAll(t *testing.T) {
 			Html: `
 <div><div class="live-photo" style="width: 460px; height: 460px; aspect-ratio: 1;">
 	<div class="container">
-		<video src="1.mp4" playsinline="" onerror="decryptFile(this)"></video>
+		<video src="1.mp4" playsinline="" onerror="decryptFile(this)" onended="fixVideoCache(this)"></video>
 		<img src="1.jpg" alt="" width="460" height="460" onerror="decryptFile(this)"/>
 	</div>
 	<div class="icon">
