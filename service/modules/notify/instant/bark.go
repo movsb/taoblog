@@ -56,7 +56,10 @@ func SendBarkMessage(ctx context.Context, deviceKey string, m Message) error {
 	body := utils.Must1(json.Marshal(_BarkMessage{
 		Message: m,
 		Action:  `none`,
-		Badge:   1, // 随意设置的
+
+		// 随意设置无意义的值，只需要有个角标，因为 App 不支持自动统计。
+		// 仅在非被动通知下才设置角标。
+		Badge: utils.IIF(m.Level == Passive, 0, 1),
 	}))
 	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(body)))
 	req.Header.Set(`Content-Type`, `application/json`)
