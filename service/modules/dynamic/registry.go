@@ -109,20 +109,18 @@ func WithScripts(module string, paths ...string) {
 	filesExists(c.private, paths...)
 
 	if dirFS, ok := c.private.(*utils.OSDirFS); ok {
-		if _, err := fs.Stat(c.private, `style.scss`); err == nil {
-			root := path.Clean(dirFS.Root())
-			go func() {
-				events, close := utils.Must2(dirFS.Watch())
-				defer close()
-				for e := range events {
-					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
-					if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
-						log.Println(`需要重新加载脚本`, e)
-						reloadAll.Store(true)
-					}
+		root := path.Clean(dirFS.Root())
+		go func() {
+			events, close := utils.Must2(dirFS.Watch())
+			defer close()
+			for e := range events {
+				name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
+				if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
+					log.Println(`需要重新加载脚本`, e)
+					reloadAll.Store(true)
 				}
-			}()
-		}
+			}
+		}()
 	}
 
 	if cc, ok := c.private.(ContentChanged); ok {
