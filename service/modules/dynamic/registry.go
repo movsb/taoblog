@@ -207,9 +207,11 @@ func initContents() {
 	script := bytes.NewReader(scriptBuilder.Bytes())
 
 	roots.HandleFunc(`GET /style.css`, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add(`Cache-Control`, `private, no-cache, must-revalidate`)
 		http.ServeContent(w, r, `style.css`, Mod, style)
 	})
 	roots.HandleFunc(`GET /script.js`, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add(`Cache-Control`, `private, no-cache, must-revalidate`)
 		http.ServeContent(w, r, `script.js`, Mod, script)
 	})
 }
