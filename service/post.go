@@ -1504,6 +1504,10 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 					if post.Status != models.PostStatusPartial {
 						return
 					}
+
+					// 假装延时一下，以把“新文章发表”通知提前。
+					time.Sleep(time.Second * 5)
+
 					// TODO s 内部有 db 事务
 					// 异步的时候 goroutine 会拷贝 s 导致事务已提交
 					// 所以部分代码放在了 go 之外。
