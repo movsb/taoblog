@@ -167,7 +167,7 @@ public class Client : ObservableObject {
 	func setPostStatus(_ id: Int64, status: String, completion: @escaping ()->Void) throws {
 		self._blog.setPostStatus(.with {
 			$0.id = id
-			$0.public = status == "public"
+			$0.status = status
 			$0.touch = false
 		}).response.whenComplete { result in
 			switch result {
