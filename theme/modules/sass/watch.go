@@ -21,7 +21,6 @@ func WatchDefaultAsync(dir string) {
 	go Watch(dir, `style.scss`, `style.css`)
 }
 
-// TODO 未处理带空格的路径。
 // 使用 sass --watch 不易 debounce，所以没使用。
 // NOTE: 只在 DevMode 下执行。
 func Watch(dir string, input, output string) {

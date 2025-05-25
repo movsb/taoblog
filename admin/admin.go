@@ -25,7 +25,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils/dir"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -416,15 +415,9 @@ type EditorData struct {
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 	if isNew := r.URL.Query().Get(`new`) == `1`; isNew {
-		post := utils.Must1(a.svc.CreatePost(r.Context(),
-			&proto.Post{
-				Type:       `post`,
-				SourceType: `markdown`,
-				Source:     fmt.Sprintf("# %s\n\n", models.Untitled),
-			},
-		))
+		post := utils.Must1(a.svc.CreateUntitledPost(r.Context(), &proto.CreateUntitledPostRequest{}))
 		args := urlpkg.Values{}
-		args.Set(`id`, fmt.Sprint(post.Id))
+		args.Set(`id`, fmt.Sprint(post.Post.Id))
 		url := a.prefixed(`editor`) + `?` + args.Encode()
 		http.Redirect(w, r, url, http.StatusFound)
 		return

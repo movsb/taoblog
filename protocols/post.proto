@@ -230,6 +230,11 @@ message ListPostsResponse {
 	repeated Post posts = 1;
 }
 
+message CreateUntitledPostRequest {}
+message CreateUntitledPostResponse {
+	Post post = 1;
+}
+
 message GetTopPostsRequest {
 	GetPostOptions get_post_options = 1;
 }

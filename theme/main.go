@@ -104,7 +104,6 @@ func createMenus(items []config.MenuItem, outer bool) string {
 			s += " target=_blank"
 		}
 		if item.Link != "" {
-			// TODO maybe error
 			s += fmt.Sprintf(` href="%s"`, html.EscapeString(item.Link))
 		}
 		s += fmt.Sprintf(`>%s</a>`, html.EscapeString(item.Name))
@@ -344,7 +343,6 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 	return false
 }
 
-// TODO 没有处理错误（比如文件不存在）。
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	handle304.MustRevalidate(w)
 	utils.ServeFSWithAutoModTime(w, req, t.rootFS, file)

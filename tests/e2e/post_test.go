@@ -194,7 +194,7 @@ func TestSitemaps(t *testing.T) {
 	utils.Must1(io.Copy(buf, rsp.Body))
 	// t.Log(buf.String())
 
-	// TODO 硬编码的，难得解析了。
+	// NOTE: 硬编码的，难得解析了。
 	expect := `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url><loc>http://localhost:2564/1/</loc></url>
@@ -521,5 +521,17 @@ func TestUpdateTags(t *testing.T) {
 	slices.Sort(tags)
 	if !reflect.DeepEqual(tags, []string{`t3`}) {
 		t.Fatal(`not equal`)
+	}
+}
+
+func TestCreateUntitledPost(t *testing.T) {
+	r := Serve(t.Context())
+	_, err := r.client.Blog.CreateUntitledPost(r.user1, &proto.CreateUntitledPostRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = r.client.Blog.CreateUntitledPost(r.guest, &proto.CreateUntitledPostRequest{})
+	if err == nil {
+		t.Fatal(`未鉴权`)
 	}
 }

@@ -88,7 +88,7 @@ func (d *Data) Kind() string {
 
 func (d *Data) Info() (*proto.GetInfoResponse, error) {
 	if d.Context == nil {
-		d.Context = auth.GuestForLocal(context.TODO())
+		d.Context = auth.GuestForLocal(context.Background())
 	}
 	return d.svc.GetInfo(d.Context, &proto.GetInfoRequest{})
 }

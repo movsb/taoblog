@@ -57,7 +57,7 @@ func (d *PostData) CommentsAsJsonArray() template.JS {
 	//      {...},
 	// ]
 	buf.WriteString("[\n")
-	// TODO 这个  marshaller 会把 < > 给转义了，其实没必要。
+	// NOTE: 这个  marshaller 会把 < > 给转义了，其实没必要。
 	encoder := jsonpb.Marshaler{
 		OrigName: true,
 	}

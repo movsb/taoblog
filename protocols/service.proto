@@ -175,6 +175,11 @@ service TaoBlog {
 			description: "创建新文章。";
 		};
 	}
+	rpc CreateUntitledPost(CreateUntitledPostRequest) returns (CreateUntitledPostResponse) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "创建一篇无标题新文章。主要给后台管理用。";
+		};
+	}
 	rpc GetPost (GetPostRequest) returns (Post) {
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "获取某篇文章。";

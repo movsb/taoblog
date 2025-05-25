@@ -463,7 +463,6 @@ func (s *Service) updatePostMetadataTime(pid int64, t time.Time) {
 	s.tdb.MustExec(`UPDATE posts SET last_commented_at=? WHERE id=?`, t.Unix(), pid)
 }
 
-// CreatePost ...
 func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, error) {
 	ac := s.MustCanCreatePost(ctx)
 
@@ -553,6 +552,18 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	return p.ToProto(s.setPostExtraFields(ctx, nil))
 }
 
+// 本身未鉴权，由 CreatePost 鉴权。
+func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitledPostRequest) (*proto.CreateUntitledPostResponse, error) {
+	p, err := s.CreatePost(ctx, &proto.Post{
+		Type:       `post`,
+		SourceType: `markdown`,
+		Source:     fmt.Sprintf("# %s\n\n", models.Untitled),
+	})
+	return &proto.CreateUntitledPostResponse{
+		Post: p,
+	}, err
+}
+
 func (s *Service) getPostCached(ctx context.Context, id int) (*models.Post, error) {
 	p, err, _ := s.postFullCaches.GetOrLoad(ctx, int64(id), func(ctx context.Context, i int64) (*models.Post, time.Duration, error) {
 		var post models.Post
@@ -561,6 +572,7 @@ func (s *Service) getPostCached(ctx context.Context, id int) (*models.Post, erro
 	return p, err
 }
 
+// TODO 上缓存。
 func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
 	post, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(id)})
 	if err != nil {
