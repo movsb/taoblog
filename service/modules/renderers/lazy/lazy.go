@@ -1,6 +1,25 @@
 package lazy
 
-import "github.com/PuerkitoBio/goquery"
+import (
+	"embed"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/service/modules/dynamic"
+)
+
+//go:embed load.js
+var _embed embed.FS
+var _local = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
+
+func init() {
+	dynamic.RegisterInit(func() {
+		const module = `lazy`
+		dynamic.WithRoots(module, nil, nil, _embed, _local)
+		dynamic.WithScripts(module, `load.js`)
+	})
+}
 
 type Lazy struct{}
 
