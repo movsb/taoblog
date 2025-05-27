@@ -254,6 +254,19 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		info := utils.Must1(fp.Stat())
 		file := info.Sys().(*models.File)
 
+		// 垃圾阿里云会自动给 html 文件增加 `Content-Disposition: attachment`，导致变成下载。
+		//
+		// "使用 OSS 默认域名访问 html、图片资源，会有以附件形式下载的情况。若需要浏览器直接访问，需使用自定义域名进行访问，了解详情。"
+		//
+		// https://help.aliyun.com/zh/oss/user-guide/how-to-ensure-an-object-is-previewed-when-you-access-the-object
+		//
+		// 在此特殊处理一下：
+		//
+		//  1. 如果是小文件，不走加速。
+		if info.Size() < 100<<10 {
+			return nil, io.EOF
+		}
+
 		s.fileURLGetters.Range(func(key, value any) bool {
 			if get, head, enc, err := value.(theme_fs.FileURLGetter).GetFileURL(p, file, ttl); err == nil {
 				val.Get = get
