@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// 尽可能修复 Safari 无法播放的问题
 		// if (/WebKit/.test(navigator.userAgent)) {
-		video.load();
+		// NOTE: 为了避免预加载，不应该提前 load。
+		// video.load();
 		// }
 
 		// fix: 鼠标进入 → 开始加载 → 鼠标离开（加载成功前） → 加载失败。

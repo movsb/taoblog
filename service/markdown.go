@@ -25,6 +25,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/iframe"
 	"github.com/movsb/taoblog/service/modules/renderers/image"
 	"github.com/movsb/taoblog/service/modules/renderers/invalid_scheme"
+	"github.com/movsb/taoblog/service/modules/renderers/lazy"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
@@ -141,6 +142,9 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		// 其它选项可能会插入链接，所以放后面。
 		// BUG: 放在 html 的最后执行，不然无效，对 hashtags。
 		link_target.New(link_target.OpenLinksInNewTabKind(co.OpenLinksInNewTab)),
+
+		// 其它选项可能会插入图片/音视频，所以放后面。
+		lazy.New(),
 	)
 
 	if !publicContent {

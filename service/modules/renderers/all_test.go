@@ -20,7 +20,8 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gallery"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
-	"github.com/movsb/taoblog/service/modules/renderers/iframe"
+	"github.com/movsb/taoblog/service/modules/renderers/image"
+	"github.com/movsb/taoblog/service/modules/renderers/lazy"
 	"github.com/movsb/taoblog/service/modules/renderers/link_target"
 	"github.com/movsb/taoblog/service/modules/renderers/list_markers"
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
@@ -152,10 +153,30 @@ func TestMarkdownAll(t *testing.T) {
 </ul>`,
 		},
 		{
-			ID:       9.0,
-			Markdown: `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
-			Options:  []renderers.Option2{iframe.New(true)},
-			Html:     `<iframe width="560" height="315" src="https://www.youtube.com/embed/7FiQV1-z06Q?si=013GZ9Dja-o8n2EY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="" loading="lazy"></iframe>`,
+			// https://blog.twofei.com/1706/#comment-2077
+			ID: 9.0,
+			Markdown: `
+<iframe></iframe>
+
+<img/>
+
+<audio></audio>
+
+<video></video>
+
+<video preload="metadata"></video>
+`,
+			Options: []renderers.Option2{
+				image.New(nil),
+				lazy.New()},
+			// 奇怪🤔，为什么 <img> 不会被放在 <p> 中？
+			Html: `
+<iframe loading="lazy"></iframe>
+<img loading="lazy"/>
+<p><audio preload="none"></audio></p>
+<p><video preload="none"></video></p>
+<p><video preload="metadata"></video></p>
+`,
 		},
 		{
 			ID:      10.0,

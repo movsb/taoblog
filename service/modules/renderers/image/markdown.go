@@ -146,7 +146,6 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 	if n.Attributes() != nil {
 		html.RenderAttributes(w, n, html.ImageAttributeFilter)
 	}
-	_, _ = w.WriteString(` loading="lazy"`)
 
 	if len(styles) > 0 {
 		b := strings.Builder{}

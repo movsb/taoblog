@@ -7,9 +7,9 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
-	"golang.org/x/net/html"
 )
 
+// NOTE: 关于 lazy 的设置已经转移到 lazy/ 目录内统一处理。
 // 油管的分享视频 iframe 竟然默认不是 lazy lading 的，有点儿无语😓。
 // 目前碎碎念是全部加载的，有好几个视频，会严重影响页面加载速度。
 //
@@ -34,9 +34,6 @@ type _LazyLoadingFrames struct {
 func (m *_LazyLoadingFrames) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`iframe`).Each(func(i int, s *goquery.Selection) {
 		if m.show {
-			node := s.Nodes[0]
-			node.Attr = append(node.Attr, html.Attribute{Key: `loading`, Val: `lazy`})
-
 			// B站竟然不写尺寸……
 			{
 				src := s.AttrOr(`src`, ``)
@@ -65,5 +62,5 @@ func (m *_LazyLoadingFrames) TransformHtml(doc *goquery.Document) error {
 const replaced = `
 <div class="iframe-placeholder" style="border: 1px dashed var(--border-color); text-align: center; vertical-align: middle; display: table-cell; color: var(--border-color);">
 	预览时将不加载内嵌页面。
-</di>
+</div>
 `
