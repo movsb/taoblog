@@ -54,6 +54,9 @@ func (t *_HashTags) Transform(node *ast.Document, reader text.Reader, pc parser.
 	})
 	list := make([]string, 0, len(tags))
 	for tag := range tags {
+		if shouldDrop(tag) {
+			continue
+		}
 		list = append(list, tag)
 	}
 	*t.out = list
@@ -66,6 +69,15 @@ var getRegexps = sync.OnceValue(func() []*regexp.Regexp {
 	}
 })
 
+func shouldDrop(tag string) bool {
+	for _, re := range getRegexps() {
+		if re.MatchString(tag) {
+			return true
+		}
+	}
+	return false
+}
+
 // 丢弃部分可能无效的#️⃣标签。
 //
 // 像 [main.go#L123](https://...) 这种链接的文本中，是允许存在各种内联元素的，
@@ -75,10 +87,8 @@ var getRegexps = sync.OnceValue(func() []*regexp.Regexp {
 // 所以目前仅仅是简单地丢弃部分我觉得无效的标签，遇到了就补充。
 func dropInvalid(resolver func(string) string) func(string) string {
 	return func(tag string) string {
-		for _, re := range getRegexps() {
-			if re.MatchString(tag) {
-				return ``
-			}
+		if shouldDrop(tag) {
+			return ``
 		}
 		return resolver(tag)
 	}
