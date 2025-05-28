@@ -78,6 +78,7 @@ type Geo struct {
 	Name      string  `json:"name,omitempty" yaml:"name,omitempty"`           // 地理位置的名字
 	Longitude float32 `json:"longitude,omitempty" yaml:"longitude,omitempty"` // 经度
 	Latitude  float32 `json:"latitude,omitempty" yaml:"latitude,omitempty"`   // 纬度
+	Private   bool    `json:"private,omitempty" yaml:"private,omitempty"`     // 是否私有地址
 }
 
 var (
@@ -118,11 +119,12 @@ func (m *PostMeta) ToProto() *proto.Metas {
 			Time:        src.Time,
 		}
 	}
-	if g := m.Geo; g != nil && g.Longitude != 0 && g.Latitude != 0 {
+	if g := m.Geo; g != nil {
 		p.Geo = &proto.Metas_Geo{
 			Longitude: g.Longitude,
 			Latitude:  g.Latitude,
 			Name:      g.Name,
+			Private:   g.Private,
 		}
 	}
 	p.Origin = m.Origin
@@ -168,6 +170,7 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 			Longitude: g.Longitude,
 			Latitude:  g.Latitude,
 			Name:      g.Name,
+			Private:   g.Private,
 		}
 	}
 	m.Origin = p.Origin

@@ -181,7 +181,7 @@ var geoTmpl = template.Must(template.New(`geo`).Parse(`
 
 func (d *Post) GeoElement() template.HTML {
 	g := d.GetMetas().GetGeo()
-	if g != nil && g.Longitude > 0 && g.Latitude > 0 && g.Name != "" {
+	if g != nil && !g.Private && g.Longitude > 0 && g.Latitude > 0 && g.Name != "" {
 		var buf bytes.Buffer
 		geoTmpl.Execute(&buf, g)
 		return template.HTML(buf.String())

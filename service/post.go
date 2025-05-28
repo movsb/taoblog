@@ -1163,8 +1163,9 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 	topPosts := s.getUserTopPosts(int(ac.User.ID))
 
 	return func(p *proto.Post) error {
+		// 私有地址仅对作者可见。
 		if ac.User.ID != int64(p.UserId) {
-			if p.Metas != nil {
+			if p.Metas != nil && p.Metas.Geo != nil && p.Metas.Geo.Private {
 				p.Metas.Geo = nil
 			}
 		}

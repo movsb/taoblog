@@ -16,6 +16,8 @@ message Metas {
 		string name = 1;
 		float longitude = 2;
 		float latitude = 3;
+		// 是否私有地址。私有地址不对外展示。
+		bool private = 4;
 	}
 	message Origin {
 		enum Platform {

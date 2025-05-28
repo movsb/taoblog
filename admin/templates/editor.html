@@ -95,6 +95,10 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			<span id="geo_location_loading"></span>
 			<datalist id="resolved_geo_locations"></datalist>
 		</label>
+		<label><span style="visibility: hidden;">私有：</span>
+			<input type="checkbox" name="geo_private" autocomplete="off"/>
+			私有地址（不对外显示）
+		</label>
 	</p>
 	<hr>
 	<p><input type="submit" value="保存" /></p>

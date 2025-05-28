@@ -219,12 +219,14 @@ class PostFormUI {
 	get elemIndent()    { return this._form['auto-indent']; }
 	
 	get geo() {
+		const private_ = this._form['geo_private'].checked;
 		const values = this._form['geo_location'].value.trim().split(',');
 		if (values.length == 1 && values[0] == '') {
 			return {
 				name: '',
 				longitude: 0,
 				latitude: 0,
+				'private': private_,
 			};
 		}
 		if (values.length != 2) {
@@ -237,13 +239,17 @@ class PostFormUI {
 			name: this._form['geo_name'].value,
 			longitude: longitude,
 			latitude: latitude,
+			'private': private_,
 		};
 	}
 	set geo(g) {
 		if (!g) { return; }
 		this._form['geo_name'].value = g.name ?? '';
 		// 按 GeoJSON 来，经度在前，纬度在后。
-		this._form['geo_location'].value = `${g.longitude},${g.latitude}`;
+		if (g.longitude > 0 && g.latitude > 0) {
+			this._form['geo_location'].value = `${g.longitude},${g.latitude}`;
+		}
+		this._form['geo_private'].checked = !!g['private'];
 	}
 
 	get usersForRequest() {

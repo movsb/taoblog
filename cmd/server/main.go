@@ -261,7 +261,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.sendNotify(`网站状态`, `现在开始运行。`)
 
-	go liveCheck(ctx, s, theService)
+	if !version.DevMode() {
+		go liveCheck(ctx, s, theService)
+	}
 
 	if s.initBackupTasks {
 		go s.createBackupTasks(ctx, cfg)
