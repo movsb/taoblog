@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>一次性密码</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-<link rel="stylesheet" type="text/css" href="/style.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="/style.css">
 {{ apply_site_theme_customs }}
 <script src="script.js"></script>
 </head>
@@ -17,8 +17,8 @@
 <p><b>一次性密码</b>会要求你再输入一个随时间变化的六位数密码，就像银行使用的动态密码一样。
 即便固定密码发生泄露，在没有获得一次性密码的情况下，光凭固定密码也完全无法登录，增加了安全性。</p>
 <form>
-	<input type="hidden" name="set" value="1"/>
-	<input type="submit" value="立即设置"/>
+	<input type="hidden" name="set" value="1">
+	<input type="submit" value="立即设置">
 	<button onclick="location.href='profile';return false;">暂不设置</button>
 </form>
 {{ end }}

@@ -17,7 +17,7 @@
 
 - markdown: |
     <audio controls>
-      <source src="杨晚晚%20-%20片片相思赋予谁.mp3" />
+      <source src="杨晚晚%20-%20片片相思赋予谁.mp3">
     </audio>
   html: |
     <div class="audio-player">
@@ -34,7 +34,7 @@
     
     
     <audio controls>
-      <source src="杨晚晚 - 片片相思赋予谁.mp3" />
+      <source src="杨晚晚 - 片片相思赋予谁.mp3">
     </audio>
   html: |
     <p>《万物死 - 云母逼乐队》</p>

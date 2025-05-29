@@ -88,7 +88,7 @@ func (ThemeStylesheetsConfig) CanSave() {}
 
 func DefaultThemeStylesheetsConfig() ThemeStylesheetsConfig {
 	return ThemeStylesheetsConfig{
-		Template: `<link rel="stylesheet" type="text/css" href="{{.Source}}" />`,
+		Template: `<link rel="stylesheet" type="text/css" href="{{.Source}}">`,
 	}
 }
 

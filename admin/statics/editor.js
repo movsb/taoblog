@@ -552,7 +552,7 @@ class FilesManager {
 	}
 
 	// 创建一个文件。
-	// f: <input type="file" /> 中拿来的文件。
+	// f: <input type="file"> 中拿来的文件。
 	async create(f, progress) {
 		let dimension = await FilesManager.detectImageSize(f);
 		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
@@ -602,7 +602,7 @@ class FilesManager {
 	}
 
 	// 通过浏览器快速判断图片文件的尺寸。
-	// f: <input type="file" /> 中拿来的文件。
+	// f: <input type="file"> 中拿来的文件。
 	// 不会抛异常。
 	static detectImageSize(f) {
 		return new Promise((success, failure) => {

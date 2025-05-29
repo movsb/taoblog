@@ -284,8 +284,8 @@ var mediaTmpl = template.Must(template.New(`media`).Parse(`
 {{- end }}
 
 {{- range .Videos }}
-<video controls {{ if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} data-poster="{{.PosterURL}}" />
-<source src="{{.FileName}}" type="{{.ContentType}}"/>
+<video controls {{ if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} data-poster="{{.PosterURL}}">
+<source src="{{.FileName}}" type="{{.ContentType}}">
 </video>
 {{- end }}
 </div>

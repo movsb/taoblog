@@ -15,7 +15,7 @@
 最终的链接是 `/about/sub/dir/main.go`。
 后端服务无法/难以识别出哪一部分属于页面路径、哪一部分属于文件路径。
 
-所以，目前所有的文章/页面下都包含了一个 `<base href="/123/" />` 类似这样的标签，
+所以，目前所有的文章/页面下都包含了一个 `<base href="/123/">` 类似这样的标签，
 用于告知浏览器页面中所有的相对链接的 `baseURI`。
 但是这会[破坏锚点链接（`#section`）的点击](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base#in-page_anchors)：
 

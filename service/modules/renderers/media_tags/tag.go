@@ -170,7 +170,7 @@ type Metadata struct {
 func (d *Metadata) PictureAsImage() template.HTML {
 	if p := d.Picture(); p != nil {
 		base64 := base64.RawStdEncoding.EncodeToString(p.Data)
-		return template.HTML(fmt.Sprintf(`<img title="%s" src="data:%s;base64,%s" />`,
+		return template.HTML(fmt.Sprintf(`<img title="%s" src="data:%s;base64,%s">`,
 			html.EscapeString(p.Description),
 			p.MIMEType,
 			base64,

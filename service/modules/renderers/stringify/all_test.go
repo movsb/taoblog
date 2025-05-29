@@ -135,7 +135,7 @@ func TestPrettifier(t *testing.T) {
 万物死
 
 <audio controls>
-	<source src="杨晚晚 - 片片相思赋予谁.mp3" />
+	<source src="杨晚晚 - 片片相思赋予谁.mp3">
 </audio>
 `,
 			Text: `万物死

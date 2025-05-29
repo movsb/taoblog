@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8"/>
+<meta charset="UTF-8">
 <title>文章编辑</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-<link rel="stylesheet" type="text/css" href="/style.css" />
-<link rel="stylesheet" type="text/css" href="/v3/dynamic/style.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="/style.css">
+<link rel="stylesheet" type="text/css" href="/v3/dynamic/style.css">
 <script src="/scripts/header.js"></script>
 <script src="/v3/dynamic/script.js"></script>
 <script src="/admin/tinymde.js"></script>
 <script src="/admin/script.js"></script>
-<link rel="stylesheet" type="text/css" href="/admin/tinymde.css" />
+<link rel="stylesheet" type="text/css" href="/admin/tinymde.css">
 {{ apply_site_theme_customs }}
 </head>
 <body class="admin editor">
@@ -30,16 +30,16 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	<hr>
 	<p>
 		选项：
-		<label><input type="checkbox" id="toggle-wrap" checked autocomplete="off"/>自动折行</label>
-		<label><input type="checkbox" id="toggle-preview" checked autocomplete="off" />显示预览</label>
-		<label><input type="checkbox" id="toggle-diff" autocomplete="off"/>显示变更</label>
-		<label><input type="checkbox" name="auto-indent" autocomplete="off"/>自动段落缩进</label>
+		<label><input type="checkbox" id="toggle-wrap" checked autocomplete="off">自动折行</label>
+		<label><input type="checkbox" id="toggle-preview" checked autocomplete="off">显示预览</label>
+		<label><input type="checkbox" id="toggle-diff" autocomplete="off">显示变更</label>
+		<label><input type="checkbox" name="auto-indent" autocomplete="off">自动段落缩进</label>
 	</p>
 	<hr>
 	<p>
 		<label>
 			日期：
-			<input type="datetime-local" name="time" value="" />
+			<input type="datetime-local" name="time" value="">
 		</label>
 	</p>
 	<p>
@@ -87,27 +87,27 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	</p>
 	<p class="geo">
 		<label><span>位置：</span>
-			<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off"/>
+			<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off">
 			<button id="geo_modify">获取</button>
 		</label>
 		<label><span style="visibility: hidden;">位置：</span>
-			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off" list="resolved_geo_locations"/>
+			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off" list="resolved_geo_locations">
 			<span id="geo_location_loading"></span>
 			<datalist id="resolved_geo_locations"></datalist>
 		</label>
 		<label><span style="visibility: hidden;">私有：</span>
-			<input type="checkbox" name="geo_private" autocomplete="off"/>
+			<input type="checkbox" name="geo_private" autocomplete="off">
 			私有地址（不对外显示）
 		</label>
 	</p>
 	<hr>
-	<p><input type="submit" value="保存" /></p>
+	<p><input type="submit" value="保存"></p>
 	<div class="files">
 		<ol class="uploading"></ol>
 		<hr>
 		<ol class="list"></ol>
 	</div>
-	<input type="file" style="display: none;" multiple id="files" autocomplete="off" />
+	<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 </form>
 <script src="editor.js"></script>
 </body>

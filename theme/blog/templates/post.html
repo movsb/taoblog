@@ -1,5 +1,5 @@
 {{define "custom_header"}}
-<base href="/{{.Data.Post.ID}}/" />
+<base href="/{{.Data.Post.ID}}/">
 <script>
 TaoBlog.posts["{{.Data.Post.Id}}"] = {{$.Strip .Data.Post}};
 TaoBlog.post_id = +"{{.Data.Post.Id}}";

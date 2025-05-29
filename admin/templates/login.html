@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>登录 - {{ .Name }}</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
-<link rel="stylesheet" type="text/css" href="/style.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="/style.css">
 {{ apply_site_theme_customs }}
 <script>
 window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
@@ -70,14 +70,14 @@ function redirect(to) {
 <div class="alts" style="display: none;">
 <form method="post" id="login-form" style="text-align: center;">
 	<div>
-		<input type="text" name="user" placeholder="用户名" required />
-		<br />
-		<input type="password" name="passwd" placeholder="密码" required />
-		<br />
-		<input type="text" name="otp" placeholder="动态密码" pattern="\d{6}" style="display: none;"/>
+		<input type="text" name="user" placeholder="用户名" required>
+		<br>
+		<input type="password" name="passwd" placeholder="密码" required>
+		<br>
+		<input type="text" name="otp" placeholder="动态密码" pattern="\d{6}" style="display: none;">
 	</div>	
 	<div>
-		<input type="submit" value="登录" />
+		<input type="submit" value="登录">
 	</div>
 	<script>
 		(function(){
@@ -129,7 +129,7 @@ function redirect(to) {
 	</script>
 </form>
 {{ if .HasSocialLogins }}
-<hr style="margin: 1em auto; width: 80%;" />
+<hr style="margin: 1em auto; width: 80%;">
 <div id="social-logins" style="text-align: center;">
 	{{ with .GitHubClientID }}
 	<div>

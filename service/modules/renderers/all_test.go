@@ -158,7 +158,7 @@ func TestMarkdownAll(t *testing.T) {
 			Markdown: `
 <iframe></iframe>
 
-<img/>
+<img>
 
 <audio></audio>
 

@@ -154,18 +154,18 @@ GitHub 的 Alerts。
 
 ### 输入框
 
-* 文本：<input type=text />
-* 密码：<input type=password />
-* 网址：<input type=url />
-* 邮箱：<input type=email />
-* 日期：<input type=datetime-local />
+* 文本：<input type=text>
+* 密码：<input type=password>
+* 网址：<input type=url>
+* 邮箱：<input type=email>
+* 日期：<input type=datetime-local>
 * 编辑：<textarea></textarea>
 
 ### 按钮
 
-* 提交：<input type=submit value="提交按钮" /><input type=submit value="禁用" disabled="" />
-* 重置：<input type=reset value="重置按钮" />
-* 按钮：<input type=button value="输入按钮" />
+* 提交：<input type=submit value="提交按钮"><input type=submit value="禁用" disabled="">
+* 重置：<input type=reset value="重置按钮">
+* 按钮：<input type=button value="输入按钮">
 * 按钮：<button>普通按钮</button><button disabled="">禁用</button>
 
 ### 选择
@@ -176,13 +176,13 @@ GitHub 的 Alerts。
 	<option>选项三</option>
 </select>
 
-复选框：<label><input type=checkbox />选项一</label>
-<label><input type=checkbox />选项二</label>
-<label><input type=checkbox />选项三</label>
+复选框：<label><input type=checkbox>选项一</label>
+<label><input type=checkbox>选项二</label>
+<label><input type=checkbox>选项三</label>
 
-单选框：<label><input type=radio name="r" />选项一</label>
-<label><input type=radio name="r" />选项二</label>
-<label><input type=radio name="r" />选项三</label>
+单选框：<label><input type=radio name="r">选项一</label>
+<label><input type=radio name="r">选项二</label>
+<label><input type=radio name="r">选项三</label>
 
 ## 其它
 
@@ -193,7 +193,7 @@ GitHub 的 Alerts。
 <dialog id="dialog">
   <p>一段文字。</p>
   <form method="dialog">
-    <input type="submit" value="关闭" />
+    <input type="submit" value="关闭">
   </form>
 </dialog>
 

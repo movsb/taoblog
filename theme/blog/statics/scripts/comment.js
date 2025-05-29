@@ -32,15 +32,15 @@ document.write(function(){/*
 			<div class="overlay" id="comment-preview" style="display: none;"></div>
 		</div>
 		<div class="fields">
-			<input type="text" name="author" placeholder="昵称" required/>
-			<input type="email" name="email" placeholder="邮箱(不公开)" required/>
-			<input type="url" name="url" placeholder="网站(可不填)" />
-			<input type="submit" id="comment-submit" value="发表评论" />
+			<input type="text" name="author" placeholder="昵称" required>
+			<input type="email" name="email" placeholder="邮箱(不公开)" required>
+			<input type="url" name="url" placeholder="网站(可不填)">
+			<input type="submit" id="comment-submit" value="发表评论">
 			<div class="field">
-				<label><input type="checkbox" id="comment-wrap-lines" checked />自动折行</label>
+				<label><input type="checkbox" id="comment-wrap-lines" checked>自动折行</label>
 			</div>
 			<div class="field">
-				<label><input type="checkbox" id="comment-show-preview" />显示预览</label>
+				<label><input type="checkbox" id="comment-show-preview">显示预览</label>
 			</div>
 		</div>
 	</form>
@@ -626,7 +626,7 @@ class Comment {
 <li style="display: none;" class="comment-li" id="comment-${cmt.id}">
 	<div class="comment-avatar">
 		<a href="#comment-${cmt.id}" onclick="comment.locate(${cmt.id});return false;">
-			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${h2a(info)}" loading=lazy />
+			<img src="${this.api.avatarURLOf(cmt.avatar)}" width="48px" height="48px" title="${h2a(info)}" loading=lazy>
 		</a>
 	</div>
 	<div class="comment-meta">

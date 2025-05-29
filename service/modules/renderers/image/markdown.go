@@ -161,7 +161,7 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 		w.WriteString(fmt.Sprintf(` class="%s"`, strings.Join(classes, " ")))
 	}
 
-	_, _ = w.WriteString("/>")
+	_, _ = w.WriteString(">")
 	return ast.WalkSkipChildren, nil
 }
 

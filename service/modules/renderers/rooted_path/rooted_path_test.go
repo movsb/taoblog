@@ -44,7 +44,7 @@ func TestRender(t *testing.T) {
 		},
 		{
 			Base:     `/123/`,
-			Markdown: `<source src="1.mp3"/>`,
+			Markdown: `<source src="1.mp3">`,
 			HTML:     `<source src="/123/1.mp3"/>`,
 		},
 		{
