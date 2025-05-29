@@ -53,7 +53,8 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 					// 另外，鉴于 window.event 是被 deprecated 的，所以也不用。
 					// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
 					// https://stackoverflow.com/q/12614862/3628322
-					w.WriteString(`<img style="display:none;" src="https://" onerror="syncCodeScroll(this)">`)
+					// 用 size 而不是 display 的原因是 lazy 扩展给 img 加上了 loading=lazy，在“display: none”下不会触发 onerror。
+					w.WriteString(`<img style="width:0;height:0;" src="https://" onerror="syncCodeScroll(this)">`)
 					w.WriteRune('\n')
 				} else {
 					language := string(utils.DropLast1(context.Language()))

@@ -51,4 +51,5 @@ function handleAudio(img) {
 	let pause = player.querySelector('.pause');
 	play.addEventListener('click', e=>{ audio.play(); })
 	pause.addEventListener('click', e=>{ audio.pause(); })
+	img.remove();
 }
