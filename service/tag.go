@@ -252,7 +252,7 @@ func (s *Service) UpdateCategory(ctx context.Context, in *proto.UpdateCategoryRe
 		panic(fmt.Errorf(`更新分类失败：%v, n=%d`, err, n))
 	}
 
-	return cat.ToProto()
+	return utils.Must1(s.getCatByID(ctx, in.Category.Id)).ToProto()
 }
 
 func (s *Service) ListCategories(ctx context.Context, in *proto.ListCategoriesRequest) (_ *proto.ListCategoriesResponse, outErr error) {

@@ -11,6 +11,26 @@
 <body class="admin category">
 <div id="wrapper">
 <h1>分类管理</h1>
+<script>
+	function insertCategoryItem(cat) {
+		let li = document.createElement('li');
+		li.setAttribute('data-id', cat.id);
+		let input = document.createElement('input');
+		input.setAttribute('type', 'text');
+		input.setAttribute('value', cat.name);
+		input.setAttribute('autocomplete', 'off');
+		li.appendChild(input);
+		let button = document.createElement('button');
+		button.setAttribute('type', 'button');
+		button.classList.add('save');
+		button.textContent = '保存';
+		li.appendChild(button);
+		let loading = document.createElement('span');
+		loading.classList.add('loading');
+		li.appendChild(loading);
+		document.getElementById('category-list').appendChild(li);
+	}
+</script>
 <form id="new-category">
 <h2>新建分类</h2>
 <p><label><input type="text" name="name" placeholder="请输入分类名称" required></label></p>
@@ -23,15 +43,7 @@ document.getElementById('new-category').addEventListener('submit', async (e) => 
 		let cat = await PostManagementAPI.createCategory({name})
 		e.target.elements['name'].value = '';
 		console.log('创建分类成功：', cat);
-
-		let li = document.createElement('li');
-		li.setAttribute('data-id', cat.id);
-		let input = document.createElement('input');
-		input.setAttribute('type', 'text');
-		input.setAttribute('name', 'category-' + cat.id);
-		input.setAttribute('value', cat.name);
-		li.appendChild(input);
-		document.getElementById('category-list').appendChild(li);
+		insertCategoryItem(cat);
 	} catch (e) {
 		alert('创建分类失败：' + e);
 		return;
@@ -43,15 +55,11 @@ document.getElementById('new-category').addEventListener('submit', async (e) => 
 	<h2>编辑分类</h2>
 	<p>分类列表：</p>
 	<ul style="list-style: none; padding-left: 0;" id="category-list">
-		{{ range $cat := .Cats }}
-			<li data-id="{{ .Id }}">
-				<input type="text" name="category-{{ .Id }}" value="{{ .Name }}">
-				<button type="button" class="save">保存</button>
-				<span class="loading"></span>
-			</li>
-		{{ end }}
 	</ul>
 <script>
+	{{ .Cats }}.forEach(cat => {
+		insertCategoryItem(cat);
+	});
 	document.querySelector('#edit-category').addEventListener('click', async e => {
 		const target = e.target;
 		if (target.classList.contains('save')) {
