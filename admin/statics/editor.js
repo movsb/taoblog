@@ -83,14 +83,15 @@ class PostFormUI {
 		});
 		this.elemNewCatDialog.addEventListener('close',()=>{
 			this.elemCategory.selectedIndex = lastCategoryIndex;
-			// console.log('新建分类对话框关闭：', lastCategoryIndex);
+			console.log('新建分类对话框关闭：', lastCategoryIndex);
 		});
 		this.elemNewCatDialog.querySelector('.cancel').addEventListener('click', (e)=> {
-			e.stopPropagation();
 			e.preventDefault();
+			console.log('新建分类对话框取消');
 			this.elemNewCatDialog.close();
 		});
-		this.elemNewCatDialog.querySelector('.ok').addEventListener('click', async (e)=> {
+		this.elemNewCatDialog.querySelector('form').addEventListener('submit', async (e)=> {
+			console.log('新建分类对话框提交');
 			e.stopPropagation();
 			e.preventDefault();
 
@@ -103,7 +104,10 @@ class PostFormUI {
 				option.value = cat.id;
 				option.innerText = cat.name;
 
-				this.elemCategory.appendChild(option);
+				this.elemCategory.insertBefore(
+					option,
+					this.elemCategory.querySelector('.insert-before'),
+				);
 				lastCategoryIndex = option.index
 
 				this.elemNewCatDialog.close();
@@ -261,7 +265,7 @@ class PostFormUI {
 	get elemTop()       { return this._form['top'];     }
 	get elemIndent()    { return this._form['auto-indent']; }
 	get elemCategory()  { return this._form['category']; }
-	get elemNewCatDialog() { return this._form.querySelector('[name=new-category-dialog]'); }
+	get elemNewCatDialog() { return document.body.querySelector('[name=new-category-dialog]'); }
 	
 	get geo() {
 		const private_ = this._form['geo_private'].checked;

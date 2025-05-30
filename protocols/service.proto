@@ -370,6 +370,15 @@ service TaoBlog {
 			description: "创建分类。";
 		};
 	}
+	rpc UpdateCategory (UpdateCategoryRequest) returns (Category) {
+		option (google.api.http) = {
+			patch: "/v3/categories/{category.id=*}";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "更新分类。";
+		};
+	}
 	rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse) {
 		option (google.api.http) = {
 			get: "/v3/categories";

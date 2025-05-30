@@ -137,6 +137,7 @@ func (a *Admin) Handler() http.Handler {
 	m.Handle(`POST /otp`, a.requireLogin(a.postOTP))
 	m.Handle(`GET /notify`, a.requireLogin(a.getNotify))
 	m.Handle(`POST /notify`, a.requireLogin(a.postNotify))
+	m.Handle(`GET /category`, a.requireLogin(a.getCategory))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
@@ -406,6 +407,21 @@ func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
 	)
 
 	http.Redirect(w, r, a.prefixed(`/profile`), http.StatusFound)
+}
+
+type CategoryData struct {
+	Cats []*proto.Category
+}
+
+func (a *Admin) getCategory(w http.ResponseWriter, r *http.Request) {
+	ac := auth.MustNotBeGuest(r.Context())
+	_ = ac
+
+	d := CategoryData{
+		Cats: utils.Must1(a.svc.ListCategories(r.Context(), &proto.ListCategoriesRequest{})).Categories,
+	}
+
+	a.executeTemplate(w, `category.html`, &d)
 }
 
 type EditorData struct {

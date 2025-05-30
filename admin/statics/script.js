@@ -207,4 +207,19 @@ class PostManagementAPI
 		}
 		return await rsp.json();
 	}
+
+	static async updateCategory(id, obj) {
+		let path = `/v3/categories/${id}`;
+		let rsp = await fetch(path, {
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(obj),
+		});
+		if (!rsp.ok) {
+			throw new Error('更新分类失败：' + await rsp.text());
+		}
+		return await rsp.json();
+	}
 }

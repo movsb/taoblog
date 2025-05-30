@@ -16,3 +16,9 @@ message ListCategoriesRequest {}
 message ListCategoriesResponse {
 	repeated Category categories = 1;
 }
+
+message UpdateCategoryRequest {
+	Category category = 1;
+
+	bool update_name = 10;
+}

@@ -61,19 +61,11 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 				{{ range $.Cats }}
 				<option value="{{.Id}}" {{if eq $.Post.Category .Id}}selected{{end}}>{{.Name}}</option>
 				{{ end }}
-				<hr>
+				<hr class="insert-before">
 				<option value="-1">新建分类...</option>
 			</select>
 		</label>
 	</p>
-	<dialog name="new-category-dialog">
-		<div><b>请输入新分类名称：</b></div>
-		<p><input type="text" name="name" placeholder="分类名称" autocomplete="off" pattern="[^\s]+"></p>
-		<div>
-			<button class="cancel">取消</button>
-			<button class="ok">确定</button>
-		</div>
-	</dialog>
 	<p class="status status-{{$.Post.Status}}">
 		<label>
 			权限：
@@ -131,6 +123,19 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	</div>
 	<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 </form>
+<dialog name="new-category-dialog">
+	<form method="dialog">
+		<div><b>请输入新分类名称：</b></div>
+		<p>
+			<input type="text" name="name" placeholder="分类名称" autocomplete="off" required>
+		</p>
+		<div style="text-align: center;">
+			<!-- 必须为 type=button，否则按下回车会被关闭。 -->
+			<button type="button" class="cancel">取消</button>
+			<input type="submit" value="确定">
+		</div>
+	</form>
+</dialog>
 <script src="editor.js"></script>
 </body>
 </html>

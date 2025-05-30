@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>分类管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="/style.css">
+{{ apply_site_theme_customs }}
+<script src="script.js"></script>
+</head>
+<body class="admin category">
+<div id="wrapper">
+<h1>分类管理</h1>
+<form id="new-category">
+<h2>新建分类</h2>
+<p><label><input type="text" name="name" placeholder="请输入分类名称" required></label></p>
+<p><input type="submit" value="保存"></p>
+<script>
+document.getElementById('new-category').addEventListener('submit', async (e) => {
+	e.preventDefault();
+	let name = e.target.elements['name'].value.trim();
+	try {
+		let cat = await PostManagementAPI.createCategory({name})
+		e.target.elements['name'].value = '';
+		console.log('创建分类成功：', cat);
+
+		let li = document.createElement('li');
+		li.setAttribute('data-id', cat.id);
+		let input = document.createElement('input');
+		input.setAttribute('type', 'text');
+		input.setAttribute('name', 'category-' + cat.id);
+		input.setAttribute('value', cat.name);
+		li.appendChild(input);
+		document.getElementById('category-list').appendChild(li);
+	} catch (e) {
+		alert('创建分类失败：' + e);
+		return;
+	}
+});
+</script>
+</form>
+<form id="edit-category">
+	<h2>编辑分类</h2>
+	<p>分类列表：</p>
+	<ul style="list-style: none; padding-left: 0;" id="category-list">
+		{{ range $cat := .Cats }}
+			<li data-id="{{ .Id }}">
+				<input type="text" name="category-{{ .Id }}" value="{{ .Name }}">
+				<button type="button" class="save">保存</button>
+				<span class="loading"></span>
+			</li>
+		{{ end }}
+	</ul>
+<script>
+	document.querySelector('#edit-category').addEventListener('click', async e => {
+		const target = e.target;
+		if (target.classList.contains('save')) {
+			const li = target.closest('li');
+			const loading = li.querySelector('.loading');
+			loading.classList.add('icon-loading');
+			const id = +li.dataset.id;
+			const name = li.querySelector('input');;
+			try {
+				let cat = await PostManagementAPI.updateCategory(id, {
+					category: {
+						name: name.value.trim(),
+					},
+					update_name: true,
+				});
+				name.value = cat.name;
+				li.classList.remove('editing');
+			} catch (e) {
+				alert('更新分类失败：' + e);
+				name.focus();
+				return;
+			} finally {
+				loading.classList.remove('icon-loading');
+			}
+		}
+	});
+</script>
+</form>
+</div>
+</body>
+</html>

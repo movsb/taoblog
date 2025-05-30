@@ -227,6 +227,34 @@ func (s *Service) CreateCategory(ctx context.Context, in *proto.Category) (_ *pr
 	return cat.ToProto()
 }
 
+func (s *Service) UpdateCategory(ctx context.Context, in *proto.UpdateCategoryRequest) (_ *proto.Category, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+
+	m := map[string]any{}
+
+	if in.UpdateName {
+		if s := strings.TrimSpace(in.Category.Name); s == `` || len(in.Category.Name) > 32 {
+			panic(`分类名字太短或太长。`)
+		}
+		m[`name`] = in.Category.Name
+	}
+
+	cat := utils.Must1(s.getCatByID(ctx, in.Category.Id))
+	if cat.UserID != int32(ac.User.ID) {
+		panic(noPerm)
+	}
+
+	db := db.FromContextDefault(ctx, s.tdb)
+	r := db.Model(cat).MustUpdateMap(m)
+	if n, err := r.RowsAffected(); err != nil || n != 1 {
+		panic(fmt.Errorf(`更新分类失败：%v, n=%d`, err, n))
+	}
+
+	return cat.ToProto()
+}
+
 func (s *Service) ListCategories(ctx context.Context, in *proto.ListCategoriesRequest) (_ *proto.ListCategoriesResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
@@ -234,7 +262,7 @@ func (s *Service) ListCategories(ctx context.Context, in *proto.ListCategoriesRe
 	db := db.FromContextDefault(ctx, s.tdb)
 
 	var cats models.Categories
-	db.Where(`user_id=?`, ac.User.ID).MustFind(&cats)
+	db.Where(`user_id=?`, ac.User.ID).OrderBy(`id asc`).MustFind(&cats)
 
 	out := utils.Must1(cats.ToProto())
 	return &proto.ListCategoriesResponse{
