@@ -476,7 +476,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		Title:      strings.TrimSpace(in.Title),
 		Slug:       in.Slug,
 		Type:       in.Type,
-		Category:   0,
+		Category:   in.Category,
 		Status:     "draft",
 		Metas:      *models.PostMetaFrom(in.Metas),
 		Source:     in.Source,
@@ -521,6 +521,10 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 	if p.SourceType == `` {
 		in.SourceType = `markdown`
 		p.SourceType = in.SourceType
+	}
+
+	if err := s.checkPostCat(ctx, p.Category); err != nil {
+		return nil, fmt.Errorf(`创建文章失败：%w`, err)
 	}
 
 	derived, err := s.parseDerived(ctx, in.SourceType, in.Source)
@@ -692,6 +696,13 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		return nil, status.Error(codes.InvalidArgument, `页面必须要有路径名（slug）。`)
 	}
 
+	if in.UpdateCategory {
+		if err := s.checkPostCat(ctx, in.Post.Category); err != nil {
+			return nil, fmt.Errorf(`更新文章失败：%w`, err)
+		}
+		m[`category`] = in.Post.Category
+	}
+
 	s.MustTxCall(func(txs *Service) error {
 		p := models.Post{ID: in.Post.Id}
 		res := txs.tdb.Model(p).Where(`modified=?`, in.Post.Modified).MustUpdateMap(m)
@@ -754,11 +765,10 @@ func (s *Service) setPostACL(postID int64, users []int32) {
 }
 
 // 只是用来在创建文章和更新文章的时候从正文里面提取。
-// 返回：标题，话题列表。
 type _Derived struct {
-	Title      string
-	Tags       []string
-	References []int32
+	Title      string   // # 标题
+	Tags       []string // #标签 #标签
+	References []int32  // [[页面引用]]
 }
 
 func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (*_Derived, error) {

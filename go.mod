@@ -8,7 +8,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
-	github.com/movsb/taorm v0.0.0-20250413081435-5f9ad0aabc24
+	github.com/movsb/taorm v0.0.0-20250530121051-f6f1b039f9fe
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0

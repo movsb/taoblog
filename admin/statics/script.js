@@ -99,6 +99,7 @@ class PostManagementAPI
 				metas: p.metas,
 				source_type: 'markdown',
 				top: p.top,
+				category: p.category ?? 0,
 			},
 			update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas',
 			get_post_options: {
@@ -112,6 +113,7 @@ class PostManagementAPI
 		}
 
 		obj.update_top = true;
+		obj.update_category = true;
 
 		let rsp = await fetch(path, {
 			method: 'PATCH',
@@ -189,5 +191,20 @@ class PostManagementAPI
 		if (!rsp.ok) {
 			throw new Error('保存置顶文章失败：' + await rsp.text());
 		}
+	}
+
+	static async createCategory(obj) {
+		let path = `/v3/categories`;
+		let rsp = await fetch(path, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(obj),
+		});
+		if (!rsp.ok) {
+			throw new Error('创建分类失败：' + await rsp.text());
+		}
+		return await rsp.json();
 	}
 }

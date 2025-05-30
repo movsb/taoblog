@@ -103,4 +103,12 @@ CREATE TABLE IF NOT EXISTS acl (
     `permission` TEXT NOT NULL
 );
 
+CREATE TABLE categories (
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `user_id` INTEGER NOT NULL,
+    `name` TEXT  NOT NULL COLLATE NOCASE
+);
+
+CREATE UNIQUE INDEX `uix_cat_user_id__name` ON `categories` (`user_id`,`name`);
+
 COMMIT;

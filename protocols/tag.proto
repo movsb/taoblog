@@ -1,0 +1,18 @@
+syntax = "proto3";
+package protocols;
+option go_package = "github.com/movsb/taoblog/proto";
+
+message Category {
+	int32 id = 1;
+	// 输出参数。
+	int32 user_id = 2;
+	// 分类的显示名称。
+	string name = 3;
+}
+
+// 获取当前用户的分类列表。
+message ListCategoriesRequest {}
+
+message ListCategoriesResponse {
+	repeated Category categories = 1;
+}

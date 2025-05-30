@@ -27,5 +27,6 @@ protoc \
 	service.proto \
 	comment.proto \
 	post.proto \
+	tag.proto \
 	search.proto \
 	config.proto

@@ -71,6 +71,49 @@ class PostFormUI {
 
 		window.addEventListener('beforeunload', (e)=>{ return this.beforeUnload(e); });
 
+		let lastCategoryIndex = this.elemCategory.selectedIndex;
+		this.elemCategory.addEventListener('change', (e) => {
+			const value = e.target.value;
+			if (value == '-1') {
+				this.elemNewCatDialog.showModal();
+			} else {
+				lastCategoryIndex = e.target.selectedIndex;
+				// console.log('选择分类：', lastCategoryIndex);
+			}
+		});
+		this.elemNewCatDialog.addEventListener('close',()=>{
+			this.elemCategory.selectedIndex = lastCategoryIndex;
+			// console.log('新建分类对话框关闭：', lastCategoryIndex);
+		});
+		this.elemNewCatDialog.querySelector('.cancel').addEventListener('click', (e)=> {
+			e.stopPropagation();
+			e.preventDefault();
+			this.elemNewCatDialog.close();
+		});
+		this.elemNewCatDialog.querySelector('.ok').addEventListener('click', async (e)=> {
+			e.stopPropagation();
+			e.preventDefault();
+
+			try {
+				let cat = await PostManagementAPI.createCategory({
+					name: this.elemNewCatDialog.querySelector('input[name=name]').value.trim(),
+				});
+
+				const option = document.createElement('option');
+				option.value = cat.id;
+				option.innerText = cat.name;
+
+				this.elemCategory.appendChild(option);
+				lastCategoryIndex = option.index
+
+				this.elemNewCatDialog.close();
+				return;
+			} catch(e) {
+				alert('创建分类失败：' + e);
+				return;
+			}
+		})
+
 		if (typeof TinyMDE != 'undefined') {
 			this.editor = new TinyMDE.Editor({
 				element: document.querySelector('#editor-container'),
@@ -217,6 +260,8 @@ class PostFormUI {
 	get elemToc()       { return this._form['toc'];     }
 	get elemTop()       { return this._form['top'];     }
 	get elemIndent()    { return this._form['auto-indent']; }
+	get elemCategory()  { return this._form['category']; }
+	get elemNewCatDialog() { return this._form.querySelector('[name=new-category-dialog]'); }
 	
 	get geo() {
 		const private_ = this._form['geo_private'].checked;
@@ -671,6 +716,7 @@ formUI.submit(async (done) => {
 				source: formUI.source,
 				metas: p.metas,
 				top: formUI.top,
+				category: +formUI.elemCategory.value,
 			},
 			{
 				users: formUI.usersForRequest,

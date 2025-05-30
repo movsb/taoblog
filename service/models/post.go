@@ -28,7 +28,7 @@ type Post struct {
 	Title           string
 	Slug            string
 	Type            string
-	Category        uint
+	Category        int32
 	Status          string
 	PageView        uint
 	CommentStatus   uint
@@ -216,7 +216,7 @@ func (p *Post) ToProto(redact func(p *proto.Post) error) (*proto.Post, error) {
 		Title:         p.Title,
 		Slug:          p.Slug,
 		Type:          p.Type,
-		Category:      int64(p.Category),
+		Category:      p.Category,
 		Status:        p.Status,
 		PageView:      int64(p.PageView),
 		CommentStatus: p.CommentStatus > 0,

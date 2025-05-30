@@ -411,6 +411,7 @@ func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
 type EditorData struct {
 	User *auth.User
 	Post *proto.Post
+	Cats []*proto.Category
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
@@ -434,9 +435,14 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 			utils.HTTPError(w, 404)
 			return
 		}
+		catsRsp, err := a.svc.ListCategories(r.Context(), &proto.ListCategoriesRequest{})
+		if err != nil {
+			utils.HTTPError(w, 400)
+		}
 		d := EditorData{
 			User: auth.Context(r.Context()).User,
 			Post: rsp,
+			Cats: catsRsp.Categories,
 		}
 		a.executeTemplate(w, `editor.html`, &d)
 		return

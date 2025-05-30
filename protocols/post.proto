@@ -76,7 +76,7 @@ message Post {
 	string content = 5;
 	string slug = 6;
 	string type = 7;
-	int64 category = 8;
+	int32 category = 8;
 	string status = 9;
 	int64 page_view = 10;
 	bool comment_status = 11;
@@ -199,6 +199,7 @@ message UpdatePostRequest {
 	bool do_not_touch = 4;
 
 	bool update_top = 5;
+	bool update_category = 6;
 
 	// 是否更新用户权限。
 	bool update_user_perms = 101;

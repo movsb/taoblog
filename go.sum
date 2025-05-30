@@ -318,8 +318,8 @@ github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:e
 github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316/go.mod h1:yZbOV1cKd0igi4wBBcVrs4G2ooTWhjxUT9pYV5RDN44=
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd h1:m6UqxMUSn3LdkI6qmXa4Wwel3hhPBiXfktzk+A36fAk=
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd/go.mod h1:72PHqKHSMlJ0v209MIb1m4kpXf8NpMtygwDm1O8pPsA=
-github.com/movsb/taorm v0.0.0-20250413081435-5f9ad0aabc24 h1:21z7T17qFCeYYdn+b1QvkDwPDVdPyPnMgCmWf2/ra0A=
-github.com/movsb/taorm v0.0.0-20250413081435-5f9ad0aabc24/go.mod h1:Y9dP0nNLY+5t5Zlx4WyNVI8LKQDl4Fk/I8hP/LBtd0I=
+github.com/movsb/taorm v0.0.0-20250530121051-f6f1b039f9fe h1:+BFaIMvkqs8m72UzDjVEoeK4fiilOlvT6glpcxYf8bY=
+github.com/movsb/taorm v0.0.0-20250530121051-f6f1b039f9fe/go.mod h1:Y9dP0nNLY+5t5Zlx4WyNVI8LKQDl4Fk/I8hP/LBtd0I=
 github.com/mschoch/smat v0.2.0 h1:8imxQsjDm8yFEAVBe7azKmKSgzSkZXDuKkSq9374khM=
 github.com/mschoch/smat v0.2.0/go.mod h1:kc9mz7DoBKqDyiRL7VZN8KvXQMWeTaVnttLRXOlotKw=
 github.com/mssola/user_agent v0.5.3 h1:lBRPML9mdFuIZgI2cmlQ+atbpJdLdeVl2IDodjBR578=

@@ -748,3 +748,12 @@ func v57(posts, files, cache *taorm.DB) {
 	posts.MustExec(`ALTER TABLE users RENAME COLUMN chanify_token TO bark_token`)
 	posts.MustExec(`DELETE FROM options WHERE name=?`, `notify.chanify`)
 }
+
+func v58(posts, files, cache *taorm.DB) {
+	posts.MustExec(`CREATE TABLE categories (
+		id INTEGER  PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		name TEXT  NOT NULL COLLATE NOCASE
+	)`)
+	posts.MustExec("CREATE UNIQUE INDEX `uix_cat_user_id__name` ON `categories` (`user_id`,`name`)")
+}

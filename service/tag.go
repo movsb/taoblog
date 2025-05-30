@@ -2,10 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strings"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/db"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
 )
@@ -199,4 +203,67 @@ func (s *Service) addTag(tagName string) int64 {
 	}
 	s.tdb.Model(&tagObj).MustCreate()
 	return tagObj.ID
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func (s *Service) CreateCategory(ctx context.Context, in *proto.Category) (_ *proto.Category, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	if s := strings.TrimSpace(in.Name); s == `` || len(in.Name) > 32 {
+		panic(`分类名字太短或太长。`)
+	}
+
+	ac := auth.MustNotBeGuest(ctx)
+
+	cat := models.Category{
+		UserID: int32(ac.User.ID),
+		Name:   in.Name,
+	}
+
+	db := db.FromContextDefault(ctx, s.tdb)
+	db.Model(&cat).MustCreate()
+
+	return cat.ToProto()
+}
+
+func (s *Service) ListCategories(ctx context.Context, in *proto.ListCategoriesRequest) (_ *proto.ListCategoriesResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+	db := db.FromContextDefault(ctx, s.tdb)
+
+	var cats models.Categories
+	db.Where(`user_id=?`, ac.User.ID).MustFind(&cats)
+
+	out := utils.Must1(cats.ToProto())
+	return &proto.ListCategoriesResponse{
+		Categories: out,
+	}, nil
+}
+
+func (s *Service) getCatByID(ctx context.Context, id int32) (*models.Category, error) {
+	var cat models.Category
+	db := db.FromContextDefault(ctx, s.tdb)
+	return &cat, db.Where(`id=?`, id).Find(&cat)
+}
+
+// 检查文章所属的分类是否正确/合法。
+func (s *Service) checkPostCat(ctx context.Context, id int32) error {
+	// 未分类/默认分类。
+	if id == 0 {
+		return nil
+	}
+
+	cat, err := s.getCatByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf(`获取分类失败：%w`, err)
+	}
+
+	ac := auth.Context(ctx)
+	if ac.User.ID != int64(cat.UserID) {
+		return fmt.Errorf(`获取分类失败：分类不存在`)
+	}
+
+	return nil
 }

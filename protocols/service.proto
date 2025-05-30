@@ -5,6 +5,7 @@ option go_package = "github.com/movsb/taoblog/proto";
 import "auth.proto";
 import "backup.proto";
 import "post.proto";
+import "tag.proto";
 import "comment.proto";
 import "search.proto";
 import "config.proto";
@@ -356,6 +357,25 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "创建样式测试页面";
+		};
+	}
+
+	// Tags && Categories
+	rpc CreateCategory (Category) returns (Category) {
+		option (google.api.http) = {
+			post: "/v3/categories";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "创建分类。";
+		};
+	}
+	rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse) {
+		option (google.api.http) = {
+			get: "/v3/categories";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "列举分类。";
 		};
 	}
 }
