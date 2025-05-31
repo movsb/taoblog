@@ -24,9 +24,7 @@ type HomeData struct {
 
 func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	ac := auth.Context(ctx)
-	settings := utils.Must1(service.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
-
-	_ = settings
+	// settings := utils.Must1(service.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
 	d := &Data{
 		Context: ctx,
 		svc:     service,
@@ -69,7 +67,7 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		}
 	}
 
-	ownership := utils.IIF(d.User.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
+	ownership := utils.IIF(d.User.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMine)
 	rsp, err := service.ListPosts(ctx,
 		&proto.ListPostsRequest{
 			Limit:     15,
