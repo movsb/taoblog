@@ -117,6 +117,7 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	stmt.WhereIf(len(in.Kinds) > 0, `type in (?)`, in.Kinds)
 	stmt.WhereIf(in.ModifiedNotBefore > 0, `modified >= ?`, in.ModifiedNotBefore)
 	stmt.WhereIf(in.ModifiedNotAfter > 0, `modified < ?`, in.ModifiedNotAfter)
+	stmt.WhereIf(len(in.Categories) > 0, `category in (?)`, in.Categories)
 
 	if err := stmt.Find(&posts); err != nil {
 		panic(err)

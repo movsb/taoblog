@@ -9,7 +9,7 @@
 
 {{ with .Data.Tops }}
 <h2>置顶文章</h2>
-<ul id=top-post-list>
+<ul id=top-post-list class="post-list">
 {{- range .}}
 	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
 {{- end}}
@@ -18,7 +18,7 @@
 
 {{ with .Data.Shared }}
 <h2>分享文章</h2>
-<ul id=shared-post-list>
+<ul id=shared-post-list class="post-list">
 {{- range .}}
 	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
 {{- end}}
@@ -26,7 +26,7 @@
 {{ end }}
 
 <h2>近期文章</h2>
-<ul id=latest-post-list>
+<ul id=latest-post-list class="post-list">
 {{- range .Data.Posts}}
 	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
 {{- end}}
@@ -37,7 +37,7 @@
 </ul>
 
 <h2>近期碎念</h2>
-<ul id=latest-tweet-list>
+<ul id=latest-tweet-list class="post-list">
 {{- range .Data.Tweets}}
 	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
 {{- end}}
@@ -46,6 +46,24 @@
 <ul id="all-tweets">
 	<li><a href="/tweets">所有碎念...</a></li>
 </ul>
+
+{{ if .Data.Grouped }}
+<div id="posts-by-category">
+	<h2>分类文章</h2>
+	<div class="group-list">
+	{{- range .Data.Grouped}}
+		<div class="group">
+			<h3>{{.Name}}</h3>
+			<ul class="category-post-list post-list">
+			{{- range .Posts}}
+				<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
+			{{- end}}
+			</ul>
+		</div>
+	{{- end}}
+	</div>
+</div>
+{{ end }}
 
 <h2>近期评论</h2>
 {{ $comments := .Data.Comments}}

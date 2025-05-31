@@ -229,6 +229,9 @@ message ListPostsRequest {
 	// 如果不指定，默认为 All。
 	// 只对已登录用户有效，未登录用户始终只能看公开文章。
 	Ownership ownership = 7;
+
+	// 分类编号。
+	repeated int32 categories = 8;
 }
 
 message ListPostsResponse {
