@@ -11,7 +11,8 @@ import (
 )
 
 type HomeData struct {
-	Tops     []*Post
+	Tops     []*Post // 置顶文章列表。
+	Shared   []*Post // 分享文章列表。
 	Posts    []*Post
 	Tweets   []*Post
 	Comments []*LatestCommentsByPost
@@ -22,6 +23,10 @@ type HomeData struct {
 }
 
 func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
+	ac := auth.Context(ctx)
+	settings := utils.Must1(service.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
+
+	_ = settings
 	d := &Data{
 		Context: ctx,
 		svc:     service,
@@ -34,7 +39,7 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		CommentCount: impl.GetDefaultIntegerOption("comment_count", 0),
 	}
 
-	{
+	if !ac.User.IsGuest() {
 		topPosts := utils.Must1(service.GetTopPosts(ctx,
 			&proto.GetTopPostsRequest{
 				GetPostOptions: &proto.GetPostOptions{
@@ -45,6 +50,22 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		for _, p := range topPosts {
 			pp := newPost(p)
 			home.Tops = append(home.Tops, pp)
+		}
+
+		sharedPosts := utils.Must1(service.ListPosts(ctx,
+			&proto.ListPostsRequest{
+				Limit:     10,
+				OrderBy:   "date DESC",
+				Kinds:     []string{`post`, `tweet`},
+				Ownership: proto.Ownership_OwnershipShared,
+				GetPostOptions: &proto.GetPostOptions{
+					WithLink:       proto.LinkKind_LinkKindRooted,
+					ContentOptions: co.For(co.HomeLatestPosts),
+				},
+			})).Posts
+		for _, p := range sharedPosts {
+			pp := newPost(p)
+			home.Shared = append(home.Shared, pp)
 		}
 	}
 

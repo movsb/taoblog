@@ -14,7 +14,15 @@
 	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
 {{- end}}
 </ul>
+{{ end }}
 
+{{ with .Data.Shared }}
+<h2>分享文章</h2>
+<ul id=shared-post-list>
+{{- range .}}
+	<li><a href="{{.Link}}">{{.StatusString}}{{.Title}}</a></li>
+{{- end}}
+</ul>
 {{ end }}
 
 <h2>近期文章</h2>
