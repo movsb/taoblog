@@ -222,4 +222,20 @@ class PostManagementAPI
 		}
 		return await rsp.json();
 	}
+
+	static async updateUserSettings(obj, masks) {
+		masks.settings = obj;
+		let path = '/v3/settings';
+		let rsp = await fetch(path, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(masks),
+		});
+		if (!rsp.ok) {
+			throw new Error('更新设置失败：' + await rsp.text());
+		}
+		return await rsp.json();
+	}
 }

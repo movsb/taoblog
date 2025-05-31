@@ -156,6 +156,25 @@ service Search {
 }
 
 service TaoBlog {
+	// TODO: 移动到 Auth。
+	rpc SetUserSettings (SetUserSettingsRequest) returns (Settings) {
+		option (google.api.http) = {
+			post: "/v3/settings";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "设置用户设置。";
+		};
+	}
+	rpc GetUserSettings (GetUserSettingsRequest) returns (Settings) {
+		option (google.api.http) = {
+			get: "/v3/settings";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "获取用户设置。";
+		};
+	}
+
 	rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
 		option (google.api.http) = {
 			get: "/v3/info";

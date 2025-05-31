@@ -88,3 +88,16 @@ message UpdateUserRequest {
 }
 
 message UpdateUserResponse {}
+
+message Settings {
+	// 首页是否按分类展示文章？
+	bool group_posts_by_category = 100;
+}
+
+message SetUserSettingsRequest {
+	Settings settings = 1;
+
+	bool update_group_posts_by_category = 100;
+}
+
+message GetUserSettingsRequest {}

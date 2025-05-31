@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -18,6 +20,7 @@ import (
 	"github.com/movsb/taorm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func optionCacheKey(name string) string {
@@ -253,4 +256,41 @@ func (s *Service) SetFavicon(ctx context.Context, in *proto.SetFaviconRequest) (
 	}
 
 	return &proto.SetFaviconResponse{}, nil
+}
+
+var jsonPB = &runtime.JSONPb{
+	MarshalOptions: protojson.MarshalOptions{
+		UseProtoNames:   true,
+		EmitUnpopulated: true,
+	},
+}
+
+func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettingsRequest) (_ *proto.Settings, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+
+	ss := utils.Must1(s.options.GetStringDefault(fmt.Sprintf(`user_settings:%d`, ac.User.ID), `{}`))
+
+	var out proto.Settings
+	utils.Must(jsonPB.Unmarshal([]byte(ss), &out))
+
+	return &out, nil
+}
+
+func (s *Service) SetUserSettings(ctx context.Context, in *proto.SetUserSettingsRequest) (_ *proto.Settings, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+
+	old := utils.Must1(s.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
+
+	if in.UpdateGroupPostsByCategory {
+		old.GroupPostsByCategory = in.Settings.GroupPostsByCategory
+	}
+
+	by := utils.Must1(jsonPB.Marshal(old))
+	utils.Must(s.options.SetString(fmt.Sprintf(`user_settings:%d`, ac.User.ID), string(by)))
+
+	return s.GetUserSettings(ctx, &proto.GetUserSettingsRequest{})
 }

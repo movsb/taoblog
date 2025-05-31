@@ -31,6 +31,25 @@
 		document.getElementById('category-list').appendChild(li);
 	}
 </script>
+<form id="category-settings">
+<h2>分类设置</h2>
+<p><label><input type="checkbox" name="show_categories_in_home" autocomplete="off"{{ if .Settings.GroupPostsByCategory }} checked{{ end }}> 在首页上显示分类文章</label></p>
+<script>
+	const settingsForm = document.getElementById('category-settings');
+	settingsForm.elements['show_categories_in_home'].addEventListener('change', async (e) => {
+		console.log('设置 show_categories_in_home:', e.target.checked);
+		try {
+			await PostManagementAPI.updateUserSettings(
+				{ group_posts_by_category: e.target.checked },
+				{ update_group_posts_by_category: true },
+			);
+		} catch (err) {
+			alert(err);
+			e.target.checked = !e.target.checked; // revert the change
+		}
+	});
+</script>
+</form>
 <form id="new-category">
 <h2>新建分类</h2>
 <p><label><input type="text" name="name" placeholder="请输入分类名称" required></label></p>

@@ -410,7 +410,8 @@ func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
 }
 
 type CategoryData struct {
-	Cats []*proto.Category
+	Settings *proto.Settings
+	Cats     []*proto.Category
 }
 
 func (a *Admin) getCategory(w http.ResponseWriter, r *http.Request) {
@@ -418,7 +419,8 @@ func (a *Admin) getCategory(w http.ResponseWriter, r *http.Request) {
 	_ = ac
 
 	d := CategoryData{
-		Cats: utils.Must1(a.svc.ListCategories(r.Context(), &proto.ListCategoriesRequest{})).Categories,
+		Cats:     utils.Must1(a.svc.ListCategories(r.Context(), &proto.ListCategoriesRequest{})).Categories,
+		Settings: utils.Must1(a.svc.GetUserSettings(r.Context(), &proto.GetUserSettingsRequest{})),
 	}
 
 	a.executeTemplate(w, `category.html`, &d)
