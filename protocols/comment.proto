@@ -84,10 +84,12 @@ enum Ownership {
 	OwnershipUnknown = 0;
 	// 自己创建的。
 	OwnershipMine = 1;
+	// 他们分享的。
+	OwnershipShared = 2;
 	// 自己创建的 + 他们分享的。
-	OwnershipMineAndShared = 2;
+	OwnershipMineAndShared = 3;
 	// 他们分享的 + 他们公开的。
-	OwnershipTheir = 3;
+	OwnershipTheir = 4;
 	// 自己创建的 + 他们分享的 + 他们公开的。
 	OwnershipAll = 100;
 }

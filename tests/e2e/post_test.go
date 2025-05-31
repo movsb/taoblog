@@ -65,6 +65,10 @@ func TestListPosts(t *testing.T) {
 	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id})
 	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
 
+	eq(`管理员看分享的`, r.admin, proto.Ownership_OwnershipShared, []int64{})
+	eq(`用户1看分享的`, r.user1, proto.Ownership_OwnershipShared, []int64{})
+	eq(`用户2看分享的`, r.user2, proto.Ownership_OwnershipShared, []int64{})
+
 	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id})
 	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{p1.Id})
 	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p2.Id})
@@ -116,6 +120,10 @@ func TestListPosts(t *testing.T) {
 	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id, p1.Id})
 	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p1.Id, p2.Id})
 
+	eq(`管理员看分享的`, r.admin, proto.Ownership_OwnershipShared, []int64{})
+	eq(`用户1看分享的`, r.user1, proto.Ownership_OwnershipShared, []int64{pa.Id})
+	eq(`用户2看分享的`, r.user2, proto.Ownership_OwnershipShared, []int64{p1.Id})
+
 	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id})
 	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
 	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
@@ -141,6 +149,10 @@ func TestListPosts(t *testing.T) {
 	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id, p1.Id})
 	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
 
+	eq(`管理员看分享的`, r.admin, proto.Ownership_OwnershipShared, []int64{})
+	eq(`用户1看分享的`, r.user1, proto.Ownership_OwnershipShared, []int64{pa.Id})
+	eq(`用户2看分享的`, r.user2, proto.Ownership_OwnershipShared, []int64{})
+
 	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id})
 	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
 	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p2.Id})
@@ -165,6 +177,10 @@ func TestListPosts(t *testing.T) {
 	eq(`管理员看自己的和分享的`, r.admin, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id})
 	eq(`用户1看自己的和分享的`, r.user1, proto.Ownership_OwnershipMineAndShared, []int64{pa.Id, p1.Id})
 	eq(`用户2看自己的和分享的`, r.user2, proto.Ownership_OwnershipMineAndShared, []int64{p2.Id})
+
+	eq(`管理员看分享的`, r.admin, proto.Ownership_OwnershipShared, []int64{})
+	eq(`用户1看分享的`, r.user1, proto.Ownership_OwnershipShared, []int64{pa.Id})
+	eq(`用户2看分享的`, r.user2, proto.Ownership_OwnershipShared, []int64{})
 
 	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
 	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})

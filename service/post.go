@@ -80,6 +80,13 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 			return nil, fmt.Errorf(`未知所有者。`)
 		case proto.Ownership_OwnershipMine:
 			stmt.Where(`user_id=?`, ac.User.ID)
+		case proto.Ownership_OwnershipShared:
+			stmt.Select(`distinct posts.*`)
+			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+			stmt.Where(
+				`posts.user_id!=? AND (acl.user_id=? AND posts.status = ?)`,
+				ac.User.ID, ac.User.ID, models.PostStatusPartial,
+			)
 		case proto.Ownership_OwnershipTheir:
 			stmt.Select(`distinct posts.*`)
 			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
@@ -477,7 +484,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		Slug:       in.Slug,
 		Type:       in.Type,
 		Category:   in.Category,
-		Status:     "draft",
+		Status:     models.PostStatusPrivate,
 		Metas:      *models.PostMetaFrom(in.Metas),
 		Source:     in.Source,
 		SourceType: in.SourceType,

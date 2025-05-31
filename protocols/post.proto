@@ -77,6 +77,8 @@ message Post {
 	string slug = 6;
 	string type = 7;
 	int32 category = 8;
+	// 文章公开状态。
+	// 默认为私有。
 	string status = 9;
 	int64 page_view = 10;
 	bool comment_status = 11;
