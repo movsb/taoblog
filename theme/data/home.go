@@ -106,7 +106,7 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 		}
 
 		slices.SortFunc(home.Grouped, func(a, b GroupedPosts) int {
-			return int(a.Posts[0].Date - b.Posts[0].Date)
+			return -int(a.Posts[0].Date - b.Posts[0].Date)
 		})
 	}
 
