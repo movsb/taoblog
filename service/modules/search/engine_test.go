@@ -22,21 +22,22 @@ func TestEngine(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := engine.IndexPosts(context.TODO(), []*proto.Post{
-		{Id: 1, Title: `标题`, Source: `昔我往矣，杨柳依依。今我来思，雨雪霏霏。`},
+		{Id: 1, Title: `标题`, Source: `内容测试`, Status: models.PostStatusPublic, UserId: 1},
+		{Id: 2, Title: `标题`, Source: `容内测试`, Status: models.PostStatusPublic, UserId: 1},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	result, err := engine.SearchPosts(auth.GuestForLocal(context.TODO()), `杨柳依依`)
+	result, err := engine.SearchPosts(auth.GuestForLocal(context.TODO()), `内容`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log(result)
 
-	highlighter := highlight.NewHTMLHighlighter()
+	highlighter := highlight.NewHTMLHighlighterTags(`<b class="highlight">`, `</b>`)
 	for _, post := range result {
 		s := highlighter.BestFragment(post.Locations[`title`], []byte(post.Post.Title))
 		fmt.Println(s)
-		s = highlighter.BestFragment(post.Locations[`content`], []byte(post.Post.Source))
+		s = highlighter.BestFragment(post.Locations[`source`], []byte(post.Post.Source))
 		fmt.Println(s)
 	}
 }
