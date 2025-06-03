@@ -248,7 +248,23 @@ class PostFormUI {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
 		}
+
+		this.sourceChanged(c => this.updatePreview(c));
+		setTimeout(() => this.updatePreview(this.source), 0);
 	}
+
+	async updatePreview(content) {
+		if (!this.checkBoxTogglePreview.checked) {
+			return;
+		}
+		try {
+			let rsp = await PostManagementAPI.previewPost(TaoBlog.post_id, content);
+			this.setPreview(rsp.html, true);
+			this.setDiff(rsp.diff);
+		} catch (e) {
+			this.setPreview(e, false);
+		}
+	};
 
 	get elemSource()    { return this._form['source'];  }
 	get elemTime()      { return this._form['time'];    }
@@ -559,6 +575,7 @@ class PostFormUI {
 	showPreview(show) {
 		this.elemPreviewContainer.style.display = show ? 'block' : 'none';
 		localStorage.setItem('editor-config-show-preview', show?'1':'0');
+		if (show) { this.updatePreview(this.source); }
 	}
 	setWrap(wrap) {
 		const editorContainer = this._form.querySelector('#editor-container');
@@ -781,19 +798,6 @@ formUI.filesChanged(async files => {
 		}
 	});
 });
-let updatePreview = async (content) => {
-	try {
-		let rsp = await postAPI.previewPost(TaoBlog.post_id, content);
-		formUI.setPreview(rsp.html, true);
-		formUI.setDiff(rsp.diff);
-	} catch (e) {
-		formUI.setPreview(e, false);
-	}
-};
-formUI.sourceChanged(async (content) => {
-	await updatePreview(content);
-});
-updatePreview(formUI.source);
 (async function() {
 	try {
 		let fm = new FilesManager(TaoBlog.post_id);

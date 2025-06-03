@@ -129,7 +129,7 @@ class PostManagementAPI
 	}
 
 	// 文章预览
-	async previewPost(id, source) {
+	static async previewPost(id, source) {
 		let path = `/v3/posts:preview`;
 		let rsp = await fetch(path, {
 			method: 'POST',
