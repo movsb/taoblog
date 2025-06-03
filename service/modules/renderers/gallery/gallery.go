@@ -54,6 +54,12 @@ func (g *Gallery) TransformHtml(doc *goquery.Document) error {
 		if elem.NextSibling == nil {
 			return
 		}
+
+		//静态资源。
+		if s.HasClass(`static`) {
+			return
+		}
+
 		// 如果所有兄弟节点都是 <img>
 		for ; elem != nil; elem = elem.NextSibling {
 			// 换行符不算

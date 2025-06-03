@@ -235,7 +235,17 @@ func TestMarkdownAll(t *testing.T) {
 				}, nil),
 			},
 			Markdown: `[狗头] A [[123]]`,
-			Html:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[狗头]" title="狗头" class="emoji weixin"/> A <a href="/123/">123</a></p>`,
+			Html:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[狗头]" title="狗头" class="static emoji weixin"/> A <a href="/123/">123</a></p>`,
+		},
+		{
+			ID:          15.0,
+			Description: `连续的表情被当成Gallery`,
+			Options: []renderers.Option2{
+				gallery.New(),
+				emojis.New(emojis.BaseURLForDynamic),
+			},
+			Markdown: `[doge][doge]`,
+			Html:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[doge]" title="doge" class="static emoji weixin"/><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[doge]" title="doge" class="static emoji weixin"/></p>`,
 		},
 	}
 	for _, tc := range cases {

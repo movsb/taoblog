@@ -16,7 +16,7 @@ func TestEmojis(t *testing.T) {
 	}{
 		{
 			Markdown: `[旺柴]`,
-			HTML:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="emoji weixin"/></p>`,
+			HTML:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="static emoji weixin"/></p>`,
 		},
 		{
 			Markdown: `[未知]`,
@@ -24,7 +24,7 @@ func TestEmojis(t *testing.T) {
 		},
 		{
 			Markdown: `[旺柴][Doge]`,
-			HTML:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="emoji weixin"/><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[Doge]" title="Doge" class="emoji weixin"/></p>`,
+			HTML:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[旺柴]" title="旺柴" class="static emoji weixin"/><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[Doge]" title="Doge" class="static emoji weixin"/></p>`,
 		},
 	}
 	baseURL, _ := url.Parse(`/v3/dynamic/emojis/`)

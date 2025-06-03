@@ -111,7 +111,7 @@ func (e *Emojis) Parse(parent ast.Node, block text.Reader, pc parser.Context) as
 
 	block.Advance(len(emoji))
 	img := ast.NewImage(link)
-	img.SetAttributeString(`class`, `emoji weixin`)
+	img.SetAttributeString(`class`, `static emoji weixin`)
 	return img
 }
 
