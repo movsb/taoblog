@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 				video.currentTime = 0;
 				await video.play();
-				container.classList.add('zoom');
+				livePhoto.classList.add('zoom');
 			}
 			catch(e) {
 				console.log(e);
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		};
 
 		const leave = (e) => {
-			container.classList.remove('zoom');
+			livePhoto.classList.remove('zoom');
 			warning.classList.remove('show');
 
 			// await play() 可能一直卡住不返回。
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		image.addEventListener('touchcancel', leave);
 
 		video.addEventListener('ended', () => {
-			container.classList.remove('zoom');
+			livePhoto.classList.remove('zoom');
 		});
 	});
 });

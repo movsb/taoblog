@@ -219,7 +219,7 @@ func TestMarkdownAll(t *testing.T) {
 	</div>
 	<div class="icon">
 		<img src="/v3/dynamic/live-photo/live.png" class="no-zoom static"/>
-		<span>LIVE</span>
+		<span>实况</span>
 	</div>
 	<div class="warning" style="opacity: 0;"></div>
 </div>

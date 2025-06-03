@@ -45,13 +45,20 @@
 
 			transition: transform 1s ease;
 		}
+	}
 
-		&.zoom {
+	&.zoom {
+		.container {
 			img, video {
 				transform: scale(1.1);
 			}
 			img {
 				opacity: 0;
+			}
+		}
+		.icon {
+			img {
+				animation: spin 5s linear infinite;
 			}
 		}
 	}
@@ -74,7 +81,7 @@
 			height: 22px;
 		}
 		span {
-			padding: 4px;
+			padding: 3px;
 			color: #606060;
 			font-size: 80%;
 		}
