@@ -54,7 +54,7 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 					// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
 					// https://stackoverflow.com/q/12614862/3628322
 					// 用 size 而不是 display 的原因是 lazy 扩展给 img 加上了 loading=lazy，在“display: none”下不会触发 onerror。
-					w.WriteString(`<img style="width:0;height:0;" src="https://" onerror="syncCodeScroll(this)">`)
+					w.WriteString(`<img style="width:0;height:0;" class="static" src="https://" onerror="syncCodeScroll(this)">`)
 					w.WriteRune('\n')
 				} else {
 					language := string(utils.DropLast1(context.Language()))

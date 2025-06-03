@@ -33,6 +33,7 @@ func (m *_Encrypted) TransformHtml(doc *goquery.Document) error {
 		if s.HasClass(`static`) {
 			return
 		}
+
 		s.SetAttr(`onerror`, `decryptFile(this)`)
 
 		// 场景：文章视频刚上传时，视频在服务器本身，能直接加载成功。当切换到加密源后，因为 fucking 缓存的原因，
