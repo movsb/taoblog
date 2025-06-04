@@ -128,22 +128,6 @@ class PostFormUI {
 				editor: this.editor,
 				commands: [
 					{
-						name: `undo`,
-						title: `撤销`,
-						innerHTML: `↩️ 撤销`,
-						action: editor => {
-							editor._stack.undo();
-						},
-					},
-					{
-						name: `redo`,
-						title: `重做`,
-						innerHTML: `↪️ 重做`,
-						action: editor => {
-							editor._stack.redo();
-						},
-					},
-					{
 						name: `insertImage`,
 						title: `上传图片/视频/文件`,
 						innerHTML: `⏫ 上传文件`,
@@ -178,72 +162,6 @@ class PostFormUI {
 					},
 				],
 			});
-			class UndoRedoStack {
-				constructor(editor) {
-					this._editor = editor;
-					this._editor._stack = this;
-
-					this._stack = [];
-					this._max= 100;
-					this._debouncing;
-					this._ignore_content = false;
-					this._ignore_selection = false;
-
-					// initial content
-					this._index = -1;
-					this._save(editor.getContent(), {row:0,col:0},{row:0,col:0});
-
-					editor.addEventListener('change', (e) => {
-						if (this._ignore_content) {
-							this._ignore_content = false;
-							return;
-						}
-						clearInterval(this._debouncing);
-						this._debouncing = setTimeout(() => {
-							this._save(e.content,
-								editor.getSelection(true),
-								editor.getSelection(),
-							);
-						}, 1000);
-						this._ignore_selection = true;
-					});
-					editor.addEventListener('selection', e => {
-						if (this._ignore_selection) {
-							this._ignore_selection = false;
-							return;
-						}
-						let i = this._stack[this._index];
-						i.start = e.anchor;
-						i.end = e.focus;
-					});
-				}
-				undo() {
-					if (this._index <= 0) { return; }
-					this._use(this._stack[--this._index]);
-				}
-				redo() {
-					if(this._index+1 >= this._stack.length) { return; }
-					this._use(this._stack[++this._index]);
-				}
-				_save(content, start, end) {
-					// save undo stack and clear redo stack
-					this._stack[++this._index] = { content, start, end };
-					this._stack.length = this._index+1;
-
-					if (this._stack.length > this._max) {
-						this._stack.shift();
-						this._index--;
-					}
-				}
-				_use(e) {
-					if (!e) { return; }
-					this._ignore_content = true;
-					this._editor.setContent(e.content);
-					this._ignore_selection = true;
-					this._editor.setSelection(e.end, e.start);
-				}
-			}
-			new UndoRedoStack(this.editor);
 		} else {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
