@@ -223,7 +223,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	theAuth := auth.New(cfg.Auth, taorm.NewDB(db))
+	theAuth := auth.New(taorm.NewDB(db))
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)

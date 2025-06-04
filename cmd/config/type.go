@@ -12,7 +12,6 @@ type Config struct {
 	Database    DatabaseConfig       `yaml:"database"`
 	Server      ServerConfig         `yaml:"server"`
 	Maintenance MaintenanceConfig    `yaml:"maintenance"`
-	Auth        AuthConfig           `yaml:"auth"`
 	Menus       Menus                `json:"menus" yaml:"menus"`
 	Site        SiteConfig           `yaml:"site"`
 	Search      search_config.Config `yaml:"search"`
@@ -30,7 +29,6 @@ func DefaultConfig() *Config {
 		Database:    DefaultDatabaseConfig(),
 		Server:      DefaultServerConfig(),
 		Maintenance: DefaultMainMaintenanceConfig(),
-		Auth:        DefaultAuthConfig(),
 		Menus:       DefaultMenuConfig(),
 		Site:        DefaultSiteConfig(),
 		Search:      search_config.DefaultConfig(),

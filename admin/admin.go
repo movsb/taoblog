@@ -217,9 +217,9 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 		Name: a.displayName,
 	}
 	if a.canGoogle.Load() {
-		d.GoogleClientID = a.auth.Config().Google.ClientID
+		// d.GoogleClientID = a.auth.Config().Google.ClientID
 	}
-	d.GitHubClientID = a.auth.Config().Github.ClientID
+	// d.GitHubClientID = a.auth.Config().Github.ClientID
 
 	a.executeTemplate(w, `login.html`, &d)
 }

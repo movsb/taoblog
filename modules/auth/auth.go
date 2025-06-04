@@ -6,9 +6,7 @@ import (
 	"crypto/sha1"
 	"crypto/subtle"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"slices"
@@ -17,8 +15,6 @@ import (
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	googleidtokenverifier "github.com/movsb/google-idtoken-verifier"
-	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -31,8 +27,6 @@ import (
 type Auth struct {
 	db *taorm.DB
 
-	cfg config.AuthConfig
-
 	userCache *lru.TTLCache[int, *models.User]
 
 	// 临时]
@@ -40,19 +34,13 @@ type Auth struct {
 }
 
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
-func New(cfg config.AuthConfig, db *taorm.DB) *Auth {
+func New(db *taorm.DB) *Auth {
 	a := Auth{
-		db:  db,
-		cfg: cfg,
+		db: db,
 
 		userCache: lru.NewTTLCache[int, *models.User](16),
 	}
 	return &a
-}
-
-// temporary
-func (a *Auth) Config() *config.AuthConfig {
-	return &a.cfg
 }
 
 func (o *Auth) getDB(ctx context.Context) *taorm.DB {
@@ -187,74 +175,80 @@ func (o *Auth) authCookie(login string, userAgent string) *User {
 }
 
 func (o *Auth) AuthGoogle(token string) *User {
-	fullClientID := o.cfg.Google.ClientID + ".apps.googleusercontent.com"
-	claims, err := googleidtokenverifier.Verify(token, fullClientID)
-	if err != nil || claims.Sub == "" {
-		return guest
-	}
+	return guest
+	/*
+		fullClientID := o.cfg.Google.ClientID + ".apps.googleusercontent.com"
+		claims, err := googleidtokenverifier.Verify(token, fullClientID)
+		if err != nil || claims.Sub == "" {
+			return guest
+		}
 
-	var user models.User
-	if err := o.db.Where(`google_user_id=?`, claims.Sub).Find(&user); err != nil {
-		log.Println(`谷歌登录错误：`, err)
-		return guest
-	}
+		var user models.User
+		if err := o.db.Where(`google_user_id=?`, claims.Sub).Find(&user); err != nil {
+			log.Println(`谷歌登录错误：`, err)
+			return guest
+		}
 
-	return &User{User: &user}
+		return &User{User: &user}
+	*/
 }
 
 func (o *Auth) AuthGitHub(code string) *User {
-	accessTokenURL, _ := url.Parse("https://github.com/login/oauth/access_token")
-	values := url.Values{}
-	values.Set("client_id", o.cfg.Github.ClientID)
-	values.Set("client_secret", o.cfg.Github.ClientSecret)
-	values.Set("code", code)
-	accessTokenURL.RawQuery = values.Encode()
-	req, err := http.NewRequest("POST", accessTokenURL.String(), nil)
-	if err != nil {
-		return guest
-	}
-	req.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return guest
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return guest
-	}
-	var accessTokenStruct struct {
-		AccessToken string `json:"access_token"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&accessTokenStruct); err != nil {
-		return guest
-	}
-	req, err = http.NewRequest("GET", "https://api.github.com/user", nil)
-	if err != nil {
-		return guest
-	}
-	req.Header.Set("Authorization", "token "+accessTokenStruct.AccessToken)
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		return guest
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return guest
-	}
-	var gUser struct {
-		ID int64 `json:"id"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&gUser); err != nil || gUser.ID == 0 {
-		return guest
-	}
+	return guest
+	/*
+		accessTokenURL, _ := url.Parse("https://github.com/login/oauth/access_token")
+		values := url.Values{}
+		values.Set("client_id", o.cfg.Github.ClientID)
+		values.Set("client_secret", o.cfg.Github.ClientSecret)
+		values.Set("code", code)
+		accessTokenURL.RawQuery = values.Encode()
+		req, err := http.NewRequest("POST", accessTokenURL.String(), nil)
+		if err != nil {
+			return guest
+		}
+		req.Header.Set("Accept", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return guest
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return guest
+		}
+		var accessTokenStruct struct {
+			AccessToken string `json:"access_token"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&accessTokenStruct); err != nil {
+			return guest
+		}
+		req, err = http.NewRequest("GET", "https://api.github.com/user", nil)
+		if err != nil {
+			return guest
+		}
+		req.Header.Set("Authorization", "token "+accessTokenStruct.AccessToken)
+		resp, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return guest
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return guest
+		}
+		var gUser struct {
+			ID int64 `json:"id"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&gUser); err != nil || gUser.ID == 0 {
+			return guest
+		}
 
-	var user models.User
-	if err := o.db.Where(`github_user_id=?`, gUser.ID).Find(&user); err != nil {
-		log.Println(`鸡盒登录错误：`, err)
-		return guest
-	}
+		var user models.User
+		if err := o.db.Where(`github_user_id=?`, gUser.ID).Find(&user); err != nil {
+			log.Println(`鸡盒登录错误：`, err)
+			return guest
+		}
 
-	return &User{User: &user}
+		return &User{User: &user}
+	*/
 }
 
 const (
