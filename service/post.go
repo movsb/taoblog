@@ -694,6 +694,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		if derived.Title != `` {
 			// 文章中的一级标题优先级大于参数。
 			m[`title`] = derived.Title
+		} else {
+			if !hasTitle {
+				m[`title`] = ``
+			}
 		}
 		// 除碎碎念外，文章不允许空标题
 		if ty != `tweet` && (derived.Title == "" && !hasTitle) {

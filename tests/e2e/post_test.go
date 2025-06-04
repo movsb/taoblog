@@ -551,3 +551,26 @@ func TestCreateUntitledPost(t *testing.T) {
 		t.Fatal(`未鉴权`)
 	}
 }
+
+func TestUpdateTitle(t *testing.T) {
+	r := Serve(t.Context())
+	p1 := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{Type: `tweet`, Source: "# Title"}))
+	if p1.Title != `Title` {
+		t.Fatal(`标题不正确`)
+	}
+	p1 = utils.Must1(r.client.Blog.UpdatePost(r.user1, &proto.UpdatePostRequest{
+		Post: &proto.Post{
+			Id:         p1.Id,
+			Modified:   p1.Modified,
+			SourceType: `markdown`,
+			Source:     `no title`,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{`source_type`, `source`},
+		},
+	}))
+	// 文章原来的标题被删除，采用自动生成的。
+	if p1.Title != `no title` {
+		t.Fatal(`标题不正确`)
+	}
+}
