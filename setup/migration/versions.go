@@ -757,3 +757,9 @@ func v58(posts, files, cache *taorm.DB) {
 	)`)
 	posts.MustExec("CREATE UNIQUE INDEX `uix_cat_user_id__name` ON `categories` (`user_id`,`name`)")
 }
+
+// 分类被重新加回来了，以前的分类表已被删除，所以全部重置。
+func v59(posts, files, cache *taorm.DB) {
+	t := time.Date(2025, 5, 30, 0, 0, 0, 0, time.Local)
+	posts.MustExec("UPDATE posts SET category=0 WHERE date < ?", t.Unix())
+}
