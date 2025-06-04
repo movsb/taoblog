@@ -253,6 +253,16 @@ blockquote {
 	text-indent: 2em;
 }
 
+// .entry 已经是 container-type，不会再有 margin collapse，所以第一个元素不能有 margin-top。
+// NOTE: 第一个元素不一定是 p，还需要考虑到其他元素，比如 h1, h2 等。
+// 不敢把 p 换成 *。
+.entry .content > p:first-child {
+	margin-top: 0;
+}
+.entry .content > * > p:first-child {
+	margin-top: 0;
+}
+
 // 预览的时候不限制媒体的显示尺寸，以方便设定缩放参数。
 #preview-container {
 	iframe, img, svg, video {
