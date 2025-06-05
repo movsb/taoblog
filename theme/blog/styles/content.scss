@@ -229,40 +229,10 @@ article {
 	}
 }
 
-.tweets, .tweet {
-	.tweet-media {
-		&.has-multiple-media {
-			> p {
-				display: flex;
-				flex-wrap: wrap;
-				img, video {
-					width: 200px;
-					height: 200px !important; // 跟 49 行冲突了
-					max-width: 200px;
-					max-height: 300px;
-					object-fit: cover;
-					margin: .1rem;
-					border: 1px solid var(--border-color);
-				}
-			}
-		}
-	}
-}
-
 // 自动段落缩进
 .entry.auto-indent .content > p, #preview-container.auto-indent > p {
 	text-indent: 2em;
 }
-
-// .entry 已经是 container-type，不会再有 margin collapse，所以第一个元素不能有 margin-top。
-// NOTE: 第一个元素不一定是 p，还需要考虑到其他元素，比如 h1, h2 等。
-// 不敢把 p 换成 *。
-// .entry .content > p:first-child {
-// 	margin-top: 0;
-// }
-// .entry .content > * > p:first-child {
-// 	margin-top: 0;
-// }
 
 // 预览的时候不限制媒体的显示尺寸，以方便设定缩放参数。
 #preview-container {
