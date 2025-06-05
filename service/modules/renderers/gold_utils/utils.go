@@ -162,3 +162,11 @@ func AddStyle(s *goquery.Selection, style string) {
 	old += style
 	s.SetAttr(`style`, old)
 }
+
+// 注入一张立即出错的图片，因可以触发 onerror 事件，所以注入可执行的脚本。
+func InjectImage(fn string) string {
+	// display: 不影响 document flow
+	// static: 不处理事件等
+	// eager: lazy 的时候过滤不处理
+	return `<img style="display:none;" class="static" loading="eager" src="https://" onerror="` + fn + `(this)">`
+}

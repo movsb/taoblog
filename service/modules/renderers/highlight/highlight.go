@@ -10,6 +10,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/service/modules/dynamic"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/util"
@@ -49,13 +50,7 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 			if entering {
 				if context.Highlighted() {
 					w.WriteString(`<div class="code-scroll-synchronizer">`)
-					// 因为 innerHTML 插入的 script 不会被执行，所以用这个手段。
-					// 另外，鉴于 window.event 是被 deprecated 的，所以也不用。
-					// https://developer.mozilla.org/en-US/docs/Web/API/Window/event
-					// https://stackoverflow.com/q/12614862/3628322
-					// 用 size 而不是 display 的原因是 lazy 扩展给 img 加上了 loading=lazy，在“display: none”下不会触发 onerror。
-					w.WriteString(`<img style="width:0;height:0;" class="static" src="https://" onerror="syncCodeScroll(this)">`)
-					w.WriteRune('\n')
+					w.WriteString(gold_utils.InjectImage(`syncCodeScroll`))
 				} else {
 					language := string(utils.DropLast1(context.Language()))
 					if language != "-" {

@@ -165,6 +165,8 @@ type Metadata struct {
 	tag.Metadata
 	Source   string
 	FileName string
+
+	InjectImage template.HTML
 }
 
 func (d *Metadata) PictureAsImage() template.HTML {
@@ -185,7 +187,8 @@ func (t *MediaTags) render(md tag.Metadata, source string) (string, error) {
 	if u, err := url.Parse(source); err == nil {
 		name = filepath.Base(u.Path)
 	}
-	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, name}); err != nil {
+	img := template.HTML(gold_utils.InjectImage(`handleAudio`))
+	if err := t.tmpl.GetNamed(`player.html`).Execute(buf, &Metadata{md, source, name, img}); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
