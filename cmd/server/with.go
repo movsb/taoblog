@@ -3,6 +3,7 @@ package server
 import (
 	"time"
 
+	"github.com/movsb/taoblog/cmd/config"
 	"google.golang.org/grpc"
 )
 
@@ -56,5 +57,12 @@ func WithMonitorDomain(b bool) With {
 func WithMonitorCerts(b bool) With {
 	return func(s *Server) {
 		s.initMonitorCerts = b
+	}
+}
+
+// WithConfigOverride 设置一个函数来覆盖配置加载后的配置。
+func WithConfigOverride(fn func(*config.Config)) With {
+	return func(s *Server) {
+		s.configOverride = fn
 	}
 }

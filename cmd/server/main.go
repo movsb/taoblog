@@ -63,23 +63,38 @@ func AddCommands(rootCmd *cobra.Command) {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			var cfg *config.Config
+			dir := os.DirFS(`.`)
 			demo := utils.Must1(cmd.Flags().GetBool(`demo`))
 			if demo {
 				cfg = config.DefaultDemoConfig()
 				// 并且强制关闭本地环境。
 				version.ForceEnableDevMode = `0`
 			} else {
-				cfg2, err := config.LoadFile(`taoblog.yml`)
-				if err != nil {
-					if os.IsNotExist(err) {
-						cfg2 = config.DefaultConfig()
-					} else {
+				cfg2 := config.DefaultConfig()
+				if err := config.ApplyFromFile(cfg2, dir, `taoblog.yml`); err != nil {
+					if !os.IsNotExist(err) {
 						log.Fatalln(err)
 					}
 				}
 				cfg = cfg2
 			}
-			s := NewDefaultServer()
+			configOverride := func(cfg *config.Config) {
+				if err := config.ApplyFromFile(cfg, dir, `taoblog.override.yml`); err != nil {
+					if !os.IsNotExist(err) {
+						log.Fatalln(err)
+					}
+				}
+			}
+			s := NewServer(
+				WithRequestThrottler(request_throttler.New()),
+				WithCreateFirstPost(),
+				WithGitSyncTask(true),
+				WithBackupTasks(true),
+				WithRSS(true),
+				WithMonitorCerts(true),
+				WithMonitorDomain(true),
+				WithConfigOverride(configOverride),
+			)
 			s.Serve(context.Background(), false, cfg, nil)
 		},
 	}
@@ -109,6 +124,7 @@ type Server struct {
 	initRssTasks      bool
 	initMonitorCerts  bool
 	initMonitorDomain bool
+	configOverride    func(cfg *config.Config)
 
 	db      *taorm.DB
 	auth    *auth.Auth
@@ -121,18 +137,6 @@ type Server struct {
 	metrics *metrics.Registry
 
 	notifyServer proto.NotifyServer
-}
-
-func NewDefaultServer() *Server {
-	return NewServer(
-		WithRequestThrottler(request_throttler.New()),
-		WithCreateFirstPost(),
-		WithGitSyncTask(true),
-		WithBackupTasks(true),
-		WithRSS(true),
-		WithMonitorCerts(true),
-		WithMonitorDomain(true),
-	)
 }
 
 // 主要用于测试启动。
@@ -325,6 +329,13 @@ func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
 		}
 		log.Println(`加载配置：`, path)
 	})
+
+	// 加载覆盖配置。
+	if s.configOverride != nil {
+		s.configOverride(cfg)
+		log.Println(`加载覆盖配置`)
+	}
+
 	return nil
 }
 
