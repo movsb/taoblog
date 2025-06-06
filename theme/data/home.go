@@ -160,7 +160,7 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 			Limit:   15,
 			OrderBy: "date DESC",
 
-			Ownership:      ownership,
+			Ownership:      proto.Ownership_OwnershipMineAndShared,
 			ContentOptions: co.For(co.HomeLatestComments),
 		})
 	if err != nil {
