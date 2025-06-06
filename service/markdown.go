@@ -37,7 +37,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
-	"github.com/movsb/taoblog/service/modules/renderers/rss"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
@@ -133,7 +132,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
 		renderers.WithFencedCodeBlockRenderer(`dot`, graph_viz.New()),
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),
-		renderers.WithFencedCodeBlockRenderer(`rss`, rss.New(s.rssTask, int(postId))),
+		// renderers.WithFencedCodeBlockRenderer(`rss`, rss.New(s.rssTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`echarts`, echarts.New(s.fileCache.GetOrLoad)),
 
 		// 所有人禁止贴无效协议的链接。
