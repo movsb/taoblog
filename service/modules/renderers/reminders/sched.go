@@ -80,6 +80,10 @@ func NewScheduler(options ...SchedulerOption) *Scheduler {
 	return sched
 }
 
+func (s *Scheduler) UpdateLastUpdatedAt() {
+	s.withLock(s.updateLastUpdatedAt)
+}
+
 func (s *Scheduler) updateLastUpdatedAt() {
 	s.lastUpdatedAt = s.now()
 }
@@ -277,7 +281,6 @@ func NewCalendarService(name string, sched *Scheduler) *CalenderService {
 	return s
 }
 
-// TODO: 对于每天任务，需要强制刷新修改时间以使得每日更新。
 func (s *CalenderService) Marshal(now time.Time, w io.Writer) error {
 	cal := ics.NewCalendarFor(version.Name)
 	cal.SetMethod(ics.MethodPublish)

@@ -43,7 +43,8 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 	}
 	go t.load()
 	go t.run(ctx)
-	go t.refresh(ctx)
+	go t.refreshPosts(ctx)
+	go t.refreshCalendar(ctx)
 	return t
 }
 
@@ -214,28 +215,19 @@ func (t *Task) parsePost(p *proto.Post) ([]*Reminder, error) {
 }
 
 // 每天凌晨刷新文章缓存。
-func (t *Task) refresh(ctx context.Context) {
-	execute := func() {
+func (t *Task) refreshPosts(ctx context.Context) {
+	utils.AtMiddleNight(ctx, func() {
 		log.Println(`刷新文章提醒缓存：`, time.Now())
 		t.sched.ForEachPost(func(id int, _ []Job, _ []Job) {
 			t.invalidatePost(id)
 			log.Println(`刷新文章缓存：`, id)
 		})
-	}
+	})
+}
 
-	ticker := time.NewTicker(time.Second * 50)
-	defer ticker.Stop()
-	last := time.Now()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case now := <-ticker.C:
-			if (now.Hour() == 0 && now.Minute() == 0) || (last.Day() != now.Day()) {
-				execute()
-				last = now
-			}
-		}
-	}
+func (t *Task) refreshCalendar(ctx context.Context) {
+	utils.AtMiddleNight(ctx, func() {
+		log.Println(`刷新日历：`, time.Now())
+		t.sched.UpdateLastUpdatedAt()
+	})
 }
