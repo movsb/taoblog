@@ -200,7 +200,6 @@ func All(r io.Reader) (*Metadata, error) {
 	for _, d := range []func(r io.Reader) (*Metadata, error){
 		normal,
 		svg,
-		avif,
 	} {
 		md, err := d(dup())
 		if err == nil {

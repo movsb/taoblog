@@ -3,6 +3,7 @@ package media_size
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"os"
 	"testing"
 
@@ -46,8 +47,8 @@ func TestAvif(t *testing.T) {
 		fp := utils.Must1(os.Open(tc.path))
 		defer fp.Close()
 
-		md := utils.Must1(avif(fp))
-		if md.Width != tc.width || md.Height != tc.height {
+		c, _ := utils.Must2(image.DecodeConfig(fp))
+		if c.Width != tc.width || c.Height != tc.height {
 			t.Errorf(`avif not equal: %d`, i)
 		}
 	}

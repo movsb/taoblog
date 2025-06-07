@@ -1,8 +1,6 @@
 package media_size
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -12,6 +10,8 @@ import (
 	_ "image/png"
 	"io"
 	"strings"
+
+	_ "github.com/movsb/go-image-avif-size"
 )
 
 type Metadata struct {
@@ -76,39 +76,4 @@ func svg(r io.Reader) (*Metadata, error) {
 	}
 
 	return nil, errors.New(`bad svg to get size`)
-}
-
-// 暴力出奇迹。
-// https://blog.twofei.com/1068/
-func avif(r io.Reader) (*Metadata, error) {
-	sniff, err := io.ReadAll(io.LimitReader(r, 1<<10))
-	if err != nil {
-		return nil, err
-	}
-	index := bytes.Index(sniff, []byte{'i', 's', 'p', 'e'})
-	if index == -1 || index < 4 || index-4+20 > len(sniff) {
-		return nil, errors.New(`not avif`)
-	}
-
-	sniff = sniff[index-4:]
-	index = 0
-
-	var (
-		bo      = binary.BigEndian
-		size    = bo.Uint32(sniff[index+0:])
-		version = bo.Uint32(sniff[index+8:])
-		width   = bo.Uint32(sniff[index+12:])
-		height  = bo.Uint32(sniff[index+16:])
-	)
-
-	if size == 0x14 && version == 0x00 &&
-		(width > 0 && width < 65536) && // just in case
-		(height > 0 && height < 65536) {
-		return &Metadata{
-			Width:  int(width),
-			Height: int(height),
-		}, nil
-	}
-
-	return nil, errors.New(`not avif`)
 }
