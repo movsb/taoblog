@@ -48,8 +48,18 @@ a > code:hover {
 	text-decoration: none;
 }
 
+// 键盘
 kbd {
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 	padding: var(--kbd-padding);
+}
+
+// 修复 iOS Safari 字体大小不一致问题。
+//
+// https://github.com/vaga/hugo-theme-m10c/blob/862c6e941be9bc46ce8adc6a2fa9e984ba647d6f/assets/css/_base.scss#L39
+// [Safari 果然是新时代的 IE，果然该死，Mac、iPad、iPho... - 陪她去流浪](https://blog.twofei.com/921/)
+code {
+	text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
 }
