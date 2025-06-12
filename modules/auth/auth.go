@@ -117,6 +117,7 @@ func shasum(in string) string {
 	return fmt.Sprintf("%x", h)
 }
 
+// https://x.com/sebastienlorber/status/1932367017065025675
 func constantEqual(x, y string) bool {
 	return subtle.ConstantTimeCompare([]byte(x), []byte(y)) == 1
 }

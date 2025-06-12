@@ -794,6 +794,7 @@ func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (
 			renderers.WithoutRendering(),
 			renderers.WithTitle(&title),
 			hashtags.New(s.hashtagResolver, &tags),
+			// 这里的 ctx 会用来给 getPostTitle 鉴权用，所以必须是原始请求附带的 ctx。
 			page_link.New(ctx, s.getPostTitle, &refs),
 		)
 	default:
