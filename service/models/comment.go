@@ -7,7 +7,6 @@ import (
 	"github.com/xeonx/timeago"
 )
 
-// Comment in database.
 type Comment struct {
 	ID         int64  `json:"id"`
 	Parent     int64  `json:"parent"`
@@ -27,12 +26,10 @@ type Comment struct {
 	ModifiedTimezone string
 }
 
-// TableName ...
 func (Comment) TableName() string {
 	return `comments`
 }
 
-// ToProtocols ...
 // 以下字段由 setCommentExtraFields 提供/清除。
 // - Email
 // - Ip
@@ -55,7 +52,9 @@ func (c *Comment) ToProto(redact func(c *proto.Comment)) *proto.Comment {
 		Modified:   c.Modified,
 		SourceType: c.SourceType,
 		Source:     c.Source,
-		DateFuzzy:  timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
+
+		// TODO 用评论自带时区。
+		DateFuzzy: timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
 
 		DateTimezone:     c.DateTimezone,
 		ModifiedTimezone: c.ModifiedTimezone,
@@ -64,10 +63,8 @@ func (c *Comment) ToProto(redact func(c *proto.Comment)) *proto.Comment {
 	return &comment
 }
 
-// Comments ...
 type Comments []*Comment
 
-// ToProtocols ...
 func (cs Comments) ToProto(redact func(c *proto.Comment)) []*proto.Comment {
 	comments := make([]*proto.Comment, 0, len(cs))
 	for _, comment := range cs {

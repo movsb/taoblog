@@ -48,7 +48,10 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 	for i, ts := range in.Times {
 		r := proto.FormatTimeResponse_Formatted{}
 		t := time.Unix(int64(ts.Unix), 0)
+
+		// TODO 用浏览器时区。
 		r.Friendly = timeago.Chinese.Format(t)
+
 		r.Server = t.In(fixedZone).Format(time.RFC3339)
 
 		if ts.Timezone != `` {
