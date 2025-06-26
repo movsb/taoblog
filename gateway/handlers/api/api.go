@@ -15,14 +15,24 @@ type _Protos struct {
 	*runtime.ServeMux
 }
 
+type JSON struct {
+	*runtime.JSONPb
+}
+
+func (j *JSON) ContentType(_ any) string {
+	return `application/json; charset=utf-8`
+}
+
 func New(ctx context.Context, client *clients.ProtoClient) http.Handler {
 	mux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(
 			runtime.MIMEWildcard,
-			&runtime.JSONPb{
-				MarshalOptions: protojson.MarshalOptions{
-					UseProtoNames:   true,
-					EmitUnpopulated: true,
+			&JSON{
+				JSONPb: &runtime.JSONPb{
+					MarshalOptions: protojson.MarshalOptions{
+						UseProtoNames:   true,
+						EmitUnpopulated: true,
+					},
 				},
 			},
 		),
