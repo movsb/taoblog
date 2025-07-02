@@ -28,6 +28,20 @@ class PostFormUI {
 			);
 		});
 
+		let geoInputDebounceTimer = undefined;
+		this._form['geo_location'].addEventListener('input', (e)=> {
+			clearTimeout(geoInputDebounceTimer);
+			geoInputDebounceTimer = setTimeout(async ()=> {
+				try {
+					const geo = this.geo;
+					await this.updateGeoLocations(geo.latitude, geo.longitude);
+				} catch(e) {
+					console.log('获取地理位置失败：' + e);
+					return;
+				}
+			}, 500);
+		});
+
 		this.elemStatus.addEventListener('change', ()=> {
 			let value = this.elemStatus.value;
 			let p = this._form.querySelector('p.status');
@@ -213,6 +227,9 @@ class PostFormUI {
 			};
 		}
 		if (values.length != 2) {
+			throw new Error('坐标值格式错误。');
+		}
+		if (values[0]=='' || values[1]=='') {
 			throw new Error('坐标值格式错误。');
 		}
 		const longitude = parseFloat(values[0]);
