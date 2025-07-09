@@ -80,8 +80,8 @@ func (t *Task) get(id int, u string, f fs.File) string {
 			go func() {
 				for t.numberOfExecutions.Add(+1) > maxExecutions {
 					t.numberOfExecutions.Add(-1)
-					log.Println(`任务太多，等待中...`)
-					time.Sleep(time.Second)
+					log.Println(`任务太多，等待中...`, key)
+					time.Sleep(time.Second * 3)
 				}
 				defer t.numberOfExecutions.Add(-1)
 				t.extract(id, baseName, stat, key, f)
