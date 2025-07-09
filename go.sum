@@ -310,14 +310,12 @@ github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJ
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
-github.com/movsb/go-image-avif-size v0.0.0-20250607013701-bdc271fa0eb7 h1:ckuuV21bU23NX3OhTB8357hjWdtxMWiRnqEONqpK5Vk=
-github.com/movsb/go-image-avif-size v0.0.0-20250607013701-bdc271fa0eb7/go.mod h1:ZzqYjl8KKdg+KzfbYCcCZZV4JnSCItJn2BiUiSwdw7w=
+github.com/movsb/go-image-avif-size v0.0.0-20250607015031-0e19c3e4a9c8 h1:/yrfCSwBD1oO30sd2aSHywtAipzq4Cvg/RrxFCuYn4Y=
+github.com/movsb/go-image-avif-size v0.0.0-20250607015031-0e19c3e4a9c8/go.mod h1:ZzqYjl8KKdg+KzfbYCcCZZV4JnSCItJn2BiUiSwdw7w=
 github.com/movsb/goldmark v1.4.1-0.20240528100946-32a63fedc159 h1:rZ899zqA7vvks0PiZKbvrSi0303rUSra89lK40WLmXA=
 github.com/movsb/goldmark v1.4.1-0.20240528100946-32a63fedc159/go.mod h1:uzxRWxtg69N339t3louHJ7+O03ezfj6PlliRlaOzY1E=
 github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575 h1:pMe8efqpxJsiUMDwn2wPDqmuvuH8yrnuq3lDZl3JVOE=
 github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575/go.mod h1:qryy4AEogyw8d+zR2jGs4QnN4OFIsAVmoe6dglyjjJM=
-github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316 h1:eeMZo/pDQ2Vdmq7jFlb3JMYDLHtQWELZIw+oeEevh4A=
-github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316/go.mod h1:yZbOV1cKd0igi4wBBcVrs4G2ooTWhjxUT9pYV5RDN44=
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd h1:m6UqxMUSn3LdkI6qmXa4Wwel3hhPBiXfktzk+A36fAk=
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd/go.mod h1:72PHqKHSMlJ0v209MIb1m4kpXf8NpMtygwDm1O8pPsA=
 github.com/movsb/taorm v0.0.0-20250530121051-f6f1b039f9fe h1:+BFaIMvkqs8m72UzDjVEoeK4fiilOlvT6glpcxYf8bY=

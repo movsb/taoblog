@@ -48,6 +48,12 @@ message GetInfoResponse {
 	
 	// 已计划更新镜像并重启？
 	bool scheduled_update = 13;
+
+	// 上次备份时间（时间戳）。
+	int32 last_backup_at = 14;
+
+	// 上次同步时间（时间戳）。
+	int32 last_sync_at = 15;
 }
 
 message RestartRequest {

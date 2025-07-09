@@ -7,7 +7,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
 	github.com/mattn/go-sqlite3 v1.14.16
-	github.com/movsb/google-idtoken-verifier v0.0.0-20190329202541-1a6aa2c7e316
 	github.com/movsb/taorm v0.0.0-20250530121051-f6f1b039f9fe
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.1
@@ -42,6 +41,7 @@ require (
 	github.com/goccy/go-yaml v1.17.1
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
+	github.com/movsb/go-image-avif-size v0.0.0-20250607015031-0e19c3e4a9c8
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
 	github.com/phuslu/lru v1.0.18
 	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66
@@ -96,7 +96,6 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/movsb/go-image-avif-size v0.0.0-20250607013701-bdc271fa0eb7 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect

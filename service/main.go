@@ -132,6 +132,10 @@ type Service struct {
 	// >= 0 表示值有效。
 	domainExpirationDaysLeft atomic.Int32
 
+	// 最后同步与备份时间。
+	lastBackupAt atomic.Int32
+	lastSyncAt   atomic.Int32
+
 	proto.AuthServer
 	proto.TaoBlogServer
 	proto.ManagementServer
@@ -339,6 +343,9 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 		CertDaysLeft:   s.certDaysLeft.Load(),
 		DomainDaysLeft: s.domainExpirationDaysLeft.Load(),
 
+		LastBackupAt: s.lastBackupAt.Load(),
+		LastSyncAt:   s.lastSyncAt.Load(),
+
 		ScheduledUpdate: s.scheduledUpdate.Load(),
 	}
 
@@ -356,4 +363,11 @@ func (s *Service) SetCertDays(n int) {
 func (s *Service) SetDomainDays(n int) {
 	s.domainExpirationDaysLeft.Store(int32(n))
 	s.exporter.domainDaysLeft.Set(float64(n))
+}
+
+func (s *Service) SetLastBackupAt(t time.Time) {
+	s.lastBackupAt.Store(int32(t.Unix()))
+}
+func (s *Service) SetLastSyncAt(t time.Time) {
+	s.lastSyncAt.Store(int32(t.Unix()))
 }

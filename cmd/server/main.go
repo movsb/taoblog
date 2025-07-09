@@ -405,15 +405,19 @@ func (s *Server) createGitSyncTasks(
 
 		err := gs.Sync()
 		if err == nil {
-			s.notifyServer.SendInstant(
-				auth.SystemForLocal(context.Background()),
-				&proto.SendInstantRequest{
-					Title: `同步成功`,
-					Body:  `全部完成，没有错误。`,
-					Group: `同步与备份`,
-					Level: proto.SendInstantRequest_Passive,
-				},
-			)
+			log.Println(`git 同步成功`)
+			/*
+				s.notifyServer.SendInstant(
+					auth.SystemForLocal(context.Background()),
+					&proto.SendInstantRequest{
+						Title: `同步成功`,
+						Body:  `全部完成，没有错误。`,
+						Group: `同步与备份`,
+						Level: proto.SendInstantRequest_Passive,
+					},
+				)
+			*/
+			s.main.SetLastSyncAt(time.Now())
 		} else {
 			s.notifyServer.SendInstant(
 				auth.SystemForLocal(context.Background()),
@@ -475,7 +479,9 @@ func (s *Server) createBackupTasks(
 				hasErr = true
 			} else {
 				log.Println(`文章备份成功`)
-				messages = append(messages, `文章备份成功。`)
+				// 通知过于频繁，改成指标，手机端通过小组件展。
+				// messages = append(messages, `文章备份成功。`)
+				s.main.SetLastBackupAt(time.Now())
 			}
 			if err := b.BackupFiles(ctx); err != nil {
 				log.Println(`备份失败：`, err)
@@ -483,17 +489,20 @@ func (s *Server) createBackupTasks(
 				hasErr = true
 			} else {
 				log.Println(`附件备份成功`)
-				messages = append(messages, `附件备份成功。`)
+				// messages = append(messages, `附件备份成功。`)
+				s.main.SetLastBackupAt(time.Now())
 			}
-			s.notifyServer.SendInstant(
-				auth.SystemForLocal(context.Background()),
-				&proto.SendInstantRequest{
-					Title: `文章和附件备份`,
-					Body:  strings.Join(messages, "\n"),
-					Group: `同步与备份`,
-					Level: utils.IIF(hasErr, proto.SendInstantRequest_Active, proto.SendInstantRequest_Passive),
-				},
-			)
+			if len(messages) > 0 {
+				s.notifyServer.SendInstant(
+					auth.SystemForLocal(context.Background()),
+					&proto.SendInstantRequest{
+						Title: `文章和附件备份`,
+						Body:  strings.Join(messages, "\n"),
+						Group: `同步与备份`,
+						Level: utils.IIF(hasErr, proto.SendInstantRequest_Active, proto.SendInstantRequest_Passive),
+					},
+				)
+			}
 		}
 
 		time.Sleep(time.Minute * 10)
