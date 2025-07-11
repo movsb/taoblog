@@ -39,6 +39,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/rooted_path"
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
+	"github.com/movsb/taoblog/service/modules/renderers/tables"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
 	"github.com/yuin/goldmark/extension"
 
@@ -53,10 +54,9 @@ import (
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
 // 前者用请求身份，后者不限身份。
 func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions, publicContent bool) (string, error) {
-	var tr renderers.Renderer
 	switch sourceType {
 	case `html`:
-		tr = &renderers.HTML{}
+		tr := &renderers.HTML{}
 		return tr.Render(source)
 	case `plain`:
 		return html.EscapeString(source), nil
@@ -150,7 +150,12 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		options = append(options, encrypted.New())
 	}
 
-	tr = renderers.NewMarkdown(options...)
+	tr := renderers.NewMarkdown(options...)
+
+	tr.AddHtmlTransformers(
+		tables.NewTableWrapper(),
+	)
+
 	rendered, err := tr.Render(source)
 	if err != nil {
 		return "", err

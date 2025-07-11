@@ -1,0 +1,10 @@
+.table-wrapper {
+	overflow-x: auto;
+	margin: 1em 0;;
+
+	> table {
+		margin: 0;;
+		width: max-content;
+		table-layout: auto;
+	}
+}

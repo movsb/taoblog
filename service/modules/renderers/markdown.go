@@ -129,6 +129,8 @@ func NewMarkdown(options ...any) *_Markdown {
 }
 
 // TODO 判断重复。
+//
+// TODO 添加具体的、有类型的函数。
 func (me *_Markdown) AddOptions(options ...any) {
 	for _, option := range options {
 		if v1, ok := option.(Option); ok {
@@ -141,6 +143,12 @@ func (me *_Markdown) AddOptions(options ...any) {
 			v1(me)
 		}
 		me.opts = append(me.opts, option)
+	}
+}
+
+func (me *_Markdown) AddHtmlTransformers(trs ...gold_utils.HtmlTransformer) {
+	for _, tr := range trs {
+		me.opts = append(me.opts, tr)
 	}
 }
 
