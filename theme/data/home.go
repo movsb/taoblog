@@ -46,6 +46,8 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 	}
 
 	if !ac.User.IsGuest() {
+		settings := utils.Must1(service.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
+
 		topPosts := utils.Must1(service.GetTopPosts(ctx,
 			&proto.GetTopPostsRequest{
 				GetPostOptions: &proto.GetPostOptions{
@@ -74,40 +76,42 @@ func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl servi
 			home.Shared = append(home.Shared, pp)
 		}
 
-		cats := utils.Must1(service.ListCategories(ctx, &proto.ListCategoriesRequest{}))
-		cats.Categories = append(cats.Categories, &proto.Category{
-			Id:   0,
-			Name: "未分类",
-		})
-		for _, cat := range cats.Categories {
-			posts := utils.Must1(service.ListPosts(ctx,
-				&proto.ListPostsRequest{
-					Limit:     10,
-					OrderBy:   "date DESC",
-					Ownership: proto.Ownership_OwnershipMine,
-					GetPostOptions: &proto.GetPostOptions{
-						WithLink:       proto.LinkKind_LinkKindRooted,
-						ContentOptions: co.For(co.HomeLatestPosts),
+		if settings.GroupPostsByCategory {
+			cats := utils.Must1(service.ListCategories(ctx, &proto.ListCategoriesRequest{}))
+			cats.Categories = append(cats.Categories, &proto.Category{
+				Id:   0,
+				Name: "未分类",
+			})
+			for _, cat := range cats.Categories {
+				posts := utils.Must1(service.ListPosts(ctx,
+					&proto.ListPostsRequest{
+						Limit:     10,
+						OrderBy:   "date DESC",
+						Ownership: proto.Ownership_OwnershipMine,
+						GetPostOptions: &proto.GetPostOptions{
+							WithLink:       proto.LinkKind_LinkKindRooted,
+							ContentOptions: co.For(co.HomeLatestPosts),
+						},
+						Categories: []int32{cat.Id},
 					},
-					Categories: []int32{cat.Id},
-				},
-			))
-			if len(posts.Posts) == 0 {
-				continue
+				))
+				if len(posts.Posts) == 0 {
+					continue
+				}
+				group := GroupedPosts{
+					Name: cat.Name,
+				}
+				for _, p := range posts.Posts {
+					pp := newPost(p)
+					group.Posts = append(group.Posts, pp)
+				}
+				home.Grouped = append(home.Grouped, group)
 			}
-			group := GroupedPosts{
-				Name: cat.Name,
-			}
-			for _, p := range posts.Posts {
-				pp := newPost(p)
-				group.Posts = append(group.Posts, pp)
-			}
-			home.Grouped = append(home.Grouped, group)
-		}
 
-		slices.SortFunc(home.Grouped, func(a, b GroupedPosts) int {
-			return -int(a.Posts[0].Date - b.Posts[0].Date)
-		})
+			slices.SortFunc(home.Grouped, func(a, b GroupedPosts) int {
+				return -int(a.Posts[0].Date - b.Posts[0].Date)
+			})
+		}
 	}
 
 	ownership := utils.IIF(d.User.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMine)
