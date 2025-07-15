@@ -26,6 +26,8 @@ func InitPosts(path string, createFirstPost bool) *sql.DB {
 }
 
 // 初始化文件数据库。
+//
+// 注意：这里只是初始化文件实际内容存储的数据库，文件元数据存储在文章数据库中。
 func InitFiles(path string) *sql.DB {
 	db := createDatabase(path)
 	testFiles(db)

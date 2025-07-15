@@ -111,4 +111,19 @@ CREATE TABLE categories (
 
 CREATE UNIQUE INDEX `uix_cat_user_id__name` ON `categories` (`user_id`,`name`);
 
+CREATE TABLE IF NOT EXISTS `files` (
+    `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `created_at` INTEGER NOT NULL,
+    `updated_at` INTEGER NOT NULL,
+    `post_id` INTEGER NOT NULL,
+    `path` TEXT NOT NULL,
+    `mode` INTEGER NOT NULL,
+    `mod_time` INTEGER  NOT NULL,
+    `size` INTEGER  NOT NULL,
+    `digest` TEXT NOT NULL,
+    `meta` BLOB NOT NULL
+);
+
+CREATE UNIQUE INDEX `post_id__path` ON `files` (`post_id`,`path`);
+
 COMMIT;

@@ -763,3 +763,79 @@ func v59(posts, files, cache *taorm.DB) {
 	t := time.Date(2025, 5, 30, 0, 0, 0, 0, time.Local)
 	posts.MustExec("UPDATE posts SET category=0 WHERE date < ?", t.Unix())
 }
+
+type v60FileInfo struct {
+	ID        int
+	CreatedAt int64
+	UpdatedAt int64
+	PostID    int
+	Path      string
+	Mode      uint32
+	ModTime   int64
+	Size      uint32
+	Digest    string
+	Meta      []byte
+}
+
+func (v60FileInfo) TableName() string {
+	return `files`
+}
+
+type v60FileOld struct {
+	v60FileInfo
+	Data []byte
+}
+
+func (v60FileOld) TableName() string {
+	return `files`
+}
+
+type v60FileData struct {
+	ID     int
+	PostID int
+	Digest string
+	Data   []byte
+}
+
+func (v60FileData) TableName() string {
+	return `files_new`
+}
+
+// 几个步骤：
+//  1. 创建新表 files
+//  2. 从旧表 files 复制基本信息到新表 files
+//  3. 更新旧表 files：只保留必要字段
+func v60(posts, files, cache *taorm.DB) {
+	log.Println(`创建新表 files...`)
+	posts.MustExec("CREATE TABLE IF NOT EXISTS `files` (`id` INTEGER  PRIMARY KEY AUTOINCREMENT,`created_at` INTEGER NOT NULL,`updated_at` INTEGER NOT NULL,`post_id` INTEGER NOT NULL,`path` TEXT NOT NULL,`mode` INTEGER NOT NULL,`mod_time` INTEGER  NOT NULL,`size` INTEGER  NOT NULL,`digest` TEXT NOT NULL,`meta` BLOB NOT NULL)")
+	posts.MustExec("CREATE UNIQUE INDEX `post_id__path` ON `files` (`post_id`,`path`)")
+
+	log.Println(`创建新表 files_new...`)
+	files.MustExec("CREATE TABLE IF NOT EXISTS `files_new` (`id` INTEGER  PRIMARY KEY AUTOINCREMENT,`post_id` INTEGER NOT NULL,`digest` TEXT NOT NULL,`data` BLOB NOT NULL)")
+	files.MustExec("CREATE UNIQUE INDEX `post_id__digest` ON `files_new` (`post_id`,`digest`)")
+
+	log.Println(`从旧表 files 复制基本信息到新表 files...`)
+	var oldFileInfos []*v60FileOld
+	files.Select(`id`).MustFind(&oldFileInfos)
+
+	for _, _fi := range oldFileInfos {
+		var file v60FileOld
+		files.Where(`id=?`, _fi.ID).MustFind(&file)
+
+		log.Println(`复制文件信息：`, file.PostID, file.Path)
+
+		posts.Model(&file.v60FileInfo).MustCreate()
+
+		files.Model(&v60FileData{
+			PostID: file.PostID,
+			Digest: file.Digest,
+			Data:   file.Data,
+		}).MustCreate()
+	}
+
+	log.Println(`完成复制，更新旧表 files...`)
+
+	files.MustExec("DROP TABLE files")
+	files.MustExec("ALTER TABLE files_new RENAME TO files")
+	// 索引自动跟表走，无需更名。
+}

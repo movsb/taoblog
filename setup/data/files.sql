@@ -1,19 +1,15 @@
 BEGIN;
 
+-- 设计上按文件 hash 唯一存储。
+-- 所以：不能有相同内容而不同文件名的文件（更不能有多个空文件）。
+
 CREATE TABLE IF NOT EXISTS `files` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
-    `created_at` INTEGER NOT NULL,
-    `updated_at` INTEGER NOT NULL,
     `post_id` INTEGER NOT NULL,
-    `path` TEXT NOT NULL,
-    `mode` INTEGER NOT NULL,
-    `mod_time` INTEGER  NOT NULL,
-    `size` INTEGER  NOT NULL,
-    `meta` BLOB NOT NULL,
     `digest` TEXT NOT NULL,
     `data` BLOB NOT NULL
 );
 
-CREATE UNIQUE INDEX `post_id__path` ON `files` (`post_id`,`path`);
+CREATE UNIQUE INDEX `post_id__digest` ON `files` (`post_id`,`digest`);
 
 COMMIT;
