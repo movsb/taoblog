@@ -9,7 +9,10 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
-const Untitled = `无标题`
+const (
+	Untitled       = `无标题`
+	UntitledSource = `# ` + Untitled + "\n\n"
+)
 
 type PostStatus string
 

@@ -569,7 +569,7 @@ func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitl
 	p, err := s.CreatePost(ctx, &proto.Post{
 		Type:       `post`,
 		SourceType: `markdown`,
-		Source:     fmt.Sprintf("# %s\n\n", models.Untitled),
+		Source:     models.UntitledSource,
 	})
 	return &proto.CreateUntitledPostResponse{
 		Post: p,
@@ -591,6 +591,12 @@ func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
 		return ``, fmt.Errorf(`getPostTitle: %w`, err)
 	}
 	return post.Title, nil
+}
+
+func isUpdatingUntitledPost(p *models.Post) bool {
+	return p.Date == p.Modified &&
+		p.Title == models.Untitled &&
+		p.Source == models.UntitledSource
 }
 
 // 更新文章。
@@ -659,6 +665,11 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		default:
 			panic(`unknown update mask:` + path)
 		}
+	}
+
+	// 更新无标题文章时如果时间未指定，则更新为现在时间。
+	if isUpdatingUntitledPost(oldPost) && in.Post.Date == oldPost.Date {
+		m[`date`] = now
 	}
 
 	if hasMetas {
@@ -745,9 +756,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 
 	// 通知新文章创建
 	// TODO 异步执行。
-	if oldPost.Date == oldPost.Modified && oldPost.Title == models.Untitled &&
-		s.cfg.Site.Notify.NewPost &&
-		oldPost.UserID != int32(auth.AdminID) {
+	if isUpdatingUntitledPost(oldPost) && s.cfg.Site.Notify.NewPost && oldPost.UserID != int32(auth.AdminID) {
 		title, _ := m[`title`].(string)
 		s.notifier.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
 			Title: `新文章发表`,

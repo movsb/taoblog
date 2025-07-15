@@ -542,13 +542,26 @@ func TestUpdateTags(t *testing.T) {
 
 func TestCreateUntitledPost(t *testing.T) {
 	r := Serve(t.Context())
-	_, err := r.client.Blog.CreateUntitledPost(r.user1, &proto.CreateUntitledPostRequest{})
+	_, err := r.client.Blog.CreateUntitledPost(r.guest, &proto.CreateUntitledPostRequest{})
+	if err == nil {
+		t.Fatal(`未鉴权`)
+	}
+	p, err := r.client.Blog.CreateUntitledPost(r.user1, &proto.CreateUntitledPostRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = r.client.Blog.CreateUntitledPost(r.guest, &proto.CreateUntitledPostRequest{})
-	if err == nil {
-		t.Fatal(`未鉴权`)
+	if p.Post.Date != p.Post.Modified {
+		t.Fatal(`创建的文章时间不正确`)
+	}
+	// 尝试修改文章，修改后“发表时间”应该是现在时间。
+	// 暂时拿不到现在时间，所以 sleep 一下以确保不一样。
+	time.Sleep(time.Second * 2)
+	p2, err := r.client.Blog.UpdatePost(r.user1, &proto.UpdatePostRequest{
+		Post:       p.Post,
+		UpdateMask: &fieldmaskpb.FieldMask{},
+	})
+	if p2.Date == p.Post.Date {
+		t.Fatal(`修改文章后，发表时间不应该等于最初的创建时间`)
 	}
 }
 
