@@ -324,6 +324,8 @@ func (*Updater) set(p any, value string) {
 	case reflect.String:
 		vpe.SetString(value)
 	case reflect.Struct, reflect.Slice:
+		// BUG: 如果结构体中包含其它重要类型，同样会被清空。
+		// TODO: Theme.VariablesConfig 的 changed 通道会被清空。导致无法即时应用更新。
 		vpe.SetZero()
 		a := vpe.Interface()
 		_ = a
