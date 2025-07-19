@@ -128,10 +128,18 @@ func DefaultThemeVariablesConfig() ThemeVariablesConfig {
 
 func (ThemeVariablesConfig) CanSave() {}
 
+func (c *ThemeVariablesConfig) ClearStruct() {
+	d := DefaultThemeVariablesConfig()
+	c.Font = d.Font
+	c.Colors = d.Colors
+	// 保留 changed 通道。
+}
+
 func (c ThemeVariablesConfig) AfterSet(paths Segments, obj any) {
 	select {
 	case c.changed <- struct{}{}:
 	default:
+		panic(`无法发送 changed 通道。可能是因为没有人监听。`)
 	}
 }
 

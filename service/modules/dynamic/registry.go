@@ -95,7 +95,7 @@ func WithStyles(module string, paths ...string) {
 	if cc, ok := c.private.(ContentChanged); ok {
 		go func() {
 			for range cc.Reload() {
-				// log.Println(`需要重新加载样式`, module)
+				log.Println(`需要重新加载样式`, module)
 				reloadAll.Store(true)
 			}
 		}()

@@ -37,6 +37,11 @@ type Updater struct {
 	obj any
 }
 
+// 自定义结构体清空方法。
+type StructClearer interface {
+	ClearStruct()
+}
+
 type Segment struct {
 	Key   string
 	Index any
@@ -324,9 +329,13 @@ func (*Updater) set(p any, value string) {
 	case reflect.String:
 		vpe.SetString(value)
 	case reflect.Struct, reflect.Slice:
-		// BUG: 如果结构体中包含其它重要类型，同样会被清空。
-		// TODO: Theme.VariablesConfig 的 changed 通道会被清空。导致无法即时应用更新。
-		vpe.SetZero()
+		// NOTE: 如果结构体中包含其它重要类型，同样会被清空。
+		if clearer, ok := vpe.Addr().Interface().(StructClearer); ok {
+			clearer.ClearStruct()
+		} else {
+			vpe.SetZero()
+		}
+
 		a := vpe.Interface()
 		_ = a
 		if err := yaml.UnmarshalWithOptions([]byte(value), vpe.Addr().Interface(), yaml.Strict()); err != nil {
