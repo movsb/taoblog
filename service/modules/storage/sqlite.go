@@ -21,12 +21,14 @@ import (
 )
 
 type SQLite struct {
-	db *taorm.DB
+	meta *taorm.DB
+	data *taorm.DB
 }
 
-func NewSQLite(db *sql.DB) *SQLite {
+func NewSQLite(meta, data *sql.DB) *SQLite {
 	return &SQLite{
-		db: taorm.NewDB(db),
+		meta: taorm.NewDB(meta),
+		data: taorm.NewDB(data),
 	}
 }
 
@@ -42,7 +44,7 @@ var _ interface {
 
 func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 	var files []*models.File
-	if err := fs.db.Select(fileFieldsWithoutData).Find(&files); err != nil {
+	if err := fs.meta.Select(fileFieldsWithoutData).Find(&files); err != nil {
 		return nil, err
 	}
 	m := make(map[int][]*proto.FileSpec)
@@ -76,35 +78,33 @@ const fileFieldsWithoutData = `id,created_at,updated_at,post_id,path,mode,mod_ti
 func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	fullName := path.Clean(path.Join(fs.dir, name))
 	var file models.File
-	if err := fs.s.db.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
+	if err := fs.s.meta.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
 		if taorm.IsNotFoundError(err) {
 			return nil, os.ErrNotExist
 		}
 		return nil, err
 	}
 
-	return file.FsFile(&_Reader{db: fs.s.db, pid: fs.pid, path: fullName, size: int(file.Size)}), nil
+	return file.FsFile(&_Reader{
+		// 这里用数据数据库，而不是元数据数据库。
+		db:   fs.s.data,
+		meta: &file,
+	}), nil
 }
 
 type _Reader struct {
 	db   *taorm.DB
-	pid  int
-	path string
-
-	// 不用再从表里面读一遍。
-	// 以后可能独立出 data 表？
-	size int
-
+	meta *models.File
 	data io.ReadSeeker
 }
 
 func (r *_Reader) prepare() error {
 	if r.data == nil {
-		var file models.File
-		if err := r.db.Select(`data`).Where(`post_id=? AND path=?`, r.pid, r.path).Find(&file); err != nil {
+		var file models.FileData
+		if err := r.db.Select(`data`).Where(`post_id=? AND digest=?`, r.meta.PostID, r.meta.Digest).Find(&file); err != nil {
 			return err
 		}
-		if len(file.Data) != r.size {
+		if len(file.Data) != int(r.meta.Size) {
 			return fmt.Errorf(`文件内容数据已损坏。`)
 		}
 		r.data = bytes.NewReader(file.Data)
@@ -130,7 +130,7 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 		return nil, errors.New(`不支持列举子目录文件。`)
 	}
 	var files []*models.File
-	if err := fs.s.db.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Find(&files); err != nil {
+	if err := fs.s.meta.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Find(&files); err != nil {
 		return nil, err
 	}
 	// TODO 为了前端显示方便，这里临时按时间排序。
@@ -154,13 +154,13 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 func (fs *SQLiteForPost) Delete(name string) error {
 	fullName := path.Clean(path.Join(fs.dir, name))
 	var file models.File
-	if err := fs.s.db.Select(`id`).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
+	if err := fs.s.meta.Select(`id`).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
 		if taorm.IsNotFoundError(err) {
 			return os.ErrNotExist
 		}
 		return err
 	}
-	return fs.s.db.Model(&file).Delete()
+	return fs.s.meta.Model(&file).Delete()
 }
 
 func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {
@@ -175,7 +175,7 @@ func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {
 	}
 
 	var file models.File
-	if err := fs.s.db.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).
+	if err := fs.s.meta.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).
 		Where(`path=?`, fullName).Find(&file); err != nil {
 		if taorm.IsNotFoundError(err) {
 			return nil, os.ErrNotExist
@@ -212,17 +212,32 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 	models.Encrypt(&meta.Encryption, data)
 
 	var old models.File
-	if err := fs.s.db.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&old); err == nil {
-		_, err := fs.s.db.Model(&old).UpdateMap(taorm.M{
+	if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&old); err == nil {
+		_, err := fs.s.meta.Model(&old).UpdateMap(taorm.M{
 			`updated_at`: now.Unix(),
 			`mode`:       spec.Mode,
 			`mod_time`:   spec.Time,
 			`size`:       spec.Size,
-			`data`:       data,
 			`meta`:       meta,
 			`digest`:     models.Digest(data),
 		})
-		return err
+		if err != nil {
+			return fmt.Errorf(`更新文件失败：%w`, err)
+		}
+		r, err := fs.s.data.Where(`post_id=? AND digest=?`, old.PostID, old.Digest).UpdateMap(taorm.M{
+			`data`: data,
+		})
+		if err != nil {
+			return fmt.Errorf(`更新文件失败：%w`, err)
+		}
+		n, err := r.RowsAffected()
+		if err != nil {
+			return fmt.Errorf(`更新文件失败：%w`, err)
+		}
+		if n != 1 {
+			return fmt.Errorf(`更新文件失败：没有更新到任何行`)
+		}
+		return nil
 	} else {
 		file := models.File{
 			CreatedAt: now.Unix(),
@@ -234,8 +249,18 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			Size:      spec.Size,
 			Meta:      meta,
 			Digest:    models.Digest(data),
-			Data:      data,
 		}
-		return fs.s.db.Model(&file).Create()
+		if err := fs.s.meta.Model(&file).Create(); err != nil {
+			return fmt.Errorf(`创建文件失败：%w`, err)
+		}
+		dataModel := models.FileData{
+			PostID: file.PostID,
+			Digest: file.Digest,
+			Data:   data,
+		}
+		if err := fs.s.data.Model(&dataModel).Create(); err != nil {
+			return fmt.Errorf(`创建文件数据失败：%w`, err)
+		}
+		return nil
 	}
 }

@@ -17,8 +17,6 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
-// TODO 考虑把简单字段移到主数据库。
-// files 此数据库只保留二进制数据。
 type File struct {
 	ID        int
 	CreatedAt int64
@@ -30,7 +28,17 @@ type File struct {
 	Size      uint32
 	Meta      FileMeta
 	Digest    string
-	Data      []byte
+}
+
+type FileData struct {
+	ID     int
+	PostID int
+	Digest string
+	Data   []byte
+}
+
+func (FileData) TableName() string {
+	return `files`
 }
 
 // 元数据。

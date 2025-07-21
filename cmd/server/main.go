@@ -210,32 +210,32 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	cacheDB := migration.InitCache(cfg.Database.Cache)
 	s.fileCache = cache.NewFileCache(ctx, cacheDB)
 
-	db := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
-	defer db.Close()
+	postsDB := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
+	defer postsDB.Close()
 
-	s.db = taorm.NewDB(db)
+	s.db = taorm.NewDB(postsDB)
 
 	filesDB := migration.InitFiles(cfg.Database.Files)
-	filesStore := theme_fs.FS(storage.NewSQLite(filesDB))
+	filesStore := theme_fs.FS(storage.NewSQLite(postsDB, filesDB))
 
-	migration.Migrate(db, filesDB, cacheDB)
+	migration.Migrate(postsDB, filesDB, cacheDB)
 
-	utils.Must(s.initConfig(cfg, db))
+	utils.Must(s.initConfig(cfg, postsDB))
 
 	s.metrics = metrics.NewRegistry(context.TODO())
 
 	var mux = http.NewServeMux()
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	theAuth := auth.New(taorm.NewDB(db))
+	theAuth := auth.New(taorm.NewDB(postsDB))
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
-	notify := s.createNotifyService(ctx, db, cfg, serviceRegistrar)
+	notify := s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
 	s.notifyServer = notify
 
-	theService := s.createMainServices(ctx, db, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, rc, mux)
+	theService := s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, rc, mux)
 	s.main = theService
 
 	if testing && s.initialTimezone != nil {
@@ -255,7 +255,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		s.initRSS()
 	}
 
-	s.createAdmin(ctx, cfg, db, theService, theAuth, mux)
+	s.createAdmin(ctx, cfg, postsDB, theService, theAuth, mux)
 
 	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth)
 	canon := canonical.New(theme, theService, s.metrics)

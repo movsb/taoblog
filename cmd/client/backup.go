@@ -44,27 +44,17 @@ func (c *Client) BackupPosts(cmd *cobra.Command, compress bool, removeLogs bool)
 	}
 	defer r.Close()
 
-	var w io.Writer
-	bStdout, err := cmd.Flags().GetBool(`stdout`)
+	localDir := `.`
+	name := `posts.db`
+	localPath := filepath.Join(localDir, name)
+	fp, err := os.Create(localPath)
 	if err != nil {
 		panic(err)
 	}
-	if !bStdout {
-		localDir := `.`
-		name := `posts.db`
-		localPath := filepath.Join(localDir, name)
-		fp, err := os.Create(localPath)
-		if err != nil {
-			panic(err)
-		}
-		defer fmt.Printf("Filename: %s\n", localPath)
-		defer fp.Close()
-		w = fp
-	} else {
-		w = os.Stdout
-	}
+	defer fmt.Printf("Filename: %s\n", localPath)
+	defer fp.Close()
 
-	if _, err := io.Copy(w, r); err != nil {
+	if _, err := io.Copy(fp, r); err != nil {
 		panic(err)
 	}
 
@@ -126,7 +116,7 @@ func (s SpecWithPostID) DeepEqual(to SpecWithPostID) bool {
 		s.File.Size == to.File.Size
 }
 
-func (c *Client) BackupFiles(cmd *cobra.Command, name string) {
+func (c *Client) BackupFiles(cmd *cobra.Command) {
 	client, err := c.Management.BackupFiles(c.Context())
 	if err != nil {
 		log.Fatalln(err)
@@ -163,8 +153,9 @@ func (c *Client) BackupFiles(cmd *cobra.Command, name string) {
 
 	log.Printf(`Local: list files...`)
 
-	localDB := migration.InitFiles(name)
-	localStore := storage.NewSQLite(localDB)
+	localDB := migration.InitFiles(`files.db`)
+	postsDB := migration.InitPosts(`posts.db`, false)
+	localStore := storage.NewSQLite(postsDB, localDB)
 	localFiles, err := localStore.AllFiles()
 	if err != nil {
 		panic(err)
