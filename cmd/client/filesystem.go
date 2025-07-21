@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/movsb/taoblog/modules/utils/syncer"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -13,9 +14,10 @@ import (
 
 type SyncFileSpec proto.FileSpec
 
-func (s *SyncFileSpec) Less(than *SyncFileSpec) bool {
-	return s.Path < than.Path
+func (s *SyncFileSpec) Compare(than *SyncFileSpec) int {
+	return strings.Compare(s.Path, than.Path)
 }
+
 func (s *SyncFileSpec) DeepEqual(to *SyncFileSpec) bool {
 	lm, rm := os.FileMode(s.Mode), os.FileMode(to.Mode)
 	if lm.IsDir() != rm.IsDir() {

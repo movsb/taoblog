@@ -23,7 +23,7 @@ const (
 )
 
 type Element[E any] interface {
-	Less(than E) bool    //  根据路径排序
+	Compare(to E) int    // 比较大小
 	DeepEqual(to E) bool // 修改时间、权限也相同
 }
 
@@ -49,19 +49,14 @@ func (s *Syncer[S, E]) Sync(locals S, remotes S, dir Dir) error {
 }
 
 func (s *Syncer[S, E]) sortAndUniq(locals S, remotes S) (S, S) {
-	cmp := func(a, b E) int {
-		if a.Less(b) {
-			return -1
-		}
-		if b.Less(a) {
-			return +1
-		}
-		return 0
-	}
-	slices.SortFunc(locals, func(a, b E) int { return cmp(a, b) })
-	slices.SortFunc(remotes, func(a, b E) int { return cmp(a, b) })
-	locals = slices.CompactFunc(locals, func(a, b E) bool { return cmp(a, b) == 0 })
-	remotes = slices.CompactFunc(remotes, func(a, b E) bool { return cmp(a, b) == 0 })
+	slices.SortFunc(locals, func(a, b E) int {
+		return a.Compare(b)
+	})
+	slices.SortFunc(remotes, func(a, b E) int {
+		return a.Compare(b)
+	})
+	locals = slices.CompactFunc(locals, func(a, b E) bool { return a.Compare(b) == 0 })
+	remotes = slices.CompactFunc(remotes, func(a, b E) bool { return a.Compare(b) == 0 })
 	return locals, remotes
 }
 
@@ -124,11 +119,11 @@ func (s *Syncer[S, E]) sync(locals S, remotes S, dir Dir) (err error) {
 
 		li, rj := locals[i], remotes[j]
 		switch {
-		case li.Less(rj): // 说明远程有多的文件。
+		case li.Compare(rj) == -1: // 说明远程有多的文件。
 			extraRemote(rj)
 			j--
 			continue
-		case rj.Less(li): // 说明本地有多的文件。
+		case rj.Compare(li) == -1: // 说明本地有多的文件。
 			extraLocal(li)
 			i--
 			continue

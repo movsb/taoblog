@@ -145,7 +145,7 @@ func (d *DataStore) CreateData(postID int, digest string, data []byte) error {
 }
 
 func (d *DataStore) DeleteData(postID int, digest string) error {
-	return d.data.Where(`post_id=? AND digest=?`, postID, digest).Delete()
+	return d.data.From(models.FileData{}).Where(`post_id=? AND digest=?`, postID, digest).Delete()
 }
 
 // 只有 PostID 和 Digest 字段。

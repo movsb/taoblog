@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -50,7 +50,6 @@ func (c *Client) Backup(cmd *cobra.Command, compress bool, removeLogs bool) {
 	if err != nil {
 		panic(err)
 	}
-	defer fmt.Printf("Filename: %s\n", localPath)
 	defer fp.Close()
 
 	if _, err := io.Copy(fp, r); err != nil {
@@ -58,6 +57,7 @@ func (c *Client) Backup(cmd *cobra.Command, compress bool, removeLogs bool) {
 	}
 
 	fmt.Println()
+	fmt.Printf("Filename: %s\n", localPath)
 
 	c.BackupFiles()
 }
@@ -103,18 +103,22 @@ type SpecWithPostID struct {
 	Digest string
 }
 
-func lessSpecWithPostID(s, than SpecWithPostID) bool {
-	return s.PostID < than.PostID || s.PostID == than.PostID && s.Digest < than.Digest
+func cmpSpecWithPostID(s, than SpecWithPostID) int {
+	if s.PostID < than.PostID {
+		return -1
+	}
+	if s.PostID > than.PostID {
+		return +1
+	}
+	return strings.Compare(s.Digest, than.Digest)
 }
 
-func (s SpecWithPostID) Less(than SpecWithPostID) bool {
-	return lessSpecWithPostID(s, than)
+func (s SpecWithPostID) Compare(than SpecWithPostID) int {
+	return cmpSpecWithPostID(s, than)
 }
 
-func (s SpecWithPostID) DeepEqual(to SpecWithPostID) bool {
-	return s.PostID == to.PostID &&
-		s.Path == to.Path &&
-		s.Digest == to.Digest
+func (s SpecWithPostID) DeepEqual(than SpecWithPostID) bool {
+	return s.PostID == than.PostID && s.Digest == than.Digest
 }
 
 type Digest2Path struct {
@@ -163,12 +167,8 @@ func (c *Client) BackupFiles() {
 		})
 	}
 
-	sort.Slice(remoteSpecs, func(i, j int) bool {
-		return remoteSpecs[i].PostID < remoteSpecs[j].PostID || strings.Compare(remoteSpecs[i].Digest, remoteSpecs[j].Digest) < 0
-	})
-	sort.Slice(localSpecs, func(i, j int) bool {
-		return localSpecs[i].PostID < localSpecs[j].PostID || strings.Compare(localSpecs[i].Digest, localSpecs[j].Digest) < 0
-	})
+	slices.SortFunc(remoteSpecs, cmpSpecWithPostID)
+	slices.SortFunc(localSpecs, cmpSpecWithPostID)
 
 	sync := syncer.New(
 		syncer.WithCopyRemoteToLocal[[]SpecWithPostID](func(f SpecWithPostID) error {
