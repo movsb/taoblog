@@ -2,9 +2,7 @@ syntax = "proto3";
 package protocols;
 option go_package = "github.com/movsb/taoblog/proto";
 
-import "post.proto";
-
-message BackupPostsRequest {
+message BackupRequest {
 	// 是否需要压缩数据（zlib）
 	bool compress = 1;
 	// 是否需要去除日志（邮件、通知……）
@@ -12,7 +10,7 @@ message BackupPostsRequest {
 	bool remove_logs = 2;
 }
 
-message BackupPostsResponse {
+message BackupResponse {
 	message Preparing {
 		float progress = 1;
 	}
@@ -27,29 +25,20 @@ message BackupPostsResponse {
 }
 
 message BackupFilesRequest {
-	message ListFilesRequest {}
 	message SendFileRequest {
 		int32 post_id = 1;
 		string path = 2;
 	}
 	oneof BackupFilesMessage {
-		ListFilesRequest list_files = 1;
 		SendFileRequest send_file = 2;
 	}
 }
 
 message BackupFilesResponse {
-	message ListFilesResponse {
-		message Files {
-			repeated FileSpec files = 1;
-		}
-		map<int32, Files> files = 1;
-	}
 	message SendFileResponse {
 		bytes data = 1;
 	}
 	oneof BackupFilesMessage {
-		ListFilesResponse list_files = 1;
 		SendFileResponse send_file = 2;
 	}
 }

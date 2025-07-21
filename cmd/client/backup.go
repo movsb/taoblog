@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"compress/zlib"
 	"fmt"
 	"io"
@@ -20,8 +19,8 @@ import (
 )
 
 // BackupPosts backups all blog database.
-func (c *Client) BackupPosts(cmd *cobra.Command, compress bool, removeLogs bool) {
-	backupClient, err := c.Management.BackupPosts(c.Context(), &proto.BackupPostsRequest{
+func (c *Client) Backup(cmd *cobra.Command, compress bool, removeLogs bool) {
+	backupClient, err := c.Management.Backup(c.Context(), &proto.BackupRequest{
 		Compress:   compress,
 		RemoveLogs: removeLogs,
 	})
@@ -59,10 +58,12 @@ func (c *Client) BackupPosts(cmd *cobra.Command, compress bool, removeLogs bool)
 	}
 
 	fmt.Println()
+
+	c.BackupFiles()
 }
 
 type _BackupProgressReader struct {
-	c         proto.Management_BackupPostsClient
+	c         proto.Management_BackupClient
 	d         []byte
 	preparing bool
 }
@@ -78,10 +79,10 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 			log.Fatalln(err)
 		}
 		switch typed := rsp.BackupResponseMessage.(type) {
-		case *proto.BackupPostsResponse_Preparing_:
+		case *proto.BackupResponse_Preparing_:
 			fmt.Printf("\r\033[KPreparing... %.2f%%", typed.Preparing.Progress*100)
 			r.preparing = true
-		case *proto.BackupPostsResponse_Transferring_:
+		case *proto.BackupResponse_Transferring_:
 			if r.preparing {
 				fmt.Println()
 				r.preparing = false
@@ -98,11 +99,12 @@ func (r *_BackupProgressReader) Read(p []byte) (int, error) {
 
 type SpecWithPostID struct {
 	PostID int
-	File   *proto.FileSpec
+	Path   string
+	Digest string
 }
 
 func lessSpecWithPostID(s, than SpecWithPostID) bool {
-	return s.PostID < than.PostID || s.PostID == than.PostID && s.File.Path < than.File.Path
+	return s.PostID < than.PostID || s.PostID == than.PostID && s.Digest < than.Digest
 }
 
 func (s SpecWithPostID) Less(than SpecWithPostID) bool {
@@ -111,81 +113,71 @@ func (s SpecWithPostID) Less(than SpecWithPostID) bool {
 
 func (s SpecWithPostID) DeepEqual(to SpecWithPostID) bool {
 	return s.PostID == to.PostID &&
-		s.File.Path == to.File.Path &&
-		s.File.Time == to.File.Time &&
-		s.File.Size == to.File.Size
+		s.Path == to.Path &&
+		s.Digest == to.Digest
 }
 
-func (c *Client) BackupFiles(cmd *cobra.Command) {
+type Digest2Path struct {
+	PostID int
+	Digest string
+}
+
+func (c *Client) BackupFiles() {
 	client, err := c.Management.BackupFiles(c.Context())
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer client.CloseSend()
-	log.Printf(`Remote: list files...`)
-	err = client.Send(&proto.BackupFilesRequest{
-		BackupFilesMessage: &proto.BackupFilesRequest_ListFiles{
-			ListFiles: &proto.BackupFilesRequest_ListFilesRequest{},
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
-	rsp, err := client.Recv()
-	if err != nil {
-		panic(err)
-	}
-	if rsp.GetListFiles() == nil {
-		panic(`bad message`)
-	}
-	remoteFiles := rsp.GetListFiles().Files
-
-	var localSpecs, remoteSpecs []SpecWithPostID
-
-	for id, r := range remoteFiles {
-		for _, f := range r.Files {
-			remoteSpecs = append(remoteSpecs, SpecWithPostID{
-				PostID: int(id),
-				File:   f,
-			})
-		}
-	}
-
-	log.Printf(`Local: list files...`)
 
 	localDB := migration.InitFiles(`files.db`)
 	postsDB := migration.InitPosts(`posts.db`, false)
-	localStore := storage.NewSQLite(postsDB, localDB)
-	localFiles, err := localStore.AllFiles()
-	if err != nil {
-		panic(err)
-	}
+	dataStore := storage.NewDataStore(localDB)
+	postsStore := storage.NewSQLite(postsDB, dataStore)
 
-	for id, r := range localFiles {
-		for _, f := range r {
-			localSpecs = append(localSpecs, SpecWithPostID{
-				PostID: int(id),
-				File:   f,
+	var localSpecs, remoteSpecs []SpecWithPostID
+	digest2path := make(map[Digest2Path]string)
+
+	remoteFiles := utils.Must1(postsStore.AllFiles())
+	for postID, files := range remoteFiles {
+		for _, f := range files {
+			remoteSpecs = append(remoteSpecs, SpecWithPostID{
+				PostID: postID,
+				Path:   f.Path,
+				Digest: f.Digest,
 			})
+			digest2path[Digest2Path{PostID: postID, Digest: f.Digest}] = f.Path
 		}
 	}
 
-	log.Println(`Sort files...`)
+	localFiles := utils.Must1(dataStore.ListAllFiles())
+	for _, f := range localFiles {
+		path := digest2path[Digest2Path{PostID: f.PostID, Digest: f.Digest}]
+		if path == `` {
+			path = fmt.Sprintf(`deleted:%s`, f.Digest)
+		}
+
+		localSpecs = append(localSpecs, SpecWithPostID{
+			PostID: f.PostID,
+			Path:   path,
+			Digest: f.Digest,
+		})
+	}
+
 	sort.Slice(remoteSpecs, func(i, j int) bool {
-		return remoteSpecs[i].PostID < remoteSpecs[j].PostID || strings.Compare(remoteSpecs[i].File.Path, remoteSpecs[j].File.Path) < 0
+		return remoteSpecs[i].PostID < remoteSpecs[j].PostID || strings.Compare(remoteSpecs[i].Digest, remoteSpecs[j].Digest) < 0
 	})
 	sort.Slice(localSpecs, func(i, j int) bool {
-		return localSpecs[i].PostID < localSpecs[j].PostID || strings.Compare(localSpecs[i].File.Path, localSpecs[j].File.Path) < 0
+		return localSpecs[i].PostID < localSpecs[j].PostID || strings.Compare(localSpecs[i].Digest, localSpecs[j].Digest) < 0
 	})
 
 	sync := syncer.New(
 		syncer.WithCopyRemoteToLocal[[]SpecWithPostID](func(f SpecWithPostID) error {
-			log.Println(`远程→本地：`, f.PostID, f.File.Path)
+			log.Println(`远程→本地：`, f.PostID, f.Path)
 			err := client.Send(&proto.BackupFilesRequest{
 				BackupFilesMessage: &proto.BackupFilesRequest_SendFile{
 					SendFile: &proto.BackupFilesRequest_SendFileRequest{
 						PostId: int32(f.PostID),
-						Path:   f.File.Path,
+						Path:   f.Path,
 					},
 				},
 			})
@@ -200,14 +192,12 @@ func (c *Client) BackupFiles(cmd *cobra.Command) {
 				panic(`bad message`)
 			}
 			data := rsp.GetSendFile().Data
-			fs := utils.Must1(localStore.ForPost(f.PostID))
-			utils.Must(utils.Write(fs, f.File, bytes.NewReader(data)))
+			utils.Must(dataStore.CreateData(f.PostID, f.Digest, data))
 			return nil
 		}),
 		syncer.WithDeleteLocal[[]SpecWithPostID](func(f SpecWithPostID) error {
-			log.Println(`删除本地：`, f.PostID, f.File.Path)
-			fs := utils.Must1(localStore.ForPost(f.PostID))
-			utils.Must(utils.Delete(fs, f.File.Path))
+			log.Println(`删除本地：`, f.PostID, f.Path)
+			utils.Must(dataStore.DeleteData(f.PostID, f.Digest))
 			return nil
 		}),
 	)

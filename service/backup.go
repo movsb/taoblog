@@ -23,13 +23,13 @@ type _ReadCloseSizer struct {
 	Size func() int
 }
 
-func (s *Service) BackupPosts(req *proto.BackupPostsRequest, srv proto.Management_BackupPostsServer) error {
+func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupServer) error {
 	s.MustBeAdmin(srv.Context())
 
 	sendPreparingProgress := func(progress float32) error {
-		return srv.Send(&proto.BackupPostsResponse{
-			BackupResponseMessage: &proto.BackupPostsResponse_Preparing_{
-				Preparing: &proto.BackupPostsResponse_Preparing{
+		return srv.Send(&proto.BackupResponse{
+			BackupResponseMessage: &proto.BackupResponse_Preparing_{
+				Preparing: &proto.BackupResponse_Preparing{
 					Progress: progress,
 				},
 			},
@@ -102,9 +102,9 @@ func (s *Service) BackupPosts(req *proto.BackupPostsRequest, srv proto.Managemen
 	}
 
 	sendTransfer := func(data []byte, progress float32) error {
-		return srv.Send(&proto.BackupPostsResponse{
-			BackupResponseMessage: &proto.BackupPostsResponse_Transferring_{
-				Transferring: &proto.BackupPostsResponse_Transferring{
+		return srv.Send(&proto.BackupResponse{
+			BackupResponseMessage: &proto.BackupResponse_Transferring_{
+				Transferring: &proto.BackupResponse_Transferring{
 					Progress: progress,
 					Data:     data,
 				},
@@ -220,32 +220,6 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 	s.MustBeAdmin(srv.Context())
 
-	listFiles := func(_ *proto.BackupFilesRequest_ListFilesRequest) error {
-		files, err := s.postDataFS.AllFiles()
-		if err != nil {
-			log.Printf(`BackupFiles failed to list files: %v`, err)
-			return err
-		}
-		outFiles := map[int32]*proto.BackupFilesResponse_ListFilesResponse_Files{}
-		for id, f := range files {
-			outFiles[int32(id)] = &proto.BackupFilesResponse_ListFilesResponse_Files{
-				Files: f,
-			}
-		}
-		rsp := &proto.BackupFilesResponse{
-			BackupFilesMessage: &proto.BackupFilesResponse_ListFiles{
-				ListFiles: &proto.BackupFilesResponse_ListFilesResponse{
-					Files: outFiles,
-				},
-			},
-		}
-		if err := srv.Send(rsp); err != nil {
-			log.Printf(`BackupFiles failed to send file list: %v`, err)
-			return err
-		}
-		return nil
-	}
-
 	sendFile := func(req *proto.BackupFilesRequest_SendFileRequest) error {
 		log.Printf("send file: %d/%s", req.PostId, req.Path)
 		fs, err := s.postDataFS.ForPost(int(req.PostId))
@@ -288,12 +262,6 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 			}
 			log.Printf(`BackupFiles failed: %v`, err)
 			return err
-		}
-		if req := req.GetListFiles(); req != nil {
-			if err := listFiles(req); err != nil {
-				return err
-			}
-			continue
 		}
 		if req := req.GetSendFile(); req != nil {
 			if err := sendFile(req); err != nil {

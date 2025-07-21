@@ -216,7 +216,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.db = taorm.NewDB(postsDB)
 
 	filesDB := migration.InitFiles(cfg.Database.Files)
-	filesStore := theme_fs.FS(storage.NewSQLite(postsDB, filesDB))
+	filesStore := theme_fs.FS(storage.NewSQLite(postsDB, storage.NewDataStore(filesDB)))
 
 	migration.Migrate(postsDB, filesDB, cacheDB)
 

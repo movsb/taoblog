@@ -106,7 +106,7 @@ service Management {
 
 	// Backup
 
-	rpc BackupPosts(BackupPostsRequest) returns (stream BackupPostsResponse) {
+	rpc Backup(BackupRequest) returns (stream BackupResponse) {
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "导出数据库。";
 		};

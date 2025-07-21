@@ -357,6 +357,10 @@ message FileSpec {
 
 	// 文件的元数据。
 	Meta meta = 6;
+
+	// 文件摘要MD5。
+	// 输出参数。
+	string digest = 7;
 }
 
 message ListPostFilesRequest {

@@ -22,13 +22,23 @@ import (
 
 type SQLite struct {
 	meta *taorm.DB
+	data *DataStore
+}
+
+type DataStore struct {
 	data *taorm.DB
 }
 
-func NewSQLite(meta, data *sql.DB) *SQLite {
+func NewDataStore(data *sql.DB) *DataStore {
+	return &DataStore{
+		data: taorm.NewDB(data),
+	}
+}
+
+func NewSQLite(meta *sql.DB, data *DataStore) *SQLite {
 	return &SQLite{
 		meta: taorm.NewDB(meta),
-		data: taorm.NewDB(data),
+		data: data,
 	}
 }
 
@@ -56,6 +66,8 @@ func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 			Time: uint32(f.ModTime),
 			Type: mime.TypeByExtension(path.Ext(f.Path)),
 			Meta: f.Meta.ToProto(),
+
+			Digest: f.Digest,
 		})
 	}
 	return m, nil
@@ -92,22 +104,70 @@ func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	}), nil
 }
 
+func (d *DataStore) GetFile(postID int, digest string, size int) (io.ReadSeeker, error) {
+	var file models.FileData
+	if err := d.data.Select(`data`).Where(`post_id=? AND digest=?`, postID, digest).Find(&file); err != nil {
+		return nil, err
+	}
+	if len(file.Data) != size {
+		return nil, fmt.Errorf(`文件内容数据已损坏。`)
+	}
+	return bytes.NewReader(file.Data), nil
+}
+
+func (d *DataStore) UpdateData(postID int, digest string, data []byte) error {
+	r, err := d.data.Where(`post_id=? AND digest=?`, postID, digest).UpdateMap(taorm.M{
+		`data`: data,
+	})
+	if err != nil {
+		return fmt.Errorf(`更新文件失败：%w`, err)
+	}
+	n, err := r.RowsAffected()
+	if err != nil {
+		return fmt.Errorf(`更新文件失败：%w`, err)
+	}
+	if n != 1 {
+		return fmt.Errorf(`更新文件失败：没有更新到任何行`)
+	}
+	return nil
+}
+
+func (d *DataStore) CreateData(postID int, digest string, data []byte) error {
+	dataModel := models.FileData{
+		PostID: postID,
+		Digest: digest,
+		Data:   data,
+	}
+	if err := d.data.Model(&dataModel).Create(); err != nil {
+		return fmt.Errorf(`创建文件数据失败：%w`, err)
+	}
+	return nil
+}
+
+func (d *DataStore) DeleteData(postID int, digest string) error {
+	return d.data.Where(`post_id=? AND digest=?`, postID, digest).Delete()
+}
+
+// 只有 PostID 和 Digest 字段。
+func (d *DataStore) ListAllFiles() ([]*models.FileData, error) {
+	var files []*models.FileData
+	d.data.Select(`post_id,digest`).MustFind(&files)
+	return files, nil
+}
+
 type _Reader struct {
-	db   *taorm.DB
+	db   *DataStore
 	meta *models.File
 	data io.ReadSeeker
 }
 
 func (r *_Reader) prepare() error {
 	if r.data == nil {
-		var file models.FileData
-		if err := r.db.Select(`data`).Where(`post_id=? AND digest=?`, r.meta.PostID, r.meta.Digest).Find(&file); err != nil {
-			return err
+		f, err := r.db.GetFile(r.meta.PostID, r.meta.Digest, int(r.meta.Size))
+		if err != nil {
+			return fmt.Errorf(`获取文件数据失败：%w`, err)
 		}
-		if len(file.Data) != int(r.meta.Size) {
-			return fmt.Errorf(`文件内容数据已损坏。`)
-		}
-		r.data = bytes.NewReader(file.Data)
+		r.data = f
 	}
 	return nil
 }
@@ -146,6 +206,8 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 			Time: uint32(f.ModTime),
 			Type: mime.TypeByExtension(path.Ext(f.Path)),
 			Meta: f.Meta.ToProto(),
+
+			Digest: f.Digest,
 		})
 	}
 	return specs, nil
@@ -224,20 +286,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 		if err != nil {
 			return fmt.Errorf(`更新文件失败：%w`, err)
 		}
-		r, err := fs.s.data.Where(`post_id=? AND digest=?`, old.PostID, old.Digest).UpdateMap(taorm.M{
-			`data`: data,
-		})
-		if err != nil {
-			return fmt.Errorf(`更新文件失败：%w`, err)
-		}
-		n, err := r.RowsAffected()
-		if err != nil {
-			return fmt.Errorf(`更新文件失败：%w`, err)
-		}
-		if n != 1 {
-			return fmt.Errorf(`更新文件失败：没有更新到任何行`)
-		}
-		return nil
+		return fs.s.data.UpdateData(fs.pid, old.Digest, data)
 	} else {
 		file := models.File{
 			CreatedAt: now.Unix(),
@@ -253,14 +302,6 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 		if err := fs.s.meta.Model(&file).Create(); err != nil {
 			return fmt.Errorf(`创建文件失败：%w`, err)
 		}
-		dataModel := models.FileData{
-			PostID: file.PostID,
-			Digest: file.Digest,
-			Data:   data,
-		}
-		if err := fs.s.data.Model(&dataModel).Create(); err != nil {
-			return fmt.Errorf(`创建文件数据失败：%w`, err)
-		}
-		return nil
+		return fs.s.data.CreateData(fs.pid, file.Digest, data)
 	}
 }

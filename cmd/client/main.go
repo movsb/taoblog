@@ -402,33 +402,18 @@ func AddCommands(rootCmd *cobra.Command) {
 	})
 	backupCmd := &cobra.Command{
 		Use:              `backup`,
-		Short:            `Backup ...`,
+		Short:            `备份文章、评论、文件等`,
 		Args:             cobra.NoArgs,
 		PersistentPreRun: preRun,
-	}
-	rootCmd.AddCommand(backupCmd)
-	backupPostsCmd := &cobra.Command{
-		Use:   `posts`,
-		Short: `backup posts and comments`,
-		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			compress := utils.Must1(cmd.Flags().GetBool(`compress`))
 			keepLogs := utils.Must1(cmd.Flags().GetBool(`keep-logs`))
-			client.BackupPosts(cmd, compress, !keepLogs)
+			client.Backup(cmd, compress, !keepLogs)
 		},
 	}
-	backupPostsCmd.Flags().Bool(`compress`, true, `是否压缩传输。`)
-	backupPostsCmd.Flags().Bool(`keep-logs`, false, `是否保留未处理的日志（通知、邮件等）。`)
-	backupCmd.AddCommand(backupPostsCmd)
-	backupFilesCmd := &cobra.Command{
-		Use:   `files`,
-		Short: `backup files`,
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			client.BackupFiles(cmd)
-		},
-	}
-	backupCmd.AddCommand(backupFilesCmd)
+	backupCmd.Flags().Bool(`compress`, true, `是否压缩传输。`)
+	backupCmd.Flags().Bool(`keep-logs`, false, `是否保留未处理的日志（通知、邮件等）。`)
+	rootCmd.AddCommand(backupCmd)
 
 	configCmd := &cobra.Command{
 		Use:              `config`,
