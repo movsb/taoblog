@@ -28,7 +28,17 @@ type File struct {
 	Size      uint32
 	Meta      FileMeta
 	Digest    string
-	Data      []byte
+}
+
+type FileData struct {
+	ID     int
+	PostID int
+	Digest string
+	Data   []byte
+}
+
+func (FileData) TableName() string {
+	return `files`
 }
 
 // 元数据。
