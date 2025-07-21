@@ -1,4 +1,6 @@
 .table-wrapper {
+	// 这一行把 sticky 表格干没了
+	// “sticky 元素的父元素不能有 overflow: hidden/scroll/auto，否则失效”
 	overflow-x: auto;
 	margin: 1em 0;;
 
@@ -6,5 +8,8 @@
 		margin: 0;;
 		width: max-content;
 		table-layout: auto;
+
+		// 尝试 fix sticky 表格（overflow 导致的）
+		// max-height: 90vh;
 	}
 }
