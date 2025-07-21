@@ -4,9 +4,10 @@
 	gap: var(--border-radius);
 	.friend {
 		border: 1px solid var(--border-color);
+		box-sizing: border-box;
 		border-radius: var(--border-radius);
 		display: flex;
-		width: 278px;
+		flex: 1 0 calc((100% - 2 * var(--border-radius)) / 3);
 		.left {
 			width: 70px;
 			height: 70px;
@@ -34,6 +35,16 @@
 					font-size: 80%;
 				}
 			}
+		}
+	}
+}
+
+@container (max-width: 600px) {
+	.friends {
+		flex-direction: column;
+		.friend {
+			flex: 1 0 100%;
+			max-width: 100%;
 		}
 	}
 }
