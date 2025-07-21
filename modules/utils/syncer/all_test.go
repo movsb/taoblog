@@ -1,6 +1,7 @@
 package syncer_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils/syncer"
@@ -8,8 +9,8 @@ import (
 
 type Path string
 
-func (p Path) Less(than Path) bool {
-	return p < than
+func (p Path) Compare(than Path) int {
+	return strings.Compare(string(p), string(than))
 }
 
 func (p Path) DeepEqual(to Path) bool {
