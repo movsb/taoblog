@@ -117,6 +117,12 @@ func genSvgURL(name string) string {
 }
 
 // TODO 更好的做法是 parse 页面，取 <link rel="favicon" ...
+//
+// 参考获取途径：
+//
+//  1. https://x.com/becool_me/status/1946260312929312803
+//  2. [Google 有一个可以获取任意网站图标的 API - V2EX](https://v2ex.com/t/1146187)
+//  3. https://x.com/jonathan_wilke/status/1945852148266185161
 func resolveIconURL(siteURL, faviconURL string) (string, error) {
 	us, err := url.Parse(siteURL)
 	if err != nil {
