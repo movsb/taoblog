@@ -354,33 +354,35 @@ class PostFormUI {
 		};
 
 		let li = document.createElement('li');
+		// 外部会修改，备份并后续使用。
+		li._path = f.path;
 
 		let name = document.createElement('span');
 		name.innerText = f.path;
 		li.appendChild(name);
 
 		let insertButton = document.createElement('button');
-		let text = '';
 		let editor = this.editor;
-		let insert = '';
-		if (/^image\//.test(f.type)) {
-			text = '🏞️';
-			insert = `![](${encodePathAsURL(f.path)})\n`;
-		} else if (/^video\//.test(f.type)) {
-			text = '🎬';
-			insert = `<video controls src="${h2a(encodePathAsURL(f.path))}"></video>\n`;
-		} else if (/^audio\//.test(f.type)) {
-			text = '🎵';
-			insert = `<audio controls src="${h2a(encodePathAsURL(f.path))}"></audio>\n`;
-		} else {
-			text = '🔗';
-			insert = `[${f.path}](${encodePathAsURL(f.path)})\n`;
-		}
-		insertButton.innerText = text;
+
+		const getInsertionText = () => {
+			let insert = '';
+			if (/^image\//.test(f.type)) {
+				insert = `![](${encodePathAsURL(li._path)})\n`;
+			} else if (/^video\//.test(f.type)) {
+				insert = `<video controls src="${h2a(encodePathAsURL(li._path))}"></video>\n`;
+			} else if (/^audio\//.test(f.type)) {
+				insert = `<audio controls src="${h2a(encodePathAsURL(li._path))}"></audio>\n`;
+			} else {
+				insert = `[${li._path}](${encodePathAsURL(li._path)})\n`;
+			}
+			return insert;
+		};
+
+		insertButton.innerText = '插入';
 		insertButton.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			editor.paste(insert);
+			editor.paste(getInsertionText());
 		});
 		li.appendChild(insertButton);
 
@@ -422,14 +424,22 @@ class PostFormUI {
 			this.li = formUI._addFile(list, spec, false);
 			this.li._path = spec.path;
 
-			this.name = spec.path;
+			this._path = spec.path;
 			this.span = this.li.querySelector('span');
 		}
 		/**
 		 * @param {Number} v
 		 */
 		set progress(v) {
-			this.span.innerText = `${this.name}(${v}%)`;
+			this.span.innerText = `${this._path}(${v}%)`;
+		}
+		/**
+		 * @param {string} path
+		 */
+		set path(path) {
+			this._path = path;
+			this.li._path = path;
+			this.span.innerText = path;
 		}
 	}
 
@@ -555,7 +565,7 @@ class FilesManager {
 
 	// 创建一个文件。
 	// f: <input type="file"> 中拿来的文件。
-	async create(f, progress) {
+	async create(f, options, progress) {
 		let dimension = await FilesManager.detectImageSize(f);
 		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
 
@@ -574,8 +584,9 @@ class FilesManager {
 
 		form.set(`data`, f)
 
-		return new Promise((success, failure) => {
+		form.set(`options`, options ? JSON.stringify(options) : '{}');
 
+		return new Promise((success, failure) => {
 			let xhr = new XMLHttpRequest();
 			xhr.open('POST', `/v3/posts/${this._post_id}/files`);
 			xhr.addEventListener('abort', ()=>{
@@ -590,7 +601,7 @@ class FilesManager {
 					return;
 				}
 				if(xhr.status >= 200 && xhr.status < 300) {
-					success();
+					success(JSON.parse(xhr.responseText));
 					return;
 				}
 				console.log(xhr);
@@ -703,6 +714,14 @@ formUI.submit(async (done) => {
 
 formUI.filesChanged(async files => {
 	if (files.length <= 0) { return; }
+
+	// 提示是否需要保留图片位置信息。
+	let haveImageFiles = Array.from(files).some(f => /^image\//.test(f.type));
+	let keepPos = true;
+	if (haveImageFiles) {
+		keepPos = confirm('选中的文件包含图片，是否需要保留图片的位置信息（如果有）？');
+	}
+
 	Array.from(files).forEach(async f => {
 		if (f.size > (10 << 20)) {
 			alert(`文件 "${f.name}" 太大，不予上传。`);
@@ -720,10 +739,14 @@ formUI.filesChanged(async files => {
 
 		try {
 			let fm = new FilesManager(TaoBlog.post_id);
-			await fm.create(f, (p)=> {
+			let rsp = await fm.create(f, {
+				drop_gps_tags: !keepPos,
+			}, (p)=> {
 				console.log(f.name, `${p}%`);
 				up.progress = p;
 			});
+			// 可能会自动转换格式，所以用更新后的文件名。
+			up.path = rsp.spec.path;
 			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。

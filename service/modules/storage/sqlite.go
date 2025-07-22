@@ -116,7 +116,7 @@ func (d *DataStore) GetFile(postID int, digest string, size int) (io.ReadSeeker,
 }
 
 func (d *DataStore) UpdateData(postID int, digest string, data []byte) error {
-	r, err := d.data.Where(`post_id=? AND digest=?`, postID, digest).UpdateMap(taorm.M{
+	r, err := d.data.From(models.FileData{}).Where(`post_id=? AND digest=?`, postID, digest).UpdateMap(taorm.M{
 		`data`: data,
 	})
 	if err != nil {

@@ -1,9 +1,14 @@
 package assets
 
 import (
+	"context"
 	"encoding/json"
 	"io"
+	"log"
+	"mime"
 	"net/http"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -72,6 +77,18 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 			return
 		}
 
+		var options Options
+		optionsString := r.FormValue(`options`)
+		if optionsString == "" {
+			optionsString = "{}"
+		}
+		dec = json.NewDecoder(strings.NewReader(optionsString))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&options); err != nil {
+			utils.HTTPError(w, http.StatusBadRequest)
+			return
+		}
+
 		data, _, err := r.FormFile(`data`)
 		if err != nil {
 			utils.HTTPError(w, http.StatusBadRequest)
@@ -85,14 +102,70 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 			return
 		}
 
+		specPtr := &spec
+
+		if isImageFile(spec.Path) {
+			spec2, data2, err := convertToAVIF(&spec, all, options.DropGPSTags)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, err.Error(), 500)
+				return
+			}
+
+			specPtr = spec2
+			all = data2
+		}
+
 		utils.Must(fsc.Send(&proto.FileSystemRequest{
 			Request: &proto.FileSystemRequest_WriteFile{
 				WriteFile: &proto.FileSystemRequest_WriteFileRequest{
-					Spec: &spec,
+					Spec: specPtr,
 					Data: all,
 				},
 			},
 		}))
 		utils.Must1(fsc.Recv())
+
+		json.NewEncoder(w).Encode(map[string]any{
+			`spec`: specPtr,
+		})
 	})
+}
+
+type Options struct {
+	DropGPSTags bool `json:"drop_gps_tags"`
+}
+
+func convertToAVIF(spec *proto.FileSpec, data []byte, dropGPSTags bool) (_ *proto.FileSpec, _ []byte, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	tmpInputFile := utils.Must1(os.CreateTemp("", ""))
+	defer os.Remove(tmpInputFile.Name())
+	utils.Must1(tmpInputFile.Write(data))
+	tmpInputFile.Close()
+
+	newPath, tmpOutputPath := utils.Must2(ConvertToAVIF(context.Background(), spec.Path, tmpInputFile.Name()))
+
+	utils.Must(CopyTags(tmpInputFile.Name(), tmpOutputPath))
+
+	if dropGPSTags {
+		utils.Must(DropGPSTags(tmpOutputPath))
+	}
+
+	fpOutput := utils.Must1(os.Open(tmpOutputPath))
+	defer os.Remove(tmpOutputPath)
+	defer fpOutput.Close()
+
+	info := utils.Must1(fpOutput.Stat())
+
+	specOutput := &proto.FileSpec{
+		Path: newPath,
+		Mode: spec.Mode,
+		Size: uint32(info.Size()),
+		Time: spec.Time,
+		Type: mime.TypeByExtension(path.Ext(newPath)),
+		Meta: spec.Meta, // TODO: 需要转换吗？能拷贝吗？能直接用吗？
+	}
+
+	return specOutput, utils.Must1(io.ReadAll(fpOutput)), nil
 }
