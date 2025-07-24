@@ -10,6 +10,7 @@
 <script src="/v3/dynamic/script.js"></script>
 <script src="/admin/tinymde.js"></script>
 <script src="/admin/script.js"></script>
+<script src="editor.js"></script>
 <link rel="stylesheet" type="text/css" href="/admin/tinymde.css">
 {{ apply_site_theme_customs }}
 </head>
@@ -116,11 +117,7 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	</p>
 	<hr>
 	<p><input type="submit" value="保存"></p>
-	<div class="files">
-		<ol class="uploading"></ol>
-		<hr>
-		<ol class="list"></ol>
-	</div>
+	<file-list class="file-list"></file-list>
 	<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 </form>
 <dialog name="new-category-dialog">
@@ -136,6 +133,5 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 		</div>
 	</form>
 </dialog>
-<script src="editor.js"></script>
 </body>
 </html>

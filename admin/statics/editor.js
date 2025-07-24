@@ -1,3 +1,112 @@
+class FileList extends HTMLElement {
+	static FileItem = class extends HTMLElement {
+		connectedCallback() {
+			this.innerHTML = `
+<span>
+	<span class="path"></span>
+	<span class="progress"></span>
+	<button type="button" class="insert">插入</button>
+</span>`;
+
+			this._path = this.querySelector('.path');
+			this._progress = this.querySelector('.progress');
+			this._insertBtn = this.querySelector('.insert');
+		}
+
+		set spec(spec) {
+			this._spec = spec;
+			this._path.innerText = this._spec.path;
+		}
+
+		set progress(v) {
+			this._progress.innerText = `(${v}%)`;
+		}
+
+		onInsert(callback) {
+			const _encodePathAsURL = (s) => {
+				// https://en.wikipedia.org/wiki/Percent-encoding
+				// 只是尽量简单地编码必要的字符，不然会在 Markdown 里面很难看。
+				// ! # $ & ' ( ) * + , / : ; = ? @ [ ]
+				// 外加 % 空格
+				const re = /!|#|\$|&|'|\(|\)|\*|\+|,|\/|:|;|=|\?|@|\[|\]|%| /g;
+				return s.replace(re, c => '%' + c.codePointAt(0).toString(16).toUpperCase());
+			}
+				
+			const _escapeAttribute = (h) => {
+				const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
+				return h.replace(/[&'"]/g, c => map[c]);
+			}
+
+			const getInsertionText = () => {
+				const f = this._spec;
+				const pathEncoded = _encodePathAsURL(f.path);
+
+				if (/^image\//.test(f.type)) {
+					return `![](${pathEncoded})\n`;
+				} else if (/^video\//.test(f.type)) {
+					return `<video controls src="${_escapeAttribute(pathEncoded)}"></video>\n`;
+				} else if (/^audio\//.test(f.type)) {
+					return `<audio controls src="${_escapeAttribute(pathEncoded)}"></audio>\n`;
+				} else {
+					return `[${li._path}](${pathEncoded})\n`;
+				}
+			};
+
+			this._insertBtn.addEventListener('click', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				callback(getInsertionText());
+			});
+		}
+	}
+
+	connectedCallback() {
+		this.innerHTML = `
+			<ol class="new"></ol>
+			<ol class="old"></ol>
+		`
+		this._old = this.querySelector('ol.old');
+		this._new = this.querySelector('ol.new');
+	}
+
+	addNew(spec) {
+		this._new.querySelectorAll('file-list-item').forEach(fi => {
+			if (fi._spec.path == spec.path) {
+				fi.remove();
+			}
+		});
+
+		return this._insert(this._new, spec);
+	}
+
+	_insert(list, spec) {
+		const li = document.createElement('li');
+		const fi = new FileList.FileItem();
+		li.appendChild(fi);
+		list.appendChild(li);
+		fi.spec = spec;
+		fi.onInsert((text) => {
+			if (this._onInsertClick) {
+				this._onInsertClick(text);
+			}
+		});
+		return fi;
+	}
+
+	onInsertClick(callback) {
+		this._onInsertClick = callback;
+	}
+
+	set files(list) {
+		this._old.innerHTML = '';
+		list.forEach(f => {
+			this._insert(this._old, f);
+		});
+	}
+}
+customElements.define('file-list', FileList);
+customElements.define('file-list-item', FileList.FileItem);
+
 class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('#main');
@@ -5,6 +114,12 @@ class PostFormUI {
 		this._files = this._form.querySelector('#files');
 		this._users = [];
 		this._contentChanged = false;
+
+		this._fileList = this._form.querySelector('.file-list');
+		this._fileList.onInsertClick((text) => {
+			// TODO 只支持 Markdown 编辑器，非 textarea。
+			this.editor.paste(text);
+		});
 		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
 			e.preventDefault();
@@ -334,117 +449,20 @@ class PostFormUI {
 		this.elemDiffContainer.innerHTML = v;
 	}
 
-	// 会自动去重。
-	_addFile(ol, f, append) {
-		/**
-		 * @param {string} s
-		 */
-		const encodePathAsURL = s => {
-			// https://en.wikipedia.org/wiki/Percent-encoding
-			// 只是尽量简单地编码必要的字符，不然会在 Markdown 里面很难看。
-			// ! # $ & ' ( ) * + , / : ; = ? @ [ ]
-			// 外加 % 空格
-			const re = /!|#|\$|&|'|\(|\)|\*|\+|,|\/|:|;|=|\?|@|\[|\]|%| /g;
-			return s.replace(re, c => '%' + c.codePointAt(0).toString(16).toUpperCase());
-		};
-		
-		const h2a = (h) => {
-			const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
-			return h.replace(/[&'"]/g, c => map[c]);
-		};
-
-		let li = document.createElement('li');
-		// 外部会修改，备份并后续使用。
-		li._path = f.path;
-
-		let name = document.createElement('span');
-		name.innerText = f.path;
-		li.appendChild(name);
-
-		let insertButton = document.createElement('button');
-		let editor = this.editor;
-
-		const getInsertionText = () => {
-			let insert = '';
-			if (/^image\//.test(f.type)) {
-				insert = `![](${encodePathAsURL(li._path)})\n`;
-			} else if (/^video\//.test(f.type)) {
-				insert = `<video controls src="${h2a(encodePathAsURL(li._path))}"></video>\n`;
-			} else if (/^audio\//.test(f.type)) {
-				insert = `<audio controls src="${h2a(encodePathAsURL(li._path))}"></audio>\n`;
-			} else {
-				insert = `[${li._path}](${encodePathAsURL(li._path)})\n`;
-			}
-			return insert;
-		};
-
-		insertButton.innerText = '插入';
-		insertButton.addEventListener('click', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			editor.paste(getInsertionText());
-		});
-		li.appendChild(insertButton);
-
-		if (append) {
-			ol.appendChild(li);
-		} else {
-			ol.prepend(li);
-		}
-
-		return li;
-	}
-
 	/**
 	 * @param {any[]} list
 	 */
 	set files(list) {
 		console.log(list);
-		let ol = this._form.querySelector('.files .list');
-		ol.innerHTML = '';
-		list.forEach(f => this._addFile(ol, f, true));
+		const fl = this._form.querySelector('.file-list');
+		fl.files = list;
 	}
+
 	filesChanged(callback) {
 		this._files.addEventListener('change', (e)=> {
 			console.log('选中文件列表：', this._files.files);
 			callback(this._files.files);
 		});
-	}
-
-	static UploadingFile = class {
-		constructor(formUI, spec) {
-			const list = formUI._form.querySelector('.files .uploading');
-
-			list.querySelectorAll(`li`).forEach(li=> {
-				if(li._path == spec.path) {
-					li.remove();
-				}
-			});
-
-			this.li = formUI._addFile(list, spec, false);
-			this.li._path = spec.path;
-
-			this._path = spec.path;
-			this.span = this.li.querySelector('span');
-		}
-		/**
-		 * @param {Number} v
-		 */
-		set progress(v) {
-			this.span.innerText = `${this._path}(${v}%)`;
-		}
-		/**
-		 * @param {string} path
-		 */
-		set path(path) {
-			this._path = path;
-			this.li._path = path;
-			this.span.innerText = path;
-		}
-	}
-
-	tmpFile(spec) {
-		return new PostFormUI.UploadingFile(this, spec);
 	}
 
 	submit(callback) {
@@ -659,6 +677,8 @@ class FilesManager {
 	}
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+
 let postAPI = new PostManagementAPI();
 let formUI = (() => {
 	try {
@@ -732,21 +752,19 @@ formUI.filesChanged(async files => {
 			return;
 		}
 
-		let up = formUI.tmpFile({
-			path: f.name,
-			type: f.type,
-		});
-
 		try {
 			let fm = new FilesManager(TaoBlog.post_id);
+			const fi = formUI._fileList.addNew({
+				path: f.name,
+			});
 			let rsp = await fm.create(f, {
 				drop_gps_tags: !keepPos,
 			}, (p)=> {
 				console.log(f.name, `${p}%`);
-				up.progress = p;
+				fi.progress = p;
 			});
 			// 可能会自动转换格式，所以用更新后的文件名。
-			up.path = rsp.spec.path;
+			fi.spec = rsp.spec;
 			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。
@@ -765,3 +783,5 @@ formUI.filesChanged(async files => {
 		alert(e);
 	}
 })();
+
+});
