@@ -2,22 +2,33 @@ class FileList extends HTMLElement {
 	static FileItem = class extends HTMLElement {
 		connectedCallback() {
 			this.innerHTML = `
-<span>
-	<span class="path"></span>
-	<span class="progress"></span>
-</span>`;
+<div>
+	<div class="preview">
+		<img>
+	</div>
+	<div class="info">
+		<div class="path"></div>
+		<div class="details">
+			<span class="progress"></span>
+		</div>
+	</div>
+</div>`;
 
 			this._path = this.querySelector('.path');
 			this._progress = this.querySelector('.progress');
+			this._img = this.querySelector('img');
 		}
 
 		set spec(spec) {
 			this._spec = spec;
 			this._path.innerText = this._spec.path;
+			this._path.title = this._spec.path;
+			// TODO: 这里是硬编码的。
+			this._img.src = `/${TaoBlog.post_id}/${encodeURIComponent(this._spec.path)}`;
 		}
 
 		set progress(v) {
-			this._progress.innerText = `(${v}%)`;
+			this._progress.innerText = `${v}%`;
 		}
 
 		getInsertionText() {

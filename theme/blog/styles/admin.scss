@@ -213,14 +213,16 @@ body.admin.editor {
 		}
 		.wrapper {
 			max-height: 100%;
-			overflow: auto;
+			// overflow: auto;
 			display: flex;
 			gap: .5em;
 			.list {
 				flex: 1;
+				min-width: 0;
 			}
 			.buttons {
 				width: 80px;
+				min-width: 80px;
 				display: flex;
 				flex-direction: column;
 				gap: 2em;
@@ -230,6 +232,9 @@ body.admin.editor {
 				}
 			}
 			.file-list {
+				// 使 max-width: 100% 有效。
+				// 我的 父元素是 flex 的右边列，它是 flex: 1 的自动宽度。我希望它内部的子元素不能把 它撑开。
+				min-width: 0;
 				max-height: 100%;
 				overflow: auto;
 				display: block;
@@ -254,6 +259,31 @@ body.admin.editor {
 						// }
 						&.selected {
 							background-color: var(--highlight-color);
+						}
+					}
+				}
+			}
+			file-list-item {
+				> div {
+					display: flex;
+					gap: .5em;
+					.preview {
+						width: 50px;
+						height: 50px;
+						flex-shrink: 0;
+						img {
+							width: 100%;
+							height: 100%;
+							object-fit: cover;
+						}
+					}
+					.info {
+						flex: 1;
+						min-width: 0;
+						.path {
+							overflow: hidden;
+							text-overflow: ellipsis;
+							white-space: nowrap;
 						}
 					}
 				}
