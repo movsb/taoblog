@@ -216,7 +216,7 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 func (fs *SQLiteForPost) Delete(name string) error {
 	fullName := path.Clean(path.Join(fs.dir, name))
 	var file models.File
-	if err := fs.s.meta.Select(`id`).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
+	if err := fs.s.meta.Select(`id,digest`).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
 		if taorm.IsNotFoundError(err) {
 			return os.ErrNotExist
 		}

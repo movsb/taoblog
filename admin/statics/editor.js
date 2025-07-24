@@ -147,6 +147,18 @@ class FileList extends HTMLElement {
 		return fi;
 	}
 
+	// 如果同一张图片上传了两遍，则可能由前一张图片被转换了格式，导致出现两条记录。
+	// 所以不能直接改 spec，需要去重。
+	updateSpec(fi, spec) {
+		const fis = this.querySelectorAll('file-list-item');
+		fis.forEach(f => {
+			if (f._spec.path == spec.path && f != fi) {
+				f.remove();
+			}
+		});
+		fi.spec = spec;
+	}
+
 	set files(list) {
 		this._old.innerHTML = '';
 		list.forEach(f => {
@@ -860,7 +872,8 @@ formUI.filesChanged(async files => {
 				fi.progress = p;
 			});
 			// 可能会自动转换格式，所以用更新后的文件名。
-			fi.spec = rsp.spec;
+			formUI._fileList.updateSpec(fi, rsp.spec);
+			// fi.spec = rsp.spec;
 			fi.finished = true;
 			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
