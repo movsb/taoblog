@@ -117,7 +117,6 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	</p>
 	<hr>
 	<p><input type="submit" value="保存"></p>
-	<file-list class="file-list"></file-list>
 	<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 </form>
 <dialog name="new-category-dialog">
@@ -132,6 +131,23 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			<input type="submit" value="确定">
 		</div>
 	</form>
+</dialog>
+<dialog name="file-manager">
+	<div class="wrapper">
+		<div class="list">
+			<file-list class="file-list"></file-list>
+		</div>
+		<div class="buttons">
+			<div>
+				<button type="button" class="insert" disabled>插入</button>
+				<button type="button" class="delete" disabled>删除</button>
+			</div>
+			<div>
+				<button type="button" class="upload">上传</button>
+				<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
+			</div>
+		</div>
+	</div>
 </dialog>
 </body>
 </html>

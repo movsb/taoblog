@@ -5,12 +5,10 @@ class FileList extends HTMLElement {
 <span>
 	<span class="path"></span>
 	<span class="progress"></span>
-	<button type="button" class="insert">插入</button>
 </span>`;
 
 			this._path = this.querySelector('.path');
 			this._progress = this.querySelector('.progress');
-			this._insertBtn = this.querySelector('.insert');
 		}
 
 		set spec(spec) {
@@ -22,7 +20,7 @@ class FileList extends HTMLElement {
 			this._progress.innerText = `(${v}%)`;
 		}
 
-		onInsert(callback) {
+		getInsertionText() {
 			const _encodePathAsURL = (s) => {
 				// https://en.wikipedia.org/wiki/Percent-encoding
 				// 只是尽量简单地编码必要的字符，不然会在 Markdown 里面很难看。
@@ -48,15 +46,11 @@ class FileList extends HTMLElement {
 				} else if (/^audio\//.test(f.type)) {
 					return `<audio controls src="${_escapeAttribute(pathEncoded)}"></audio>\n`;
 				} else {
-					return `[${li._path}](${pathEncoded})\n`;
+					return `[${f.path}](${pathEncoded})\n`;
 				}
 			};
 
-			this._insertBtn.addEventListener('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				callback(getInsertionText());
-			});
+			return getInsertionText();
 		}
 	}
 
@@ -67,6 +61,29 @@ class FileList extends HTMLElement {
 		`
 		this._old = this.querySelector('ol.old');
 		this._new = this.querySelector('ol.new');
+
+		this._selected = [];
+
+		this.addEventListener('click', (e) => {
+			const target = e.target;
+			const li = target.closest('li');
+			if (!li) { return; }
+			li.classList.toggle('selected');
+
+			this._selected = this.querySelectorAll('li.selected file-list-item');
+			console.log('选中的文件：', this._selected);
+			if (this._onSelectionChange) {
+				this._onSelectionChange(this._selected);
+			}
+		});
+	}
+
+	get selected() {
+		return this._selected;
+	}
+
+	onSelectionChange(callback) {
+		this._onSelectionChange = callback;
 	}
 
 	addNew(spec) {
@@ -85,16 +102,7 @@ class FileList extends HTMLElement {
 		li.appendChild(fi);
 		list.appendChild(li);
 		fi.spec = spec;
-		fi.onInsert((text) => {
-			if (this._onInsertClick) {
-				this._onInsertClick(text);
-			}
-		});
 		return fi;
-	}
-
-	onInsertClick(callback) {
-		this._onInsertClick = callback;
 	}
 
 	set files(list) {
@@ -115,10 +123,28 @@ class PostFormUI {
 		this._users = [];
 		this._contentChanged = false;
 
-		this._fileList = this._form.querySelector('.file-list');
-		this._fileList.onInsertClick((text) => {
-			// TODO 只支持 Markdown 编辑器，非 textarea。
-			this.editor.paste(text);
+		this._fileManagerDialog = document.querySelector('dialog[name="file-manager"]');
+		this._fileList = this._fileManagerDialog.querySelector('file-list');
+		this._fileList.onSelectionChange( selected => {
+			this._fileManagerDialog.querySelector('.insert').disabled = selected.length <= 0;
+			this._fileManagerDialog.querySelector('.delete').disabled = selected.length <= 0;
+		});
+		this._fileManagerDialog.querySelector('.insert').addEventListener('click', (e) => {
+			const selected = this._fileList.selected;
+			if (selected.length <= 0) {
+				return;
+			}
+			selected.forEach(fi => {
+				const text = fi.getInsertionText();
+				if (this.editor) {
+					this.editor.paste(text);
+				} else {
+					this.elemSource.value += text;
+				}
+			});
+		});
+		this._fileManagerDialog.querySelector('.upload').addEventListener('click', (e) => {
+			this._files.click();
 		});
 		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
@@ -257,18 +283,20 @@ class PostFormUI {
 				editor: this.editor,
 				commands: [
 					{
-						name: `insertImage`,
+						name: `fileManager`,
 						title: `上传图片/视频/文件`,
-						innerHTML: `⏫ 上传文件`,
+						innerHTML: `📄 文件管理`,
 						action: editor => {
-							let files = document.getElementById('files');
-							files.click();
+							const d = this._fileManagerDialog;
+							d.inert = true;
+							d.show();
+							d.inert = false;
 						},
 					},
 					{
 						name: `insertTaskItem`,
 						title: `插入任务`,
-						innerHTML: `☑️ 插入任务`,
+						innerHTML: `☑️ 任务`,
 						action: editor => {
 							editor.paste('- [ ] ');
 						},
@@ -276,12 +304,12 @@ class PostFormUI {
 					{
 						name: `blockquote`,
 						title: `切换选中文本为块引用`,
-						innerHTML: `➡️ 插入块引用`,
+						innerHTML: `➡️ 块引用`,
 					},
 					{
 						name: `divider`,
 						title: `插入当时时间分割线`,
-						innerHTML: `✂️ 插入分隔符`,
+						innerHTML: `✂️ 分隔符`,
 						action: editor => {
 							const date = new Date();
 							let formatted = date.toLocaleString().replaceAll('/', '-');
@@ -454,8 +482,7 @@ class PostFormUI {
 	 */
 	set files(list) {
 		console.log(list);
-		const fl = this._form.querySelector('.file-list');
-		fl.files = list;
+		this._fileList.files = list;
 	}
 
 	filesChanged(callback) {

@@ -194,6 +194,72 @@ body.admin.editor {
 			margin-right: 8px;
 		}
 	}
+	dialog[name="file-manager"] {
+		width: 450px;
+		max-width: 100%;
+		height: 350px;
+		max-height: 100%;
+		box-sizing: border-box;
+
+		position: fixed;
+		top: 50%;
+		transform: translateY(-50%);
+		padding: .5em;
+		.close {
+			position: absolute;
+			top: 0.5em;
+			right: 0.5em;
+			cursor: pointer;
+		}
+		.wrapper {
+			max-height: 100%;
+			overflow: auto;
+			display: flex;
+			gap: .5em;
+			.list {
+				flex: 1;
+			}
+			.buttons {
+				width: 80px;
+				display: flex;
+				flex-direction: column;
+				gap: 2em;
+				> div {
+					display: flex;
+					flex-direction: column;
+				}
+			}
+			.file-list {
+				max-height: 100%;
+				overflow: auto;
+				display: block;
+				ol {
+					list-style-type: none;;
+					padding: 0;
+					margin: 0;
+					li {
+						padding: .5em;
+						margin: .5em 0;
+						border-radius: var(--border-radius);
+						// box-sizing: border-box;
+						// border: 1px solid var(--border-color);
+						&:first-child {
+							margin-top: 0;
+						}
+						&:last-child {
+							margin-bottom: 0;
+						}
+						// &:hover {
+						// 	background-color: var(--highlight-color);
+						// }
+						&.selected {
+							background-color: var(--highlight-color);
+						}
+					}
+				}
+			}
+		}
+	}
 	p.geo {
 		label {
 			display: block;
