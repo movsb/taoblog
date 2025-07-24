@@ -219,6 +219,7 @@ body.admin.editor {
 			.list {
 				flex: 1;
 				min-width: 0;
+				border-right: 1px solid var(--border-color);
 			}
 			.buttons {
 				width: 80px;
@@ -284,6 +285,11 @@ body.admin.editor {
 							overflow: hidden;
 							text-overflow: ellipsis;
 							white-space: nowrap;
+							margin-bottom: .3em;
+						}
+						.details {
+							font-size: 0.8em;
+							color: var(--code-color);
 						}
 					}
 				}

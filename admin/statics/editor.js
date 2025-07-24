@@ -10,6 +10,7 @@ class FileList extends HTMLElement {
 		<div class="path"></div>
 		<div class="details">
 			<span class="progress"></span>
+			<span class="size"></span>
 		</div>
 	</div>
 </div>`;
@@ -17,18 +18,36 @@ class FileList extends HTMLElement {
 			this._path = this.querySelector('.path');
 			this._progress = this.querySelector('.progress');
 			this._img = this.querySelector('img');
+			this._size = this.querySelector('.size');
+		}
+
+		_formatFileSize(bytes) {
+			if (bytes === 0) return '0 B';
+			const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+			const k = 1024;
+			const i = Math.floor(Math.log(bytes) / Math.log(k));
+			const size = bytes / Math.pow(k, i);
+			return size.toFixed(2).replace(/\.00$/, '') + ' ' + units[i];
 		}
 
 		set spec(spec) {
 			this._spec = spec;
 			this._path.innerText = this._spec.path;
 			this._path.title = this._spec.path;
+			this._size.innerText = `大小：${this._formatFileSize(this._spec.size)}`;
 			// TODO: 这里是硬编码的。
 			this._img.src = `/${TaoBlog.post_id}/${encodeURIComponent(this._spec.path)}`;
 		}
 
+		set finished(b) {
+			this._progress.innerText = '';
+		}
+
 		set progress(v) {
-			this._progress.innerText = `${v}%`;
+			if (v == 100) {
+				v = '处理中……';
+			}
+			this._progress.innerText = `上传中：${v}%`;
 		}
 
 		getInsertionText() {
@@ -794,6 +813,7 @@ formUI.filesChanged(async files => {
 			let fm = new FilesManager(TaoBlog.post_id);
 			const fi = formUI._fileList.addNew({
 				path: f.name,
+				size: f.size,
 			});
 			let rsp = await fm.create(f, {
 				drop_gps_tags: !keepPos,
@@ -803,6 +823,7 @@ formUI.filesChanged(async files => {
 			});
 			// 可能会自动转换格式，所以用更新后的文件名。
 			fi.spec = rsp.spec;
+			fi.finished = true;
 			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。
