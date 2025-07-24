@@ -269,8 +269,8 @@ body.admin.editor {
 					display: flex;
 					gap: .5em;
 					.preview {
-						width: 50px;
-						height: 50px;
+						width: 80px;
+						height: 80px;
 						flex-shrink: 0;
 						img {
 							width: 100%;
@@ -282,10 +282,12 @@ body.admin.editor {
 						flex: 1;
 						min-width: 0;
 						.path {
-							overflow: hidden;
-							text-overflow: ellipsis;
-							white-space: nowrap;
+							// 前面几个 min-width: 0; 是为了这个而设置的。
+							// overflow: hidden;
+							// text-overflow: ellipsis;
+							// white-space: nowrap;
 							margin-bottom: .3em;
+							font-size: .9em;
 						}
 						.details {
 							font-size: 0.8em;
