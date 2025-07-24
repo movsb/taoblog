@@ -131,6 +131,20 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr erro
 	}
 }
 
+func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRequest) (_ *proto.DeletePostFileResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
+	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+		panic(noPerm)
+	}
+
+	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
+	utils.Must(utils.Delete(pfs, in.Path))
+	return &proto.DeletePostFileResponse{}, nil
+}
+
 func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequest) (_ *proto.ListPostFilesResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 

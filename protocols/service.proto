@@ -277,6 +277,14 @@ service TaoBlog {
 		};
 	}
 
+	rpc DeletePostFile (DeletePostFileRequest) returns (DeletePostFileResponse) {
+		option (google.api.http) = {
+			delete: "/v3/posts/{post_id=*}/files/{path=**}";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "删除文件。";
+		};
+	}
 	rpc ListPostFiles (ListPostFilesRequest) returns (ListPostFilesResponse) {
 		option (google.api.http) = {
 			get: "/v3/posts/{post_id=*}/files";

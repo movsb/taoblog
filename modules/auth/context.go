@@ -364,10 +364,10 @@ const noPerm = `此操作无权限。`
 
 func MustNotBeGuest(ctx context.Context) *AuthContext {
 	ac := Context(ctx)
-	if ac.User.IsGuest() {
-		panic(status.Error(codes.PermissionDenied, noPerm))
+	if !ac.User.IsGuest() {
+		return ac
 	}
-	return ac
+	panic(status.Error(codes.PermissionDenied, noPerm))
 }
 
 func MustBeAdmin(ctx context.Context) *AuthContext {

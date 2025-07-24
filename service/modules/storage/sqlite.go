@@ -222,7 +222,10 @@ func (fs *SQLiteForPost) Delete(name string) error {
 		}
 		return err
 	}
-	return fs.s.meta.Model(&file).Delete()
+	if err := fs.s.meta.Model(&file).Delete(); err != nil {
+		return err
+	}
+	return fs.s.data.DeleteData(fs.pid, file.Digest)
 }
 
 func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {

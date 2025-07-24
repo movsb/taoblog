@@ -30,6 +30,7 @@ class FileList extends HTMLElement {
 			return size.toFixed(2).replace(/\.00$/, '') + ' ' + units[i];
 		}
 
+		get spec() { return this._spec; }
 		set spec(spec) {
 			this._spec = spec;
 			this._path.innerText = this._spec.path;
@@ -44,10 +45,8 @@ class FileList extends HTMLElement {
 		}
 
 		set progress(v) {
-			if (v == 100) {
-				v = '处理中……';
-			}
-			this._progress.innerText = `上传中：${v}%`;
+			const s = v == 100 ? '处理中……' : `上传中：${v}%`;
+			this._progress.innerText = s;
 		}
 
 		getInsertionText() {
@@ -108,6 +107,14 @@ class FileList extends HTMLElement {
 		});
 	}
 
+	clearSelection() {
+		this._selected = [];
+		this.querySelectorAll('li.selected').forEach(li => {
+			li.classList.remove('selected');
+		});
+		this._onSelectionChange && this._onSelectionChange(this._selected);
+	}
+
 	get selected() {
 		return this._selected;
 	}
@@ -124,6 +131,11 @@ class FileList extends HTMLElement {
 		});
 
 		return this._insert(this._new, spec);
+	}
+
+	removeFile(fi) {
+		const li = fi.closest('li');
+		li.remove();
 	}
 
 	_insert(list, spec) {
@@ -158,12 +170,11 @@ class PostFormUI {
 		this._fileList.onSelectionChange( selected => {
 			this._fileManagerDialog.querySelector('.insert').disabled = selected.length <= 0;
 			this._fileManagerDialog.querySelector('.delete').disabled = selected.length <= 0;
+			console.log('选中改变。');
 		});
 		this._fileManagerDialog.querySelector('.insert').addEventListener('click', (e) => {
 			const selected = this._fileList.selected;
-			if (selected.length <= 0) {
-				return;
-			}
+			if (selected.length <= 0) { return; }
 			selected.forEach(fi => {
 				const text = fi.getInsertionText();
 				if (this.editor) {
@@ -171,6 +182,23 @@ class PostFormUI {
 				} else {
 					this.elemSource.value += text;
 				}
+				this._fileList.clearSelection();
+			});
+		});
+		this._fileManagerDialog.querySelector('.delete').addEventListener('click', async (e) => {
+			const selected = this._fileList.selected;
+			if (selected.length <= 0) { return; }
+			selected.forEach(async fi => {
+				const path = fi.spec.path;
+				console.log('删除文件：', path);
+				try {
+					await new FilesManager(TaoBlog.post_id).delete(path);
+					this._fileList.removeFile(fi);
+				} catch(e) {
+					alert('删除文件失败：' + e);
+					return;
+				}
+				this._fileList.clearSelection();
 			});
 		});
 		this._fileManagerDialog.querySelector('.upload').addEventListener('click', (e) => {
@@ -636,6 +664,16 @@ class FilesManager {
 		}
 		rsp = await rsp.json();
 		return rsp.files;
+	}
+
+	async delete(path) {
+		const url = `/v3/posts/${this._post_id}/files/${encodeURIComponent(path)}`;
+		let rsp = await fetch(url, {
+			method: 'DELETE',
+		});
+		if (!rsp.ok) {
+			throw new Error(`文件删除失败：`, rsp.statusText);
+		}
 	}
 
 	// 创建一个文件。

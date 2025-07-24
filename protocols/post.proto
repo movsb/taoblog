@@ -363,6 +363,13 @@ message FileSpec {
 	string digest = 7;
 }
 
+message DeletePostFileRequest {
+	int32 post_id = 1;
+	string path = 2;
+}
+
+message DeletePostFileResponse {}
+
 message ListPostFilesRequest {
 	int32 post_id = 1;
 }
