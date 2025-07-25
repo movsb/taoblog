@@ -87,6 +87,13 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 			q.Del(`cover`)
 		}
 
+		// 可以手动指定宽度。
+		prefWidth := 0
+		if n, err := strconv.Atoi(q.Get(`w`)); err == nil && n > 0 {
+			prefWidth = n
+			q.Del(`w`)
+		}
+
 		parsedURL.RawQuery = q.Encode()
 		s.SetAttr(`src`, parsedURL.String())
 
@@ -99,7 +106,16 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		}
 
 		w, h := md.Width, md.Height
+
+		// 如果指定了 scale，则按比例缩放。
 		w, h = int(float64(w)*scale), int(float64(h)*scale)
+
+		// 如果指定了宽度，则按比例缩放高度。
+		if prefWidth > 0 {
+			// w/h == pw / ph -> ph = h * pw / w
+			h = int(float64(h) * float64(prefWidth) / float64(w))
+			w = prefWidth
+		}
 
 		s.SetAttr(`width`, fmt.Sprint(w))
 		s.SetAttr(`height`, fmt.Sprint(h))
