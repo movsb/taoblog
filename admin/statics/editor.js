@@ -361,6 +361,10 @@ class PostFormUI {
 							d.inert = true;
 							d.show();
 							d.inert = false;
+							// 如果需要打开的时候自动弹出选择文件对话框，则取消注释下面的代码。
+							// if(this._fileList.selected.length <= 0) {
+							// 	this._files.click();
+							// }
 						},
 					},
 					{
@@ -700,6 +704,7 @@ class FilesManager {
 			mode: 0o644,
 			size: f.size,
 			time: Math.floor(f.lastModified/1000),
+			type: f.type, // 其实不应该上传，后端计算更靠谱。
 
 			meta: {
 				width: dimension.width,
@@ -864,6 +869,7 @@ formUI.filesChanged(async files => {
 			const fi = formUI._fileList.addNew({
 				path: f.name,
 				size: f.size,
+				type: f.type,
 			});
 			let rsp = await fm.create(f, {
 				drop_gps_tags: !keepPos,
