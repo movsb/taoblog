@@ -1,6 +1,7 @@
 class FileList extends HTMLElement {
 	static FileItem = class extends HTMLElement {
-		connectedCallback() {
+		constructor() {
+			super();
 			this.innerHTML = `
 <div>
 	<div class="preview">
@@ -103,6 +104,20 @@ class FileList extends HTMLElement {
 				this._onSelectionChange(this._selected);
 			}
 		});
+
+		const sortable = new Sortable(
+			this._list,
+			{
+				handle: '.preview img',
+				animation: 150,
+				onClone: function(event) {
+					const old = event.item.firstElementChild;
+					const cloned = event.clone.firstElementChild;
+					cloned.spec = old.spec;
+					console.log('拷贝元素', event);
+				},
+			},
+		)
 	}
 
 	clearSelection() {
