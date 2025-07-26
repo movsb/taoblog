@@ -85,11 +85,9 @@ class FileList extends HTMLElement {
 
 	connectedCallback() {
 		this.innerHTML = `
-			<ol class="new"></ol>
-			<ol class="old"></ol>
+			<ol></ol>
 		`
-		this._old = this.querySelector('ol.old');
-		this._new = this.querySelector('ol.new');
+		this._list = this.querySelector('ol');
 
 		this._selected = [];
 
@@ -124,13 +122,13 @@ class FileList extends HTMLElement {
 	}
 
 	addNew(spec) {
-		this._new.querySelectorAll('file-list-item').forEach(fi => {
+		this._list.querySelectorAll('file-list-item').forEach(fi => {
 			if (fi._spec.path == spec.path) {
 				fi.remove();
 			}
 		});
 
-		return this._insert(this._new, spec);
+		return this._insert(this._list, spec);
 	}
 
 	removeFile(fi) {
@@ -160,9 +158,9 @@ class FileList extends HTMLElement {
 	}
 
 	set files(list) {
-		this._old.innerHTML = '';
+		this._list.innerHTML = '';
 		list.forEach(f => {
-			this._insert(this._old, f);
+			this._insert(this._list, f);
 		});
 	}
 }
