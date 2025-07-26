@@ -5,7 +5,6 @@ class FileList extends HTMLElement {
 			this.innerHTML = `
 <div>
 	<div class="preview">
-		<img>
 	</div>
 	<div class="info">
 		<div class="path"></div>
@@ -18,7 +17,6 @@ class FileList extends HTMLElement {
 
 			this._path = this.querySelector('.path');
 			this._progress = this.querySelector('.progress');
-			this._img = this.querySelector('img');
 			this._size = this.querySelector('.size');
 		}
 
@@ -37,8 +35,33 @@ class FileList extends HTMLElement {
 			this._path.innerText = this._spec.path;
 			this._path.title = this._spec.path;
 			this._size.innerText = `大小：${this._formatFileSize(this._spec.size)}`;
-			// TODO: 这里是硬编码的。
-			this._img.src = `/${TaoBlog.post_id}/${encodeURIComponent(this._spec.path)}`;
+
+			const fullPath = `/${TaoBlog.post_id}/${encodeURIComponent(this._spec.path)}`;
+
+			// TODO: 这里是硬编码的，且没有处理加密数据。
+			const preview = this.querySelector('.preview');
+			preview.innerHTML = '';
+			let elem = null;
+
+			const type = spec.type ?? '';
+			const isImage = /^image\//.test(type);
+			const isVideo = /^video\//.test(type);
+
+			if(isImage) {
+				const img = document.createElement('img');
+				img.src = fullPath;
+				elem = img;
+			} else if(isVideo) {
+				const video = document.createElement('video');0
+				video.src = fullPath;
+				elem = video;
+			} else {
+				const object = document.createElement('object');
+				object.data = fullPath;
+				elem = object;
+			}
+
+			preview.appendChild(elem);
 		}
 
 		set finished(b) {
@@ -108,7 +131,7 @@ class FileList extends HTMLElement {
 		const sortable = new Sortable(
 			this._list,
 			{
-				handle: '.preview img',
+				handle: '.preview',
 				animation: 150,
 				onClone: function(event) {
 					const old = event.item.firstElementChild;
@@ -195,7 +218,7 @@ class PostFormUI {
 		this._fileList.onSelectionChange( selected => {
 			this._fileManagerDialog.querySelector('.insert').disabled = selected.length <= 0;
 			this._fileManagerDialog.querySelector('.delete').disabled = selected.length <= 0;
-			console.log('选中改变。');
+			// console.log('选中改变。');
 		});
 		this._fileManagerDialog.querySelector('.insert').addEventListener('click', (e) => {
 			const selected = this._fileList.selected;
