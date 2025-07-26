@@ -18,6 +18,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/storage"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"google.golang.org/grpc/codes"
@@ -143,6 +144,28 @@ func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRe
 	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
 	utils.Must(utils.Delete(pfs, in.Path))
 	return &proto.DeletePostFileResponse{}, nil
+}
+
+func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCaptionRequest) (_ *proto.UpdateFileCaptionResponse, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := auth.MustNotBeGuest(ctx)
+	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
+	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+		panic(noPerm)
+	}
+
+	// 强制转换了，只应有这一种实例。
+	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId))).(*storage.SQLiteForPost)
+	utils.Must(pfs.UpdateCaption(in.Path, &proto.FileSpec_Meta_Source{
+		Format:  proto.FileSpec_Meta_Source_Markdown,
+		Caption: in.Caption,
+	}))
+
+	s.deletePostContentCacheFor(int64(in.PostId))
+	s.updatePostMetadataTime(int64(in.PostId), time.Now())
+
+	return &proto.UpdateFileCaptionResponse{}, nil
 }
 
 func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequest) (_ *proto.ListPostFilesResponse, outErr error) {

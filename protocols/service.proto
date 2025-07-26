@@ -293,6 +293,15 @@ service TaoBlog {
 			description: "获取文件列表。";
 		};
 	}
+	rpc UpdateFileCaption (UpdateFileCaptionRequest) returns (UpdateFileCaptionResponse) {
+		option (google.api.http) = {
+			patch: "/v3/posts/{post_id=*}/files/{path=**}:caption";
+			body: "*";
+		};
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "更新文件说明。";
+		};
+	}
 
 	rpc GetTopPosts(GetTopPostsRequest) returns (GetTopPostsResponse) {
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {

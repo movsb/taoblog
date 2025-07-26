@@ -258,6 +258,23 @@ func (fs *SQLiteForPost) Sub(dir string) (std_fs.FS, error) {
 	}, nil
 }
 
+func (fs *SQLiteForPost) UpdateCaption(name string, caption *proto.FileSpec_Meta_Source) error {
+	var file models.File
+	fullName := path.Clean(path.Join(fs.dir, name))
+	if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&file); err != nil {
+		return err
+	}
+	file.Meta.Source = caption
+	_, err := fs.s.meta.Model(&file).UpdateMap(taorm.M{
+		`updated_at`: time.Now().Unix(),
+		`meta`:       file.Meta,
+	})
+	if err != nil {
+		return fmt.Errorf(`更新文件失败：%w`, err)
+	}
+	return nil
+}
+
 func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 	if fs.pid <= 0 {
 		return fmt.Errorf(`没有指定文件编号`)

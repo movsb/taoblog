@@ -149,6 +149,14 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			</div>
 		</div>
 	</div>
+	<dialog name="file-source-dialog">
+		<textarea autocomplete="off"></textarea>
+		<div>
+			<span class="status-icon"></span>
+			<button type="button" class="save">保存</button>
+			<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
+		</div>
+	</dialog>
 </dialog>
 </body>
 </html>

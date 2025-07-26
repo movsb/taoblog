@@ -9,8 +9,13 @@ class FileList extends HTMLElement {
 	<div class="info">
 		<div class="path"></div>
 		<div class="details">
-			<span class="progress"></span>
-			<span class="size"></span>
+			<div>
+				<span class="progress"></span>
+				<span class="size"></span>
+			</div>
+			<div>
+				<a class="caption">添加注释</a>
+			</div>
 		</div>
 	</div>
 </div>`;
@@ -117,6 +122,12 @@ class FileList extends HTMLElement {
 
 		this.addEventListener('click', (e) => {
 			const target = e.target;
+			if(target.tagName == 'A' && target.classList.contains('caption')) {
+				const fi = target.closest('file-list-item');
+				this._onEditCaption && this._onEditCaption(fi);
+				return;
+			}
+
 			const li = target.closest('li');
 			if (!li) { return; }
 			li.classList.toggle('selected');
@@ -157,6 +168,9 @@ class FileList extends HTMLElement {
 
 	onSelectionChange(callback) {
 		this._onSelectionChange = callback;
+	}
+	onEditCaption(callback) {
+		this._onEditCaption = callback;
 	}
 
 	addNew(spec) {
@@ -219,6 +233,28 @@ class PostFormUI {
 			this._fileManagerDialog.querySelector('.insert').disabled = selected.length <= 0;
 			this._fileManagerDialog.querySelector('.delete').disabled = selected.length <= 0;
 			// console.log('选中改变。');
+		});
+		this._fileList.onEditCaption(async fi => {
+			const dialog = this._fileManagerDialog.querySelector('dialog[name="file-source-dialog"]');
+			const captionEditor = dialog.querySelector('textarea');
+			dialog.querySelector('.save').onclick = async ()=> {
+				console.log('点击保存');
+				const loading = dialog.querySelector('.status-icon');
+				try {
+					loading.classList.add('loading');
+					const caption = captionEditor.value;
+					await new FilesManager(TaoBlog.post_id).updateCaption(fi.spec.path, caption);
+					fi.spec.meta.source.caption = caption;
+					dialog.close();
+				} catch(e) {
+					alert(e);
+				} finally {
+					loading.classList.remove('loading');
+				}
+			};
+			if(!fi.spec.meta.source) { fi.spec.meta.source = {}; }
+			captionEditor.value = fi.spec.meta.source.caption ?? '';
+			dialog.showModal();
 		});
 		this._fileManagerDialog.querySelector('.insert').addEventListener('click', (e) => {
 			const selected = this._fileList.selected;
@@ -719,12 +755,23 @@ class FilesManager {
 	}
 
 	async delete(path) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURIComponent(path)}`;
+		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
 		let rsp = await fetch(url, {
 			method: 'DELETE',
 		});
 		if (!rsp.ok) {
 			throw new Error(`文件删除失败：`, rsp.statusText);
+		}
+	}
+
+	async updateCaption(path, caption) {
+		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}:caption`;
+		let rsp = await fetch(url, {
+			method: 'PATCH',
+			body: JSON.stringify({ caption }),
+		});
+		if (!rsp.ok) {
+			throw new Error(`文件更新失败：`, rsp.statusText);
 		}
 	}
 

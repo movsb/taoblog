@@ -292,10 +292,36 @@ body.admin.editor {
 						.details {
 							font-size: 0.8em;
 							color: var(--code-color);
+							a {
+								visibility: hidden;
+								color: inherit;
+								cursor: pointer;
+								&:visited {
+									color: inherit;
+								}
+							}
+						}
+					}
+				}
+				&:hover {
+					.details {
+						a {
+							visibility: visible !important;
 						}
 					}
 				}
 			}
+		}
+	}
+	dialog[name="file-source-dialog"] {
+		textarea {
+			margin-bottom: 1em;
+			width: 300px;
+			height: 150px;
+			resize: none;
+		}
+		> div {
+			text-align: right;
 		}
 	}
 	p.geo {

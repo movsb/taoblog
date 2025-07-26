@@ -376,6 +376,13 @@ message DeletePostFileRequest {
 
 message DeletePostFileResponse {}
 
+message UpdateFileCaptionRequest {
+	int32 post_id = 1;
+	string path = 2;
+	string caption = 3;
+}
+message UpdateFileCaptionResponse {}
+
 message ListPostFilesRequest {
 	int32 post_id = 1;
 }
