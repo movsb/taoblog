@@ -6,12 +6,6 @@ import "google/protobuf/field_mask.proto";
 import "comment.proto";
 
 message Metas {
-	message Source {
-		string name = 1;
-		string url = 2;
-		string description = 3;
-		int32  time = 4;
-	}
 	message Geo {
 		string name = 1;
 		float longitude = 2;
@@ -43,10 +37,6 @@ message Metas {
 	
 	// 是否以宽屏模式显示内容。
 	bool wide = 4;
-
-	// 文章附件来源。
-	// 第一个参数是相对路径。
-	map<string,Source> sources = 10;
 
 	// 地理位置信息。
 	Geo geo = 11;
@@ -348,6 +338,22 @@ message FileSpec {
 	message Meta {
 		int32 width = 1;
 		int32 height = 2;
+
+		// 来源信息，注释信息，caption 等。
+		message Source {
+			enum Format {
+				FileSpecMetaSourceFormatUnspecified = 0;
+				Plaintext = 1;
+				// 只支持最基础的 Markdown。
+				Markdown = 2;
+			}
+
+			Format format = 1;      // 说明文字的格式。
+			string caption = 2;     // 说明文字。
+			// string url = 3;         // 点击说明文字跳转的链接（仅 plaintext 时有效）。
+		}
+
+		Source source = 3;
 	}
 
 	// 文件内容类型。

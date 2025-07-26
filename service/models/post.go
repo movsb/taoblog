@@ -51,25 +51,13 @@ type PostMeta struct {
 	Footer   string `json:"footer,omitempty" yaml:"footer,omitempty"`
 	Outdated bool   `json:"outdated,omitempty" yaml:"outdated,omitempty"`
 	Wide     bool   `json:"wide,omitempty" yaml:"wide,omitempty"`
+	Toc      bool   `json:"toc,omitempty" yaml:"toc,omitempty"`
 
-	Weixin string `json:"weixin,omitempty" yaml:"weixin,omitempty"`
-
-	Sources map[string]*PostMetaSource `json:"sources,omitempty" yaml:"sources,omitempty"`
-
-	Geo *Geo `json:"geo,omitempty" yaml:"geo,omitempty"`
-
+	Geo    *Geo                `json:"geo,omitempty" yaml:"geo,omitempty"`
 	Origin *proto.Metas_Origin `json:"origin:omitempty" yaml:"origin,omitempty"`
 
-	Toc bool `json:"toc,omitempty" yaml:"toc,omitempty"`
-
-	TextIndent bool `json:"text_indent,omitempty" yaml:"text_indent,omitempty"`
-}
-
-type PostMetaSource struct {
-	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
-	URL         string `json:"url,omitempty" yaml:"url,omitempty"`
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-	Time        int32  `json:"time,omitempty" yaml:"time,omitempty"`
+	Weixin     string `json:"weixin,omitempty" yaml:"weixin,omitempty"`
+	TextIndent bool   `json:"text_indent,omitempty" yaml:"text_indent,omitempty"`
 }
 
 // 本来想用 GeoJSON 的，但是感觉标准化程度还不高。
@@ -110,17 +98,8 @@ func (m *PostMeta) ToProto() *proto.Metas {
 		Outdated:   m.Outdated,
 		Wide:       m.Wide,
 		Weixin:     m.Weixin,
-		Sources:    make(map[string]*proto.Metas_Source),
 		Toc:        m.Toc,
 		TextIndent: m.TextIndent,
-	}
-	for name, src := range m.Sources {
-		p.Sources[name] = &proto.Metas_Source{
-			Name:        src.Name,
-			Url:         src.URL,
-			Description: src.Description,
-			Time:        src.Time,
-		}
 	}
 	if g := m.Geo; g != nil {
 		p.Geo = &proto.Metas_Geo{
@@ -141,7 +120,6 @@ func (m *PostMeta) IsEmpty() bool {
 		!m.Outdated &&
 		!m.Wide &&
 		m.Weixin == "" &&
-		len(m.Sources) == 0 &&
 		(m.Geo == nil || (m.Geo.Longitude == 0 && m.Geo.Latitude == 0)) &&
 		!m.Toc
 }
@@ -156,17 +134,8 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 		Outdated:   p.Outdated,
 		Wide:       p.Wide,
 		Weixin:     p.Weixin,
-		Sources:    make(map[string]*PostMetaSource),
 		Toc:        p.Toc,
 		TextIndent: p.TextIndent,
-	}
-	for name, src := range p.Sources {
-		m.Sources[name] = &PostMetaSource{
-			Name:        src.Name,
-			URL:         src.Url,
-			Description: src.Description,
-			Time:        src.Time,
-		}
 	}
 	if g := p.Geo; g != nil {
 		m.Geo = &Geo{

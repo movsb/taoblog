@@ -9,30 +9,19 @@ import (
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/renderer/html"
-	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 )
 
-// 提供文章附件的引用来源
-type AssetFinder func(path string) (name, url, description string, found bool)
-
 type Image struct {
-	assetFinder AssetFinder
 }
 
-func New(finder AssetFinder) *Image {
-	return &Image{
-		assetFinder: finder,
-	}
+func New() *Image {
+	return &Image{}
 }
 
 func (e *Image) Extend(m goldmark.Markdown) {
-	m.Parser().AddOptions(parser.WithASTTransformers(
-		util.Prioritized(e, 100),
-	))
 	m.Renderer().AddOptions(renderer.WithNodeRenderers(
 		util.Prioritized(e, 100),
 	))
@@ -40,39 +29,6 @@ func (e *Image) Extend(m goldmark.Markdown) {
 
 func (e *Image) RegisterFuncs(r renderer.NodeRendererFuncRegisterer) {
 	r.Register(ast.KindImage, e.renderImage)
-}
-
-// Transform transforms the given AST tree.
-func (e *Image) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
-	imagesToBeFigure := []ast.Node{}
-
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if !entering {
-			return ast.WalkContinue, nil
-		}
-		switch n.Kind() {
-		case ast.KindImage:
-			if n.Parent().ChildCount() == 1 {
-				// 标记有来源的图片，移除其父 <p>。
-				// 因为 <figure> 不能出现在 <p> 中。
-				if e.assetFinder != nil {
-					if url, err := url.Parse(string(n.(*ast.Image).Destination)); err == nil {
-						if _, _, _, hasSource := e.assetFinder(url.Path); hasSource {
-							imagesToBeFigure = append(imagesToBeFigure, n)
-						}
-					}
-				}
-			}
-		}
-		return ast.WalkContinue, nil
-	})
-
-	// 处理需要把 img 转换成 figure 的节点。
-	for _, node := range imagesToBeFigure {
-		p := node.Parent()
-		pp := p.Parent()
-		pp.ReplaceChild(pp, p, node)
-	}
 }
 
 func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -106,31 +62,6 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 	}
 
 	url.RawQuery = q.Encode()
-
-	// 如果有来源，包在 <figure> 中。
-	//  <figure>
-	//      <img src="full-piano.png" alt="Full Piano Keyboard">
-	//      <figcaption>
-	//          <a href="https://www.piano-keyboard-guide.com/piano-notes-and-keys.html" target="_blank" class="external">Full Piano Keyboard</a>
-	//      </figcaption>
-	//  </figure>
-	//  defer 还能这么用！😂😂😂
-	if e.assetFinder != nil {
-		srcName, srcURL, srcDesc, hasSource := e.assetFinder(url.Path)
-		if hasSource && srcName != "" && srcURL != "" {
-			w.WriteString("<figure>\n")
-			defer w.WriteString("</figure>\n")
-			defer w.WriteString("</figcaption>\n")
-			defer w.WriteString(fmt.Sprintf(
-				`<a href="%s" target="_blank" class="external">%s</a>`,
-				// TODO: srcURL | urlEscaper | attrEscaper
-				util.EscapeHTML([]byte(srcURL)),
-				util.EscapeHTML([]byte(srcName)),
-			))
-			defer w.WriteString("<figcaption>\n")
-			_ = srcDesc
-		}
-	}
 
 	_, _ = w.WriteString("<img src=\"")
 	// TODO 不知道 escape 几次了个啥。

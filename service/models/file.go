@@ -49,6 +49,8 @@ type FileMeta struct {
 	Width, Height int
 
 	Encryption FileEncryptionMeta
+
+	Source *proto.FileSpec_Meta_Source
 }
 
 type FileEncryptionMeta struct {
@@ -82,6 +84,7 @@ func (m FileMeta) ToProto() *proto.FileSpec_Meta {
 	return &proto.FileSpec_Meta{
 		Width:  int32(m.Width),
 		Height: int32(m.Height),
+		Source: m.Source,
 	}
 }
 
@@ -92,6 +95,7 @@ func FileMetaFromProto(m *proto.FileSpec_Meta) FileMeta {
 	return FileMeta{
 		Width:  int(m.Width),
 		Height: int(m.Height),
+		Source: m.Source,
 	}
 }
 

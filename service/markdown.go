@@ -9,6 +9,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/alerts"
+	"github.com/movsb/taoblog/service/modules/renderers/caption"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/echarts"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
@@ -100,15 +101,8 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 			media_size.WithLocalOnly(),
 			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
 		),
-		image.New(func(path string) (name string, url string, description string, found bool) {
-			if src, ok := metas.Sources[path]; ok {
-				name = src.Name
-				url = src.URL
-				description = src.Description
-				found = true
-			}
-			return
-		}),
+		image.New(),
+		caption.New(assets),
 		gallery.New(),
 		task_list.New(),
 		hashtags.New(s.hashtagResolver, nil),
