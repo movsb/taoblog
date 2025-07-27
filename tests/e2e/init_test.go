@@ -2,6 +2,8 @@ package e2e_test
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
@@ -62,4 +64,9 @@ func Serve(ctx context.Context, options ...server.With) *R {
 func onBehalfOf(r *R, user int64) context.Context {
 	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(context.TODO(), user))}
 	return auth.TestingUserContextForClient(u)
+}
+
+func (r *R) addAuth(req *http.Request, user int64) {
+	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(context.TODO(), user))}
+	req.Header.Set(`Authorization`, fmt.Sprintf(`token %d:%s`, u.ID, u.Password))
 }

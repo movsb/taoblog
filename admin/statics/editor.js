@@ -954,6 +954,7 @@ formUI.filesChanged(async files => {
 				size: f.size,
 				type: f.type,
 			});
+			// BUG: 如果上传同名文件，“说明”字段会被覆盖丢失。
 			let rsp = await fm.create(f, {
 				drop_gps_tags: !keepPos,
 			}, (p)=> {
