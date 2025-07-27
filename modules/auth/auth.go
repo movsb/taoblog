@@ -262,7 +262,8 @@ func cookieValue(userAgent, username, password string) string {
 	return username + ":" + shasum(userAgent+login(username, password))
 }
 
-// MakeCookie ...
+const maxAge = time.Hour * 24 * 7
+
 func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	agent := r.Header.Get("User-Agent")
 	cookie := cookieValue(agent, fmt.Sprint(u.ID), u.Password)
@@ -270,7 +271,7 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    cookie,
-		MaxAge:   0,
+		MaxAge:   int(maxAge.Seconds()),
 		Path:     `/`,
 		Domain:   ``,
 		Secure:   secure,
@@ -281,7 +282,7 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameUserID,
 		Value:    fmt.Sprint(u.ID),
-		MaxAge:   0,
+		MaxAge:   int(maxAge.Seconds()),
 		Path:     `/`,
 		Domain:   ``,
 		Secure:   secure,
@@ -291,7 +292,7 @@ func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameNickname,
 		Value:    url.PathEscape(u.Nickname),
-		MaxAge:   0,
+		MaxAge:   int(maxAge.Seconds()),
 		Path:     `/`,
 		Domain:   ``,
 		Secure:   secure,
