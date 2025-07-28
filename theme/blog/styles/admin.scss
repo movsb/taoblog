@@ -303,9 +303,9 @@ body.admin.editor {
 						}
 					}
 				}
-				&:hover {
+				&.finished:hover {
 					.details {
-						a {
+						.caption {
 							visibility: visible !important;
 						}
 					}

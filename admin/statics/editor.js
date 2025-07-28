@@ -71,6 +71,7 @@ class FileList extends HTMLElement {
 
 		set finished(b) {
 			this._progress.innerText = '';
+			this.classList.add('finished');
 		}
 
 		set progress(v) {
@@ -219,7 +220,8 @@ class FileList extends HTMLElement {
 	set files(list) {
 		this._list.innerHTML = '';
 		list.forEach(f => {
-			this._insert(this._list, f);
+			const fi = this._insert(this._list, f);
+			fi.finished = true;
 		});
 	}
 }
