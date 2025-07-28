@@ -17,6 +17,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/theme/modules/canonical"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -179,4 +180,10 @@ func convertToAVIF(spec *proto.FileSpec, data []byte, dropGPSTags bool) (_ *prot
 	}
 
 	return specOutput, utils.Must1(io.ReadAll(fpOutput)), nil
+}
+
+// NOTE: 这个接口仅限登录用户使用。
+func GetFile(s canonical.FileServer, w http.ResponseWriter, r *http.Request, pid int, path string) {
+	_ = auth.MustNotBeGuest(r.Context())
+	s.ServeFile(w, r, int64(pid), path, true)
 }

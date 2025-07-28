@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	_ "embed"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/api"
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
@@ -129,8 +131,27 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 	// 使用登录身份鉴权的部分
 	// 可跨进程使用。
 	{
+		api := api.New(ctx, g.client,
+			func(mux *runtime.ServeMux) {
+				// /v3/posts/.../files 被 GRPC 注册了，但是上层由于注册的是 /v3/，所以 GRPC 那里
+				// 接收不到这个不带 / 结尾的请求。会被重定向到 files/。
+				// 所以这里注册到 api 里面。
+				// https://github.com/grpc-ecosystem/grpc-gateway/issues/5771
+				mux.HandlePath(`GET`, `/v3/posts/{id}/files/{path=**}`, func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+					pid := utils.Must1(strconv.Atoi(pathParams[`id`]))
+					path := pathParams[`path`]
+					if pid <= 0 || path == `` {
+						utils.HTTPError(w, 400)
+						return
+					}
+					assets.GetFile(g.service, w, r, pid, path)
+				})
+			},
+			nil,
+		)
+
 		// GRPC API 转接层
-		mc.Handle(`/v3/`, api.New(ctx, g.client))
+		mc.Handle(`/v3/`, api)
 
 		// 文件服务
 		mc.Handle(`POST /v3/posts/{id}/files`, assets.CreateFile(g.client))

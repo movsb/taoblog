@@ -41,9 +41,8 @@ class FileList extends HTMLElement {
 			this._path.title = this._spec.path;
 			this._size.innerText = `大小：${this._formatFileSize(this._spec.size)}`;
 
-			const fullPath = `/${TaoBlog.post_id}/${encodeURIComponent(this._spec.path)}`;
+			const fullPath = `/v3/posts/${TaoBlog.post_id}/files/${encodeURIComponent(this._spec.path)}`;
 
-			// TODO: 这里是硬编码的，且没有处理加密数据。
 			const preview = this.querySelector('.preview');
 			preview.innerHTML = '';
 			let elem = null;

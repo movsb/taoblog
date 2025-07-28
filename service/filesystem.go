@@ -188,8 +188,9 @@ func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
 	s.fileURLGetters.Store(name, g)
 }
 
-func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64, file string) {
+func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64, file string, localOnly bool) {
 	// 权限检查
+	// TODO 应该调用带缓存接口（注意鉴权），否则会频繁查数据库。
 	p := utils.Must1(s.GetPost(r.Context(), &proto.GetPostRequest{Id: int32(postID)}))
 
 	// 所有人禁止访问特殊文件：以 . 或者 _ 开头的文件或目录。
@@ -209,21 +210,23 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 
 	pfs := utils.Must1(s.postDataFS.ForPost(int(postID)))
 
-	if cache := s.getFasterFileURL(r, pfs, p, file); cache != nil && cache.Get != `` {
-		w.Header().Add(`Cache-Control`, `no-store`)
-		if !cache.Encrypted {
-			http.Redirect(w, r, cache.Get, http.StatusFound)
-			return
-		} else {
-			// 对于加密情况，直接写相关加密参数，onerror 会处理。
-			// 这样可以尽量减少请求导致的流量，加快速度。
-			w.Header().Set(`Content-Type`, `application/json`)
-			json.NewEncoder(w).Encode(map[string]any{
-				`src`:   cache.Get,
-				`key`:   base64.StdEncoding.EncodeToString(cache.Key),
-				`nonce`: base64.StdEncoding.EncodeToString(cache.Nonce),
-			})
-			return
+	if !localOnly {
+		if cache := s.getFasterFileURL(r, pfs, p, file); cache != nil && cache.Get != `` {
+			w.Header().Add(`Cache-Control`, `no-store`)
+			if !cache.Encrypted {
+				http.Redirect(w, r, cache.Get, http.StatusFound)
+				return
+			} else {
+				// 对于加密情况，直接写相关加密参数，onerror 会处理。
+				// 这样可以尽量减少请求导致的流量，加快速度。
+				w.Header().Set(`Content-Type`, `application/json`)
+				json.NewEncoder(w).Encode(map[string]any{
+					`src`:   cache.Get,
+					`key`:   base64.StdEncoding.EncodeToString(cache.Key),
+					`nonce`: base64.StdEncoding.EncodeToString(cache.Nonce),
+				})
+				return
+			}
 		}
 	}
 

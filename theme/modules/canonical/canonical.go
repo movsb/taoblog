@@ -26,7 +26,7 @@ type Renderer interface {
 // 文件服务接口。
 type FileServer interface {
 	// file: 形如 `123/abc.txt`。不包含最前面的 `/`。
-	ServeFile(w http.ResponseWriter, req *http.Request, postID int64, file string)
+	ServeFile(w http.ResponseWriter, req *http.Request, postID int64, file string, localOnly bool)
 }
 
 type Canonical struct {
@@ -91,7 +91,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpFile.FindStringSubmatch(path)
 			postID := utils.Must1(strconv.Atoi(matches[1]))
 			file := matches[2]
-			c.fileServer.ServeFile(w, req, int64(postID), file)
+			c.fileServer.ServeFile(w, req, int64(postID), file, false)
 			return
 		}
 

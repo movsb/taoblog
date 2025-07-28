@@ -263,7 +263,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
 
-	s.sendNotify(`网站状态`, `现在开始运行。`)
+	if !version.DevMode() {
+		s.sendNotify(`网站状态`, `现在开始运行。`)
+	}
 
 	if !version.DevMode() {
 		go liveCheck(ctx, s, theService)
@@ -624,9 +626,17 @@ func (s *Server) throttlerGatewayInterceptor(ctx context.Context, req any, info 
 // 运行 HTTP 服务。
 // 真实地址回写到 s.httpAddr 中。
 func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
+	debugRequest := func(w http.ResponseWriter, r *http.Request) {
+		// if strings.HasPrefix(r.URL.Path, `/v3/posts/1801/files`) {
+		// 	log.Println(1)
+		// }
+		h.ServeHTTP(w, r)
+	}
+
 	server := &http.Server{
 		Addr: addr,
-		Handler: utils.ChainFuncs(h,
+		Handler: utils.ChainFuncs(
+			http.Handler(http.HandlerFunc(debugRequest)),
 			// 注意这个拦截器的能力：
 			//
 			// 所有进入服务端认证信息均被包含在 context 中，
