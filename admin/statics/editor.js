@@ -61,9 +61,9 @@ class FileList extends HTMLElement {
 				video.src = fullPath;
 				elem = video;
 			} else {
-				const object = document.createElement('object');
-				object.data = fullPath;
-				elem = object;
+				const img = document.createElement('img');
+				img.src = 'file.png';
+				elem = img;
 			}
 
 			preview.appendChild(elem);
