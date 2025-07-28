@@ -45,10 +45,10 @@ func TestFiles(t *testing.T) {
 			Meta: &proto.FileSpec_Meta{
 				Width:  60,
 				Height: 60,
-				// Source: &proto.FileSpec_Meta_Source{
-				// 	Format:  proto.FileSpec_Meta_Source_Markdown,
-				// 	Caption: `123`,
-				// },
+				Source: &proto.FileSpec_Meta_Source{
+					Format:  proto.FileSpec_Meta_Source_Markdown,
+					Caption: `123`,
+				},
 			},
 		}))),
 	))
@@ -71,8 +71,9 @@ func TestFiles(t *testing.T) {
 	r.addAuth(req, r.user1ID)
 	rsp := utils.Must1(http.DefaultClient.Do(req))
 	defer rsp.Body.Close()
-	rspBody := utils.Must1(io.ReadAll(rsp.Body))
-	if strings.TrimSpace(string(rspBody)) != `{"spec":{"path":"blank.png.xxx","mode":384,"size":4637,"meta":{"width":60,"height":60}}}` {
+	rspBody := strings.TrimSpace(string(utils.Must1(io.ReadAll(rsp.Body))))
+	if rspBody != `{"spec":{"path":"blank.png.xxx","mode":384,"size":4637,"meta":{"width":60,"height":60,"source":{"format":2,"caption":"123"}}}}` {
 		t.Error(`返回不正确`)
+		t.Log(rspBody)
 	}
 }

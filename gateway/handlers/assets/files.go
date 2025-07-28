@@ -12,13 +12,23 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 )
+
+var jsonPB = &runtime.JSONPb{
+	MarshalOptions: protojson.MarshalOptions{
+		UseProtoNames:   true,
+		EmitUnpopulated: true,
+	},
+	UnmarshalOptions: protojson.UnmarshalOptions{},
+}
 
 func CreateFile(client *clients.ProtoClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -69,10 +79,8 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 
 		specValue := r.FormValue(`spec`)
 		var spec proto.FileSpec
-		// NOTE 普通 json
-		dec := json.NewDecoder(strings.NewReader(specValue))
-		dec.DisallowUnknownFields()
-		if err := dec.Decode(&spec); err != nil {
+		if err := jsonPB.Unmarshal([]byte(specValue), &spec); err != nil {
+			log.Println(err)
 			utils.HTTPError(w, http.StatusBadRequest)
 			return
 		}
@@ -82,7 +90,7 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 		if optionsString == "" {
 			optionsString = "{}"
 		}
-		dec = json.NewDecoder(strings.NewReader(optionsString))
+		dec := json.NewDecoder(strings.NewReader(optionsString))
 		dec.DisallowUnknownFields()
 		if err := dec.Decode(&options); err != nil {
 			utils.HTTPError(w, http.StatusBadRequest)

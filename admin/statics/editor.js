@@ -173,14 +173,21 @@ class FileList extends HTMLElement {
 		this._onEditCaption = callback;
 	}
 
+	// 返回旧的spec、新的fi。
 	addNew(spec) {
+		let old = null;
 		this._list.querySelectorAll('file-list-item').forEach(fi => {
 			if (fi._spec.path == spec.path) {
-				fi.remove();
+				old = fi._spec;
+				const li = fi.closest('li');
+				li.remove();
 			}
 		});
 
-		return this._insert(this._list, spec);
+		return {
+			old: old,
+			now: this._insert(this._list, spec),
+		};
 	}
 
 	removeFile(fi) {
@@ -777,9 +784,16 @@ class FilesManager {
 
 	// 创建一个文件。
 	// f: <input type="file"> 中拿来的文件。
-	async create(f, options, progress) {
+	// options: 用来指导对上传的文件作如何处理。
+	// progress: 进度回调。
+	// meta: 额外的元数据。但宽、高会自动设置。
+	async create(f, options, progress, meta) {
 		let dimension = await FilesManager.detectImageSize(f);
 		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
+
+		meta = meta || {};
+		meta.width = dimension.width;
+		meta.height = dimension.height;
 
 		let form = new FormData();
 		form.set(`spec`, JSON.stringify({
@@ -788,11 +802,7 @@ class FilesManager {
 			size: f.size,
 			time: Math.floor(f.lastModified/1000),
 			type: f.type, // 其实不应该上传，后端计算更靠谱。
-
-			meta: {
-				width: dimension.width,
-				height: dimension.height,
-			},
+			meta: meta,
 		}));
 
 		form.set(`data`, f)
@@ -949,22 +959,30 @@ formUI.filesChanged(async files => {
 
 		try {
 			let fm = new FilesManager(TaoBlog.post_id);
-			const fi = formUI._fileList.addNew({
+			const { old, now } = formUI._fileList.addNew({
 				path: f.name,
 				size: f.size,
 				type: f.type,
 			});
-			// BUG: 如果上传同名文件，“说明”字段会被覆盖丢失。
-			let rsp = await fm.create(f, {
-				drop_gps_tags: !keepPos,
-			}, (p)=> {
-				console.log(f.name, `${p}%`);
-				fi.progress = p;
-			});
+
+			const meta = {
+				source: old?.meta?.source,
+			};
+
+			let rsp = await fm.create(f,
+				{
+					drop_gps_tags: !keepPos,
+				},
+				(p)=> {
+					console.log(f.name, `${p}%`);
+					now.progress = p;
+				},
+				meta,
+			);
 			// 可能会自动转换格式，所以用更新后的文件名。
-			formUI._fileList.updateSpec(fi, rsp.spec);
+			formUI._fileList.updateSpec(now, rsp.spec);
 			// fi.spec = rsp.spec;
-			fi.finished = true;
+			now.finished = true;
 			// alert(`文件 ${f.name} 上传成功。`);
 			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
 			// 导致我的不得不用 formUI，而不是 this。
