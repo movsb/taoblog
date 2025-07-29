@@ -11,6 +11,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/modules/auth"
@@ -114,7 +115,18 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 		specPtr := &spec
 
 		if isImageFile(spec.Path) {
-			spec2, data2, err := convertToAVIF(&spec, all, options.DropGPSTags)
+			var (
+				spec2 *proto.FileSpec
+				data2 []byte
+				err   error
+			)
+			utils.LimitNumberOfProcesses(
+				`convertToAVIF`, &numberOfAvifProcesses, maxNumberOfAvifProcesses,
+				func() {
+					// 跨线程写没问题吧？
+					spec2, data2, err = convertToAVIF(&spec, all, options.DropGPSTags)
+				},
+			)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, err.Error(), 500)
@@ -144,6 +156,10 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 type Options struct {
 	DropGPSTags bool `json:"drop_gps_tags"`
 }
+
+const maxNumberOfAvifProcesses = 3
+
+var numberOfAvifProcesses atomic.Int32
 
 // TODO:
 // 自动加上版权信息（方法一）：

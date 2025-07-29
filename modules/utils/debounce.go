@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/phuslu/lru"
@@ -133,4 +135,25 @@ func (t *Throttler[Key]) Throttled(key Key, interval time.Duration, update bool)
 
 func (t *Throttler[Key]) Update(key Key, interval time.Duration) {
 	t.cache.Set(key, time.Now(), interval)
+}
+
+// 并行进程个数限制器。
+// 超过时会自动等待 1 秒。
+// 会等待执行完成后才返回，execute 在线程在被调用。
+func LimitNumberOfProcesses(name string, n *atomic.Int32, max int, execute func()) {
+	ch := make(chan struct{})
+	go func() {
+		defer func() {
+			ch <- struct{}{}
+			close(ch)
+		}()
+		for n.Add(+1) > int32(max) {
+			log.Println(`Too many`, name, `waiting...`)
+			n.Add(-1)
+			time.Sleep(time.Second * 1)
+		}
+		defer n.Add(-1)
+		execute()
+	}()
+	<-ch
 }

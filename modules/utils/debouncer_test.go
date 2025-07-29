@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"log"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -51,4 +52,20 @@ func TestThrottler(t *testing.T) {
 	expect(3, l.Throttled(0, time.Second, true), true)
 	time.Sleep(time.Second * 2)
 	expect(4, l.Throttled(0, time.Second, true), false)
+}
+
+func TestLimitNumberOfProcesses(t *testing.T) {
+	var n atomic.Int32
+	ch := make(chan struct{}, 5)
+	for i := range 5 {
+		go utils.LimitNumberOfProcesses(`test`, &n, 3, func() {
+			t.Log(`sleeping`)
+			time.Sleep(time.Second * 1)
+			t.Log(i)
+			ch <- struct{}{}
+		})
+	}
+	for range 5 {
+		<-ch
+	}
 }
