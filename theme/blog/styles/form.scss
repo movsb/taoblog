@@ -76,6 +76,8 @@ select {
 	// 2px: 比同为 2em 的按钮要窄一点
 	height: calc(2em + 2px);
 	padding: var(--input-padding);
+	// Safari 显示很奇怪，直接全部去掉。
+	appearance: none;
 }
 
 // label:has(>input) {
