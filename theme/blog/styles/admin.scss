@@ -291,13 +291,21 @@ body.admin.editor {
 						}
 						.details {
 							font-size: 0.8em;
-							color: var(--code-color);
-							a {
-								visibility: hidden;
-								color: inherit;
-								cursor: pointer;
-								&:visited {
+							color: dimgray;
+							.caption {
+								display: none;
+								a {
 									color: inherit;
+									cursor: pointer;
+									&:visited {
+										color: inherit;
+									}
+								}
+							}
+							.message {
+								display: none;
+								&.error {
+									color: brown;
 								}
 							}
 						}
@@ -306,7 +314,7 @@ body.admin.editor {
 				&.finished:hover {
 					.details {
 						.caption {
-							visibility: visible !important;
+							display: block !important;
 						}
 					}
 				}

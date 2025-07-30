@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -142,7 +143,13 @@ func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRe
 	}
 
 	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
-	utils.Must(utils.Delete(pfs, in.Path))
+	if err := utils.Delete(pfs, in.Path); err != nil {
+		if os.IsNotExist(err) {
+			panic(status.Error(codes.NotFound, `file not found`))
+		}
+		panic(err)
+	}
+
 	return &proto.DeletePostFileResponse{}, nil
 }
 

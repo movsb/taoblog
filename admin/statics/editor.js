@@ -13,9 +13,10 @@ class FileList extends HTMLElement {
 				<span class="progress"></span>
 				<span class="size"></span>
 			</div>
-			<div>
-				<a class="caption">添加注释</a>
+			<div class="caption">
+				<a>添加注释</a>
 			</div>
+			<div class="message"></div>
 		</div>
 	</div>
 </div>`;
@@ -23,6 +24,7 @@ class FileList extends HTMLElement {
 			this._path = this.querySelector('.path');
 			this._progress = this.querySelector('.progress');
 			this._size = this.querySelector('.size');
+			this._message = this.querySelector('.message');
 		}
 
 		_formatFileSize(bytes) {
@@ -78,6 +80,16 @@ class FileList extends HTMLElement {
 			this._progress.innerText = s;
 		}
 
+		error(message) {
+			if (message) {
+				this._message.innerText = message;
+				this._message.classList.add('error');
+				this._message.style.display = 'block';
+			} else {
+				this._message.style.display = 'none';
+			}
+		}
+
 		getInsertionText() {
 			const _encodePathAsURL = (s) => {
 				// https://en.wikipedia.org/wiki/Percent-encoding
@@ -122,7 +134,7 @@ class FileList extends HTMLElement {
 
 		this.addEventListener('click', (e) => {
 			const target = e.target;
-			if(target.tagName == 'A' && target.classList.contains('caption')) {
+			if(target.tagName == 'A' && target.parentElement?.classList.contains('caption')) {
 				const fi = target.closest('file-list-item');
 				this._onEditCaption && this._onEditCaption(fi);
 				return;
@@ -285,11 +297,13 @@ class PostFormUI {
 				console.log('删除文件：', path);
 				try {
 					await new FilesManager(TaoBlog.post_id).delete(path);
-					this._fileList.removeFile(fi);
 				} catch(e) {
-					alert('删除文件失败：' + e);
-					return;
+					if (!(e instanceof Response && e.status == 404)) {
+						alert('文件删除失败：' + e);
+						return;
+					}
 				}
+				this._fileList.removeFile(fi);
 				this._fileList.clearSelection();
 			});
 		});
@@ -756,7 +770,7 @@ class FilesManager {
 		const url = `/v3/posts/${this._post_id}/files`;
 		let rsp = await fetch(url);
 		if (!rsp.ok) {
-			throw new Error(`获取列表失败：`, rsp.statusText);
+			throw rsp;
 		}
 		rsp = await rsp.json();
 		return rsp.files;
@@ -768,7 +782,7 @@ class FilesManager {
 			method: 'DELETE',
 		});
 		if (!rsp.ok) {
-			throw new Error(`文件删除失败：`, rsp.statusText);
+			throw rsp;
 		}
 	}
 
@@ -779,7 +793,7 @@ class FilesManager {
 			body: JSON.stringify({ caption }),
 		});
 		if (!rsp.ok) {
-			throw new Error(`文件更新失败：`, rsp.statusText);
+			throw rsp;
 		}
 	}
 
@@ -949,23 +963,23 @@ formUI.filesChanged(async files => {
 	}
 
 	Array.from(files).forEach(async f => {
-		if (f.size > (10 << 20)) {
-			alert(`文件 "${f.name}" 太大，不予上传。`);
-			return;
-		}
 		if (f.size == 0) {
 			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
 			return;
 		}
 
-		try {
-			let fm = new FilesManager(TaoBlog.post_id);
-			const { old, now } = formUI._fileList.addNew({
-				path: f.name,
-				size: f.size,
-				type: f.type,
-			});
+		const { old, now } = formUI._fileList.addNew({
+			path: f.name,
+			size: f.size,
+			type: f.type,
+		});
 
+		try {
+			if (f.size > (10 << 20)) {
+				throw new Error(`文件太大，不予上传。`);
+			}
+
+			let fm = new FilesManager(TaoBlog.post_id);
 			const meta = {
 				source: old?.meta?.source,
 			};
@@ -982,14 +996,11 @@ formUI.filesChanged(async files => {
 			);
 			// 可能会自动转换格式，所以用更新后的文件名。
 			formUI._fileList.updateSpec(now, rsp.spec);
-			// fi.spec = rsp.spec;
 			now.finished = true;
-			// alert(`文件 ${f.name} 上传成功。`);
-			// 奇怪，不是说 lambda 不会改变 this 吗？为什么变成 window 了……
-			// 导致我的不得不用 formUI，而不是 this。
-			// formUI.files = await fm.list();
+			now.error('');
 		} catch(e) {
-			alert(`文件 ${f.name} 上传失败：${e}`);
+			// alert(`文件 ${f.name} 上传失败：${e}`);
+			now.error(`错误：${e.message ?? e}`);
 			return;
 		}
 	});
