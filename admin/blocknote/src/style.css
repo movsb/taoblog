@@ -5,3 +5,9 @@
 .bn-block-content[data-content-type=heading] h1 {
 	font-size: 1.5rem !important;
 }
+
+.bn-panel {
+	width: 250px !important;
+	max-width: 100%;
+	box-sizing: border-box;
+}

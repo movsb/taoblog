@@ -39,10 +39,34 @@ func (b *Blocknote) Render(source string) (string, error) {
 }
 
 func (b *Blocknote) renderBlocks(buf *strings.Builder, blocks []*Block) {
-	for _, block := range blocks {
+	for i := 0; i < len(blocks); {
+		block := blocks[i]
+		if block.Type == `numberedListItem` || block.Type == `bulletListItem` {
+			var items []*Block
+			var j int
+			for j = i; j < len(blocks) && blocks[j].Type == block.Type; j++ {
+				items = append(items, blocks[j])
+			}
+			b.renderList(buf, items)
+			i = j
+			continue
+		}
 		b.renderBlock(buf, block, true)
 		b.renderBlock(buf, block, false)
+		i++
 	}
+}
+
+func (b *Blocknote) renderList(buf *strings.Builder, items []*Block) {
+	unordered := items[0].Type == `bulletListItem`
+	buf.WriteString(utils.IIF(unordered, `<ul>`, `<ol>`))
+	for _, item := range items {
+		buf.WriteString(`<li>`)
+		b.renderContent(buf, item.Content)
+		b.renderBlocks(buf, item.Children)
+		buf.WriteString(`</li>`)
+	}
+	buf.WriteString(utils.IIF(unordered, `</ul>`, `</ol>`))
 }
 
 func (b *Blocknote) renderBlock(buf *strings.Builder, block *Block, entering bool) {
@@ -107,6 +131,13 @@ func (b *Blocknote) renderBlock(buf *strings.Builder, block *Block, entering boo
 			b.renderContent(buf, block.Content)
 		} else {
 			buf.WriteString(`</table>`)
+		}
+	case `codeBlock`:
+		if entering {
+			buf.WriteString(`<pre><code>`)
+			b.renderContent(buf, block.Content)
+		} else {
+			buf.WriteString(`</code></pre>`)
 		}
 	}
 }
