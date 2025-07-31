@@ -434,7 +434,14 @@ type EditorData struct {
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 	if isNew := r.URL.Query().Get(`new`) == `1`; isNew {
-		post := utils.Must1(a.svc.CreateUntitledPost(r.Context(), &proto.CreateUntitledPostRequest{}))
+		ty := `markdown`
+		if st := r.URL.Query().Get(`type`); st != `` {
+			ty = st
+		}
+
+		post := utils.Must1(a.svc.CreateUntitledPost(r.Context(), &proto.CreateUntitledPostRequest{
+			Type: ty,
+		}))
 		args := urlpkg.Values{}
 		args.Set(`id`, fmt.Sprint(post.Post.Id))
 		url := a.prefixed(`editor`) + `?` + args.Encode()

@@ -9,6 +9,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/alerts"
+	"github.com/movsb/taoblog/service/modules/renderers/blocknote"
 	"github.com/movsb/taoblog/service/modules/renderers/caption"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
 	"github.com/movsb/taoblog/service/modules/renderers/echarts"
@@ -61,6 +62,13 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		return tr.Render(source)
 	case `plain`:
 		return html.EscapeString(source), nil
+	case `blocknote`:
+		options := []blocknote.Option{}
+		if !co.KeepTitleHeading {
+			options = append(options, blocknote.DoNotRenderTitle())
+		}
+		tr := blocknote.New(options...)
+		return tr.Render(source)
 	}
 
 	if sourceType != `markdown` {

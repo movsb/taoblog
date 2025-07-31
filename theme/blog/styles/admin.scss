@@ -166,6 +166,18 @@ body.admin.editor {
 			tab-size: 4;
 			overflow: auto;
 		}
+		#blocknote-root {
+			height: 100%;
+			border: 1px solid var(--border-color);
+			padding: var(--textarea-padding);
+			border-radius: var(--border-radius);
+			// display: block !important;
+			box-sizing: border-box;
+			> .bn-container {
+				max-height: 100%;
+				overflow: auto;
+			}
+		}
 	}
 	#command-container {
 		margin: 1em 0;

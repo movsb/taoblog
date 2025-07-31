@@ -97,7 +97,7 @@ class PostManagementAPI
 				status: p.status ?? 'public',
 				source: p.source,
 				metas: p.metas,
-				source_type: 'markdown',
+				source_type: p.source_type,
 				top: p.top,
 				category: p.category ?? 0,
 			},
@@ -129,7 +129,7 @@ class PostManagementAPI
 	}
 
 	// 文章预览
-	static async previewPost(id, source) {
+	static async previewPost(id, type, source) {
 		let path = `/v3/posts:preview`;
 		let rsp = await fetch(path, {
 			method: 'POST',
@@ -138,7 +138,8 @@ class PostManagementAPI
 			},
 			body: JSON.stringify({
 				id: id,
-				markdown: source,
+				type: type,
+				source: source,
 			})
 		});
 		if (!rsp.ok) {

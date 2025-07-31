@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/blocknote"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/page_link"
@@ -566,10 +567,19 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 
 // 本身未鉴权，由 CreatePost 鉴权。
 func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitledPostRequest) (*proto.CreateUntitledPostResponse, error) {
+	var source string
+	switch in.Type {
+	case `markdown`:
+		source = models.UntitledSourceMarkdown
+	case `blocknote`:
+		source = models.UntitledSourceBlocknote
+	default:
+		return nil, status.Error(codes.InvalidArgument, `unknown post type`)
+	}
 	p, err := s.CreatePost(ctx, &proto.Post{
 		Type:       `post`,
-		SourceType: `markdown`,
-		Source:     models.UntitledSource,
+		SourceType: in.Type,
+		Source:     source,
 	})
 	return &proto.CreateUntitledPostResponse{
 		Post: p,
@@ -596,7 +606,8 @@ func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
 func isUpdatingUntitledPost(p *models.Post) bool {
 	return p.Date == p.Modified &&
 		p.Title == models.Untitled &&
-		p.Source == models.UntitledSource
+		(p.Source == models.UntitledSourceMarkdown ||
+			p.Source == models.UntitledSourceBlocknote)
 }
 
 // 更新文章。
@@ -793,32 +804,43 @@ type _Derived struct {
 }
 
 func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (*_Derived, error) {
-	var tr renderers.Renderer
 	var title string
 	var tags []string
 	var refs []int32
 	switch sourceType {
 	case "markdown":
-		tr = renderers.NewMarkdown(
+		tr := renderers.NewMarkdown(
 			renderers.WithoutRendering(),
 			renderers.WithTitle(&title),
 			hashtags.New(s.hashtagResolver, &tags),
 			// 这里的 ctx 会用来给 getPostTitle 鉴权用，所以必须是原始请求附带的 ctx。
 			page_link.New(ctx, s.getPostTitle, &refs),
 		)
+		_, err := tr.Render(source)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		d := &_Derived{
+			Title:      title,
+			Tags:       tags,
+			References: refs,
+		}
+		return d, nil
+	case `blocknote`:
+		var title string
+		tr := blocknote.New(
+			blocknote.WithTitle(&title),
+		)
+		_, err := tr.Render(source)
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		return &_Derived{
+			Title: title,
+		}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "no renderer was found for: %q", sourceType)
 	}
-	_, err := tr.Render(source)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	d := &_Derived{
-		Title:      title,
-		Tags:       tags,
-		References: refs,
-	}
-	return d, nil
 }
 
 // 用于删除一篇文章。
@@ -849,7 +871,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	auth.MustNotBeGuest(ctx)
 
-	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewPost), s.isPostPublic(ctx, int(in.Id)))
+	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, in.Type, in.Source, models.PostMeta{}, co.For(co.PreviewPost), s.isPostPublic(ctx, int(in.Id)))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -860,7 +882,7 @@ func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest)
 	}
 
 	// 不太清楚这个 check lines 参数是干啥的。
-	diffs := diffmatchpatch.New().DiffMain(source, in.Markdown, true)
+	diffs := diffmatchpatch.New().DiffMain(source, in.Source, true)
 	var buf bytes.Buffer
 	for _, diff := range diffs {
 		text := html.EscapeString(diff.Text)

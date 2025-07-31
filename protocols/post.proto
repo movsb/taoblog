@@ -228,7 +228,10 @@ message ListPostsResponse {
 	repeated Post posts = 1;
 }
 
-message CreateUntitledPostRequest {}
+message CreateUntitledPostRequest {
+	// markdown / blocknote
+	string type = 1;
+}
 message CreateUntitledPostResponse {
 	Post post = 1;
 }
@@ -267,7 +270,8 @@ message SetPostStatusResponse {
 
 message PreviewPostRequest {
 	int32 id = 1;
-	string markdown = 2;
+	string type = 2;
+	string source = 3;
 }
 
 message PreviewPostResponse {
