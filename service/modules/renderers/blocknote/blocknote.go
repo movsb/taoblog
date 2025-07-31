@@ -41,13 +41,17 @@ func (b *Blocknote) Render(source string) (string, error) {
 func (b *Blocknote) renderBlocks(buf *strings.Builder, blocks []*Block) {
 	for i := 0; i < len(blocks); {
 		block := blocks[i]
-		if block.Type == `numberedListItem` || block.Type == `bulletListItem` {
+		if block.Type == `numberedListItem` || block.Type == `bulletListItem` || block.Type == `checkListItem` {
 			var items []*Block
 			var j int
 			for j = i; j < len(blocks) && blocks[j].Type == block.Type; j++ {
 				items = append(items, blocks[j])
 			}
-			b.renderList(buf, items)
+			if block.Type == `checkListItem` {
+				b.renderTodoList(buf, items)
+			} else {
+				b.renderPlainList(buf, items)
+			}
 			i = j
 			continue
 		}
@@ -57,7 +61,23 @@ func (b *Blocknote) renderBlocks(buf *strings.Builder, blocks []*Block) {
 	}
 }
 
-func (b *Blocknote) renderList(buf *strings.Builder, items []*Block) {
+func (b *Blocknote) renderTodoList(buf *strings.Builder, items []*Block) {
+	buf.WriteString(`<ol class="task-list">`)
+	for _, item := range items {
+		buf.WriteString(`<li class="task-list-item">`)
+		if checked, _ := item.Props[`checked`].(bool); checked {
+			buf.WriteString(`<input type="checkbox" disabled checked> `)
+		} else {
+			buf.WriteString(`<input type="checkbox" disabled> `)
+		}
+		b.renderContent(buf, item.Content)
+		b.renderBlocks(buf, item.Children)
+		buf.WriteString(`</li>`)
+	}
+	buf.WriteString(`</ol>`)
+}
+
+func (b *Blocknote) renderPlainList(buf *strings.Builder, items []*Block) {
 	unordered := items[0].Type == `bulletListItem`
 	buf.WriteString(utils.IIF(unordered, `<ul>`, `<ol>`))
 	for _, item := range items {
