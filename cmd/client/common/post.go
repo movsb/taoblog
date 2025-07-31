@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 )
 
+// TODO 增加 html / blocknote
 const IndexFileName = `README.md`
 
 const ConfigFileName = `config.yml`

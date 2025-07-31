@@ -30,3 +30,13 @@ tools:
 		google.golang.org/protobuf/cmd/protoc-gen-go \
 		google.golang.org/grpc/cmd/protoc-gen-go-grpc \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+
+.PHONY: blocknote
+blocknote:
+	cd admin/blocknote && npm install && npm run build
+	cd admin && rm -rf statics/blocknote && mkdir -p statics/blocknote && \
+		cp -r blocknote/dist/assets statics/blocknote && \
+		cp blocknote/dist/blocknote.* statics/blocknote && \
+		cd statics/blocknote && sed -E 's/\/assets\//assets\//g' blocknote.css > a.css && \
+			mv a.css blocknote.css
+

@@ -86,6 +86,12 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 			utils.HTTPError(w, http.StatusBadRequest)
 			return
 		}
+		if spec.Type == `` {
+			spec.Type = mime.TypeByExtension(path.Ext(spec.Path))
+			if spec.Type == `` {
+				spec.Type = `application/octet-stream`
+			}
+		}
 
 		var options Options
 		optionsString := r.FormValue(`options`)

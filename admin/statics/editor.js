@@ -239,6 +239,32 @@ class FileList extends HTMLElement {
 customElements.define('file-list', FileList);
 customElements.define('file-list-item', FileList.FileItem);
 
+class FileManagerDialog {
+	constructor(options) {
+		this._dialog = document.querySelector('dialog[name="file-manager"]');
+		this._fileList = this._dialog.querySelector('file-list');
+		this._dialog.querySelector('.insert').addEventListener('click', e => {
+			e.stopPropagation();
+			e.preventDefault();
+			const selected = this._fileList.selected;
+			if (selected.length <= 0) { return; }
+			this._onInsert && this._onInsert(selected);
+		});
+		this._onInsert = options?.onInsert;
+	}
+	show() {
+		this._dialog.inert = true;
+		this._dialog.show();
+		this._dialog.inert = false;
+	}
+	showModal() {
+		this._dialog.showModal();
+	}
+	clearSelection() {
+		this._fileList.clearSelection();
+	}
+}
+
 class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('#main');
@@ -276,19 +302,6 @@ class PostFormUI {
 			captionEditor.value = fi.spec.meta.source.caption ?? '';
 			dialog.showModal();
 		});
-		this._fileManagerDialog.querySelector('.insert').addEventListener('click', (e) => {
-			const selected = this._fileList.selected;
-			if (selected.length <= 0) { return; }
-			selected.forEach(fi => {
-				const text = fi.getInsertionText();
-				if (this.editor) {
-					this.editor.paste(text);
-				} else {
-					this.elemSource.value += text;
-				}
-				this._fileList.clearSelection();
-			});
-		});
 		this._fileManagerDialog.querySelector('.delete').addEventListener('click', async (e) => {
 			const selected = this._fileList.selected;
 			if (selected.length <= 0) { return; }
@@ -309,6 +322,9 @@ class PostFormUI {
 		});
 		this._fileManagerDialog.querySelector('.upload').addEventListener('click', (e) => {
 			this._files.click();
+		});
+		this._form.querySelector('p.file-manager-button button').addEventListener('click', e => {
+			this.showFileManager();
 		});
 		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
@@ -380,14 +396,6 @@ class PostFormUI {
 			this.setAutoIndent(this.autoIndent);
 		})
 
-		const showPreview = localStorage.getItem('editor-config-show-preview') != '0';
-		this.checkBoxTogglePreview.checked = showPreview;
-		this.showPreview(showPreview);
-
-		const setWrap = localStorage.getItem('editor-config-wrap') != '0';
-		this.checkBoxWrap.checked = setWrap;
-		this.setWrap(setWrap);
-
 		window.addEventListener('beforeunload', (e)=>{ return this.beforeUnload(e); });
 
 		let lastCategoryIndex = this.elemCategory.selectedIndex;
@@ -437,63 +445,142 @@ class PostFormUI {
 			}
 		})
 
-		if (typeof TinyMDE != 'undefined') {
-			this.editor = new TinyMDE.Editor({
-				element: document.querySelector('#editor-container'),
-				textarea: document.querySelector('#editor-container textarea'),
-			});
-			this.editorCommands = new TinyMDE.CommandBar({
-				element: document.getElementById('command-container'),
-				editor: this.editor,
-				commands: [
-					{
-						name: `fileManager`,
-						title: `上传图片/视频/文件`,
-						innerHTML: `📄 文件管理`,
-						action: editor => {
-							const d = this._fileManagerDialog;
-							d.inert = true;
-							d.show();
-							d.inert = false;
-							// 如果需要打开的时候自动弹出选择文件对话框，则取消注释下面的代码。
-							// if(this._fileList.selected.length <= 0) {
-							// 	this._files.click();
-							// }
+		const currentPost = TaoBlog.posts[TaoBlog.post_id];
+		console.log(currentPost);
+		if(currentPost.source_type == 'markdown') {
+			if (typeof TinyMDE != 'undefined') {
+				this.editor = new TinyMDE.Editor({
+					element: document.querySelector('#editor-container'),
+					textarea: document.querySelector('#editor-container textarea'),
+				});
+				this.editorCommands = new TinyMDE.CommandBar({
+					element: document.getElementById('command-container'),
+					editor: this.editor,
+					commands: [
+						{
+							name: `fileManager`,
+							title: `上传图片/视频/文件`,
+							innerHTML: `📄 文件管理`,
+							action: editor => {
+								this.showFileManager();
+							},
 						},
-					},
-					{
-						name: `insertTaskItem`,
-						title: `插入任务`,
-						innerHTML: `☑️ 任务`,
-						action: editor => {
-							editor.paste('- [ ] ');
+						{
+							name: `insertTaskItem`,
+							title: `插入任务`,
+							innerHTML: `☑️ 任务`,
+							action: editor => {
+								editor.paste('- [ ] ');
+							},
 						},
-					},
-					{
-						name: `blockquote`,
-						title: `切换选中文本为块引用`,
-						innerHTML: `➡️ 块引用`,
-					},
-					{
-						name: `divider`,
-						title: `插入当时时间分割线`,
-						innerHTML: `✂️ 分隔符`,
-						action: editor => {
-							const date = new Date();
-							let formatted = date.toLocaleString().replaceAll('/', '-');
-							formatted = `\n--- ${formatted} ---\n\n`;
-							editor.paste(formatted);
+						{
+							name: `blockquote`,
+							title: `切换选中文本为块引用`,
+							innerHTML: `➡️ 块引用`,
 						},
-					},
-				],
-			});
+						{
+							name: `divider`,
+							title: `插入当时时间分割线`,
+							innerHTML: `✂️ 分隔符`,
+							action: editor => {
+								const date = new Date();
+								let formatted = date.toLocaleString().replaceAll('/', '-');
+								formatted = `\n--- ${formatted} ---\n\n`;
+								editor.paste(formatted);
+							},
+						},
+					],
+				});
+			} else {
+				const editor = document.querySelector('#editor-container textarea[name=source]');
+				editor.style.display = 'block';
+			}
+		} else if(currentPost.source_type == 'blocknote') {
+			this.editor = TaoBlog.blocknote;
+			const root = document.querySelector('#blocknote-root');
+			root.style.setProperty('display', 'block', 'important');
+
+			const textarea = document.querySelector('#editor-container textarea[name=source]');
+			this.source = textarea.value;
+
+			// 超级 hack 手段。
+			root.addEventListener('click', (e)=>{
+				if (e.target.closest('.bn-add-file-button')) {
+					e.stopImmediatePropagation();
+					e.stopPropagation();
+					e.preventDefault();
+					const blockElement = e.target.closest('.bn-block');
+					const id = blockElement.dataset.id;
+					const blockContent = this.editor.getBlock(id);
+					console.log('click:', id, blockContent);
+					this.showFileManager();
+				}
+			}, { capture: true });
 		} else {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
 		}
 
+		const showPreview = localStorage.getItem('editor-config-show-preview') != '0';
+		this.checkBoxTogglePreview.checked = showPreview;
+		this.showPreview(showPreview);
+
+		const setWrap = localStorage.getItem('editor-config-wrap') != '0';
+		this.checkBoxWrap.checked = setWrap;
+		this.setWrap(setWrap);
+
 		this.sourceChanged(c => this.updatePreview(c));
 		setTimeout(() => this.updatePreview(this.source), 0);
+	}
+
+	showFileManager(modal) {
+		const dialog = new FileManagerDialog({
+			onInsert: (selected) => {
+				selected.forEach(fi => {
+					if(this.editor.onChange) {
+						console.log(fi.spec);
+						const isImage = /^image\//.test(fi.spec.type);
+						const isVideo = /^video\//.test(fi.spec.type);
+						let block = undefined;
+						if (isImage) {
+							block = {
+								type: 'image',
+								props: {
+									url: fi.spec.path,
+								},
+							};
+						} else if (isVideo) {
+							block = {
+								type: 'video',
+								props: {
+									url: fi.spec.path,
+								},
+							};
+						} else {
+							block = {
+								type: 'file',
+								props: {
+									url: fi.spec.path,
+								},
+							};
+						}
+						if (block) {
+							const ref = this.editor.document[this.editor.document.length-1];
+							this.editor.insertBlocks([block], ref, 'before');
+						}
+					} else {
+						const text = fi.getInsertionText();
+						if (this.editor) {
+							this.editor.paste(text);
+						} else {
+							this.elemSource.value += text;
+						}
+					}
+				});
+				dialog.clearSelection();
+			},
+		});
+		modal ? dialog.showModal() : dialog.show();
 	}
 
 	async updatePreview(content) {
@@ -501,7 +588,7 @@ class PostFormUI {
 			return;
 		}
 		try {
-			let rsp = await PostManagementAPI.previewPost(TaoBlog.post_id, content);
+			let rsp = await PostManagementAPI.previewPost(TaoBlog.post_id, TaoBlog.posts[TaoBlog.post_id].source_type, content);
 			this.setPreview(rsp.html, true);
 			this.setDiff(rsp.diff);
 		} catch (e) {
@@ -594,7 +681,12 @@ class PostFormUI {
 		});
 	}
 
-	get source()    { return this.elemSource.value;     }
+	get source()    {
+		if(this.editor.onChange) { // blocknote
+			return JSON.stringify(this.editor.document);
+		}
+		return this.elemSource.value;
+	}
 	get time()      {
 		let t = this.elemTime.value;
 		let d = new Date(t).getTime() / 1000;
@@ -632,7 +724,18 @@ class PostFormUI {
 	}
 
 
-	set source(v)   { this.elemSource.value = v;        }
+	set source(v)   {
+		if(this.editor.onChange) { // blocknote
+			const b = JSON.parse(v);
+			console.log('replace:', b);
+			this.editor.replaceBlocks(
+				this.editor.document.map(b => b.id),
+				b,
+			);
+			return;
+		}
+		this.elemSource.value = v;
+	}
 	setPreview(v, ok)  {
 		if (!ok) {
 			this.elemPreviewContainer.innerText = v;
@@ -675,7 +778,20 @@ class PostFormUI {
 	// debounced
 	sourceChanged(callback) {
 		let debouncing = undefined;
-		if (this.editor) {
+		if (this.editor.onChange) { // blocknote
+			this.editor.onChange((editor)=>{
+				this._contentChanged = true;
+				if (this._previewCallbackReturned == false) { return; }
+				clearTimeout(debouncing);
+				debouncing = setTimeout(() => {
+					const doc = editor.document;
+					const j = JSON.stringify(doc, undefined, 4);
+					console.log('blocknote:', doc);
+					console.log(j);
+					callback(j);
+				}, 1500);
+			});
+		} else if (this.editor) { // tinymde
 			this.editor.addEventListener('change', (e)=>{
 				this._contentChanged = true;
 				if (this._previewCallbackReturned == false) { return; }
@@ -685,6 +801,7 @@ class PostFormUI {
 				}, 1500);
 			});
 		} else {
+			// textarea
 			this.elemSource.addEventListener('input', (e)=>{
 				this._contentChanged = true;
 				if (this._previewCallbackReturned == false) { return; }
@@ -805,6 +922,7 @@ class FilesManager {
 	async create(f, options, progress, meta) {
 		let dimension = await FilesManager.detectImageSize(f);
 		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
+		console.log('creating:', f);
 
 		meta = meta || {};
 		meta.width = dimension.width;
@@ -907,6 +1025,7 @@ let formUI = (() => {
 		alert('创建表单失败：' + e);
 	}
 })();
+TaoBlog.formUI = formUI;
 formUI.submit(async (done) => {
 	try {
 		let p = TaoBlog.posts[TaoBlog.post_id];
@@ -922,6 +1041,7 @@ formUI.submit(async (done) => {
 				type: formUI.type,
 				status: formUI.status,
 				source: formUI.source,
+				source_type: p.source_type,
 				metas: p.metas,
 				top: formUI.top,
 				category: +formUI.elemCategory.value,
@@ -959,7 +1079,7 @@ formUI.filesChanged(async files => {
 	let haveImageFiles = Array.from(files).some(f => /^image\//.test(f.type));
 	let keepPos = true;
 	if (haveImageFiles) {
-		keepPos = confirm('选中的文件包含图片，是否需要保留图片的位置信息（如果有）？');
+		keepPos = confirm('保留图片的位置信息（如果有）？');
 	}
 
 	Array.from(files).forEach(async f => {
