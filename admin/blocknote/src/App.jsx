@@ -16,6 +16,14 @@ export default function App() {
         cellTextColor: true,
         headers: true,
       },
+      resolveFileUrl: async (url) => {
+        console.log('url:', url);
+        return new Promise((success) => {
+          const postID = TaoBlog.post_id;
+          const newURL = `/v3/posts/${postID}/files/${url}`;
+          success(newURL);
+        });
+      },
     }
   );
 

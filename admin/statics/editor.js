@@ -239,6 +239,32 @@ class FileList extends HTMLElement {
 customElements.define('file-list', FileList);
 customElements.define('file-list-item', FileList.FileItem);
 
+class FileManagerDialog {
+	constructor(options) {
+		this._dialog = document.querySelector('dialog[name="file-manager"]');
+		this._fileList = this._dialog.querySelector('file-list');
+		this._dialog.querySelector('.insert').addEventListener('click', e => {
+			e.stopPropagation();
+			e.preventDefault();
+			const selected = this._fileList.selected;
+			if (selected.length <= 0) { return; }
+			this._onInsert && this._onInsert(selected);
+		});
+		this._onInsert = options?.onInsert;
+	}
+	show() {
+		this._dialog.inert = true;
+		this._dialog.show();
+		this._dialog.inert = false;
+	}
+	showModal() {
+		this._dialog.showModal();
+	}
+	clearSelection() {
+		this._fileList.clearSelection();
+	}
+}
+
 class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('#main');
@@ -276,19 +302,6 @@ class PostFormUI {
 			captionEditor.value = fi.spec.meta.source.caption ?? '';
 			dialog.showModal();
 		});
-		this._fileManagerDialog.querySelector('.insert').addEventListener('click', (e) => {
-			const selected = this._fileList.selected;
-			if (selected.length <= 0) { return; }
-			selected.forEach(fi => {
-				const text = fi.getInsertionText();
-				if (this.editor) {
-					this.editor.paste(text);
-				} else {
-					this.elemSource.value += text;
-				}
-				this._fileList.clearSelection();
-			});
-		});
 		this._fileManagerDialog.querySelector('.delete').addEventListener('click', async (e) => {
 			const selected = this._fileList.selected;
 			if (selected.length <= 0) { return; }
@@ -309,6 +322,9 @@ class PostFormUI {
 		});
 		this._fileManagerDialog.querySelector('.upload').addEventListener('click', (e) => {
 			this._files.click();
+		});
+		this._form.querySelector('p.file-manager-button button').addEventListener('click', e => {
+			this.showFileManager();
 		});
 		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
@@ -446,14 +462,7 @@ class PostFormUI {
 							title: `上传图片/视频/文件`,
 							innerHTML: `📄 文件管理`,
 							action: editor => {
-								const d = this._fileManagerDialog;
-								d.inert = true;
-								d.show();
-								d.inert = false;
-								// 如果需要打开的时候自动弹出选择文件对话框，则取消注释下面的代码。
-								// if(this._fileList.selected.length <= 0) {
-								// 	this._files.click();
-								// }
+								this.showFileManager();
 							},
 						},
 						{
@@ -488,10 +497,25 @@ class PostFormUI {
 			}
 		} else if(currentPost.source_type == 'blocknote') {
 			this.editor = TaoBlog.blocknote;
-			document.querySelector('#blocknote-root').style.setProperty('display', 'block', 'important');
+			const root = document.querySelector('#blocknote-root');
+			root.style.setProperty('display', 'block', 'important');
 
 			const textarea = document.querySelector('#editor-container textarea[name=source]');
 			this.source = textarea.value;
+
+			// 超级 hack 手段。
+			root.addEventListener('click', (e)=>{
+				if (e.target.closest('.bn-add-file-button')) {
+					e.stopImmediatePropagation();
+					e.stopPropagation();
+					e.preventDefault();
+					const blockElement = e.target.closest('.bn-block');
+					const id = blockElement.dataset.id;
+					const blockContent = this.editor.getBlock(id);
+					console.log('click:', id, blockContent);
+					this.showFileManager();
+				}
+			}, { capture: true });
 		} else {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
@@ -507,6 +531,56 @@ class PostFormUI {
 
 		this.sourceChanged(c => this.updatePreview(c));
 		setTimeout(() => this.updatePreview(this.source), 0);
+	}
+
+	showFileManager(modal) {
+		const dialog = new FileManagerDialog({
+			onInsert: (selected) => {
+				selected.forEach(fi => {
+					if(this.editor.onChange) {
+						console.log(fi.spec);
+						const isImage = /^image\//.test(fi.spec.type);
+						const isVideo = /^video\//.test(fi.spec.type);
+						let block = undefined;
+						if (isImage) {
+							block = {
+								type: 'image',
+								props: {
+									url: fi.spec.path,
+								},
+							};
+						} else if (isVideo) {
+							block = {
+								type: 'video',
+								props: {
+									url: fi.spec.path,
+								},
+							};
+						} else {
+							block = {
+								type: 'file',
+								props: {
+									url: fi.spec.path,
+								},
+							};
+						}
+						if (block) {
+							const ref = this.editor.document[this.editor.document.length-1];
+							this.editor.insertBlocks([block], ref, 'before');
+						}
+					} else {
+						const text = fi.getInsertionText();
+						if (this.editor) {
+							this.editor.paste(text);
+						} else {
+							this.elemSource.value += text;
+						}
+					}
+				});
+				dialog.clearSelection();
+			},
+		});
+		modal ? dialog.showModal() : dialog.show();
 	}
 
 	async updatePreview(content) {
@@ -848,6 +922,7 @@ class FilesManager {
 	async create(f, options, progress, meta) {
 		let dimension = await FilesManager.detectImageSize(f);
 		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
+		console.log('creating:', f);
 
 		meta = meta || {};
 		meta.width = dimension.width;

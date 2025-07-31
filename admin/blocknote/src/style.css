@@ -10,4 +10,5 @@
 	width: 250px !important;
 	max-width: 100%;
 	box-sizing: border-box;
+	display: none;
 }

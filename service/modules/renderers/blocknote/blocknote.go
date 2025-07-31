@@ -159,6 +159,30 @@ func (b *Blocknote) renderBlock(buf *strings.Builder, block *Block, entering boo
 		} else {
 			buf.WriteString(`</code></pre>`)
 		}
+	case `image`:
+		if entering {
+			buf.WriteString(`<p><img src="`)
+			buf.WriteString(html.EscapeString(block.Props[`url`].(string)))
+			buf.WriteString(`">`)
+		} else {
+			buf.WriteString(`</p>`)
+		}
+	case `video`:
+		if entering {
+			buf.WriteString(`<p><video controls src="`)
+			buf.WriteString(html.EscapeString(block.Props[`url`].(string)))
+			buf.WriteString(`">`)
+		} else {
+			buf.WriteString(`</p>`)
+		}
+	case `file`:
+		if entering {
+			buf.WriteString(`<p><object data="`)
+			buf.WriteString(html.EscapeString(block.Props[`url`].(string)))
+			buf.WriteString(`">`)
+		} else {
+			buf.WriteString(`</object></p>`)
+		}
 	}
 }
 
