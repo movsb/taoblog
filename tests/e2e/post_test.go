@@ -542,11 +542,11 @@ func TestUpdateTags(t *testing.T) {
 
 func TestCreateUntitledPost(t *testing.T) {
 	r := Serve(t.Context())
-	_, err := r.client.Blog.CreateUntitledPost(r.guest, &proto.CreateUntitledPostRequest{})
+	_, err := r.client.Blog.CreateUntitledPost(r.guest, &proto.CreateUntitledPostRequest{Type: `markdown`})
 	if err == nil {
 		t.Fatal(`未鉴权`)
 	}
-	p, err := r.client.Blog.CreateUntitledPost(r.user1, &proto.CreateUntitledPostRequest{})
+	p, err := r.client.Blog.CreateUntitledPost(r.user1, &proto.CreateUntitledPostRequest{Type: `markdown`})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -72,7 +72,7 @@ func TestFiles(t *testing.T) {
 	rsp := utils.Must1(http.DefaultClient.Do(req))
 	defer rsp.Body.Close()
 	rspBody := strings.TrimSpace(string(utils.Must1(io.ReadAll(rsp.Body))))
-	if rspBody != `{"spec":{"path":"blank.png.xxx","mode":384,"size":4637,"meta":{"width":60,"height":60,"source":{"format":2,"caption":"123"}}}}` {
+	if rspBody != `{"spec":{"path":"blank.png.xxx","mode":384,"size":4637,"type":"application/octet-stream","meta":{"width":60,"height":60,"source":{"format":2,"caption":"123"}}}}` {
 		t.Error(`返回不正确`)
 		t.Log(rspBody)
 	}
