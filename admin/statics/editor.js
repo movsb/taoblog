@@ -222,7 +222,7 @@ class FileList extends HTMLElement {
 		const fis = this.querySelectorAll('file-list-item');
 		fis.forEach(f => {
 			if (f._spec.path == spec.path && f != fi) {
-				f.remove();
+				this.removeFile(f);
 			}
 		});
 		fi.spec = spec;
