@@ -42,6 +42,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/movsb/taoblog/service/modules/renderers/tables"
+	"github.com/movsb/taoblog/service/modules/renderers/tables/csv"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
 	"github.com/yuin/goldmark/extension"
 
@@ -136,6 +137,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),
 		// renderers.WithFencedCodeBlockRenderer(`rss`, rss.New(s.rssTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`echarts`, echarts.New(s.fileCache.GetOrLoad)),
+		renderers.WithFencedCodeBlockRenderer(`csv`, csv.New()),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
