@@ -45,6 +45,10 @@ func (t *CSV) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, 
 	defer utils.CatchAsError(&outErr)
 
 	csvReader := csv.NewReader(bytes.NewReader(source))
+
+	// 不要求每行字段数一致，后面会自动补齐。
+	csvReader.FieldsPerRecord = -1
+
 	table, err := csvReader.ReadAll()
 	if err != nil {
 		return fmt.Errorf(`failed to parse csv as table: %w`, err)
@@ -52,6 +56,19 @@ func (t *CSV) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, 
 
 	if len(table) <= 0 {
 		return nil
+	}
+
+	// 正在编辑时可能出现列数不一致的情况，没必要报错。
+	// 采用自动填充空数据的方式手动对齐。
+	m := 0
+	for _, cols := range table {
+		m = max(m, len(cols))
+	}
+	for i, cols := range table {
+		d := m - len(cols)
+		for range d {
+			table[i] = append(table[i], ``)
+		}
 	}
 
 	return ttt().Execute(w, table)
