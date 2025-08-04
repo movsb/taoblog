@@ -2,19 +2,36 @@ package caption
 
 import (
 	"bytes"
+	"embed"
 	"log"
 	"net/url"
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
+
+//go:generate sass --style compressed --no-source-map style.scss style.css
+
+//go:embed style.css
+var _embed embed.FS
+var _root = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
+
+func init() {
+	dynamic.RegisterInit(func() {
+		const module = `caption`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithStyles(module, `style.css`)
+	})
+}
 
 type _Caption struct {
 	web gold_utils.WebFileSystem

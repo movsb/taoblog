@@ -20,7 +20,7 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `footnotes`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
-		dynamic.WithStyles(`footnotes`, `style.css`)
+		dynamic.WithStyles(module, `style.css`)
 	})
 }
 
