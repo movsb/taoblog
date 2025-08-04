@@ -17,6 +17,9 @@ sup:has(>.footnote-ref) {
 	&::after {
 		content: "]";
 	}
+	&:target {
+		background-color: var(--highlight-color);
+	}
 }
 
 .footnotes {
@@ -31,27 +34,29 @@ sup:has(>.footnote-ref) {
 			font-family: monospace;
 		}
 		&:target {
-			position: relative;
-			&::before {
-				content: "";
+			// position: relative;
+			// &::before {
+			// 	content: "";
 				background-color: var(--highlight-color);
-				position: absolute;
-				left: -3px;
-				bottom: 0;
-				right: 0;
-				top: 0;
-			}
+			// 	position: absolute;
+			// 	left: -3px;
+			// 	bottom: 0;
+			// 	right: 0;
+			// 	top: 0;
+			// }
 		}
-		p {
-			position: relative;
-			margin: 0;
-			padding-left: 1em;
-			// 学维斯百科放前面
-			.footnote-backref {
-				position: absolute;
-				left: 0;
-				top: 0;
-			}
-		}
+		// 可能会同时出现一个脚注被好几次引用，如果放在前面的话，目前的基于 absolute 的定位
+		// 无法顺序、等宽地显示出来，暂时不这样显示。
+		// p {
+		// 	position: relative;
+		// 	margin: 0;
+		// 	padding-left: 1em;
+		// 	// 学维斯百科放前面
+		// 	.footnote-backref {
+		// 		position: absolute;
+		// 		left: 0;
+		// 		top: 0;
+		// 	}
+		// }
 	}
 }
