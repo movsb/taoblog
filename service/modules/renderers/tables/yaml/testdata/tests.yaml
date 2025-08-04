@@ -1,0 +1,122 @@
+- description: 原生 JSON 数组写法
+  table:
+    rows:
+      - [1,2,3]
+      - [4,5,6]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>4</td><td>5</td><td>6</td></tr>
+    </tbody>
+    </table>
+
+- description: 引号是可以省略的
+  table:
+    rows:
+      - cols: [1,2,3]
+      - cols: [a,b,"<c>"]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>a</td><td>b</td><td>&lt;c&gt;</td></tr>
+    </tbody>
+    </table>
+
+- description: 分开写也是完全标准的
+  table:
+    rows:
+      - cols:
+          - 1
+          - 2
+          # 默认为普通文本，原样输出，但是应该考虑给 td 加 white-space: pre;
+          - |
+            this is
+            a multiline
+            yaml text.
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>this is
+    a multiline
+    yaml text.
+    </td></tr>
+    </tbody>
+    </table>
+
+- description: 分开写后，单独的单元格可以自定义：
+  table:
+    rows:
+      - cols:
+          - 1
+          - text: text content
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>text content</td></tr>
+    </tbody>
+    </table>
+
+- description: 可以增加格式
+  table:
+    rows:
+      - cols:
+          - 1
+          - text: text content
+            formats: [bold,italic]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td class="bold italic">text content</td></tr>
+    </tbody>
+    </table>
+
+- description: 可以增加格式（全部）
+  table:
+    rows:
+      - cols:
+          - 1
+          - text: text content
+            formats: [bold,italic,underline,strike,code,ins,del,kbd,left,center,right]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td class="bold italic underline strike code ins del kbd left center right">text content</td></tr>
+    </tbody>
+    </table>
+
+- description: 设置 rowspan 和 colspan
+  table:
+    rows:
+      - cols:
+          - 1
+          - text: 2
+            colspan: 2
+      - - text: 4
+          rowspan: 2
+        - 5
+        - 6
+      - [8,9]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td colspan="2">2</td></tr>
+    <tr><td rowspan="2">4</td><td>5</td><td>6</td></tr>
+    <tr><td>8</td><td>9</td></tr>
+    </tbody>
+    </table>
