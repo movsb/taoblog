@@ -271,6 +271,10 @@ func TestSpec(t *testing.T) {
 		Example  int    `yaml:"example"`
 		Markdown string `yaml:"markdown"`
 		HTML     string `yaml:"html"`
+
+		StartLine int    `yaml:"start_line"`
+		EndLine   int    `yaml:"end_line"`
+		Section   string `yaml:"section"`
 	}
 
 	fp := utils.Must1(os.Open(`testdata/spec-0.31.2.json.gz`))

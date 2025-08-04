@@ -20,7 +20,7 @@ func MustLoadCasesFromYaml[T any](path string) []*T {
 func MustLoadCasesFromYamlReader[T any](r io.Reader) []*T {
 	var t []*T
 
-	if err := yaml.NewDecoder(r).Decode(&t); err != nil {
+	if err := yaml.NewDecoder(r, yaml.DisallowUnknownField()).Decode(&t); err != nil {
 		panic(err)
 	}
 
