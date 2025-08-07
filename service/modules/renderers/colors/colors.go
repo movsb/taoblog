@@ -3,6 +3,7 @@ package colors
 import (
 	"embed"
 	"fmt"
+	"html/template"
 	"regexp"
 	"strings"
 	"sync"
@@ -41,6 +42,9 @@ func New() *_Colors {
 func (m *_Colors) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`color`).Each(func(i int, s *goquery.Selection) {
 		transform(s)
+	})
+	doc.Find(`colors`).Each(func(i int, s *goquery.Selection) {
+		s.ReplaceWithHtml(table())
 	})
 	return nil
 }
@@ -162,4 +166,48 @@ var oncePalette = sync.OnceValue(func() map[string]string {
 func hasColor(name string) bool {
 	_, has := oncePalette()[strings.ToLower(name)]
 	return has
+}
+
+func table() string {
+	const tpl = `
+<table class="colors">
+<thead>
+	<tr>
+		<th rowspan=2>名字</th>
+		<th rowspan=2>代码</th>
+		<th colspan=2>前景</th>
+		<th colspan=2>背景</th>
+	</tr>
+	<tr>
+		<td>浅色</td>
+		<td>深色</td>
+		<td>浅色</td>
+		<td>深色</td>
+	</tr>
+</thead>
+<tbody>
+	{{- range . }}
+	<tr>
+		<td>{{ .Name }}</td>
+		<td><pre><code>{{ .Hex }}</code></pre></td>
+		<td><div class="fg light" style="color:{{.Hex}};">Text</div></td>
+		<td><div class="fg dark" style="color:{{.Hex}};">Text</div></td>
+		<td><div class="bg light" style="background-color:{{.Hex}};">Text</div></td>
+		<td><div class="bg dark" style="background-color:{{.Hex}};">Text</div></td>
+	</tr>
+	{{- end }}
+</tbody>
+</table>
+	`
+	b := strings.Builder{}
+	t := template.Must(template.New(`table`).Parse(tpl))
+
+	var cs []Color
+	utils.Must(yaml.Unmarshal(colors, &cs))
+	for i := range cs {
+		cs[i].Name = strings.ToLower(cs[i].Name)
+	}
+	utils.Must(t.Execute(&b, cs))
+
+	return b.String()
 }
