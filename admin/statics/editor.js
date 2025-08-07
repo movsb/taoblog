@@ -366,7 +366,7 @@ class PostFormUI {
 		this.elemStatus.addEventListener('change', ()=> {
 			let value = this.elemStatus.value;
 			let p = this._form.querySelector('p.status');
-			p.classList.remove('status-public', 'status-draft', 'status-partial');
+			p.classList.remove('status-public', 'status-private', 'status-partial', 'status-draft');
 			p.classList.add('status-'+value);
 		});
 

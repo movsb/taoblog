@@ -112,10 +112,12 @@ func (p *Post) StatusString() string {
 		panic(`post.Status empty`)
 	case `public`:
 		return ``
-	case `draft`:
+	case `private`:
 		return `[私密]`
 	case `partial`:
 		return `[部分可见]`
+	case `draft`:
+		return `[草稿]`
 	default:
 		panic(`unknown post status`)
 	}
@@ -129,9 +131,10 @@ func (p *Post) EntryClass() string {
 	return strings.Join(s, " ")
 }
 
-func (p *Post) IsPrivate() bool {
-	return p.Post.Status == models.PostStatusPrivate
-}
+func (p *Post) IsPublic() bool  { return p.Post.Status == models.PostStatusPublic }
+func (p *Post) IsPartial() bool { return p.Post.Status == models.PostStatusPartial }
+func (p *Post) IsPrivate() bool { return p.Post.Status == models.PostStatusPrivate }
+func (p *Post) IsDraft() bool   { return p.Post.Status == models.PostStatusDraft }
 
 func (p *Post) CommentString() string {
 	if p.Comments == 0 {

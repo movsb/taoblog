@@ -83,15 +83,23 @@ message DeleteCommentResponse {
 enum Ownership {
 	OwnershipUnknown = 0;
 	// 自己创建的。
+	// 不包含草稿。
 	OwnershipMine = 1;
 	// 他们分享的。
 	OwnershipShared = 2;
 	// 自己创建的 + 他们分享的。
+	// 不包含草稿。
 	OwnershipMineAndShared = 3;
 	// 他们分享的 + 他们公开的。
 	OwnershipTheir = 4;
 	// 自己创建的 + 他们分享的 + 他们公开的。
+	// 不包含草稿。
 	OwnershipAll = 100;
+
+	// 特殊的。
+	// 自己的草稿。
+	// 等等……为什么不是加一个 status 过滤参数？
+	OwnershipDrafts = 200;
 }
 
 message ListCommentsRequest {

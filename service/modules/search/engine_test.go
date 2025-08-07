@@ -54,7 +54,7 @@ func TestPerm(t *testing.T) {
 	if err := engine.IndexPosts(context.TODO(), []*proto.Post{
 		{Id: 1, Title: `公开文章`, Status: models.PostStatusPublic, UserId: int32(u1.ID)},
 		{Id: 2, Title: `私有文章`, Status: models.PostStatusPrivate, UserId: int32(u2.ID)},
-		{Id: 3, Title: `私有文章`, Status: models.PostStatusPrivate, UserId: int32(u3.ID)},
+		{Id: 3, Title: `草稿文章`, Status: models.PostStatusDraft, UserId: int32(u3.ID)},
 	}); err != nil {
 		t.Fatal(err)
 	}

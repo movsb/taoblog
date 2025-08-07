@@ -44,9 +44,10 @@ func TestListPosts(t *testing.T) {
 		return utils.Must1(r.client.Blog.CreatePost(user, p))
 	}
 
-	pa := create(r.admin, &proto.Post{Source: `# admin`, SourceType: `markdown`})
-	p1 := create(r.user1, &proto.Post{Source: `# user1`, SourceType: `markdown`})
-	p2 := create(r.user2, &proto.Post{Source: `# user2`, SourceType: `markdown`})
+	pa := create(r.admin, &proto.Post{Source: `# admin`, SourceType: `markdown`, Status: models.PostStatusPrivate})
+	p1 := create(r.user1, &proto.Post{Source: `# user1`, SourceType: `markdown`, Status: models.PostStatusPrivate})
+	p2 := create(r.user2, &proto.Post{Source: `# user2`, SourceType: `markdown`, Status: models.PostStatusPrivate})
+	p3 := create(r.user1, &proto.Post{Source: `# user1 & draft`, SourceType: `markdown`, Status: models.PostStatusDraft})
 	if pa.Id != 1 {
 		panic(`应该=1`)
 	}
@@ -56,6 +57,10 @@ func TestListPosts(t *testing.T) {
 	eq(`管理员自己的`, r.admin, proto.Ownership_OwnershipMine, []int64{pa.Id})
 	eq(`用户1自己的`, r.user1, proto.Ownership_OwnershipMine, []int64{p1.Id})
 	eq(`用户2自己的`, r.user2, proto.Ownership_OwnershipMine, []int64{p2.Id})
+
+	eq(`管理员自己的（含草稿）`, r.admin, proto.Ownership_OwnershipDrafts, []int64{})
+	eq(`用户1自己的（含草稿）`, r.user1, proto.Ownership_OwnershipDrafts, []int64{p3.Id})
+	eq(`用户2自己的（含草稿）`, r.user2, proto.Ownership_OwnershipDrafts, []int64{})
 
 	eq(`管理员看别人公开和分享的`, r.admin, proto.Ownership_OwnershipTheir, []int64{})
 	eq(`用户1看别人公开和分享的`, r.user1, proto.Ownership_OwnershipTheir, []int64{})

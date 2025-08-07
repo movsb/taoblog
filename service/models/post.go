@@ -50,8 +50,9 @@ type PostStatus string
 
 const (
 	PostStatusPublic  = `public`  // 所有人可见。
-	PostStatusPrivate = `draft`   // 仅自己可见。
 	PostStatusPartial = `partial` // 仅对指定的人可见。
+	PostStatusPrivate = `private` // 仅自己可见。
+	PostStatusDraft   = `draft`   // 仅自己可见，草稿。仅显示在草稿箱，不在文章列表中显示。
 )
 
 type Post struct {

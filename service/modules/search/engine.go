@@ -117,7 +117,7 @@ func (e *Engine) getWriter() (*bluge.Writer, error) {
 	return writer, nil
 }
 
-// 只能搜索公开文章和自己的文章，不包含分享的。
+// 只能搜索公开文章和自己的文章（含草稿），暂不包含分享的。
 func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*SearchResult, err error) {
 	writer, err := e.getWriter()
 	if err != nil {

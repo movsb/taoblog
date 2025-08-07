@@ -282,23 +282,6 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	postsPublishCmd.Flags().BoolP(`touch`, `t`, false, `Touch create_time and update_time`)
 	postsCmd.AddCommand(postsPublishCmd)
-	postsDraftCmd := &cobra.Command{
-		Use:   `draft [post-id]`,
-		Short: `Unpublish this post (make it a draft)`,
-		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			var postID int64
-			var err error
-			if len(args) == 1 {
-				postID, err = strconv.ParseInt(args[0], 10, 0)
-				if err != nil {
-					panic(err)
-				}
-			}
-			client.SetPostStatus(postID, models.PostStatusPrivate, false)
-		},
-	}
-	postsCmd.AddCommand(postsDraftCmd)
 	postsGetCmd := &cobra.Command{
 		Use:   `get`,
 		Short: `(Don't use)`,

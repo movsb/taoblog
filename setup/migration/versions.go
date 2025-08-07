@@ -839,3 +839,7 @@ func v60(posts, files, cache *taorm.DB) {
 	files.MustExec("ALTER TABLE files_new RENAME TO files")
 	// 索引自动跟表走，无需更名。
 }
+
+func v61(posts, files, cache *taorm.DB) {
+	posts.MustExec(`UPDATE posts SET status='private' WHERE status='draft'`)
+}

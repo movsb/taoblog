@@ -294,7 +294,7 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 			return nil, fmt.Errorf(`未知所有者。`)
 		case proto.Ownership_OwnershipMine:
 			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
-			stmt.Where(`posts.user_id=?`, ac.User.ID)
+			stmt.Where(`posts.user_id=? AND posts.status!=?`, ac.User.ID, models.PostStatusDraft)
 		case proto.Ownership_OwnershipTheir:
 			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
 			stmt.InnerJoin(models.AccessControlEntry{}, `comments.post_id=acl.post_id`)
@@ -306,15 +306,15 @@ func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsReques
 			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `comments.post_id=acl.post_id`)
 			stmt.Where(
-				`posts.user_id=? OR (acl.user_id=? AND posts.status = ?)`,
-				ac.User.ID, ac.User.ID, models.PostStatusPartial,
+				`(posts.user_id=? AND posts.status!=?) OR (acl.user_id=? AND posts.status = ?)`,
+				ac.User.ID, models.PostStatusDraft, ac.User.ID, models.PostStatusPartial,
 			)
 		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
 			stmt.InnerJoin(models.Post{}, `comments.post_id=posts.id`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
-				`posts.user_id=? OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
-				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
+				`(posts.user_id=? AND posts.status!=?) OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
+				ac.User.ID, models.PostStatusDraft, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
 			)
 		}
 	}

@@ -79,8 +79,10 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 		switch in.Ownership {
 		default:
 			return nil, fmt.Errorf(`未知所有者。`)
+		case proto.Ownership_OwnershipDrafts:
+			stmt.Where(`user_id=? AND status=?`, ac.User.ID, models.PostStatusDraft)
 		case proto.Ownership_OwnershipMine:
-			stmt.Where(`user_id=?`, ac.User.ID)
+			stmt.Where(`user_id=? AND status!=?`, ac.User.ID, models.PostStatusDraft)
 		case proto.Ownership_OwnershipShared:
 			stmt.Select(`distinct posts.*`)
 			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
@@ -99,15 +101,15 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 			stmt.Select(`distinct posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
-				`posts.user_id=? OR (acl.user_id=? AND posts.status = ?)`,
-				ac.User.ID, ac.User.ID, models.PostStatusPartial,
+				`(posts.user_id=? AND posts.status!=?) OR (acl.user_id=? AND posts.status = ?)`,
+				ac.User.ID, models.PostStatusDraft, ac.User.ID, models.PostStatusPartial,
 			)
 		case proto.Ownership_OwnershipUnknown, proto.Ownership_OwnershipAll:
 			stmt.Select(`distinct posts.*`)
 			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
-				`posts.user_id=? OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
-				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
+				`(posts.user_id=? AND posts.status!=?) OR (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
+				ac.User.ID, models.PostStatusDraft, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
 			)
 		}
 	} else {
@@ -486,7 +488,7 @@ func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, 
 		Slug:       in.Slug,
 		Type:       in.Type,
 		Category:   in.Category,
-		Status:     models.PostStatusPrivate,
+		Status:     models.PostStatusDraft,
 		Metas:      *models.PostMetaFrom(in.Metas),
 		Source:     in.Source,
 		SourceType: in.SourceType,
@@ -1084,6 +1086,7 @@ func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequ
 			models.PostStatusPublic,
 			models.PostStatusPartial,
 			models.PostStatusPrivate,
+			models.PostStatusDraft,
 		}, in.Status) {
 			return errors.New(`无效状态`)
 		}
