@@ -44,7 +44,9 @@ func (m *_Colors) TransformHtml(doc *goquery.Document) error {
 		transform(s)
 	})
 	doc.Find(`colors`).Each(func(i int, s *goquery.Selection) {
-		s.ReplaceWithHtml(table())
+		if s.Parent().Children().Length() == 1 {
+			s.Parent().ReplaceWithHtml(table())
+		}
 	})
 	return nil
 }
