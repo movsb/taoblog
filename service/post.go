@@ -71,7 +71,11 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 	ac := auth.Context(ctx)
 
 	var posts models.Posts
-	stmt := s.posts().Limit(int64(in.Limit)).OrderBy(in.OrderBy)
+
+	stmt := s.posts().
+		Limit(int64(in.Limit)).
+		// ORM 会安全校验 order by 语句是否规范，这里不用校验。
+		OrderBy(in.OrderBy)
 
 	if ac.User.IsSystem() {
 		// nothing to do

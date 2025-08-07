@@ -132,6 +132,7 @@ func (a *Admin) Handler() http.Handler {
 
 	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
 	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
+	m.Handle(`GET /drafts`, a.requireLogin(a.getDrafts))
 	m.Handle(`GET /reorder`, a.requireLogin(a.getReorder))
 	m.Handle(`GET /otp`, a.requireLogin(a.getOTP))
 	m.Handle(`POST /otp`, a.requireLogin(a.postOTP))
@@ -473,4 +474,22 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.HTTPError(w, http.StatusBadRequest)
+}
+
+type DraftsData struct {
+	// 按更新时间降序排列。
+	Posts []*proto.Post
+}
+
+func (a *Admin) getDrafts(w http.ResponseWriter, r *http.Request) {
+	auth.MustNotBeGuest(r.Context())
+
+	d := DraftsData{
+		Posts: utils.Must1(a.svc.ListPosts(r.Context(), &proto.ListPostsRequest{
+			OrderBy:   `modified desc`,
+			Ownership: proto.Ownership_OwnershipDrafts,
+		})).Posts,
+	}
+
+	a.executeTemplate(w, `drafts.html`, &d)
 }
