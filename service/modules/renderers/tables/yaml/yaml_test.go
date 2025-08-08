@@ -2,11 +2,11 @@ package yaml_test
 
 import (
 	"fmt"
+	"html"
 	"os"
 	"strings"
 	"testing"
 
-	goyaml "github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/modules/utils"
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers/tables/yaml"
@@ -19,40 +19,6 @@ func TestAll(t *testing.T) {
 		HTML        string     `yaml:"html"`
 	}
 	testCases := test_utils.MustLoadCasesFromYaml[TestCase](`testdata/tests.yaml`)
-	for _, tc := range testCases {
-		buf := strings.Builder{}
-		utils.Must(tc.Table.Render(&buf))
-		h := buf.String()
-		if h != tc.HTML {
-			fmt.Printf("%s:\nwant:\n%s\ngot:\n%s", tc.Description, tc.HTML, h)
-			t.Error(`⬆️⬆️⬆️`)
-		}
-	}
-}
-
-func TestRender(t *testing.T) {
-	const table = `
-rows:
-  - cols:
-      - 1
-      - text: text content
-        formats: [bold,italic,right]
-      - 3
-  - cols:
-      - 1
-      - text: text content / text content / 33234
-        formats: [ins]
-      - 3
-  - cols:
-      - 1
-      - text: 2
-        colspan: 2
-  - - text: 4
-      rowspan: 2
-    - 5
-    - 6
-  - [8,9]
-`
 
 	const name = `test.html`
 	fp := utils.Must1(os.Create(name))
@@ -67,7 +33,7 @@ table, th, td {
 	border-collapse: collapse;
 }
 th, td {
-	padding: 1em;
+	padding: .5em 1em;
 }
 
 .bold       { font-weight: bold; }
@@ -81,20 +47,26 @@ th, td {
 .left       { text-align: left; }
 .center     { text-align: center; }
 .right      { text-align: right; }
+.pre        { white-space: pre; }
 
 </style>
 </head>
 <body>
 `)
-
-	tab := yaml.Table{}
-	utils.Must(goyaml.Unmarshal([]byte(table), &tab))
-	buf := strings.Builder{}
-	utils.Must(tab.Render(&buf))
-	fp.WriteString(buf.String())
-
-	fp.WriteString(`
+	defer fp.WriteString(`
 </body>
 </html>
 `)
+	for _, tc := range testCases {
+		buf := strings.Builder{}
+		utils.Must(tc.Table.Render(&buf))
+		h := buf.String()
+		if h != tc.HTML {
+			fmt.Printf("%s:\nwant:\n%s\ngot:\n%s", tc.Description, tc.HTML, h)
+			t.Error(`⬆️⬆️⬆️`)
+			continue
+		}
+		fmt.Fprintf(fp, `<h2>%s</h2>`, html.EscapeString(tc.Description))
+		fp.WriteString(buf.String())
+	}
 }

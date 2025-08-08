@@ -35,18 +35,79 @@
           - 1
           - 2
           # 默认为普通文本，原样输出，但是应该考虑给 td 加 white-space: pre;
-          - |
-            this is
-            a multiline
-            yaml text.
+          - text: |
+              this is
+              a multiline
+              yaml text.
+            formats: [bold]
   html: |
     <table>
     <thead>
     </thead>
     <tbody>
-    <tr><td>1</td><td>2</td><td>this is
+    <tr><td>1</td><td>2</td><td class="bold"><span class="pre">this is
     a multiline
     yaml text.
+    </span></td></tr>
+    </tbody>
+    </table>
+
+- description: 可以内嵌表格
+  table:
+    rows:
+      - cols:
+          - 1
+          - text content
+      - - 2
+        - - 123 456
+          - table:
+              rows:
+                - [1,2,3]
+                - [4,5,6]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td><span class="pre">text content</span></td></tr>
+    <tr><td>2</td><td><p><span class="pre">123 456</span></p><table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>4</td><td>5</td><td>6</td></tr>
+    </tbody>
+    </table>
+    </td></tr>
+    </tbody>
+    </table>
+
+- description: 甚至可以把某个单元格分开写成数组（对应复杂情况）
+  table:
+    rows:
+      - cols:
+          - 1
+          - 2
+          - - 1
+            - text: 333
+              formats: [del]
+            - text: 222
+              formats: [ins]
+            - table:
+                rows: [[1,2,3],[4,5,6]]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td><p>1<span class="del">333</span><span class="ins">222</span></p><table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>4</td><td>5</td><td>6</td></tr>
+    </tbody>
+    </table>
     </td></tr>
     </tbody>
     </table>
@@ -62,7 +123,7 @@
     <thead>
     </thead>
     <tbody>
-    <tr><td>1</td><td>text content</td></tr>
+    <tr><td>1</td><td><span class="pre">text content</span></td></tr>
     </tbody>
     </table>
 
@@ -78,7 +139,7 @@
     <thead>
     </thead>
     <tbody>
-    <tr><td>1</td><td class="bold italic">text content</td></tr>
+    <tr><td>1</td><td class="bold italic"><span class="pre">text content</span></td></tr>
     </tbody>
     </table>
 
@@ -94,7 +155,7 @@
     <thead>
     </thead>
     <tbody>
-    <tr><td>1</td><td class="bold italic underline strike code ins del kbd left center right">text content</td></tr>
+    <tr><td>1</td><td class="bold italic underline strike code ins del kbd left center right"><span class="pre">text content</span></td></tr>
     </tbody>
     </table>
 
