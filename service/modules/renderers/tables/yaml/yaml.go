@@ -18,12 +18,29 @@ type Table struct {
 
 	headerRows map[int]struct{}
 	headerCols map[int]struct{}
+
+	markdownRenderer MarkdownRenderer
+}
+
+type MarkdownRenderer func(text string) (string, error)
+
+func (t *Table) SetTextRenderer(tr MarkdownRenderer) {
+	t.markdownRenderer = tr
 }
 
 func (t *Table) isTH(r, c int) bool {
 	_, ok1 := t.headerRows[r]
 	_, ok2 := t.headerCols[c]
 	return ok1 || ok2
+}
+
+func (t *Table) setRoot() {
+	for _, row := range t.Rows {
+		row.root = t
+		for _, col := range row.Cols {
+			col.setRoot(t)
+		}
+	}
 }
 
 func (t *Table) calculateCoords() {
@@ -37,13 +54,6 @@ func (t *Table) calculateCoords() {
 		t.headerCols = make(map[int]struct{})
 		for _, n := range t.Headers[1] {
 			t.headerCols[n] = struct{}{}
-		}
-	}
-
-	for _, row := range t.Rows {
-		row.root = t
-		for _, col := range row.Cols {
-			col.root = t
 		}
 	}
 
@@ -107,9 +117,10 @@ func (t *Table) calculateCoords() {
 }
 
 func (t *Table) Render(buf *strings.Builder) error {
+	t.setRoot()
 	t.calculateCoords()
 
-	buf.WriteString("<table>\n")
+	buf.WriteString("<table class=\"yaml\">\n")
 
 	// 暂时没使用。
 	// 表头更应该放在 thead 中，方便打印时自动分页的时候
@@ -159,11 +170,12 @@ func (r *Row) UnmarshalYAML(unmarshal func(any) error) error {
 type Col struct {
 	root *Table
 
-	// 文本、表格或是数组构成的。
-	// 三选一。
-	Text  string `yaml:"text"`
-	Table *Table `yaml:"table"`
-	Cols  []*Col
+	// 文本、Markdown、表格或是数组构成的。
+	// 四选一。
+	Text     string `yaml:"text"`
+	Markdown string `yaml:"markdown"`
+	Table    *Table `yaml:"table"`
+	Cols     []*Col
 
 	// 值为 0 时表示没设置，处理为 1.
 	ColSpan int `yaml:"colspan"`
@@ -228,19 +240,30 @@ func (c *Col) Render(buf *strings.Builder) error {
 	return nil
 }
 
+// t := fmt.Sprintf(`(%d,%d)(%d,%d)`, c.coords.r1, c.coords.c1, c.coords.r2, c.coords.c2)
+// writeText(buf, t)
 func writeText(buf *strings.Builder, t string) {
 	if strings.ContainsAny(t, " \n\t") {
 		buf.WriteString(`<span class="pre">`)
 		defer buf.WriteString(`</span>`)
+
 	}
 	buf.WriteString(html.EscapeString(t))
 }
 
 func (c *Col) renderContent(buf *strings.Builder) error {
 	if c.Text != `` {
-		// t := fmt.Sprintf(`(%d,%d)(%d,%d)`, c.coords.r1, c.coords.c1, c.coords.r2, c.coords.c2)
-		// writeText(buf, t)
 		writeText(buf, c.Text)
+	} else if c.Markdown != `` {
+		if tr := c.root.markdownRenderer; tr != nil {
+			text, err := tr(c.Markdown)
+			if err != nil {
+				return err
+			}
+			buf.WriteString(text)
+		} else {
+			writeText(buf, c.Markdown)
+		}
 	} else if c.Table != nil {
 		if err := c.Table.Render(buf); err != nil {
 			return err
@@ -282,6 +305,16 @@ func (c *Col) renderContent(buf *strings.Builder) error {
 		}
 	}
 	return nil
+}
+
+func (c *Col) setRoot(t *Table) {
+	c.root = t
+	for _, col := range c.Cols {
+		col.setRoot(t)
+	}
+	if c.Table != nil {
+		c.Table.setRoot()
+	}
 }
 
 type Styles struct {

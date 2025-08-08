@@ -97,6 +97,10 @@ func WithoutTransform() Option {
 	}
 }
 
+func (me *_Markdown) EnableTransform(enable bool) {
+	me.noTransform = !enable
+}
+
 // 修改锚点页内引用（#）的指向为绝对地址。
 // https://github.com/movsb/taoblog/blob/5c86466f3c1ab2f1543c3a5be4abc24f9c60c532/docs/TODO.md
 func WithModifiedAnchorReference(relativePath string) Option {

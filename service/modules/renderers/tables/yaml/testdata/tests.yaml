@@ -5,7 +5,7 @@
       - [4,5,6]
       - [7,8,9]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -21,7 +21,7 @@
       - cols: [1,2,3]
       - cols: [a,b,"<c>"]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -43,7 +43,7 @@
               yaml text.
             formats: [bold]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -67,12 +67,12 @@
                 - [1,2,3]
                 - [4,5,6]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
     <tr><td>1</td><td><span class="pre">text content</span></td></tr>
-    <tr><td>2</td><td><p><span class="pre">123 456</span></p><table>
+    <tr><td>2</td><td><p><span class="pre">123 456</span></p><table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -98,11 +98,11 @@
             - table:
                 rows: [[1,2,3],[4,5,6]]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
-    <tr><td>1</td><td>2</td><td><p>1<span class="del">333</span><span class="ins">222</span></p><table>
+    <tr><td>1</td><td>2</td><td><p>1<span class="del">333</span><span class="ins">222</span></p><table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -121,7 +121,7 @@
           - 1
           - text: text content
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -137,7 +137,7 @@
           - text: text content
             formats: [bold,italic]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -153,7 +153,7 @@
           - text: text content
             formats: [bold,italic,underline,strike,code,ins,del,kbd,left,center,right]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -174,7 +174,7 @@
         - 6
       - [8,9]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -194,7 +194,7 @@
       - cols: [1,2,3]
       - cols: [a,b,*c]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
@@ -211,7 +211,7 @@
       - [4,5,6]
       - [7,8,9]
   html: |
-    <table>
+    <table class="yaml">
     <thead>
     </thead>
     <tbody>
