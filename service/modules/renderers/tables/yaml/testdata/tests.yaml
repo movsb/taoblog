@@ -3,6 +3,7 @@
     rows:
       - [1,2,3]
       - [4,5,6]
+      - [7,8,9]
   html: |
     <table>
     <thead>
@@ -10,6 +11,7 @@
     <tbody>
     <tr><td>1</td><td>2</td><td>3</td></tr>
     <tr><td>4</td><td>5</td><td>6</td></tr>
+    <tr><td>7</td><td>8</td><td>9</td></tr>
     </tbody>
     </table>
 
@@ -198,5 +200,23 @@
     <tbody>
     <tr><td>1</td><td>2</td><td>3</td></tr>
     <tr><td>a</td><td>b</td><td class="italic">1</td></tr>
+    </tbody>
+    </table>
+
+- description: 可以有表头
+  table:
+    headers: [[1],[1]]
+    rows:
+      - [1,2,3]
+      - [4,5,6]
+      - [7,8,9]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><th>1</th><th>2</th><th>3</th></tr>
+    <tr><th>4</th><td>5</td><td>6</td></tr>
+    <tr><th>7</th><td>8</td><td>9</td></tr>
     </tbody>
     </table>

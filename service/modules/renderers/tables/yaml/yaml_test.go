@@ -35,6 +35,9 @@ table, th, td {
 th, td {
 	padding: .5em 1em;
 }
+th {
+	background-color: beige;
+}
 
 .bold       { font-weight: bold; }
 .italic     { font-style: italic; }
@@ -59,14 +62,18 @@ th, td {
 `)
 	for _, tc := range testCases {
 		buf := strings.Builder{}
+		if tc.Description == `设置 rowspan 和 colspan` {
+			// debug here
+			buf.Write(nil)
+		}
 		utils.Must(tc.Table.Render(&buf))
 		h := buf.String()
+		fmt.Fprintf(fp, `<h2>%s</h2>`, html.EscapeString(tc.Description))
+		fp.WriteString(h)
 		if h != tc.HTML {
 			fmt.Printf("%s:\nwant:\n%s\ngot:\n%s", tc.Description, tc.HTML, h)
 			t.Error(`⬆️⬆️⬆️`)
 			continue
 		}
-		fmt.Fprintf(fp, `<h2>%s</h2>`, html.EscapeString(tc.Description))
-		fp.WriteString(buf.String())
 	}
 }
