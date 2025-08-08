@@ -739,8 +739,10 @@ class PostFormUI {
 	setPreview(v, ok)  {
 		if (!ok) {
 			this.elemPreviewContainer.innerText = v;
+			this.elemPreviewContainer.style.whiteSpace = 'pre';
 		} else {
 			this.elemPreviewContainer.innerHTML = v;
+			this.elemPreviewContainer.style.whiteSpace = '';
 		}
 		this._previewCallbackReturned = true;
 	}

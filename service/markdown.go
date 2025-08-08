@@ -43,7 +43,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/scoped_css"
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/movsb/taoblog/service/modules/renderers/tables"
-	"github.com/movsb/taoblog/service/modules/renderers/tables/csv"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
 	"github.com/yuin/goldmark/extension"
 
@@ -106,6 +105,9 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 	if co.UseAbsolutePaths {
 		options = append(options, rooted_path.New(assets))
 	}
+
+	var renderMarkdown func(markdown string) (string, error)
+
 	options = append(options,
 		media_size.New(assets,
 			media_size.WithLocalOnly(),
@@ -139,7 +141,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),
 		// renderers.WithFencedCodeBlockRenderer(`rss`, rss.New(s.rssTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`echarts`, echarts.New(s.fileCache.GetOrLoad)),
-		renderers.WithFencedCodeBlockRenderer(`csv`, csv.New()),
+		renderers.WithFencedCodeBlockRenderer(`csv`, tables.NewCSV()),
+		renderers.WithFencedCodeBlockRenderer(`yaml+table`, tables.NewYAML(func(text string) (string, error) {
+			return renderMarkdown(text)
+		})),
 
 		// 所有人禁止贴无效协议的链接。
 		invalid_scheme.New(),
@@ -161,6 +166,15 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 	tr.AddHtmlTransformers(
 		tables.NewTableWrapper(),
 	)
+
+	// 不知道多次渲染会不会有数据冲突。
+	renderMarkdown = func(markdown string) (string, error) {
+		// 临时免表格产生的 html 被 transform 一次后再被最终的 html transform 一次。
+		tr.EnableTransform(false)
+		t, err := tr.Render(markdown)
+		tr.EnableTransform(true)
+		return t, err
+	}
 
 	rendered, err := tr.Render(source)
 	if err != nil {
