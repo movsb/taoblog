@@ -7,7 +7,8 @@ import (
 )
 
 type Table struct {
-	Rows []Row `yaml:"rows"`
+	Cells any   `yaml:"cells"`
+	Rows  []Row `yaml:"rows"`
 }
 
 func (t *Table) Render(buf *strings.Builder) error {

@@ -181,3 +181,22 @@
     <tr><td>8</td><td>9</td></tr>
     </tbody>
     </table>
+
+- description: YAML 的 Anchor/Reference 是可以使用（方便把复杂数据独立出去，行写在一起）
+  table:
+    cells:
+      c: &c
+        text: 1
+        formats: [italic]
+    rows:
+      - cols: [1,2,3]
+      - cols: [a,b,*c]
+  html: |
+    <table>
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>a</td><td>b</td><td class="italic">1</td></tr>
+    </tbody>
+    </table>
