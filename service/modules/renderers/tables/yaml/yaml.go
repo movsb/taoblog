@@ -12,7 +12,7 @@ type Table struct {
 	// 存放 Anchor 数据。
 	Cells any `yaml:"cells"`
 	// 包含两个元素的数组，分别表示哪些行、哪些列作为表头渲染，从 1 开始。
-	Headers [][]int `yaml:"headers"`
+	Headers [2]Headers `yaml:"headers"`
 	// 行数据。每行包含所有的列数据。
 	Rows []*Row `yaml:"rows"`
 
@@ -20,6 +20,20 @@ type Table struct {
 	headerCols map[int]struct{}
 
 	markdownRenderer MarkdownRenderer
+}
+
+type Headers []int
+
+func (h *Headers) UnmarshalYAML(unmarshal func(any) error) error {
+	if err := unmarshal((*[]int)(h)); err == nil {
+		return nil
+	}
+	var n int
+	if err := unmarshal(&n); err == nil {
+		*h = []int{n}
+		return nil
+	}
+	return fmt.Errorf(`bad headers`)
 }
 
 type MarkdownRenderer func(text string) (string, error)
@@ -114,6 +128,15 @@ func (t *Table) calculateCoords() {
 			}
 		}
 	}
+}
+
+type _PlainTable Table
+
+func (t *Table) UnmarshalYAML(unmarshal func(any) error) error {
+	if err := unmarshal(&t.Rows); err == nil {
+		return nil
+	}
+	return unmarshal((*_PlainTable)(t))
 }
 
 func (t *Table) Render(buf *strings.Builder) error {
@@ -315,11 +338,6 @@ func (c *Col) setRoot(t *Table) {
 	if c.Table != nil {
 		c.Table.setRoot()
 	}
-}
-
-type Styles struct {
-	Color      string `yaml:"color"`
-	Background string `yaml:"background"`
 }
 
 func renderFormats(buf *strings.Builder, formats []string) error {

@@ -1,3 +1,19 @@
+- description: 原生 JSON 数组写法（简单模式）
+  table:
+    - [1,2,3]
+    - [4,5,6]
+    - [a,b,c]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td>4</td><td>5</td><td>6</td></tr>
+    <tr><td>a</td><td>b</td><td>c</td></tr>
+    </tbody>
+    </table>
+
 - description: 原生 JSON 数组写法
   table:
     rows:
@@ -205,7 +221,7 @@
 
 - description: 可以有表头
   table:
-    headers: [[1],[1]]
+    headers: [1,1]
     rows:
       - [1,2,3]
       - [4,5,6]
@@ -218,5 +234,23 @@
     <tr><th>1</th><th>2</th><th>3</th></tr>
     <tr><th>4</th><td>5</td><td>6</td></tr>
     <tr><th>7</th><td>8</td><td>9</td></tr>
+    </tbody>
+    </table>
+
+- description: 可以有表头，甚至是多列
+  table:
+    headers: [[1,3],[1,3]]
+    rows:
+      - [1,2,3]
+      - [4,5,6]
+      - [7,8,9]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><th>1</th><th>2</th><th>3</th></tr>
+    <tr><th>4</th><td>5</td><th>6</th></tr>
+    <tr><th>7</th><th>8</th><th>9</th></tr>
     </tbody>
     </table>
