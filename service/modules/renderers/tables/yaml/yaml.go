@@ -104,7 +104,7 @@ func (t *Table) calculateCoords() {
 								goto out
 							}
 							cc := t.Rows[x].Cols[y].coords
-							if cc.r1 <= tr && tr <= cc.r2 && cc.c1 <= tc && tc <= cc.c2 {
+							if cc.includes(tr, tc) {
 								tc++
 								goto retry
 							}
@@ -167,11 +167,18 @@ func (t *Table) Render(buf *strings.Builder) error {
 type Row struct {
 	root *Table
 
-	Cols []*Col `yaml:"cols"`
+	Cols    []*Col   `yaml:"cols"`
+	Formats []string `yaml:"formats"`
 }
 
 func (r *Row) Render(buf *strings.Builder) error {
-	buf.WriteString(`<tr>`)
+	buf.WriteString(`<tr`)
+	if len(r.Formats) > 0 {
+		buf.WriteString(` class="`)
+		renderFormats(buf, r.Formats)
+		buf.WriteString(`"`)
+	}
+	buf.WriteString(`>`)
 	for _, col := range r.Cols {
 		if err := col.Render(buf); err != nil {
 			return err
@@ -216,6 +223,10 @@ type Col struct {
 type Coords struct {
 	r1, c1 int
 	r2, c2 int
+}
+
+func (cc Coords) includes(r, c int) bool {
+	return cc.r1 <= r && r <= cc.r2 && cc.c1 <= c && c <= cc.c2
 }
 
 type _PlainCol Col

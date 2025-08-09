@@ -254,3 +254,23 @@
     <tr><th>7</th><th>8</th><th>9</th></tr>
     </tbody>
     </table>
+
+- description: 可以按行设置格式
+  table:
+    rows:
+      - cols: [1,22222222,3]
+        formats: [left]
+      - cols: [44444444,5,6]
+        formats: [center]
+      - cols: [7,8,99999999]
+        formats: [right]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr class="left"><td>1</td><td>22222222</td><td>3</td></tr>
+    <tr class="center"><td>44444444</td><td>5</td><td>6</td></tr>
+    <tr class="right"><td>7</td><td>8</td><td>99999999</td></tr>
+    </tbody>
+    </table>
