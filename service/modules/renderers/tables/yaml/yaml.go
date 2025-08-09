@@ -9,12 +9,19 @@ import (
 )
 
 type Table struct {
-	// 存放 Anchor 数据。
+	// 存放用于被引用的 Anchor 数据。
 	Cells any `yaml:"cells"`
+
 	// 包含两个元素的数组，分别表示哪些行、哪些列作为表头渲染，从 1 开始。
 	Headers [2]Headers `yaml:"headers"`
+
 	// 行数据。每行包含所有的列数据。
 	Rows []*Row `yaml:"rows"`
+
+	// 临时：列格式控制。
+	Cols map[int]struct {
+		Formats []string `yaml:"formats"`
+	} `yaml:"cols"`
 
 	headerRows map[int]struct{}
 	headerCols map[int]struct{}
@@ -256,9 +263,13 @@ func (c *Col) Render(buf *strings.Builder) error {
 		fmt.Fprintf(buf, ` rowspan="%d"`, c.RowSpan)
 	}
 
-	if len(c.Formats) > 0 {
+	colAttr, _ := c.root.Cols[c.coords.c1]
+
+	if len(c.Formats) > 0 || len(colAttr.Formats) > 0 {
 		buf.WriteString(` class="`)
-		if err := renderFormats(buf, c.Formats); err != nil {
+		all := append([]string{}, c.Formats...)
+		all = append(all, colAttr.Formats...)
+		if err := renderFormats(buf, all); err != nil {
 			return err
 		}
 		buf.WriteString(`"`)

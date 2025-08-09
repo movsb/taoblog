@@ -274,3 +274,24 @@
     <tr class="right"><td>7</td><td>8</td><td>99999999</td></tr>
     </tbody>
     </table>
+
+- description: 按列设置格式是更常规的需求
+  table:
+    cols:
+      1: { formats: [left]   }
+      2: { formats: [center] }
+      3: { formats: [right]  }
+    rows:
+      - [1,22222222,3]
+      - [44444444,5,6]
+      - [7,8,99999999]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td class="left">1</td><td class="center">22222222</td><td class="right">3</td></tr>
+    <tr><td class="left">44444444</td><td class="center">5</td><td class="right">6</td></tr>
+    <tr><td class="left">7</td><td class="center">8</td><td class="right">99999999</td></tr>
+    </tbody>
+    </table>
