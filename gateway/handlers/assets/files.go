@@ -170,6 +170,8 @@ var numberOfAvifProcesses atomic.Int32
 // TODO:
 // 自动加上版权信息（方法一）：
 // https://chatgpt.com/share/6880633e-4858-8008-9b01-ba02bdd8c245
+//
+// dropGPSTags: 先完成转换之后再 Drop。
 func convertToAVIF(spec *proto.FileSpec, data []byte, dropGPSTags bool) (_ *proto.FileSpec, _ []byte, outErr error) {
 	defer utils.CatchAsError(&outErr)
 

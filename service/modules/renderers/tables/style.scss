@@ -2,6 +2,8 @@
 	// 这一行把 sticky 表格干没了
 	// “sticky 元素的父元素不能有 overflow: hidden/scroll/auto，否则失效”
 	overflow-x: auto;
+	// 如果加上限高，可能有所缓解。
+	max-height: 60vh;
 	margin: 1em 0;;
 
 	> table {

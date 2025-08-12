@@ -35,6 +35,10 @@ type _TableWrapper struct{}
 
 func (_TableWrapper) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`table`).Each(func(i int, s *goquery.Selection) {
+		// TODO 临时过滤。
+		if s.Parent().HasClass(`chroma`) {
+			return
+		}
 		s.WrapHtml(`<div class="table-wrapper"></div>`)
 	})
 	return nil
