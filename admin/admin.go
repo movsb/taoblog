@@ -434,6 +434,8 @@ type EditorData struct {
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
+	ac := auth.Context(r.Context())
+
 	if isNew := r.URL.Query().Get(`new`) == `1`; isNew {
 		ty := `markdown`
 		if st := r.URL.Query().Get(`type`); st != `` {
@@ -461,18 +463,23 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 			utils.HTTPError(w, 404)
 			return
 		}
+		if rsp.UserId != int32(ac.User.ID) {
+			utils.HTTPError(w, 403)
+			return
+		}
 		catsRsp, err := a.svc.ListCategories(r.Context(), &proto.ListCategoriesRequest{})
 		if err != nil {
 			utils.HTTPError(w, 400)
 		}
 		d := EditorData{
-			User: auth.Context(r.Context()).User,
+			User: ac.User,
 			Post: rsp,
 			Cats: catsRsp.Categories,
 		}
 		a.executeTemplate(w, `editor.html`, &d)
 		return
 	}
+
 	utils.HTTPError(w, http.StatusBadRequest)
 }
 
