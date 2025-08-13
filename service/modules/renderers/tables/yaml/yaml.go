@@ -23,10 +23,26 @@ type Table struct {
 		Formats []string `yaml:"formats"`
 	} `yaml:"cols"`
 
+	// <table>/<th>/<td> 的边框设置。
+	Border Border `yaml:"border"`
+
 	headerRows map[int]struct{}
 	headerCols map[int]struct{}
 
 	markdownRenderer MarkdownRenderer
+}
+
+type Border struct {
+	b *bool
+}
+
+func (b *Border) UnmarshalYAML(unmarshal func(any) error) error {
+	var bb bool
+	if err := unmarshal(&bb); err == nil {
+		b.b = &bb
+		return nil
+	}
+	return fmt.Errorf(`bad border`)
 }
 
 type Headers []int
@@ -150,7 +166,11 @@ func (t *Table) Render(buf *strings.Builder) error {
 	t.setRoot()
 	t.calculateCoords()
 
-	buf.WriteString("<table class=\"yaml\">\n")
+	buf.WriteString(`<table class="yaml`)
+	if b := t.Border.b; b != nil {
+		buf.WriteString(utils.IIF(*b, ` border`, ` no-border`))
+	}
+	buf.WriteString("\">\n")
 
 	// 暂时没使用。
 	// 表头更应该放在 thead 中，方便打印时自动分页的时候

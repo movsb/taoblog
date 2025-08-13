@@ -18,4 +18,17 @@ table.yaml {
 	td > :last-child {
 		margin-bottom: 0;
 	}
+
+	&.border {
+		&, td, th {
+			border: var(--table-border, '1px solid gray');
+			border-collapse: collapse;
+		}
+	}
+	&.no-border {
+		&, td, th {
+			border: none;
+			background-color: unset;
+		}
+	}
 }
