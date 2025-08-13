@@ -181,10 +181,10 @@ func table() string {
 		<th colspan=2>背景</th>
 	</tr>
 	<tr>
-		<td>浅色</td>
-		<td>深色</td>
-		<td>浅色</td>
-		<td>深色</td>
+		<th>浅色</th>
+		<th>深色</th>
+		<th>浅色</th>
+		<th>深色</th>
 	</tr>
 </thead>
 <tbody>

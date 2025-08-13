@@ -132,7 +132,13 @@ table {
 	// 维斯百科的表格没有 <thead>，所以这里的判断并不是很严格。
 	// https://blog.twofei.com/1419/
 	// https://blog.twofei.com/1418/
-	tr:first-of-type:has(th):not(:has(td)) {
+	// tr:first-of-type:has(th):not(:has(td)) {
+	// 有些表格可能包含多行表头
+	thead:has(tr) {
+		position: sticky;
+		top: 0;
+	}
+	tr:has(th):not(:has(td)) {
 		position: sticky;
 		top: 0;
 		th {
