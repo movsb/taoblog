@@ -48,6 +48,69 @@ document.write(function(){/*
 </div>
 */}.toString().slice(14,-3));
 
+class TextareaWithTab {
+	constructor(editor) {
+		this.editor = editor;
+		this.editor.addEventListener('keydown', (event)=>{
+			this.handleTab(event);
+		});
+	}
+
+	replace(start, end, text) {
+		this.editor.focus();
+
+		// 方案 A：优先用 execCommand，移动端（含 iOS Safari）更容易进撤销栈
+		const canExec = typeof document.execCommand === 'function' &&
+						(document.queryCommandSupported?.('insertText') ?? true);
+		if (canExec) {
+			this.editor.setSelectionRange(start, end);
+			const ok = document.execCommand('insertText', false, text);
+			if (ok) return;
+		}
+
+		// 方案 B：回退到 setRangeText（在桌面浏览器通常也能进入撤销栈）
+		if (typeof this.editor.setRangeText === 'function') {
+			this.editor.setRangeText(text, start, end, 'preserve');
+			return;
+		}
+
+		// 最后兜底（不保 undo）
+		this.editor.value = this.editor.value.slice(0, start) + text + this.editor.value.slice(end);
+	}
+
+	handleTab(e) {
+		if (e.key !== 'Tab') return;
+		e.preventDefault();
+
+		const v = this.editor.value;
+		let start = this.editor.selectionStart;
+		let end = this.editor.selectionEnd;
+		let selection = v.slice(start, end);
+
+		// 如果是多行选区，则将选区的每一行都缩进。
+		const multi = selection.includes('\n');
+		if (multi) {
+			while (start > 0 && v[start - 1] !== '\n') start--;
+			while (end < v.length && v[end] !== '\n') end++;
+			selection = v.slice(start, end);
+		}
+
+		const isShift = e.shiftKey;
+		const modified = selection
+			.split('\n')
+			.map(line => isShift ? line.replace(/^  /, '') : ('  ' + line))
+			.join('\n');
+
+		this.replace(start, end, modified);
+
+		if (multi) {
+			// 维持修改后的整段为选区，体验更接近编辑器
+			const newEnd = start + modified.length;
+			this.editor.setSelectionRange(start, newEnd);
+		}
+	}
+}
+
 class CommentAPI
 {
 	constructor(postID) {
@@ -454,6 +517,8 @@ class Comment {
 		});
 
 		this.preload();
+
+		new TextareaWithTab(this.form.elemSource)
 	}
 
 	preload() {

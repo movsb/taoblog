@@ -255,6 +255,8 @@ body.signed-in {
 		}
 		textarea {
 			line-height: inherit;
+			font-family: var(--font-mono, monospace) !important;
+			tab-size: 4;
 		}
 		#comment-preview {
 			padding: var(--textarea-padding);
