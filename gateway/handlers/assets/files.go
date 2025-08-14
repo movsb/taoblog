@@ -180,12 +180,20 @@ func convertToAVIF(spec *proto.FileSpec, data []byte, dropGPSTags bool) (_ *prot
 	utils.Must1(tmpInputFile.Write(data))
 	tmpInputFile.Close()
 
-	newPath, tmpOutputPath := utils.Must2(ConvertToAVIF(context.Background(), spec.Path, tmpInputFile.Name()))
+	newPath, tmpOutputPath := utils.Must2(ConvertToAVIF(context.Background(), spec.Path, tmpInputFile.Name(), true))
 
-	utils.Must(CopyTags(tmpInputFile.Name(), tmpOutputPath))
+	output := utils.Must1(CopyTags(tmpInputFile.Name(), tmpOutputPath))
+	// Warning: Error rebuilding maker notes (may be corrupt)
+	if strings.Contains(output, `Error rebuilding maker notes`) {
+		// utils.Must(DropMakerNotes(tmpOutputPath))
+		// 如果拷贝原始文件的元数据失败，可能是因为 MakerNotes 有问题。
+		// 直接重新转换，并不拷贝。
+		os.Remove(tmpOutputPath)
+		newPath, tmpOutputPath = utils.Must2(ConvertToAVIF(context.Background(), spec.Path, tmpInputFile.Name(), false))
+	}
 
 	if dropGPSTags {
-		utils.Must(DropGPSTags(tmpOutputPath))
+		utils.Must1(DropGPSTags(tmpOutputPath))
 	}
 
 	fpOutput := utils.Must1(os.Open(tmpOutputPath))

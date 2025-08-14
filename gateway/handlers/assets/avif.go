@@ -28,7 +28,7 @@ func isImageFile(path string) bool {
 //	格式转换后的文件路径。
 //
 // 由使用者负责删除临时文件。
-func ConvertToAVIF(ctx context.Context, path string, input string) (_ string, _ string, outErr error) {
+func ConvertToAVIF(ctx context.Context, path string, input string, keepTags bool) (_ string, _ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
 	if !isImageFile(path) {
@@ -44,7 +44,15 @@ func ConvertToAVIF(ctx context.Context, path string, input string) (_ string, _ 
 	tmpOutputFile.Close()
 
 	log.Println(`转换成 AVIF 格式：`, input, "->", tmpOutputFile.Name())
-	cmd := exec.CommandContext(ctx, `avifenc`, input, tmpOutputFile.Name())
+
+	var args []string
+	if keepTags {
+		args = []string{input, tmpOutputFile.Name()}
+	} else {
+		args = []string{`--ignore-exif`, `--ignore-xmp`, `--ignore-icc`, input, tmpOutputFile.Name()}
+	}
+
+	cmd := exec.CommandContext(ctx, `avifenc`, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	utils.Must(cmd.Run())
@@ -53,11 +61,10 @@ func ConvertToAVIF(ctx context.Context, path string, input string) (_ string, _ 
 }
 
 // copyTags 从源文件复制元数据到目标文件。
-func CopyTags(src, dst string) error {
+func CopyTags(src, dst string) (string, error) {
 	cmd := exec.Command("exiftool", "-overwrite_original", "-tagsFromFile", src, dst)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	return string(output), err
 }
 
 // 有些图像可能把 GPS 信息嵌在 XMP、ICC_Profile、MakerNotes 里（尤其是手机拍摄图）。
@@ -65,9 +72,16 @@ func CopyTags(src, dst string) error {
 //
 //   - [How do you delete GPS information in XMP metadata?](https://exiftool.org/forum/index.php?topic=4686.0)
 //   - [Deleting Exif GPS Tags](https://exiftool.org/forum/index.php?topic=7868.0)
-func DropGPSTags(file string) error {
+func DropGPSTags(file string) (string, error) {
 	cmd := exec.Command("exiftool", "-overwrite_original", "-gps*=", file)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	return string(output), err
 }
+
+// func DropMakerNotes(file string) error {
+// 	log.Println(`remove MakerNotes from`, file)
+// 	cmd := exec.Command("exiftool", "-overwrite_original", "-MakerNotes=", file)
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Stderr = os.Stderr
+// 	return cmd.Run()
+// }
