@@ -20,7 +20,7 @@ import (
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
-//go:embed style.css
+//go:embed style.css script.js
 var _embed embed.FS
 var _local = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
@@ -29,6 +29,7 @@ func init() {
 		const module = `image`
 		dynamic.WithRoots(module, nil, nil, _embed, _local)
 		dynamic.WithStyles(module, `style.css`)
+		dynamic.WithScripts(module, `script.js`)
 	})
 }
 

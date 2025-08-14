@@ -3,8 +3,15 @@ img {
 		filter: var(--image-filter) blur(50px);
 		clip-path: inset(0 round var(--border-radius, 4px));
 		transition: filter .5s ease;
-		&:hover {
-			filter: var(--image-filter);
+		// 移动端会长时间 hover 住，仅在桌面端应用，移动端始终靠点击触发取消。
+		@media (hover: hover) and (pointer: fine) {
+			&:hover {
+				filter: var(--image-filter);
+			}
 		}
+	}
+	&.blur-removed {
+		transition: filter .5s ease;
+		clip-path: inset(0 round var(--border-radius, 4px));
 	}
 }
