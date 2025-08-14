@@ -2,17 +2,35 @@ package image
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"log"
 	"net/url"
 	"strings"
 
+	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/util"
 )
+
+//go:generate sass --style compressed --no-source-map style.scss style.css
+
+//go:embed style.css
+var _embed embed.FS
+var _local = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
+
+func init() {
+	dynamic.RegisterInit(func() {
+		const module = `image`
+		dynamic.WithRoots(module, nil, nil, _embed, _local)
+		dynamic.WithStyles(module, `style.css`)
+	})
+}
 
 type Image struct {
 }
@@ -59,6 +77,11 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 	if q.Has(`t`) {
 		classes = append(classes, `transparent`)
 		q.Del(`t`)
+	}
+	// 模糊效果/闪图。
+	// 注意：不要给 live-photo 加，会自动去掉。
+	if q.Has(`blur`) {
+		classes = append(classes, `blur`)
 	}
 
 	url.RawQuery = q.Encode()

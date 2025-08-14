@@ -104,9 +104,12 @@ img, svg {
 	}
 }
 
+:root {
+	--image-filter: brightness(.7);
+}
 @media (prefers-color-scheme: dark) {
 	iframe, img, svg, video {
-		filter: brightness(.7);
+		filter: var(--image-filter);
 	}
 	audio {
 		filter: brightness(.6);

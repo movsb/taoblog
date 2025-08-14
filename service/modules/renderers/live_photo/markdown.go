@@ -68,6 +68,11 @@ func (e *LivePhoto) TransformHtml(doc *goquery.Document) error {
 			return
 		}
 
+		// 不要在实况照片上应用模糊效果。
+		if s.HasClass(`blur`) {
+			s.RemoveClass(`blur`)
+		}
+
 		// [!NOTE]
 		//
 		// 1. 由于渲染出来有 div 元素，需要把上一级的 p 替换掉。

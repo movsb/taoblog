@@ -1,0 +1,10 @@
+img {
+	&.blur {
+		filter: var(--image-filter) blur(50px);
+		clip-path: inset(0 round var(--border-radius, 4px));
+		transition: filter .5s ease;
+		&:hover {
+			filter: var(--image-filter);
+		}
+	}
+}
