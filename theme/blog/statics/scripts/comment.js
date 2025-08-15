@@ -19,9 +19,7 @@ document.write(function(){/*
 <!-- 评论框 -->
 <div id="comment-form-div">
 	<div class="no-sel nc drag-header">
-		<div class="ncbtns">
-			<div title="隐藏" class="close" onclick="comment.hide();"></div>
-		</div>
+		<div title="隐藏" class="close" onclick="comment.hide();">×</div>
 		<div class="comment-title">
 			<span id="comment-title-status">编辑评论</span>
 		</div>

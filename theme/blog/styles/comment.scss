@@ -1,5 +1,3 @@
-@use "assets";
-
 #comments {
 	.pointer {
 		cursor: pointer;
@@ -143,26 +141,21 @@ body.signed-in {
 
 	.nc {
 		height: 38px;
+		margin: 0 -10px 0;
 		cursor: move;
-	}
-
-	.ncbtns {
-		z-index: 1000;
-		position: absolute;
-		top: 6px;
-		cursor: pointer;
-		height: 25px;
-		right: 10px;
-		
 		.close {
-			width: 25px;
-			height: 25px;
-			background-image: url(assets.$closeButton);
-			background-size: cover;
-			filter: opacity(.1);
-			transition: filter .1s linear;
+			position: absolute;
+			right: 0;
+			display: flex;
+			justify-content: center;
+			width: 30px;
+			height: 30px;
+			align-items: center;
+			font-size: 24px;
+			cursor: pointer;
 		}
 	}
+
 	.comment-title {
 		text-align: center;
 		height: 100%;
@@ -282,22 +275,6 @@ body.signed-in {
 @media (prefers-color-scheme: dark) {
 	#comment-form-div {
 		background-color: var(--color-bg);
-	}
-}
-
-#comment-form-div {
-	@media (prefers-color-scheme: light) {
-		.ncbtns .close:hover {
-			filter: opacity(.3);
-		}
-	}
-	@media (prefers-color-scheme: dark) {
-		.ncbtns .close {
-			filter: invert(30%);
-			&:hover {
-				filter: invert(50%);
-			}
-		}
 	}
 }
 
