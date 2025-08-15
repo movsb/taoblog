@@ -3,6 +3,9 @@ package gold_utils
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"html"
+	"io"
 	"io/fs"
 	"net/url"
 	"slices"
@@ -169,4 +172,10 @@ func InjectImage(fn string) string {
 	// static: 不处理事件等
 	// eager: lazy 的时候过滤不处理
 	return `<img style="display:none;" class="static" loading="eager" src="https://" onerror="` + fn + `(this)">`
+}
+
+func RenderError(w io.Writer, err error) {
+	fmt.Fprint(w, `<div class="render-error">`)
+	fmt.Fprint(w, html.EscapeString(strings.TrimSpace(err.Error())))
+	fmt.Fprint(w, `</div>`)
 }

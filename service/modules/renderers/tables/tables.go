@@ -3,6 +3,8 @@ package tables
 import (
 	"bytes"
 	"embed"
+	"errors"
+	"fmt"
 	"io"
 	"strings"
 
@@ -60,17 +62,24 @@ type _YAML struct {
 	tr yt.MarkdownRenderer
 }
 
-func (t *_YAML) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {
-	defer utils.CatchAsError(&outErr)
-
+func (t *_YAML) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) error {
 	var table yt.Table
-	utils.Must(yaml.NewDecoder(bytes.NewReader(source), yaml.DisallowUnknownField()).Decode(&table))
+	if err := yaml.NewDecoder(bytes.NewReader(source), yaml.DisallowUnknownField()).Decode(&table); err != nil {
+		if errors.Is(err, io.EOF) {
+			err = fmt.Errorf(`Error: empty YAML table.`)
+		}
+		gold_utils.RenderError(w, err)
+		return nil
+	}
 
 	table.SetTextRenderer(t.tr)
 
 	buf := strings.Builder{}
-	utils.Must(table.Render(&buf))
+	if err := table.Render(&buf); err != nil {
+		gold_utils.RenderError(w, err)
+		return nil
+	}
+
 	_, err := w.Write([]byte(buf.String()))
-	// log.Println(buf.String())
 	return err
 }

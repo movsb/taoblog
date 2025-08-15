@@ -3,6 +3,7 @@ package gold_utils
 import (
 	"bytes"
 	"io"
+	"log"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -69,6 +70,7 @@ func (e *FencedCodeBlockExtender) renderCodeBlock(writer util.BufWriter, source 
 	}
 
 	if err := nn.r.RenderFencedCodeBlock(writer, nn.language, nn.attrs, buf.Bytes()); err != nil {
+		log.Println(`error rendering code block:`, err)
 		return ast.WalkStop, err
 	}
 

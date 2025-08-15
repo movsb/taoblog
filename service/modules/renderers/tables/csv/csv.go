@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark/parser"
 )
 
@@ -51,7 +52,8 @@ func (t *CSV) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, 
 
 	table, err := csvReader.ReadAll()
 	if err != nil {
-		return fmt.Errorf(`failed to parse csv as table: %w`, err)
+		gold_utils.RenderError(w, fmt.Errorf(`failed to parse csv as table: %w`, err))
+		return nil
 	}
 
 	if len(table) <= 0 {

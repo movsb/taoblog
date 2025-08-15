@@ -2,12 +2,15 @@ package renderers
 
 import (
 	"bytes"
+	"embed"
 	_ "embed"
 	"log"
 	"net/url"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -17,6 +20,20 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+//go:generate sass --style compressed --no-source-map style.scss style.css
+
+//go:embed style.css
+var _embed embed.FS
+var _local = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
+
+func init() {
+	dynamic.RegisterInit(func() {
+		const module = `markdown`
+		dynamic.WithRoots(module, nil, nil, _embed, _local)
+		dynamic.WithStyles(module, `style.css`)
+	})
+}
 
 type Renderer interface {
 	Render(source string) (string, error)

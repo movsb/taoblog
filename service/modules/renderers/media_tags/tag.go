@@ -76,7 +76,6 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 }
 
 func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
-	var outErr error
 	doc.Find(`audio`).EachWithBreak(func(_ int, s *goquery.Selection) bool {
 		src := t.getSrc(s)
 		if src == "" {
@@ -130,7 +129,7 @@ func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
 
 		return true
 	})
-	return outErr
+	return nil
 }
 
 func (t *MediaTags) getSrc(s *goquery.Selection) string {

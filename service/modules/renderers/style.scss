@@ -1,0 +1,8 @@
+div.render-error {
+	white-space: pre;
+	border: 1px solid #ff325b;
+	background-color: #ff325b30;
+	border-radius: var(--border-radius);
+	padding: 1em;
+	overflow-x: auto;
+}
