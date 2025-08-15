@@ -38,3 +38,22 @@
 		cursor: zoom-in;
 	}
 }
+
+#img-view-mobile {
+	background-color: rgba(0,0,0,0.88);
+	display: none;
+	position: fixed;
+	inset: 0;;
+	// display: flex;
+	gap: 1em;
+	flex-wrap: nowrap;
+	scroll-snap-type: x mandatory;
+	overflow: auto;
+	img {
+		scroll-snap-align: center;
+		flex: 0 0 100%;
+		object-fit: contain;
+		// 在 iOS 上图片没有居中。
+		height: 100%;
+	}
+}

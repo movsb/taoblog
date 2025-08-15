@@ -1,4 +1,4 @@
-class ImageViewUI {
+class ImageViewDesktop {
 	constructor(img) {
 		let html = `<div class="img-view" id="img-view" style="display: none"></div>\n`;
 		
@@ -18,10 +18,8 @@ class ImageViewUI {
 		this.viewImage(img);
 		this.initBindings();
 
-		if (!this._isMobileDevice()) {
-			this._boundKeyHandler = this._keyHandler.bind(this);
-			document.body.addEventListener('keydown', this._boundKeyHandler);
-		}
+		this._boundKeyHandler = this._keyHandler.bind(this);
+		document.body.addEventListener('keydown', this._boundKeyHandler);
 	}
 	
 	show(yes) {
@@ -134,9 +132,6 @@ class ImageViewUI {
 		let body = document.body;
 		body.style.overflow = 'hidden';
 	}
-	_isMobileDevice() {
-		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
-	}
 	initBindings() {
 		// 单击图片时，缩放到原始大小。
 		// 或者，关闭预览。
@@ -157,31 +152,29 @@ class ImageViewUI {
 			this.show(false);
 		});
 
-		if(!this._isMobileDevice()) {
-			this.obj.addEventListener('mousemove', (e)=>{
-				if (e.buttons != 0) { return; }
-				// console.log('moving:', e, e.offsetX, e.offsetY);
-				// 以一种奇怪的方式实现了缩放鼠标位置并根据鼠标位置移动图片位置。
-				this.obj.style.transformOrigin = `${e.offsetX}px ${e.offsetY}px`;
-			});
-			
-			// 禁止拖动图片。
-			this.obj.addEventListener('mousedown', (e)=> {
-				e.preventDefault();
-				e.stopPropagation();
-			});
+		this.obj.addEventListener('mousemove', (e)=>{
+			if (e.buttons != 0) { return; }
+			// console.log('moving:', e, e.offsetX, e.offsetY);
+			// 以一种奇怪的方式实现了缩放鼠标位置并根据鼠标位置移动图片位置。
+			this.obj.style.transformOrigin = `${e.offsetX}px ${e.offsetY}px`;
+		});
+		
+		// 禁止拖动图片。
+		this.obj.addEventListener('mousedown', (e)=> {
+			e.preventDefault();
+			e.stopPropagation();
+		});
 
-			this.root.addEventListener('wheel', (e)=>{
-				// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
-				// 根据 delta 值（正、负）求得允许范围内的新的缩放值。
-				this._scale += e.deltaY * -0.01;
-				this._scale = Math.min(Math.max(1, this._scale), 10);
-				this.scale = this._scale;
+		this.root.addEventListener('wheel', (e)=>{
+			// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
+			// 根据 delta 值（正、负）求得允许范围内的新的缩放值。
+			this._scale += e.deltaY * -0.01;
+			this._scale = Math.min(Math.max(1, this._scale), 10);
+			this.scale = this._scale;
 
-				e.preventDefault();
-				return false;
-			});
-		}
+			e.preventDefault();
+			return false;
+		});
 	}
 
 	set scale(value) {
@@ -206,27 +199,68 @@ class ImageViewUI {
 	}
 }
 
+class ImageViewMobile {
+	constructor(images) {
+		this.numberOfImages = images.length;
+		const div = document.createElement('div');
+		div.innerHTML = `<div id="img-view-mobile"></div>`;
+		this.root = div.firstElementChild;
+		images.forEach((img, index)  => {
+			const clone = img.cloneNode(true);
+			this.root.appendChild(clone);
+			img.addEventListener('click', (e) => {
+				this.view(index);
+				e.preventDefault();
+				e.stopPropagation();
+			});
+			clone.addEventListener('click', (e) => {
+				this.root.style.display = 'none';
+				e.preventDefault();
+				e.stopPropagation();
+			});
+		});
+		document.body.appendChild(this.root);
+	}
+	view(index) {
+		console.log('viewing image:', index);
+		this.root.style.opacity = 0;
+		this.root.style.display = 'flex';
+		const width = this.root.clientWidth;
+		this.root.scrollLeft = width * index;
+		this.root.style.opacity = 1;
+	}
+}
+
 class ImageView {
 	constructor() {
-		document.addEventListener(`DOMContentLoaded`, ()=>{
-			this.init();
-		});
+		if (this.isMobileDevice()) {
+			this.initMobile();
+		} else {
+			this.initDesktop();
+		}
 	}
 
-	init() {
+	isMobileDevice() {
+		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
+	}
+
+	initDesktop() {
 		let images = document.querySelectorAll('.entry img:not(.no-zoom):not(.static)');
 		images.forEach(img => img.addEventListener('click', e => {
 			if (!img.complete) {
 				console.log('图片未完成加载：', img);
 				return;
 			}
-			this.show(e.target);
+			new ImageViewDesktop(img);
 		}));
 	}
 
-	show(img) {
-		new ImageViewUI(img);
+	initMobile() {
+		let images = document.querySelectorAll('.entry img:not(.no-zoom):not(.static)');
+		new ImageViewMobile(images)
 	}
 }
 
-(TaoBlog||window).imgView = new ImageView();
+document.addEventListener('DOMContentLoaded', () => {
+	(TaoBlog||window).imgView = new ImageView();
+});
