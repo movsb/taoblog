@@ -15,8 +15,8 @@ class ImageViewUI {
 	
 		this._scale = 1;
 
-		this._viewImage(img);
-		this._initBindings();
+		this.viewImage(img);
+		this.initBindings();
 
 		if (!this._isMobileDevice()) {
 			this._boundKeyHandler = this._keyHandler.bind(this);
@@ -41,7 +41,7 @@ class ImageViewUI {
 		}
 	}
 
-	_viewImage(img) {
+	viewImage(img) {
 		// 对于 xhtml 来说保留原始大小写
 		// https://developer.mozilla.org/en-US/docs/Web/API/Element/tagName
 		if (img.tagName == 'svg') {
@@ -67,15 +67,9 @@ class ImageViewUI {
 	}
 
 	_hideImage() {
-		if (this._isMobileDevice()) {
-			let wrapper = document.getElementById('wrapper');
-			wrapper.style.display = 'block';
-			window.scrollTo({left: 0, top: this._scrollY});
-		} else {
-			let body = document.body;
-			body.style.overflow = 'auto';
-			body.removeEventListener('keydown', this._boundKeyHandler);
-		}
+		let body = document.body;
+		body.style.overflow = 'auto';
+		body.removeEventListener('keydown', this._boundKeyHandler);
 	}
 
 	_keyHandler(e) {
@@ -137,169 +131,63 @@ class ImageViewUI {
 			style.display   = 'block';
 		}
 
-		// 这个是 Zoom.js 的 Bugs。
-		// 本来在桌面浏览器上对 body hidden 就够了，
-		// 但是移动设备上会出现当页面有滚动时，图片预览缩放功能乱跑。
-		if (this._isMobileDevice()) {
-			this._scrollY = window.scrollY;
-			let wrapper = document.getElementById('wrapper');
-			wrapper.style.display = 'none';
-		} else {
-			let body = document.body;
-			body.style.overflow = 'hidden';
-		}
+		let body = document.body;
+		body.style.overflow = 'hidden';
 	}
 	_isMobileDevice() {
 		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
 	}
-	_initBindings() {
-		if (this._isMobileDevice()) {
-			let zoom = new Zoom(this.obj, {
-				rotate: false,
-				// minZoom: 0.25,
-				// maxZoom: 5,
-			});
-			this.root.addEventListener('touchstart', (e)=> {
-				if (e.touches.length === 1) {
-					if (this.mayBeDoubleTap) {
-						clearTimeout(this.mayBeDoubleTap);
-						this.mayBeDoubleTap = null;
-						this.show(false);
-						e.preventDefault();
-						e.stopPropagation();
-					} else {
-						this.mayBeDoubleTap = setTimeout(()=>this.mayBeDoubleTap=null,250);
-					}
-				}
-			});
-		} else {
-			let moveHandler = this._onImgMouseMove.bind(this);
-			
-			// https://stackoverflow.com/a/52839734/3628322
-			this.obj.addEventListener('mousedown', (e)=> {
-				// 点击 svg 的其它地方不要拖，方便复制文本。
-				if (this.obj.tagName == 'svg' && e.target.tagName == 'text') {
-					console.log('not clicking on svg root node.')
-					return;
-				}
-				this._onImgMouseDown(e);
-				window.addEventListener('mousemove', moveHandler, true);
-				window.addEventListener('mouseup', (e) => {
-					// console.log('up...');
-					this._onImgMouseUp(e);
-					window.removeEventListener('mousemove', moveHandler, true);
-				}, { once: true });
-			}, true);
-
-			let imgHandlers = {
-				'click':            this._onImgClick,
-				'transitionend':    this._onTransitionEnd,
-			};
-			for (let key in imgHandlers) {
-				this.obj.addEventListener(key, imgHandlers[key].bind(this), true);
+	initBindings() {
+		// 单击图片时，缩放到原始大小。
+		// 或者，关闭预览。
+		this.obj.addEventListener('click', (e)=> {
+			if(this._scale != 1) {
+				this.scale = 1;
+				this._scale = 1;
+			} else {
+				this.show(false);
 			}
-			
-			let divHandlers = {
-				'wheel':        this._onDivMouseWheel,
-				'click':        this._onDivClick,
-			};
-			for (let key in divHandlers) {
-				this.root.addEventListener(key, divHandlers[key].bind(this));
-			}
-		}
-	}
-	_onImgMouseDown(e) {
-		if (this.obj.getAttribute('data-busy') == '1') {
-			e.preventDefault();
-			return false;
-		}
-
-		// http://stackoverflow.com/a/2725963
-		if (e.which == 1) { // left button
-			this._offsetX = e.clientX;
-			this._offsetY = e.clientY;
-
-			this._coordX = parseInt(this.obj.style.left);
-			this._coordY = parseInt(this.obj.style.top);
-
-			this._dragging = true;
-		}
-
-		e.preventDefault();
-		return false;
-	}
-	_onImgMouseMove(e) {
-		console.log('moving');
-		if (!this._dragging) {
-			return false;
-		}
-
-		let left = this._coordX + e.clientX - this._offsetX + 'px';
-		let top = this._coordY + e.clientY - this._offsetY + 'px';
-		
-		// console.log({left, top});
-		this.obj.style.left = left;
-		this.obj.style.top = top;
-
-		e.preventDefault();
-		return false;
-	}
-	_onImgMouseUp(e) {
-		this._dragging = false;
-		e.preventDefault();
-		console.log('exit dragging');
-		return false;
-	}
-	_onImgClick(e) {
-		// console.log('img: click');
-		if (this.obj.tagName == 'svg' && e.target.tagName == 'text') {
-			console.log('clicking on text nodes.');
 			e.preventDefault();
 			e.stopPropagation();
-			return;
-		}
-		let smallMove = false;
-		{
-			let horz = Math.abs(e.clientX - this._offsetX);
-			let vert = Math.abs(e.clientY - this._offsetY);
-
-			if (horz <= 1 && vert <= 1) {
-				smallMove = true;
-			}
-		}
-
-		if (smallMove) {
-			this.show(false);
-			console.log('hide because of small move');
-		}
-
-		e.preventDefault();
-		e.stopPropagation();
-		return false;
-	}
-	_onTransitionEnd(e) {
-		this.obj.style.transition = '';
-		this.obj.setAttribute('data-busy', '');
-	}
-	_onDivMouseWheel(e) {
-		if (this.obj.getAttribute('data-busy') == '1') {
-			e.preventDefault();
 			return false;
+		});
+
+		this.root.addEventListener('click', (e)=> {
+			// 点击空白处关闭预览。
+			this.show(false);
+		});
+
+		if(!this._isMobileDevice()) {
+			this.obj.addEventListener('mousemove', (e)=>{
+				if (e.buttons != 0) { return; }
+				// console.log('moving:', e, e.offsetX, e.offsetY);
+				// 以一种奇怪的方式实现了缩放鼠标位置并根据鼠标位置移动图片位置。
+				this.obj.style.transformOrigin = `${e.offsetX}px ${e.offsetY}px`;
+			});
+			
+			// 禁止拖动图片。
+			this.obj.addEventListener('mousedown', (e)=> {
+				e.preventDefault();
+				e.stopPropagation();
+			});
+
+			this.root.addEventListener('wheel', (e)=>{
+				// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
+				// 根据 delta 值（正、负）求得允许范围内的新的缩放值。
+				this._scale += e.deltaY * -0.01;
+				this._scale = Math.min(Math.max(1, this._scale), 10);
+				this.scale = this._scale;
+
+				e.preventDefault();
+				return false;
+			});
 		}
-
-		// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
-		// 根据 delta 值（正、负）求得允许范围内的新的缩放值。
-		this._scale += e.deltaY * -0.01;
-		this._scale = Math.min(Math.max(.25, this._scale), 10);
-
-		this.obj.style.transform = `scale(${this._scale})`;
-
-		e.preventDefault();
-		return false;
 	}
-	_onDivClick(e) {
-		this.show(false);
+
+	set scale(value) {
+		this.obj.style.transform = `scale(${value})`;
 	}
+
 	initMetadata(metadata) {
 		let md;
 		try {
@@ -320,11 +208,13 @@ class ImageViewUI {
 
 class ImageView {
 	constructor() {
-		document.addEventListener(`DOMContentLoaded`, this.init.bind(this));
+		document.addEventListener(`DOMContentLoaded`, ()=>{
+			this.init();
+		});
 	}
 
 	init() {
-		let images = document.querySelectorAll('.entry img:not(.no-zoom)');
+		let images = document.querySelectorAll('.entry img:not(.no-zoom):not(.static)');
 		images.forEach(img => img.addEventListener('click', e => {
 			if (!img.complete) {
 				console.log('图片未完成加载：', img);
@@ -332,25 +222,8 @@ class ImageView {
 			}
 			this.show(e.target);
 		}));
-		// SVG 可能有交互，放大不太好。
-		// let svgs = document.querySelectorAll('.entry svg:not(.no-zoom)');
-		// svgs.forEach(img => {
-		// 	let parent = img.parentElement;
-		// 	while (parent) {
-		// 		if (parent.classList.contains('katex')) {
-		// 			return;
-		// 		}
-		// 		parent = parent.parentElement;
-		// 	}
-		// 	img.addEventListener('click', e => {
-		// 		// 仅点空白处才显示图片，否则可能是复制文本。
-		// 		if (e.target.tagName != 'text') {
-		// 			this.show(e.currentTarget);
-		// 		}
-		// 	});
-		// });
 	}
-	
+
 	show(img) {
 		new ImageViewUI(img);
 	}
