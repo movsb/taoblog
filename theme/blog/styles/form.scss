@@ -62,6 +62,7 @@ input[type=datetime-local] {
 
 input[type=checkbox], input[type=range], input[type=radio] {
 	accent-color: var(--accent-color);
+	color-scheme: light dark;
 }
 
 input[type=text],input[type=password],input[type=email],input[type=url],textarea {
