@@ -72,9 +72,19 @@ func (t *Table) isTH(r, c int) bool {
 }
 
 func (t *Table) setRoot() {
-	for _, row := range t.Rows {
+	for i, row := range t.Rows {
+		if row == nil {
+			r := &Row{}
+			t.Rows[i] = r
+			row = r
+		}
 		row.root = t
-		for _, col := range row.Cols {
+		for j, col := range row.Cols {
+			if col == nil {
+				c := &Col{}
+				row.Cols[j] = c
+				col = c
+			}
 			col.setRoot(t)
 		}
 	}
