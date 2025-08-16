@@ -45,7 +45,8 @@
 	position: fixed;
 	inset: 0;;
 	// display: flex;
-	gap: 1em;
+	// 如果要修改，记得同时修改 view(index) 里面的滚动偏移计算函数。
+	gap: 10px;
 	flex-wrap: nowrap;
 	scroll-snap-type: x mandatory;
 	overflow: auto;

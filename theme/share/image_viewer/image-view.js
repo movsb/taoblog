@@ -229,8 +229,16 @@ class ImageViewMobile {
 		console.log('viewing image:', index);
 		this.root.style.opacity = 0;
 		this.root.style.display = 'flex';
-		const width = this.root.clientWidth;
-		this.root.scrollLeft = width * index;
+
+		// 真实宽度可能是小数，通过 clientWidth 拿不到。
+		// 这样会导致越往后滚的时候偏离越大，这里换用 getComputedStyle。
+		const gap = 10;
+		// const width = this.root.clientWidth;
+		const width = parseFloat(getComputedStyle(this.root).width) 
+			|| this.root.clientWidth;
+		this.root.scrollLeft = (width+gap) * index;
+		// alert(`图片索引：${index}, 滚动：${(width+gap)*index}, 真实：${this.root.scrollLeft}，客户区：${this.root.clientWidth}`);
+
 		this.root.style.opacity = 1;
 	}
 }
