@@ -207,6 +207,10 @@ class ImageViewMobile {
 		this.root = div.firstElementChild;
 		images.forEach((img, index)  => {
 			const clone = img.cloneNode(true);
+
+			// 不再使用 blur 类。
+			clone.classList.remove('blur');
+
 			this.root.appendChild(clone);
 			img.addEventListener('click', (e) => {
 				this.view(index);

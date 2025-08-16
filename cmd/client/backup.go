@@ -196,7 +196,7 @@ func (c *Client) BackupFiles() {
 			return nil
 		}),
 		syncer.WithDeleteLocal[[]SpecWithPostID](func(f SpecWithPostID) error {
-			log.Println(`删除本地：`, f.PostID, f.Path)
+			log.Println(`删除 本地：`, f.PostID, f.Path)
 			utils.Must(dataStore.DeleteData(f.PostID, f.Digest))
 			return nil
 		}),
