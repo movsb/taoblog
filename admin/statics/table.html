@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table, td, th {
+	border: 1px solid gray;
+	border-collapse: collapse;
+}
+td, th {
+	padding: .5em 1em;
+	background-color: lightgreen;
+	user-select: none;
+}
+</style>
+</head>
+<body>
+<p>
+	<button type="button" onclick="table.reset()">Reset</button>
+</p>
+<p>
+	<button type="button" onclick="table.addRow('above')">Add Row Above</button>
+	<button type="button" onclick="table.addRow('below')">Add Row Below</button>
+</p>
+<p>
+	<button type="button" onclick="table.addCol('left')">Add Col Left</button>
+	<button type="button" onclick="table.addCol('right')">Add Col Right</button>
+</p>
+<p>
+	<button type="button" onclick="table.merge()">Merge</button>
+</p>
+<script src="table.js"></script>
+</body>
+</html>
