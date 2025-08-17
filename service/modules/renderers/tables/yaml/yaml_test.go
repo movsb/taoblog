@@ -17,6 +17,7 @@ func TestAll(t *testing.T) {
 		Description string     `yaml:"description"`
 		Table       yaml.Table `yaml:"table"`
 		HTML        string     `yaml:"html"`
+		Coords      bool       `yaml:"coords"`
 	}
 	testCases := test_utils.MustLoadCasesFromYaml[TestCase](`testdata/tests.yaml`)
 
@@ -62,9 +63,12 @@ th {
 `)
 	for _, tc := range testCases {
 		buf := strings.Builder{}
-		if tc.Description == `设置 rowspan 和 colspan` {
+		if tc.Description == `colspan` {
 			// debug here
 			buf.Write(nil)
+		}
+		if tc.Coords {
+			tc.Table.SetOutputCoords(true)
 		}
 		utils.Must(tc.Table.Render(&buf))
 		h := buf.String()

@@ -30,6 +30,7 @@ type Table struct {
 	headerCols map[int]struct{}
 
 	markdownRenderer MarkdownRenderer
+	outputCoords     bool
 }
 
 type Border struct {
@@ -63,6 +64,10 @@ type MarkdownRenderer func(text string) (string, error)
 
 func (t *Table) SetTextRenderer(tr MarkdownRenderer) {
 	t.markdownRenderer = tr
+}
+
+func (t *Table) SetOutputCoords(coords bool) {
+	t.outputCoords = coords
 }
 
 func (t *Table) isTH(r, c int) bool {
@@ -291,6 +296,12 @@ func (c *Col) Render(buf *strings.Builder) error {
 	}
 	if c.RowSpan > 1 {
 		fmt.Fprintf(buf, ` rowspan="%d"`, c.RowSpan)
+	}
+
+	if c.root.outputCoords {
+		buf.WriteString(` data-coords="`)
+		fmt.Fprintf(buf, `[%d,%d,%d,%d]`, c.coords.r1, c.coords.c1, c.coords.r2, c.coords.c2)
+		buf.WriteString(`"`)
 	}
 
 	colAttr, _ := c.root.Cols[c.coords.c1]
