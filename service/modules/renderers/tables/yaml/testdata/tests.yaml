@@ -341,3 +341,35 @@
     <tr><td data-coords="[3,1,3,1]">1</td><td data-coords="[3,2,3,2]">2</td><td data-coords="[3,3,3,3]">3</td></tr>
     </tbody>
     </table>
+
+- description: colspan & rowspan
+  coords: true
+  table:
+    rows:
+      - [1,{text:2,colspan:2,rowspan:2},4]
+      - [1,4]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td data-coords="[1,1,1,1]">1</td><td colspan="2" rowspan="2" data-coords="[1,2,2,3]">2</td><td data-coords="[1,4,1,4]">4</td></tr>
+    <tr><td data-coords="[2,1,2,1]">1</td><td data-coords="[2,4,2,4]">4</td></tr>
+    </tbody>
+    </table>
+
+- description: colspan & rowspan 2
+  coords: true
+  table:
+    rows:
+      - [1,{text:2,colspan:3}]
+      - [1,2,3,4]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td data-coords="[1,1,1,1]">1</td><td colspan="3" data-coords="[1,2,1,4]">2</td></tr>
+    <tr><td data-coords="[2,1,2,1]">1</td><td data-coords="[2,2,2,2]">2</td><td data-coords="[2,3,2,3]">3</td><td data-coords="[2,4,2,4]">4</td></tr>
+    </tbody>
+    </table>

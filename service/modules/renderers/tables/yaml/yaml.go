@@ -118,40 +118,25 @@ func (t *Table) calculateCoords() {
 			// 行始终是不变的。
 			p.r1 = r + 1
 
-			// for debug
-			// if r == 2 && c == 0 {
-			// 	r += 0
-			// }
-
-			if c > 0 {
-				// 列会被左边的往右边挤。
-				// 所以计算的时候要参考左边是多少。
-				right := row.Cols[c-1].coords.c2
-				p.c1 = right + 1
-			} else {
-				// 但是左边可能会是上边的 rowspan 挤下来的，物理上不一定相邻。
-				if r == 0 {
-					p.c1 = 1
-				} else {
-					// 根据物理位置依次判断物理坐标是否被前面的元素占领。
-					tr, tc := r+1, c+1
-				retry:
-					for x := 0; x <= r; x++ {
-						for y := 0; y <= c; y++ {
-							if x == r && y == c {
-								goto out
-							}
-							cc := t.Rows[x].Cols[y].coords
-							if cc.includes(tr, tc) {
-								tc++
-								goto retry
-							}
-						}
+			// 列会被左边的往右边挤，所以计算的时候要参考左边是多少。
+			// 但是左边可能会是上边的 rowspan 挤下来的，物理上不一定相邻。
+			// 根据物理位置依次判断物理坐标是否被前面的元素占领。
+			tr, tc := r+1, c+1
+		retry:
+			for x := 0; x <= r; x++ {
+				for y := 0; y < len(t.Rows[x].Cols); y++ {
+					if x == r && y == c {
+						goto out
 					}
-				out:
-					p.c1 = tc
+					cc := t.Rows[x].Cols[y].coords
+					if cc.includes(tr, tc) {
+						tc++
+						goto retry
+					}
 				}
 			}
+		out:
+			p.c1 = tc
 
 			if col.RowSpan == 0 {
 				p.r2 = p.r1
