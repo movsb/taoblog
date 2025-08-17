@@ -171,6 +171,10 @@ table {
 	&.no-border, &.no-border td {
 		border: none;
 	}
+
+	// 不仅是 <code>，<td> 里面的文本也有字体大小不一致的问题。
+	// text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
 }
 
 hr {
