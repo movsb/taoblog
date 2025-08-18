@@ -78,7 +78,7 @@ class Table {
 			}
 		}
 
-		this.calcCoords();
+		this._calcCoords();
 	}
 
 	remove() {
@@ -248,7 +248,7 @@ class Table {
 
 		// 如果上方或正文的行没有 colspan，则 maxCols 代表本来应该插入的列数。
 		// 但是实际可能存在 colspan 和 rowspan，插入数量需要重新计算（更少）。
-		const maxCols = this.maxCols();
+		const maxCols = this._maxCols();
 
 		// 如果是第一行或最后一行，则不需要计算。
 		if (newRowIndex == 0 || newRowIndex == this.table.rows.length) {
@@ -289,7 +289,7 @@ class Table {
 			}
 		}
 
-		this.calcCoords();
+		this._calcCoords();
 	}
 
 	addColLeft()  { return this._addCol('left');  }
@@ -308,13 +308,13 @@ class Table {
 
 		// 如果是第一列，不需要计算。
 		// 如果是最后一列，直接追加。
-		if (cc.c1 == 1 && position == 'left' || cc.c2 == this.maxCols() && position == 'right') {
+		if (cc.c1 == 1 && position == 'left' || cc.c2 == this._maxCols() && position == 'right') {
 			const rows = this.table.rows.length;
 			for(let i=0; i<rows; i++) {
 				const row = this.table.rows[i];
 				row.insertCell(position=='left' ? 0 : -1);
 			}
-			this.calcCoords();
+			this._calcCoords();
 			return;
 		}
 
@@ -350,7 +350,7 @@ class Table {
 			}
 		}
 
-		this.calcCoords();
+		this._calcCoords();
 	}
 
 	merge() {
@@ -400,10 +400,73 @@ class Table {
 		// 合并后把当前单元格设置为第一个单元格。
 		this._selectCell(firstCell);
 
-		this.calcCoords();
+		this._calcCoords();
 	}
 
-	maxCols() {
+	split() {
+		if (!this.curCell) {
+			alert('Please select a cell first.');
+			return;
+		}
+
+		const cell = this.curCell;
+		if(cell.rowSpan == 1 && cell.colSpan == 1) {
+			alert('not a merged cell');
+			return;
+		}
+
+		const cc = this._getCoords(cell);
+		const c1 = cc.c1;
+		const rowCellIndices = [];
+		// 每行都需要添加一个单元格。
+		for(let i=cc.r1; i<=cc.r2; i++) {
+			const row = this.table.rows[i-1];
+			if(c1 == 1) {
+				for(let k=0; k<cell.colSpan; k++) {
+					// 最左上角的
+					if(i==cc.r1 && k==0) {
+						continue;
+					}
+					row.insertCell(k);
+				}
+				continue;
+			}
+			// 单元格可能是上面 rowspan 的的，需要向前找到第一个起始行为当前行的。
+			for(let j=c1-1; j>=1; j--) {
+				const left = this.findCell(i, j);
+				const cl = this._getCoords(left);
+				if(cl.r1 != i) {
+					continue;
+				}
+				const cellIndices = [];
+				for(let k=0; k<cell.colSpan; k++) {
+					// 最左上角的
+					if(i==cc.r1 && k==0) {
+						continue;
+					}
+					const index = left.cellIndex+k+1;
+					cellIndices.push(index);
+				}
+				rowCellIndices.push(cellIndices);
+				break;
+			}
+		}
+
+		rowCellIndices.forEach((indices,relativeRowIndex) => {
+			const realRowIndex = cc.r1 - 1 + relativeRowIndex;
+			const row = this.table.rows[realRowIndex];
+			indices.forEach(colIndex => {
+				row.insertCell(colIndex);
+			});
+		});
+
+		cell.removeAttribute('colspan');
+		cell.removeAttribute('rowspan');
+
+		this._calcCoords();
+	}
+
+	_maxCols() {
 		let maxCol = 0;
 		Array.from(this.table.rows).forEach(row=> {
 			Array.from(row.cells).forEach(cell=> {
@@ -414,7 +477,7 @@ class Table {
 		return maxCol;
 	}
 
-	calcCoords() {
+	_calcCoords() {
 		// debugger;
 		let calcC1 = (rowIndex, colIndex) => {
 			let retry = (tr, tc) => {
@@ -512,6 +575,10 @@ class TableTest {
 				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.selectCell(1,2); t.addColLeft(); },
 				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td class="selected">1,3</td><td>1,4</td></tr><tr><td>2,1</td><td>2,2</td><td class="" rowspan="2" colspan="2">2,3</td></tr><tr><td>3,1</td><td>3,2</td></tr></tbody></table>',
 			},
+			{
+				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.split(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td>1,3</td></tr><tr><td>2,1</td><td class="selected">2,2</td><td>2,3</td></tr><tr><td>3,1</td><td>3,2</td><td>3,3</td></tr></tbody></table>',
+			},
 		];
 	}
 
@@ -525,7 +592,7 @@ class TableTest {
 			}
 			const html = table.content;
 			if(html != t.html) {
-				console.table(['测试错误：', html, t.html]);
+				console.table(['测试错误：', t.html, html]);
 				throw new Error(`测试错误: @${index}`);
 			}
 		});
