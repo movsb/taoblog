@@ -10,16 +10,9 @@ class Table {
 		// 始终为从左上到右下的顺序。
 		this.selectedCells = [];
 	
-		this._reset = () => {
-			this.init(2,2);
-			this.curCell = null;
-			this.clearSelection();
-		};
-		this.reset();
-
 		this.table.addEventListener('click', (e) => {
 			if (this.isCell(e.target)) {
-				this.select(e.target);
+				this._selectCell(e.target);
 			}
 		});
 	
@@ -48,7 +41,7 @@ class Table {
 					return;
 				}
 				const endCell = e.target;
-				if(!this.selectRange(startCell, endCell)) {
+				if(!this._selectRange(startCell, endCell)) {
 					console.log('选区无效。');
 				}
 			};
@@ -61,8 +54,32 @@ class Table {
 		});
 	}
 
-	reset() {
-		this._reset();
+	/**
+	 * 
+	 * @param {Number} rows 
+	 * @param {Number} cols 
+	 */
+	reset(rows, cols) {
+		this.clearSelection();
+		this.table.innerHTML = '';
+
+		for(let i=0; i<rows; i++) {
+			const tr = this.table.insertRow();
+			for(let j=0; j<cols; j++) {
+				const td = tr.insertCell();
+			}
+		}
+
+		this.calcCoords();
+	}
+
+	remove() {
+		this.table.remove();
+	}
+
+	/** @returns {string} */
+	get content() {
+		return this.table.outerHTML;
 	}
 
 	_forEachCell(callback) {
@@ -74,26 +91,35 @@ class Table {
 	}
 
 	_getCoords(cell) {
-		const r1 = +cell.dataset.r1;
-		const c1 = +cell.dataset.c1;
-		const r2 = +cell.dataset.r2;
-		const c2 = +cell.dataset.c2;
-		return { r1, c1, r2, c2 };
+		return cell._coords;
+	}
+	_setCoords(cell, coords) {
+		cell._coords = coords;
+	}
+	
+	// 目前只支持从左上到右下的选择。
+	// 如果设置成功，返回 true。
+	/**
+	 * @param {Number} r1 
+	 * @param {Number} c1 
+	 * @param {Number} r2 
+	 * @param {Number} c2 
+	 */
+	selectRange(r1,c1,r2,c2) {
+		const cell1 = this.findCell(r1, c1);
+		const cell2 = this.findCell(r2, c2);
+		return this._selectRange(cell1, cell2);
 	}
 
 	/**
 	 * @param {HTMLTableCellElement} cell1 
 	 * @param {HTMLTableCellElement} cell2 
 	 */
-	// 目前只支持从左上到右下的选择。
-	// 如果设置成功，返回 true。
-	selectRange(cell1, cell2) {
+	_selectRange(cell1, cell2) {
 		console.log('selectRange:', cell1, cell2);
 
-		const c1r1 = +cell1.dataset.r1;
-		const c1c1 = +cell1.dataset.c1;
-		const c2r2 = +cell2.dataset.r2;
-		const c2c2 = +cell2.dataset.c2;
+		const cc1 = this._getCoords(cell1);
+		const cc2 = this._getCoords(cell2);
 
 		this.clearSelection();
 
@@ -101,17 +127,13 @@ class Table {
 
 		Array.from(this.table.rows).forEach(row=> {
 			Array.from(row.cells).forEach(cell=> {
-				const r1 = +cell.dataset.r1;
-				const c1 = +cell.dataset.c1;
-				const r2 = +cell.dataset.r2;
-				const c2 = +cell.dataset.c2;
-
+				const cc = this._getCoords(cell);
 				let some = false, all = true;
 
 				// 被包含元素必须被完整包含。
-				for(let i=r1; i<=r2; i++) {
-					for(let j=c1; j<=c2; j++) {
-						const within = c1r1 <= i && i <= c2r2 && c1c1 <= j && j <= c2c2;
+				for(let i=cc.r1; i<=cc.r2; i++) {
+					for(let j=cc.c1; j<=cc.c2; j++) {
+						const within = cc1.r1 <= i && i <= cc2.r2 && cc1.c1 <= j && j <= cc2.c2;
 						some |= within;
 						all  &= within;
 					}
@@ -138,21 +160,18 @@ class Table {
 		return element.tagName == 'TD' || element.tagName == 'TH';
 	}
 
-	init(rows, cols) {
-		this.table.innerHTML = '';
-
-		for(let i=0; i<rows; i++) {
-			const tr = this.table.insertRow();
-			for(let j=0; j<cols; j++) {
-				const td = tr.insertCell();
-			}
-		}
-
-		this.calcCoords();
+	/**
+	 * 
+	 * @param {Number} row 
+	 * @param {Number} col 
+	 */
+	selectCell(row, col) {
+		const cell = this.findCell(row, col);
+		return this._selectCell(cell);
 	}
 
 	/** @param {HTMLTableCellElement} col */
-	select(col) {
+	_selectCell(col) {
 		if(this.curCell) {
 			this.highlight(this.curCell, false);
 		}
@@ -164,14 +183,34 @@ class Table {
 	}
 
 	clearSelection() {
+		this.curCell = null;
 		this.selectedCells.forEach(cell => {
 			this.highlight(cell, false);
 		})
 		this.selectedCells = [];
 	}
 
+	/**
+	 * 
+	 * @param {HTMLTableCellElement} cell 
+	 * @param {boolean} on 
+	 */
 	highlight(cell, on) {
-		cell.style.backgroundColor = on ? 'green' : '';
+		if(on) cell.classList.add('selected');
+		else cell.classList.remove('selected');
+	}
+
+	/** @returns {HTMLTableCellElement} */
+	findCell(r,c) {
+		let ret = null;
+		this._forEachCell(cell => {
+			const cc = this._getCoords(cell);
+			if(cc.r1 <= r && r <= cc.r2 && cc.c1 <= c && c <= cc.c2) {
+				ret = cell;
+				return;
+			}
+		});
+		return ret;
 	}
 
 	addRow(position) {
@@ -205,23 +244,11 @@ class Table {
 			// const refRow = this.table.rows[newRowIndex];
 			// 计算待插入行的实际构成。
 
-			/** @returns {HTMLTableCellElement} */
-			const findCell = (r1,c1) => {
-				let cell = null;
-				this._forEachCell(c => {
-					const cc = this._getCoords(c);
-					if(cc.r1 <= r1 && r1 <= cc.r2 && cc.c1 <= c1 && c1 <= cc.c2) {
-						cell = c;
-						return;
-					}
-				});
-				return cell;
-			};
-
 			let insertCount = 0;
 
 			for(let i=0; i<maxCols; /*i++*/) {
-				const cell = findCell(newRowIndex+1, i+1);
+				const rr = newRowIndex+1, rc = i+1;
+				const cell = this.findCell(rr, rc);
 				const cc = this._getCoords(cell);
 				// 该单元格由自己组成。
 				if(cc.r1 == cc.r2) {
@@ -230,7 +257,7 @@ class Table {
 					continue;
 				}
 				// 由上面单元格的最下面的构成 || 由下面单元格的最上面的构成。
-				if (position == 'above' && cc.r2 == newRowIndex || position == 'below' && cc.r1 == newRowIndex) {
+				if (position == 'above' && (cc.r1 == rr /*|| cc.r2 == rr*/) || position == 'below' && (cc.r1 == rr)) {
 					insertCount++;
 					i += 1;
 					continue;
@@ -280,16 +307,19 @@ class Table {
 		// const lastCell = this.selectedCells[this.selectedCells.length - 1];
 
 		let lastCell = firstCell;
+
+		const firstCoords = this._getCoords(firstCell);
+		const lastCoords = this._getCoords(lastCell);
+
 		this.selectedCells.forEach(cell => {
-			const r2 = +cell.dataset.r2;
-			const c2 = +cell.dataset.c2;
-			if (r2 >= +lastCell.dataset.r2 && c2 >= +lastCell.dataset.c2) {
+			const cc = this._getCoords(cell);
+			if (cc.r2 >= lastCoords.r2 && cc.c2 >= lastCoords.c2) {
 				lastCell = cell;
 			}
 		});
 
-		const rowSpan = +lastCell.dataset.r2 - +firstCell.dataset.r1 + 1;
-		const colSpan = +lastCell.dataset.c2 - +firstCell.dataset.c1 + 1;
+		const rowSpan = lastCoords.r2 - firstCoords.r1 + 1;
+		const colSpan = lastCoords.c2 - firstCoords.c1 + 1;
 
 		// 移除所有其它元素。以第一个为合并标准。它总是位于最左上角位置，即第一个元素。
 		for(let i=1; i<this.selectedCells.length; i++) {
@@ -309,7 +339,7 @@ class Table {
 		}
 
 		// 合并后把当前单元格设置为第一个单元格。
-		this.select(firstCell);
+		this._selectCell(firstCell);
 
 		this.calcCoords();
 	}
@@ -318,7 +348,8 @@ class Table {
 		let maxCol = 0;
 		Array.from(this.table.rows).forEach(row=> {
 			Array.from(row.cells).forEach(cell=> {
-				maxCol = Math.max(maxCol, +cell.dataset.c2);
+				const cc = this._getCoords(cell);
+				maxCol = Math.max(maxCol, cc.c2);
 			});
 		});
 		return maxCol;
@@ -334,12 +365,8 @@ class Table {
 						if(x == rowIndex && y == colIndex) {
 							return tc;
 						}
-						const cc = this.table.rows[x].cells[y].dataset;
-						const   ccr1 = +cc.r1,
-								ccr2 = +cc.r2,
-								ccc1 = +cc.c1,
-								ccc2 = +cc.c2;
-						if (ccr1 <= tr && tr <= ccr2 && ccc1 <= tc && tc <= ccc2) {
+						const cc = this._getCoords(this.table.rows[x].cells[y]);
+						if (cc.r1 <= tr && tr <= cc.r2 && cc.c1 <= tc && tc <= cc.c2) {
 							tc++;
 							return retry(tr, tc);
 						}
@@ -355,7 +382,7 @@ class Table {
 
 		Array.from(this.table.rows).forEach((row, rowIndex) => {
 			Array.from(row.cells).forEach((col, colIndex) => {
-				const p = col.dataset;
+				const p = {};
 
 				p.r1 = rowIndex + 1;
 				p.c1 = calcC1(rowIndex, colIndex);
@@ -372,10 +399,46 @@ class Table {
 					p.c2 = +p.c1 + col.colSpan - 1;
 				}
 
+				this._setCoords(col, p);
+
 				col.innerText = `${p.r1},${p.c1}`;
 			});
 		});
 	}
 }
 
+class TableTest {
+	constructor() {
+		/**
+		 * @type {{ run: (t: Table) => void, html: string }[]}
+		 */
+		this.cases = [
+			{
+				run: t => { t.reset(2,2); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr></tbody></table>',
+			},
+			{
+				run: t => { t.reset(2,2); t.selectCell(1,2); },
+				html: '<table><tbody><tr><td>1,1</td><td class="selected">1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr></tbody></table>',
+			},
+		];
+	}
+
+	run() {
+		this.cases.forEach((t, index) => {
+			const table = new Table();
+			t.run(table);
+			const html = table.content;
+			table.remove();
+			if(html != t.html) {
+				console.table(['测试错误：', html, t.html]);
+				throw new Error(`测试错误: @${index}`);
+			}
+		});
+	}
+}
+
+new TableTest().run();
+
 let table = new Table();
+table.reset(2,2);
