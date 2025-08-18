@@ -11,27 +11,27 @@ class Table {
 		this.selectedCells = [];
 	
 		this.table.addEventListener('click', (e) => {
-			if (this.isCell(e.target)) {
+			if (this._isCell(e.target)) {
 				this._selectCell(e.target);
 			}
 		});
 	
 		this.table.addEventListener('mousedown', e => {
 			// console.log('mousedown:', e.target);
-			if(!this.isCell(e.target)) {
+			if(!this._isCell(e.target)) {
 				// console.log('mousedown not on cell');
 				return;
 			}
 
 			const startCell = e.target;
 			if(this.curCell) {
-				this.highlight(this.curCell, false);
+				this._highlight(this.curCell, false);
 			}
 			this.clearSelection();
 
 			const moveHandler = e => {
 				// console.log('mousemove:', e.target);
-				if (!this.isCell(e.target)) {
+				if (!this._isCell(e.target)) {
 					// console.log('mousemove not on cell');
 					return;
 				}
@@ -154,7 +154,7 @@ class Table {
 
 				if(!some) { return; }
 				if(all) {
-					this.highlight(cell, true);
+					this._highlight(cell, true);
 					this.selectedCells.push(cell);
 				} else {
 					valid = false;
@@ -169,7 +169,7 @@ class Table {
 		return valid;
 	}
 
-	isCell(element) {
+	_isCell(element) {
 		return element.tagName == 'TD' || element.tagName == 'TH';
 	}
 
@@ -186,22 +186,22 @@ class Table {
 	/** @param {HTMLTableCellElement} col */
 	_selectCell(col) {
 		if(this.curCell) {
-			this.highlight(this.curCell, false);
+			this._highlight(this.curCell, false);
 		}
 
 		this.clearSelection();
 
 		this.curCell = col;
-		this.highlight(col, true);
+		this._highlight(col, true);
 	}
 
 	clearSelection() {
 		if(this.curCell) {
-			this.highlight(this.curCell, false);
+			this._highlight(this.curCell, false);
 		}
 		this.curCell = null;
 		this.selectedCells.forEach(cell => {
-			this.highlight(cell, false);
+			this._highlight(cell, false);
 		})
 		this.selectedCells = [];
 	}
@@ -211,12 +211,12 @@ class Table {
 	 * @param {HTMLTableCellElement} cell 
 	 * @param {boolean} on 
 	 */
-	highlight(cell, on) {
+	_highlight(cell, on) {
 		if(on) cell.classList.add('selected');
 		else cell.classList.remove('selected');
 	}
 
-	/** @returns {HTMLTableCellElement} */
+	/** @returns {HTMLTableCellElement | null} */
 	findCell(r,c) {
 		let ret = null;
 		this._forEachCell(cell => {
