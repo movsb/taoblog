@@ -196,6 +196,9 @@ class Table {
 	}
 
 	clearSelection() {
+		if(this.curCell) {
+			this.highlight(this.curCell, false);
+		}
 		this.curCell = null;
 		this.selectedCells.forEach(cell => {
 			this.highlight(cell, false);
@@ -435,7 +438,8 @@ class Table {
 			for(let j=c1-1; j>=1; j--) {
 				const left = this.findCell(i, j);
 				const cl = this._getCoords(left);
-				if(cl.r1 != i) {
+				// 从上面挤下来的，或者左边还有元素。
+				if(cl.r1 != i && cl.c1 > 1) {
 					continue;
 				}
 				const cellIndices = [];
@@ -444,7 +448,7 @@ class Table {
 					if(i==cc.r1 && k==0) {
 						continue;
 					}
-					const index = left.cellIndex+k+1;
+					const index = cl.r1 == i ? left.cellIndex+k+1 : k;
 					cellIndices.push(index);
 				}
 				rowCellIndices.push(cellIndices);
@@ -579,6 +583,10 @@ class TableTest {
 				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.split(); },
 				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td>1,3</td></tr><tr><td>2,1</td><td class="selected">2,2</td><td>2,3</td></tr><tr><td>3,1</td><td>3,2</td><td>3,3</td></tr></tbody></table>',
 			},
+			{
+				init: t => { t.reset(2,2); t.selectRange(1,1,2,1); t.merge(); t.selectRange(1,2,2,2);  t.merge(); t.split(); },
+				html: '<table><tbody><tr><td class="" rowspan="2">1,1</td><td class="selected">1,2</td></tr><tr><td>2,2</td></tr></tbody></table>',
+			},
 		];
 	}
 
@@ -607,4 +615,4 @@ try {
 }
 
 let table = new Table();
-table.reset(3,3);
+table.reset(2,2);
