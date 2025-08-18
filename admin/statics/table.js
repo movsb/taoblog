@@ -3,11 +3,6 @@ class Table {
 		this.table = document.createElement('table');
 		document.body.appendChild(this.table);
 
-		this._reset = () => {
-			this.init(8,8);
-		};
-		this.reset();
-
 		/** @type {HTMLTableCellElement | null} */
 		this.curCell = null;
 
@@ -15,6 +10,13 @@ class Table {
 		// 始终为从左上到右下的顺序。
 		this.selectedCells = [];
 	
+		this._reset = () => {
+			this.init(2,2);
+			this.curCell = null;
+			this.clearSelection();
+		};
+		this.reset();
+
 		this.table.addEventListener('click', (e) => {
 			if (this.isCell(e.target)) {
 				this.select(e.target);
@@ -61,6 +63,22 @@ class Table {
 
 	reset() {
 		this._reset();
+	}
+
+	_forEachCell(callback) {
+		Array.from(this.table.rows).forEach(row => {
+			Array.from(row.cells).forEach(cell => {
+				callback(cell);
+			});
+		});
+	}
+
+	_getCoords(cell) {
+		const r1 = +cell.dataset.r1;
+		const c1 = +cell.dataset.c1;
+		const r2 = +cell.dataset.r2;
+		const c2 = +cell.dataset.c2;
+		return { r1, c1, r2, c2 };
 	}
 
 	/**
@@ -164,13 +182,70 @@ class Table {
 
 		/** @type {HTMLTableRowElement} */
 		const row = this.curCell.parentElement;
-		const rowIndex = row.rowIndex;
-		const rowDiff = position == 'above' ? 0 : 1;
-		const tr = this.table.insertRow(rowIndex + rowDiff);
+		const curCell = this.curCell;
+
+		// 计算待插入行的逻辑行号。
+		// 初始化为上方（above）插入。
+		// 如果是下方，需要根据 rowspan 计算。
+		let newRowIndex = position == 'above' 
+			? row.rowIndex
+			: row.rowIndex + curCell.rowSpan;
+
+		// 如果上方或正文的行没有 colspan，则 maxCols 代表本来应该插入的列数。
+		// 但是实际可能存在 colspan 和 rowspan，插入数量需要重新计算（更少）。
 		const maxCols = this.maxCols();
-		for(let i=0; i<maxCols; i++) {
-			tr.insertCell();
+
+		// 如果是第一行或最后一行，则不需要计算。
+		if (newRowIndex == 0 || newRowIndex == this.table.rows.length) {
+			const tr = this.table.insertRow(newRowIndex);
+			for(let i=0; i<maxCols; i++) {
+				tr.insertCell();
+			}
+		} else {
+			// const refRow = this.table.rows[newRowIndex];
+			// 计算待插入行的实际构成。
+
+			/** @returns {HTMLTableCellElement} */
+			const findCell = (r1,c1) => {
+				let cell = null;
+				this._forEachCell(c => {
+					const cc = this._getCoords(c);
+					if(cc.r1 <= r1 && r1 <= cc.r2 && cc.c1 <= c1 && c1 <= cc.c2) {
+						cell = c;
+						return;
+					}
+				});
+				return cell;
+			};
+
+			let insertCount = 0;
+
+			for(let i=0; i<maxCols; /*i++*/) {
+				const cell = findCell(newRowIndex+1, i+1);
+				const cc = this._getCoords(cell);
+				// 该单元格由自己组成。
+				if(cc.r1 == cc.r2) {
+					insertCount++;
+					i += 1;
+					continue;
+				}
+				// 由上面单元格的最下面的构成 || 由下面单元格的最上面的构成。
+				if (position == 'above' && cc.r2 == newRowIndex || position == 'below' && cc.r1 == newRowIndex) {
+					insertCount++;
+					i += 1;
+					continue;
+				}
+				// 其它情况：扩展原有单元格。
+				cell.rowSpan += 1;
+				i += cell.colSpan;
+			}
+
+			const tr = this.table.insertRow(newRowIndex);
+			for(let i=0; i<insertCount; i++) {
+				tr.insertCell();
+			}
 		}
+
 		this.calcCoords();
 	}
 
@@ -232,6 +307,9 @@ class Table {
 		} else {
 			firstCell.removeAttribute('colspan');
 		}
+
+		// 合并后把当前单元格设置为第一个单元格。
+		this.select(firstCell);
 
 		this.calcCoords();
 	}
