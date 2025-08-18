@@ -325,14 +325,16 @@ class Table {
 		for(let i=0; i<rows; i++) {
 			const row = this.table.rows[i];
 			const rr = i+1, rc = newColIndex+1;
-			// 找的是左边那个元素。
-			const cell = this.findCell(rr, rc-1);
-
+			const cell = this.findCell(rr, rc);
 			const cc = this._getCoords(cell);
 
 			// 单元格由自己组成。
-			if(cc.c1 == cc.c2) {
-				const pos = cell.cellIndex+1;
+			if(cc.c1 == rc) {
+				let pos = cell.cellIndex;
+				// 上面插入过
+				if(cell.rowSpan > 1 && i+1 != cc.r1) {
+					pos--;
+				}
 				const td = row.insertCell(pos);
 				this._setCoords(td, {
 					r1: rr, c1: rc,
@@ -342,7 +344,7 @@ class Table {
 			}
 
 			// 单元格由合并单元格组成，并且当前处在合并单元格的第一行。
-			if(cc.r1 == i+1) {
+			if(cc.r1 == i+1 && cc.c1 != rc) {
 				cell.colSpan++;
 				continue;
 			}
@@ -497,6 +499,18 @@ class TableTest {
 			{
 				init: t => { t.reset(2,2); t.selectRange(1,2,2,2); t.merge(); t.addColLeft(); },
 				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td class="selected" rowspan="2">1,3</td></tr><tr><td>2,1</td><td>2,2</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(3,2); t.selectRange(1,1,3,1); t.merge(); t.selectCell(2,2); t.addColLeft(); },
+				html: '<table><tbody><tr><td class="" rowspan="3">1,1</td><td>1,2</td><td>1,3</td></tr><tr><td>2,2</td><td class="selected">2,3</td></tr><tr><td>3,2</td><td>3,3</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(3,2); t.selectRange(1,1,3,1); t.merge(); t.selectCell(2,2); t.addColRight(); t.selectRange(2,2,2,3); t.merge(); t.addColLeft(); },
+				html: '<table><tbody><tr><td class="" rowspan="3">1,1</td><td>1,2</td><td>1,3</td><td>1,4</td></tr><tr><td>2,2</td><td class="selected" colspan="2">2,3</td></tr><tr><td>3,2</td><td>3,3</td><td>3,4</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.selectCell(1,2); t.addColLeft(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td class="selected">1,3</td><td>1,4</td></tr><tr><td>2,1</td><td>2,2</td><td class="" rowspan="2" colspan="2">2,3</td></tr><tr><td>3,1</td><td>3,2</td></tr></tbody></table>',
 			},
 		];
 	}
