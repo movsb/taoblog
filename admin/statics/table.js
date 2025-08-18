@@ -17,9 +17,9 @@ class Table {
 		});
 	
 		this.table.addEventListener('mousedown', e => {
-			console.log('mousedown:', e.target);
+			// console.log('mousedown:', e.target);
 			if(!this.isCell(e.target)) {
-				console.log('mousedown not on cell');
+				// console.log('mousedown not on cell');
 				return;
 			}
 
@@ -30,25 +30,25 @@ class Table {
 			this.clearSelection();
 
 			const moveHandler = e => {
-				console.log('mousemove:', e.target);
+				// console.log('mousemove:', e.target);
 				if (!this.isCell(e.target)) {
-					console.log('mousemove not on cell');
+					// console.log('mousemove not on cell');
 					return;
 				}
 				const table = e.target.closest('table');
 				if (!table || table != this.table) {
-					console.log('mousemove on another table, ignoring');
+					// console.log('mousemove on another table, ignoring');
 					return;
 				}
 				const endCell = e.target;
 				if(!this._selectRange(startCell, endCell)) {
-					console.log('选区无效。');
+					// console.log('选区无效。');
 				}
 			};
 
 			document.addEventListener('mousemove', moveHandler);
 			document.addEventListener('mouseup', ()=>{
-				console.log('mouseup:', e.target);
+				// console.log('mouseup:', e.target);
 				document.removeEventListener('mousemove', moveHandler);
 			}, { once: true });
 		});
@@ -60,6 +60,14 @@ class Table {
 	 * @param {Number} cols 
 	 */
 	reset(rows, cols) {
+		if(!rows && !cols) {
+			rows = this._rows;
+			cols = this._cols;
+		} else {
+			this._rows = rows;
+			this._cols = cols;
+		}
+
 		this.clearSelection();
 		this.table.innerHTML = '';
 
@@ -90,6 +98,11 @@ class Table {
 		});
 	}
 
+	/**
+	 * 
+	 * @param {HTMLTableCellElement} cell 
+	 * @returns {{r1: Number,c1: Number,r2: Number,c2: Number}}
+	 */
 	_getCoords(cell) {
 		return cell._coords;
 	}
@@ -116,7 +129,7 @@ class Table {
 	 * @param {HTMLTableCellElement} cell2 
 	 */
 	_selectRange(cell1, cell2) {
-		console.log('selectRange:', cell1, cell2);
+		// console.log('selectRange:', cell1, cell2);
 
 		const cc1 = this._getCoords(cell1);
 		const cc2 = this._getCoords(cell2);
@@ -213,7 +226,10 @@ class Table {
 		return ret;
 	}
 
-	addRow(position) {
+	addRowAbove() { return this._addRow('above'); }
+	addRowBelow() { return this._addRow('below'); }
+
+	_addRow(position) {
 		if (!this.curCell) {
 			alert('Please select a cell first.');
 			return;
@@ -276,20 +292,60 @@ class Table {
 		this.calcCoords();
 	}
 
+	addColLeft()  { return this._addCol('left');  }
+	addColRight() { return this._addCol('right'); }
+
 	/** @param {string} position  */
-	addCol(position) {
+	_addCol(position) {
 		if (!this.curCell) {
 			alert('Please select a cell first.');
 			return;
 		}
 
 		/** @type {HTMLTableCellElement} */
-		const col = this.curCell;
-		const colIndex = col.cellIndex;
-		const colDiff = position == 'left' ? 0 : 1;
-		const rowCount = this.table.rows.length;
-		for(let i=0; i<rowCount; i++) {
-			const td = this.table.rows[i].insertCell(colIndex+colDiff);
+		const cell = this.curCell;
+		const cc = this._getCoords(cell);
+
+		// 如果是第一列，不需要计算。
+		// 如果是最后一列，直接追加。
+		if (cc.c1 == 1 && position == 'left' || cc.c2 == this.maxCols() && position == 'right') {
+			const rows = this.table.rows.length;
+			for(let i=0; i<rows; i++) {
+				const row = this.table.rows[i];
+				row.insertCell(position=='left' ? 0 : -1);
+			}
+			this.calcCoords();
+			return;
+		}
+
+		const left = position == 'left';
+		const newColIndex = left ? cc.c1 - 1 : cc.c2;
+
+		const rows = this.table.rows.length;
+		for(let i=0; i<rows; i++) {
+			const row = this.table.rows[i];
+			const rr = i+1, rc = newColIndex+1;
+			// 找的是左边那个元素。
+			const cell = this.findCell(rr, rc-1);
+
+			const cc = this._getCoords(cell);
+
+			// 单元格由自己组成。
+			if(cc.c1 == cc.c2) {
+				const pos = cell.cellIndex+1;
+				const td = row.insertCell(pos);
+				this._setCoords(td, {
+					r1: rr, c1: rc,
+					r2: rr, c2: rc,
+				});
+				continue;
+			}
+
+			// 单元格由合并单元格组成，并且当前处在合并单元格的第一行。
+			if(cc.r1 == i+1) {
+				cell.colSpan++;
+				continue;
+			}
 		}
 
 		this.calcCoords();
@@ -309,12 +365,13 @@ class Table {
 		let lastCell = firstCell;
 
 		const firstCoords = this._getCoords(firstCell);
-		const lastCoords = this._getCoords(lastCell);
+		let lastCoords = this._getCoords(lastCell);
 
 		this.selectedCells.forEach(cell => {
 			const cc = this._getCoords(cell);
 			if (cc.r2 >= lastCoords.r2 && cc.c2 >= lastCoords.c2) {
 				lastCell = cell;
+				lastCoords = this._getCoords(lastCell);
 			}
 		});
 
@@ -410,16 +467,36 @@ class Table {
 class TableTest {
 	constructor() {
 		/**
-		 * @type {{ run: (t: Table) => void, html: string }[]}
+		 * @type {{ init: (t: Table) => void, html: string }[]}
 		 */
 		this.cases = [
 			{
-				run: t => { t.reset(2,2); },
+				init: t => { t.reset(2,2); },
 				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr></tbody></table>',
 			},
 			{
-				run: t => { t.reset(2,2); t.selectCell(1,2); },
+				init: t => { t.reset(2,2); t.selectCell(1,2); },
 				html: '<table><tbody><tr><td>1,1</td><td class="selected">1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(2,2); t.selectCell(1,1); t.addRowAbove(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td class="selected">2,1</td><td>2,2</td></tr><tr><td>3,1</td><td>3,2</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(2,2); t.selectRange(1,2,2,2); t.merge(); },
+				html: '<table><tbody><tr><td>1,1</td><td class="selected" rowspan="2">1,2</td></tr><tr><td>2,1</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(2,2); t.selectRange(1,2,2,2); t.merge(); t.selectCell(1,1); t.addRowAbove(); t.addRowBelow(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td class="selected">2,1</td><td class="" rowspan="3">2,2</td></tr><tr><td>3,1</td></tr><tr><td>4,1</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(2,1); t.selectRange(1,1,2,1); t.merge(); t.addColRight(); },
+				html: '<table><tbody><tr><td class="selected" rowspan="2">1,1</td><td>1,2</td></tr><tr><td>2,2</td></tr></tbody></table>',
+			},
+			{
+				init: t => { t.reset(2,2); t.selectRange(1,2,2,2); t.merge(); t.addColLeft(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td class="selected" rowspan="2">1,3</td></tr><tr><td>2,1</td><td>2,2</td></tr></tbody></table>',
 			},
 		];
 	}
@@ -427,9 +504,12 @@ class TableTest {
 	run() {
 		this.cases.forEach((t, index) => {
 			const table = new Table();
-			t.run(table);
+			try {
+				t.init(table);
+			} finally {
+				table.remove();
+			}
 			const html = table.content;
-			table.remove();
 			if(html != t.html) {
 				console.table(['测试错误：', html, t.html]);
 				throw new Error(`测试错误: @${index}`);
@@ -438,7 +518,12 @@ class TableTest {
 	}
 }
 
-new TableTest().run();
+try {
+	const tt = new TableTest();
+	tt.run();
+} catch(e) {
+	console.error(e);
+}
 
 let table = new Table();
-table.reset(2,2);
+table.reset(3,3);
