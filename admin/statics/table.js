@@ -26,6 +26,8 @@ class Table {
 			if(cell == this.curCell && this._isEditing(cell)) {
 				return;
 			} 
+			// 被反转选择清除掉了，选回来。
+			this._selectCell(cell);
 			this._edit(cell, true);
 		});
 	
