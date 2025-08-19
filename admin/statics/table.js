@@ -9,6 +9,11 @@ class Table {
 		/** @type {HTMLTableCellElement[]} */
 		// 始终为从左上到右下的顺序。
 		this.selectedCells = [];
+
+		/** @type {Boolean} 是否展示调试内容。 */
+		this._showCoords = false;
+		/** @type {Boolean} 是否 fix empty line height */
+		this._fixLineHeight = true;
 	
 		this.table.addEventListener('click', (e) => {
 			if (!this._isCell(e.target)) {
@@ -90,6 +95,12 @@ class Table {
 			const tr = this.table.insertRow();
 			for(let j=0; j<cols; j++) {
 				const td = tr.insertCell();
+			}
+			if(this._fixLineHeight) {
+				// 任何列都可以。只是 firefox 上此单元格双击时不显示光标。
+				const last = tr.cells[cols-1];
+				last.innerHTML = '\u200b';
+				last._fixing = true;
 			}
 		}
 
@@ -263,6 +274,13 @@ class Table {
 			cell.contentEditable = 'plaintext-only';
 			cell.classList.add('editing');
 			cell.focus();
+
+			if(this._fixLineHeight) {
+				if(cell._fixing) {
+					cell.textContent = '';
+					cell._fixing = false;
+				}
+			}
 
 			const range = document.createRange();
 			range.selectNodeContents(cell);
@@ -657,6 +675,9 @@ class Table {
 	}
 
 	_calcCoords() {
+		return this._calcCoordsDebug(this._showCoords);
+	}
+	_calcCoordsDebug(debug) {
 		// debugger;
 		let calcC1 = (rowIndex, colIndex) => {
 			let retry = (tr, tc) => {
@@ -702,7 +723,7 @@ class Table {
 
 				this._setCoords(col, p);
 
-				col.innerText = `${p.r1},${p.c1}`;
+				if(debug) col.textContent = `${p.r1},${p.c1}`;
 			});
 		});
 	}
@@ -798,6 +819,8 @@ class TableTest {
 	run() {
 		this.cases.forEach((t, index) => {
 			const table = new Table();
+			table._showCoords = true;
+			table._fixLineHeight = false;
 			try {
 				t.init(table);
 			} finally {
