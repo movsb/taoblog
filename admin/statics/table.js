@@ -193,7 +193,8 @@ class Table {
 	 */
 	selectCell(row, col) {
 		const cell = this.findCell(row, col);
-		return this._selectCell(cell);
+		this._selectCell(cell);
+		return cell;
 	}
 
 	/** @param {HTMLTableCellElement} col */
@@ -366,6 +367,110 @@ class Table {
 			}
 		}
 
+		this._calcCoords();
+	}
+
+	deleteRows() {
+		const rows = [];
+		if (this.curCell) {
+			const cc = this._getCoords(this.curCell);
+			for(let i=cc.r1; i<=cc.r2; i++) {
+				rows.push(i);
+			}
+		} else if(this.selectedCells?.length > 0) {
+			this.selectedCells.forEach(cell => {
+				const cc = this._getCoords(cell);
+				for(let i=cc.r1; i<=cc.r2; i++) {
+					rows.push(i);
+				}
+			});
+		}
+
+		// descending
+		const sorted = [...new Set(rows)].sort((a,b) => b-a);
+		// console.log('deleteRows:', sorted);
+
+		const maxCols = this._maxCols();
+		sorted.forEach(r => {
+			for(let c=1; c <= maxCols;) {
+				const cell = this.findCell(r, c);
+				const cc = this._getCoords(cell);
+				// 单行元素。
+				if (cell.rowSpan == 1) {
+					c += cell.colSpan;
+					continue;
+				}
+				// 向下展开。
+				if (r == cc.r1) {
+					this.selectCell(r, c);
+					// 可以考虑再合并。
+					this.split();
+					c += cell.colSpan;
+					continue;
+				}
+				// 来自上面。
+				cell.rowSpan--;
+				c += cell.colSpan;
+			}
+			this.table.deleteRow(r - 1);
+		});
+
+		this.clearSelection();
+		this._calcCoords();
+	}
+
+	deleteCols() {
+		const cols = [];
+		if (this.curCell) {
+			const cc = this._getCoords(this.curCell);
+			for(let i=cc.c1; i<=cc.c2; i++) {
+				cols.push(i);
+			}
+		} else if(this.selectedCells?.length > 0) {
+			this.selectedCells.forEach(cell => {
+				const cc = this._getCoords(cell);
+				for(let i=cc.c1; i<=cc.c2; i++) {
+					cols.push(i);
+				}
+			});
+		}
+
+		// descending
+		const sorted = [...new Set(cols)].sort((a,b) => b-a);
+		// console.log('deleteCols:', sorted);
+
+		const rows = this.table.rows.length;
+		sorted.forEach(c => {
+			const toRemove = [];
+			for(let r=1; r <= rows;) {
+				const cell = this.findCell(r, c);
+				const cc = this._getCoords(cell);
+				// 单列元素。
+				if (cell.colSpan == 1) {
+					r += cell.rowSpan;
+					toRemove.push(cell);
+					continue;
+				}
+				// 向右展开。
+				if(c == cc.c1) {
+					this.selectCell(r, c);
+					// 可以考虑再合并。
+					this.split();
+					// 修改过需要重新计算。
+					this._calcCoords();
+					// 拆分过了，只剩 1 行
+					r += 1;
+					toRemove.push(cell);
+					continue;
+				}
+				// 来自左边。
+				cell.colSpan--;
+				r += cell.rowSpan;
+			}
+			toRemove.forEach(cell => cell.remove());
+		});
+
+		this.clearSelection();
 		this._calcCoords();
 	}
 
@@ -549,7 +654,7 @@ class Table {
 class TableTest {
 	constructor() {
 		/**
-		 * @type {{ init: (t: Table) => void, html: string }[]}
+		 * @type {{ note: string, init: (t: Table) => void, html: string }[]}
 		 */
 		this.cases = [
 			{
@@ -600,6 +705,36 @@ class TableTest {
 				init: t => { t.reset(2,2); t.selectRange(1,1,2,1); t.merge(); t.selectRange(1,2,2,2);  t.merge(); t.split(); },
 				html: '<table><tbody><tr><td class="" rowspan="2">1,1</td><td class="selected">1,2</td></tr><tr><td>2,2</td></tr></tbody></table>',
 			},
+			{
+				note: '删除行，单行元素',
+				init: t => { t.reset(3,3); t.selectCell(1,2); t.deleteRows(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td>1,3</td></tr><tr><td>2,1</td><td>2,2</td><td>2,3</td></tr></tbody></table>',
+			},
+			{
+				note: '删除行，多行元素，来自上面',
+				init: t => { t.reset(3,3); t.selectRange(1,2,3,2); t.merge(); t.selectCell(3,1); t.deleteRows(); },
+				html: '<table><tbody><tr><td>1,1</td><td class="" rowspan="2">1,2</td><td>1,3</td></tr><tr><td>2,1</td><td>2,3</td></tr></tbody></table>',
+			},
+			{
+				note: '删除行，多行元素，向下展开',
+				init: t => { t.reset(3,3); t.selectRange(1,2,3,2); t.merge(); t.selectCell(1,1); t.deleteRows(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td><td>1,3</td></tr><tr><td>2,1</td><td>2,2</td><td>2,3</td></tr></tbody></table>',
+			},
+			{
+				note: '删除列，单列元素',
+				init: t => { t.reset(3,3); t.selectCell(1,2); t.deleteCols(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr><tr><td>3,1</td><td>3,2</td></tr></tbody></table>',
+			},
+			{
+				note: '删除列，多列元素，来自左边',
+				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.selectCell(1,3); t.deleteCols(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td>2,1</td><td class="" rowspan="2" colspan="1">2,2</td></tr><tr><td>3,1</td></tr></tbody></table>',
+			},
+			{
+				note: '删除列，多列元素，向右展开',
+				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.selectCell(1,2); t.deleteCols(); },
+				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr><tr><td>3,1</td><td>3,2</td></tr></tbody></table>',
+			},
 		];
 	}
 
@@ -613,7 +748,7 @@ class TableTest {
 			}
 			const html = table.content;
 			if(html != t.html) {
-				console.table(['测试错误：', t.html, html]);
+				console.table([`测试错误：${t.note ?? ''}`, t.html, html]);
 				throw new Error(`测试错误: @${index}`);
 			}
 		});
@@ -628,4 +763,4 @@ try {
 }
 
 let table = new Table();
-table.reset(8,8);
+table.reset(3,3);
