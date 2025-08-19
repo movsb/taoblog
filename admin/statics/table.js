@@ -916,5 +916,4 @@ try {
 }
 
 let table = new Table();
-table._showCoords = true;
 table.reset(3,3);
