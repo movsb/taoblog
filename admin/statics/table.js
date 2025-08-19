@@ -110,7 +110,6 @@ class Table {
 		cell._coords = coords;
 	}
 	
-	// 目前只支持从左上到右下的选择。
 	// 如果设置成功，返回 true。
 	/**
 	 * @param {Number} r1 
@@ -131,8 +130,22 @@ class Table {
 	_selectRange(cell1, cell2) {
 		// console.log('selectRange:', cell1, cell2);
 
-		const cc1 = this._getCoords(cell1);
-		const cc2 = this._getCoords(cell2);
+		let cc1 = this._getCoords(cell1);
+		let cc2 = this._getCoords(cell2);
+
+		if (!(cc1.r1 <= cc2.r1 && cc1.c1 <= cc2.c1)) { // ! ➡️↘️⬇️
+			if(cc1.c1 == cc2.c1 || cc1.r1 == cc2.r1) { //   ⬆️⬅️
+				const t = cell1;
+				cell1 = cell2;
+				cell2 = t;
+				cc1 = this._getCoords(cell1);
+				cc2 = this._getCoords(cell2);
+			} else if (cc1.c1 > cc2.c1) { // ️↙️↖️
+				return this.selectRange(cc1.r1, cc2.c1, cc2.r1, cc1.c1);
+			} else { // ↗️
+				return this.selectRange(cc2.r1, cc1.c1, cc1.r1, cc2.c1);
+			}
+		}
 
 		this.clearSelection();
 
@@ -615,4 +628,4 @@ try {
 }
 
 let table = new Table();
-table.reset(2,2);
+table.reset(8,8);
