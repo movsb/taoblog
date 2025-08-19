@@ -98,9 +98,9 @@ class Table {
 	}
 	_use(content) {
 		this.table.innerHTML = content;
-		let cell = this.table.querySelector('.selected');
-		if(cell) this._highlight(cell, false);
-		cell = this.table.querySelector('.editing');
+		let cells = this.table.querySelectorAll('.selected');
+		cells.forEach(cell => this._highlight(cell, false));
+		let cell = this.table.querySelector('.editing');
 		if(cell) this._edit(cell, false);
 		this._calcCoords();
 	}
@@ -356,6 +356,28 @@ class Table {
 			}
 		});
 		return ret;
+	}
+
+	toHeaderCells() { return this._toCells('TD', 'TH'); }
+	toDataCells()   { return this._toCells('TH', 'TD'); }
+
+	/** @param {string} type */
+	// TH / TD
+	_toCells(from, to) {
+		const cells = [this.curCell, ...this.selectedCells];
+		cells.forEach(cell => {
+			if(cell?.tagName == from) {
+				/** @type {HTMLTableCellElement} */
+				const replaced = document.createElement(to);
+				replaced.innerHTML = cell.innerHTML;
+				if (cell.rowSpan > 1) replaced.rowSpan = cell.rowSpan;
+				if (cell.colSpan > 1) replaced.colSpan = cell.colSpan;
+				this._setCoords(replaced, this._getCoords(cell));
+				cell.replaceWith(replaced);
+			}
+		});
+		this.clearSelection();
+		this._save();
 	}
 
 	addRowAbove() { return this._addRow('above'); }
@@ -859,6 +881,11 @@ class TableTest {
 				init: t => { t.reset(3,3); t.selectRange(2,2,3,3); t.merge(); t.selectCell(1,2); t.deleteCols(); },
 				html: '<table><tbody><tr><td>1,1</td><td>1,2</td></tr><tr><td>2,1</td><td>2,2</td></tr><tr><td>3,1</td><td>3,2</td></tr></tbody></table>',
 			},
+			{
+				note: '切换表头',
+				init: t => { t.reset(3,3); t.selectRange(1,1,1,3); t.toHeaderCells(); t.selectRange(1,1,3,1); t.toHeaderCells(); },
+				html: '<table><tbody><tr><th class="">1,1</th><th>1,2</th><th>1,3</th></tr><tr><th>2,1</th><td>2,2</td><td>2,3</td></tr><tr><th>3,1</th><td>3,2</td><td>3,3</td></tr></tbody></table>',
+			},
 		];
 	}
 
@@ -889,4 +916,5 @@ try {
 }
 
 let table = new Table();
+table._showCoords = true;
 table.reset(3,3);

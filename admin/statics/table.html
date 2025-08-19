@@ -13,12 +13,14 @@ table, td, th {
 	border-collapse: collapse;
 }
 td, th {
-	padding: .5em 1em;
-	background-color: lightgreen;
+	padding: 4px 8px;
 	user-select: none;
 }
+th {
+	background-color: #ccc6;
+}
 td.selected, th.selected {
-	background-color: green;
+	background-color: accentColor;
 }
 td.editing, th.editing {
 	background-color: white;
@@ -53,6 +55,10 @@ td.editing, th.editing {
 <p>
 	<button type="button" onclick="table.undo()">Undo</button>
 	<button type="button" onclick="table.redo()">Redo</button>
+</p>
+<p>
+	<button type="button" onclick="table.toHeaderCells()">To Header Cells</button>
+	<button type="button" onclick="table.toDataCells()">To Data Cells</button>
 </p>
 <script src="table.js"></script>
 </body>
