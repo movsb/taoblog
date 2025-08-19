@@ -11,9 +11,22 @@ class Table {
 		this.selectedCells = [];
 	
 		this.table.addEventListener('click', (e) => {
-			if (this._isCell(e.target)) {
-				this._selectCell(e.target);
+			if (!this._isCell(e.target)) {
+				return;
 			}
+			this._selectCell(e.target);
+		});
+		this.table.addEventListener('dblclick', (e) => {
+			if (!this._isCell(e.target)) {
+				return;
+			}
+			// console.log('双击');
+			/** @type {HTMLTableCellElement} */
+			const cell = e.target;
+			if(cell == this.curCell && this._isEditing(cell)) {
+				return;
+			} 
+			this._edit(cell, true);
 		});
 	
 		this.table.addEventListener('mousedown', e => {
@@ -24,15 +37,15 @@ class Table {
 			}
 
 			const startCell = e.target;
-			if(this.curCell) {
-				this._highlight(this.curCell, false);
-			}
-			this.clearSelection();
 
 			const moveHandler = e => {
 				// console.log('mousemove:', e.target);
 				if (!this._isCell(e.target)) {
 					// console.log('mousemove not on cell');
+					return;
+				}
+				// 防止在同一个元素内移动时因频繁 clearSelection 导致失去编辑焦点。
+				if (e.target == startCell) {
 					return;
 				}
 				const table = e.target.closest('table');
@@ -198,24 +211,32 @@ class Table {
 	}
 
 	/** @param {HTMLTableCellElement} col */
-	_selectCell(col) {
+	_selectCell(cell) {
+		if(cell == this.curCell) {
+			if(this._isEditing(cell)) return;
+			else return this.clearSelection();
+		}
+
 		if(this.curCell) {
 			this._highlight(this.curCell, false);
+			this._edit(this.curCell, false);
 		}
 
 		this.clearSelection();
 
-		this.curCell = col;
-		this._highlight(col, true);
+		this.curCell = cell;
+		this._highlight(cell, true);
 	}
 
 	clearSelection() {
 		if(this.curCell) {
 			this._highlight(this.curCell, false);
+			this._edit(this.curCell, false);
 		}
 		this.curCell = null;
 		this.selectedCells.forEach(cell => {
 			this._highlight(cell, false);
+			this._edit(cell, false);
 		})
 		this.selectedCells = [];
 	}
@@ -228,6 +249,40 @@ class Table {
 	_highlight(cell, on) {
 		if(on) cell.classList.add('selected');
 		else cell.classList.remove('selected');
+	}
+
+	/**
+	 * 
+	 * @param {HTMLTableCellElement} cell 
+	 * @param {boolean} on 
+	 */
+	_edit(cell, on) {
+		if(on) {
+			cell.contentEditable = 'plaintext-only';
+			cell.classList.add('editing');
+			cell.focus();
+
+			const range = document.createRange();
+			range.selectNodeContents(cell);
+			const selection = window.getSelection();
+			selection.removeAllRanges();
+			selection.addRange(range);
+		} else {
+			// console.log('删除属性，移除类名', cell);
+			cell.removeAttribute('contentEditable');
+			cell.classList.remove('editing');
+			// 会不会有误清除？
+			window.getSelection().removeAllRanges();
+		}
+	}
+
+	/**
+	 * 
+	 * @param {HTMLTableCellElement} cell 
+	 * @returns {Boolean}
+	 */
+	_isEditing(cell) {
+		return cell.classList.contains('editing');
 	}
 
 	/** @returns {HTMLTableCellElement | null} */
