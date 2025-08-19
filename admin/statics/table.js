@@ -14,7 +14,16 @@ class Table {
 		this._showCoords = false;
 		/** @type {Boolean} 是否 fix empty line height */
 		this._fixLineHeight = true;
+
+		// Redo/Undo 数据。
+		// https://github.com/movsb/tinymde-with-undo-redo/blob/main/index.html
+		this._stack = [];
+		this._stackIndex = -1;
 	
+		this._handleEvents();
+	}
+
+	_handleEvents() {
 		this.table.addEventListener('click', (e) => {
 			if (!this._isCell(e.target)) {
 				return;
@@ -74,6 +83,28 @@ class Table {
 		});
 	}
 
+	undo() {
+		if (this._stackIndex <= 0) { return; }
+		this._use(this._stack[--this._stackIndex]);
+	}
+	redo() {
+		if(this._stackIndex+1 >= this._stack.length) { return; }
+		this._use(this._stack[++this._stackIndex]);
+	}
+	_save() {
+		const content = this.table.innerHTML;
+		this._stack[++this._stackIndex] = content;
+		this._stack.length = this._stackIndex+1;
+	}
+	_use(content) {
+		this.table.innerHTML = content;
+		let cell = this.table.querySelector('.selected');
+		if(cell) this._highlight(cell, false);
+		cell = this.table.querySelector('.editing');
+		if(cell) this._edit(cell, false);
+		this._calcCoords();
+	}
+
 	/**
 	 * 
 	 * @param {Number} rows 
@@ -105,6 +136,7 @@ class Table {
 		}
 
 		this._calcCoords();
+		this._save();
 	}
 
 	remove() {
@@ -282,13 +314,21 @@ class Table {
 				}
 			}
 
+			// 保存旧内容，对比并判断是否需要进栈。
+			cell._data = cell.textContent;
+
 			const range = document.createRange();
 			range.selectNodeContents(cell);
 			const selection = window.getSelection();
 			selection.removeAllRanges();
 			selection.addRange(range);
 		} else {
-			// console.log('删除属性，移除类名', cell);
+			// 如果正在编辑（而不是重复取消编辑），则说明可能内容需要保存。
+			if (!this._isEditing(cell)) { return }
+			if(typeof cell._data == 'string' && cell.textContent != cell._data) {
+				this._save();
+			}
+
 			cell.removeAttribute('contentEditable');
 			cell.classList.remove('editing');
 			// 会不会有误清除？
@@ -382,6 +422,7 @@ class Table {
 		}
 
 		this._calcCoords();
+		this._save();
 	}
 
 	addColLeft()  { return this._addCol('left');  }
@@ -443,6 +484,7 @@ class Table {
 		}
 
 		this._calcCoords();
+		this._save();
 	}
 
 	deleteRows() {
@@ -492,6 +534,7 @@ class Table {
 
 		this.clearSelection();
 		this._calcCoords();
+		this._save();
 	}
 
 	deleteCols() {
@@ -547,6 +590,7 @@ class Table {
 
 		this.clearSelection();
 		this._calcCoords();
+		this._save();
 	}
 
 	merge() {
@@ -597,6 +641,7 @@ class Table {
 		this._selectCell(firstCell);
 
 		this._calcCoords();
+		this._save();
 	}
 
 	split() {
@@ -661,6 +706,7 @@ class Table {
 		cell.removeAttribute('rowspan');
 
 		this._calcCoords();
+		this._save();
 	}
 
 	_maxCols() {
