@@ -1,4 +1,4 @@
-class FileList extends HTMLElement {
+class MyFileList extends HTMLElement {
 	static FileItem = class extends HTMLElement {
 		constructor() {
 			super();
@@ -14,9 +14,10 @@ class FileList extends HTMLElement {
 				<span class="size"></span>
 			</div>
 			<div class="caption">
-				<a>添加注释</a>
+				<a class="button">添加注释</a>
 			</div>
 			<div class="message"></div>
+			<div class="retry"><a class="button">重试</a></div>
 		</div>
 	</div>
 </div>`;
@@ -24,7 +25,13 @@ class FileList extends HTMLElement {
 			this._path = this.querySelector('.path');
 			this._progress = this.querySelector('.progress');
 			this._size = this.querySelector('.size');
+			/** @type {HTMLDivElement} */
 			this._message = this.querySelector('.message');
+			/** @type {HTMLDivElement} */
+			this._retry = this.querySelector('.retry');
+
+			/** @type {File|null} */
+			this._file = null;
 		}
 
 		_formatFileSize(bytes) {
@@ -36,6 +43,10 @@ class FileList extends HTMLElement {
 			return size.toFixed(2).replace(/\.00$/, '') + ' ' + units[i];
 		}
 
+		get options() { return this._options; }
+		set options(value) { this._options = value; }
+		get file() { return this._file; }
+		set file(value) { this._file = value; }
 		get spec() { return this._spec; }
 		set spec(spec) {
 			this._spec = spec;
@@ -76,7 +87,7 @@ class FileList extends HTMLElement {
 		}
 
 		set progress(v) {
-			const s = v == 100 ? '处理中……' : `上传中：${v}%`;
+			const s = v == 100 ? '处理中...' : `上传中：${v}%`;
 			this._progress.innerText = s;
 		}
 
@@ -85,8 +96,13 @@ class FileList extends HTMLElement {
 				this._message.innerText = message;
 				this._message.classList.add('error');
 				this._message.style.display = 'block';
+				this._progress.innerText = '';
+				if (this._file) {
+					this._retry.style.display = 'block';
+				}
 			} else {
 				this._message.style.display = 'none';
+				this._retry.style.display = 'none';
 			}
 		}
 
@@ -139,6 +155,12 @@ class FileList extends HTMLElement {
 				this._onEditCaption && this._onEditCaption(fi);
 				return;
 			}
+			if(target.tagName == 'A' && target.parentElement?.classList.contains('retry')) {
+				/** @type {MyFileList.FileItem} */
+				const fi = target.closest('file-list-item');
+				this._onRetry && this._onRetry(fi.file, fi.options);
+				return;
+			}
 
 			const li = target.closest('li');
 			if (!li) { return; }
@@ -166,6 +188,16 @@ class FileList extends HTMLElement {
 		)
 	}
 
+	selectAll() {
+		const items = this.querySelectorAll('li');
+		items.forEach(item => item.classList.add('selected'));
+		this._selected = this.querySelectorAll('li.selected file-list-item');
+		console.log('选中的文件：', this._selected);
+		if (this._onSelectionChange) {
+			this._onSelectionChange(this._selected);
+		}
+	}
+
 	clearSelection() {
 		this._selected = [];
 		this.querySelectorAll('li.selected').forEach(li => {
@@ -184,9 +216,22 @@ class FileList extends HTMLElement {
 	onEditCaption(callback) {
 		this._onEditCaption = callback;
 	}
+	/**
+	 * @param {(file: File, options: {keepPos: Boolean}) => {}} callback 
+	 */
+	onRetry(callback) {
+		this._onRetry = callback;
+	}
 
 	// 返回旧的spec、新的fi。
-	addNew(spec) {
+	/**
+	 * 
+	 * @param {*} spec 
+	 * @param {File} file 
+	 * @param {{keepPos: Boolean}} options 
+	 * @returns {{old: {}, now: MyFileList.FileItem}}
+	 */
+	addNew(file, spec, options) {
 		let old = null;
 		this._list.querySelectorAll('file-list-item').forEach(fi => {
 			if (fi._spec.path == spec.path) {
@@ -198,7 +243,7 @@ class FileList extends HTMLElement {
 
 		return {
 			old: old,
-			now: this._insert(this._list, spec),
+			now: this._insert(this._list, file, spec, options),
 		};
 	}
 
@@ -207,12 +252,21 @@ class FileList extends HTMLElement {
 		li.remove();
 	}
 
-	_insert(list, spec) {
+	/**
+	 * 
+	 * @param {HTMLUListElement|HTMLOListElement} list 
+	 * @param {File | null} file 
+	 * @param {*} spec 
+	 * @returns 
+	 */
+	_insert(list, file, spec, options) {
 		const li = document.createElement('li');
-		const fi = new FileList.FileItem();
+		const fi = new MyFileList.FileItem();
 		li.appendChild(fi);
 		list.appendChild(li);
 		fi.spec = spec;
+		fi.file = file;
+		fi.options = options;
 		return fi;
 	}
 
@@ -231,13 +285,13 @@ class FileList extends HTMLElement {
 	set files(list) {
 		this._list.innerHTML = '';
 		list.forEach(f => {
-			const fi = this._insert(this._list, f);
+			const fi = this._insert(this._list, null, f, {});
 			fi.finished = true;
 		});
 	}
 }
-customElements.define('file-list', FileList);
-customElements.define('file-list-item', FileList.FileItem);
+customElements.define('file-list', MyFileList);
+customElements.define('file-list-item', MyFileList.FileItem);
 
 class FileManagerDialog {
 	constructor(options) {
@@ -251,6 +305,16 @@ class FileManagerDialog {
 			this._onInsert && this._onInsert(selected);
 		});
 		this._onInsert = options?.onInsert;
+		this._dialog.querySelector('.select-none').addEventListener('click', (e)=>{
+			e.preventDefault();
+			e.stopPropagation();
+			this.clearSelection();
+		});
+		this._dialog.querySelector('.select-all').addEventListener('click', (e)=>{
+			e.preventDefault();
+			e.stopPropagation();
+			this._fileList.selectAll();
+		});
 	}
 	show() {
 		this._dialog.inert = true;
@@ -274,10 +338,12 @@ class PostFormUI {
 		this._contentChanged = false;
 
 		this._fileManagerDialog = document.querySelector('dialog[name="file-manager"]');
+		/** @type {MyFileList} */
 		this._fileList = this._fileManagerDialog.querySelector('file-list');
 		this._fileList.onSelectionChange( selected => {
 			this._fileManagerDialog.querySelector('.insert').disabled = selected.length <= 0;
 			this._fileManagerDialog.querySelector('.delete').disabled = selected.length <= 0;
+			this._fileManagerDialog.querySelector('.select-none').disabled = selected.length <= 0;
 			// console.log('选中改变。');
 		});
 		this._fileList.onEditCaption(async fi => {
@@ -302,6 +368,11 @@ class PostFormUI {
 			captionEditor.value = fi.spec.meta.source.caption ?? '';
 			dialog.showModal();
 		});
+		this._fileList.onRetry(async (file, options) => {
+			await this.uploadFile(file, options);
+		});
+
+
 		this._fileManagerDialog.querySelector('.delete').addEventListener('click', async (e) => {
 			const selected = this._fileList.selected;
 			if (selected.length <= 0) { return; }
@@ -725,6 +796,10 @@ class PostFormUI {
 		this._fileList.files = list;
 	}
 
+	/**
+	 * 
+	 * @param {(file: File[]) => {}} callback 
+	 */
 	filesChanged(callback) {
 		this._files.addEventListener('change', (e)=> {
 			console.log('选中文件列表：', this._files.files);
@@ -828,6 +903,56 @@ class PostFormUI {
 	setAutoIndent(b) {
 		this.elemPreviewContainer.classList.toggle('auto-indent', b);
 	}
+
+	/**
+	 * 
+	 * @param {File} file 
+	 * @param {{keepPos: Boolean}} options 
+	 * @returns 
+	 */
+	async uploadFile(file, options) {
+		const f = file;
+		if (f.size == 0) {
+			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
+			return;
+		}
+
+		const { old, now } = this._fileList.addNew(f, {
+			path: f.name,
+			size: f.size,
+			type: f.type,
+		}, options);
+
+		try {
+			if (f.size > (10 << 20)) {
+				throw new Error(`文件太大，不予上传。`);
+			}
+
+			let fm = new FilesManager(TaoBlog.post_id);
+			const meta = {
+				source: old?.meta?.source,
+			};
+
+			let rsp = await fm.create(f,
+				{
+					drop_gps_tags: !options.keepPos,
+				},
+				(p)=> {
+					console.log(f.name, `${p}%`);
+					now.progress = p;
+				},
+				meta,
+			);
+			// 可能会自动转换格式，所以用更新后的文件名。
+			this._fileList.updateSpec(now, rsp.spec);
+			now.finished = true;
+			now.error('');
+		} catch(e) {
+			// alert(`文件 ${f.name} 上传失败：${e}`);
+			now.error(`错误：${e.message ?? e}`);
+			return;
+		}
+	}
 }
 
 class FilesManager {
@@ -905,7 +1030,7 @@ class FilesManager {
 				failure('xhr: aborted');
 			});
 			xhr.addEventListener('error', ()=>{
-				failure('xhr: error');
+				failure('上传失败。');
 			});
 			xhr.addEventListener('load', ()=> {
 				if(xhr.readyState != XMLHttpRequest.DONE) {
@@ -1039,46 +1164,7 @@ formUI.filesChanged(async files => {
 	}
 
 	Array.from(files).forEach(async f => {
-		if (f.size == 0) {
-			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
-			return;
-		}
-
-		const { old, now } = formUI._fileList.addNew({
-			path: f.name,
-			size: f.size,
-			type: f.type,
-		});
-
-		try {
-			if (f.size > (10 << 20)) {
-				throw new Error(`文件太大，不予上传。`);
-			}
-
-			let fm = new FilesManager(TaoBlog.post_id);
-			const meta = {
-				source: old?.meta?.source,
-			};
-
-			let rsp = await fm.create(f,
-				{
-					drop_gps_tags: !keepPos,
-				},
-				(p)=> {
-					console.log(f.name, `${p}%`);
-					now.progress = p;
-				},
-				meta,
-			);
-			// 可能会自动转换格式，所以用更新后的文件名。
-			formUI._fileList.updateSpec(now, rsp.spec);
-			now.finished = true;
-			now.error('');
-		} catch(e) {
-			// alert(`文件 ${f.name} 上传失败：${e}`);
-			now.error(`错误：${e.message ?? e}`);
-			return;
-		}
+		return await formUI.uploadFile(f, { keepPos });
 	});
 });
 (async function() {

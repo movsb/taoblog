@@ -292,23 +292,26 @@ body.admin.editor {
 							font-size: .9em;
 						}
 						.details {
+							a.button {
+								color: inherit;
+								cursor: pointer;
+								&:visited {
+									color: inherit;
+								}
+							}
 							font-size: 0.8em;
 							color: dimgray;
 							.caption {
 								display: none;
-								a {
-									color: inherit;
-									cursor: pointer;
-									&:visited {
-										color: inherit;
-									}
-								}
 							}
 							.message {
 								display: none;
 								&.error {
 									color: brown;
 								}
+							}
+							.retry {
+								display: none;
 							}
 						}
 					}
