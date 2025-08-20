@@ -23,20 +23,27 @@ class Table {
 		this._handleEvents();
 	}
 
+	/**
+	 * 从事件元素 element 获取当前的单元格。
+	 * @param {HTMLElement} element 
+	 * @returns {HTMLTableCellElement | null}
+	 */
+	_getCell(element) {
+		do {
+			element = element.closest('td') ?? element.closest('th');
+			if(element && element.closest('table') == this.table) { return element; }
+		} while(element);
+	}
+
 	_handleEvents() {
 		this.table.addEventListener('click', (e) => {
-			if (!this._isCell(e.target)) {
-				return;
-			}
-			this._selectCell(e.target);
+			const cell = this._getCell(e.target);
+			if (!cell) { return; }
+			this._selectCell(cell);
 		});
 		this.table.addEventListener('dblclick', (e) => {
-			if (!this._isCell(e.target)) {
-				return;
-			}
-			// console.log('双击');
-			/** @type {HTMLTableCellElement} */
-			const cell = e.target;
+			const cell = this._getCell(e.target);
+			if (!cell) { return; }
 			if(cell == this.curCell && this._isEditing(cell)) {
 				return;
 			} 
@@ -46,30 +53,20 @@ class Table {
 		});
 	
 		this.table.addEventListener('mousedown', e => {
-			// console.log('mousedown:', e.target);
-			if(!this._isCell(e.target)) {
-				// console.log('mousedown not on cell');
-				return;
-			}
+			const cell = this._getCell(e.target);
+			if(!cell) { return; }
 
-			const startCell = e.target;
+			const startCell = cell;
 
 			const moveHandler = e => {
 				// console.log('mousemove:', e.target);
-				if (!this._isCell(e.target)) {
-					// console.log('mousemove not on cell');
-					return;
-				}
+				const cell = this._getCell(e.target);
+				if(!cell) { return; }
 				// 防止在同一个元素内移动时因频繁 clearSelection 导致失去编辑焦点。
-				if (e.target == startCell) {
+				if (cell == startCell) {
 					return;
 				}
-				const table = e.target.closest('table');
-				if (!table || table != this.table) {
-					// console.log('mousemove on another table, ignoring');
-					return;
-				}
-				const endCell = e.target;
+				const endCell = cell;
 				if(!this._selectRange(startCell, endCell)) {
 					// console.log('选区无效。');
 				}
@@ -103,6 +100,17 @@ class Table {
 		let cell = this.table.querySelector('.editing');
 		if(cell) this._edit(cell, false);
 		this._calcCoords();
+	}
+
+	/**
+	 * @param {string: "<table>...</table>"} html 
+	 */
+	use(html) {
+		const div = document.createElement('div');
+		div.innerHTML = html;
+		const table = div.firstElementChild;
+		this._use(table.innerHTML);
+		this._save();
 	}
 
 	/**
@@ -238,10 +246,6 @@ class Table {
 		}
 
 		return valid;
-	}
-
-	_isCell(element) {
-		return element.tagName == 'TD' || element.tagName == 'TH';
 	}
 
 	/**
