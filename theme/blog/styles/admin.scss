@@ -130,6 +130,27 @@ body.admin.editor {
 		#editor-container {
 			font-family: var(--font-mono);
 		}
+
+		// 小屏幕下直接占满。
+		#editor-container.stretch {
+			position: fixed;
+			inset: 0;
+			background-color: var(--color-bg);
+			max-height: unset;
+			height: 100vh;
+			height: 100dvh;
+			z-index: 100;
+			.TinyMDE {
+				border: none;
+				// 总是成为滚动元素。
+				// 没生效，注释掉。
+				// overflow: scroll;
+				// 防止滚动到末尾时把滚动事件向外传递，
+				// 这会导致滚动时误触发“键盘收起”动作。
+				overscroll-behavior: contain;
+			}
+		}
+
 		#preview-container, #diff-container {
 			padding: var(--textarea-padding);
 			border: 1px solid var(--border-color);

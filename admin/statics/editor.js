@@ -1192,3 +1192,19 @@ formUI.filesChanged(async files => {
 })();
 
 });
+
+// 小屏幕下使编辑区域占满屏幕。
+document.addEventListener('DOMContentLoaded', ()=>{
+	const wv = window.visualViewport;
+	/** @type {HTMLDivElement} */
+	const ec = document.querySelector('#editor-container');
+	wv?.addEventListener('resize', ()=> {
+		if(wv.width < 500 && wv.height < 500) {
+			ec.classList.add('stretch');
+			ec.style.height = `${wv.height}px`;
+		} else {
+			ec.classList.remove('stretch');
+			ec.style.removeProperty('height');
+		}
+	});
+});
