@@ -71,7 +71,7 @@ class MyFileList extends HTMLElement {
 				img.src = fullPath;
 				elem = img;
 			} else if(isVideo) {
-				const video = document.createElement('video');0
+				const video = document.createElement('video');
 				video.src = fullPath;
 				elem = video;
 			} else {
@@ -79,6 +79,8 @@ class MyFileList extends HTMLElement {
 				img.src = 'file.png';
 				elem = img;
 			}
+
+			elem.title = `文件名：${this._spec.path}`;
 
 			preview.appendChild(elem);
 		}
@@ -319,6 +321,11 @@ class FileManagerDialog {
 			e.stopPropagation();
 			this._fileList.selectAll();
 		});
+		this._dialog.querySelector('button.tiled').addEventListener('click', (e)=>{
+			e.preventDefault();
+			e.stopPropagation();
+			this.switchView();
+		});
 	}
 	show() {
 		this._dialog.inert = true;
@@ -330,6 +337,10 @@ class FileManagerDialog {
 	}
 	clearSelection() {
 		this._fileList.clearSelection();
+	}
+	switchView() {
+		const name = 'view-tiled';
+		this._fileList.classList.toggle(name);
 	}
 }
 
