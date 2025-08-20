@@ -2,6 +2,7 @@ package avatar
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/movsb/taoblog/gateway/handlers/avatar/github"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/gravatar"
+	"github.com/movsb/taoblog/gateway/handlers/avatar/qq"
 	"github.com/movsb/taoblog/service/modules/cache"
 )
 
@@ -112,13 +114,10 @@ func (t *Task) refreshLoop(ctx context.Context) {
 	}
 }
 
-const maxBodySize = 50 << 10
+const maxBodySize = 100 << 10
 
 func get(ctx context.Context, email string) (_ time.Time, _ []byte, outErr error) {
-	rsp, err := github.Get(ctx, email)
-	if err != nil {
-		rsp, err = gravatar.Get(ctx, email)
-	}
+	rsp, err := get2(ctx, email)
 	if err != nil {
 		log.Println(`头像获取失败：`, err)
 		outErr = err
@@ -137,4 +136,22 @@ func get(ctx context.Context, email string) (_ time.Time, _ []byte, outErr error
 	}
 
 	return lastModified, body, nil
+}
+
+func get2(ctx context.Context, email string) (*http.Response, error) {
+	// 喜欢用 QQ 邮箱？那就先尝试 QQ 头像吧。
+	rsp, err0 := qq.Get(ctx, email)
+	if err0 == nil {
+		return rsp, nil
+	}
+	rsp, err1 := github.Get(ctx, email)
+	if err1 == nil {
+		return rsp, nil
+	}
+	rsp, err2 := gravatar.Get(ctx, email)
+	if err2 == nil {
+		return rsp, nil
+	}
+
+	return nil, errors.Join(err0, err1, err2)
 }
