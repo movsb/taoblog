@@ -43,6 +43,8 @@ class MyFileList extends HTMLElement {
 			return size.toFixed(2).replace(/\.00$/, '') + ' ' + units[i];
 		}
 
+		// 修改以下属性时注意同步到拖动排序拷贝元素。
+
 		get options() { return this._options; }
 		set options(value) { this._options = value; }
 		get file() { return this._file; }
@@ -182,6 +184,8 @@ class MyFileList extends HTMLElement {
 					const old = event.item.firstElementChild;
 					const cloned = event.clone.firstElementChild;
 					cloned.spec = old.spec;
+					cloned.options = old.options;
+					cloned.file = old.file;
 					console.log('拷贝元素', event);
 				},
 			},

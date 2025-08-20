@@ -203,6 +203,10 @@ body.admin.editor {
 		max-height: 100%;
 		box-sizing: border-box;
 
+		// 支持拖动改变大小。
+		resize: both;
+		overflow: auto;
+
 		position: fixed;
 		top: 50%;
 		transform: translateY(-50%);
@@ -263,10 +267,20 @@ body.admin.editor {
 						&.selected {
 							background-color: var(--highlight-color);
 						}
+						&.sortable-drag, &.sortable-ghost {
+							background-color: var(--highlight-color);
+						}
 					}
 				}
 			}
 			file-list-item {
+				// 取消Safari浏览器的 Live Text 功能。
+				img {
+					-webkit-user-select: none; /* Safari/旧版 iOS */
+					-webkit-touch-callout: none; /* 禁止长按呼出菜单 */
+					user-select: none; /* 其它浏览器 */
+					pointer-events: auto; /* 保留点击事件 */
+				}
 				> div {
 					display: flex;
 					gap: .5em;
