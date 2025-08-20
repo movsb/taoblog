@@ -163,7 +163,7 @@ type Options struct {
 	DropGPSTags bool `json:"drop_gps_tags"`
 }
 
-const maxNumberOfAvifProcesses = 3
+const maxNumberOfAvifProcesses = 1
 
 var numberOfAvifProcesses atomic.Int32
 
