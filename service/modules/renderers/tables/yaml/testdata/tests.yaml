@@ -373,3 +373,21 @@
     <tr><td data-coords="[2,1,2,1]">1</td><td data-coords="[2,2,2,2]">2</td><td data-coords="[2,3,2,3]">3</td><td data-coords="[2,4,2,4]">4</td></tr>
     </tbody>
     </table>
+
+- description: 自动补齐
+  coords: true
+  table:
+    rows:
+      - [1]
+      - [1,2]
+      - [1,2,3]
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td data-coords="[1,1,1,1]">1</td><td data-coords="[1,2,1,2]"></td><td data-coords="[1,3,1,3]"></td></tr>
+    <tr><td data-coords="[2,1,2,1]">1</td><td data-coords="[2,2,2,2]">2</td><td data-coords="[2,3,2,3]"></td></tr>
+    <tr><td data-coords="[3,1,3,1]">1</td><td data-coords="[3,2,3,2]">2</td><td data-coords="[3,3,3,3]">3</td></tr>
+    </tbody>
+    </table>

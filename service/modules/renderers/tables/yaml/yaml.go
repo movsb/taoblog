@@ -95,6 +95,40 @@ func (t *Table) setRoot() {
 	}
 }
 
+func (t *Table) pad() {
+	maxCols := 0
+	for _, row := range t.Rows {
+		if n := len(row.Cols); n > 0 {
+			last := row.Cols[n-1]
+			maxCols = max(maxCols, last.coords.c2)
+		}
+	}
+	for ri, row := range t.Rows {
+		for ci := range maxCols {
+			if cell := t.findCell(ri+1, ci+1); cell == nil {
+				row.Cols = append(row.Cols, &Col{
+					root: t,
+					coords: Coords{
+						r1: ri + 1, c1: ci + 1,
+						r2: ri + 1, c2: ci + 1,
+					},
+				})
+			}
+		}
+	}
+}
+
+func (t *Table) findCell(r, c int) *Col {
+	for _, row := range t.Rows {
+		for _, cell := range row.Cols {
+			if cell.coords.includes(r, c) {
+				return cell
+			}
+		}
+	}
+	return nil
+}
+
 func (t *Table) calculateCoords() {
 	if len(t.Headers) >= 1 {
 		t.headerRows = make(map[int]struct{})
@@ -165,6 +199,7 @@ func (t *Table) UnmarshalYAML(unmarshal func(any) error) error {
 func (t *Table) Render(buf *strings.Builder) error {
 	t.setRoot()
 	t.calculateCoords()
+	t.pad()
 
 	buf.WriteString(`<table class="yaml`)
 	if b := t.Border.b; b != nil {
