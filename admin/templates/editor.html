@@ -13,8 +13,6 @@
 <script src="editor.js"></script>
 <script src="sortable.js"></script>
 <link rel="stylesheet" type="text/css" href="/admin/tinymde.css">
-<script type="module" crossorigin src="blocknote/blocknote.js"></script>
-<link rel="stylesheet" crossorigin href="blocknote/blocknote.css">
 {{ apply_site_theme_customs }}
 </head>
 <body class="admin editor">
@@ -26,7 +24,6 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	<div id="container">
 		<div id="editor-container">
 			<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
-			<div id="blocknote-root" style="display: none;"></div>
 		</div>
 		<div id="preview-container"></div>
 		<div id="diff-container"></div>

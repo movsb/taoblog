@@ -118,8 +118,10 @@ body.admin.editor {
 		#editor-container, #preview-container, #diff-container {
 			flex: 1;
 			min-width: 300px;
-			min-height: 350px;
-			max-height: 80vh;
+			min-height: 50vh;
+			min-height: 50dvh;
+			max-height: 100vh;
+			max-height: 100dvh;
 			// 简单限制一下在手机上的高度。
 			@media screen and (max-width: 650px) {
 				max-height: 40vh;
@@ -165,18 +167,6 @@ body.admin.editor {
 			border-radius: var(--border-radius);
 			tab-size: 4;
 			overflow: auto;
-		}
-		#blocknote-root {
-			height: 100%;
-			border: 1px solid var(--border-color);
-			padding: var(--textarea-padding);
-			border-radius: var(--border-radius);
-			// display: block !important;
-			box-sizing: border-box;
-			> .bn-container {
-				max-height: 100%;
-				overflow: auto;
-			}
 		}
 	}
 	#command-container {

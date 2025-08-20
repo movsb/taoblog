@@ -10,40 +10,8 @@ import (
 )
 
 const (
-	Untitled                = `无标题`
-	UntitledSourceMarkdown  = `# ` + Untitled + "\n\n"
-	UntitledSourceBlocknote = `[
-  {
-    "id": "ee3b6b4a-4860-4dc6-ae0f-c1d51cdd1f3d",
-    "type": "heading",
-    "props": {
-      "textColor": "default",
-      "backgroundColor": "default",
-      "textAlignment": "left",
-      "level": 1,
-      "isToggleable": false
-    },
-    "content": [
-      {
-        "type": "text",
-        "text": "无标题",
-        "styles": {}
-      }
-    ],
-    "children": []
-  },
-  {
-    "id": "979a960a-3fde-483e-a72d-59204cecca03",
-    "type": "paragraph",
-    "props": {
-      "textColor": "default",
-      "backgroundColor": "default",
-      "textAlignment": "left"
-    },
-    "content": [],
-    "children": []
-  }
-]`
+	Untitled               = `无标题`
+	UntitledSourceMarkdown = `# ` + Untitled + "\n\n"
 )
 
 type PostStatus string

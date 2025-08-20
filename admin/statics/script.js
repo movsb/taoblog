@@ -1,3 +1,14 @@
+/**
+ * 
+ * @param {Response} rsp 
+ */
+async function throwAPIError(rsp) {
+	let exception = await rsp.text();
+	try { exception = JSON.parse(exception); }
+	catch {}
+	throw exception.message ?? exception;
+}
+
 class WebAuthnAPI {
 	constructor(){}
 
@@ -122,7 +133,9 @@ class PostManagementAPI
 			},
 			body: JSON.stringify(obj),
 		});
-		if (!rsp.ok) { throw new Error('更新失败：' + await rsp.text()); }
+		if (!rsp.ok) {
+			return await throwAPIError(rsp);
+		}
 		let c = await rsp.json();
 		console.log(c);
 		return c;
@@ -143,13 +156,7 @@ class PostManagementAPI
 			})
 		});
 		if (!rsp.ok) {
-			let exception = await rsp.text();
-			try { 
-				exception = JSON.parse(exception);
-				exception = exception.message ?? exception;
-			}
-			catch {}
-			throw exception;
+			return await throwAPIError(rsp);
 		}
 		return await rsp.json();
 	}

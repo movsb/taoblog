@@ -577,8 +577,6 @@ func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitl
 	switch in.Type {
 	case `markdown`:
 		source = models.UntitledSourceMarkdown
-	case `blocknote`:
-		source = models.UntitledSourceBlocknote
 	default:
 		return nil, status.Error(codes.InvalidArgument, `unknown post type`)
 	}
@@ -612,8 +610,7 @@ func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
 func isUpdatingUntitledPost(p *models.Post) bool {
 	return p.Date == p.Modified &&
 		p.Title == models.Untitled &&
-		(p.Source == models.UntitledSourceMarkdown ||
-			p.Source == models.UntitledSourceBlocknote)
+		(p.Source == models.UntitledSourceMarkdown)
 }
 
 // 更新文章。

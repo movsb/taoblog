@@ -229,7 +229,7 @@ message ListPostsResponse {
 }
 
 message CreateUntitledPostRequest {
-	// markdown / blocknote
+	// markdown
 	string type = 1;
 }
 message CreateUntitledPostResponse {

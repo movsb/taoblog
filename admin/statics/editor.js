@@ -495,27 +495,6 @@ class PostFormUI {
 				const editor = document.querySelector('#editor-container textarea[name=source]');
 				editor.style.display = 'block';
 			}
-		} else if(currentPost.source_type == 'blocknote') {
-			this.editor = TaoBlog.blocknote;
-			const root = document.querySelector('#blocknote-root');
-			root.style.setProperty('display', 'block', 'important');
-
-			const textarea = document.querySelector('#editor-container textarea[name=source]');
-			this.source = textarea.value;
-
-			// 超级 hack 手段。
-			root.addEventListener('click', (e)=>{
-				if (e.target.closest('.bn-add-file-button')) {
-					e.stopImmediatePropagation();
-					e.stopPropagation();
-					e.preventDefault();
-					const blockElement = e.target.closest('.bn-block');
-					const id = blockElement.dataset.id;
-					const blockContent = this.editor.getBlock(id);
-					console.log('click:', id, blockContent);
-					this.showFileManager();
-				}
-			}, { capture: true });
 		} else {
 			const editor = document.querySelector('#editor-container textarea[name=source]');
 			editor.style.display = 'block';
@@ -682,9 +661,6 @@ class PostFormUI {
 	}
 
 	get source()    {
-		if(this.editor.onChange) { // blocknote
-			return JSON.stringify(this.editor.document);
-		}
 		return this.elemSource.value;
 	}
 	get time()      {
@@ -725,15 +701,6 @@ class PostFormUI {
 
 
 	set source(v)   {
-		if(this.editor.onChange) { // blocknote
-			const b = JSON.parse(v);
-			console.log('replace:', b);
-			this.editor.replaceBlocks(
-				this.editor.document.map(b => b.id),
-				b,
-			);
-			return;
-		}
 		this.elemSource.value = v;
 	}
 	setPreview(v, ok)  {
@@ -780,20 +747,7 @@ class PostFormUI {
 	// debounced
 	sourceChanged(callback) {
 		let debouncing = undefined;
-		if (this.editor.onChange) { // blocknote
-			this.editor.onChange((editor)=>{
-				this._contentChanged = true;
-				if (this._previewCallbackReturned == false) { return; }
-				clearTimeout(debouncing);
-				debouncing = setTimeout(() => {
-					const doc = editor.document;
-					const j = JSON.stringify(doc, undefined, 4);
-					console.log('blocknote:', doc);
-					console.log(j);
-					callback(j);
-				}, 1500);
-			});
-		} else if (this.editor) { // tinymde
+		if (this.editor) { // tinymde
 			this.editor.addEventListener('change', (e)=>{
 				this._contentChanged = true;
 				if (this._previewCallbackReturned == false) { return; }
@@ -1055,7 +1009,7 @@ formUI.submit(async (done) => {
 		formUI._contentChanged = false;
 		window.location = `/${post.id}/`;
 	} catch(e) {
-		alert(e);
+		alert('更新失败：' + e);
 	} finally {
 		done();
 	}
