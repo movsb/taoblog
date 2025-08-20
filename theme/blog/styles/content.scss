@@ -210,13 +210,14 @@ blockquote {
 
 article {
 	container-type: inline-size;
-	padding: 0 1em;
+	// padding: 0 1em;
 }
 
 .tweet, .tweets {
 	article {
 		background-color: var(--color-bg);
 		margin: 1em 0;
+		padding: 0 1em;
 		border: 1px solid var(--border-color);
 		border-radius: var(--border-radius);
 	}

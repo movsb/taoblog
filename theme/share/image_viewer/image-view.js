@@ -99,9 +99,11 @@ class ImageViewDesktop {
 		let initWidth = rawWidth * initScale;
 		let initHeight = rawHeight * initScale;
 
+		const rootPadding = 10*2;
+
 		{
-			let scaleWidth  = this.root.clientWidth  / initWidth;
-			let scaleHeight = this.root.clientHeight / initHeight;
+			let scaleWidth  = (this.root.clientWidth  - rootPadding) / initWidth;
+			let scaleHeight = (this.root.clientHeight - rootPadding) / initHeight;
 
 			// if smaller than container
 			if (scaleWidth >= 1 && scaleHeight >= 1) {
@@ -118,8 +120,8 @@ class ImageViewDesktop {
 		}
 
 		let style = this.obj.style;
-		style.left      = `${(this.root.clientWidth  - initWidth) /2}px`;
-		style.top       = `${(this.root.clientHeight - initHeight)/2}px`;
+		style.left      = `${(this.root.clientWidth  - rootPadding - initWidth) /2}px`;
+		style.top       = `${(this.root.clientHeight - rootPadding - initHeight)/2}px`;
 		style.width     = `${initWidth}px`;
 		style.height    = `${initHeight}px`;
 
@@ -204,6 +206,7 @@ class ImageViewMobile {
 		this.numberOfImages = images.length;
 		const div = document.createElement('div');
 		div.innerHTML = `<div id="img-view-mobile"></div>`;
+		/** @type {HTMLDivElement} */
 		this.root = div.firstElementChild;
 		images.forEach((img, index)  => {
 			const clone = img.cloneNode(true);
@@ -224,6 +227,11 @@ class ImageViewMobile {
 			});
 		});
 		document.body.appendChild(this.root);
+		// 停止向外抛滚动事件。
+		this.root.addEventListener('wheel', (e)=>{
+			e.preventDefault();
+			e.stopImmediatePropagation();
+		});
 	}
 	view(index) {
 		console.log('viewing image:', index);
