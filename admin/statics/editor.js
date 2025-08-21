@@ -1,155 +1,154 @@
-class MyFileList extends HTMLElement {
-	static FileItem = class extends HTMLElement {
-		constructor() {
-			super();
-			this.innerHTML = `
+class FileItem extends HTMLElement {
+	constructor() {
+		super();
+		this.innerHTML = `
 <div>
-	<div class="preview">
-	</div>
-	<div class="info">
-		<div class="path"></div>
-		<div class="details">
-			<div>
-				<span class="progress"></span>
-				<span class="size"></span>
-			</div>
-			<div class="caption">
-				<a class="button">添加注释</a>
-			</div>
-			<div class="message"></div>
-			<div class="retry"><a class="button">重试</a></div>
+<div class="preview">
+</div>
+<div class="info">
+	<div class="path"></div>
+	<div class="details">
+		<div>
+			<span class="progress"></span>
+			<span class="size"></span>
 		</div>
+		<div class="caption">
+			<a class="button">添加注释</a>
+		</div>
+		<div class="message"></div>
+		<div class="retry"><a class="button">重试</a></div>
 	</div>
+</div>
 </div>`;
 
-			this._path = this.querySelector('.path');
-			this._progress = this.querySelector('.progress');
-			this._size = this.querySelector('.size');
-			/** @type {HTMLDivElement} */
-			this._message = this.querySelector('.message');
-			/** @type {HTMLDivElement} */
-			this._retry = this.querySelector('.retry');
+		this._path = this.querySelector('.path');
+		this._progress = this.querySelector('.progress');
+		this._size = this.querySelector('.size');
+		/** @type {HTMLDivElement} */
+		this._message = this.querySelector('.message');
+		/** @type {HTMLDivElement} */
+		this._retry = this.querySelector('.retry');
 
-			/** @type {File|null} */
-			this._file = null;
+		/** @type {File|null} */
+		this._file = null;
+	}
+
+	_formatFileSize(bytes) {
+		if (bytes === 0) return '0 B';
+		const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+		const k = 1024;
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		const size = bytes / Math.pow(k, i);
+		return size.toFixed(2).replace(/\.00$/, '') + ' ' + units[i];
+	}
+
+	// 修改以下属性时注意同步到拖动排序拷贝元素。
+
+	get options() { return this._options; }
+	set options(value) { this._options = value; }
+	get file() { return this._file; }
+	set file(value) { this._file = value; }
+	get spec() { return this._spec; }
+	set spec(spec) {
+		this._spec = spec;
+		this._path.innerText = this._spec.path;
+		this._path.title = this._spec.path;
+		this._size.innerText = `大小：${this._formatFileSize(this._spec.size)}`;
+
+		const fullPath = `/v3/posts/${TaoBlog.post_id}/files/${encodeURIComponent(this._spec.path)}`;
+
+		const preview = this.querySelector('.preview');
+		preview.innerHTML = '';
+		let elem = null;
+
+		const type = spec.type ?? '';
+		const isImage = /^image\//.test(type);
+		const isVideo = /^video\//.test(type);
+
+		if(isImage) {
+			const img = document.createElement('img');
+			img.src = fullPath;
+			elem = img;
+		} else if(isVideo) {
+			const video = document.createElement('video');
+			video.src = fullPath;
+			elem = video;
+		} else {
+			const img = document.createElement('img');
+			img.src = 'file.png';
+			elem = img;
 		}
 
-		_formatFileSize(bytes) {
-			if (bytes === 0) return '0 B';
-			const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-			const k = 1024;
-			const i = Math.floor(Math.log(bytes) / Math.log(k));
-			const size = bytes / Math.pow(k, i);
-			return size.toFixed(2).replace(/\.00$/, '') + ' ' + units[i];
-		}
+		elem.title = `文件名：${this._spec.path}`;
 
-		// 修改以下属性时注意同步到拖动排序拷贝元素。
+		preview.appendChild(elem);
+	}
 
-		get options() { return this._options; }
-		set options(value) { this._options = value; }
-		get file() { return this._file; }
-		set file(value) { this._file = value; }
-		get spec() { return this._spec; }
-		set spec(spec) {
-			this._spec = spec;
-			this._path.innerText = this._spec.path;
-			this._path.title = this._spec.path;
-			this._size.innerText = `大小：${this._formatFileSize(this._spec.size)}`;
+	set finished(b) {
+		this._progress.innerText = '';
+		this.classList.add('finished');
+	}
 
-			const fullPath = `/v3/posts/${TaoBlog.post_id}/files/${encodeURIComponent(this._spec.path)}`;
+	set progress(v) {
+		const s = v == 100 ? '处理中...' : `上传中：${v}%`;
+		this._progress.innerText = s;
+	}
 
-			const preview = this.querySelector('.preview');
-			preview.innerHTML = '';
-			let elem = null;
-
-			const type = spec.type ?? '';
-			const isImage = /^image\//.test(type);
-			const isVideo = /^video\//.test(type);
-
-			if(isImage) {
-				const img = document.createElement('img');
-				img.src = fullPath;
-				elem = img;
-			} else if(isVideo) {
-				const video = document.createElement('video');
-				video.src = fullPath;
-				elem = video;
-			} else {
-				const img = document.createElement('img');
-				img.src = 'file.png';
-				elem = img;
-			}
-
-			elem.title = `文件名：${this._spec.path}`;
-
-			preview.appendChild(elem);
-		}
-
-		set finished(b) {
+	error(message) {
+		if (message) {
+			this._message.innerText = message;
+			this._message.classList.add('error');
+			this._message.style.display = 'block';
 			this._progress.innerText = '';
-			this.classList.add('finished');
-		}
-
-		set progress(v) {
-			const s = v == 100 ? '处理中...' : `上传中：${v}%`;
-			this._progress.innerText = s;
-		}
-
-		error(message) {
-			if (message) {
-				this._message.innerText = message;
-				this._message.classList.add('error');
-				this._message.style.display = 'block';
-				this._progress.innerText = '';
-				if (this._file) {
-					this._retry.style.display = 'block';
-				}
-			} else {
-				this._message.style.display = 'none';
-				this._retry.style.display = 'none';
+			if (this._file) {
+				this._retry.style.display = 'block';
 			}
-		}
-
-		getInsertionText() {
-			const _encodePathAsURL = (s) => {
-				// https://en.wikipedia.org/wiki/Percent-encoding
-				// 只是尽量简单地编码必要的字符，不然会在 Markdown 里面很难看。
-				// ! # $ & ' ( ) * + , / : ; = ? @ [ ]
-				// 外加 % 空格
-				const re = /!|#|\$|&|'|\(|\)|\*|\+|,|\/|:|;|=|\?|@|\[|\]|%| /g;
-				return s.replace(re, c => '%' + c.codePointAt(0).toString(16).toUpperCase());
-			}
-				
-			const _escapeAttribute = (h) => {
-				const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
-				return h.replace(/[&'"]/g, c => map[c]);
-			}
-
-			const getInsertionText = () => {
-				const f = this._spec;
-				const pathEncoded = _encodePathAsURL(f.path);
-
-				if (/^image\//.test(f.type)) {
-					return `![](${pathEncoded})\n`;
-				} else if (/^video\//.test(f.type)) {
-					return `<video controls src="${_escapeAttribute(pathEncoded)}"></video>\n`;
-				} else if (/^audio\//.test(f.type)) {
-					return `<audio controls src="${_escapeAttribute(pathEncoded)}"></audio>\n`;
-				} else {
-					return `[${f.path}](${pathEncoded})\n`;
-				}
-			};
-
-			return getInsertionText();
+		} else {
+			this._message.style.display = 'none';
+			this._retry.style.display = 'none';
 		}
 	}
 
+	getInsertionText() {
+		const _encodePathAsURL = (s) => {
+			// https://en.wikipedia.org/wiki/Percent-encoding
+			// 只是尽量简单地编码必要的字符，不然会在 Markdown 里面很难看。
+			// ! # $ & ' ( ) * + , / : ; = ? @ [ ]
+			// 外加 % 空格
+			const re = /!|#|\$|&|'|\(|\)|\*|\+|,|\/|:|;|=|\?|@|\[|\]|%| /g;
+			return s.replace(re, c => '%' + c.codePointAt(0).toString(16).toUpperCase());
+		}
+			
+		const _escapeAttribute = (h) => {
+			const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
+			return h.replace(/[&'"]/g, c => map[c]);
+		}
+
+		const getInsertionText = () => {
+			const f = this._spec;
+			const pathEncoded = _encodePathAsURL(f.path);
+
+			if (/^image\//.test(f.type)) {
+				return `![](${pathEncoded})\n`;
+			} else if (/^video\//.test(f.type)) {
+				return `<video controls src="${_escapeAttribute(pathEncoded)}"></video>\n`;
+			} else if (/^audio\//.test(f.type)) {
+				return `<audio controls src="${_escapeAttribute(pathEncoded)}"></audio>\n`;
+			} else {
+				return `[${f.path}](${pathEncoded})\n`;
+			}
+		};
+
+		return getInsertionText();
+	}
+}
+
+class MyFileList extends HTMLElement {
 	connectedCallback() {
-		this.innerHTML = `
-			<ol></ol>
-		`
+		this.innerHTML = `<ol></ol>`
 		this._list = this.querySelector('ol');
 
+		/** @type {NodeListOf<FileItem>} */
 		this._selected = [];
 
 		this.addEventListener('click', (e) => {
@@ -216,6 +215,10 @@ class MyFileList extends HTMLElement {
 		return this._selected;
 	}
 
+	/**
+	 * 注册选中文件变化时的回调函数。
+	 * @param {(selected: NodeListOf<FileItem>) => void} callback - 当文件选择状态发生变化时调用，参数为当前被选中的 FileItem 节点列表。
+	 */
 	onSelectionChange(callback) {
 		this._onSelectionChange = callback;
 	}
@@ -267,7 +270,7 @@ class MyFileList extends HTMLElement {
 	 */
 	_insert(list, file, spec, options) {
 		const li = document.createElement('li');
-		const fi = new MyFileList.FileItem();
+		const fi = new FileItem();
 		li.appendChild(fi);
 		list.appendChild(li);
 		fi.spec = spec;
@@ -296,21 +299,33 @@ class MyFileList extends HTMLElement {
 		});
 	}
 }
+
 customElements.define('file-list', MyFileList);
-customElements.define('file-list-item', MyFileList.FileItem);
+customElements.define('file-list-item', FileItem);
 
 class FileManagerDialog {
+	/**
+	 * 
+	 * @param {{
+	 *      onInsert: (selected: NodeListOf<FileItem>) => void,
+	 *      onRetryUploadFile: (file: File, options: {}) => void,
+	 *      onDelete: (selected: NodeListOf<FileItem>) => void,
+	 *      onChooseFiles: () => void,
+	 * }} options 
+	 */
 	constructor(options) {
+		this._options = options;
 		this._dialog = document.querySelector('dialog[name="file-manager"]');
+		/** @type {MyFileList} */
 		this._fileList = this._dialog.querySelector('file-list');
+
 		this._dialog.querySelector('.insert').addEventListener('click', e => {
 			e.stopPropagation();
 			e.preventDefault();
 			const selected = this._fileList.selected;
 			if (selected.length <= 0) { return; }
-			this._onInsert && this._onInsert(selected);
+			this._options?.onInsert?.(selected);
 		});
-		this._onInsert = options?.onInsert;
 		this._dialog.querySelector('.select-none').addEventListener('click', (e)=>{
 			e.preventDefault();
 			e.stopPropagation();
@@ -326,40 +341,22 @@ class FileManagerDialog {
 			e.stopPropagation();
 			this.switchView();
 		});
-	}
-	show() {
-		this._dialog.inert = true;
-		this._dialog.show();
-		this._dialog.inert = false;
-	}
-	showModal() {
-		this._dialog.showModal();
-	}
-	clearSelection() {
-		this._fileList.clearSelection();
-	}
-	switchView() {
-		const name = 'view-tiled';
-		this._fileList.classList.toggle(name);
-	}
-}
+		this._dialog.querySelector('.delete').addEventListener('click', ()=>{
+			const selected = this._fileList.selected;
+			this._options?.onDelete?.(selected);
+		});
+		this._dialog.querySelector('.upload').addEventListener('click', ()=>{
+			this._options?.onChooseFiles?.();
+		});
 
-class PostFormUI {
-	constructor() {
-		this._form = document.querySelector('#main');
-		this._previewCallbackReturned = true;
-		this._files = this._form.querySelector('#files');
-		this._users = [];
-		this._contentChanged = false;
+		this._fileList.onSelectionChange(selected => {
+			const btnInsert = this._dialog.querySelector('.insert');
+			const btnDelete = this._dialog.querySelector('.delete');
+			const btnSelectNone = this._dialog.querySelector('.select-none');
 
-		this._fileManagerDialog = document.querySelector('dialog[name="file-manager"]');
-		/** @type {MyFileList} */
-		this._fileList = this._fileManagerDialog.querySelector('file-list');
-		this._fileList.onSelectionChange( selected => {
-			this._fileManagerDialog.querySelector('.insert').disabled = selected.length <= 0;
-			this._fileManagerDialog.querySelector('.delete').disabled = selected.length <= 0;
-			this._fileManagerDialog.querySelector('.select-none').disabled = selected.length <= 0;
-			// console.log('选中改变。');
+			btnInsert.disabled = selected.length <= 0;
+			btnDelete.disabled = selected.length <= 0;
+			btnSelectNone.disabled = selected.length <= 0;
 		});
 		this._fileList.onEditCaption(async fi => {
 			const dialog = this._fileManagerDialog.querySelector('dialog[name="file-source-dialog"]');
@@ -383,33 +380,89 @@ class PostFormUI {
 			captionEditor.value = fi.spec.meta.source.caption ?? '';
 			dialog.showModal();
 		});
-		this._fileList.onRetry(async (file, options) => {
-			await this.uploadFile(file, options);
-		});
+		this._fileList.onRetry(this._options.onRetryUploadFile);
+	}
+	show() {
+		this._dialog.inert = true;
+		this._dialog.show();
+		this._dialog.inert = false;
+	}
+	showModal() {
+		this._dialog.showModal();
+	}
+	clearSelection() {
+		this._fileList.clearSelection();
+	}
+	switchView() {
+		const name = 'view-tiled';
+		this._fileList.classList.toggle(name);
+	}
 
+	set files(list) {
+		console.log(list);
+		this._fileList.files = list;
+	}
 
-		this._fileManagerDialog.querySelector('.delete').addEventListener('click', async (e) => {
-			const selected = this._fileList.selected;
-			if (selected.length <= 0) { return; }
-			selected.forEach(async fi => {
-				const path = fi.spec.path;
-				console.log('删除文件：', path);
-				try {
-					await new FilesManager(TaoBlog.post_id).delete(path);
-				} catch(e) {
-					if (!(e instanceof Response && e.status == 404)) {
-						alert('文件删除失败：' + e);
-						return;
+	/**
+	 * 
+	 * @param {FileItem} fi 
+	 */
+	removeFile(fi) {
+		this._fileList.removeFile(fi);
+	}
+
+	/**
+	 * 
+	 * @param {File} file 
+	 * @param {{
+	 *      path: string,
+	 *      size: number,
+	 *      type: string,
+	 * }} spec 
+	 */
+	createFile(file, spec, options) {
+		return this._fileList.addNew(file, spec, options);
+	}
+
+	updateFile(fi, spec) {
+		return this._fileList.updateSpec(fi, spec);
+	}
+}
+
+class PostFormUI {
+	constructor() {
+		this._form = document.querySelector('#main');
+		this._previewCallbackReturned = true;
+		/** @type {HTMLInputElement} */
+		this._files = this._form.querySelector('#files');
+		this._users = [];
+		this._contentChanged = false;
+
+		this._fileManager = new FileManagerDialog({
+			onInsert: (selected) => {  this._handleInsertFiles(selected); },
+			onRetryUploadFile: async (file, options) => {
+				await this.uploadFile(file, options);
+			},
+			onDelete: async (selected) => {
+				selected.forEach(async fi => {
+					const path = fi.spec.path;
+					console.log('删除文件：', path);
+					try {
+						await new FilesManager(TaoBlog.post_id).delete(path);
+					} catch(e) {
+						if (!(e instanceof Response && e.status == 404)) {
+							alert('文件删除失败：' + e);
+							return;
+						}
 					}
-				}
-				this._fileList.removeFile(fi);
-				this._fileList.clearSelection();
-			});
+					this._fileManager.removeFile(fi);
+				});
+				this._fileManager.clearSelection();
+			},
+			onChooseFiles: () => { this._files.click(); },
 		});
-		this._fileManagerDialog.querySelector('.upload').addEventListener('click', (e) => {
-			this._files.click();
-		});
-		this._form.querySelector('p.file-manager-button button').addEventListener('click', e => {
+
+		this._form.querySelector('p.file-manager-button button').addEventListener('click', () => {
 			this.showFileManager();
 		});
 		
@@ -436,7 +489,7 @@ class PostFormUI {
 		});
 
 		let geoInputDebounceTimer = undefined;
-		this._form['geo_location'].addEventListener('input', (e)=> {
+		this._form['geo_location'].addEventListener('input', ()=> {
 			clearTimeout(geoInputDebounceTimer);
 			geoInputDebounceTimer = setTimeout(async ()=> {
 				try {
@@ -547,7 +600,7 @@ class PostFormUI {
 							name: `fileManager`,
 							title: `上传图片/视频/文件`,
 							innerHTML: `📄 文件管理`,
-							action: editor => {
+							action: () => {
 								this.showFileManager();
 							},
 						},
@@ -598,54 +651,58 @@ class PostFormUI {
 		setTimeout(() => this.updatePreview(this.source), 0);
 	}
 
-	showFileManager(modal) {
-		const dialog = new FileManagerDialog({
-			onInsert: (selected) => {
-				selected.forEach(fi => {
-					if(this.editor.onChange) {
-						console.log(fi.spec);
-						const isImage = /^image\//.test(fi.spec.type);
-						const isVideo = /^video\//.test(fi.spec.type);
-						let block = undefined;
-						if (isImage) {
-							block = {
-								type: 'image',
-								props: {
-									url: fi.spec.path,
-								},
-							};
-						} else if (isVideo) {
-							block = {
-								type: 'video',
-								props: {
-									url: fi.spec.path,
-								},
-							};
-						} else {
-							block = {
-								type: 'file',
-								props: {
-									url: fi.spec.path,
-								},
-							};
-						}
-						if (block) {
-							const ref = this.editor.document[this.editor.document.length-1];
-							this.editor.insertBlocks([block], ref, 'before');
-						}
-					} else {
-						const text = fi.getInsertionText();
-						if (this.editor) {
-							this.editor.paste(text);
-						} else {
-							this.elemSource.value += text;
-						}
-					}
-				});
-				dialog.clearSelection();
-			},
+	/**
+	 * 
+	 * @param {NodeListOf<FileItem>} selected 
+	 */
+	_handleInsertFiles(selected) {
+		selected.forEach(fi => {
+			if(this.editor.onChange) {
+				console.log(fi.spec);
+				const isImage = /^image\//.test(fi.spec.type);
+				const isVideo = /^video\//.test(fi.spec.type);
+				let block = undefined;
+				if (isImage) {
+					block = {
+						type: 'image',
+						props: {
+							url: fi.spec.path,
+						},
+					};
+				} else if (isVideo) {
+					block = {
+						type: 'video',
+						props: {
+							url: fi.spec.path,
+						},
+					};
+				} else {
+					block = {
+						type: 'file',
+						props: {
+							url: fi.spec.path,
+						},
+					};
+				}
+				if (block) {
+					const ref = this.editor.document[this.editor.document.length-1];
+					this.editor.insertBlocks([block], ref, 'before');
+				}
+			} else {
+				const text = fi.getInsertionText();
+				if (this.editor) {
+					this.editor.paste(text);
+				} else {
+					this.elemSource.value += text;
+				}
+			}
 		});
-		modal ? dialog.showModal() : dialog.show();
+		this._fileManager.clearSelection();
+	}
+
+	showFileManager(modal) {
+		if(modal) this._fileManager.showModal();
+		else this._fileManager.show();
 	}
 
 	async updatePreview(content) {
@@ -776,7 +833,7 @@ class PostFormUI {
 	get status() { return this.elemStatus.value; }
 	set status(s) { this.elemStatus.value = s; }
 	get toc() { return this.elemToc.value; }
-	set toc(s) { return this.elemToc.value = s ? "1": "0"; }
+	set toc(s) { this.elemToc.value = s ? "1": "0"; }
 	get top()   { return this.elemTop.value == 1; }
 	set top(v)  { this.elemTop.value = v ? "1": "0"; }
 	get autoIndent() { return this.elemIndent.checked; }
@@ -808,7 +865,7 @@ class PostFormUI {
 	 */
 	set files(list) {
 		console.log(list);
-		this._fileList.files = list;
+		this._fileManager.files = list;
 	}
 
 	/**
@@ -816,7 +873,7 @@ class PostFormUI {
 	 * @param {(file: File[]) => {}} callback 
 	 */
 	filesChanged(callback) {
-		this._files.addEventListener('change', (e)=> {
+		this._files.addEventListener('change', ()=> {
 			console.log('选中文件列表：', this._files.files);
 			callback(this._files.files);
 		});
@@ -848,7 +905,7 @@ class PostFormUI {
 			});
 		} else {
 			// textarea
-			this.elemSource.addEventListener('input', (e)=>{
+			this.elemSource.addEventListener('input', ()=>{
 				this._contentChanged = true;
 				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
@@ -878,7 +935,7 @@ class PostFormUI {
 					exception = JSON.parse(exception);
 					exception = exception.message ?? exception;
 				}
-				catch {}
+				catch { /* empty */ }
 				throw exception;
 			}
 			const { names } = await rsp.json();
@@ -932,7 +989,7 @@ class PostFormUI {
 			return;
 		}
 
-		const { old, now } = this._fileList.addNew(f, {
+		const { old, now } = this._fileManager.createFile(f, {
 			path: f.name,
 			size: f.size,
 			type: f.type,
@@ -959,7 +1016,7 @@ class PostFormUI {
 				meta,
 			);
 			// 可能会自动转换格式，所以用更新后的文件名。
-			this._fileList.updateSpec(now, rsp.spec);
+			this._fileManager.updateFile(now, rsp.spec);
 			now.finished = true;
 			now.error('');
 		} catch(e) {
@@ -1070,7 +1127,7 @@ class FilesManager {
 	// f: <input type="file"> 中拿来的文件。
 	// 不会抛异常。
 	static detectImageSize(f) {
-		return new Promise((success, failure) => {
+		return new Promise((success) => {
 			const isImage = /^image\//.test(f.type);
 			const isVideo = /^video\//.test(f.type);
 
