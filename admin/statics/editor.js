@@ -164,7 +164,7 @@ class MyFileList extends HTMLElement {
 			if(target.tagName == 'A' && target.parentElement?.classList.contains('retry')) {
 				/** @type {MyFileList.FileItem} */
 				const fi = target.closest('file-list-item');
-				this._onRetry && this._onRetry(fi.file, fi.options);
+				this._onRetry && this._onRetry(fi);
 				return;
 			}
 
@@ -229,34 +229,25 @@ class MyFileList extends HTMLElement {
 		this._onEditCaption = callback;
 	}
 	/**
-	 * @param {(file: File, options: {keepPos: Boolean}) => {}} callback 
+	 * @param {(fi: FileItem) => {}} callback 
 	 */
 	onRetry(callback) {
 		this._onRetry = callback;
 	}
 
-	// 返回旧的spec、新的fi。
 	/**
 	 * 
 	 * @param {*} spec 
 	 * @param {File} file 
 	 * @param {{keepPos: Boolean}} options 
-	 * @returns {{old: {}, now: MyFileList.FileItem}}
+	 * @returns {FileItem}
 	 */
 	addNew(file, spec, options) {
-		let old = null;
-		this._list.querySelectorAll('file-list-item').forEach(fi => {
-			if (fi._spec.path == spec.path) {
-				old = fi._spec;
-				const li = fi.closest('li');
-				li.remove();
-			}
-		});
-
-		return {
-			old: old,
-			now: this._insert(this._list, file, spec, options),
-		};
+		/** @type {NodeListOf<FileItem>} */
+		const items = this._list.querySelectorAll('file-list-item');
+		const existed = Array.from(items).filter(fi => fi.spec.path == spec.path);
+		if (existed?.length > 0) { return existed[0]; }
+		return this._insert(file, spec, options);
 	}
 
 	removeFile(fi) {
@@ -271,11 +262,11 @@ class MyFileList extends HTMLElement {
 	 * @param {*} spec 
 	 * @returns 
 	 */
-	_insert(list, file, spec, options) {
+	_insert(file, spec, options) {
 		const li = document.createElement('li');
 		const fi = new FileItem();
 		li.appendChild(fi);
-		list.appendChild(li);
+		this._list.appendChild(li);
 		fi.spec = spec;
 		fi.file = file;
 		fi.options = options;
@@ -297,7 +288,7 @@ class MyFileList extends HTMLElement {
 	set files(list) {
 		this._list.innerHTML = '';
 		list.forEach(f => {
-			const fi = this._insert(this._list, null, f, {});
+			const fi = this._insert(null, f, {});
 			fi.finished = true;
 		});
 	}
@@ -311,7 +302,7 @@ class FileManagerDialog {
 	 * 
 	 * @param {{
 	 *      onInsert: (selected: NodeListOf<FileItem>) => void,
-	 *      onRetryUploadFile: (file: File, options: {}) => void,
+	 *      onRetryUploadFile: (fi: FileItem) => void,
 	 *      onDelete: (selected: NodeListOf<FileItem>) => void,
 	 *      onChooseFiles: () => void,
 	 * }} options 
@@ -366,7 +357,8 @@ class FileManagerDialog {
 			btnSelectNone.disabled = selected.length <= 0;
 		});
 		this._fileList.onEditCaption(async fi => {
-			const dialog = this._fileManagerDialog.querySelector('dialog[name="file-source-dialog"]');
+			/** @type {HTMLDialogElement} */
+			const dialog = this._dialog.querySelector('dialog[name="file-source-dialog"]');
 			const captionEditor = dialog.querySelector('textarea');
 			dialog.querySelector('.save').onclick = async ()=> {
 				console.log('点击保存');
@@ -447,8 +439,9 @@ class PostFormUI {
 
 		this._fileManager = new FileManagerDialog({
 			onInsert: (selected) => {  this._handleInsertFiles(selected); },
-			onRetryUploadFile: async (file, options) => {
-				await this.uploadFile(file, options);
+			onRetryUploadFile: async (fi) => {
+				fi.error('');
+				await this.uploadFile(fi.file, fi.options);
 			},
 			onDelete: async (selected) => {
 				selected.forEach(async fi => {
@@ -996,7 +989,7 @@ class PostFormUI {
 			return;
 		}
 
-		const { old, now } = this._fileManager.createFile(f, {
+		const now = this._fileManager.createFile(f, {
 			path: f.name,
 			size: f.size,
 			type: f.type,
@@ -1008,9 +1001,7 @@ class PostFormUI {
 			}
 
 			let fm = new FilesManager(TaoBlog.post_id);
-			const meta = {
-				source: old?.meta?.source,
-			};
+			const meta = {};
 
 			let rsp = await fm.create(f,
 				{
@@ -1121,7 +1112,7 @@ class FilesManager {
 					return;
 				}
 				console.log(xhr);
-				failure('xhr: unknown');
+				failure(`HTTP: ${xhr.status}`);
 			});
 			xhr.upload.addEventListener('progress', (e)=> {
 				progress((e.loaded / e.total * 100).toFixed(0));
