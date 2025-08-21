@@ -86,7 +86,10 @@ class FileItem extends HTMLElement {
 
 	set finished(b) {
 		this._progress.innerText = '';
-		this.classList.add('finished');
+		this.classList.toggle('finished', b);
+	}
+	get finished() {
+		return this.classList.contains('finished');
 	}
 
 	set progress(v) {
@@ -324,6 +327,10 @@ class FileManagerDialog {
 			e.preventDefault();
 			const selected = this._fileList.selected;
 			if (selected.length <= 0) { return; }
+			if(Array.from(selected).some(fi => !fi.finished)) {
+				alert('选中了未完成处理的文件。');
+				return;
+			}
 			this._options?.onInsert?.(selected);
 		});
 		this._dialog.querySelector('.select-none').addEventListener('click', (e)=>{
@@ -1252,6 +1259,7 @@ formUI.filesChanged(async files => {
 
 // 小屏幕下使编辑区域占满屏幕。
 document.addEventListener('DOMContentLoaded', ()=>{
+	if(!('ontouchstart' in window)) { return; }
 	const wv = window.visualViewport;
 	/** @type {HTMLDivElement} */
 	const ec = document.querySelector('#editor-container');

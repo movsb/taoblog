@@ -4,7 +4,11 @@
 __debug_bin*
 *_local_test.go
 /root
+
 node_modules/
+/eslint.config.mjs
+/package-lock.json
+/package.json
 
 # https://stackoverflow.com/a/13953560/3628322
 # https://stackoverflow.com/a/53039267/3628322
