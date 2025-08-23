@@ -292,6 +292,11 @@ class MyFileList extends HTMLElement {
 			fi.finished = true;
 		});
 	}
+
+	get fileCount() {
+		const items = this._list.querySelectorAll('file-list-item');
+		return items.length;
+	}
 }
 
 customElements.define('file-list', MyFileList);
@@ -400,6 +405,18 @@ class FileManagerDialog {
 	set files(list) {
 		console.log(list);
 		this._fileList.files = list;
+	}
+
+	/**
+	 * 返回文件总数。
+	 * @returns {number}
+	 */
+	get fileCount() {
+		return this._fileList.fileCount;
+	}
+
+	showUploadFile() {
+		this._options?.onChooseFiles?.();
 	}
 
 	/**
@@ -700,9 +717,11 @@ class PostFormUI {
 		this._fileManager.clearSelection();
 	}
 
-	showFileManager(modal) {
-		if(modal) this._fileManager.showModal();
-		else this._fileManager.show();
+	showFileManager() {
+		this._fileManager.show();
+		if(this._fileManager.fileCount <= 0) {
+			this._fileManager.showUploadFile();
+		}
 	}
 
 	async updatePreview(content) {
