@@ -88,7 +88,9 @@ func (m *Metadata) String() []string {
 	add(m.FileName, `名字`)
 	add(m.FileSize, `大小`)
 	add(m.ImageSize, `尺寸`)
-	add(m.Orientation, `方向`)
+	if !strings.Contains(m.Orientation, `normal`) {
+		add(m.Orientation, `方向`)
+	}
 	add(m.MimeType, `类型`)
 
 	if t := m.CreationDateTime(); !t.IsZero() {
