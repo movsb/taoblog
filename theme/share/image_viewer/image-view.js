@@ -265,7 +265,7 @@ class ImageView {
 	}
 
 	initDesktop() {
-		let images = document.querySelectorAll('.entry img:not(.no-zoom):not(.static)');
+		let images = document.querySelectorAll('.entry img:not(.static)');
 		images.forEach(img => img.addEventListener('click', e => {
 			if (!img.complete) {
 				console.log('图片未完成加载：', img);
@@ -276,7 +276,7 @@ class ImageView {
 	}
 
 	initMobile() {
-		let images = document.querySelectorAll('.entry img:not(.no-zoom):not(.static)');
+		let images = document.querySelectorAll('.entry img:not(.static)');
 		new ImageViewMobile(images)
 	}
 }

@@ -25,14 +25,13 @@
 
 :root {
 --accent-color:             #ac53ac;
---highlight-color:          #ac53ac8f;
+--highlight-color:          rgb(from var(--accent-color) r g b / 55%);
 --font-size:                15px;
 --font-mono:                "MapleMonoNL", Monaco, Consolas, monospace;
 --font-normal:              "MapleMonoNL", Helvetica,Verdana,"Microsoft YaHei",'Noto Sans',sans-serif;
 --max-width:                850px;
 --border-radius:            4px;
---code-color:               rgba(60,60,60,0.6);
---a-fg:                     var(--accent-color);
+--code-color:               rgb(60,60,60,0.6);
 --box-shadow:               0 0 3px gray;
 --line-height-loose:        2;
 --line-height-tight:        1.5;
@@ -43,7 +42,7 @@
 --kbd-padding:              3px 8px;
 
 // 其实我并不喜欢修改用户的选中色……
---selection-background-color:   #ac53ac8f;
+--selection-background-color: var(--highlight-color);
 }
 
 @media (prefers-color-scheme: light) {

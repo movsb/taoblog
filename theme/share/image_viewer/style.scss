@@ -1,16 +1,10 @@
 #img-view {
     position: fixed;
     z-index: 1000000;
-    background-color: rgba(0,0,0,0.88);
+    background-color: rgb(0,0,0,0.88);
 	inset: 0;
 	padding: 10px;
     cursor: zoom-out;
-
-	&.transparent {
-		@media (prefers-color-scheme: light) {
-			background-color: rgba(white, 0.95);
-		}
-	}
 
     > img, > svg {
         cursor: move;
@@ -32,13 +26,13 @@
 // TODO 应该在 img 的事件绑定上加 class，
 // 因为有过滤器，不是所有图片都需要如此。
 .entry {
-	img:not(.no-zoom):not(.static) /*, svg */{
+	img:not(.static) /*, svg */{
 		cursor: zoom-in;
 	}
 }
 
 #img-view-mobile {
-	background-color: rgba(0,0,0,0.88);
+	background-color: rgb(0,0,0,0.88);
 	display: none;
 	position: fixed;
 	inset: 0;;

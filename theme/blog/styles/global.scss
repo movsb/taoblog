@@ -34,7 +34,7 @@ body.tweet, body.tweets {
 
 @media screen and (max-width: variables.$max_width) {
     body {
-        text-shadow: 0 0 1px rgba(0,0,0,0.22);
+        text-shadow: 0 0 1px rgb(0,0,0,0.22);
     }
 }
 
@@ -61,7 +61,7 @@ h6 { font-size: 1.0em; }
 
 a, .like-a {
 	text-decoration: none;
-	color: var(--a-fg);
+	color: var(--accent-color);
 	transition: all .2s ease-out;
 	&:hover {
 		text-decoration: underline;
@@ -134,6 +134,10 @@ table {
 	border-collapse: collapse;
 	margin: 1em 0px;
 	overflow: auto;
+
+	// 不仅是 <code>，<td> 里面的文本也有字体大小不一致的问题。
+	text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
 	
 	// 维斯百科的表格没有 <thead>，所以这里的判断并不是很严格。
 	// https://blog.twofei.com/1419/
@@ -171,10 +175,6 @@ table {
 	&.no-border, &.no-border td {
 		border: none;
 	}
-
-	// 不仅是 <code>，<td> 里面的文本也有字体大小不一致的问题。
-	text-size-adjust: 100%;
-	-webkit-text-size-adjust: 100%;
 }
 
 hr {

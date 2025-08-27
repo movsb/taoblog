@@ -218,7 +218,7 @@ func TestMarkdownAll(t *testing.T) {
 		<img src="1.jpg" alt="" width="460" height="460" onerror="decryptFile(this)"/>
 	</div>
 	<div class="icon">
-		<img src="/v3/dynamic/live-photo/live.png" class="no-zoom static"/>
+		<img src="/v3/dynamic/live-photo/live.png" class="static"/>
 		<span>实况</span>
 	</div>
 	<div class="warning" style="opacity: 0;"></div>
