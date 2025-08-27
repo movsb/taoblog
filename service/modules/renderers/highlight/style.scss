@@ -27,14 +27,16 @@ div.chroma {
 	}
 }
 
+$gutter_gap: 14px;
+
 table.lntable {
 	display: block;
 	position: relative;
 	overflow: hidden;
 	> tbody {
 		display: block;
-		margin-left: calc(40px - .5em);
-		padding-left: .5em;
+		margin-left: calc(40px - $gutter_gap);
+		padding-left: $gutter_gap;
 		border-left: 1px solid var(--border-color);
 		box-sizing: border-box;
 
@@ -51,12 +53,12 @@ table.lntable {
 		user-select: none;
 		position: absolute;
 		left: 0;
-		width: calc(40px - .5em);
+		width: calc(40px - calc($gutter_gap - 2px));
 		@media (prefers-color-scheme: dark) {
 			color: #666;
 		}
 		pre.chroma {
-			padding-right: .5em;
+			padding-right: calc($gutter_gap - 2px);
 			box-sizing: border-box;
 			text-align: right;
 			border-radius: unset;

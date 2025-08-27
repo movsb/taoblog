@@ -72,6 +72,10 @@ a, .like-a {
 	&:focus {
 		outline: none;
 	}
+	&[title] {
+		text-decoration-style: dashed;
+		text-decoration-line: underline;
+	}
 }
 
 pre {
@@ -102,6 +106,14 @@ img, svg {
 		float: right;
 		margin-left: 1em !important;
 	}
+}
+
+del {
+	// 默认的看起来太细了（居然少于1？），有点不清楚。
+	text-decoration-thickness: 1px;
+
+	// 稍微留点边距，看起来不那么拥挤。
+	margin: 0 2px;
 }
 
 :root {

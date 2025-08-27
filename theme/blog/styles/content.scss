@@ -73,6 +73,7 @@ body:not(.wide) {
 		font-size: 85%;
         a {
             color: inherit;
+			text-decoration: none;
 
             &:visited {
                 color: inherit;
@@ -152,11 +153,23 @@ body:not(.wide) .entry {
 	}
 }
 
+$blockquote-color: var(--border-color);
+
 blockquote {
-	margin: 0;
-	border-left: .25em solid var(--border-color);
-	padding: 0 .5em;
-	opacity: 75%;
+	margin: 1em 0 1em 1px;
+	padding: 1px 14px;
+	opacity: 80%;
+	border-left: 5px solid $blockquote-color;
+	// background-color: rgb(from $blockquote-color r g b / .3);
+
+	$margin: 5px;
+
+	> p:first-child {
+		margin-top: $margin;
+	}
+	> p:last-child {
+		margin-bottom: $margin;
+	}
 }
 
 .entry {
