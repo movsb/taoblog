@@ -58,7 +58,7 @@ func TestLimitNumberOfProcesses(t *testing.T) {
 	var n atomic.Int32
 	ch := make(chan struct{}, 5)
 	for i := range 5 {
-		go utils.LimitNumberOfProcesses(`test`, &n, 3, func() {
+		go utils.LimitExec(`test`, &n, 3, func() {
 			t.Log(`sleeping`)
 			time.Sleep(time.Second * 1)
 			t.Log(i)

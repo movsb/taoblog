@@ -126,7 +126,7 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 				data2 []byte
 				err   error
 			)
-			utils.LimitNumberOfProcesses(
+			utils.LimitExec(
 				`convertToAVIF`, &numberOfAvifProcesses, maxNumberOfAvifProcesses,
 				func() {
 					// 跨线程写没问题吧？

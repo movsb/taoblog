@@ -140,7 +140,8 @@ func (t *Throttler[Key]) Update(key Key, interval time.Duration) {
 // 并行进程个数限制器。
 // 超过时会自动等待 1 秒。
 // 会等待执行完成后才返回，execute 在线程在被调用。
-func LimitNumberOfProcesses(name string, n *atomic.Int32, max int, execute func()) {
+// 不会捕获异常。
+func LimitExec(name string, n *atomic.Int32, max int, execute func()) {
 	ch := make(chan struct{})
 	go func() {
 		defer func() {

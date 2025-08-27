@@ -28,7 +28,7 @@ type _CacheValue struct {
 
 type InvalidateCacheFor func(id int)
 
-const maxExecutions = 16
+const maxExecutions = 1
 
 type Task struct {
 	invalidate InvalidateCacheFor
@@ -77,15 +77,10 @@ func (t *Task) get(id int, u string, f fs.File) string {
 		key, ttl, &value,
 		func() (any, error) {
 			shouldCloseFile = false
-			go func() {
-				for t.numberOfExecutions.Add(+1) > maxExecutions {
-					t.numberOfExecutions.Add(-1)
-					log.Println(`任务太多，等待中...`, key)
-					time.Sleep(time.Second * 3)
-				}
-				defer t.numberOfExecutions.Add(-1)
+			// 为了快速返回，放线程中执行。
+			go utils.LimitExec(`exif`, &t.numberOfExecutions, maxExecutions, func() {
 				t.extract(id, baseName, stat, key, f)
-			}()
+			})
 			return nil, fmt.Errorf(`async`)
 		},
 	); err != nil {
