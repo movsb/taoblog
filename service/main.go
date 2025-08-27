@@ -334,15 +334,16 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 	}
 
 	out := &proto.GetInfoResponse{
-		Name:         s.cfg.Site.Name,
-		Description:  s.cfg.Site.Description,
-		Home:         strings.TrimSuffix(s.cfg.Site.Home, "/"),
-		Commit:       version.GitCommit,
-		LastPostedAt: int32(t.Unix()),
+		Name:        s.cfg.Site.Name,
+		Description: s.cfg.Site.Description,
+		Home:        strings.TrimSuffix(s.cfg.Site.Home, "/"),
+		Commit:      version.GitCommit,
+		Uptime:      int32(time.Since(version.Time).Seconds()),
 
 		CertDaysLeft:   s.certDaysLeft.Load(),
 		DomainDaysLeft: s.domainExpirationDaysLeft.Load(),
 
+		LastPostedAt: int32(t.Unix()),
 		LastBackupAt: s.lastBackupAt.Load(),
 		LastSyncAt:   s.lastSyncAt.Load(),
 

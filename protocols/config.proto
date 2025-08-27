@@ -36,6 +36,10 @@ message GetInfoResponse {
 	// Git 版本号
 	string commit = 4;
 
+	// 本次启动已运行时长。
+	// 以 秒 为单位。
+	int32 uptime = 5;
+
 	// 最后更新时间。
 	// 主要包含：文章。
 	int32 last_posted_at = 10;
