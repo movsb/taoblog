@@ -37,6 +37,7 @@ func proxy(ctx context.Context, listen string, home, token string) {
 			pr.SetURL(parsedHome)
 			pr.Out.Host = parsedHome.Host
 			pr.Out.Header.Set(`User-Agent`, ua)
+			pr.Out.Header.Del(`Cookie`)
 			for _, c := range cookies {
 				pr.Out.AddCookie(c)
 			}

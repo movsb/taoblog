@@ -530,7 +530,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		Short:            `代理网络请求，自动登录。`,
 		PersistentPreRun: preRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			proxy(cmd.Context(), `localhost:2564`, config.Home, config.Token)
+			proxy(cmd.Context(), `localhost:22564`, config.Home, config.Token)
 		},
 	}
 	rootCmd.AddCommand(proxyCmd)
