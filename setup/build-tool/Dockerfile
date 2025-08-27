@@ -30,4 +30,4 @@ ENV PATH="$PATH":/usr/local/go/bin:/root/go/bin
 # 	&& rm protoc-grpc-swift-plugins-linux-x86_64-1.23.0.zip
 
 # 安装 Node.js v23（通过 apt）
-RUN curl -fsSL https://deb.nodesource.com/setup_23.x | bash - && apt install -y nodejs
+# RUN curl -fsSL https://deb.nodesource.com/setup_23.x | bash - && apt install -y nodejs
