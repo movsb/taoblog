@@ -12,6 +12,7 @@ import (
 	ics "github.com/arran4/golang-ical"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders/solar"
 )
 
 type Job struct {
@@ -109,7 +110,7 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 			startAt: r.Dates.Start,
 			endAt:   r.Dates.End,
 			messageFunc: func() string {
-				days := daysPassed(s.now(), r.Dates.Start.Time, r.Exclusive)
+				days := solar.DaysPassed(s.now(), r.Dates.Start.Time, r.Exclusive)
 				return fmt.Sprintf(`%s 已经 %d 天了`, r.Title, days)
 			},
 			isDaily: true,

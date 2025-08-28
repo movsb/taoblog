@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
-	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/renderers/reminders/solar"
 )
 
 type UserDate struct {
@@ -52,7 +52,10 @@ type Reminder struct {
 	Description string        `yaml:"description"`
 	Dates       ReminderDates `yaml:"dates"`
 
-	Exclusive bool `yaml:"exclusive"` // 排除今天？
+	// * 对于发生在过去的事件时间，是否排除当天。
+	// * 如果正值事件当天，此参数也有效。
+	// * 如果事件还未发生，此参数无效。
+	Exclusive bool `yaml:"exclusive"`
 
 	// 提醒？
 	Remind ReminderRemind `yaml:"remind"`
@@ -103,12 +106,7 @@ type ReminderRemind struct {
 }
 
 func (r *Reminder) Days() int {
-	return daysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
-}
-
-func daysPassed(now, t time.Time, exclusive bool) int {
-	n := int(now.Sub(t).Hours() / 24)
-	return utils.IIF(exclusive, n, n+1)
+	return solar.DaysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
 }
 
 func (r *Reminder) Start() string {
