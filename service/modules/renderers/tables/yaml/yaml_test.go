@@ -1,6 +1,7 @@
 package yaml_test
 
 import (
+	"bytes"
 	"fmt"
 	"html"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 	"github.com/movsb/taoblog/service/modules/renderers/tables/yaml"
+	"github.com/yuin/goldmark"
 )
 
 func TestAll(t *testing.T) {
@@ -70,6 +72,12 @@ th {
 		if tc.Coords {
 			tc.Table.SetOutputCoords(true)
 		}
+		tc.Table.SetTextRenderer(func(text string) (string, error) {
+			buf := bytes.NewBuffer(nil)
+			err := goldmark.Convert([]byte(text), buf)
+			return buf.String(), err
+		})
+
 		utils.Must(tc.Table.Render(&buf))
 		h := buf.String()
 		fmt.Fprintf(fp, `<h2>%s</h2>`, html.EscapeString(tc.Description))

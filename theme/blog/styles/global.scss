@@ -72,10 +72,6 @@ a, .like-a {
 	&:focus {
 		outline: none;
 	}
-	&[title] {
-		text-decoration-style: dashed;
-		text-decoration-line: underline;
-	}
 }
 
 pre {

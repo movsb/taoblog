@@ -391,3 +391,37 @@
     <tr><td data-coords="[3,1,3,1]">1</td><td data-coords="[3,2,3,2]">2</td><td data-coords="[3,3,3,3]">3</td></tr>
     </tbody>
     </table>
+
+- description: Markdown 单元格
+  table:
+    - cols:
+        - text: plain
+        - markdown: '*italic*'
+        - markdown: '**bold**'
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td>plain</td><td><p><em>italic</em></p>
+    </td><td><p><strong>bold</strong></p>
+    </td></tr>
+    </tbody>
+    </table>
+
+- description: 默认 Markdown
+  table:
+    markdown: true
+    rows:
+      - [plain,'*italic*','**bold**']
+  html: |
+    <table class="yaml">
+    <thead>
+    </thead>
+    <tbody>
+    <tr><td><p>plain</p>
+    </td><td><p><em>italic</em></p>
+    </td><td><p><strong>bold</strong></p>
+    </td></tr>
+    </tbody>
+    </table>

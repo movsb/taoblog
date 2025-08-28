@@ -130,6 +130,10 @@ body:not(.wide) {
                 cursor: default;
             }
         }
+		&[title] {
+			text-decoration-style: dashed;
+			text-decoration-line: underline;
+		}
     }
 
 	.toc {

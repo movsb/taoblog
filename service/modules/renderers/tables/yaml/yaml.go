@@ -26,6 +26,13 @@ type Table struct {
 	// <table>/<th>/<td> 的边框设置。
 	Border Border `yaml:"border"`
 
+	// 默认单元格为 Markdown 格式。
+	// 如果未设置 MarkdownRenderer，会报错。
+	// TODO: 是否应该去掉默认的 <p></p> 包装？
+	// NOTE: Markdown 渲染目前是独立进行的，单元格与单元格之间，单元格与文章
+	// 之间没有关联，比如引用、脚注之类的不会生效。
+	Markdown bool `yaml:"markdown"`
+
 	headerRows map[int]struct{}
 	headerCols map[int]struct{}
 
@@ -352,24 +359,32 @@ func writeText(buf *strings.Builder, t string) {
 	if strings.ContainsAny(t, " \n\t") {
 		buf.WriteString(`<span class="pre">`)
 		defer buf.WriteString(`</span>`)
-
 	}
 	buf.WriteString(html.EscapeString(t))
 }
 
+func writeMarkdown(buf *strings.Builder, r MarkdownRenderer, m string) error {
+	if r != nil {
+		text, err := r(m)
+		if err != nil {
+			return err
+		}
+		buf.WriteString(text)
+		return nil
+	}
+	return fmt.Errorf(`no markdown renderer set`)
+}
+
 func (c *Col) renderContent(buf *strings.Builder) error {
 	if c.Text != `` {
-		writeText(buf, c.Text)
-	} else if c.Markdown != `` {
-		if tr := c.root.markdownRenderer; tr != nil {
-			text, err := tr(c.Markdown)
-			if err != nil {
-				return err
-			}
-			buf.WriteString(text)
+		if c.root.Markdown {
+			return writeMarkdown(buf, c.root.markdownRenderer, c.Text)
 		} else {
-			writeText(buf, c.Markdown)
+			writeText(buf, c.Text)
+			return nil
 		}
+	} else if c.Markdown != `` {
+		return writeMarkdown(buf, c.root.markdownRenderer, c.Markdown)
 	} else if c.Table != nil {
 		if err := c.Table.Render(buf); err != nil {
 			return err
