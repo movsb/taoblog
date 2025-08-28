@@ -22,10 +22,6 @@ message FormatTimeResponse {
 	repeated Formatted formatted = 1;
 }
 
-message DialRemoteMessage {
-	bytes data = 1;
-}
-
 message ResolveGeoLocationRequest {
 	float latitude = 1;
 	float longitude = 2;

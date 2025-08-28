@@ -3,11 +3,9 @@ package service
 import (
 	"context"
 	"time"
-
 	_ "time/tzdata"
 
 	"github.com/movsb/taoblog/modules/auth"
-	"github.com/movsb/taoblog/modules/dialers"
 	"github.com/movsb/taoblog/modules/geo"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
@@ -74,11 +72,6 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 	return &proto.FormatTimeResponse{
 		Formatted: formatted,
 	}, nil
-}
-
-func (u *Utils) DialRemote(s proto.Utils_DialRemoteServer) error {
-	dialer := dialers.NewRemoteDialerManager(s)
-	return dialer.Run()
 }
 
 func (u *Utils) ResolveGeoLocation(ctx context.Context, in *proto.ResolveGeoLocationRequest) (_ *proto.ResolveGeoLocationResponse, outErr error) {
