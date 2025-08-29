@@ -46,11 +46,22 @@ document.write(function(){/*
 </div>
 */}.toString().slice(14,-3));
 
+// TODO: 没有选区的时候不能取消缩进。
 class TextareaWithTab {
+	/**
+	 * 
+	 * @param {HTMLTextAreaElement} editor 
+	 */
 	constructor(editor) {
+		/** @type {HTMLTextAreaElement} */
 		this.editor = editor;
 		this.editor.addEventListener('keydown', (event)=>{
 			this.handleTab(event);
+			
+			if(event.key == 'Enter' && this.handleEnter(event)) {
+				event.preventDefault();
+				return;
+			}
 		});
 	}
 
@@ -76,21 +87,51 @@ class TextareaWithTab {
 		this.editor.value = this.editor.value.slice(0, start) + text + this.editor.value.slice(end);
 	}
 
+	/**
+	 * 
+	 * @param {KeyboardEvent} e 
+	 */
+	handleEnter(e) {
+		let start = this.editor.selectionStart;
+		let end = this.editor.selectionEnd;
+		// 必须在没有选区的时候尝试自动缩进。
+		if(start != end) return false;
+
+		const content = this.editor.value;
+
+		// 按下回车的时候还没有插入，拷贝当前行前面的空白内容。
+		let lineStart = start;
+		let lastNonWhitespace = start;
+		while(lineStart > 0) {
+			const c = content[lineStart-1];
+			if(c == '\n') { break; }
+			if(c != ' ' && c != '\t') {
+				lastNonWhitespace = lineStart-1;
+			}
+			lineStart--;
+		}
+
+		const prefix = content.slice(lineStart, lastNonWhitespace);
+		this.replace(end, end, "\n"+prefix);
+		return true;
+	}
+
 	handleTab(e) {
 		if (e.key !== 'Tab') return;
 		e.preventDefault();
 
-		const v = this.editor.value;
+		const content = this.editor.value;
 		let start = this.editor.selectionStart;
 		let end = this.editor.selectionEnd;
-		let selection = v.slice(start, end);
+		let selection = content.slice(start, end);
 
-		// 如果是多行选区，则将选区的每一行都缩进。
+		// 1. 如果是多行选区，则应该选区的每一行都缩进。
+		//    所以这里把选区扩展到行首和行尾，并重新选区。
 		const multi = selection.includes('\n');
 		if (multi) {
-			while (start > 0 && v[start - 1] !== '\n') start--;
-			while (end < v.length && v[end] !== '\n') end++;
-			selection = v.slice(start, end);
+			while (start > 0 && content[start - 1] !== '\n') start--;
+			while (end < content.length && content[end] !== '\n') end++;
+			selection = content.slice(start, end);
 		}
 
 		const isShift = e.shiftKey;
