@@ -7,29 +7,30 @@
 <script src="/admin/script.js"></script>
 </head>
 <body id="error">
+<div class="sitename" style="position:absolute;top:1em;left:1em;font-size: 80%;" ><a href="/" title="{{ siteName }}">{{ siteName }}</a></div>
+{{ if .User.IsGuest }}
+<div style="position: absolute; top: 1em; right: 1em; font-size: 80%;">
+	<a onclick="login()">未登录？点击登录</a>
+	<script>
+		async function login() {
+			let wa = new WebAuthn();
+			try {
+				await wa.login();
+				document.body.classList.add('signed-in');
+				location.reload();
+			} catch(e) {
+				if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+					console.log('已取消操作。');
+					return;
+				}
+				alert(e);
+			}
+		}
+	</script>
+</div>
+{{ end }}
 <div id="wrapper">
 	<div>{{ .Data.Message }}</div>
-	{{ if .User.IsGuest }}
-	<div style="position: absolute; top: 1em; right: 1em; font-size: 80%;">
-		<a onclick="login()">未登录？点击登录</a>
-		<script>
-			async function login() {
-				let wa = new WebAuthn();
-				try {
-					await wa.login();
-					document.body.classList.add('signed-in');
-					location.reload();
-				} catch(e) {
-					if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
-						console.log('已取消操作。');
-						return;
-					}
-					alert(e);
-				}
-			}
-		</script>
-	</div>
-	{{ end }}
 </div>
 </body>
 </html>
