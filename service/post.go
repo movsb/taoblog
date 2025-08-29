@@ -684,6 +684,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	// 更新无标题文章时如果时间未指定，则更新为现在时间。
 	if isUpdatingUntitledPost(oldPost) && in.Post.Date == oldPost.Date {
 		m[`date`] = now
+		// 可能没有修改时区，但是空也是合法的。
+		if tz, ok := m[`modified_timezone`]; ok {
+			m[`date_timezone`] = tz
+		}
 	}
 
 	if hasMetas {
