@@ -1,17 +1,68 @@
 .table-wrapper {
-	// 这一行把 sticky 表格干没了
-	// “sticky 元素的父元素不能有 overflow: hidden/scroll/auto，否则失效”
-	overflow-x: auto;
-	// 如果加上限高，可能有所缓解。
-	max-height: 60vh;
-	margin: 1em 0;;
+	// 允许工具栏绝对定位。
+	position: relative;
 
-	> table {
-		margin: 0;;
-		width: max-content;
-		table-layout: auto;
+	&.fullscreen {
+		position: fixed;
+		inset: 0;
+		background-color: var(--color-bg);
+		z-index: 100;
 
-		// 尝试 fix sticky 表格（overflow 导致的）
-		// max-height: 90vh;
+		> .toolbar {
+			top: 16px;
+		}
+
+		> .scrollable {
+			margin: 0;
+			max-height: 100%;
+			// 前进、后退、body不滚动。
+			overscroll-behavior: contain;
+		}
+	}
+
+	> .scrollable {
+		// 这一行把 sticky 表格干没了
+		// “sticky 元素的父元素不能有 overflow: hidden/scroll/auto，否则失效”
+		// 如果加上限高，可能有所缓解。
+		overflow: auto;
+		max-height: 60vh;
+
+		margin: 1em 0;;
+		// 禁止触发浏览器的前进后退、页面的滚动。
+		overscroll-behavior-x: contain;
+
+		> table {
+			margin: 0;;
+			width: max-content;
+			table-layout: auto;
+
+			// 尝试 fix sticky 表格（overflow 导致的）
+			// max-height: 90vh;
+		}
+	}
+
+	> .toolbar {
+		opacity: 0;
+		width: 16px;
+		height: 16px;
+		position: absolute;
+		top: .5em;
+		right: 16px;
+		transition: opacity .25s linear;
+		cursor: pointer;
+		z-index: 100;
+		background-color: var(--color-bg);
+
+		> svg {
+			fill: var(--color-fg);
+		}
+	}
+}
+
+@media (hover: hover) {
+	.table-wrapper:hover {
+		> .toolbar {
+			opacity: 1;
+		}
 	}
 }

@@ -21,7 +21,7 @@ import (
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
-//go:embed style.css
+//go:embed style.css script.js
 var _embed embed.FS
 var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
@@ -30,6 +30,7 @@ func init() {
 		const module = `tables`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
 		dynamic.WithStyles(module, `style.css`)
+		dynamic.WithScripts(module, `script.js`)
 	})
 }
 
@@ -41,7 +42,7 @@ func (_TableWrapper) TransformHtml(doc *goquery.Document) error {
 		if s.Parent().HasClass(`chroma`) {
 			return
 		}
-		s.WrapHtml(`<div class="table-wrapper"></div>`)
+		s.WrapHtml(`<div class="table-wrapper"><div class="scrollable"></div></div>`)
 	})
 	return nil
 }
