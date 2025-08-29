@@ -493,7 +493,11 @@ class PostFormUI {
 					// 按 GeoJSON 来，经度在前，纬度在后。
 					const s = `${longitude},${latitude}`;
 					console.log('位置：', s);
-					document.querySelector('#geo_location').value = s;
+					/** @type {HTMLInputElement} */
+					const loc = document.querySelector('#geo_location');
+					const empty = loc.value.length == 0;
+					loc.value = s;
+					if(empty) { this._form['geo_private'].checked = true; }
 					this.updateGeoLocations(latitude, longitude);
 				},
 				()=> {
