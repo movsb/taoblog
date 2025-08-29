@@ -843,3 +843,36 @@ func v60(posts, files, cache *taorm.DB) {
 func v61(posts, files, cache *taorm.DB) {
 	posts.MustExec(`UPDATE posts SET status='private' WHERE status='draft'`)
 }
+
+type v62Post struct {
+	ID    int
+	Metas string
+}
+
+func (v62Post) TableName() string {
+	return `posts`
+}
+
+// "origin:omitempty":null
+func v62(posts, files, cache *taorm.DB) {
+	var ps []*v62Post
+	posts.From(models.Post{}).Select(`id,metas`).MustFind(&ps)
+
+	r := strings.NewReplacer(
+		`{"origin:omitempty":null}`, `{}`, // 只有它
+		`{"origin:omitempty":null,`, `{`, // 在左边
+		`,"origin:omitempty":null}`, `}`, // 在右边
+		`,"origin:omitempty":null,`, `,`, // 在中间
+		`"origin:omitempty":{`, `"origin":{`, // 有值的。
+	)
+
+	for _, p := range ps {
+		p.Metas = r.Replace(p.Metas)
+	}
+
+	for _, p := range ps {
+		posts.Model(p).MustUpdateMap(taorm.M{
+			`metas`: p.Metas,
+		})
+	}
+}

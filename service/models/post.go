@@ -55,7 +55,7 @@ type PostMeta struct {
 	Toc      bool   `json:"toc,omitempty" yaml:"toc,omitempty"`
 
 	Geo    *Geo                `json:"geo,omitempty" yaml:"geo,omitempty"`
-	Origin *proto.Metas_Origin `json:"origin:omitempty" yaml:"origin,omitempty"`
+	Origin *proto.Metas_Origin `json:"origin,omitempty" yaml:"origin,omitempty"`
 
 	Weixin     string `json:"weixin,omitempty" yaml:"weixin,omitempty"`
 	TextIndent bool   `json:"text_indent,omitempty" yaml:"text_indent,omitempty"`
