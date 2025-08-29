@@ -96,7 +96,7 @@ class TextareaWithTab {
 		const isShift = e.shiftKey;
 		const modified = selection
 			.split('\n')
-			.map(line => isShift ? line.replace(/^  /, '') : ('  ' + line))
+			.map(line => isShift ? line.replace(/^  |^\t/, '') : ('  ' + line))
 			.join('\n');
 
 		this.replace(start, end, modified);
