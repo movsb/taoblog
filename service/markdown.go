@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
@@ -56,7 +57,10 @@ import (
 //
 // 换言之，发表/更新调用此接口，把评论转换成 html 时用 cached 接口。
 // 前者用请求身份，后者不限身份。
-func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions, publicContent bool) (string, error) {
+//
+// NOTE: 创建评论、预览评论、创建文章等一些地方可能是没有 postID 和 commentID 的。
+// 严格情况下，不能光靠这两个字段来区别是文章还是评论。
+func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, commentID int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions, publicContent bool) (string, error) {
 	switch sourceType {
 	case `html`:
 		tr := &renderers.HTML{}
@@ -127,7 +131,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, _ int
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
 		extension.GFM,
-		footnotes.New(),
+		footnotes.New(
+			utils.IIF(commentID > 0, footnotes.Comment, footnotes.Article),
+			int(utils.IIF(commentID > 0, commentID, postId)),
+		),
 		alerts.New(),
 		colors.New(),
 

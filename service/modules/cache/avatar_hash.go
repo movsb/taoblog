@@ -69,8 +69,8 @@ func (c *AvatarHash) Email(email string) (out uint32) {
 	next := c.id(
 		[]byte(email),
 		func(sum uint32) bool {
-			e, ok := c.id2email[sum]
-			return ok && e == email
+			_, ok := c.id2email[sum]
+			return ok
 		})
 
 	c.email2id[email] = next
@@ -92,8 +92,8 @@ func (c *AvatarHash) User(user int) (out uint32) {
 	next := c.id(
 		binary.LittleEndian.AppendUint32(nil, uint32(user)),
 		func(sum uint32) bool {
-			u, ok := c.id2user[sum]
-			return ok && u == user
+			_, ok := c.id2user[sum]
+			return ok
 		},
 	)
 
