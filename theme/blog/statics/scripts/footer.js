@@ -78,3 +78,12 @@ setTimeout(update, 3000);
 		});
 	}
 })();
+
+// 不知道为什么 Firefox On iOS 会会长数字解析成电话号码，但是 Safari 并不会。
+// 按照网上所有人说的添加 `<meta name="format-detection" content="telephone=no">` 也无济于事。
+// 草草草🌿️🌿️🌿️！！！
+setTimeout(()=>{
+	document.querySelectorAll('a[x-apple-data-detectors]').forEach(a => {
+		a.replaceWith(a.textContent);
+	});
+}, 1000);
