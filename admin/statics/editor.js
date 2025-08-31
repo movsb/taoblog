@@ -121,28 +121,12 @@ class FileItem extends HTMLElement {
 			const re = /!|#|\$|&|'|\(|\)|\*|\+|,|\/|:|;|=|\?|@|\[|\]|%| /g;
 			return s.replace(re, c => '%' + c.codePointAt(0).toString(16).toUpperCase());
 		}
-			
-		const _escapeAttribute = (h) => {
-			const map = {'&': '&amp;', "'": '&#39;', '"': '&quot;'};
-			return h.replace(/[&'"]/g, c => map[c]);
-		}
 
-		const getInsertionText = () => {
-			const f = this._spec;
-			const pathEncoded = _encodePathAsURL(f.path);
+		const f = this._spec;
+		const pathEncoded = _encodePathAsURL(f.path);
 
-			if (/^image\//.test(f.type)) {
-				return `![](${pathEncoded})\n`;
-			} else if (/^video\//.test(f.type)) {
-				return `<video controls src="${_escapeAttribute(pathEncoded)}"></video>\n`;
-			} else if (/^audio\//.test(f.type)) {
-				return `<audio controls src="${_escapeAttribute(pathEncoded)}"></audio>\n`;
-			} else {
-				return `[${f.path}](${pathEncoded})\n`;
-			}
-		};
-
-		return getInsertionText();
+		// 通通插入成图片，后端根据 type 自动修改插入类型。
+		return `![](${pathEncoded})\n`;
 	}
 }
 

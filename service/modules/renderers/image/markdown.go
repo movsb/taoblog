@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	std_html "html"
 	"log"
+	"mime"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -66,6 +69,28 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 		return ast.WalkContinue, nil
 	}
 
+	fileType := mime.TypeByExtension(path.Ext(url.Path))
+	switch {
+	case strings.HasPrefix(fileType, `video/`):
+		renderVideo(w, url)
+	case strings.HasPrefix(fileType, `audio/`):
+		renderAudio(w, url)
+	default:
+		renderImage(w, url, n, source)
+	}
+
+	return ast.WalkSkipChildren, nil
+}
+
+func renderVideo(w util.BufWriter, url *url.URL) {
+	fmt.Fprintf(w, `<video controls src="%s"></video>`, std_html.EscapeString(url.String()))
+}
+
+func renderAudio(w util.BufWriter, url *url.URL) {
+	fmt.Fprintf(w, `<audio controls src="%s"></audio>`, std_html.EscapeString(url.String()))
+}
+
+func renderImage(w util.BufWriter, url *url.URL, n *ast.Image, source []byte) {
 	styles := map[string]string{}
 	classes := []string{}
 
@@ -117,7 +142,6 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 	}
 
 	_, _ = w.WriteString(">")
-	return ast.WalkSkipChildren, nil
 }
 
 func nodeToHTMLText(n ast.Node, source []byte) []byte {
