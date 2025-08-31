@@ -77,3 +77,46 @@ func TestFiles(t *testing.T) {
 		t.Log(rspBody)
 	}
 }
+
+func TestCreateEmptyFiles(t *testing.T) {
+	r := Serve(t.Context())
+
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		SourceType: `markdown`,
+		Source:     `# 123`,
+	}))
+
+	createFile := func(name string, data []byte) {
+		// 上传文件
+		body := bytes.NewBuffer(nil)
+		parts := multipart.NewWriter(body)
+
+		utils.Must(parts.WriteField(
+			`spec`, string(utils.Must1(jsonPB.Marshal(&proto.FileSpec{
+				Path: name,
+				Mode: 0600,
+				Size: uint32(len(data)),
+				Time: 0,
+			}))),
+		))
+		_ = utils.Must1(parts.CreateFormFile(`data`, name))
+		utils.Must(parts.Close())
+
+		endpoint := r.server.JoinPath(`/v3/posts`, fmt.Sprint(p.Id), `files`)
+
+		req := utils.Must1(http.NewRequestWithContext(
+			r.user1, http.MethodPost,
+			endpoint, bytes.NewBuffer(body.Bytes()),
+		))
+		req.Header.Set(`Content-Type`, parts.FormDataContentType())
+		r.addAuth(req, r.user1ID)
+		rsp := utils.Must1(http.DefaultClient.Do(req))
+		defer rsp.Body.Close()
+		if rsp.StatusCode != 200 {
+			t.Fatalf(`文件上传错误：status=%s`, rsp.Status)
+		}
+	}
+
+	createFile(`1.txt`, nil)
+	createFile(`2.txt`, nil)
+}

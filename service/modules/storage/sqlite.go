@@ -104,6 +104,8 @@ func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	}), nil
 }
 
+// 获取文件的内容数据。
+// 零大小数据不能走这里。
 func (d *DataStore) GetFile(postID int, digest string, size int) (io.ReadSeeker, error) {
 	var file models.FileData
 	if err := d.data.Select(`data`).Where(`post_id=? AND digest=?`, postID, digest).Find(&file); err != nil {
@@ -163,11 +165,15 @@ type _Reader struct {
 
 func (r *_Reader) prepare() error {
 	if r.data == nil {
-		f, err := r.db.GetFile(r.meta.PostID, r.meta.Digest, int(r.meta.Size))
-		if err != nil {
-			return fmt.Errorf(`获取文件数据失败：%w`, err)
+		if r.meta.Size == 0 {
+			r.data = bytes.NewReader(nil)
+		} else {
+			f, err := r.db.GetFile(r.meta.PostID, r.meta.Digest, int(r.meta.Size))
+			if err != nil {
+				return fmt.Errorf(`获取文件数据失败：%w`, err)
+			}
+			r.data = f
 		}
-		r.data = f
 	}
 	return nil
 }
@@ -294,6 +300,8 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 	models.Encrypt(&meta.Encryption, data)
 
 	var old models.File
+
+	// 更新文件。
 	if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&old); err == nil {
 		_, err := fs.s.meta.Model(&old).UpdateMap(taorm.M{
 			`updated_at`: now.Unix(),
@@ -306,22 +314,33 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 		if err != nil {
 			return fmt.Errorf(`更新文件失败：%w`, err)
 		}
+		// 零大小文件不存放数据。
+		if spec.Size == 0 {
+			return fs.s.data.DeleteData(fs.pid, old.Digest)
+		}
 		return fs.s.data.UpdateData(fs.pid, old.Digest, data)
-	} else {
-		file := models.File{
-			CreatedAt: now.Unix(),
-			UpdatedAt: now.Unix(),
-			PostID:    fs.pid,
-			Path:      fullName,
-			Mode:      spec.Mode,
-			ModTime:   int64(spec.Time),
-			Size:      spec.Size,
-			Meta:      meta,
-			Digest:    models.Digest(data),
-		}
-		if err := fs.s.meta.Model(&file).Create(); err != nil {
-			return fmt.Errorf(`创建文件失败：%w`, err)
-		}
-		return fs.s.data.CreateData(fs.pid, file.Digest, data)
 	}
+
+	// 创建新文件。
+	file := models.File{
+		CreatedAt: now.Unix(),
+		UpdatedAt: now.Unix(),
+		PostID:    fs.pid,
+		Path:      fullName,
+		Mode:      spec.Mode,
+		ModTime:   int64(spec.Time),
+		Size:      spec.Size,
+		Meta:      meta,
+		Digest:    models.Digest(data),
+	}
+	if err := fs.s.meta.Model(&file).Create(); err != nil {
+		return fmt.Errorf(`创建文件失败：%w`, err)
+	}
+
+	// 零大小文件不存放数据。
+	if spec.Size == 0 {
+		return nil
+	}
+
+	return fs.s.data.CreateData(fs.pid, file.Digest, data)
 }

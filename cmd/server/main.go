@@ -157,6 +157,11 @@ func (s *Server) HTTPAddr() string {
 	return s.httpAddr
 }
 
+// 基于 HTTPAddr 创建请求端点地址。
+func (s *Server) JoinPath(paths ...string) string {
+	return utils.Must1(url.Parse(`http://` + s.HTTPAddr())).JoinPath(paths...).String()
+}
+
 // 运行时的真实 GRPC 地址。
 // 形如：127.0.0.1:2563，不包含协议、路径等。
 func (s *Server) GRPCAddr() string {
