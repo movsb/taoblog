@@ -1,3 +1,10 @@
+/**
+ * @typedef {Object} FileSpec
+ * @property {string} path
+ * @property {string} type
+ * @property {number} size
+ */
+
 class FileItem extends HTMLElement {
 	constructor() {
 		super();
@@ -48,8 +55,12 @@ class FileItem extends HTMLElement {
 	set options(value) { this._options = value; }
 	get file() { return this._file; }
 	set file(value) { this._file = value; }
+
 	get spec() { return this._spec; }
 	set spec(spec) {
+		if (!spec) { throw new Error('错误的文件元信息。'); }
+
+		/** @type {FileSpec} */
 		this._spec = spec;
 		this._path.innerText = this._spec.path;
 		this._path.title = this._spec.path;
@@ -180,6 +191,26 @@ class MyFileList extends HTMLElement {
 		)
 	}
 
+	/**
+	 * 选中指定文件路径的文件。
+	 * @param {string} path 
+	 * @returns {boolean}
+	 */
+	select(path) {
+		const anchor = Array.from(this.items).find(fi => fi.spec.path == path);
+		if(anchor) {
+			anchor.scrollIntoView();
+			const li = anchor.closest('li');
+			li.classList.add('selected');
+
+			this._selected = [anchor];
+			console.log('选中的文件：', this._selected);
+			if (this._onSelectionChange) {
+				this._onSelectionChange(this._selected);
+			}
+		}
+	}
+
 	selectAll() {
 		const items = this.querySelectorAll('li');
 		items.forEach(item => item.classList.add('selected'));
@@ -278,13 +309,67 @@ class MyFileList extends HTMLElement {
 	}
 
 	get fileCount() {
-		const items = this._list.querySelectorAll('file-list-item');
-		return items.length;
+		return this.items.length;
+	}
+
+	/**
+	 * @returns {NodeListOf<FileItem>}
+	 */
+	get items() {
+		return this._list.querySelectorAll('file-list-item');
 	}
 }
 
 customElements.define('file-list', MyFileList);
 customElements.define('file-list-item', FileItem);
+
+class FileCreationDialog {
+	/**
+	 * @typedef {Object} FileCreationDialogOptions
+	 * @property {(type: string, path: string, data: string) => Promise<boolean>} onSave
+	 * 
+	 * @param {FileCreationDialogOptions} options 
+	 */
+	constructor(options) {
+		this._options = options;
+
+		/** @type {HTMLDialogElement} */
+		this._dialog = document.querySelector('dialog[name=create-file-dialog]');
+		/** @type {HTMLSelectElement} */
+		this._type = this._dialog.querySelector('select[name=type]');
+		/** @type {HTMLInputElement} */
+		this._name = this._dialog.querySelector('input[name=name]');
+
+		this._dialog.querySelector('button.save').addEventListener('click', async ()=>{
+			let path = this._name.value;
+			
+			let type = 'text/plain';
+			switch (this._type.value) {
+			case 'text':
+				type = 'text/plain';
+				break;
+			case 'table':
+				path += '.table';
+			}
+
+			const data = '';
+			
+			if(await this._options.onSave(type, path, data)) {
+				this.close();
+			}
+		});
+	}
+
+	close() {
+		this._dialog.close();
+	}
+
+	showModal() {
+		this._type.value = 'table';
+		this._name.value = '';
+		this._dialog.showModal();
+	}
+}
 
 class FileManagerDialog {
 	/**
@@ -294,6 +379,7 @@ class FileManagerDialog {
 	 *      onRetryUploadFile: (fi: FileItem) => void,
 	 *      onDelete: (selected: NodeListOf<FileItem>) => void,
 	 *      onChooseFiles: () => void,
+	 *      onCreateFile: (type: string, path: string, data: string) => Promise<boolean>,
 	 * }} options 
 	 */
 	constructor(options) {
@@ -301,6 +387,16 @@ class FileManagerDialog {
 		this._dialog = document.querySelector('dialog[name="file-manager"]');
 		/** @type {MyFileList} */
 		this._fileList = this._dialog.querySelector('file-list');
+
+		this._fileCreationDialog = new FileCreationDialog({
+			onSave: async (type, path, data) => {
+				const success =  await this._options.onCreateFile(type, path, data);
+				if(success) {
+					this._fileCreationDialog.close();
+					this._fileList.select(path);
+				}
+			},
+		});
 
 		this._dialog.querySelector('.insert').addEventListener('click', e => {
 			e.stopPropagation();
@@ -334,6 +430,9 @@ class FileManagerDialog {
 		});
 		this._dialog.querySelector('.upload').addEventListener('click', ()=>{
 			this._options?.onChooseFiles?.();
+		});
+		this._dialog.querySelector('button.create').addEventListener('click', () => {
+			this._fileCreationDialog.showModal();
 		});
 
 		this._fileList.onSelectionChange(selected => {
@@ -408,7 +507,14 @@ class FileManagerDialog {
 	 * @param {FileItem} fi 
 	 */
 	removeFile(fi) {
-		this._fileList.removeFile(fi);
+		return this._fileList.removeFile(fi);
+	}
+
+	removeFileByPath(path) {
+		const items = Array.from(this._fileList.items);
+		const item = items.find(fi => fi.spec.path == path);
+		if(item) return this.removeFile(item);
+		return false;
 	}
 
 	/**
@@ -461,6 +567,23 @@ class PostFormUI {
 				this._fileManager.clearSelection();
 			},
 			onChooseFiles: () => { this._files.click(); },
+			onCreateFile: async (type, path, data) => {
+				const file = new File([data], path, {
+					type: type,
+					lastModified: Date.now(),
+				});
+				const spec = await this.uploadFile(file, {
+					keepPos: true,
+					showError: true,
+				});
+				if (typeof spec === 'boolean') {
+					if (!spec) {
+						this._fileManager.removeFileByPath(path);
+					}
+					return spec;
+				}
+				return true;
+			}
 		});
 
 		this._form.querySelector('p.file-manager-button button').addEventListener('click', () => {
@@ -662,44 +785,12 @@ class PostFormUI {
 	 */
 	_handleInsertFiles(selected) {
 		selected.forEach(fi => {
-			if(this.editor.onChange) {
-				console.log(fi.spec);
-				const isImage = /^image\//.test(fi.spec.type);
-				const isVideo = /^video\//.test(fi.spec.type);
-				let block = undefined;
-				if (isImage) {
-					block = {
-						type: 'image',
-						props: {
-							url: fi.spec.path,
-						},
-					};
-				} else if (isVideo) {
-					block = {
-						type: 'video',
-						props: {
-							url: fi.spec.path,
-						},
-					};
-				} else {
-					block = {
-						type: 'file',
-						props: {
-							url: fi.spec.path,
-						},
-					};
-				}
-				if (block) {
-					const ref = this.editor.document[this.editor.document.length-1];
-					this.editor.insertBlocks([block], ref, 'before');
-				}
+			const text = fi.getInsertionText();
+			if (this.editor) {
+				this.editor.paste(text);
 			} else {
-				const text = fi.getInsertionText();
-				if (this.editor) {
-					this.editor.paste(text);
-				} else {
-					this.elemSource.value += text;
-				}
+				// TODO 插入到选中位置。
+				this.elemSource.value += text;
 			}
 		});
 		this._fileManager.clearSelection();
@@ -707,9 +798,9 @@ class PostFormUI {
 
 	showFileManager() {
 		this._fileManager.show();
-		if(this._fileManager.fileCount <= 0) {
-			this._fileManager.showUploadFile();
-		}
+		// if(this._fileManager.fileCount <= 0) {
+		// 	this._fileManager.showUploadFile();
+		// }
 	}
 
 	async updatePreview(content) {
@@ -986,14 +1077,20 @@ class PostFormUI {
 	/**
 	 * 
 	 * @param {File} file 
-	 * @param {{keepPos: Boolean}} options 
-	 * @returns 
+	 * @param {{keepPos: Boolean, showError: boolean}} options 
+	 * @returns {Promise<boolean> | boolean | any }
 	 */
 	async uploadFile(file, options) {
 		const f = file;
+
+		if (f.name.trim() == '') {
+			alert('无效文件名。');
+			return false;
+		}
+
 		if (f.size == 0) {
 			alert(`看起来不像个文件？只支持文件上传哦。\n\n${f.name}`);
-			return;
+			return false;
 		}
 
 		const now = this._fileManager.createFile(f, {
@@ -1024,10 +1121,12 @@ class PostFormUI {
 			this._fileManager.updateFile(now, rsp.spec);
 			now.finished = true;
 			now.error('');
+			return true;
 		} catch(e) {
 			// alert(`文件 ${f.name} 上传失败：${e}`);
 			now.error(`错误：${e.message ?? e}`);
-			return;
+			options.showError && alert('错误：' + e);
+			return false;
 		}
 	}
 }

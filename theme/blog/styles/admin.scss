@@ -218,8 +218,11 @@ body.admin.editor {
 		}
 	}
 	dialog[name="file-manager"] {
+		$buttons-width: 80px;
+
 		// 边框*2 + 边距*2 + gap + .buttons + img*4 + img-padding*2*4 + img-margin*2*4
-		width: calc(1px*2 + 10px*2 + 10px + 100px + 80px*4 + 4px*2*4 + 2px*2*4);
+		width: calc(1px*2 + 10px*2 + 10px + $buttons-width + 80px*4 + 4px*2*4 + 2px*2*4);
+
 		max-width: 100%;
 		height: 400px;
 		max-height: 100%;
@@ -252,11 +255,12 @@ body.admin.editor {
 				margin-right: -1px;
 			}
 			.buttons {
-				width: 100px;
-				min-width: 100px;
+				font-size: 80%;
+				width: $buttons-width;
+				min-width: $buttons-width;
 				display: flex;
 				flex-direction: column;
-				gap: 2em;
+				gap: 10px;
 				> div {
 					display: flex;
 					flex-direction: column;
@@ -390,6 +394,11 @@ body.admin.editor {
 			text-align: right;
 		}
 	}
+	dialog[name=create-file-dialog] {
+		select, input[type=text] {
+			width: 200px;
+		}
+	}
 	p.geo {
 		label {
 			display: block;
@@ -402,10 +411,5 @@ body.admin.editor {
 		li button {
 			margin: 0.1em 0.5em;
 		}
-	}
-}
-
-body.admin.category {
-	#edit-category {
 	}
 }

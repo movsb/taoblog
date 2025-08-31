@@ -151,7 +151,10 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 				},
 			},
 		}))
-		utils.Must1(fsc.Recv())
+		if _, err := fsc.Recv(); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
 
 		json.NewEncoder(w).Encode(map[string]any{
 			`spec`: specPtr,

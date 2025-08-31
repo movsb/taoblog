@@ -147,6 +147,9 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 		</div>
 		<div class="buttons">
 			<div>
+				<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
+			</div>
+			<div>
 				<button type="button" class="select-all">全选</button>
 				<button type="button" class="select-none" disabled autocomplete="false">不选</button>
 			</div>
@@ -156,7 +159,7 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			</div>
 			<div>
 				<button type="button" class="upload">上传</button>
-				<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
+				<button type="button" class="create">新建</button>
 			</div>
 			<div>
 				<button type="button" class="tiled">切换视图</button>
@@ -166,6 +169,20 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 	<dialog name="file-source-dialog">
 		<textarea autocomplete="off" placeholder="填写文件说明/注释。支持部分 Markdown 格式。"></textarea>
 		<div>
+			<span class="status-icon"></span>
+			<button type="button" class="save">保存</button>
+			<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
+		</div>
+	</dialog>
+	<dialog name="create-file-dialog">
+		<form>
+			<p><label>文件类型：<select name="type" autocomplete="off">
+				<option value="table">表格</option>
+			</select></label></p>
+			<p><label>文件名字：<input name="name" type="text" autocomplete="off" value=""></label></p>
+		</form>
+		<hr>
+		<div style="text-align: right;">
 			<span class="status-icon"></span>
 			<button type="button" class="save">保存</button>
 			<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>

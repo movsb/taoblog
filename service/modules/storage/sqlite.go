@@ -285,6 +285,11 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 	if fs.pid <= 0 {
 		return fmt.Errorf(`没有指定文件编号`)
 	}
+
+	if !std_fs.ValidPath(spec.Path) || spec.Path == "." {
+		return fmt.Errorf(`无效文件名：%q`, spec.Path)
+	}
+
 	fullName := path.Clean(path.Join(fs.dir, spec.Path))
 	data, err := io.ReadAll(r)
 	if err != nil {
