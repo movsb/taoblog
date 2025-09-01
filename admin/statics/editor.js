@@ -637,7 +637,7 @@ class TableEditor extends HTMLElement {
 		this.appendChild(cloned.firstElementChild);
 
 		if(typeof JavaScriptTableEditor == 'undefined') {
-			const url = 'https://unpkg.com/javascript-table-editor@1.0.3/dist/table.iife.min.js';
+			const url = 'https://unpkg.com/javascript-table-editor@1.0.5/dist/table.iife.min.js';
 			const script = document.createElement('script');
 			script.src = url;
 			document.head.appendChild(script);

@@ -14,6 +14,12 @@
 <script src="sortable.js"></script>
 <link rel="stylesheet" type="text/css" href="/admin/tinymde.css">
 {{ apply_site_theme_customs }}
+<style>
+div.mobile { display: none;}
+@media (hover: none) {
+	div.mobile { display: block;}
+}
+</style>
 </head>
 <body class="admin editor">
 <script>
@@ -227,6 +233,13 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 				<button type="button" class="toHeaderCols">设为表头列</button>
 				<button type="button" class="toDataRows">设为数据行</button>
 				<button type="button" class="toDataCols">设为数据列</button>
+			</div>
+			<div class="mobile">
+				<button type="button" class="startRangeSelection">开始选区</button>
+				<button type="button" class="moveRowsUp">上移行</button>
+				<button type="button" class="moveRowsDown">下移行</button>
+				<button type="button" class="moveColsLeft">左移列</button>
+				<button type="button" class="moveColsRight">右移列</button>
 			</div>
 		</div>
 		<div class="editor"><div class="placeholder"></div></div>
