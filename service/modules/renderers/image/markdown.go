@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	std_html "html"
+	"io"
 	"log"
 	"mime"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/service/modules/dynamic"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/renderer"
@@ -37,10 +39,13 @@ func init() {
 }
 
 type Image struct {
+	web gold_utils.WebFileSystem
 }
 
-func New() *Image {
-	return &Image{}
+func New(web gold_utils.WebFileSystem) *Image {
+	return &Image{
+		web: web,
+	}
 }
 
 func (e *Image) Extend(m goldmark.Markdown) {
@@ -76,10 +81,24 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 	case strings.HasPrefix(fileType, `audio/`):
 		renderAudio(w, url)
 	default:
-		renderImage(w, url, n, source)
+		if strings.HasSuffix(url.Path, `.table`) {
+			e.renderTable(w, url)
+		} else {
+			renderImage(w, url, n, source)
+		}
 	}
 
 	return ast.WalkSkipChildren, nil
+}
+
+func (e *Image) renderTable(w util.BufWriter, url *url.URL) {
+	fp, err := e.web.OpenURL(url.String())
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer fp.Close()
+	io.Copy(w, fp)
 }
 
 func renderVideo(w util.BufWriter, url *url.URL) {

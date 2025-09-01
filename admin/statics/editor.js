@@ -3,6 +3,7 @@
  * @property {string} path
  * @property {string} type
  * @property {number} size
+ * @property {number} time
  */
 
 class FileItem extends HTMLElement {
@@ -342,18 +343,23 @@ class FileCreationDialog {
 
 		this._dialog.querySelector('button.save').addEventListener('click', async ()=>{
 			let path = this._name.value;
-			
 			let type = 'text/plain';
+			let data = '';
+
+			if(path.trim() == '') {
+				alert('文件名不能为空。');
+				return;
+			}
+
 			switch (this._type.value) {
 			case 'text':
 				type = 'text/plain';
 				break;
 			case 'table':
 				path += '.table';
+				data = '<table><tbody><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table>';
 			}
 
-			const data = '';
-			
 			if(await this._options.onSave(type, path, data)) {
 				this.close();
 			}
@@ -396,6 +402,7 @@ class FileManagerDialog {
 				if(success) {
 					this._fileCreationDialog.close();
 					this._fileList.select(path);
+					this.close();
 				}
 			},
 		});
@@ -593,6 +600,7 @@ class Editor extends HTMLElement {
 	constructor() {
 		super();
 
+		/** @type {string} */
 		this._name = "";
 	}
 	
@@ -604,13 +612,91 @@ class Editor extends HTMLElement {
 	get name() {
 		return this._name;
 	}
+
+	/**
+	 * 
+	 * @param {HTMLElement} editor 
+	 */
+	embed(editor) {
+		this.appendChild(editor);
+	}
 }
 customElements.define('my-editor', Editor);
+
+class TableEditor extends HTMLElement {
+	constructor() {
+		super();
+
+		this._table = null;
+	}
+
+	async connectedCallback() {
+		/** @type {HTMLTemplateElement} */
+		const tmpl = document.getElementById('tmpl-table-editor');
+		const cloned = tmpl.content.cloneNode(true);
+		this.appendChild(cloned.firstElementChild);
+
+		if(typeof JavaScriptTableEditor == 'undefined') {
+			const url = 'https://unpkg.com/javascript-table-editor@1.0.3/dist/table.iife.min.js';
+			const script = document.createElement('script');
+			script.src = url;
+			document.head.appendChild(script);
+			const timer = setInterval(async ()=>{
+				if(typeof JavaScriptTableEditor != 'undefined') {
+					clearInterval(timer);
+					await this._init();
+				}
+			}, 1000);
+		} else {
+			await this._init();
+		}
+	}
+
+	async _init() {
+		const placeholder =  this.querySelector('.placeholder');
+		/** @type {EventTarget} */
+		const table = new JavaScriptTableEditor.Table(placeholder);
+		const content = await this._file.text();
+		table.use(content);
+		this._table = table;
+
+		this._table.addEventListener('change', () => {
+			this._onChange?.(this._table.getContent());
+		});
+
+		this.querySelector('.toolbar').addEventListener('click', (e) => {
+			if(e.target.tagName == 'BUTTON') {
+				const name = e.target.className;
+				this._table[name]?.();
+			}
+		});
+	}
+
+	/**
+	 * 
+	 * @param {(content: string) => void} content 
+	 */
+	onChange(content) {
+		this._onChange = content;
+	}
+
+	/**
+	 * @param {File} value 
+	 */
+	set file(value) {
+		this._file = value;
+	}
+}
+customElements.define('table-editor', TableEditor);
 
 class TabsManager {
 	/**
 	 * 
-	 * @param {{onClose: (tab: Tab)=>void}} options 
+	 * @param {{
+	 *  onClose: (tab: Tab)=>void,
+	 *  getFile: (path: string) => Promise<File>,
+	 *  saveFile: (file: File) => Promise<void>,
+	 * }} options 
 	 */
 	constructor(options) {
 		this._options = options;
@@ -647,9 +733,16 @@ class TabsManager {
 		});
 	}
 
-	open(name) {
+	/**
+	 * @returns {boolean}
+	 */
+	isOpening(name) {
 		const found = Array.from(this._tabs.children).find(div => div._tab.name == name);
-		if(found) {
+		return !!found;
+	}
+
+	async open(name) {
+		if(this.isOpening(name)) {
 			this._select(name);
 			this._toggleTabs();
 			return;
@@ -672,6 +765,7 @@ class TabsManager {
 		if(name != '文章') {
 			const editor = new Editor();
 			editor.name = name;
+			editor.embed(await this._openEmbed(name));
 			this._editors.appendChild(editor);
 		}
 
@@ -679,9 +773,37 @@ class TabsManager {
 		this._toggleTabs();
 	}
 
+	/**
+	 * 
+	 * @param {string} path 
+	 * @returns {Promise<HTMLElement>}
+	 */
+	async _openEmbed(path) {
+		if(path.endsWith('.table')) {
+			const file = await this._options.getFile(path);
+			const editor = new TableEditor();
+			editor.file = file;
+			editor.onChange((content) => {
+				this._options.saveFile(new File([content], file.name));
+			});
+			return editor;
+		}
+
+		return document.createElement('div');
+	}
+
 	close(name) {
+		if(name == '文章') { return; }
+
 		const tab = Array.from(this._tabs.children).find(div => div._tab.name == name);
 		if(tab) { tab.remove(); }
+
+		const editor = Array.from(this._editors.children).find(_editor => {
+			/** @type {Editor} */
+			const editor = _editor;
+			return editor.name == name;
+		});
+		if(editor) { editor.remove(); }
 
 		this._toggleTabs();
 	}
@@ -700,20 +822,6 @@ class PostFormUI {
 		this._files = this._form.querySelector('#files');
 		this._users = [];
 		this._contentChanged = false;
-
-		this._tabManager = new TabsManager({
-			onClose: (tab) => {
-				if(tab.name == '文章') {
-					console.log('“文章”不能被关闭。');
-					return;
-				}
-				this._tabManager.close(tab.name);
-				this._tabManager.open('文章');
-			},
-		})
-
-		this._tabManager.open('文章');
-		this._tabManager.open('7688.table');
 
 		this._fileManager = new FileManagerDialog({
 			onInsert: (selected) => {  this._handleInsertFiles(selected); },
@@ -734,6 +842,7 @@ class PostFormUI {
 						}
 					}
 					this._fileManager.removeFile(fi);
+					this._tabManager.close(path);
 				});
 				this._fileManager.clearSelection();
 			},
@@ -750,17 +859,55 @@ class PostFormUI {
 				if (typeof spec === 'boolean') {
 					if (!spec) {
 						this._fileManager.removeFileByPath(path);
+						return false;
 					}
-					return spec;
 				}
+				this._tabManager.open(path);
 				return true;
 			},
-			onEditFile: (path) => {
+			onEditFile: async (path) => {
 				console.log('编辑：' + path);
-				this._tabManager.open(path);
+				await this._tabManager.open(path);
 				this._fileManager.close();
 			},
 		});
+
+		this._tabManager = new TabsManager({
+			onClose: (tab) => {
+				if(tab.name == '文章') {
+					console.log('“文章”不能被关闭。');
+					return;
+				}
+				this._tabManager.close(tab.name);
+				this._tabManager.open('文章');
+			},
+			getFile: async (path) => {
+				const fm = new FilesManager(TaoBlog.post_id);
+				const list = await fm.list();
+				const spec = list.find(s => s.path == path);
+				const data = await fm.get(path);
+				return new File([data], spec.path, {
+					lastModified: spec.time,
+				});
+			},
+			saveFile: async (file) => {
+				const fm = new FilesManager(TaoBlog.post_id);
+				try {
+					const spec = await fm.create(file, {}, ()=>{}, {});
+					console.log('文件更新成功：', spec);
+				} catch(e) {
+					alert('文件更新失败：' + e);
+				}
+				try {
+					this.updatePreview(this.source);
+					console.log('预览更新成功');
+				} catch(e) {
+					alert('预览更新失败：' + e);
+				}
+			},
+		})
+
+		this._tabManager.open('文章');
 
 		this._form.querySelector('p.file-manager-button button').addEventListener('click', () => {
 			this.showFileManager();
@@ -1308,6 +1455,10 @@ class FilesManager {
 	// NOTE: 返回的文件用 path 代表 name。
 	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
 	// 用 name 表示 path 容易误解。
+	/**
+	 * 
+	 * @returns {Promise<FileSpec[]>}
+	 */
 	async list() {
 		const url = `/v3/posts/${this._post_id}/files`;
 		let rsp = await fetch(url);
@@ -1339,11 +1490,30 @@ class FilesManager {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {string} path 
+	 */
+	async get(path) {
+		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
+		let rsp = await fetch(url);
+		if (!rsp.ok) {
+			throw rsp;
+		}
+		return rsp.bytes();
+	}
+
 	// 创建一个文件。
-	// f: <input type="file"> 中拿来的文件。
 	// options: 用来指导对上传的文件作如何处理。
-	// progress: 进度回调。
 	// meta: 额外的元数据。但宽、高会自动设置。
+	/**
+	 * 
+	 * @param {File} f 
+	 * @param {*} options 
+	 * @param {(progress: number) => void} progress 
+	 * @param {{}} meta 
+	 * @returns 
+	 */
 	async create(f, options, progress, meta) {
 		let dimension = await FilesManager.detectImageSize(f);
 		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);

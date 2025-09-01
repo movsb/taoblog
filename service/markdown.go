@@ -117,7 +117,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 			media_size.WithLocalOnly(),
 			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
 		),
-		image.New(),
+		image.New(assets),
 		caption.New(assets),
 		gallery.New(),
 		task_list.New(),

@@ -167,7 +167,7 @@ func TestMarkdownAll(t *testing.T) {
 <video preload="metadata"></video>
 `,
 			Options: []renderers.Option2{
-				image.New(),
+				image.New(nil),
 				lazy.New()},
 			// 奇怪🤔，为什么 <img> 不会被放在 <p> 中？
 			Html: `

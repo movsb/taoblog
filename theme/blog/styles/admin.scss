@@ -448,4 +448,29 @@ body.admin.editor {
 			margin: 0.1em 0.5em;
 		}
 	}
+	.table-editor-wrapper {
+		.toolbar {
+			font-size: 85%;
+			button {
+				margin-left: 0;
+			}
+		}
+		.editor {
+			th, td {
+				user-select: none;
+				-webkit-user-select: none;
+			}
+			td.selected, th.selected {
+				background-color: var(--accent-color);
+			}
+			td.editing, th.editing {
+				background-color: white;
+			}
+			@media (prefers-color-scheme: dark) {
+				td.editing, th.editing {
+					background-color: black;
+				}
+			}
+		}
+	}
 }

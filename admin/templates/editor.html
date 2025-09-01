@@ -47,98 +47,98 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 					<label><input type="checkbox" id="toggle-diff" autocomplete="off">显示变更</label>
 					<label><input type="checkbox" name="auto-indent" autocomplete="off">段落缩进</label>
 				</p>
+				<hr>
+				<p class="file-manager-button">
+					<label>
+						文件：
+						<button type="button">管理</button>
+					</label>
+				</p>
+				<p>
+					<label>
+						日期：
+						<input type="datetime-local" name="time" value="">
+					</label>
+				</p>
+				<p>
+					<label>
+						类型：
+						<select name="type">
+							<option value="tweet">碎碎念</option>
+							<option value="post">文章</option>
+							<option value="page">页面</option>
+						</select>
+					</label>
+				</p>
+				<p>
+					<label>
+						分类：
+						<select name="category" autocomplete="off">
+							<option value="0"{{if eq $.Post.Category 0}} selected{{end}}>未分类</option>
+							<hr>
+							{{ range $.Cats }}
+							<option value="{{.Id}}" {{if eq $.Post.Category .Id}}selected{{end}}>{{.Name}}</option>
+							{{ end }}
+							<hr class="insert-before">
+							<option value="-1">新建分类...</option>
+						</select>
+					</label>
+				</p>
+				<p class="status status-{{$.Post.Status}}">
+					<label>
+						权限：
+						<select name="status" autocomplete="off">
+							<option value="draft">📝 草稿</option>
+							<option value="private">🔒 仅自己可见</option>
+							<option value="public">👀 所有人可见</option>
+							<option value="partial">📢 部分人可见</option>
+						</select>
+					</label>
+					<button name="set-acl">选择可见的人</button>
+				</p>
+				<dialog name="set-acl-dialog">
+					<ol class="list"></ol>
+					<div><button>✅ 确定</button></div>
+				</dialog>
+				<p class="top">
+					<label>
+						<span>置顶：</span>
+						<select name="top" autocomplete="off">
+							<option value="0">否</option>
+							<option value="1">是</option>
+						</select>
+					</label>
+				</p>
+				<p class="toc" style="display: none;">
+					<label>
+						<span>目录：</span>
+						<select name="toc">
+							<option value="0">📚 关闭</option>
+							<option value="1">📖 开启</option>
+						</select>
+					</label>
+				</p>
+				<p class="geo">
+					<label><span>位置：</span>
+						<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off">
+						<button id="geo_modify">获取</button>
+					</label>
+					<label><span style="visibility: hidden;">位置：</span>
+						<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off" list="resolved_geo_locations">
+						<span id="geo_location_loading"></span>
+						<datalist id="resolved_geo_locations"></datalist>
+					</label>
+					<label><span style="visibility: hidden;">私有：</span>
+						<input type="checkbox" name="geo_private" autocomplete="off">
+						私有地址（不对外显示）
+					</label>
+				</p>
+				<hr>
+				<p><input type="submit" value="保存"></p>
+				<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 			</div>
 		</div>
 	</div>
-	<hr>
-	<p class="file-manager-button">
-		<label>
-			文件：
-			<button type="button">管理</button>
-		</label>
-	</p>
-	<p>
-		<label>
-			日期：
-			<input type="datetime-local" name="time" value="">
-		</label>
-	</p>
-	<p>
-		<label>
-			类型：
-			<select name="type">
-				<option value="tweet">碎碎念</option>
-				<option value="post">文章</option>
-				<option value="page">页面</option>
-			</select>
-		</label>
-	</p>
-	<p>
-		<label>
-			分类：
-			<select name="category" autocomplete="off">
-				<option value="0"{{if eq $.Post.Category 0}} selected{{end}}>未分类</option>
-				<hr>
-				{{ range $.Cats }}
-				<option value="{{.Id}}" {{if eq $.Post.Category .Id}}selected{{end}}>{{.Name}}</option>
-				{{ end }}
-				<hr class="insert-before">
-				<option value="-1">新建分类...</option>
-			</select>
-		</label>
-	</p>
-	<p class="status status-{{$.Post.Status}}">
-		<label>
-			权限：
-			<select name="status" autocomplete="off">
-				<option value="draft">📝 草稿</option>
-				<option value="private">🔒 仅自己可见</option>
-				<option value="public">👀 所有人可见</option>
-				<option value="partial">📢 部分人可见</option>
-			</select>
-		</label>
-		<button name="set-acl">选择可见的人</button>
-	</p>
-	<dialog name="set-acl-dialog">
-		<ol class="list"></ol>
-		<div><button>✅ 确定</button></div>
-	</dialog>
-	<p class="top">
-		<label>
-			<span>置顶：</span>
-			<select name="top" autocomplete="off">
-				<option value="0">否</option>
-				<option value="1">是</option>
-			</select>
-		</label>
-	</p>
-	<p class="toc" style="display: none;">
-		<label>
-			<span>目录：</span>
-			<select name="toc">
-				<option value="0">📚 关闭</option>
-				<option value="1">📖 开启</option>
-			</select>
-		</label>
-	</p>
-	<p class="geo">
-		<label><span>位置：</span>
-			<input type="text" name="geo_location" id="geo_location" placeholder="坐标（经度,纬度)" autocomplete="off">
-			<button id="geo_modify">获取</button>
-		</label>
-		<label><span style="visibility: hidden;">位置：</span>
-			<input type="text" name="geo_name" id="geo_name" placeholder="名字" autocomplete="off" list="resolved_geo_locations">
-			<span id="geo_location_loading"></span>
-			<datalist id="resolved_geo_locations"></datalist>
-		</label>
-		<label><span style="visibility: hidden;">私有：</span>
-			<input type="checkbox" name="geo_private" autocomplete="off">
-			私有地址（不对外显示）
-		</label>
-	</p>
-	<hr>
-	<p><input type="submit" value="保存"></p>
-	<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 </form>
 <dialog name="new-category-dialog">
 	<form method="dialog">
@@ -205,5 +205,32 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 		</div>
 	</dialog>
 </dialog>
+<template id="tmpl-table-editor">
+	<div class="table-editor-wrapper">
+		<div class="toolbar">
+			<div>
+				<button type="button" class="addRowAbove">在上面添加行</button>
+				<button type="button" class="addRowBelow">在下面添加行</button>
+				<button type="button" class="addColLeft">在左边添加列</button>
+				<button type="button" class="addColRight">在右边添加列</button>
+			</div>
+			<div>
+				<button type="button" class="deleteRows">删除行</button>
+				<button type="button" class="deleteCols">删除列</button>
+				<button type="button" class="merge">合并</button>
+				<button type="button" class="split">拆分</button>
+				<button type="button" class="undo">撤销</button>
+				<button type="button" class="redo">重做</button>
+			</div>
+			<div>
+				<button type="button" class="toHeaderRows">设为表头行</button>
+				<button type="button" class="toHeaderCols">设为表头列</button>
+				<button type="button" class="toDataRows">设为数据行</button>
+				<button type="button" class="toDataCols">设为数据列</button>
+			</div>
+		</div>
+		<div class="editor"><div class="placeholder"></div></div>
+	</div>
+</template>
 </body>
 </html>
