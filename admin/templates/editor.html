@@ -21,22 +21,35 @@ TaoBlog.post_id = +"{{$.Post.Id}}";
 TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 </script>
 <form id="main">
-	<div id="container">
-		<div id="editor-container">
-			<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
+	<div id="workspace">
+		<template id="tab-template">
+			<div class="tab">
+				<span class="name"></span><!--
+				--><span class="close" title="关闭">×</span>
+			</div>
+		</template>
+		<div id="tabs"></div>
+		<div id="editors">
+			<div id="post-editor">
+				<div id="container">
+					<div id="editor-container">
+						<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
+					</div>
+					<div id="preview-container"></div>
+					<div id="diff-container"></div>
+				</div>
+				<div id="command-container"></div>
+				<hr>
+				<p>
+					选项：
+					<label><input type="checkbox" id="toggle-wrap" checked autocomplete="off">自动折行</label>
+					<label><input type="checkbox" id="toggle-preview" checked autocomplete="off">显示预览</label>
+					<label><input type="checkbox" id="toggle-diff" autocomplete="off">显示变更</label>
+					<label><input type="checkbox" name="auto-indent" autocomplete="off">段落缩进</label>
+				</p>
+			</div>
 		</div>
-		<div id="preview-container"></div>
-		<div id="diff-container"></div>
 	</div>
-	<div id="command-container"></div>
-	<hr>
-	<p>
-		选项：
-		<label><input type="checkbox" id="toggle-wrap" checked autocomplete="off">自动折行</label>
-		<label><input type="checkbox" id="toggle-preview" checked autocomplete="off">显示预览</label>
-		<label><input type="checkbox" id="toggle-diff" autocomplete="off">显示变更</label>
-		<label><input type="checkbox" name="auto-indent" autocomplete="off">段落缩进</label>
-	</p>
 	<hr>
 	<p class="file-manager-button">
 		<label>
@@ -151,15 +164,18 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			</div>
 			<div>
 				<button type="button" class="select-all">全选</button>
-				<button type="button" class="select-none" disabled autocomplete="false">不选</button>
+				<button type="button" class="select-none" disabled autocomplete="off">不选</button>
 			</div>
 			<div>
-				<button type="button" class="insert" disabled autocomplete="false">插入</button>
-				<button type="button" class="delete" disabled autocomplete="false">删除</button>
+				<button type="button" class="insert" disabled autocomplete="off">插入</button>
 			</div>
 			<div>
 				<button type="button" class="upload">上传</button>
+				<button type="button" class="delete" disabled autocomplete="off">删除</button>
+			</div>
+			<div>
 				<button type="button" class="create">新建</button>
+				<button type="button" class="edit" disabled autocomplete="off">编辑</button>
 			</div>
 			<div>
 				<button type="button" class="tiled">切换视图</button>

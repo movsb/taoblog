@@ -100,6 +100,43 @@ body.admin.login {
 }
 
 body.admin.editor {
+	#workspace {
+		margin: 1em 0;
+	}
+
+	#tabs {
+		display: flex;
+		gap: 2px;
+		margin-bottom: 8px;
+
+		&.only {
+			display: none;
+		}
+
+		.tab {
+			user-select: none;
+			padding: 4px 0px 4px 8px;
+			border: 1px solid var(--border-color);
+			border-radius: var(--border-radius);
+			&:not(.selected) {
+				color: rgb(from var(--color-fg) r g b / .6);
+			}
+			.close {
+				padding: 0 5px;
+				cursor: pointer;
+			}
+		}
+	}
+
+	#editors {
+		> * {
+			display: none;
+			&.selected {
+				display: block;
+			}
+		}
+	}
+
 	textarea {
 		display: block;
 		width: 100%;
@@ -114,7 +151,6 @@ body.admin.editor {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 4px;
-		margin: 1em 0;
 		#editor-container, #preview-container, #diff-container {
 			flex: 1;
 			min-width: 300px;

@@ -380,10 +380,12 @@ class FileManagerDialog {
 	 *      onDelete: (selected: NodeListOf<FileItem>) => void,
 	 *      onChooseFiles: () => void,
 	 *      onCreateFile: (type: string, path: string, data: string) => Promise<boolean>,
+	 *      onEditFile: (path: string) => void,
 	 * }} options 
 	 */
 	constructor(options) {
 		this._options = options;
+		/** @type {HTMLDialogElement} */
 		this._dialog = document.querySelector('dialog[name="file-manager"]');
 		/** @type {MyFileList} */
 		this._fileList = this._dialog.querySelector('file-list');
@@ -434,16 +436,31 @@ class FileManagerDialog {
 		this._dialog.querySelector('button.create').addEventListener('click', () => {
 			this._fileCreationDialog.showModal();
 		});
+		this._dialog.querySelector('button.edit').addEventListener('click', ()=>{
+			this._options.onEditFile(this._fileList.selected[0].spec.path);
+		});
 
 		this._fileList.onSelectionChange(selected => {
 			const btnInsert = this._dialog.querySelector('.insert');
 			const btnDelete = this._dialog.querySelector('.delete');
 			const btnSelectNone = this._dialog.querySelector('.select-none');
+			/** @type {HTMLButtonElement} */
+			const btnEdit = this._dialog.querySelector('.edit');
 
 			btnInsert.disabled = selected.length <= 0;
 			btnDelete.disabled = selected.length <= 0;
 			btnSelectNone.disabled = selected.length <= 0;
+
+			let canEdit = false;
+			if (selected.length == 1) {
+				const fi = selected[0];
+				if(fi.spec.path.endsWith('.table')) {
+					canEdit = true;
+				}
+			}
+			btnEdit.disabled = !canEdit;
 		});
+
 		this._fileList.onEditCaption(async fi => {
 			/** @type {HTMLDialogElement} */
 			const dialog = this._dialog.querySelector('dialog[name="file-source-dialog"]');
@@ -468,6 +485,9 @@ class FileManagerDialog {
 			dialog.showModal();
 		});
 		this._fileList.onRetry(this._options.onRetryUploadFile);
+	}
+	close() {
+		this._dialog.close();
 	}
 	show() {
 		this._dialog.inert = true;
@@ -535,6 +555,143 @@ class FileManagerDialog {
 	}
 }
 
+class Tab {
+	/**
+	 * 
+	 * @param {HTMLDivElement} dom 
+	 * @param {string} name 
+	 * @param {{onClose: ()=> void, onSelect: () => void}} options 
+	 */
+	constructor(name, dom, options) {
+		this._options = options;
+		this._dom = dom;
+
+		/** @type {HTMLSpanElement} */
+		this._name = this._dom.querySelector('.name');
+		/** @type {HTMLSpanElement} */
+		this._close = this._dom.querySelector('.close');
+
+		this._name.textContent = name;
+		this._close.addEventListener('click', (e)=>{
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			this._options.onClose();
+		});
+		this._dom.addEventListener('click', (e)=>{
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			this._options.onSelect();
+		});
+	}
+
+	get name() {
+		return this._name.textContent;
+	}
+}
+
+class Editor extends HTMLElement {
+	constructor() {
+		super();
+
+		this._name = "";
+	}
+	
+	connectedCallback() { }
+
+	set name(value) {
+		this._name = value;
+	}
+	get name() {
+		return this._name;
+	}
+}
+customElements.define('my-editor', Editor);
+
+class TabsManager {
+	/**
+	 * 
+	 * @param {{onClose: (tab: Tab)=>void}} options 
+	 */
+	constructor(options) {
+		this._options = options;
+
+		/** @type {HTMLDivElement} */
+		this._tabs = document.querySelector('#tabs');
+		/** @type {HTMLDivElement} */
+		this._editors = document.querySelector('#editors');
+
+		/** @type {HTMLTemplateElement} */
+		this._tabTmpl = document.querySelector('#tab-template');
+		// /** @type {HTMLTemplateElement} */
+		// this._editorTmpl = document.querySelector('#editor-template');
+	}
+
+	_select(name) {
+		Array.from(this._tabs.children).forEach(_div => {
+			/** @type {HTMLDivElement} */
+			const div = _div;
+			/** @type {Tab} */
+			const tab = _div._tab;
+
+			div.classList.toggle('selected', tab.name == name);
+		});
+		Array.from(this._editors.children).forEach(div => {
+			if(div instanceof HTMLDivElement && name == '文章') {
+				div.classList.add('selected');
+				return;
+			}
+
+			/** @type {Editor} */
+			const editor = div;
+			editor.classList.toggle('selected', editor.name == name);
+		});
+	}
+
+	open(name) {
+		const found = Array.from(this._tabs.children).find(div => div._tab.name == name);
+		if(found) {
+			this._select(name);
+			this._toggleTabs();
+			return;
+		}
+
+		{
+			const cloned = this._tabTmpl.content.cloneNode(true);
+			const child = cloned.firstElementChild;
+			const tab = new Tab(name, child, {
+				onClose: () => {
+					this._options.onClose(tab);
+				},
+				onSelect: () => {
+					this._select(name);
+				},
+			});
+			child._tab = tab;
+			this._tabs.appendChild(child);
+		}
+		if(name != '文章') {
+			const editor = new Editor();
+			editor.name = name;
+			this._editors.appendChild(editor);
+		}
+
+		this._select(name);
+		this._toggleTabs();
+	}
+
+	close(name) {
+		const tab = Array.from(this._tabs.children).find(div => div._tab.name == name);
+		if(tab) { tab.remove(); }
+
+		this._toggleTabs();
+	}
+
+	_toggleTabs() {
+		const many = this._tabs.children.length > 1;
+		this._tabs.classList.toggle('only', !many);
+	}
+}
+
 class PostFormUI {
 	constructor() {
 		this._form = document.querySelector('#main');
@@ -543,6 +700,20 @@ class PostFormUI {
 		this._files = this._form.querySelector('#files');
 		this._users = [];
 		this._contentChanged = false;
+
+		this._tabManager = new TabsManager({
+			onClose: (tab) => {
+				if(tab.name == '文章') {
+					console.log('“文章”不能被关闭。');
+					return;
+				}
+				this._tabManager.close(tab.name);
+				this._tabManager.open('文章');
+			},
+		})
+
+		this._tabManager.open('文章');
+		this._tabManager.open('7688.table');
 
 		this._fileManager = new FileManagerDialog({
 			onInsert: (selected) => {  this._handleInsertFiles(selected); },
@@ -583,7 +754,12 @@ class PostFormUI {
 					return spec;
 				}
 				return true;
-			}
+			},
+			onEditFile: (path) => {
+				console.log('编辑：' + path);
+				this._tabManager.open(path);
+				this._fileManager.close();
+			},
 		});
 
 		this._form.querySelector('p.file-manager-button button').addEventListener('click', () => {
@@ -724,14 +900,6 @@ class PostFormUI {
 					element: document.getElementById('command-container'),
 					editor: this.editor,
 					commands: [
-						{
-							name: `fileManager`,
-							title: `上传图片/视频/文件`,
-							innerHTML: `📄 文件管理`,
-							action: () => {
-								this.showFileManager();
-							},
-						},
 						{
 							name: `insertTaskItem`,
 							title: `插入任务`,
