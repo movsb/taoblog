@@ -456,19 +456,25 @@ body.admin.editor {
 			}
 		}
 		.editor {
-			th, td {
-				user-select: none;
-				-webkit-user-select: none;
-			}
-			td.selected, th.selected {
-				background-color: var(--accent-color);
-			}
-			td.editing, th.editing {
-				background-color: white;
-			}
-			@media (prefers-color-scheme: dark) {
+			overflow: auto;
+
+			> table {
+				width: max-content;
+
+				th, td {
+					user-select: none;
+					-webkit-user-select: none;
+				}
+				td.selected, th.selected {
+					background-color: rgb(from var(--accent-color) r g b / .5);
+				}
 				td.editing, th.editing {
-					background-color: black;
+					background-color: white;
+				}
+				@media (prefers-color-scheme: dark) {
+					td.editing, th.editing {
+						background-color: black;
+					}
 				}
 			}
 		}
