@@ -117,9 +117,10 @@ func (d *DataStore) GetFile(postID int, digest string, size int) (io.ReadSeeker,
 	return bytes.NewReader(file.Data), nil
 }
 
-func (d *DataStore) UpdateData(postID int, digest string, data []byte) error {
-	r, err := d.data.From(models.FileData{}).Where(`post_id=? AND digest=?`, postID, digest).UpdateMap(taorm.M{
-		`data`: data,
+func (d *DataStore) UpdateData(postID int, odlDigest, newDigest string, data []byte) error {
+	r, err := d.data.From(models.FileData{}).Where(`post_id=? AND digest=?`, postID, odlDigest).UpdateMap(taorm.M{
+		`digest`: newDigest,
+		`data`:   data,
 	})
 	if err != nil {
 		return fmt.Errorf(`更新文件失败：%w`, err)
@@ -306,6 +307,8 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 
 	var old models.File
 
+	digest := models.Digest(data)
+
 	// 更新文件。
 	if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&old); err == nil {
 		_, err := fs.s.meta.Model(&old).UpdateMap(taorm.M{
@@ -314,7 +317,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			`mod_time`:   spec.Time,
 			`size`:       spec.Size,
 			`meta`:       meta,
-			`digest`:     models.Digest(data),
+			`digest`:     digest,
 		})
 		if err != nil {
 			return fmt.Errorf(`更新文件失败：%w`, err)
@@ -323,7 +326,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 		if spec.Size == 0 {
 			return fs.s.data.DeleteData(fs.pid, old.Digest)
 		}
-		return fs.s.data.UpdateData(fs.pid, old.Digest, data)
+		return fs.s.data.UpdateData(fs.pid, old.Digest, digest, data)
 	}
 
 	// 创建新文件。
@@ -336,7 +339,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 		ModTime:   int64(spec.Time),
 		Size:      spec.Size,
 		Meta:      meta,
-		Digest:    models.Digest(data),
+		Digest:    digest,
 	}
 	if err := fs.s.meta.Model(&file).Create(); err != nil {
 		return fmt.Errorf(`创建文件失败：%w`, err)
