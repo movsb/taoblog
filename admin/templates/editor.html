@@ -215,16 +215,12 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			<div>
 				<button type="button" class="addRowAbove">在上面添加行</button>
 				<button type="button" class="addRowBelow">在下面添加行</button>
-				<button type="button" class="addColLeft">在左边添加列</button>
-				<button type="button" class="addColRight">在右边添加列</button>
+				<button type="button" class="deleteRows">删除行</button>
 			</div>
 			<div>
-				<button type="button" class="deleteRows">删除行</button>
+				<button type="button" class="addColLeft">在左边添加列</button>
+				<button type="button" class="addColRight">在右边添加列</button>
 				<button type="button" class="deleteCols">删除列</button>
-				<button type="button" class="merge">合并</button>
-				<button type="button" class="split">拆分</button>
-				<button type="button" class="undo">撤销</button>
-				<button type="button" class="redo">重做</button>
 			</div>
 			<div>
 				<button type="button" class="toHeaderRows">设为表头行</button>
@@ -238,6 +234,14 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 				<button type="button" class="moveRowsDown">下移行</button>
 				<button type="button" class="moveColsLeft">左移列</button>
 				<button type="button" class="moveColsRight">右移列</button>
+			</div>
+			<div>
+				<button type="button" class="merge">合并单元格</button>
+				<button type="button" class="split">拆分单元格</button>
+			</div>
+			<div>
+				<button type="button" class="undo">撤销</button>
+				<button type="button" class="redo">重做</button>
 			</div>
 		</div>
 		<div class="editor"><div class="placeholder"></div></div>
