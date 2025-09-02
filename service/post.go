@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/assets"
 	"github.com/movsb/taoblog/service/modules/renderers/blocknote"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
@@ -878,10 +879,15 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
 	auth.MustNotBeGuest(ctx)
 
+	out := proto.PreviewPostResponse{}
+
+	ctx = assets.With(ctx, &out.Paths, fmt.Sprintf(`/%d/`, in.Id))
+
 	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, in.Type, in.Source, models.PostMeta{}, co.For(co.PreviewPost), s.isPostPublic(ctx, int(in.Id)))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	out.Html = content
 
 	source, err := s.getPostSourceCached(ctx, int64(in.Id))
 	if err != nil {
@@ -902,11 +908,9 @@ func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest)
 			fmt.Fprint(&buf, text)
 		}
 	}
+	out.Diff = buf.String()
 
-	return &proto.PreviewPostResponse{
-		Html: content,
-		Diff: buf.String(),
-	}, nil
+	return &out, nil
 }
 
 // updateLastPostTime updates last_post_time in options.

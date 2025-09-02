@@ -47,6 +47,8 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
 	"github.com/yuin/goldmark/extension"
 
+	assetsParser "github.com/movsb/taoblog/service/modules/renderers/assets"
+
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	_ "github.com/movsb/taoblog/theme/share/image_viewer"
 	_ "github.com/movsb/taoblog/theme/share/vim"
@@ -173,6 +175,10 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 	tr.AddHtmlTransformers(
 		tables.NewTableWrapper(),
 	)
+
+	if ap := assetsParser.FromContext(ctx); ap != nil {
+		tr.AddHtmlTransformers(ap)
+	}
 
 	// 不知道多次渲染会不会有数据冲突。
 	renderMarkdown = func(markdown string) (string, error) {

@@ -277,6 +277,8 @@ message PreviewPostRequest {
 message PreviewPostResponse {
 	string html = 1;
 	string diff = 2;
+	// 文章中引用过的、来自于本篇文章的文件路径。
+	repeated string paths = 3;
 }
 
 message CreateStylingPageRequest {
