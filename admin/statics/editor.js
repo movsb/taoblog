@@ -909,7 +909,7 @@ class PostFormUI {
 
 		this._tabManager.open('文章');
 
-		this._form.querySelector('p.file-manager-button button').addEventListener('click', () => {
+		this._form.querySelector('p.file-manager-button .all').addEventListener('click', () => {
 			this.showFileManager();
 		});
 		
@@ -1126,10 +1126,32 @@ class PostFormUI {
 			let rsp = await PostManagementAPI.previewPost(TaoBlog.post_id, TaoBlog.posts[TaoBlog.post_id].source_type, content);
 			this.setPreview(rsp.html, true);
 			this.setDiff(rsp.diff);
+			this._updateReferencedFiles(rsp.paths || []);
 		} catch (e) {
 			this.setPreview(e, false);
 		}
 	};
+
+	/**
+	 * 
+	 * @param {string[]} paths 
+	 */
+	_updateReferencedFiles(paths) {
+		const buttonsParent = document.querySelector('p.file-manager-button');
+		buttonsParent.querySelectorAll('.file').forEach(b => b.remove());
+		paths.forEach(path => {
+			if(path.endsWith('.table')) {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.textContent = `编辑表格：${path}`;
+				btn.addEventListener('click', ()=>{
+					this._tabManager.open(path);
+				});
+				btn.classList.add('file');
+				buttonsParent.appendChild(btn);
+			}
+		});
+	}
 
 	get elemSource()    { return this._form['source'];  }
 	get elemTime()      { return this._form['time'];    }

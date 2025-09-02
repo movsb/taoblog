@@ -177,6 +177,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 	)
 
 	if ap := assetsParser.FromContext(ctx); ap != nil {
+		// TODO 同时也实现了 EnteringWalker，也在这里添加了。
 		tr.AddHtmlTransformers(ap)
 	}
 

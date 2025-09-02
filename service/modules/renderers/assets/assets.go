@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/yuin/goldmark/ast"
 )
 
 // 来源：cmd/client/post.go
@@ -40,6 +41,28 @@ func With(ctx context.Context, paths *[]string, prefix string) context.Context {
 func FromContext(ctx context.Context) *AssetsParser {
 	val, _ := ctx.Value(ctxObj{}).(*AssetsParser)
 	return val
+}
+
+// 有些文件会被渲染，光从 html 结果不一定找得到，但是它们确实被引用过。
+func (p *AssetsParser) WalkEntering(n ast.Node) (ast.WalkStatus, error) {
+	if p.paths == nil {
+		return ast.WalkContinue, nil
+	}
+
+	if n.Kind() != ast.KindImage {
+		return ast.WalkContinue, nil
+	}
+
+	img := n.(*ast.Image)
+	src := string(img.Destination)
+
+	// markdown 里面只可能是本文的相对路径，不会出现文章编号前缀，
+	// 所以这里不需要关心前缀。
+	if u := parseURL(src, ""); u != `` {
+		*p.paths = append(*p.paths, u)
+	}
+
+	return ast.WalkContinue, nil
 }
 
 func (p *AssetsParser) TransformHtml(doc *goquery.Document) error {
