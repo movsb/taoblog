@@ -3,8 +3,8 @@ package gravatar
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -31,6 +31,11 @@ var gravatarHosts = []string{
 	`https://cravatar.eallion.com/avatar`,
 }
 
+type _Result struct {
+	rsp *http.Response
+	err error
+}
+
 // 鉴于博客服务器可能在国外/可能在国内、主站可能被墙、镜像站不稳定的原因，
 // 采用随机并发请求多个源的方式，外部做好缓存。
 func Get(ctx context.Context, email string) (*http.Response, error) {
@@ -43,39 +48,37 @@ func Get(ctx context.Context, email string) (*http.Response, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
-	ch := make(chan *http.Response)
+	ch := make(chan _Result)
 
 	// 并发请求所有源，错误的返回 nil
 	for _, host := range gravatarHosts {
 		go func(host string) {
 			rsp, err := get(ctx, host, fmt.Sprintf(`%x`, sum))
-			if err != nil {
-				log.Println(err)
-				ch <- nil
-			} else {
-				ch <- rsp
-			}
+			ch <- _Result{rsp, err}
 		}(host)
 	}
 
 	var rsp *http.Response
 
+	var errs []error
+
 	// 只取第一个有效的
 	for range gravatarHosts {
-		rsp2 := <-ch
-		if rsp2 == nil {
+		ret := <-ch
+		if ret.rsp == nil {
+			errs = append(errs, ret.err)
 			continue
 		}
 
 		if rsp == nil {
-			rsp = rsp2
+			rsp = ret.rsp
 		} else {
-			rsp2.Body.Close()
+			ret.rsp.Body.Close()
 		}
 	}
 
 	if rsp == nil {
-		return nil, fmt.Errorf(`no available gravatar`)
+		return nil, fmt.Errorf(`no available gravatar: %v`, errors.Join(errs...))
 	}
 
 	return rsp, nil
@@ -97,6 +100,6 @@ func get(ctx context.Context, endpoint string, hash string) (*http.Response, err
 	case 200:
 		return resp, nil
 	default:
-		return nil, fmt.Errorf(`statusCode != 200: %s`, u)
+		return nil, fmt.Errorf(`statusCode != 200: %s, %s`, u, resp.Status)
 	}
 }
