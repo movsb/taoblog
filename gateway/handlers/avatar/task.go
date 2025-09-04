@@ -2,6 +2,7 @@ package avatar
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"io"
 	"log"
@@ -59,10 +60,14 @@ func NewTask(ctx context.Context, cache *cache.FileCache) *Task {
 	return t
 }
 
-func (t *Task) Get(email string) (lastModified time.Time, content []byte, found bool) {
+func (t *Task) Get(email string, force bool) (lastModified time.Time, content []byte, found bool) {
 	ck := CacheKey{Email: strings.ToLower(email)}
 
 	val := CacheValue{}
+
+	if force {
+		t.cache.Delete(ck)
+	}
 
 	if err := t.cache.GetOrLoad(ck, cacheTTL, &val,
 		func() (any, error) {

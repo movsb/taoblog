@@ -86,7 +86,7 @@ func Get(ctx context.Context, email string) (*http.Response, error) {
 
 func get(ctx context.Context, endpoint string, hash string) (*http.Response, error) {
 	endpoint = strings.TrimSuffix(endpoint, `/`)
-	u := fmt.Sprintf(`%s/%s?d=mm&s=100`, endpoint, hash)
+	u := fmt.Sprintf(`%s/%s?d=404&s=100`, endpoint, hash)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
