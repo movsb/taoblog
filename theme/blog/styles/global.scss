@@ -90,7 +90,17 @@ i, em {
 }
 
 figure {
-	text-align: center;
+	margin: 1em 0;
+	
+	// 仅有一张图片的时候才居中，因为会继承，不能
+	// 影响其它元素，比如实况照片。
+	&:has(> img:first-child) {
+		text-align: center;
+	}
+
+	figcaption {
+		text-align: center;
+	}
 }
 
 iframe {

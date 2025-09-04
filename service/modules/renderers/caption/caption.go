@@ -82,7 +82,7 @@ func (m *_Caption) TransformHtml(doc *goquery.Document) error {
 		}
 
 		spec := getSource(m.web, src)
-		if spec == nil {
+		if spec == nil || spec.Caption == `` {
 			return
 		}
 
