@@ -52,6 +52,8 @@ func NewFileCache(ctx context.Context, db *sql.DB) *FileCache {
 		touched: make(map[int]int64),
 	}
 	go cc.run(ctx)
+	// 可能是刚从备份恢复的数据库，立即清理一下。
+	go time.AfterFunc(time.Second*10, cc.sync)
 	return cc
 }
 

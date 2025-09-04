@@ -9,10 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/github"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/gravatar"
 	"github.com/movsb/taoblog/gateway/handlers/avatar/qq"
 	"github.com/movsb/taoblog/service/modules/cache"
+	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 )
 
 type CacheKey struct {
@@ -24,13 +26,34 @@ type CacheValue struct {
 	LastModified time.Time
 }
 
-type Task struct {
-	cache *cache.FileCache
+type RuntimeConfig struct {
+	RefreshNow bool `yaml:"refresh_now"`
+
+	refreshNow chan struct{}
+	config.Saver
 }
 
-func NewTask(cache *cache.FileCache) *Task {
+func (c *RuntimeConfig) AfterSet(paths config.Segments, obj any) {
+	switch paths.At(0).Key {
+	case `refresh_now`:
+		c.refreshNow <- struct{}{}
+	}
+}
+
+type Task struct {
+	cache *cache.FileCache
+	rc    *RuntimeConfig
+}
+
+func NewTask(ctx context.Context, cache *cache.FileCache) *Task {
 	t := &Task{
 		cache: cache,
+		rc: &RuntimeConfig{
+			refreshNow: make(chan struct{}),
+		},
+	}
+	if r := runtime_config.FromContext(ctx); r != nil {
+		r.Register(`avatar`, t.rc)
 	}
 	go t.refreshLoop(context.Background())
 	return t
@@ -66,6 +89,7 @@ const cacheTTL = refreshTTL * 7
 func (t *Task) refreshLoop(ctx context.Context) {
 	refresh := func() {
 		log.Println(`即将更新头像`)
+		defer log.Println(`头像更新全部结束`)
 
 		var keys []CacheKey
 		t.cache.GetAllKeysFor(&keys)
@@ -84,7 +108,7 @@ func (t *Task) refreshLoop(ctx context.Context) {
 			// 因为：每成功 Get/刷新 都会使过期时间延迟缓存时间。
 			// 最近有 Get 过：过期剩余时间 > 刷新时间。
 			if time.Until(expiringAt) < refreshTTL {
-				log.Println(`即将过期，不再刷新：`, k)
+				log.Println(`即将过期或已经过期，不再刷新：`, k)
 				continue
 			}
 
@@ -109,6 +133,8 @@ func (t *Task) refreshLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-time.After(refreshTTL):
+			refresh()
+		case <-t.rc.refreshNow:
 			refresh()
 		}
 	}

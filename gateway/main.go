@@ -88,8 +88,8 @@ func (g *Gateway) AvatarURL(uid int) string {
 }
 
 // 头像服务
-func (g *Gateway) SetAvatar(cache *cache.FileCache, resolve avatar.ResolveFunc) {
-	task := avatar.NewTask(cache)
+func (g *Gateway) SetAvatar(ctx context.Context, cache *cache.FileCache, resolve avatar.ResolveFunc) {
+	task := avatar.NewTask(ctx, cache)
 	a := avatar.New(task, resolve)
 	g.mc.Handle(`GET /v3/avatar/{id}`, a.Handler())
 }

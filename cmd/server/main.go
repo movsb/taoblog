@@ -254,7 +254,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
-	s.gateway.SetAvatar(s.fileCache, s.Main().ResolveAvatar)
+	s.gateway.SetAvatar(ctx, s.fileCache, s.Main().ResolveAvatar)
 
 	if s.initRssTasks {
 		s.initRSS()
