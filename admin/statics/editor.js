@@ -352,12 +352,18 @@ class FileCreationDialog {
 			}
 
 			switch (this._type.value) {
+			default:
+				alert('未知文件类型。');
+				return
 			case 'text':
 				type = 'text/plain';
 				break;
 			case 'table':
 				path += '.table';
 				data = '<table><tbody><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table>';
+			case 'drawio':
+				path += '.drawio';
+				data = '<mxGraphModel dx="1380" dy="912" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" /></root></mxGraphModel>';
 			}
 
 			if(await this._options.onSave(type, path, data)) {
@@ -462,6 +468,9 @@ class FileManagerDialog {
 			if (selected.length == 1) {
 				const fi = selected[0];
 				if(fi.spec.path.endsWith('.table')) {
+					canEdit = true;
+				}
+				if(fi.spec.path.endsWith('.drawio')) {
 					canEdit = true;
 				}
 			}
@@ -637,7 +646,7 @@ class TableEditor extends HTMLElement {
 		this.appendChild(cloned.firstElementChild);
 
 		if(typeof JavaScriptTableEditor == 'undefined') {
-			const url = 'https://unpkg.com/javascript-table-editor@1.0.5/dist/table.iife.min.js';
+			const url = 'https://unpkg.com/javascript-table-editor@1.0.6/dist/table.iife.min.js';
 			const script = document.createElement('script');
 			script.src = url;
 			document.head.appendChild(script);
@@ -688,6 +697,89 @@ class TableEditor extends HTMLElement {
 	}
 }
 customElements.define('table-editor', TableEditor);
+
+// [Embed mode](https://www.drawio.com/doc/faq/embed-mode)
+class DrawioEditor extends HTMLElement {
+	constructor() {
+		super();
+
+		/** @type {HTMLIFrameElement} */
+		this._iframe = null;
+	}
+
+	/**
+	 * @param {File} value 
+	 */
+	set file(value) {
+		this._file = value;
+	}
+
+	async connectedCallback() {
+		const frame = document.createElement('iframe');
+		frame.src = 'https://embed.diagrams.net/?configure=1&embed=1&spin=1&libraries=1&proto=json';
+		frame.style.width = '100%';
+		frame.style.minHeight = '85dvh';
+		frame.style.border = 'none';
+		this.appendChild(frame);
+
+		window.addEventListener('message', this._messageHandler);
+	}
+	disconnectedCallback() {
+		window.removeEventListener('message', this._messageHandler);
+		console.log('移除事件');
+	}
+
+	_messageHandler = async (e) => {
+		const m = JSON.parse(e.data);
+		if(m.event == 'configure') {
+			e.source.postMessage(JSON.stringify({
+				action: 'configure',
+				config: {
+					css: '',
+				},
+			}), e.origin);
+			return;
+		}
+		if(m.event == 'init') {
+			e.source.postMessage(JSON.stringify({
+				action: 'load',
+				xml: await this._file.text(),
+				title: this._file.name,
+			}),e.origin);
+			return;
+		}
+		if(m.event == 'save') {
+			e.source.postMessage(JSON.stringify({
+				action: 'export',
+				format: 'svg',
+				border: 10,
+			}), e.origin);
+		}
+		if(m.event == 'export') {
+			// console.log(m.data);
+			const xmlName = this._file.name;
+			const xmlFile = new File([m.xml], xmlName);
+
+			// 不严谨。
+			const svgName = xmlName.replace('.drawio', '.svg');
+			const index = m.data.indexOf(';base64,');
+			const base64Content = m.data.slice(index + ';base64,'.length);
+			const bytes = Uint8Array.fromBase64(base64Content);
+			const svgFile = new File([bytes], svgName);
+
+			this._onSave(xmlFile, svgFile);
+		}
+	}
+
+	/**
+	 * 
+	 * @param {(xmlFile: File, svgFile: File)=>void} callback 
+	 */
+	onSave(callback) {
+		this._onSave = callback;
+	}
+}
+customElements.define('drawio-editor', DrawioEditor);
 
 class TabsManager {
 	/**
@@ -785,6 +877,16 @@ class TabsManager {
 			editor.file = file;
 			editor.onChange((content) => {
 				this._options.saveFile(new File([content], file.name));
+			});
+			return editor;
+		}
+		if(path.endsWith('.drawio')) {
+			const file = await this._options.getFile(path);
+			const editor = new DrawioEditor();
+			editor.file = file;
+			editor.onSave((xmlFile, svgFile) => {
+				this._options.saveFile(xmlFile);
+				this._options.saveFile(svgFile);
 			});
 			return editor;
 		}
@@ -891,6 +993,8 @@ class PostFormUI {
 				});
 			},
 			saveFile: async (file) => {
+				const now = Date.now();
+
 				const fm = new FilesManager(TaoBlog.post_id);
 				try {
 					const spec = await fm.create(file, {}, ()=>{}, {});
@@ -899,8 +1003,30 @@ class PostFormUI {
 					alert('文件更新失败：' + e);
 				}
 				try {
-					this.updatePreview(this.source);
+					await this.updatePreview(this.source);
 					console.log('预览更新成功');
+
+					// 傻逼 firefox 不会重新加载图片，即便设置了 must-revalidate，
+					// 还是会使用缓存，刷新页面也不会重新加载。真的遇到鬼了。mmp。
+					// 这会导致预览中的图片始终不变。
+					// 尝试把刚刚保存过的文件重新请求一遍，如果时间较早，那肯定表示
+					// 用了缓存。注意依然使用 GET，方便浏览器复现缓存。
+					// TODO 手拼的路径。
+					const fullPath = `/${TaoBlog.post_id}/${file.name}`;
+					setTimeout(async ()=>{
+						const images = this.elemPreviewContainer.querySelectorAll('img');
+						const rsp = await fetch(fullPath);
+						// 先简单通过文件大小来判断。
+						if(new Date(rsp.headers.get('last-modified') ?? "0").getTime() < now) {
+							console.warn('文件时间不对，尝试更新文件：', fullPath);
+							const img = Array.from(images).find(img => img.getAttribute('src') == fullPath);
+							if(img) {
+								const url = new URL(img.src);
+								url.searchParams.set('_t', Date.now());
+								img.src = url.toString();
+							}
+						}
+					}, 2000);
 				} catch(e) {
 					alert('预览更新失败：' + e);
 				}
