@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net/url"
 	"path"
+	pathpkg "path"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -83,12 +84,27 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 	default:
 		if strings.HasSuffix(url.Path, `.table`) {
 			e.renderTable(w, url)
+		} else if strings.HasSuffix(url.Path, `.drawio`) {
+			e.renderDrawio(w, url)
 		} else {
 			renderImage(w, url, n, source)
 		}
 	}
 
 	return ast.WalkSkipChildren, nil
+}
+
+func (e *Image) renderDrawio(w util.BufWriter, url *url.URL) {
+	path := url.Path
+	ext := pathpkg.Ext(path)
+	imgPath := strings.TrimSuffix(path, ext) + `.svg`
+	fp, err := e.web.OpenURL(imgPath)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer fp.Close()
+	io.Copy(w, fp)
 }
 
 func (e *Image) renderTable(w util.BufWriter, url *url.URL) {

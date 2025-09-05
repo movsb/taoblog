@@ -716,7 +716,12 @@ class DrawioEditor extends HTMLElement {
 
 	async connectedCallback() {
 		const frame = document.createElement('iframe');
-		frame.src = 'https://embed.diagrams.net/?configure=1&embed=1&spin=1&libraries=1&proto=json';
+
+		// embed drawio 有个 bug，即便当前是 dark 模式，进入 iframe 仍然是 light，但是切日夜切换却是正常的。
+		// 这里通过媒体查询设定一个初始值，设定后仍然能自动日夜切换。
+		// ui=dark/light 是查 gpt 得知的，官方文档没有写。
+		const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		frame.src = `https://embed.diagrams.net/?configure=1&embed=1&spin=1&libraries=1&proto=json&ui=${isDark ? 'dark' : 'light' }`;
 		frame.style.width = '100%';
 		frame.style.minHeight = '85dvh';
 		frame.style.border = 'none';
@@ -730,12 +735,14 @@ class DrawioEditor extends HTMLElement {
 	}
 
 	_messageHandler = async (e) => {
+		console.log('收到消息：', e);
 		const m = JSON.parse(e.data);
 		if(m.event == 'configure') {
 			e.source.postMessage(JSON.stringify({
 				action: 'configure',
 				config: {
-					css: '',
+					css: `
+					`,
 				},
 			}), e.origin);
 			return;
@@ -1006,27 +1013,27 @@ class PostFormUI {
 					await this.updatePreview(this.source);
 					console.log('预览更新成功');
 
-					// 傻逼 firefox 不会重新加载图片，即便设置了 must-revalidate，
-					// 还是会使用缓存，刷新页面也不会重新加载。真的遇到鬼了。mmp。
-					// 这会导致预览中的图片始终不变。
-					// 尝试把刚刚保存过的文件重新请求一遍，如果时间较早，那肯定表示
-					// 用了缓存。注意依然使用 GET，方便浏览器复现缓存。
-					// TODO 手拼的路径。
-					const fullPath = `/${TaoBlog.post_id}/${file.name}`;
-					setTimeout(async ()=>{
-						const images = this.elemPreviewContainer.querySelectorAll('img');
-						const rsp = await fetch(fullPath);
-						// 先简单通过文件大小来判断。
-						if(new Date(rsp.headers.get('last-modified') ?? "0").getTime() < now) {
-							console.warn('文件时间不对，尝试更新文件：', fullPath);
-							const img = Array.from(images).find(img => img.getAttribute('src') == fullPath);
-							if(img) {
-								const url = new URL(img.src);
-								url.searchParams.set('_t', Date.now());
-								img.src = url.toString();
-							}
-						}
-					}, 2000);
+					// // 傻逼 firefox 不会重新加载图片，即便设置了 must-revalidate，
+					// // 还是会使用缓存，刷新页面也不会重新加载。真的遇到鬼了。mmp。
+					// // 这会导致预览中的图片始终不变。
+					// // 尝试把刚刚保存过的文件重新请求一遍，如果时间较早，那肯定表示
+					// // 用了缓存。注意依然使用 GET，方便浏览器复现缓存。
+					// // TODO 手拼的路径。
+					// const fullPath = `/${TaoBlog.post_id}/${file.name}`;
+					// setTimeout(async ()=>{
+					// 	const images = this.elemPreviewContainer.querySelectorAll('img');
+					// 	const rsp = await fetch(fullPath);
+					// 	// 先简单通过文件大小来判断。
+					// 	if(new Date(rsp.headers.get('last-modified') ?? "0").getTime() < now) {
+					// 		console.warn('文件时间不对，尝试更新文件：', fullPath);
+					// 		const img = Array.from(images).find(img => img.getAttribute('src') == fullPath);
+					// 		if(img) {
+					// 			const url = new URL(img.src);
+					// 			url.searchParams.set('_t', Date.now());
+					// 			img.src = url.toString();
+					// 		}
+					// 	}
+					// }, 2000);
 				} catch(e) {
 					alert('预览更新失败：' + e);
 				}
@@ -1270,6 +1277,16 @@ class PostFormUI {
 				const btn = document.createElement('button');
 				btn.type = 'button';
 				btn.textContent = `编辑表格：${path}`;
+				btn.addEventListener('click', ()=>{
+					this._tabManager.open(path);
+				});
+				btn.classList.add('file');
+				buttonsParent.appendChild(btn);
+			}
+			if(path.endsWith('.drawio')) {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.textContent = `编辑绘图：${path}`;
 				btn.addEventListener('click', ()=>{
 					this._tabManager.open(path);
 				});
