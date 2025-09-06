@@ -361,9 +361,11 @@ class FileCreationDialog {
 			case 'table':
 				path += '.table';
 				data = '<table><tbody><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table>';
+				break;
 			case 'drawio':
 				path += '.drawio';
 				data = '<mxGraphModel dx="1380" dy="912" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" /></root></mxGraphModel>';
+				break;
 			}
 
 			if(await this._options.onSave(type, path, data)) {
