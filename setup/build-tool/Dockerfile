@@ -35,3 +35,7 @@ ENV PATH="$PATH":/usr/local/go/bin:/root/go/bin
 # 安装 BUN
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
+
+# 真是奇怪，代码写了很久了，为什么安装了 bun 以后就不见了？
+# service/modules/renderers/image/image_test.go
+RUN apt install media-types
