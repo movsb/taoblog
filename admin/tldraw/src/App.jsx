@@ -75,6 +75,7 @@ export default function App({snapshotJSON, saveSnapshot}) {
 	return (
 		<div className='tldraw-app'>
 			<Tldraw
+				inferDarkMode
 				snapshot={JSON.parse(snapshotJSON ?? '{}')}
 				onMount={ed => {
 					ed.__saveSnapshot = saveSnapshot;
