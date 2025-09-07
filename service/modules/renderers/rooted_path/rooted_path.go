@@ -5,6 +5,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
+	"golang.org/x/net/html/atom"
 )
 
 type _RootedPaths struct {
@@ -23,10 +24,23 @@ func (m *_RootedPaths) TransformHtml(doc *goquery.Document) error {
 		switch s.Nodes[0].Data {
 		case `a`:
 			attrName = `href`
-		case `img`, `iframe`, `source`, `audio`, `video`:
+		case `img`, `iframe`, `audio`, `video`:
 			attrName = `src`
 		case `object`:
 			attrName = `data`
+		case `source`:
+			// [<source>: The Media or Image Source element - HTML | MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/source#src)
+			// <audio> 和 <video> 用 src
+			// <picture> 用 srcset
+			switch s.Parent().Nodes[0].DataAtom {
+			case atom.Audio, atom.Video:
+				attrName = `src`
+			case atom.Picture:
+				attrName = `srcset`
+			default:
+				// 其实不存在了，测试里面有个没有 parent
+				attrName = `src`
+			}
 		}
 		attrValue := s.AttrOr(attrName, ``)
 		if attrValue == `` {

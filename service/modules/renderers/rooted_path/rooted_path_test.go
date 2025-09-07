@@ -67,6 +67,21 @@ func TestRender(t *testing.T) {
 			Markdown: `<object data="中文.pdf"></object>`,
 			HTML:     `<p><object data="/123/%E4%B8%AD%E6%96%87.pdf"></object></p>`,
 		},
+		{
+			Base: `/123/`,
+			Markdown: `
+<picture>
+	<source media="(prefers-color-scheme: dark)" srcset="dark.jpg">
+	<img src="light.jpg">
+</picture>
+`,
+			HTML: `
+<picture>
+	<source media="(prefers-color-scheme: dark)" srcset="/123/dark.jpg"/>
+	<img src="/123/light.jpg"/>
+</picture>
+`,
+		},
 	}
 
 	for i, tc := range testCases {
