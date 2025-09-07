@@ -366,6 +366,10 @@ class FileCreationDialog {
 				path += '.drawio';
 				data = '<mxGraphModel dx="1380" dy="912" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" /></root></mxGraphModel>';
 				break;
+			case 'tldraw':
+				path += '.tldraw';
+				data = '{}';
+				break;
 			}
 
 			if(await this._options.onSave(type, path, data)) {
@@ -473,6 +477,9 @@ class FileManagerDialog {
 					canEdit = true;
 				}
 				if(fi.spec.path.endsWith('.drawio')) {
+					canEdit = true;
+				}
+				if(fi.spec.path.endsWith('.tldraw')) {
 					canEdit = true;
 				}
 			}
@@ -790,13 +797,69 @@ class DrawioEditor extends HTMLElement {
 }
 customElements.define('drawio-editor', DrawioEditor);
 
+class TldrawEditor extends HTMLElement {
+	constructor() {
+		super();
+	}
+
+	/**
+	 * @param {File} value 
+	 */
+	set file(value) {
+		this._file = value;
+	}
+
+	async connectedCallback() {
+		if(typeof renderTldrawComponent == 'undefined') {
+			const style = document.createElement('link');
+			style.rel = 'stylesheet';
+			style.href = '/admin/tldraw.min.css';
+			document.head.appendChild(style);
+
+			const script = document.createElement('script');
+			script.src = '/admin/tldraw.min.js';
+			script.type = 'module';
+			document.body.appendChild(script);
+
+			const timer = setInterval(async () => {
+				if(typeof renderTldrawComponent != 'undefined') {
+					clearInterval(timer);
+					await this._init();
+				}
+			}, 1000);
+		} else {
+			await this._init();
+		}
+	}
+
+	async _init() {
+		const placeholder = document.createElement('div');
+		this.appendChild(placeholder);
+		renderTldrawComponent(placeholder, {
+			snapshotJSON: await this._file.text(),
+			saveSnapshot: async (state, light, dark) => {
+				return await this._onSave(state, light, dark);
+			},
+		});
+	}
+
+	/**
+	 * 
+	 * @param {(state: string, light: Blob, dark: Blob) => Promise<boolean>} callback 
+	 */
+	onSave(callback) {
+		this._onSave = callback;
+	}
+}
+customElements.define('tldraw-editor', TldrawEditor);
+
 class TabsManager {
 	/**
 	 * 
 	 * @param {{
 	 *  onClose: (tab: Tab)=>void,
 	 *  getFile: (path: string) => Promise<File>,
-	 *  saveFile: (file: File) => Promise<void>,
+	 *  saveFiles: (files: [File]) => Promise<void>,
 	 * }} options 
 	 */
 	constructor(options) {
@@ -885,7 +948,7 @@ class TabsManager {
 			const editor = new TableEditor();
 			editor.file = file;
 			editor.onChange((content) => {
-				this._options.saveFile(new File([content], file.name));
+				this._options.saveFiles([new File([content], file.name)]);
 			});
 			return editor;
 		}
@@ -894,8 +957,19 @@ class TabsManager {
 			const editor = new DrawioEditor();
 			editor.file = file;
 			editor.onSave((xmlFile, svgFile) => {
-				this._options.saveFile(xmlFile);
-				this._options.saveFile(svgFile);
+				this._options.saveFiles([xmlFile, svgFile]);
+			});
+			return editor;
+		}
+		if(path.endsWith('.tldraw')) {
+			const file = await this._options.getFile(path);
+			const editor = new TldrawEditor();
+			editor.file = file;
+			editor.onSave((state, light, dark) => {
+				const stateFile = new File([state], path);
+				const lightFile = new File([light], path + '.light.svg');
+				const darkFile  = new File([dark],  path + '.dark.svg');
+				this._options.saveFiles([stateFile, lightFile, darkFile]);
 			});
 			return editor;
 		}
@@ -1001,41 +1075,28 @@ class PostFormUI {
 					lastModified: spec.time,
 				});
 			},
-			saveFile: async (file) => {
-				const now = Date.now();
-
+			/**
+			 * 
+			 * @param {File[]} files 
+			 * @returns 
+			 */
+			saveFiles: async (files) => {
 				const fm = new FilesManager(TaoBlog.post_id);
 				try {
-					const spec = await fm.create(file, {}, ()=>{}, {});
-					console.log('文件更新成功：', spec);
+					const promises = [];
+					files.forEach(file => {
+						const spec = fm.create(file, {}, ()=>{}, {});
+						promises.push(spec);
+					});
+					const specs = await Promise.all(promises);
+					console.log('文件更新成功：', specs);
 				} catch(e) {
 					alert('文件更新失败：' + e);
+					return;
 				}
 				try {
 					await this.updatePreview(this.source);
 					console.log('预览更新成功');
-
-					// // 傻逼 firefox 不会重新加载图片，即便设置了 must-revalidate，
-					// // 还是会使用缓存，刷新页面也不会重新加载。真的遇到鬼了。mmp。
-					// // 这会导致预览中的图片始终不变。
-					// // 尝试把刚刚保存过的文件重新请求一遍，如果时间较早，那肯定表示
-					// // 用了缓存。注意依然使用 GET，方便浏览器复现缓存。
-					// // TODO 手拼的路径。
-					// const fullPath = `/${TaoBlog.post_id}/${file.name}`;
-					// setTimeout(async ()=>{
-					// 	const images = this.elemPreviewContainer.querySelectorAll('img');
-					// 	const rsp = await fetch(fullPath);
-					// 	// 先简单通过文件大小来判断。
-					// 	if(new Date(rsp.headers.get('last-modified') ?? "0").getTime() < now) {
-					// 		console.warn('文件时间不对，尝试更新文件：', fullPath);
-					// 		const img = Array.from(images).find(img => img.getAttribute('src') == fullPath);
-					// 		if(img) {
-					// 			const url = new URL(img.src);
-					// 			url.searchParams.set('_t', Date.now());
-					// 			img.src = url.toString();
-					// 		}
-					// 	}
-					// }, 2000);
 				} catch(e) {
 					alert('预览更新失败：' + e);
 				}
@@ -1286,6 +1347,16 @@ class PostFormUI {
 				buttonsParent.appendChild(btn);
 			}
 			if(path.endsWith('.drawio')) {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.textContent = `编辑绘图：${path}`;
+				btn.addEventListener('click', ()=>{
+					this._tabManager.open(path);
+				});
+				btn.classList.add('file');
+				buttonsParent.appendChild(btn);
+			}
+			if(path.endsWith('.tldraw')) {
 				const btn = document.createElement('button');
 				btn.type = 'button';
 				btn.textContent = `编辑绘图：${path}`;

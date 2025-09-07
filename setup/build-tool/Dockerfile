@@ -31,3 +31,6 @@ ENV PATH="$PATH":/usr/local/go/bin:/root/go/bin
 
 # 安装 Node.js v23（通过 apt）
 # RUN curl -fsSL https://deb.nodesource.com/setup_23.x | bash - && apt install -y nodejs
+
+# 安装 BUN
+RUN curl -fsSL https://bun.sh/install | bash

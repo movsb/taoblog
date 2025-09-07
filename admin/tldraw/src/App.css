@@ -1,0 +1,27 @@
+.tlui-layout__top__right {
+	flex-direction: row;
+	align-items: unset;
+}
+
+.share-buttons {
+	pointer-events: all;
+	display: flex;
+	gap: 10px;
+	align-items: baseline;
+	margin-top: 4px;
+}
+
+.share-buttons button {
+	background-color: var(--color-selected);
+	color: white;
+	border-radius: 4px;
+	/* border: none; */
+	padding: 8px 16px;
+	cursor: pointer;
+	font-family: inherit;
+}
+
+/* 博客主题干扰了。*/
+.tlui-button:hover {
+	border: none !important;
+}

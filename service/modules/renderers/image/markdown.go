@@ -3,8 +3,10 @@ package image
 import (
 	"bytes"
 	"embed"
+	_ "embed"
 	"fmt"
 	std_html "html"
+	"html/template"
 	"io"
 	"log"
 	"mime"
@@ -12,6 +14,7 @@ import (
 	"path"
 	pathpkg "path"
 	"strings"
+	"sync"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -86,12 +89,36 @@ func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, ente
 			e.renderTable(w, url)
 		} else if strings.HasSuffix(url.Path, `.drawio`) {
 			e.renderDrawio(w, url)
+		} else if strings.HasSuffix(url.Path, `.tldraw`) {
+			e.renderTldraw(w, url)
 		} else {
 			renderImage(w, url, n, source)
 		}
 	}
 
 	return ast.WalkSkipChildren, nil
+}
+
+var (
+	//go:embed picture.html
+	pictureHTML []byte
+	getPicture  = sync.OnceValue(func() *template.Template {
+		return template.Must(template.New(`picture`).Parse(string(pictureHTML)))
+	})
+)
+
+type _PictureData struct {
+	LightURL string
+	DarkURL  string
+}
+
+// [朋友们 - 陪她去流浪](https://blog.twofei.com/608/#comment-1792)
+func (e *Image) renderTldraw(w util.BufWriter, url *url.URL) {
+	base := url.String()
+	getPicture().Execute(w, _PictureData{
+		LightURL: base + `.light.svg`,
+		DarkURL:  base + `.dark.svg`,
+	})
 }
 
 func (e *Image) renderDrawio(w util.BufWriter, url *url.URL) {
