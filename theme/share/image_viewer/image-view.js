@@ -39,22 +39,28 @@ class ImageViewDesktop {
 		}
 	}
 
+	/**
+	 * 
+	 * @param {HTMLImageElement | HTMLPictureElement} img 
+	 */
 	viewImage(img) {
 		// 对于 xhtml 来说保留原始大小写
 		// https://developer.mozilla.org/en-US/docs/Web/API/Element/tagName
 		if (img.tagName == 'svg') {
 			let svg = img.cloneNode(true);
-			if (img.classList.contains('transparent')) {
-				this.root.classList.add('transparent');
-			}
 			this.obj = svg;
 			this.ref = img;
 			this.root.appendChild(svg);
 			setTimeout(()=>this._onImgLoad(), 0);
+		} else if(img.tagName == 'PICTURE') {
+			this.obj = img.cloneNode(true);
+			const inner = this.obj.querySelector('img');
+			inner.addEventListener('load', this._onImgLoad.bind(this));
+			this.root.appendChild(this.obj);
+			inner.src = inner.src; // 重新加载，触发事件。
+			this.ref = inner;
+			this.initMetadata(inner.dataset.metadata);
 		} else {
-			if (img.classList.contains('transparent')) {
-				this.root.classList.add('transparent');
-			}
 			this.obj = document.createElement('img');
 			this.obj.addEventListener('load', this._onImgLoad.bind(this));
 			this.root.appendChild(this.obj);
@@ -80,9 +86,12 @@ class ImageViewDesktop {
 	_onImgLoad() {
 		let rawWidth, rawHeight;
 		
-		const obj = this.obj;
+		let obj = this.obj;
 
-		if (obj.tagName == 'IMG') {
+		if (obj.tagName == 'IMG' || obj.tagName == 'PICTURE') {
+			if(obj.tagName == 'PICTURE') {
+				obj = obj.querySelector('img');
+			}
 			rawWidth = obj.naturalWidth || parseInt(this.ref.style.width) || parseInt(this.ref.getAttribute('width')) || 300;
 			rawHeight = obj.naturalHeight || parseInt(this.ref.style.height) || parseInt(this.ref.getAttribute('height')) || 300;
 		} else if (obj.tagName == 'svg') {
@@ -264,20 +273,20 @@ class ImageView {
 		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
 	}
 
+	// 图片可能是 <picture>
+	getAllImages() {
+		const images = document.querySelectorAll('.entry img:not(.static)');
+		return Array.from(images).map(i => i.parentElement?.tagName == 'PICTURE' ? i.parentElement : i);
+	}
+
 	initDesktop() {
-		let images = document.querySelectorAll('.entry img:not(.static)');
-		images.forEach(img => img.addEventListener('click', e => {
-			if (!img.complete) {
-				console.log('图片未完成加载：', img);
-				return;
-			}
+		this.getAllImages().forEach(img => img.addEventListener('click', e => {
 			new ImageViewDesktop(img);
 		}));
 	}
 
 	initMobile() {
-		let images = document.querySelectorAll('.entry img:not(.static)');
-		new ImageViewMobile(images)
+		new ImageViewMobile(this.getAllImages());
 	}
 }
 

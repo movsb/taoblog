@@ -158,6 +158,10 @@ body:not(.wide) .entry {
 		display: block;
 		margin: auto;
 	}
+	picture img {
+		display: block;
+		margin: auto;
+	}
 }
 
 $blockquote-color: var(--border-color);

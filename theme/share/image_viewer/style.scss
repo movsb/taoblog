@@ -1,12 +1,12 @@
 #img-view {
     position: fixed;
     z-index: 1000000;
-    background-color: rgb(0,0,0,0.88);
+    background-color: rgb(from var(--color-bg) r g b / .97);
 	inset: 0;
 	padding: 10px;
     cursor: zoom-out;
 
-    > img, > svg {
+    > img, > svg, > picture {
         cursor: move;
         position: relative;
         left: 0px;
@@ -32,7 +32,7 @@
 }
 
 #img-view-mobile {
-	background-color: rgb(0,0,0,0.88);
+	background-color: rgb(from var(--color-bg) r g b / .97);
 	display: none;
 	position: fixed;
 	inset: 0;;
@@ -42,11 +42,17 @@
 	flex-wrap: nowrap;
 	scroll-snap-type: x mandatory;
 	overflow: auto;
-	img {
+	> img, > picture {
 		scroll-snap-align: center;
 		flex: 0 0 100%;
-		object-fit: contain;
 		// 在 iOS 上图片没有居中。
 		height: 100%;
+	}
+	img {
+		object-fit: contain;
+	}
+	> picture img {
+		height: 100%;
+		width: 100%;
 	}
 }
