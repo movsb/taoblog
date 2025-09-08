@@ -1,3 +1,9 @@
+/* 在官方网站上有这个样式，否则会导致 top 占的空间延伸到 bottom 上面，
+导致在移动设备上无法点击画布 */
+.tlui-layout__top {
+	height: fit-content;
+}
+
 .tlui-layout__top__right {
 	flex-direction: row;
 	align-items: unset;
@@ -24,4 +30,11 @@
 /* 博客主题干扰了。*/
 .tlui-button:hover {
 	border: none !important;
+}
+
+/* 有 border-radius 的 svg 令 tldraw 完全无法工作 */
+.tl-container {
+	svg {
+		border-radius: initial;
+	}
 }
