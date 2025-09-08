@@ -28,6 +28,7 @@ func New(paths *[]string, prefix string) *AssetsParser {
 type ctxObj struct{}
 
 // 暂时不支持重复使用，如果需要多个，换 key 为 int 后递增。
+// 注意：路径不会自动去重，为了后期提供引用位置准备。
 func With(ctx context.Context, paths *[]string, prefix string) context.Context {
 	if paths == nil {
 		panic(`invalid argument`)

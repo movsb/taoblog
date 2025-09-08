@@ -1335,7 +1335,9 @@ class PostFormUI {
 	_updateReferencedFiles(paths) {
 		const buttonsParent = document.querySelector('p.file-manager-button');
 		buttonsParent.querySelectorAll('.file').forEach(b => b.remove());
-		paths.forEach(path => {
+
+		// note: 路径是有重复的，需要拖动去重
+		[...new Set(paths)].forEach(path => {
 			if(path.endsWith('.table')) {
 				const btn = document.createElement('button');
 				btn.type = 'button';
