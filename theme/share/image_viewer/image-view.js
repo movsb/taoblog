@@ -54,12 +54,11 @@ class ImageViewDesktop {
 			setTimeout(()=>this._onImgLoad(), 0);
 		} else if(img.tagName == 'PICTURE') {
 			this.obj = img.cloneNode(true);
-			const inner = this.obj.querySelector('img');
-			inner.addEventListener('load', this._onImgLoad.bind(this));
 			this.root.appendChild(this.obj);
-			inner.src = inner.src; // 重新加载，触发事件。
+			const inner = this.obj.querySelector('img');
 			this.ref = inner;
 			this.initMetadata(inner.dataset.metadata);
+			setTimeout(()=>this._onImgLoad(), 0);
 		} else {
 			this.obj = document.createElement('img');
 			this.obj.addEventListener('load', this._onImgLoad.bind(this));
