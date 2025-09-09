@@ -202,13 +202,13 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 				<option value="tldraw">绘图(tldraw)</option>
 			</select></label></p>
 			<p><label>文件名字：<input name="name" type="text" autocomplete="off" value=""></label></p>
+			<hr>
+			<div style="text-align: right;">
+				<span class="status-icon"></span>
+				<input type="submit" value="保存">
+				<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
+			</div>
 		</form>
-		<hr>
-		<div style="text-align: right;">
-			<span class="status-icon"></span>
-			<button type="button" class="save">保存</button>
-			<button type="button" class="cancel" onclick="this.closest('dialog').close()">关闭</button>
-		</div>
 	</dialog>
 </dialog>
 <template id="tmpl-table-editor">

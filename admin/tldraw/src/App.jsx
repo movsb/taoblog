@@ -60,7 +60,7 @@ function SnapshotToolbar() {
 					opacity: showCheckMark ? 1 : 0,
 				}}
 			>✅ 已保存</span>
-			<button style={{backgroundColor: 'var(--color-selected', color: 'white'}}
+			<button type='button' style={{backgroundColor: 'var(--color-selected', color: 'white'}}
 				onClick={async () => {
 					if(await save()) {
 						setShowCheckMark(true)

@@ -336,12 +336,16 @@ class FileCreationDialog {
 
 		/** @type {HTMLDialogElement} */
 		this._dialog = document.querySelector('dialog[name=create-file-dialog]');
+		/** @type {HTMLFormElement} */
+		this._form = this._dialog.querySelector('form');
 		/** @type {HTMLSelectElement} */
 		this._type = this._dialog.querySelector('select[name=type]');
 		/** @type {HTMLInputElement} */
 		this._name = this._dialog.querySelector('input[name=name]');
 
-		this._dialog.querySelector('button.save').addEventListener('click', async ()=>{
+		this._form.addEventListener('submit', async (e)=>{
+			e.preventDefault();
+
 			let path = this._name.value;
 			let type = 'text/plain';
 			let data = '';
@@ -1001,6 +1005,7 @@ class TabsManager {
 
 class PostFormUI {
 	constructor() {
+		/** @type {HTMLFormElement} */
 		this._form = document.querySelector('#main');
 		this._previewCallbackReturned = true;
 		/** @type {HTMLInputElement} */
