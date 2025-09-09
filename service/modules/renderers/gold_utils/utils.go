@@ -1,6 +1,7 @@
 package gold_utils
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
+	gold_html "github.com/yuin/goldmark/renderer/html"
 )
 
 type NodeFilter = func(node *goquery.Selection) bool
@@ -178,4 +180,15 @@ func RenderError(w io.Writer, err error) {
 	fmt.Fprint(w, `<div class="render-error">`)
 	fmt.Fprint(w, html.EscapeString(strings.TrimSpace(err.Error())))
 	fmt.Fprint(w, `</div>`)
+}
+
+var htmlWriter = gold_html.NewWriter()
+
+// 见 TestTitle
+func RenderToText(rawMarkdown []byte) string {
+	buf := bytes.NewBuffer(nil)
+	bw := bufio.NewWriter(buf)
+	htmlWriter.Write(bw, rawMarkdown)
+	bw.Flush()
+	return html.UnescapeString(buf.String())
 }

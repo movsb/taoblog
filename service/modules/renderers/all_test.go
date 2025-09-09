@@ -303,3 +303,45 @@ func TestSpec(t *testing.T) {
 		}
 	}
 }
+
+func TestTitle(t *testing.T) {
+	testCases := []struct {
+		Markdown string
+		Title    string
+	}{
+		{
+			Markdown: `# 123`,
+			Title:    `123`,
+		},
+		{
+			Markdown: `# \123`,
+			Title:    `\123`,
+		},
+		{
+			Markdown: "# `123`",
+			Title:    `123`,
+		},
+		{
+			Markdown: `# \<img\>`,
+			Title:    `<img>`,
+		},
+		{
+			Markdown: `# <img>1`,
+			Title:    `1`,
+		},
+		{
+			Markdown: `# &lt;X`,
+			Title:    `<X`,
+		},
+	}
+
+	for _, tc := range testCases {
+		var title string
+		md := renderers.NewMarkdown(renderers.WithTitle(&title))
+		md.Render(tc.Markdown)
+		if title != tc.Title {
+			t.Errorf(`标题不相等：[%s] vs. [%s]`, tc.Title, title)
+			continue
+		}
+	}
+}

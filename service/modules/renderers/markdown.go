@@ -235,7 +235,7 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 					if *me.title != "" {
 						return ast.WalkStop, status.Errorf(codes.InvalidArgument, "内容中多次出现主标题")
 					}
-					*me.title = string(heading.Text(sourceBytes))
+					*me.title = gold_utils.RenderToText(heading.Text(sourceBytes))
 				}
 				if me.disableHeadings {
 					return ast.WalkStop, status.Errorf(codes.InvalidArgument, `Markdown 不能包含标题元素。`)
