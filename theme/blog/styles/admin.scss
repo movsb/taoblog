@@ -143,6 +143,18 @@ body.admin.editor {
 				display: block;
 			}
 		}
+		> *.fullscreen {
+			position: fixed;
+			inset: 0;
+			overscroll-behavior: contain;
+		}
+
+		tldraw-editor {
+			display: block;
+			&, > div, > div > .tldraw-app {
+				height: 100%;
+			}
+		}
 	}
 
 	textarea {

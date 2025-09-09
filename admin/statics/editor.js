@@ -642,6 +642,13 @@ class Editor extends HTMLElement {
 	embed(editor) {
 		this.appendChild(editor);
 	}
+
+	/**
+	 * @param {boolean} value 
+	 */
+	set fullscreen(value) {
+		this.classList.toggle('fullscreen', value);
+	}
 }
 customElements.define('my-editor', Editor);
 
@@ -844,6 +851,9 @@ class TldrawEditor extends HTMLElement {
 			saveSnapshot: async (state, light, dark) => {
 				return await this._onSave(state, light, dark);
 			},
+			close: async () => {
+				this._onClose();
+			},
 		});
 	}
 
@@ -854,6 +864,9 @@ class TldrawEditor extends HTMLElement {
 	onSave(callback) {
 		this._onSave = callback;
 	}
+	onClose(callback) {
+		this._onClose = callback;
+	}
 }
 customElements.define('tldraw-editor', TldrawEditor);
 
@@ -863,7 +876,7 @@ class TabsManager {
 	 * @param {{
 	 *  onClose: (tab: Tab)=>void,
 	 *  getFile: (path: string) => Promise<File>,
-	 *  saveFiles: (files: [File]) => Promise<void>,
+	 *  saveFiles: (files: [File]) => Promise<boolean>,
 	 * }} options 
 	 */
 	constructor(options) {
@@ -916,24 +929,27 @@ class TabsManager {
 			return;
 		}
 
-		{
-			const cloned = this._tabTmpl.content.cloneNode(true);
-			const child = cloned.firstElementChild;
-			const tab = new Tab(name, child, {
-				onClose: () => {
-					this._options.onClose(tab);
-				},
-				onSelect: () => {
-					this._select(name);
-				},
-			});
-			child._tab = tab;
-			this._tabs.appendChild(child);
-		}
+		const cloned = this._tabTmpl.content.cloneNode(true);
+		const child = cloned.firstElementChild;
+		const tab = new Tab(name, child, {
+			onClose: () => {
+				this._options.onClose(tab);
+			},
+			onSelect: () => {
+				this._select(name);
+			},
+		});
+		child._tab = tab;
+		this._tabs.appendChild(child);
+			
 		if(name != '文章') {
 			const editor = new Editor();
 			editor.name = name;
-			editor.embed(await this._openEmbed(name));
+			const embed = await this._openEmbed(name, tab);
+			if (embed instanceof TldrawEditor) {
+				editor.fullscreen = true;
+			}
+			editor.embed(embed);
 			this._editors.appendChild(editor);
 		}
 
@@ -944,9 +960,10 @@ class TabsManager {
 	/**
 	 * 
 	 * @param {string} path 
+	 * @param {Tab} tab 
 	 * @returns {Promise<HTMLElement>}
 	 */
-	async _openEmbed(path) {
+	async _openEmbed(path, tab) {
 		if(path.endsWith('.table')) {
 			const file = await this._options.getFile(path);
 			const editor = new TableEditor();
@@ -973,7 +990,10 @@ class TabsManager {
 				const stateFile = new File([state], path);
 				const lightFile = new File([light], path + '.light.svg');
 				const darkFile  = new File([dark],  path + '.dark.svg');
-				this._options.saveFiles([stateFile, lightFile, darkFile]);
+				return this._options.saveFiles([stateFile, lightFile, darkFile]);
+			});
+			editor.onClose(()=>{
+				this._options.onClose(tab);
 			});
 			return editor;
 		}
@@ -1083,11 +1103,11 @@ class PostFormUI {
 			/**
 			 * 
 			 * @param {File[]} files 
-			 * @returns 
+			 * @returns {Promise<boolean>}
 			 */
 			saveFiles: async (files) => {
-				const fm = new FilesManager(TaoBlog.post_id);
 				try {
+					const fm = new FilesManager(TaoBlog.post_id);
 					const promises = [];
 					files.forEach(file => {
 						const spec = fm.create(file, {}, ()=>{}, {});
@@ -1097,13 +1117,15 @@ class PostFormUI {
 					console.log('文件更新成功：', specs);
 				} catch(e) {
 					alert('文件更新失败：' + e);
-					return;
+					return false;
 				}
 				try {
 					await this.updatePreview(this.source);
 					console.log('预览更新成功');
+					return true;
 				} catch(e) {
 					alert('预览更新失败：' + e);
+					return false;
 				}
 			},
 		})

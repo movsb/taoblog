@@ -39,6 +39,11 @@ function SnapshotToolbar() {
 		);
 	}, [editor])
 
+	const close = useCallback(async() => {
+		const close = editor.__close;
+		return await close();
+	}, [editor]);
+
 	const [showCheckMark, setShowCheckMark] = useState(false)
 	useEffect(() => {
 		if (showCheckMark) {
@@ -60,18 +65,21 @@ function SnapshotToolbar() {
 					opacity: showCheckMark ? 1 : 0,
 				}}
 			>✅ 已保存</span>
-			<button type='button' style={{backgroundColor: 'var(--color-selected', color: 'white'}}
+			<button type='button'
 				onClick={async () => {
 					if(await save()) {
 						setShowCheckMark(true)
 					}
 				}}
 			>保存</button>
+			<button type='button' onClick={async () => {
+				await close();
+			}}>关闭</button>
 		</div>
 	)
 }
 
-export default function App({snapshotJSON, saveSnapshot}) {
+export default function App({snapshotJSON, saveSnapshot, close}) {
 	return (
 		<div className='tldraw-app'>
 			<Tldraw
@@ -79,6 +87,7 @@ export default function App({snapshotJSON, saveSnapshot}) {
 				snapshot={JSON.parse(snapshotJSON ?? '{}')}
 				onMount={ed => {
 					ed.__saveSnapshot = saveSnapshot;
+					ed.__close = close;
 				}}
 				options={{
 					maxPages: 1,
