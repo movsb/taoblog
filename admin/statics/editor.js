@@ -1129,6 +1129,8 @@ class PostFormUI {
 					const empty = loc.value.length == 0;
 					loc.value = s;
 					if(empty) { this._form['geo_private'].checked = true; }
+					const pg = document.querySelector('p.geo');
+					pg.classList.remove('no-data');
 					this.updateGeoLocations(latitude, longitude);
 				},
 				()=> {
@@ -1428,6 +1430,12 @@ class PostFormUI {
 			this._form['geo_location'].value = `${g.longitude},${g.latitude}`;
 		}
 		this._form['geo_private'].checked = !!g['private'];
+
+		if(g.name || g.longitude || g.latitude || !!g['private']) {
+			/** @type {HTMLParagraphElement} */
+			const p = document.querySelector('p.geo');
+			p.classList.remove('no-data');
+		}
 	}
 
 	get usersForRequest() {

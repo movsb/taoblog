@@ -164,8 +164,8 @@ body.admin.editor {
 			min-width: 300px;
 			min-height: 50vh;
 			min-height: 50dvh;
-			max-height: 100vh;
-			max-height: 100dvh;
+			max-height: 90vh;
+			max-height: 90dvh;
 			// 简单限制一下在手机上的高度。
 			@media screen and (max-width: 650px) {
 				max-height: 40vh;
@@ -444,6 +444,17 @@ body.admin.editor {
 		}
 	}
 	p.geo {
+		&.no-data {
+			input[name=geo_location] {
+				display: none;
+			}
+			label:nth-child(2) {
+				display: none;
+			}
+			label:nth-child(3) {
+				display: none;
+			}
+		}
 		label {
 			display: block;
 		}
