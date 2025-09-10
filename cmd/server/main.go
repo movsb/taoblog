@@ -748,10 +748,6 @@ func liveCheck(ctx context.Context, s *Server, svc *service.Service) {
 }
 
 func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore theme_fs.FS) {
-	// if version.DevMode() {
-	// 	log.Println(`测试环境不启动同步。`)
-	// 	return
-	// }
 	for _, backend := range []struct {
 		config *config.OSSConfigWithEnabled
 		name   string
