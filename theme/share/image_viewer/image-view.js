@@ -55,7 +55,10 @@ class ImageViewDesktop {
 		} else if(img.tagName == 'PICTURE') {
 			this.obj = img.cloneNode(true);
 			this.root.appendChild(this.obj);
+			/** @type {HTMLImageElement} */
 			const inner = this.obj.querySelector('img');
+			inner.removeAttribute('width');
+			inner.removeAttribute('height');
 			this.ref = inner;
 			this.initMetadata(inner.dataset.metadata);
 			setTimeout(()=>this._onImgLoad(), 0);
