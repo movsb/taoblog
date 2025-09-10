@@ -12,7 +12,6 @@ import (
 	"mime"
 	"net/url"
 	"path"
-	pathpkg "path"
 	"strings"
 	"sync"
 
@@ -113,25 +112,32 @@ type _PictureData struct {
 }
 
 // [朋友们 - 陪她去流浪](https://blog.twofei.com/608/#comment-1792)
-func (e *Image) renderTldraw(w util.BufWriter, url *url.URL) {
-	base := url.String()
+func (e *Image) renderTldraw(w util.BufWriter, u *url.URL) {
+	lightURL := *u
+	lightURL.Path += `.light.svg`
+
+	darkURL := *u
+	darkURL.Path += `.dark.svg`
+	darkURL.RawQuery = ``
+
 	getPicture().Execute(w, _PictureData{
-		LightURL: base + `.light.svg`,
-		DarkURL:  base + `.dark.svg`,
+		LightURL: lightURL.String(),
+		DarkURL:  darkURL.String(),
 	})
 }
 
+// 写路径或者直接嵌入都可以。
 func (e *Image) renderDrawio(w util.BufWriter, url *url.URL) {
-	path := url.Path
-	ext := pathpkg.Ext(path)
-	imgPath := strings.TrimSuffix(path, ext) + `.svg`
-	fp, err := e.web.OpenURL(imgPath)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer fp.Close()
-	io.Copy(w, fp)
+	u := *url
+	u.Path += `.svg`
+	w.WriteString(`<img src="` + std_html.EscapeString(u.String()) + `">`)
+	// fp, err := e.web.OpenURL(imgPath)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
+	// defer fp.Close()
+	// // io.Copy(w, fp)
 }
 
 func (e *Image) renderTable(w util.BufWriter, url *url.URL) {

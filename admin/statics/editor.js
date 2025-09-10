@@ -787,8 +787,7 @@ class DrawioEditor extends HTMLElement {
 			const xmlName = this._file.name;
 			const xmlFile = new File([m.xml], xmlName);
 
-			// 不严谨。
-			const svgName = xmlName.replace('.drawio', '.svg');
+			const svgName = xmlName + '.svg';
 			const index = m.data.indexOf(';base64,');
 			const base64Content = m.data.slice(index + ';base64,'.length);
 			const bytes = Uint8Array.fromBase64(base64Content);

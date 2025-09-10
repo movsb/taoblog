@@ -27,6 +27,24 @@ func TestRenderByType(t *testing.T) {
 			Markdown: `![](1.mp4)`,
 			HTML:     `<p><video controls src="1.mp4"></video></p>`,
 		},
+		{
+			Markdown: `![](1.tldraw)`,
+			HTML: `<p><picture>
+	<source media="(prefers-color-scheme: dark)" srcset="1.tldraw.dark.svg">
+	<img src="1.tldraw.light.svg">
+</picture></p>`,
+		},
+		{
+			Markdown: `![](1.tldraw?w=500)`,
+			HTML: `<p><picture>
+	<source media="(prefers-color-scheme: dark)" srcset="1.tldraw.dark.svg">
+	<img src="1.tldraw.light.svg?w=500">
+</picture></p>`,
+		},
+		{
+			Markdown: `![](1.drawio?w=500)`,
+			HTML:     `<p><img src="1.drawio.svg?w=500"></p>`,
+		},
 	}
 
 	for _, tc := range testCases {
