@@ -175,7 +175,7 @@ class MyFileList extends HTMLElement {
 			}
 		});
 
-		const sortable = new Sortable(
+		this._sortable = new Sortable(
 			this._list,
 			{
 				handle: '.preview',
@@ -190,6 +190,23 @@ class MyFileList extends HTMLElement {
 				},
 			},
 		)
+	}
+
+	/**
+	 * 
+	 * @param {(a: FileItem, b: FileItem) => number} cmp 
+	 */
+	sort(cmp) {
+		/** @type {HTMLLIElement[]} */
+		const items = Array.from(this._list.children);
+		const sorted = items.sort((a,b)=>{
+			/** @type {FileItem} */
+			const fi1 = a.querySelector('file-list-item');
+			/** @type {FileItem} */
+			const fi2 = b.querySelector('file-list-item');
+			return cmp(fi1, fi2);
+		}).map(li => li.dataset.id);
+		this._sortable.sort(sorted);
 	}
 
 	/**
@@ -280,6 +297,7 @@ class MyFileList extends HTMLElement {
 	 */
 	_insert(file, spec, options) {
 		const li = document.createElement('li');
+		li.dataset.id = spec.path;
 		const fi = new FileItem();
 		li.appendChild(fi);
 		this._list.appendChild(li);
@@ -291,6 +309,11 @@ class MyFileList extends HTMLElement {
 
 	// 如果同一张图片上传了两遍，则可能由前一张图片被转换了格式，导致出现两条记录。
 	// 所以不能直接改 spec，需要去重。
+	/**
+	 * 
+	 * @param {FileItem} fi 
+	 * @param {*} spec 
+	 */
 	updateSpec(fi, spec) {
 		const fis = this.querySelectorAll('file-list-item');
 		fis.forEach(f => {
@@ -299,6 +322,7 @@ class MyFileList extends HTMLElement {
 			}
 		});
 		fi.spec = spec;
+		fi.closest('li').dataset.id = spec.path;
 	}
 
 	set files(list) {
@@ -514,6 +538,10 @@ class FileManagerDialog {
 			dialog.showModal();
 		});
 		this._fileList.onRetry(this._options.onRetryUploadFile);
+
+		this._dialog.querySelector('select.sort').addEventListener('change', e => {
+			this._sortFiles();
+		});
 	}
 	close() {
 		this._dialog.close();
@@ -576,11 +604,37 @@ class FileManagerDialog {
 	 * }} spec 
 	 */
 	createFile(file, spec, options) {
-		return this._fileList.addNew(file, spec, options);
+		const ret = this._fileList.addNew(file, spec, options);
+		this._sortFiles();
+		return ret;
 	}
 
 	updateFile(fi, spec) {
-		return this._fileList.updateSpec(fi, spec);
+		const ret = this._fileList.updateSpec(fi, spec);
+		this._sortFiles();
+		return ret;
+	}
+
+	_sortFiles() {
+		const rule = this._dialog.querySelector('select.sort').value;
+		/** @type {(a: FileItem, b: FileItem) => number} */
+		let cmp = null;
+		switch(rule) {
+		case 'name_asc':
+			cmp = (a, b) => a.spec.path.localeCompare(b.spec.path);
+			break;
+		case 'name_desc':
+			cmp = (a, b) => -(a.spec.path.localeCompare(b.spec.path));
+			break;
+		case 'time_asc':
+			cmp = (a, b) => a.spec.time - b.spec.time;
+			break;
+		case 'time_desc':
+			cmp = (a, b) => -(a.spec.time - b.spec.time);
+			break;
+		}
+		if(!cmp) { return; }
+		this._fileList.sort(cmp);
 	}
 }
 
