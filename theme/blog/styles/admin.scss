@@ -487,6 +487,11 @@ body.admin.editor {
 	.table-editor-wrapper {
 		.toolbar {
 			font-size: 85%;
+			position: sticky;
+			top: 0;
+			background-color: rgb(from var(--color-bg) r g b / .95);
+			z-index: 1;
+			padding: 10px 0;
 			button {
 				margin-left: 0;
 			}
