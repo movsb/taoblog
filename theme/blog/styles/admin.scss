@@ -155,6 +155,11 @@ body.admin.editor {
 				height: 100%;
 			}
 		}
+		drawio-editor {
+			&, > iframe {
+				height: 100%;
+			}
+		}
 	}
 
 	textarea {

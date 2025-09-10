@@ -754,6 +754,11 @@ class DrawioEditor extends HTMLElement {
 		console.log('移除事件');
 	}
 
+	/**
+	 * 
+	 * @param {MessageEvent} e 
+	 * @returns 
+	 */
 	_messageHandler = async (e) => {
 		console.log('收到消息：', e);
 		const m = JSON.parse(e.data);
@@ -781,6 +786,7 @@ class DrawioEditor extends HTMLElement {
 				format: 'svg',
 				border: 10,
 			}), e.origin);
+			return;
 		}
 		if(m.event == 'export') {
 			// console.log(m.data);
@@ -793,16 +799,39 @@ class DrawioEditor extends HTMLElement {
 			const bytes = Uint8Array.fromBase64(base64Content);
 			const svgFile = new File([bytes], svgName);
 
-			this._onSave(xmlFile, svgFile);
+			e.source.postMessage(JSON.stringify({
+				action: 'spinner',
+				message: '正在保存...',
+				show: true,
+				enabled: false,
+			}), e.origin);
+
+			try {
+				await this._onSave(xmlFile, svgFile);
+			} finally {
+				e.source.postMessage(JSON.stringify({
+					action: 'spinner',
+					show: false,
+				}), e.origin);
+			}
+
+			return;
+		}
+		if(m.event == 'exit') {
+			this._onClose();
+			return;
 		}
 	}
 
 	/**
 	 * 
-	 * @param {(xmlFile: File, svgFile: File)=>void} callback 
+	 * @param {(xmlFile: File, svgFile: File)=>Promise<boolean>} callback 
 	 */
 	onSave(callback) {
 		this._onSave = callback;
+	}
+	onClose(callback) {
+		this._onClose = callback;
 	}
 }
 customElements.define('drawio-editor', DrawioEditor);
@@ -948,6 +977,9 @@ class TabsManager {
 			if (embed instanceof TldrawEditor) {
 				editor.fullscreen = true;
 			}
+			if (embed instanceof DrawioEditor) {
+				editor.fullscreen = true;
+			}
 			editor.embed(embed);
 			this._editors.appendChild(editor);
 		}
@@ -976,8 +1008,11 @@ class TabsManager {
 			const file = await this._options.getFile(path);
 			const editor = new DrawioEditor();
 			editor.file = file;
-			editor.onSave((xmlFile, svgFile) => {
-				this._options.saveFiles([xmlFile, svgFile]);
+			editor.onSave(async (xmlFile, svgFile) => {
+				return await this._options.saveFiles([xmlFile, svgFile]);
+			});
+			editor.onClose(()=>{
+				this._options.onClose(tab);
 			});
 			return editor;
 		}
