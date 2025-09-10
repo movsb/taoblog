@@ -55,6 +55,9 @@ function SnapshotToolbar() {
 		return
 	})
 
+	const [showSaving, setShowSaving] = useState(false)
+	const [displaySaving, setDisplayShowSaving] = useState(false)
+
 	return (
 		<div className='share-buttons'>
 			<span
@@ -65,11 +68,24 @@ function SnapshotToolbar() {
 					opacity: showCheckMark ? 1 : 0,
 				}}
 			>✅ 已保存</span>
-			<button type='button'
+			<span
+				style={{
+					display: 'inline-block',
+					transition: 'transform 0.2s ease, opacity 0.2s ease',
+					transform: showSaving ? `scale(1)` : `scale(0.5)`,
+					opacity: showSaving ? 1 : 0,
+					display: displaySaving ? 'inline-block' : 'none',
+				}}
+			>保存中...</span>
+			<button type='button' disabled={displaySaving}
 				onClick={async () => {
+					setDisplayShowSaving(true);
+					setShowSaving(true);
 					if(await save()) {
 						setShowCheckMark(true)
 					}
+					setShowSaving(false);
+					setDisplayShowSaving(false);
 				}}
 			>保存</button>
 			<button type='button' onClick={async () => {
