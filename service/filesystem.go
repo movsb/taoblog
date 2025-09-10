@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path"
@@ -231,6 +232,8 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 					`src`:   cache.Get,
 					`key`:   base64.StdEncoding.EncodeToString(cache.Key),
 					`nonce`: base64.StdEncoding.EncodeToString(cache.Nonce),
+
+					`content_type`: mime.TypeByExtension(path.Ext(file)),
 				})
 				return
 			}
