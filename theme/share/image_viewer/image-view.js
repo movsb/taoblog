@@ -21,11 +21,14 @@ class ImageView {
 			img.style.removeProperty('aspect-ratio');
 			img.style.removeProperty('width');
 
+			this._initMetadata(img.dataset.metadata, img);
+
 			// 实况照片本身要宽高限制，不适于设置 100%，包一层。
 			if(clone.classList.contains('live-photo')) {
 				const div = document.createElement('div');
 				div.classList.add('live-photo-wrapper');
 				div.appendChild(clone);
+				TaoBlog.bindLivePhotoEvents(clone, clone.querySelector('.icon'));
 				clone = div;
 			}
 			this.root.appendChild(clone);
@@ -108,6 +111,23 @@ class ImageView {
 				p.style.setProperty('height', `${h}px`, 'important');
 			}
 		});
+	}
+
+	_initMetadata(metadata, to) {
+		let md;
+		try {
+			md = JSON.parse(metadata);
+			if (md.length <= 0 || md.length&1 > 0) {
+				return;
+			}
+		} catch {
+			return;
+		}
+		let title = '';
+		for(let i=0; i<md.length; i+=2) {
+			title += `${md[i+0]}：${md[i+1]}\n`;
+		}
+		to.title = title;
 	}
 }
 

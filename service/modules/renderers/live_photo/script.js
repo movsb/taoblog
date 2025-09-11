@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-	document.querySelectorAll('.live-photo').forEach(livePhoto => {
+	const bindEvents = (livePhoto, startElement) => {
 		const container = livePhoto.querySelector('.container');
 		const icon = livePhoto.querySelector('.icon');
 		const video = container.querySelector('video');
@@ -18,11 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
 		// fix: 鼠标进入 → 开始加载 → 鼠标离开（加载成功前） → 加载失败。
 		let within = false;
 
+		// 在移动设备上模拟点击。
+		let touchTimer = null;
+
+		/**
+		 * @param {MouseEvent | TouchEvent} e 
+		 */
 		const start = async (e) => {
 			e.stopPropagation();
 			e.preventDefault();
 
 			within = true;
+
+			if(e.touches) {
+				touchTimer = setTimeout(()=>{
+					!touchTimer && image.click();
+				}, 250);
+			}
 
 			try {
 				video.currentTime = 0;
@@ -53,18 +65,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			// 成功返回，就会进入异常处理。
 			within = false;
 
+			if(touchTimer) {
+				touchTimer = null;
+			}
+
 			video.pause();
 		};
 
 		icon.addEventListener('mouseenter',   start);
 		icon.addEventListener('mouseleave',   leave);
 
-		image.addEventListener('touchstart',  start);
-		image.addEventListener('touchend',    leave);
-		image.addEventListener('touchcancel', leave);
+		const touchElement = startElement ?? image;
+		touchElement.addEventListener('touchstart',  start);
+		touchElement.addEventListener('touchend',    leave);
+		touchElement.addEventListener('touchcancel', leave);
 
 		video.addEventListener('ended', () => {
 			livePhoto.classList.remove('zoom');
 		});
-	});
+	};
+	document.querySelectorAll('.live-photo').forEach(p => bindEvents(p));
+	window.TaoBlog.bindLivePhotoEvents = bindEvents;
 });
