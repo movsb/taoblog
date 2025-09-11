@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -66,15 +65,7 @@ func AddCommands(parent *cobra.Command) {
 				info := utils.Must1(os.Stat(arg))
 				if info.IsDir() {
 					entries := utils.Must1(os.ReadDir(arg))
-					reImage := regexp.MustCompile(`^(?i:IMG_E\d+\.HEIC)$`)
-					reVideo := regexp.MustCompile(`^(?i:IMG_E\d+\.MOV)$`)
 					for _, entry := range entries {
-						if reImage.MatchString(entry.Name()) {
-							continue
-						}
-						if reVideo.MatchString(entry.Name()) {
-							continue
-						}
 						handleFile(cmd.Context(), filepath.Join(arg, entry.Name()))
 					}
 				} else {
