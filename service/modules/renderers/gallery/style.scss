@@ -10,6 +10,14 @@
 		object-fit: cover; // 针对 img
 		margin: unset; // 针对 live photo
 	}
+
+	// 内部的，比如实况，不应该加圆角。
+	// 否则会因为边框的原因导致内径小一，圆角就不对。
+	> * {
+		img, video {
+			border-radius: unset;
+		}
+	}
 }
 
 .gallery {
