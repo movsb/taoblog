@@ -1,251 +1,66 @@
-class ImageViewDesktop {
-	constructor(img) {
-		let html = `<div class="img-view" id="img-view" style="display: none"></div>\n`;
-		
-		let old = document.getElementById('img-view');
-		if (old) { old.remove(); }
-
-		let div = document.createElement('div');
-		div.innerHTML = html;
-		document.body.appendChild(div.firstElementChild);
-		
-		this.root = document.getElementById('img-view');
-
-		this.show(true);
-	
-		this._scale = 1;
-
-		this.viewImage(img);
-		this.initBindings();
-
-		this._boundKeyHandler = this._keyHandler.bind(this);
-		document.body.addEventListener('keydown', this._boundKeyHandler);
-	}
-	
-	show(yes) {
-		if (yes) {
-			if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeIn) {
-				TaoBlog.fn.fadeIn(this.root);
-			} else{
-				this.root.style.display = 'block';
-			}
-		} else {
-			if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeOut) {
-				TaoBlog.fn.fadeOut(this.root);
-			} else{
-				this.root.style.display = 'none';
-			}
-			this._hideImage();
-		}
-	}
-
+class ImageView {
 	/**
-	 * 
-	 * @param {HTMLImageElement | HTMLPictureElement} img 
+	 * @param {Array<HTMLImageElement|HTMLPictureElement|HTMLDivElement>} objects 
 	 */
-	viewImage(img) {
-		// 对于 xhtml 来说保留原始大小写
-		// https://developer.mozilla.org/en-US/docs/Web/API/Element/tagName
-		if (img.tagName == 'svg') {
-			let svg = img.cloneNode(true);
-			this.obj = svg;
-			this.ref = img;
-			this.root.appendChild(svg);
-			setTimeout(()=>this._onImgLoad(), 0);
-		} else if(img.tagName == 'PICTURE') {
-			this.obj = img.cloneNode(true);
-			this.root.appendChild(this.obj);
-			/** @type {HTMLImageElement} */
-			const inner = this.obj.querySelector('img');
-			inner.removeAttribute('width');
-			inner.removeAttribute('height');
-			this.ref = inner;
-			this.initMetadata(inner.dataset.metadata);
-			setTimeout(()=>this._onImgLoad(), 0);
-		} else {
-			this.obj = document.createElement('img');
-			this.obj.addEventListener('load', this._onImgLoad.bind(this));
-			this.root.appendChild(this.obj);
-			this.obj.src = img.src;
-			this.ref = img;
-			this.initMetadata(img.dataset.metadata);
-		}
-	}
-
-	_hideImage() {
-		let body = document.body;
-		body.style.overflow = 'auto';
-		body.removeEventListener('keydown', this._boundKeyHandler);
-	}
-
-	_keyHandler(e) {
-		if (e.keyCode == 27) {
-			this.show(false);
-			e.preventDefault();
-			e.stopPropagation();
-		}
-	}
-	_onImgLoad() {
-		let rawWidth, rawHeight;
-		
-		let obj = this.obj;
-
-		if (obj.tagName == 'IMG' || obj.tagName == 'PICTURE') {
-			if(obj.tagName == 'PICTURE') {
-				obj = obj.querySelector('img');
-			}
-			rawWidth = obj.naturalWidth || parseInt(this.ref.style.width) || parseInt(this.ref.getAttribute('width')) || 300;
-			rawHeight = obj.naturalHeight || parseInt(this.ref.style.height) || parseInt(this.ref.getAttribute('height')) || 300;
-		} else if (obj.tagName == 'svg') {
-			this.obj.style.opacity = .01;
-			this.obj.style.display = 'block';
-			let {width, height } = obj.getBBox();
-			rawWidth = width || 300;
-			rawHeight = height || 300;
-		} else {
-			console.error('未处理的类型。');
-		}
-
-		let initScale = 1;
-		let initWidth = rawWidth * initScale;
-		let initHeight = rawHeight * initScale;
-
-		const rootPadding = 10*2;
-
-		{
-			let scaleWidth  = (this.root.clientWidth  - rootPadding) / initWidth;
-			let scaleHeight = (this.root.clientHeight - rootPadding) / initHeight;
-
-			// if smaller than container
-			if (scaleWidth >= 1 && scaleHeight >= 1) {
-				initScale *= 1;
-			}
-
-			// if larger than container, scale to fit
-			else {
-				initScale *= Math.min(scaleWidth, scaleHeight);
-			}
-
-			initWidth = rawWidth * initScale;
-			initHeight = rawHeight * initScale;
-		}
-
-		let style = this.obj.style;
-		style.left      = `${(this.root.clientWidth  - rootPadding - initWidth) /2}px`;
-		style.top       = `${(this.root.clientHeight - rootPadding - initHeight)/2}px`;
-		style.width     = `${initWidth}px`;
-		style.height    = `${initHeight}px`;
-
-		if (TaoBlog && TaoBlog.fn && TaoBlog.fn.fadeIn) {
-			TaoBlog.fn.fadeIn(this.obj);
-		} else {
-			style.display   = 'block';
-		}
-
-		let body = document.body;
-		body.style.overflow = 'hidden';
-	}
-	initBindings() {
-		// 单击图片时，缩放到原始大小。
-		// 或者，关闭预览。
-		this.obj.addEventListener('click', (e)=> {
-			if(this._scale != 1) {
-				this.scale = 1;
-				this._scale = 1;
-			} else {
-				this.show(false);
-			}
-			e.preventDefault();
-			e.stopPropagation();
-			return false;
-		});
-
-		this.root.addEventListener('click', (e)=> {
-			// 点击空白处关闭预览。
-			this.show(false);
-		});
-
-		this.obj.addEventListener('mousemove', (e)=>{
-			if (e.buttons != 0) { return; }
-			// console.log('moving:', e, e.offsetX, e.offsetY);
-			// 以一种奇怪的方式实现了缩放鼠标位置并根据鼠标位置移动图片位置。
-			this.obj.style.transformOrigin = `${e.offsetX}px ${e.offsetY}px`;
-		});
-		
-		// 禁止拖动图片。
-		this.obj.addEventListener('mousedown', (e)=> {
-			e.preventDefault();
-			e.stopPropagation();
-		});
-
-		this.root.addEventListener('wheel', (e)=>{
-			// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
-			// 根据 delta 值（正、负）求得允许范围内的新的缩放值。
-			this._scale += e.deltaY * -0.01;
-			this._scale = Math.min(Math.max(1, this._scale), 10);
-			this.scale = this._scale;
-
-			e.preventDefault();
-			return false;
-		});
-	}
-
-	set scale(value) {
-		this.obj.style.transform = `scale(${value})`;
-	}
-
-	initMetadata(metadata) {
-		let md;
-		try {
-			md = JSON.parse(metadata);
-			if (md.length <= 0 || md.length&1 > 0) {
-				return;
-			}
-		} catch {
-			return;
-		}
-		let title = '';
-		for(let i=0; i<md.length; i+=2) {
-			title += `${md[i+0]}：${md[i+1]}\n`;
-		}
-		this.obj.title = title;
-	}
-}
-
-class ImageViewMobile {
-	constructor(images) {
-		this.numberOfImages = images.length;
+	constructor(objects) {
 		const div = document.createElement('div');
-		div.innerHTML = `<div id="img-view-mobile"></div>`;
+		div.innerHTML = `<div id="img-view"></div>`;
 		/** @type {HTMLDivElement} */
 		this.root = div.firstElementChild;
-		images.forEach((img, index)  => {
-			const clone = img.cloneNode(true);
-
-			// 不再使用 blur 类。
-			clone.classList.remove('blur');
-
-			this.root.appendChild(clone);
-			img.addEventListener('click', (e) => {
-				this.view(index);
-				e.preventDefault();
-				e.stopPropagation();
-			});
-			clone.addEventListener('click', (e) => {
-				this.root.style.display = 'none';
-				e.preventDefault();
-				e.stopPropagation();
-			});
-		});
 		document.body.appendChild(this.root);
-		// 停止向外抛滚动事件。
-		this.root.addEventListener('wheel', (e)=>{
-			e.preventDefault();
-			e.stopImmediatePropagation();
+
+		objects.forEach((obj, index)  => {
+			let clone = obj.cloneNode(true);
+
+			/** @type {HTMLImageElement} */
+			const img = clone.querySelector('img') ?? clone;
+			// 不再使用 blur 类。
+			img.classList.remove('blur');
+			// 移除封面效果。
+			img.style.removeProperty('object-fit');
+			img.style.removeProperty('aspect-ratio');
+			img.style.removeProperty('width');
+
+			// 实况照片本身要宽高限制，不适于设置 100%，包一层。
+			if(clone.classList.contains('live-photo')) {
+				const div = document.createElement('div');
+				div.classList.add('live-photo-wrapper');
+				div.appendChild(clone);
+				clone = div;
+			}
+			this.root.appendChild(clone);
+
+			const clickable = obj instanceof HTMLImageElement ? obj : obj.querySelector('img');
+			clickable.addEventListener('click', (e) => {
+				this.view(index, clone);
+				e.preventDefault();
+				e.stopPropagation();
+			});
+
+			clone.addEventListener('click', (e) => {
+				this.hide();
+				e.preventDefault();
+				e.stopPropagation();
+			});
 		});
+
+		let resizeDebouncer = null;
+		window.addEventListener('resize', () => {
+			if(resizeDebouncer) clearTimeout(resizeDebouncer);
+			resizeDebouncer = setTimeout(()=>{
+				this._placeLivePhotos();
+				resizeDebouncer = null;
+			}, 500);
+		});
+		this._placeLivePhotos();
 	}
-	view(index) {
-		console.log('viewing image:', index);
+	/**
+	 * 
+	 * @param {number} index 
+	 * @param {HTMLImageElement | HTMLPictureElement | HTMLDivElement} obj 
+	 */
+	view(index, obj) {
+		console.log('viewing object:', index);
 		this.root.style.opacity = 0;
 		this.root.style.display = 'flex';
 
@@ -255,43 +70,56 @@ class ImageViewMobile {
 		// const width = this.root.clientWidth;
 		const width = parseFloat(getComputedStyle(this.root).width) 
 			|| this.root.clientWidth;
+
 		this.root.scrollLeft = (width+gap) * index;
 		// alert(`图片索引：${index}, 滚动：${(width+gap)*index}, 真实：${this.root.scrollLeft}，客户区：${this.root.clientWidth}`);
 
 		this.root.style.opacity = 1;
-	}
-}
 
-class ImageView {
-	constructor() {
-		if (this.isMobileDevice()) {
-			this.initMobile();
-		} else {
-			this.initDesktop();
+		if(obj.querySelector('div.live-photo')) {
+			/** @type {HTMLVideoElement} */
+			const video = obj.querySelector('video');
+			video.load();
 		}
 	}
-
-	isMobileDevice() {
-		return 'ontouchstart' in window || /iPhone|iPad|Android|XiaoMi/.test(navigator.userAgent);
+	hide() {
+		this.root.style.display = 'none';
 	}
 
-	// 图片可能是 <picture>
-	getAllImages() {
-		const images = document.querySelectorAll('.entry img:not(.static)');
-		return Array.from(images).map(i => i.parentElement?.tagName == 'PICTURE' ? i.parentElement : i);
-	}
-
-	initDesktop() {
-		this.getAllImages().forEach(img => img.addEventListener('click', e => {
-			new ImageViewDesktop(img);
-		}));
-	}
-
-	initMobile() {
-		new ImageViewMobile(this.getAllImages());
+	_placeLivePhotos() {
+		const maxWidth = window.innerWidth, maxHeight = window.innerHeight;
+		/** @type {HTMLDivElement[]} */
+		const livePhotos = this.root.querySelectorAll('div.live-photo');
+		livePhotos.forEach(p => {
+			const width = parseInt(p.style.width);
+			const height = parseInt(p.style.height);
+			const scaledWidth = maxHeight / height * width;
+			const scaledHeight = maxWidth / width * height;
+			let w = 0, h = 0;
+			if(scaledWidth > maxWidth) {
+				w = maxWidth;
+				h = scaledHeight;
+			} else if(scaledHeight > maxHeight) {
+				w = scaledWidth;
+				h = maxHeight;
+			}
+			if(w && h) {
+				p.style.setProperty('width', `${w}px`, 'important');
+				p.style.setProperty('height', `${h}px`, 'important');
+			}
+		});
 	}
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-	(TaoBlog||window).imgView = new ImageView();
+	/** @type {HTMLImageElement[]} */
+	let images = document.querySelectorAll('.entry img:not(.static)');
+	let objects = Array.from(images).map(img => {
+		const picture = img.closest('picture');
+		if(picture) return picture;
+		const livePhoto = img.closest('div.live-photo');
+		if(livePhoto) return livePhoto;
+		return img;
+	});
+	window.TaoBlog.imgView = new ImageView(objects);
 });
