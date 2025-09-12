@@ -4,16 +4,35 @@
 	background-color: var(--selection-background-color);
 }
 
-body {
+html, body {
 	color: var(--color-fg);
 	background-color: var(--color-bg);
+	transition: background-color .2s linear;
+}
+
+#header {
+	background-color: var(--header-color);
+}
+
+// https://x.com/i/status/1966041229042348075
+:root:has(#header)::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	background: linear-gradient(
+		var(--header-color) 50%,
+		var(--color-bg) 50%
+	);
+}
+
+body {
 	margin: 0px auto;
 	padding: 0px;
 	font-size: var(--font-size);
 	font-size-adjust: var(--font-size-adjust);
 	font-family: var(--font-normal);
 	font-weight: normal;
-	transition: background-color .2s linear;
 	line-height: var(--line-height-tight);
 
 	// 类似 GitHub 固定链接的长链接会使 Safari 表现异常，
@@ -21,15 +40,6 @@ body {
 	// 这篇文章里面的脚注链接。
 	// 但是我也不太清楚放在 body 上是不是足够安全。
 	overflow-wrap: anywhere;
-}
-
-body.tweet, body.tweets {
-	background-color: var(--code-bg);
-}
-@media (prefers-color-scheme: dark) {
-	body.tweet, body.tweets {
-		background-color: var(--color-bg);
-	}
 }
 
 @media screen and (max-width: variables.$max_width) {
