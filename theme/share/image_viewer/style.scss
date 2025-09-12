@@ -24,6 +24,7 @@
 	}
 	img {
 		object-fit: contain;
+		filter: unset;
 	}
 	> picture img {
 		height: 100%;
@@ -38,6 +39,7 @@
 		}
 	}
 	// 不知道为什么多出来一丢丢 y 滚动。
+	// https://blog.twofei.com/1862/
 	picture {
 		overflow: hidden;
 	}

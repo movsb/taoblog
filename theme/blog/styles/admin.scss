@@ -384,6 +384,8 @@ body.admin.editor {
 					-webkit-touch-callout: none; /* 禁止长按呼出菜单 */
 					user-select: none; /* 其它浏览器 */
 					pointer-events: auto; /* 保留点击事件 */
+					// https://blog.twofei.com/1862/
+					display: block;
 				}
 				> div {
 					display: flex;

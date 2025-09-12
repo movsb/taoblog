@@ -119,7 +119,7 @@ func (t *Task) refreshLoop(ctx context.Context) {
 
 			l, c, err := get(ctx, k.Email)
 			if err != nil {
-				log.Println(err)
+				log.Println(err, k.Email)
 				return
 			}
 			if val.LastModified.Equal(l) {
