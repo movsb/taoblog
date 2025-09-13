@@ -56,6 +56,8 @@ class ImageView {
 			}, 500);
 		});
 		this._placeLivePhotos();
+
+		this._keydownHandlerBound = this._keydownHandler.bind(this);
 	}
 	/**
 	 * 
@@ -84,9 +86,26 @@ class ImageView {
 			const video = obj.querySelector('video');
 			video.load();
 		}
+
+		document.addEventListener('keydown', this._keydownHandlerBound);
 	}
 	hide() {
 		this.root.style.display = 'none';
+
+		document.removeEventListener('keydown', this._keydownHandlerBound);
+	}
+
+	/**
+	 * 
+	 * @param {KeyboardEvent} e 
+	 */
+	_keydownHandler(e) {
+		console.log('image-view:', e);
+		if(e.key == 'Escape') {
+			this.hide();
+			e.preventDefault();
+			e.stopPropagation();
+		}
 	}
 
 	_placeLivePhotos() {
