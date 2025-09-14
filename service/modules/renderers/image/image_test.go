@@ -9,7 +9,9 @@ import (
 )
 
 func TestRenderByType(t *testing.T) {
-	m := renderers.NewMarkdown(image.New(nil))
+	i := image.New(nil)
+	i.DoNotAddTime()
+	m := renderers.NewMarkdown(i)
 
 	testCases := []struct {
 		Markdown string

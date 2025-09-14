@@ -78,6 +78,32 @@ func TestFiles(t *testing.T) {
 	}
 }
 
+func createFile(t *testing.T, r *R, pid int64, spec *proto.FileSpec, data []byte) {
+	// 上传文件
+	body := bytes.NewBuffer(nil)
+	parts := multipart.NewWriter(body)
+
+	utils.Must(parts.WriteField(
+		`spec`, string(utils.Must1(jsonPB.Marshal(spec))),
+	))
+	_ = utils.Must1(parts.CreateFormFile(`data`, spec.Path))
+	utils.Must(parts.Close())
+
+	endpoint := r.server.JoinPath(`/v3/posts`, fmt.Sprint(pid), `files`)
+
+	req := utils.Must1(http.NewRequestWithContext(
+		r.user1, http.MethodPost,
+		endpoint, bytes.NewBuffer(body.Bytes()),
+	))
+	req.Header.Set(`Content-Type`, parts.FormDataContentType())
+	r.addAuth(req, r.user1ID)
+	rsp := utils.Must1(http.DefaultClient.Do(req))
+	defer rsp.Body.Close()
+	if rsp.StatusCode != 200 {
+		t.Fatalf(`文件上传错误：status=%s`, rsp.Status)
+	}
+}
+
 func TestCreateEmptyFiles(t *testing.T) {
 	r := Serve(t.Context())
 
@@ -86,37 +112,52 @@ func TestCreateEmptyFiles(t *testing.T) {
 		Source:     `# 123`,
 	}))
 
-	createFile := func(name string, data []byte) {
-		// 上传文件
-		body := bytes.NewBuffer(nil)
-		parts := multipart.NewWriter(body)
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path: `1.txt`,
+		Mode: 0644,
+	}, nil)
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path: `2.txt`,
+		Mode: 0644,
+	}, nil)
+}
 
-		utils.Must(parts.WriteField(
-			`spec`, string(utils.Must1(jsonPB.Marshal(&proto.FileSpec{
-				Path: name,
-				Mode: 0600,
-				Size: uint32(len(data)),
-				Time: 0,
-			}))),
-		))
-		_ = utils.Must1(parts.CreateFormFile(`data`, name))
-		utils.Must(parts.Close())
+func TestCreateGeneratedFiles(t *testing.T) {
+	r := Serve(t.Context())
 
-		endpoint := r.server.JoinPath(`/v3/posts`, fmt.Sprint(p.Id), `files`)
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		SourceType: `markdown`,
+		Source:     `# 123`,
+	}))
 
-		req := utils.Must1(http.NewRequestWithContext(
-			r.user1, http.MethodPost,
-			endpoint, bytes.NewBuffer(body.Bytes()),
-		))
-		req.Header.Set(`Content-Type`, parts.FormDataContentType())
-		r.addAuth(req, r.user1ID)
-		rsp := utils.Must1(http.DefaultClient.Do(req))
-		defer rsp.Body.Close()
-		if rsp.StatusCode != 200 {
-			t.Fatalf(`文件上传错误：status=%s`, rsp.Status)
-		}
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path: `1.tldraw`,
+	}, nil)
+
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path:       `1.tldraw.light.svg`,
+		ParentPath: `1.tldraw`,
+	}, nil)
+
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path:       `1.tldraw.dark.svg`,
+		ParentPath: `1.tldraw`,
+	}, nil)
+
+	list := utils.Must1(r.client.Blog.ListPostFiles(r.user1, &proto.ListPostFilesRequest{PostId: int32(p.Id)})).Files
+	listNames := utils.Map(list, func(f *proto.FileSpec) string { return f.Path })
+	if len(listNames) != 1 || listNames[0] != `1.tldraw` {
+		t.Fatal(`列表不正确`, listNames)
 	}
 
-	createFile(`1.txt`, nil)
-	createFile(`2.txt`, nil)
+	// 删除主文件
+	utils.Must1(r.client.Blog.DeletePostFile(r.user1, &proto.DeletePostFileRequest{
+		PostId: int32(p.Id),
+		Path:   `1.tldraw`,
+	}))
+
+	list = utils.Must1(r.client.Blog.ListPostFiles(r.user1, &proto.ListPostFilesRequest{PostId: int32(p.Id)})).Files
+	if len(list) != 0 {
+		t.Fatal(`列表不正确`, list)
+	}
 }

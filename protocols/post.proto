@@ -373,6 +373,9 @@ message FileSpec {
 	// 文件摘要MD5。
 	// 输出参数。
 	string digest = 7;
+
+	// 指定主文件的路径，以表明这是一个自动生成的文件。
+	string parent_path = 8;
 }
 
 message DeletePostFileRequest {

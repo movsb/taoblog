@@ -19,6 +19,7 @@ import (
 
 type File struct {
 	ID        int
+	ParentID  int
 	CreatedAt int64
 	UpdatedAt int64
 	PostID    int

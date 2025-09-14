@@ -14,6 +14,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -42,7 +43,8 @@ func init() {
 }
 
 type Image struct {
-	web gold_utils.WebFileSystem
+	web          gold_utils.WebFileSystem
+	doNotAddTime bool
 }
 
 func New(web gold_utils.WebFileSystem) *Image {
@@ -111,14 +113,34 @@ type _PictureData struct {
 	DarkURL  string
 }
 
+func (e *Image) DoNotAddTime() {
+	e.doNotAddTime = true
+}
+
 // [朋友们 - 陪她去流浪](https://blog.twofei.com/608/#comment-1792)
 func (e *Image) renderTldraw(w util.BufWriter, u *url.URL) {
+
+	setT := func() func(u *url.URL) {
+		t := fmt.Sprint(time.Now().Unix())
+		return func(u *url.URL) {
+			q := u.Query()
+			q.Set(`_t`, t)
+			u.RawQuery = q.Encode()
+		}
+	}()
+
 	lightURL := *u
 	lightURL.Path += `.light.svg`
 
 	darkURL := *u
 	darkURL.Path += `.dark.svg`
+	// dark url 在 picture 中，不需要额外参数，复用 img 的。
 	darkURL.RawQuery = ``
+
+	if !e.doNotAddTime {
+		setT(&lightURL)
+		setT(&darkURL)
+	}
 
 	getPicture().Execute(w, _PictureData{
 		LightURL: lightURL.String(),
@@ -130,6 +152,13 @@ func (e *Image) renderTldraw(w util.BufWriter, u *url.URL) {
 func (e *Image) renderDrawio(w util.BufWriter, url *url.URL) {
 	u := *url
 	u.Path += `.svg`
+
+	if !e.doNotAddTime {
+		q := u.Query()
+		q.Set(`_t`, fmt.Sprint(time.Now().Unix()))
+		u.RawQuery = q.Encode()
+	}
+
 	w.WriteString(`<img src="` + std_html.EscapeString(u.String()) + `">`)
 	// fp, err := e.web.OpenURL(imgPath)
 	// if err != nil {

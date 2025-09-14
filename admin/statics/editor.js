@@ -1063,6 +1063,7 @@ class TabsManager {
 			const editor = new DrawioEditor();
 			editor.file = file;
 			editor.onSave(async (xmlFile, svgFile) => {
+				svgFile.parentPath = xmlFile.name;
 				return await this._options.saveFiles([xmlFile, svgFile]);
 			});
 			editor.onClose(()=>{
@@ -1078,6 +1079,8 @@ class TabsManager {
 				const stateFile = new File([state], path);
 				const lightFile = new File([light], path + '.light.svg');
 				const darkFile  = new File([dark],  path + '.dark.svg');
+				lightFile.parentPath = stateFile.name;
+				darkFile.parentPath  = stateFile.name;
 				return this._options.saveFiles([stateFile, lightFile, darkFile]);
 			});
 			editor.onClose(()=>{
@@ -1756,7 +1759,7 @@ class PostFormUI {
 	 * 
 	 * @param {File} file 
 	 * @param {{keepPos: Boolean, showError: boolean}} options 
-	 * @returns {Promise<boolean> | boolean | any }
+	 * @returns {Promise<boolean>}
 	 */
 	async uploadFile(file, options) {
 		const f = file;
@@ -1894,6 +1897,7 @@ class FilesManager {
 			time: Math.floor(f.lastModified/1000),
 			type: f.type, // 其实不应该上传，后端计算更靠谱。
 			meta: meta,
+			parent_path: f.parentPath ?? '',
 		}));
 
 		form.set(`data`, f)

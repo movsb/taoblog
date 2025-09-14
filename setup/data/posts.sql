@@ -113,6 +113,7 @@ CREATE UNIQUE INDEX `uix_cat_user_id__name` ON `categories` (`user_id`,`name`);
 
 CREATE TABLE IF NOT EXISTS `files` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
+    `parent_id` INTEGER NOT NULL,
     `created_at` INTEGER NOT NULL,
     `updated_at` INTEGER NOT NULL,
     `post_id` INTEGER NOT NULL,

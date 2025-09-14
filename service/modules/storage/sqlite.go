@@ -54,7 +54,7 @@ var _ interface {
 
 func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 	var files []*models.File
-	if err := fs.meta.Select(fileFieldsWithoutData).Find(&files); err != nil {
+	if err := fs.meta.Select(fileFields).Find(&files); err != nil {
 		return nil, err
 	}
 	m := make(map[int][]*proto.FileSpec)
@@ -85,12 +85,12 @@ var _ interface {
 	utils.WriteFS
 } = (*SQLiteForPost)(nil)
 
-const fileFieldsWithoutData = `id,created_at,updated_at,post_id,path,mode,mod_time,size,meta,digest`
+const fileFields = `id,parent_id,created_at,updated_at,post_id,path,mode,mod_time,size,meta,digest`
 
 func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	fullName := path.Clean(path.Join(fs.dir, name))
 	var file models.File
-	if err := fs.s.meta.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
+	if err := fs.s.meta.Select(fileFields).Where(`post_id=?`, fs.pid).Where(`path=?`, fullName).Find(&file); err != nil {
 		if taorm.IsNotFoundError(err) {
 			return nil, os.ErrNotExist
 		}
@@ -147,6 +147,8 @@ func (d *DataStore) CreateData(postID int, digest string, data []byte) error {
 	return nil
 }
 
+// 删除文件。
+// 不存在的问题不会报错。
 func (d *DataStore) DeleteData(postID int, digest string) error {
 	return d.data.From(models.FileData{}).Where(`post_id=? AND digest=?`, postID, digest).Delete()
 }
@@ -197,7 +199,7 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 		return nil, errors.New(`不支持列举子目录文件。`)
 	}
 	var files []*models.File
-	if err := fs.s.meta.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).Find(&files); err != nil {
+	if err := fs.s.meta.Select(fileFields).Where(`post_id=?`, fs.pid).Find(&files); err != nil {
 		return nil, err
 	}
 	// TODO 为了前端显示方便，这里临时按时间排序。
@@ -206,6 +208,10 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 	})
 	specs := make([]*proto.FileSpec, 0, len(files))
 	for _, f := range files {
+		// 暂时去掉自动生成的文件。
+		if f.ParentID != 0 {
+			continue
+		}
 		specs = append(specs, &proto.FileSpec{
 			Path: f.Path,
 			Mode: f.Mode,
@@ -220,6 +226,8 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 	return specs, nil
 }
 
+// 删除文件。
+// 中途可能出错，所以无法确保万无一失，可能会留下垃圾数据。
 func (fs *SQLiteForPost) Delete(name string) error {
 	fullName := path.Clean(path.Join(fs.dir, name))
 	var file models.File
@@ -232,7 +240,22 @@ func (fs *SQLiteForPost) Delete(name string) error {
 	if err := fs.s.meta.Model(&file).Delete(); err != nil {
 		return err
 	}
-	return fs.s.data.DeleteData(fs.pid, file.Digest)
+	if err := fs.s.data.DeleteData(fs.pid, file.Digest); err != nil {
+		return err
+	}
+
+	// 删除自动生成的文件。
+	var genFiles []*models.File
+	if err := fs.s.meta.Select(`id,digest`).Where(`post_id=? AND parent_id=?`, fs.pid, file.ID).Find(&genFiles); err != nil {
+		return err
+	}
+	for _, gf := range genFiles {
+		if err := fs.s.data.DeleteData(fs.pid, gf.Digest); err != nil {
+			return err
+		}
+	}
+
+	return fs.s.meta.From(models.File{}).Where(`post_id=? AND parent_id=?`, fs.pid, file.ID).Delete()
 }
 
 func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {
@@ -247,7 +270,7 @@ func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {
 	}
 
 	var file models.File
-	if err := fs.s.meta.Select(fileFieldsWithoutData).Where(`post_id=?`, fs.pid).
+	if err := fs.s.meta.Select(fileFields).Where(`post_id=?`, fs.pid).
 		Where(`path=?`, fullName).Find(&file); err != nil {
 		if taorm.IsNotFoundError(err) {
 			return nil, os.ErrNotExist
@@ -271,6 +294,12 @@ func (fs *SQLiteForPost) UpdateCaption(name string, caption *proto.FileSpec_Meta
 	if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&file); err != nil {
 		return err
 	}
+
+	// 不能更新自动生成文件的标题。
+	if file.ParentID != 0 {
+		return fmt.Errorf(`不能更新自动生成文件的注释`)
+	}
+
 	file.Meta.Source = caption
 	_, err := fs.s.meta.Model(&file).UpdateMap(taorm.M{
 		`updated_at`: time.Now().Unix(),
@@ -289,6 +318,28 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 
 	if !std_fs.ValidPath(spec.Path) || spec.Path == "." {
 		return fmt.Errorf(`无效文件名：%q`, spec.Path)
+	}
+
+	// 如果指定了父文件路径
+	//  1. 必须存在
+	//  2. 必须同目录
+	//  3. 父文件不能是自动生成的文件
+	var parentID int
+	if spec.ParentPath != `` {
+		if path.Dir(spec.ParentPath) != path.Dir(spec.Path) {
+			return fmt.Errorf(`自动生成文件的父文件路径必须和文件路径在同一目录下`)
+		}
+		var parent models.File
+		if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, spec.ParentPath).Find(&parent); err != nil {
+			if taorm.IsNotFoundError(err) {
+				return fmt.Errorf(`自动生成文件的父文件不存在`)
+			}
+			return fmt.Errorf(`检查自动生成文件的父文件时出错：%w`, err)
+		}
+		if parent.ParentID != 0 {
+			return fmt.Errorf(`自动生成文件的父文件不能是自动生成的文件`)
+		}
+		parentID = parent.ID
 	}
 
 	fullName := path.Clean(path.Join(fs.dir, spec.Path))
@@ -318,6 +369,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 			`size`:       spec.Size,
 			`meta`:       meta,
 			`digest`:     digest,
+			`parent_id`:  parentID,
 		})
 		if err != nil {
 			return fmt.Errorf(`更新文件失败：%w`, err)
@@ -331,6 +383,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 
 	// 创建新文件。
 	file := models.File{
+		ParentID:  parentID,
 		CreatedAt: now.Unix(),
 		UpdatedAt: now.Unix(),
 		PostID:    fs.pid,

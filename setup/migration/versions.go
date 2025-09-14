@@ -876,3 +876,7 @@ func v62(posts, files, cache *taorm.DB) {
 		})
 	}
 }
+
+func v63(posts, files, cache *taorm.DB) {
+	posts.MustExec(`ALTER TABLE files ADD COLUMN parent_id INTEGER NOT NULL DEFAULT 0`)
+}
