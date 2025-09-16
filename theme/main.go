@@ -385,10 +385,10 @@ func (m *Merged) prepare(file string) *_MergedContent {
 	}
 	if dynamic.Mod.After(merged.time) {
 		merged.time = dynamic.Mod
-
-		// 以前是 http 里面更新的，现在改成这里更新。
-		dynamic.InitAll()
 	}
+
+	// 以前是 http 里面更新的，现在改成这里更新。
+	dynamic.InitAll()
 
 	// 如果内容有变化过，重新计算。
 	m.lock.Lock()
