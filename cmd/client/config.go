@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -25,15 +26,15 @@ func (c *Client) GetConfig(path string) (string, error) {
 	return rsp.Yaml, nil
 }
 
-func (c *Client) SetConfig(path string, value string) {
-	rsp, err := c.Management.SetConfig(c.Context(), &proto.SetConfigRequest{
+func (c *Client) SetConfig(path string, value string) error {
+	_, err := c.Management.SetConfig(c.Context(), &proto.SetConfigRequest{
 		Path: path,
 		Yaml: value,
 	})
 	if err != nil {
-		log.Fatalln(status.Convert(err).Message())
+		return errors.New(status.Convert(err).Message())
 	}
-	_ = rsp
+	return nil
 }
 
 func (c *Client) Restart() {

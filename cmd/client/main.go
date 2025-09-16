@@ -435,7 +435,9 @@ func AddCommands(rootCmd *cobra.Command) {
 			} else {
 				value = string(utils.Must1(io.ReadAll(os.Stdin)))
 			}
-			client.SetConfig(path, value)
+			if err := client.SetConfig(path, value); err != nil {
+				log.Fatalln(err)
+			}
 		},
 	}
 	configCmd.AddCommand(configSetCmd)
@@ -460,8 +462,21 @@ func AddCommands(rootCmd *cobra.Command) {
 			if strings.HasPrefix(path, `/`) {
 				ext = filepath.Ext(path)
 			}
-			if editedValue, edited := edit(value, ext); edited {
-				client.SetConfig(path, editedValue)
+			for {
+				editedValue, edited := edit(value, ext)
+				if !edited {
+					break
+				}
+				err := client.SetConfig(path, editedValue)
+				if err == nil {
+					break
+				}
+				log.Println(`更新配置时错误：`, err)
+				fmt.Print(`按回车重新编辑，Ctrl+C 退出...`)
+				if _, err := fmt.Scanln(); err != nil {
+					break
+				}
+				value = editedValue
 			}
 		},
 	}
