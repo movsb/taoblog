@@ -33,11 +33,22 @@ var (
 	_Dynamic    = map[string]*_Content{}
 	once        sync.Once
 	roots       *http.ServeMux
-	Mod         time.Time
 	reloadAll   atomic.Bool
 	reloadLock  sync.RWMutex
 	_invalidate func()
+
+	Mod     time.Time
+	Styles  atomic.Value
+	Scripts atomic.Value
 )
+
+func GetStyles() []byte {
+	return Styles.Load().([]byte)
+}
+
+func GetScripts() []byte {
+	return Scripts.Load().([]byte)
+}
 
 type ContentChanged interface {
 	Reload() <-chan struct{}
@@ -203,17 +214,8 @@ func initContents() {
 		scriptBuilder.WriteByte('\n')
 	}
 
-	style := bytes.NewReader(styleBuilder.Bytes())
-	script := bytes.NewReader(scriptBuilder.Bytes())
-
-	roots.HandleFunc(`GET /style.css`, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add(`Cache-Control`, `private, no-cache, must-revalidate`)
-		http.ServeContent(w, r, `style.css`, Mod, style)
-	})
-	roots.HandleFunc(`GET /script.js`, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add(`Cache-Control`, `private, no-cache, must-revalidate`)
-		http.ServeContent(w, r, `script.js`, Mod, script)
-	})
+	Styles.Store(styleBuilder.Bytes())
+	Scripts.Store(scriptBuilder.Bytes())
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -243,5 +245,5 @@ func callInits() {
 // 主题、扩展有变动的时候可以调用此方法更新动态内容。
 func Reload() {
 	reloadAll.Store(true)
-	initAll()
+	InitAll()
 }

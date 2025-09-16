@@ -25,13 +25,23 @@ import (
 	"github.com/movsb/taoblog/modules/utils/dir"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 )
 
-//go:embed statics templates
-var root embed.FS
+//go:embed statics templates dynamic
+var _embed embed.FS
+var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
+
+func init() {
+	dynamic.RegisterInit(func() {
+		const module = `admin`
+		dynamic.WithRoots(module, nil, nil, _embed, _root)
+		dynamic.WithScripts(module, `dynamic/script.js`)
+	})
+}
 
 type LoginData struct {
 	Name           string
@@ -77,8 +87,8 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, a
 		rootFS = os.DirFS(dir.Join(`statics`))
 		tmplFS = utils.NewOSDirFS(dir.Join(`templates`))
 	} else {
-		rootFS = utils.Must1(fs.Sub(root, `statics`))
-		tmplFS = utils.Must1(fs.Sub(root, `templates`))
+		rootFS = utils.Must1(fs.Sub(_embed, `statics`))
+		tmplFS = utils.Must1(fs.Sub(_embed, `templates`))
 	}
 
 	a := &Admin{

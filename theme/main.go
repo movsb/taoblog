@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
@@ -35,6 +36,7 @@ type Theme struct {
 
 	rootFS fs.FS
 	tmplFS fs.FS
+	merged *Merged
 
 	cfg *config.Config
 
@@ -69,6 +71,7 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 
 		rootFS: rootFS,
 		tmplFS: tmplFS,
+		merged: &Merged{root: rootFS},
 
 		cfg:      cfg,
 		service:  service,
@@ -345,5 +348,82 @@ func (t *Theme) QuerySpecial(w http.ResponseWriter, req *http.Request, file stri
 
 func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file string) {
 	handle304.MustRevalidate(w)
-	utils.ServeFSWithAutoModTime(w, req, t.rootFS, file)
+	t.merged.Serve(w, req, file)
+}
+
+// 合并 /style.css 和 /v3/dynamic/styles.css
+type Merged struct {
+	root fs.FS
+
+	lock        sync.Mutex
+	lastStyles  time.Time
+	lastScripts time.Time
+	styles      []byte
+	scripts     []byte
+}
+
+func (m *Merged) Serve(w http.ResponseWriter, r *http.Request, file string) {
+	switch file {
+	case `/style.css`, `/script.js`:
+		merged := m.prepare(file)
+		http.ServeContent(w, r, file, merged.time, merged)
+	default:
+		utils.ServeFSWithAutoModTime(w, r, m.root, file)
+	}
+}
+
+func (m *Merged) prepare(file string) *_MergedContent {
+	merged := &_MergedContent{time: version.Time}
+
+	// 更新到最新的时间。
+	fp, err := m.root.Open(file[1:])
+	if err == nil {
+		defer fp.Close()
+		if info, err := fp.Stat(); err == nil {
+			merged.time = info.ModTime()
+		}
+	}
+	if dynamic.Mod.After(merged.time) {
+		merged.time = dynamic.Mod
+
+		// 以前是 http 里面更新的，现在改成这里更新。
+		dynamic.InitAll()
+	}
+
+	// 如果内容有变化过，重新计算。
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if (file == `/style.css` && merged.time.After(m.lastStyles)) || (file == `/script.js` && merged.time.After(m.lastScripts)) {
+		log.Println(`重新准备数据：`, file)
+		buf := bytes.NewBuffer(nil)
+		if fp != nil {
+			io.Copy(buf, fp)
+		}
+		switch file {
+		case `/style.css`:
+			buf.WriteByte('\n')
+			buf.Write(dynamic.GetStyles())
+			m.styles = buf.Bytes()
+			m.lastStyles = merged.time
+		case `/script.js`:
+			buf.WriteByte('\n')
+			buf.Write(dynamic.GetScripts())
+			m.scripts = buf.Bytes()
+			m.lastScripts = merged.time
+		}
+	}
+
+	switch file {
+	case `/style.css`:
+		merged.Reader = bytes.NewReader(m.styles)
+	case `/script.js`:
+		merged.Reader = bytes.NewReader(m.scripts)
+	}
+
+	return merged
+}
+
+type _MergedContent struct {
+	time time.Time
+	*bytes.Reader
 }

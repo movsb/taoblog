@@ -22,7 +22,7 @@ func URL(path string) string {
 
 func New(invalidate func()) http.Handler {
 	_invalidate = invalidate
-	initAll()
+	InitAll()
 	return &Handler{}
 }
 
@@ -32,12 +32,13 @@ func New(invalidate func()) http.Handler {
 type Handler struct{}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	initAll()
+	InitAll()
 	roots.ServeHTTP(w, r)
 }
 
 // 导出的目的主要是给测试用。
-func initAll() {
+// 不会重复生成，可以多次调用。
+func InitAll() {
 	onceInits.Do(callInits)
 	once.Do(initContents)
 

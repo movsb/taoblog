@@ -31,5 +31,5 @@ func TestNoAccessToPost(t *testing.T) {
 func TestModTime(t *testing.T) {
 	r := Serve(t.Context())
 	expect304(r, `/style.css`)
-	expect304(r, `/admin/script.js`)
+	expect304(r, `/script.js`)
 }

@@ -1,5 +1,5 @@
 /**
- * @typedef {import('./script.js')} BUNDLE
+ * @typedef {import('../dynamic/script.js')} BUNDLE
  */
 
 class FilesManager {
