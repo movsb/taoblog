@@ -30,8 +30,27 @@ class SidebarManager {
 			this._options.onCollapse?.();
 		});
 
+		this._sidebar.addEventListener('blur', () => {
+			this._options.onCollapse?.();
+		});
+
 		/** @type {HTMLLIElement | null} */
 		this._lastSelected = null;
+
+		this.focus();
+	}
+
+	focus() {
+		const match = window.matchMedia('(max-width: 599px)').matches;
+		if(match) {
+			this._sidebar.tabIndex = 0;
+			this._sidebar.focus();
+		} else {
+			this._sidebar.removeAttribute('tabIndex');
+		}
+	}
+	blur() {
+		this._sidebar.blur();
 	}
 
 	/**
@@ -92,6 +111,9 @@ class SidebarManager {
 		this._lastSelected = li;
 
 		this._options.onClick?.(+li.dataset.id);
+
+		const match = window.matchMedia('(max-width: 599px)').matches;
+		if(match) { this._options.onCollapse(); }
 	}
 }
 
@@ -158,7 +180,11 @@ const sidebarManager = new SidebarManager('#sidebar', 'img.expand', {
 	},
 	onCollapse: () => {
 		const w = document.querySelector('.wrapper');
-		w.classList.toggle('collapsed');
+		if(w.classList.toggle('collapsed')) {
+			sidebarManager.blur();
+		} else {
+			sidebarManager.focus();
+		}
 	},
 });
 

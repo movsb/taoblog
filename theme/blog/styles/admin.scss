@@ -573,6 +573,9 @@ body.admin.drafts {
 		border-right: 1px solid var(--border-color);
 		position: relative;
 		left: 0;
+		&:focus {
+			outline: none;
+		}
 		li {
 			cursor: pointer;
 			padding: 6px;
