@@ -179,8 +179,8 @@ body.admin.editor {
 		#editor-container, #preview-container, #diff-container {
 			flex: 1;
 			min-width: 300px;
-			min-height: 50vh;
-			min-height: 50dvh;
+			min-height: 45vh;
+			min-height: 45dvh;
 			max-height: 90vh;
 			max-height: 90dvh;
 			// 简单限制一下在手机上的高度。

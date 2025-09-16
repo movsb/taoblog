@@ -15,16 +15,7 @@
 	<p><img class="avatar" src="{{.AvatarURL}}"></p>
 	<p>昵称：{{ .User.Nickname }}</p>
 	<p>邮箱：{{ with .User.Email }}{{ . }}{{ else }}(无){{ end }}</p>
-	{{ if .PublicKeys }}
-	<p><b>公钥：</b></p>
-	<ul>
-		{{ range .PublicKeys }}
-		<li>{{ . }}</li>
-		{{ end}}
-	</ul>
-	{{ else }}
-		<p><b>公钥：</b>(无)</p>
-	{{ end }}
+	<p>公钥：{{ len .PublicKeys }}</p>
 	<p><button onclick="register()">注册通行密钥</button></p>
 </div>
 <div>
