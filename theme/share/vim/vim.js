@@ -5,7 +5,7 @@ class __Vim {
 		this.stack = [];    // 按键栈
 		this.timer = null;  // 定时清理掉无效的按键
 
-		document.addEventListener('DOMContentLoaded', this.init.bind(this));
+		this.init();
 	}
 
 	init() {
@@ -127,11 +127,23 @@ class __Vim {
 	}
 }
 
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
 	const vim = (TaoBlog||window).vim = new __Vim();
 
-	document.addEventListener('DOMContentLoaded', function() {
-		const edit = document.querySelector('.edit-button > a');
-		if (edit) { vim.bind('e', edit.click.bind(edit)); }
+	const edit = document.querySelector('.edit-button > a');
+	if (edit) { vim.bind('e', edit.click.bind(edit)); }
+
+	vim.bind('a', async ()=>{
+		let wa = new WebAuthn();
+		try {
+			await wa.login();
+			location.reload();
+		} catch(e) {
+			if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+				console.log('已取消操作。');
+				return;
+			}
+			alert(e);
+		}
 	});
-})();
+});

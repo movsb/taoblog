@@ -42,10 +42,7 @@ TaoBlog.posts["{{.Data.Post.Id}}"] = {{ $.Strip .Data.Post }};
 			{{ editLinkHTML $ }}
 		</div>
 	</div>
-	<!-- comments begin -->
 	<script>TaoBlog.comments = {{ $.Data.CommentsAsJsonArray }};</script>
-	<script src="/scripts/comment.js"></script>
-	<!-- comments end -->
 	</article>
 </div>
 {{ render "footer" . }}

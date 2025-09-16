@@ -61,24 +61,6 @@ setTimeout(update, 3000);
 
 })();
 
-(function() {
-	if (TaoBlog && TaoBlog.vim) {
-		TaoBlog.vim.bind('a', async ()=>{
-			let wa = new WebAuthn();
-			try {
-				await wa.login();
-				location.reload();
-			} catch(e) {
-				if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
-					console.log('已取消操作。');
-					return;
-				}
-				alert(e);
-			}
-		});
-	}
-})();
-
 // 不知道为什么 Firefox On iOS 会会长数字解析成电话号码，但是 Safari 并不会。
 // 按照网上所有人说的添加 `<meta name="format-detection" content="telephone=no">` 也无济于事。
 // 草草草🌿️🌿️🌿️！！！

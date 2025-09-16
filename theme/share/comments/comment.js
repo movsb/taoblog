@@ -1,4 +1,4 @@
-document.write(function(){/*
+const commentHTML = function(){/*
 <div id="comments">
 <!--评论标题 -->
 <div id="comment-title">
@@ -44,7 +44,7 @@ document.write(function(){/*
 	</form>
 </div>
 </div>
-*/}.toString().slice(14,-3));
+*/}.toString().slice(14,-3);
 
 // TODO: 没有选区的时候不能取消缩进。
 class TextareaWithTab {
@@ -505,7 +505,7 @@ class CommentListUI {
 	}
 }
 
-class Comment {
+class CommentManager {
 	constructor(postID) {
 		this.post_id = postID;
 
@@ -966,5 +966,16 @@ class Comment {
 	}
 }
 
-let comment = new Comment(TaoBlog.post_id);
-comment.init();
+document.addEventListener('DOMContentLoaded', () => {
+	const articles = document.getElementsByTagName('article');
+	// 只在单篇文章页显示的时候启用评论功能。
+	if(articles.length != 1) {
+		return;
+	}
+
+	const article = articles[0];
+	article.insertAdjacentHTML('beforeend', commentHTML);
+
+	let comment = new CommentManager(TaoBlog.post_id);
+	comment.init();
+});
