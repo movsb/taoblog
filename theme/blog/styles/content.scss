@@ -69,7 +69,7 @@ body:not(.wide) {
 
     /* 文章元数据 */
     .meta1, .meta2 { 
-		opacity: 0.5;
+		color: rgb(from var(--color-fg) r g b / 0.6);
 		font-size: 85%;
         a {
             color: inherit;

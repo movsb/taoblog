@@ -104,6 +104,9 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, a
 // 下面的网址在中国已经能访问，不能再用它来判断是否可以访问 Google 主站。
 //
 //	https://www.gstatic.com/generate_204
+//
+// 换：<https://google.com/generate_204>
+// https://x.com/kholinchan/status/1638515221643026432
 func (a *Admin) detectNetwork() {
 	resp, err := http.Get(`https://www.google.com/favicon.ico`)
 	if err == nil {
@@ -170,6 +173,7 @@ func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to strin
 func (a *Admin) requireLogin(h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !auth.Context(r.Context()).User.IsGuest() {
+			w.Header().Add(`Cache-Control`, `no-store`)
 			h.ServeHTTP(w, r)
 			return
 		}

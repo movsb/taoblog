@@ -64,6 +64,11 @@ input[type=checkbox], input[type=range], input[type=radio] {
 	accent-color: var(--accent-color);
 	color-scheme: light dark;
 }
+input[type=checkbox] {
+	// 有那么一丢丢向上偏移。
+	position: relative;
+	top: 1px;
+}
 
 input[type=text],input[type=password],input[type=email],input[type=url],textarea {
 	caret-color: var(--accent-color);

@@ -1,4 +1,173 @@
 /**
+ * @typedef {import('./script.js')} BUNDLE
+ */
+
+class FilesManager {
+	constructor(id) {
+		if (!id) { throw new Error('无效文章编号。'); }
+		this._post_id = +id;
+	}
+	// 列举所有的文件列表。
+	// NOTE: 返回的文件用 path 代表 name。
+	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
+	// 用 name 表示 path 容易误解。
+	/**
+	 * 
+	 * @returns {Promise<FileSpec[]>}
+	 */
+	async list() {
+		const url = `/v3/posts/${this._post_id}/files`;
+		let rsp = await fetch(url);
+		if (!rsp.ok) {
+			throw rsp;
+		}
+		rsp = await rsp.json();
+		return rsp.files;
+	}
+
+	async delete(path) {
+		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
+		let rsp = await fetch(url, {
+			method: 'DELETE',
+		});
+		if (!rsp.ok) {
+			throw rsp;
+		}
+	}
+
+	async updateCaption(path, caption) {
+		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}:caption`;
+		let rsp = await fetch(url, {
+			method: 'PATCH',
+			body: JSON.stringify({ caption }),
+		});
+		if (!rsp.ok) {
+			throw rsp;
+		}
+	}
+
+	/**
+	 * 
+	 * @param {string} path 
+	 */
+	async get(path) {
+		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
+		let rsp = await fetch(url);
+		if (!rsp.ok) {
+			throw rsp;
+		}
+		return rsp.bytes();
+	}
+
+	// 创建一个文件。
+	// options: 用来指导对上传的文件作如何处理。
+	// meta: 额外的元数据。但宽、高会自动设置。
+	/**
+	 * 
+	 * @param {File} f 
+	 * @param {*} options 
+	 * @param {(progress: number) => void} progress 
+	 * @param {{}} meta 
+	 * @returns 
+	 */
+	async create(f, options, progress, meta) {
+		let dimension = await FilesManager.detectImageSize(f);
+		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
+		console.log('creating:', f);
+
+		meta = meta || {};
+		meta.width = dimension.width;
+		meta.height = dimension.height;
+
+		let form = new FormData();
+		form.set(`spec`, JSON.stringify({
+			path: f.name,
+			mode: 0o644,
+			size: f.size,
+			time: Math.floor(f.lastModified/1000),
+			type: f.type, // 其实不应该上传，后端计算更靠谱。
+			meta: meta,
+			parent_path: f.parentPath ?? '',
+		}));
+
+		form.set(`data`, f)
+
+		form.set(`options`, options ? JSON.stringify(options) : '{}');
+
+		return new Promise((success, failure) => {
+			let xhr = new XMLHttpRequest();
+			xhr.open('POST', `/v3/posts/${this._post_id}/files`);
+			xhr.addEventListener('abort', ()=>{
+				failure('xhr: aborted');
+			});
+			xhr.addEventListener('error', ()=>{
+				failure('上传失败。');
+			});
+			xhr.addEventListener('load', ()=> {
+				if(xhr.readyState != XMLHttpRequest.DONE) {
+					failure('readystate error');
+					return;
+				}
+				if(xhr.status >= 200 && xhr.status < 300) {
+					success(JSON.parse(xhr.responseText));
+					return;
+				}
+				console.log(xhr);
+				failure(`HTTP: ${xhr.status}`);
+			});
+			xhr.upload.addEventListener('progress', (e)=> {
+				progress((e.loaded / e.total * 100).toFixed(0));
+			});
+			xhr.send(form);
+		});
+	}
+
+	// 通过浏览器快速判断图片文件的尺寸。
+	// f: <input type="file"> 中拿来的文件。
+	// 不会抛异常。
+	static detectImageSize(f) {
+		return new Promise((success) => {
+			const isImage = /^image\//.test(f.type);
+			const isVideo = /^video\//.test(f.type);
+
+			if (!isImage && !isVideo) {
+				return success({ width: 0, height: 0 });
+			}
+
+			const url = URL.createObjectURL(f);
+
+			let revoke = (data)=> {
+				URL.revokeObjectURL(url);
+				return success(data);
+			}
+
+			if (isImage) {
+				const img = new Image();
+				img.addEventListener('load', () => {
+					return revoke({ width: img.naturalWidth, height: img.naturalHeight });
+				});
+				img.addEventListener('error', () => {
+					return revoke({ width: 0, height: 0 });
+				});
+				img.src = url;
+			} else if (isVideo) {
+				const video = document.createElement('video');
+				video.preload = 'metadata';
+				video.onloadedmetadata = ()=> {
+					return revoke({ width: video.videoWidth, height: video.videoHeight });
+				};
+				video.onerror = ()=> {
+					return revoke({ width: 0, height: 0});
+				};
+				video.src = url;
+			} else {
+				revoke({ width: 0, height: 0});
+			}
+		});
+	}
+}
+
+/**
  * @typedef {Object} FileSpec
  * @property {string} path
  * @property {string} type
@@ -109,13 +278,18 @@ class FileItem extends HTMLElement {
 		this._progress.innerText = s;
 	}
 
-	error(message) {
+	/**
+	 * 
+	 * @param {string} message 
+	 * @param {boolean} showRetry 
+	 */
+	error(message, showRetry) {
 		if (message) {
 			this._message.innerText = message;
 			this._message.classList.add('error');
 			this._message.style.display = 'block';
 			this._progress.innerText = '';
-			if (this._file) {
+			if (this._file && showRetry) {
 				this._retry.style.display = 'block';
 			}
 		} else {
@@ -1116,6 +1290,7 @@ class TabsManager {
 
 class PostFormUI {
 	constructor() {
+		this._api = new PostManagementAPI();
 		/** @type {HTMLFormElement} */
 		this._form = document.querySelector('#main');
 		this._previewCallbackReturned = true;
@@ -1372,11 +1547,6 @@ class PostFormUI {
 							},
 						},
 						{
-							name: `blockquote`,
-							title: `切换选中文本为块引用`,
-							innerHTML: `➡️ 块引用`,
-						},
-						{
 							name: `divider`,
 							title: `插入当时时间分割线`,
 							innerHTML: `✂️ 分隔符`,
@@ -1408,6 +1578,122 @@ class PostFormUI {
 
 		this.sourceChanged(c => this.updatePreview(c));
 		setTimeout(() => this.updatePreview(this.source), 0);
+
+		document.addEventListener('DOMContentLoaded', async ()=>{
+			this._refreshFileList();
+			this._handleWindowResize();
+		});
+
+		this._files.addEventListener('change', async (e)=>{
+			this._handleSelectFiles(this._files.files);
+		});
+
+		const submit = this._form.querySelector('input[type=submit]');
+		submit.addEventListener('click', async (e)=>{
+			e.preventDefault();
+			e.stopPropagation();
+			await this._handleSubmit(submit);
+		});
+	}
+
+	// 小屏幕下使编辑区域占满屏幕。
+	_handleWindowResize() {
+		if(!('ontouchstart' in window)) { return; }
+		const wv = window.visualViewport;
+		/** @type {HTMLDivElement} */
+		const ec = document.querySelector('#editor-container');
+		wv?.addEventListener('resize', ()=> {
+			if(wv.width < 500 && wv.height < 500) {
+				ec.classList.add('stretch');
+				ec.style.height = `${wv.height}px`;
+			} else {
+				ec.classList.remove('stretch');
+				ec.style.removeProperty('height');
+			}
+		});
+	}
+
+	initFrom(p) {
+		this.time = p.date * 1000;
+		this.status = p.status;
+		this.type = p.type;
+		if (p.metas && p.metas.geo) {
+			this.geo = p.metas.geo;
+		}
+		this.autoIndent = !!p.metas.text_indent;
+		this.top = p.top;
+		this.users = p.user_perms || [];
+	}
+
+	/**
+	 * 
+	 * @param {HTMLInputElement} submitButton 
+	 */
+	async _handleSubmit(submitButton) {
+		try {
+			submitButton.disabled = true;
+			await this._updatePost();
+			this._contentChanged = false;
+			window.location = `/${TaoBlog.post_id}/`;
+		} catch(e) {
+			submitButton.disabled = false;
+			alert('更新失败：' + e);
+		}
+	}
+
+	async _updatePost() {
+		let p = TaoBlog.posts[TaoBlog.post_id];
+		p.metas.geo = this.geo;
+		p.metas.toc = !!+this.toc;
+		p.metas.text_indent = this.autoIndent;
+
+		const newPost = {
+			id: TaoBlog.post_id,
+			date: this.time,
+			modified: p.modified,
+			modified_timezone: TimeWithZone.getTimezone(),
+			type: this.type,
+			status: this.status,
+			source: this.source,
+			source_type: p.source_type,
+			metas: p.metas,
+			top: this.top,
+			category: +this.elemCategory.value,
+		};
+
+		return await this._api.updatePost(
+			newPost,
+			{
+				users: this.usersForRequest,
+			},
+		);
+	}
+
+	async _refreshFileList() {
+		try {
+			const fm = new FilesManager(TaoBlog.post_id);
+			const list = fm.list();
+			this._fileManager.files = list;
+		} catch(e) {
+			alert('获取文件列表失败：' + e);
+		}
+	}
+
+	/**
+	 * 
+	 * @param {File[]} files 
+	 * @returns 
+	 */
+	async _handleSelectFiles(files) {
+		if (files.length <= 0) { return; }
+
+		// 提示是否需要保留图片位置信息。
+		let haveImageFiles = Array.from(files).some(f => /^image\//.test(f.type));
+		let keepPos = haveImageFiles && confirm('保留图片的位置信息（如果有）？');
+
+		Array.from(files).forEach(async f => {
+			return await this.uploadFile(f, { keepPos });
+		});
 	}
 
 	/**
@@ -1639,37 +1925,6 @@ class PostFormUI {
 		this.elemDiffContainer.innerHTML = v;
 	}
 
-	/**
-	 * @param {any[]} list
-	 */
-	set files(list) {
-		console.log(list);
-		this._fileManager.files = list;
-	}
-
-	/**
-	 * 
-	 * @param {(file: File[]) => {}} callback 
-	 */
-	filesChanged(callback) {
-		this._files.addEventListener('change', ()=> {
-			console.log('选中文件列表：', this._files.files);
-			callback(this._files.files);
-		});
-	}
-
-	submit(callback) {
-		let submit = document.querySelector('input[type=submit]');
-		submit.addEventListener('click', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			submit.disabled = true;
-			callback(()=>{
-				submit.disabled = false;
-			});
-		});
-	}
-
 	// debounced
 	sourceChanged(callback) {
 		let debouncing = undefined;
@@ -1751,6 +2006,10 @@ class PostFormUI {
 	showDiff(show) {
 		this.elemDiffContainer.style.display = show ? 'block' : 'none';
 	}
+	/**
+	 * https://x.com/passluo/status/1967501847457128693
+	 * @param {boolean} b 
+	 */
 	setAutoIndent(b) {
 		this.elemPreviewContainer.classList.toggle('auto-indent', b);
 	}
@@ -1804,274 +2063,15 @@ class PostFormUI {
 			now.error('');
 			return true;
 		} catch(e) {
-			// alert(`文件 ${f.name} 上传失败：${e}`);
-			now.error(`错误：${e.message ?? e}`);
+			now.error(`错误：${e.message ?? e}`, true);
 			options.showError && alert('错误：' + e);
 			return false;
 		}
 	}
 }
 
-class FilesManager {
-	constructor(id) {
-		if (!id) { throw new Error('无效文章编号。'); }
-		this._post_id = +id;
-	}
-	// 列举所有的文件列表。
-	// NOTE: 返回的文件用 path 代表 name。
-	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
-	// 用 name 表示 path 容易误解。
-	/**
-	 * 
-	 * @returns {Promise<FileSpec[]>}
-	 */
-	async list() {
-		const url = `/v3/posts/${this._post_id}/files`;
-		let rsp = await fetch(url);
-		if (!rsp.ok) {
-			throw rsp;
-		}
-		rsp = await rsp.json();
-		return rsp.files;
-	}
-
-	async delete(path) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
-		let rsp = await fetch(url, {
-			method: 'DELETE',
-		});
-		if (!rsp.ok) {
-			throw rsp;
-		}
-	}
-
-	async updateCaption(path, caption) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}:caption`;
-		let rsp = await fetch(url, {
-			method: 'PATCH',
-			body: JSON.stringify({ caption }),
-		});
-		if (!rsp.ok) {
-			throw rsp;
-		}
-	}
-
-	/**
-	 * 
-	 * @param {string} path 
-	 */
-	async get(path) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
-		let rsp = await fetch(url);
-		if (!rsp.ok) {
-			throw rsp;
-		}
-		return rsp.bytes();
-	}
-
-	// 创建一个文件。
-	// options: 用来指导对上传的文件作如何处理。
-	// meta: 额外的元数据。但宽、高会自动设置。
-	/**
-	 * 
-	 * @param {File} f 
-	 * @param {*} options 
-	 * @param {(progress: number) => void} progress 
-	 * @param {{}} meta 
-	 * @returns 
-	 */
-	async create(f, options, progress, meta) {
-		let dimension = await FilesManager.detectImageSize(f);
-		dimension.width > 0 && console.log(`文件尺寸：`, f.name, dimension);
-		console.log('creating:', f);
-
-		meta = meta || {};
-		meta.width = dimension.width;
-		meta.height = dimension.height;
-
-		let form = new FormData();
-		form.set(`spec`, JSON.stringify({
-			path: f.name,
-			mode: 0o644,
-			size: f.size,
-			time: Math.floor(f.lastModified/1000),
-			type: f.type, // 其实不应该上传，后端计算更靠谱。
-			meta: meta,
-			parent_path: f.parentPath ?? '',
-		}));
-
-		form.set(`data`, f)
-
-		form.set(`options`, options ? JSON.stringify(options) : '{}');
-
-		return new Promise((success, failure) => {
-			let xhr = new XMLHttpRequest();
-			xhr.open('POST', `/v3/posts/${this._post_id}/files`);
-			xhr.addEventListener('abort', ()=>{
-				failure('xhr: aborted');
-			});
-			xhr.addEventListener('error', ()=>{
-				failure('上传失败。');
-			});
-			xhr.addEventListener('load', ()=> {
-				if(xhr.readyState != XMLHttpRequest.DONE) {
-					failure('readystate error');
-					return;
-				}
-				if(xhr.status >= 200 && xhr.status < 300) {
-					success(JSON.parse(xhr.responseText));
-					return;
-				}
-				console.log(xhr);
-				failure(`HTTP: ${xhr.status}`);
-			});
-			xhr.upload.addEventListener('progress', (e)=> {
-				progress((e.loaded / e.total * 100).toFixed(0));
-			});
-			xhr.send(form);
-		});
-	}
-
-	// 通过浏览器快速判断图片文件的尺寸。
-	// f: <input type="file"> 中拿来的文件。
-	// 不会抛异常。
-	static detectImageSize(f) {
-		return new Promise((success) => {
-			const isImage = /^image\//.test(f.type);
-			const isVideo = /^video\//.test(f.type);
-
-			if (!isImage && !isVideo) {
-				return success({ width: 0, height: 0 });
-			}
-
-			const url = URL.createObjectURL(f);
-
-			let revoke = (data)=> {
-				URL.revokeObjectURL(url);
-				return success(data);
-			}
-
-			if (isImage) {
-				const img = new Image();
-				img.addEventListener('load', () => {
-					return revoke({ width: img.naturalWidth, height: img.naturalHeight });
-				});
-				img.addEventListener('error', () => {
-					return revoke({ width: 0, height: 0 });
-				});
-				img.src = url;
-			} else if (isVideo) {
-				const video = document.createElement('video');
-				video.preload = 'metadata';
-				video.onloadedmetadata = ()=> {
-					return revoke({ width: video.videoWidth, height: video.videoHeight });
-				};
-				video.onerror = ()=> {
-					return revoke({ width: 0, height: 0});
-				};
-				video.src = url;
-			} else {
-				revoke({ width: 0, height: 0});
-			}
-		});
-	}
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-
-let postAPI = new PostManagementAPI();
-let formUI = (() => {
-	try {
-		return new PostFormUI();
-	} catch(e) {
-		alert('创建表单失败：' + e);
-	}
-})();
-TaoBlog.formUI = formUI;
-formUI.submit(async (done) => {
-	try {
-		let p = TaoBlog.posts[TaoBlog.post_id];
-		p.metas.geo = formUI.geo;
-		p.metas.toc = !!+formUI.toc;
-		p.metas.text_indent = formUI.autoIndent;
-		let post = await postAPI.updatePost(
-			{
-				id: TaoBlog.post_id,
-				date: formUI.time,
-				modified: p.modified,
-				modified_timezone: TimeWithZone.getTimezone(),
-				type: formUI.type,
-				status: formUI.status,
-				source: formUI.source,
-				source_type: p.source_type,
-				metas: p.metas,
-				top: formUI.top,
-				category: +formUI.elemCategory.value,
-			},
-			{
-				users: formUI.usersForRequest,
-			},
-		);
-		formUI._contentChanged = false;
-		window.location = `/${post.id}/`;
-	} catch(e) {
-		alert('更新失败：' + e);
-	} finally {
-		done();
-	}
-});
-
-(function(){
-	let p = TaoBlog.posts[TaoBlog.post_id];
-	formUI.time = p.date * 1000;
-	formUI.status = p.status;
-	formUI.type = p.type;
-	if (p.metas && p.metas.geo) {
-		formUI.geo = p.metas.geo;
-	}
-	formUI.autoIndent = !!p.metas.text_indent;
-	formUI.top = p.top;
-	formUI.users = p.user_perms || [];
-})();
-
-formUI.filesChanged(async files => {
-	if (files.length <= 0) { return; }
-
-	// 提示是否需要保留图片位置信息。
-	let haveImageFiles = Array.from(files).some(f => /^image\//.test(f.type));
-	let keepPos = true;
-	if (haveImageFiles) {
-		keepPos = confirm('保留图片的位置信息（如果有）？');
-	}
-
-	Array.from(files).forEach(async f => {
-		return await formUI.uploadFile(f, { keepPos });
-	});
-});
-(async function() {
-	try {
-		let fm = new FilesManager(TaoBlog.post_id);
-		formUI.files = await fm.list();
-	} catch(e) {
-		alert(e);
-	}
-})();
-
-});
-
-// 小屏幕下使编辑区域占满屏幕。
-document.addEventListener('DOMContentLoaded', ()=>{
-	if(!('ontouchstart' in window)) { return; }
-	const wv = window.visualViewport;
-	/** @type {HTMLDivElement} */
-	const ec = document.querySelector('#editor-container');
-	wv?.addEventListener('resize', ()=> {
-		if(wv.width < 500 && wv.height < 500) {
-			ec.classList.add('stretch');
-			ec.style.height = `${wv.height}px`;
-		} else {
-			ec.classList.remove('stretch');
-			ec.style.removeProperty('height');
-		}
-	});
+	const post = TaoBlog.posts[TaoBlog.post_id];
+	const form = new PostFormUI();
+	form.initFrom(post);
 });
