@@ -524,3 +524,116 @@ body.admin.editor {
 		}
 	}
 }
+
+body.admin.drafts {
+	$header-height: 50px;
+	$body-margin: 10px;
+
+	margin: $body-margin;
+
+	h1 {
+		margin: 0;
+		height: $header-height;
+		align-content: center;
+	}
+	.expand {
+		width: 16px;
+		height: 16px;
+		vertical-align: middle;
+		cursor: pointer;
+		filter: invert(50%);
+		user-select: none;
+		margin-left: 8px;
+	}
+	$sidebar-width: 250px;
+	.wrapper {
+		// gap: 10px;
+		// position: relative;
+		height: calc(100vh - #{$header-height} - #{$body-margin} * 2);
+		> * {
+			box-sizing: border-box;
+			max-height: 100%;
+			overflow: auto;
+		}
+		&.collapsed {
+			#sidebar {
+				left: - calc($sidebar-width + 10px * 2);
+				width: 0;
+				padding-right: 0;
+				margin-right: 0;
+			}
+		}
+	}
+	#sidebar {
+		width: $sidebar-width;
+		flex-shrink: 0;
+		margin-right: 10px;
+		padding-right: 10px;
+		transition: left .25s ease, width .25s ease;
+		border-right: 1px solid var(--border-color);
+		position: relative;
+		left: 0;
+		li {
+			cursor: pointer;
+			padding: 6px;
+			margin: 6px 0;
+			border-radius: var(--border-radius);
+			&.selected {
+				background-color: rgb(from var(--highlight-color) r g b / .4);
+			}
+			&:hover {
+				background-color: var(--highlight-color);
+			}
+			.title {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: block;
+				max-width: 100%;
+				&.dirty {
+					&::before {
+						content: "*";
+						font-family: var(--font-mono);
+					}
+				}
+			}
+			.date {
+				color: rgb(from var(--color-fg) r g b / 0.6);
+			}
+		}
+	}
+	#editor-area {
+		flex: 1;
+		> * {
+			height: 100%;
+			width: 100%;
+			box-sizing: border-box;
+			border: none;
+			filter: none;
+		}
+	}
+	@media screen and (max-width: 599px){
+		.wrapper {
+			position: relative;
+			#sidebar {
+				position: absolute;
+				inset: 0;
+				background-color: var(--color-bg);
+			}
+		}
+	}
+}
+
+body.admin.editor.embed-drafts {
+	&, #workspace {
+		margin: 0;
+	}
+	#post-editor {
+		p:is(.date,.type,.category,.status,.top,.toc,.geo) {
+			display: none;
+		}
+		div.save {
+			display: none;
+		}
+	}
+}

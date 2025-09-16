@@ -910,6 +910,29 @@ func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest)
 	}
 	out.Diff = buf.String()
 
+	// 自动保存。
+	if in.Save {
+		rsp, err := s.UpdatePost(ctx, &proto.UpdatePostRequest{
+			Post: &proto.Post{
+				Id:         int64(in.Id),
+				SourceType: in.Type,
+				Source:     in.Source,
+				Modified:   in.ModifiedAt,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{
+				Paths: []string{
+					`source_type`,
+					`source`,
+				},
+			},
+		})
+		if err != nil {
+			return &out, err
+		}
+		out.Title = rsp.Title
+		out.UpdatedAt = rsp.Modified
+	}
+
 	return &out, nil
 }
 

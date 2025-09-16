@@ -142,7 +142,22 @@ class PostManagementAPI
 	}
 
 	// 文章预览
-	static async previewPost(id, type, source) {
+	/**
+	 * @typedef {Object} PreviewResponse
+	 * @property {string} html
+	 * @property {string} diff
+	 * @property {string[]} paths
+	 * @property {string} title
+	 * @property {number} updated_at
+	 * 
+	 * @param {number} id 
+	 * @param {string} type 
+	 * @param {string} source 
+	 * @param {boolean} autoSave 
+	 * @param {number} modifiedAt 
+	 * @returns {Promise<PreviewResponse>}
+	 */
+	static async previewPost(id, type, source, autoSave, modifiedAt) {
 		let path = `/v3/posts:preview`;
 		let rsp = await fetch(path, {
 			method: 'POST',
@@ -153,6 +168,8 @@ class PostManagementAPI
 				id: id,
 				type: type,
 				source: source,
+				save: autoSave ?? false,
+				modified_at: modifiedAt ?? 0,
 			})
 		});
 		if (!rsp.ok) {

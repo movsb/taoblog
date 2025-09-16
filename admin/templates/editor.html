@@ -55,13 +55,13 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 					文件：
 					<button type="button" class="all">管理</button>
 				</p>
-				<p>
+				<p class="date">
 					<label>
 						日期：
 						<input type="datetime-local" name="time" value="">
 					</label>
 				</p>
-				<p>
+				<p class="type">
 					<label>
 						类型：
 						<select name="type">
@@ -71,7 +71,7 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 						</select>
 					</label>
 				</p>
-				<p>
+				<p class="category">
 					<label>
 						分类：
 						<select name="category" autocomplete="off">
@@ -134,8 +134,10 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 						私有地址（不对外显示）
 					</label>
 				</p>
-				<hr>
-				<p><input type="submit" value="保存"></p>
+				<div class="save">
+					<hr>
+					<p><input type="submit" value="保存"></p>
+				</div>
 				<input type="file" style="display: none;" multiple id="files" autocomplete="off">
 			</div>
 		</div>

@@ -1386,7 +1386,7 @@ class PostFormUI {
 					return false;
 				}
 				try {
-					await this.updatePreview(this.source);
+					await this.updatePreview(this.source, true);
 					console.log('预览更新成功');
 					return true;
 				} catch(e) {
@@ -1576,8 +1576,8 @@ class PostFormUI {
 		this.checkBoxWrap.checked = setWrap;
 		this.setWrap(setWrap);
 
-		this.sourceChanged(c => this.updatePreview(c));
-		setTimeout(() => this.updatePreview(this.source), 0);
+		this.sourceChanged(this._handleSourceChanged);
+		setTimeout(() => this.updatePreview(this.source, false), 0);
 
 		document.addEventListener('DOMContentLoaded', async ()=>{
 			this._refreshFileList();
@@ -1594,6 +1594,10 @@ class PostFormUI {
 			e.stopPropagation();
 			await this._handleSubmit(submit);
 		});
+	}
+
+	_handleSourceChanged = (content) => {
+		this.updatePreview(content, true);
 	}
 
 	// 小屏幕下使编辑区域占满屏幕。
@@ -1625,6 +1629,18 @@ class PostFormUI {
 		this.users = p.user_perms || [];
 	}
 
+	_setContentChanged(b) {
+		this._contentChanged = b;
+
+		if(window.parent != window) {
+			window.parent.postMessage({
+				name: 'dirty',
+				id: TaoBlog.post_id,
+				dirty: b,
+			}, '*');
+		}
+	}
+
 	/**
 	 * 
 	 * @param {HTMLInputElement} submitButton 
@@ -1633,7 +1649,7 @@ class PostFormUI {
 		try {
 			submitButton.disabled = true;
 			await this._updatePost();
-			this._contentChanged = false;
+			this._setContentChanged(false);
 			window.location = `/${TaoBlog.post_id}/`;
 		} catch(e) {
 			submitButton.disabled = false;
@@ -1720,15 +1736,37 @@ class PostFormUI {
 		// }
 	}
 
-	async updatePreview(content) {
-		if (!this.checkBoxTogglePreview.checked) {
-			return;
-		}
+	/**
+	 * 
+	 * @param {string} content 
+	 * @param {boolean} autoSave 
+	 */
+	async updatePreview(content, autoSave) {
+		const id = TaoBlog.post_id;
+		const post = TaoBlog.posts[id];
+
 		try {
-			let rsp = await PostManagementAPI.previewPost(TaoBlog.post_id, TaoBlog.posts[TaoBlog.post_id].source_type, content);
+			let rsp = await PostManagementAPI.previewPost(
+				id, post.source_type, content, autoSave, post.modified,
+			);
+
 			this.setPreview(rsp.html, true);
 			this.setDiff(rsp.diff);
 			this._updateReferencedFiles(rsp.paths || []);
+
+			this._setContentChanged(false);
+
+			if(autoSave && window.parent != window) {
+				post.modified = rsp.updated_at;
+				post.title = rsp.title
+
+				window.parent.postMessage({
+					name: 'saved',
+					id: id,
+					title: post.title,
+					updatedAt: post.modified,
+				}, '*');
+			}
 		} catch (e) {
 			this.setPreview(e, false);
 		}
@@ -1926,11 +1964,15 @@ class PostFormUI {
 	}
 
 	// debounced
+	/**
+	 * 
+	 * @param {(content: string) => void} callback 
+	 */
 	sourceChanged(callback) {
 		let debouncing = undefined;
 		if (this.editor) { // tinymde
 			this.editor.addEventListener('change', (e)=>{
-				this._contentChanged = true;
+				this._setContentChanged(true);
 				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
@@ -1940,7 +1982,7 @@ class PostFormUI {
 		} else {
 			// textarea
 			this.elemSource.addEventListener('input', ()=>{
-				this._contentChanged = true;
+				this._setContentChanged(true);
 				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
@@ -1987,8 +2029,9 @@ class PostFormUI {
 
 	showPreview(show) {
 		this.elemPreviewContainer.style.display = show ? 'block' : 'none';
+		this.elemIndent.closest('label').style.display = show ? 'inline-block' : 'none';
 		localStorage.setItem('editor-config-show-preview', show?'1':'0');
-		if (show) { this.updatePreview(this.source); }
+		if (show) { this.updatePreview(this.source, false); }
 	}
 	setWrap(wrap) {
 		const editorContainer = this._form.querySelector('#editor-container');

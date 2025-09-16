@@ -69,3 +69,11 @@ setTimeout(()=>{
 		a.replaceWith(a.textContent);
 	});
 }, 1000);
+
+// 草稿管理时嵌入页面，总是以宽屏显示。
+document.addEventListener('DOMContentLoaded', () => {
+	if(window.parent != window && window.parent.location.pathname.endsWith('/drafts')) {
+		document.body.classList.add('wide');
+		document.body.classList.add('embed-drafts');
+	}
+});

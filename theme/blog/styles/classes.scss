@@ -1,0 +1,27 @@
+ol, ul {
+	&.style-none {
+		list-style-type: none;
+		padding-left: 0;
+	}
+}
+
+.flex {
+	display: flex;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+.border {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+}
+
+.margin-0 {
+	margin: 0;
+}
+
+.padding-10 {
+	padding: 10px;
+}

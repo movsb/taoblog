@@ -5,7 +5,7 @@ const commentHTML = function(){/*
 	文章评论
 	<span class="item"><span class="total">0</span></span>
 	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
-	<span class="right item">
+	<span class="right item login-panel">
 		<a class="sign-in pointer" onclick="comment.login()">登录</a>
 		<a class="sign-out pointer" onclick="comment.logout()">登出</a>
 	</span>

@@ -6,27 +6,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
 <link rel="stylesheet" type="text/css" href="/style.css">
 {{ apply_site_theme_customs }}
-<script src="script.js"></script>
+<script src="/script.js"></script>
+<script>
+	const drafts = {{ .Posts }};
+</script>
 </head>
 <body class="admin drafts">
-<h1>草稿管理</h1>
-<table>
-<thead>
-	<tr>
-		<th>编号</th>
-		<th>标题</th>
-		<th>动作</th>
-	</tr>
-</thead>
-<tbody>
-	{{- range .Posts }}
-	<tr>
-		<td>{{ .Id }} </td>
-		<td>{{ .Title }}</td>
-		<td><button type="button" onclick="location = 'editor?id={{.Id}}'">编辑</button></td>
-	</tr>
-	{{- end }}
-</tbody>
-</table>
+<h1>草稿管理<img class="expand" src="sidebar.svg" title="边栏"></h1>
+<div class="wrapper flex">
+	<div id="sidebar">
+		<template id="draft-template">
+			<li data-id="">
+				<div><span class="title bold"></span></div>
+				<div><small class="date"></small></div>
+			</li>
+		</template>
+		<ol class="style-none margin-0"></ol>
+	</div>
+	<div id="editor-area">
+	</div>
+</div><!-- .wrapper -->
+<script src="drafts.js"></script>
 </body>
 </html>

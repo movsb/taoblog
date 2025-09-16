@@ -321,3 +321,11 @@ li:target > .comment-content {
 		}
 	}
 }
+
+body.embed-drafts {
+	#comment-title {
+		.login-panel {
+			display: none;
+		}
+	}
+}
