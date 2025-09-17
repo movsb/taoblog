@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/yuin/goldmark v1.7.8
+	github.com/yuin/goldmark v1.7.13
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/grpc v1.68.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
@@ -47,7 +47,6 @@ require (
 	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/tdewolff/parse/v2 v2.7.19
-	github.com/xtaci/smux v1.5.24
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/hashtag v0.3.1
 	go.abhg.dev/goldmark/toc v0.11.0
@@ -149,4 +148,4 @@ go 1.24.2
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
 
 // replace github.com/yuin/goldmark => /Users/tao/code/goldmark
-replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20240528100946-32a63fedc159
+replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20250917133208-9e62946384f5
