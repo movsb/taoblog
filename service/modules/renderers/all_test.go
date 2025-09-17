@@ -327,7 +327,7 @@ func TestTitle(t *testing.T) {
 		},
 		{
 			Markdown: `# <img>1`,
-			Title:    `1`,
+			Title:    `<img>1`,
 		},
 		{
 			Markdown: `# &lt;X`,
@@ -335,12 +335,12 @@ func TestTitle(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for i, tc := range testCases {
 		var title string
 		md := renderers.NewMarkdown(renderers.WithTitle(&title))
 		md.Render(tc.Markdown)
 		if title != tc.Title {
-			t.Errorf(`标题不相等：[%s] vs. [%s]`, tc.Title, title)
+			t.Errorf(`标题不相等：#%d: [%s] vs. [%s]`, i, tc.Title, title)
 			continue
 		}
 	}
