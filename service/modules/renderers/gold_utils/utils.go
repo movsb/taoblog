@@ -173,7 +173,7 @@ func InjectImage(fn string) string {
 	// display: 不影响 document flow
 	// static: 不处理事件等
 	// eager: lazy 的时候过滤不处理
-	return `<img style="display:none;" class="static" loading="eager" src="https://" onerror="` + fn + `(this)">`
+	return `<img style="display:none;" class="static" loading="eager" src="data:image/png;base64,AAAA" onerror="` + fn + `(this)">`
 }
 
 func RenderError(w io.Writer, err error) {

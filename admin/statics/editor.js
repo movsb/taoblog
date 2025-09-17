@@ -1739,11 +1739,13 @@ class PostFormUI {
 	/**
 	 * 
 	 * @param {string} content 
-	 * @param {boolean} autoSave 
+	 * @param {boolean} autoSave 是否自动保存，即便是，只会在被嵌入的时候有效。
 	 */
 	async updatePreview(content, autoSave) {
 		const id = TaoBlog.post_id;
 		const post = TaoBlog.posts[id];
+
+		autoSave = autoSave && window.parent != window;
 
 		try {
 			let rsp = await PostManagementAPI.previewPost(
@@ -1754,9 +1756,9 @@ class PostFormUI {
 			this.setDiff(rsp.diff);
 			this._updateReferencedFiles(rsp.paths || []);
 
-			this._setContentChanged(false);
+			if(autoSave) {
+				this._setContentChanged(false);
 
-			if(autoSave && window.parent != window) {
 				post.modified = rsp.updated_at;
 				post.title = rsp.title
 
