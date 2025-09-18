@@ -63,30 +63,6 @@
 		}
 	}
 
-	.icon {
-		display: inline-flex;
-		align-items: center;
-		padding: 2px;
-		border-radius: var(--border-radius);
-		position: relative;
-		left: 10px;
-		top: 10px;
-		height: 22px;
-		background-color: #f0ffffab;
-		cursor: pointer;
-		user-select: none;
-
-		img {
-			width: 22px;
-			height: 22px;
-		}
-		span {
-			padding: 3px;
-			color: #606060;
-			font-size: 80%;
-		}
-	}
-
 	// 如果显示大小比较小，隐藏文字 LIVE。
 	@container (max-width: 200px) {
 		.icon span {
@@ -108,5 +84,31 @@
 			opacity: 1 !important;
 			display: inline-block !important;
 		}
+	}
+}
+
+// 提出来是为了图片预览时也有效果。
+// 比较 hack 的手法。
+.live-photo .icon, .live-photo-icon {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px;
+	border-radius: var(--border-radius);
+	position: relative;
+	left: 10px;
+	top: 10px;
+	height: 22px;
+	background-color: #f0ffffab;
+	cursor: pointer;
+	user-select: none;
+
+	img {
+		width: 22px;
+		height: 22px;
+	}
+	span {
+		padding: 3px;
+		color: #606060;
+		font-size: 80%;
 	}
 }

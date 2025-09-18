@@ -25,13 +25,23 @@ class ImageView {
 
 			// 实况照片本身要宽高限制，不适于设置 100%，包一层。
 			if(clone.classList.contains('live-photo')) {
+				// 防止被 live photo js 把克隆的也处理了，因为执行顺序不确定。
+				clone.classList.add('clone');
+
 				const div = document.createElement('div');
 				div.classList.add('live-photo-wrapper');
 				div.appendChild(clone);
-				// 打包后顺序不确定，所以延迟。
-				setTimeout(() => {
-					TaoBlog.bindLivePhotoEvents(clone, clone.querySelector('.icon'));
-				}, 0);
+
+				// 预览的时候是全屏的，为了更醒目，把图标提出来。
+				/** @type {HTMLDivElement} */
+				const icon = clone.querySelector('.icon');
+				icon.remove();
+				icon.classList.add('live-photo-icon');
+				div.appendChild(icon);
+
+				// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。
+				livePhotoBindEvents(clone, icon);
+
 				clone = div;
 			}
 			this.root.appendChild(clone);

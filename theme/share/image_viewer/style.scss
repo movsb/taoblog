@@ -26,6 +26,9 @@
 		object-fit: contain;
 		filter: unset;
 	}
+	video {
+		filter: unset !important;
+	}
 	> picture img {
 		height: 100%;
 		width: 100%;
@@ -33,9 +36,15 @@
 	div.live-photo-wrapper {
 		display: flex;
 		align-items: center;
+		// 允许图标放左上角。
+		position: relative;
 		.live-photo {
 			margin: auto;
 			max-width: unset;
+		}
+		.live-photo-icon {
+			// 重新调整为左上角。
+			position: absolute;
 		}
 	}
 	// 不知道为什么多出来一丢丢 y 滚动。
