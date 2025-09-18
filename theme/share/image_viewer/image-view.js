@@ -28,7 +28,10 @@ class ImageView {
 				const div = document.createElement('div');
 				div.classList.add('live-photo-wrapper');
 				div.appendChild(clone);
-				TaoBlog.bindLivePhotoEvents(clone, clone.querySelector('.icon'));
+				// 打包后顺序不确定，所以延迟。
+				setTimeout(() => {
+					TaoBlog.bindLivePhotoEvents(clone, clone.querySelector('.icon'));
+				}, 0);
 				clone = div;
 			}
 			this.root.appendChild(clone);
