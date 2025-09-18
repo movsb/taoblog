@@ -1579,10 +1579,8 @@ class PostFormUI {
 		this.sourceChanged(this._handleSourceChanged);
 		setTimeout(() => this.updatePreview(this.source, false), 0);
 
-		document.addEventListener('DOMContentLoaded', async ()=>{
-			this._refreshFileList();
-			this._handleWindowResize();
-		});
+		this._refreshFileList();
+		this._handleWindowResize();
 
 		this._files.addEventListener('change', async (e)=>{
 			this._handleSelectFiles(this._files.files);
@@ -1688,7 +1686,7 @@ class PostFormUI {
 	async _refreshFileList() {
 		try {
 			const fm = new FilesManager(TaoBlog.post_id);
-			const list = fm.list();
+			const list = await fm.list();
 			this._fileManager.files = list;
 		} catch(e) {
 			alert('获取文件列表失败：' + e);
