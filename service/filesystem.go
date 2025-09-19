@@ -163,7 +163,7 @@ func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCap
 		panic(noPerm)
 	}
 
-	// 强制转换了，只应有这一种实例。
+	// TODO: 强制转换了，只应有这一种实例。
 	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId))).(*storage.SQLiteForPost)
 	utils.Must(pfs.UpdateCaption(in.Path, &proto.FileSpec_Meta_Source{
 		Format:  proto.FileSpec_Meta_Source_Markdown,

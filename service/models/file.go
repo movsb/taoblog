@@ -43,7 +43,7 @@ func (FileData) TableName() string {
 }
 
 // 元数据。
-// 由 State.sys 返回文件拿到。
+// 由 Stat.Sys() 返回文件拿到。
 type FileMeta struct {
 	// 如果是图片，则包含宽高。
 	// 只能是空值。上传的时候浏览器计算。
@@ -118,8 +118,8 @@ func (File) TableName() string {
 	return `files`
 }
 
-func (f *File) FsFile(r io.ReadSeeker) fs.File {
-	return &_FsFile{f: f, ReadSeeker: r}
+func (f *File) FsFile(r io.ReadSeekCloser) fs.File {
+	return &_FsFile{f: f, ReadSeekCloser: r}
 }
 
 func (f *File) InfoFile() fs.FileInfo {
@@ -132,11 +132,11 @@ func (f *File) GetImageDimension() (int, int) {
 
 type _FsFile struct {
 	f *File
-	io.ReadSeeker
+	io.ReadSeekCloser
 }
 
 func (f *_FsFile) Stat() (fs.FileInfo, error) { return &_InfoFile{f.f}, nil }
-func (f *_FsFile) Close() error               { return nil }
+func (f *_FsFile) Close() error               { return f.ReadSeekCloser.Close() }
 
 type _InfoFile struct{ f *File }
 

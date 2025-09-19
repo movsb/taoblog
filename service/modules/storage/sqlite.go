@@ -107,10 +107,11 @@ func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	}
 
 	// 先走本地缓存。
+	// 返回的 Sys() 必须是 models.File
 	if fs.s.cache != nil {
 		tmp, err := fs.s.cache.Open(fs.pid, file.Digest)
 		if err == nil {
-			return tmp, nil
+			return file.FsFile(tmp.(io.ReadSeekCloser)), nil
 		}
 	}
 
@@ -227,6 +228,9 @@ func (r *_Reader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 	return r.data.Read(p)
+}
+func (r *_Reader) Close() error {
+	return nil
 }
 
 func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
