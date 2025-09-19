@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	stdRuntime "runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -34,139 +35,146 @@ var jsonPB = &runtime.JSONPb{
 
 func CreateFile(client *clients.ProtoClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ac := auth.Context(r.Context())
-		id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
-		po, err := client.Blog.GetPost(
-			auth.NewContextForRequestAsGateway(r),
-			&proto.GetPostRequest{
-				Id: int32(id),
-			},
-		)
-		if err != nil {
-			if se, ok := status.FromError(err); ok {
-				if se.Code() == codes.NotFound {
-					utils.HTTPError(w, 404)
-					return
-				}
-			}
-			utils.HTTPError(w, http.StatusBadRequest)
-			return
-		}
-		if ac.User.ID != int64(po.UserId) {
-			utils.HTTPError(w, http.StatusForbidden)
+		spec, options, data, fsc, ok := readRequest(client, w, r)
+		if !ok {
 			return
 		}
 
-		fsc, err := client.Management.FileSystem(
-			auth.NewContextForRequestAsGateway(r),
-		)
+		spec, err := single(fsc, spec, data, options)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		defer fsc.CloseSend()
-
-		utils.Must(fsc.Send(&proto.FileSystemRequest{
-			Init: &proto.FileSystemRequest_InitRequest{
-				For: &proto.FileSystemRequest_InitRequest_Post_{
-					Post: &proto.FileSystemRequest_InitRequest_Post{
-						Id: int64(id),
-					},
-				},
-			},
-		}))
-		utils.Must1(fsc.Recv())
-
-		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
-
-		specValue := r.FormValue(`spec`)
-		var spec proto.FileSpec
-		if err := jsonPB.Unmarshal([]byte(specValue), &spec); err != nil {
-			log.Println(err)
-			utils.HTTPError(w, http.StatusBadRequest)
-			return
-		}
-		if spec.Type == `` {
-			spec.Type = mime.TypeByExtension(path.Ext(spec.Path))
-			if spec.Type == `` {
-				spec.Type = `application/octet-stream`
-			}
-		}
-
-		var options Options
-		optionsString := r.FormValue(`options`)
-		if optionsString == "" {
-			optionsString = "{}"
-		}
-		dec := json.NewDecoder(strings.NewReader(optionsString))
-		dec.DisallowUnknownFields()
-		if err := dec.Decode(&options); err != nil {
-			utils.HTTPError(w, http.StatusBadRequest)
-			return
-		}
-
-		data, _, err := r.FormFile(`data`)
-		if err != nil {
-			utils.HTTPError(w, http.StatusBadRequest)
-			return
-		}
-		defer data.Close()
-
-		all, err := io.ReadAll(data)
-		if err != nil {
-			utils.HTTPError(w, http.StatusBadRequest)
-			return
-		}
-
-		specPtr := &spec
-
-		if isImageFile(spec.Path) {
-			var (
-				spec2 *proto.FileSpec
-				data2 []byte
-				err   error
-			)
-			utils.LimitExec(
-				`convertToAVIF`, &numberOfAvifProcesses, maxNumberOfAvifProcesses,
-				func() {
-					// 跨线程写没问题吧？
-					spec2, data2, err = convertToAVIF(&spec, all, options.DropGPSTags)
-				},
-			)
-			if err != nil {
-				log.Println(err)
-				http.Error(w, err.Error(), 500)
-				return
-			}
-
-			specPtr = spec2
-			all = data2
-		}
-
-		utils.Must(fsc.Send(&proto.FileSystemRequest{
-			Request: &proto.FileSystemRequest_WriteFile{
-				WriteFile: &proto.FileSystemRequest_WriteFileRequest{
-					Spec: specPtr,
-					Data: all,
-				},
-			},
-		}))
-		if _, err := fsc.Recv(); err != nil {
-			http.Error(w, err.Error(), 400)
-			return
-		}
 
 		json.NewEncoder(w).Encode(map[string]any{
-			`spec`: specPtr,
+			`spec`: spec,
 		})
 	})
+}
+
+func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Request) (_ *proto.FileSpec, _ Options, _ []byte, _ proto.Management_FileSystemClient, _ bool) {
+	ac := auth.Context(r.Context())
+	id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
+	po, err := client.Blog.GetPost(
+		auth.NewContextForRequestAsGateway(r),
+		&proto.GetPostRequest{
+			Id: int32(id),
+		},
+	)
+	if err != nil {
+		if se, ok := status.FromError(err); ok {
+			if se.Code() == codes.NotFound {
+				utils.HTTPError(w, 404)
+				return
+			}
+		}
+		utils.HTTPError(w, http.StatusBadRequest)
+		return
+	}
+	if ac.User.ID != int64(po.UserId) {
+		utils.HTTPError(w, http.StatusForbidden)
+		return
+	}
+
+	fsc, err := client.Management.FileSystem(
+		auth.NewContextForRequestAsGateway(r),
+	)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	utils.Must(fsc.Send(&proto.FileSystemRequest{
+		Init: &proto.FileSystemRequest_InitRequest{
+			For: &proto.FileSystemRequest_InitRequest_Post_{
+				Post: &proto.FileSystemRequest_InitRequest_Post{
+					Id: int64(id),
+				},
+			},
+		},
+	}))
+	utils.Must1(fsc.Recv())
+
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+
+	specValue := r.FormValue(`spec`)
+	spec := &proto.FileSpec{}
+	if err := jsonPB.Unmarshal([]byte(specValue), spec); err != nil {
+		log.Println(err)
+		utils.HTTPError(w, http.StatusBadRequest)
+		return
+	}
+
+	var options Options
+	optionsString := r.FormValue(`options`)
+	if optionsString == "" {
+		optionsString = "{}"
+	}
+	dec := json.NewDecoder(strings.NewReader(optionsString))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&options); err != nil {
+		utils.HTTPError(w, http.StatusBadRequest)
+		return
+	}
+
+	data, _, err := r.FormFile(`data`)
+	if err != nil {
+		utils.HTTPError(w, http.StatusBadRequest)
+		return
+	}
+	defer data.Close()
+
+	all, err := io.ReadAll(data)
+	if err != nil {
+		utils.HTTPError(w, http.StatusBadRequest)
+		return
+	}
+
+	return spec, options, all, fsc, true
+}
+
+func single(fsc proto.Management_FileSystemClient, spec *proto.FileSpec, data []byte, options Options) (*proto.FileSpec, error) {
+	if spec.Type == `` {
+		spec.Type = mime.TypeByExtension(path.Ext(spec.Path))
+		if spec.Type == `` {
+			spec.Type = `application/octet-stream`
+		}
+	}
+
+	var err error
+
+	if isImageFile(spec.Path) {
+		utils.LimitExec(
+			`convertToAVIF`, &numberOfAvifProcesses, stdRuntime.NumCPU(),
+			func() {
+				// 跨线程写没问题吧？
+				spec, data, err = convertToAVIF(spec, data, options.DropGPSTags)
+			},
+		)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	}
+
+	utils.Must(fsc.Send(&proto.FileSystemRequest{
+		Request: &proto.FileSystemRequest_WriteFile{
+			WriteFile: &proto.FileSystemRequest_WriteFileRequest{
+				Spec: spec,
+				Data: data,
+			},
+		},
+	}))
+	if _, err := fsc.Recv(); err != nil {
+		return nil, err
+	}
+
+	return spec, nil
 }
 
 type Options struct {
 	DropGPSTags bool `json:"drop_gps_tags"`
 }
-
-const maxNumberOfAvifProcesses = 1
 
 var numberOfAvifProcesses atomic.Int32
 

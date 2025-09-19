@@ -409,6 +409,7 @@ message ListPostFilesRequest {
 	bool with_generated = 10;
 
 	// 是否包含实况照片的视频文件。
+	// 对于以前的照片和视频分开存放情况而言。
 	bool with_live_photo_video = 11;
 }
 message ListPostFilesResponse {
