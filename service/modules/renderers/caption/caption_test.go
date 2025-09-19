@@ -52,7 +52,7 @@ func TestRender(t *testing.T) {
 
 	db1 := migration.InitPosts(``, false)
 	db2 := migration.InitFiles(``)
-	dbFS := storage.NewSQLite(db1, storage.NewDataStore(db2))
+	dbFS := storage.NewSQLite(db1, storage.NewDataStore(db2), nil)
 	utils.Must(utils.Write(
 		utils.Must1(dbFS.ForPost(1)),
 		&proto.FileSpec{

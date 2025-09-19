@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	std_fs "io/fs"
+	"log"
 	"mime"
 	"os"
 	"path"
@@ -23,6 +24,9 @@ import (
 type SQLite struct {
 	meta *taorm.DB
 	data *DataStore
+
+	// 加速静态文件访问，避免读大数据列占用太多内存。
+	cache *FileCache
 }
 
 type DataStore struct {
@@ -35,11 +39,16 @@ func NewDataStore(data *sql.DB) *DataStore {
 	}
 }
 
-func NewSQLite(meta *sql.DB, data *DataStore) *SQLite {
-	return &SQLite{
+// cache: 可以为空。
+func NewSQLite(meta *sql.DB, data *DataStore, cache *os.Root) *SQLite {
+	sq := &SQLite{
 		meta: taorm.NewDB(meta),
 		data: data,
 	}
+	if cache != nil {
+		sq.cache = NewFileCache(cache)
+	}
+	return sq
 }
 
 type SQLiteForPost struct {
@@ -97,11 +106,37 @@ func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 		return nil, err
 	}
 
-	return file.FsFile(&_Reader{
+	// 先走本地缓存。
+	if fs.s.cache != nil {
+		tmp, err := fs.s.cache.Open(fs.pid, file.Digest)
+		if err == nil {
+			return tmp, nil
+		}
+	}
+
+	reader := _Reader{
 		// 这里用数据数据库，而不是元数据数据库。
 		db:   fs.s.data,
 		meta: &file,
-	}), nil
+	}
+
+	if fs.s.cache != nil {
+		data, err := io.ReadAll(&reader)
+		if err != nil {
+			return nil, err
+		}
+		if err := fs.s.cache.Create(fs.pid, file.Digest, data); err != nil {
+			log.Println(err)
+			// 临时文件创建不成功没关系，可以继续执行
+		}
+
+		if _, err := reader.Seek(0, io.SeekStart); err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	}
+
+	return file.FsFile(&reader), nil
 }
 
 // 获取文件的内容数据。

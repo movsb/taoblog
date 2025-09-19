@@ -136,7 +136,7 @@ func (c *Client) BackupFiles() {
 	localDB := migration.InitFiles(`files.db`)
 	postsDB := migration.InitPosts(`posts.db`, false)
 	dataStore := storage.NewDataStore(localDB)
-	postsStore := storage.NewSQLite(postsDB, dataStore)
+	postsStore := storage.NewSQLite(postsDB, dataStore, nil)
 
 	var localSpecs, remoteSpecs []SpecWithPostID
 	digest2path := make(map[Digest2Path]string)

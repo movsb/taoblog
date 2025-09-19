@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
@@ -221,7 +222,11 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.db = taorm.NewDB(postsDB)
 
 	filesDB := migration.InitFiles(cfg.Database.Files)
-	filesStore := theme_fs.FS(storage.NewSQLite(postsDB, storage.NewDataStore(filesDB)))
+	tmpDir := filepath.Join(os.TempDir(), version.NameLowercase)
+	os.Mkdir(tmpDir, 0755)
+	tmpRoot := utils.Must1(os.OpenRoot(tmpDir))
+	log.Println(`临时目录：`, tmpDir)
+	filesStore := theme_fs.FS(storage.NewSQLite(postsDB, storage.NewDataStore(filesDB), tmpRoot))
 
 	migration.Migrate(postsDB, filesDB, cacheDB)
 
