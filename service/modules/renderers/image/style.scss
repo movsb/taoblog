@@ -14,4 +14,15 @@ img {
 		transition: filter .5s ease;
 		clip-path: inset(0 round var(--border-radius, 4px));
 	}
+
+	&.padding {
+		padding: 20px;
+		box-sizing: border-box;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		&.light-on-dark {
+			background-color: white;
+		}
+	}
 }

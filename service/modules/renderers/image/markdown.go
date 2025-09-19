@@ -206,6 +206,16 @@ func renderImage(w util.BufWriter, url *url.URL, n *ast.Image, source []byte) {
 	if q.Has(`blur`) {
 		classes = append(classes, `blur`)
 	}
+	// 自动在暗黑模式下使用日间模式。
+	// 适用于一些自带透明但不支持暗黑模式的图片。
+	if q.Has(`light`) {
+		classes = append(classes, `light-on-dark`)
+		q.Del(`light`)
+	}
+	if n := `padding`; q.Has(n) {
+		classes = append(classes, n)
+		q.Del(n)
+	}
 
 	url.RawQuery = q.Encode()
 

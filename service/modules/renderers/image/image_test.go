@@ -47,6 +47,10 @@ func TestRenderByType(t *testing.T) {
 			Markdown: `![](1.drawio?w=500)`,
 			HTML:     `<p><img src="1.drawio.svg?w=500"></p>`,
 		},
+		{
+			Markdown: `![](1.jpg?light&padding)`,
+			HTML:     `<p><img src="1.jpg" alt="" class="light-on-dark padding"></p>`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -56,7 +60,7 @@ func TestRenderByType(t *testing.T) {
 			continue
 		}
 		if strings.TrimSpace(output) != tc.HTML {
-			t.Errorf(`结果不一样：%s, %s`, output, tc.HTML)
+			t.Errorf("结果不一样：\n%s\n%s", output, tc.HTML)
 			continue
 		}
 	}
