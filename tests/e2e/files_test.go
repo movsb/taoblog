@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
+	stdRuntime "runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -102,6 +105,37 @@ func createFile(t *testing.T, r *R, pid int64, spec *proto.FileSpec, data []byte
 	if rsp.StatusCode != 200 {
 		t.Fatalf(`文件上传错误：status=%s`, rsp.Status)
 	}
+}
+
+func TestListFilesOptions(t *testing.T) {
+	r := Serve(t.Context())
+
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		SourceType: `markdown`,
+		Source:     `# 123`,
+	}))
+
+	createFile(t, r, p.Id, &proto.FileSpec{Path: `1.doc`}, nil)
+	createFile(t, r, p.Id, &proto.FileSpec{Path: `1.avif`}, nil)
+	createFile(t, r, p.Id, &proto.FileSpec{Path: `1.webm`}, nil)
+	createFile(t, r, p.Id, &proto.FileSpec{Path: `1.drawio`}, nil)
+	createFile(t, r, p.Id, &proto.FileSpec{Path: `1.drawio.svg`, ParentPath: `1.drawio`}, nil)
+
+	expect := func(t *testing.T, req *proto.ListPostFilesRequest, want []string) {
+		req.PostId = int32(p.Id)
+		files := utils.Must1(r.client.Blog.ListPostFiles(r.user1, req)).Files
+		mapped := utils.Map(files, func(spec *proto.FileSpec) string { return spec.Path })
+		slices.Sort(want)
+		slices.Sort(mapped)
+		if !reflect.DeepEqual(want, mapped) {
+			_, file, line, _ := stdRuntime.Caller(1)
+			t.Errorf(`文件列表不对(%s:%d): %v, %v`, file, line, want, mapped)
+		}
+	}
+
+	expect(t, &proto.ListPostFilesRequest{}, []string{`1.doc`, `1.avif`, `1.drawio`})
+	expect(t, &proto.ListPostFilesRequest{WithGenerated: true}, []string{`1.doc`, `1.avif`, `1.drawio`, `1.drawio.svg`})
+	expect(t, &proto.ListPostFilesRequest{WithLivePhotoVideo: true}, []string{`1.doc`, `1.avif`, `1.webm`, `1.drawio`})
 }
 
 func TestCreateEmptyFiles(t *testing.T) {

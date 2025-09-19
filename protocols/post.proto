@@ -404,6 +404,12 @@ message UpdateFileCaptionResponse {}
 
 message ListPostFilesRequest {
 	int32 post_id = 1;
+
+	// 是否包含自动生成的文件。
+	bool with_generated = 10;
+
+	// 是否包含实况照片的视频文件。
+	bool with_live_photo_video = 11;
 }
 message ListPostFilesResponse {
 	repeated FileSpec files = 1;

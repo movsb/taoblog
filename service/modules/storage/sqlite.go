@@ -206,12 +206,25 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 	slices.SortFunc(files, func(a, b *models.File) int {
 		return -int(a.UpdatedAt - b.UpdatedAt)
 	})
+
+	parentPaths := map[int]string{}
 	specs := make([]*proto.FileSpec, 0, len(files))
 	for _, f := range files {
-		// 暂时去掉自动生成的文件。
-		if f.ParentID != 0 {
-			continue
+		parentPath := ``
+
+		if f.ParentID > 0 {
+			if path, ok := parentPaths[f.ParentID]; !ok {
+				var pf models.File
+				if err := fs.s.meta.Select(`id,path`).Where(`id=?`, f.ParentID).Find(&pf); err != nil {
+					return nil, err
+				}
+				parentPaths[f.ParentID] = pf.Path
+				parentPath = pf.Path
+			} else {
+				parentPath = path
+			}
 		}
+
 		specs = append(specs, &proto.FileSpec{
 			Path: f.Path,
 			Mode: f.Mode,
@@ -221,6 +234,8 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 			Meta: f.Meta.ToProto(),
 
 			Digest: f.Digest,
+
+			ParentPath: parentPath,
 		})
 	}
 	return specs, nil

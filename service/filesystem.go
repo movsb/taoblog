@@ -187,8 +187,43 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 
 	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
 	files := utils.Must1(utils.ListFiles(pfs))
+
+	filtered := make([]*proto.FileSpec, 0, len(files))
+	for _, file := range files {
+		// 过滤自动生成的文件。
+		if !in.WithGenerated && file.ParentPath != `` {
+			continue
+		}
+
+		// 过滤实况照片视频？
+		// 低效的写法，但是鉴于文件少，可行。
+		if !in.WithLivePhotoVideo {
+			ext := path.Ext(file.Path)
+			if strings.HasPrefix(mime.TypeByExtension(ext), `video/`) {
+				base1 := strings.TrimSuffix(file.Path, ext)
+				// 依次判断有没有同名（不含后缀）的图片文件。
+				found := false
+				for _, file := range files {
+					ext := path.Ext(file.Path)
+					if strings.HasPrefix(mime.TypeByExtension(ext), `image/`) {
+						base2 := strings.TrimSuffix(file.Path, ext)
+						if base2 == base1 {
+							found = true
+							break
+						}
+					}
+				}
+				if found {
+					continue
+				}
+			}
+		}
+
+		filtered = append(filtered, file)
+	}
+
 	return &proto.ListPostFilesResponse{
-		Files: files,
+		Files: filtered,
 	}, nil
 }
 
