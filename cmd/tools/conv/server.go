@@ -55,47 +55,67 @@ func (s *Server) Run(ctx context.Context) {
 	})
 
 	mux.HandleFunc(`GET /api/files`, func(w http.ResponseWriter, r *http.Request) {
-		entries := utils.Must1(fs.ReadDir(os.DirFS(s.dir), `.`))
 		files := []File{}
-		for _, entry := range entries {
-			if !entry.Type().IsRegular() {
-				continue
+		const maxFiles = 100
+
+		filepath.WalkDir(s.dir, func(path string, d fs.DirEntry, err error) error {
+			if len(files) > maxFiles {
+				log.Println(`too many files`)
+				return filepath.SkipAll
 			}
-			info := utils.Must1(entry.Info())
-			typ := mime.TypeByExtension(path.Ext(entry.Name()))
+
+			if err != nil {
+				log.Println(err)
+				return nil
+			}
+
+			if !d.Type().IsRegular() {
+				return nil
+			}
+
+			info := utils.Must1(d.Info())
+			typ := mime.TypeByExtension(filepath.Ext(d.Name()))
 			if strings.HasPrefix(typ, `image/`) {
 				if typ == `image/avif` {
-					continue
+					return nil
 				}
 
-				if ext := filepath.Ext(entry.Name()); strings.ToLower(ext) == `.heic` {
-					jpg1 := strings.TrimSuffix(entry.Name(), ext) + `.JPG`
-					jpg2 := strings.TrimSuffix(entry.Name(), ext) + `.jpg`
+				if ext := filepath.Ext(d.Name()); strings.ToLower(ext) == `.heic` {
+					jpg1 := strings.TrimSuffix(d.Name(), ext) + `.JPG`
+					jpg2 := strings.TrimSuffix(d.Name(), ext) + `.jpg`
 					_, err1 := os.Stat(filepath.Join(s.dir, jpg1))
 					_, err2 := os.Stat(filepath.Join(s.dir, jpg2))
 					if err1 == nil || err2 == nil {
-						continue
+						return nil
 					}
-					convertHEIC(context.Background(), filepath.Join(s.dir, entry.Name()))
-					continue
+					jpgPath := convertHEIC(context.Background(), path)
+					info := utils.Must1(os.Stat(jpgPath))
+					files = append(files, File{
+						Name: jpgPath,
+						Type: typ,
+						Size: utils.ByteCountIEC(info.Size()),
+					})
+					return nil
 				}
 
 				files = append(files, File{
-					Name: entry.Name(),
+					Name: path,
 					Type: typ,
 					Size: utils.ByteCountIEC(info.Size()),
 				})
 			} else if strings.HasPrefix(typ, `video/`) {
 				if typ == `video/mp4` || typ == `video/webm` {
-					continue
+					return nil
 				}
 				files = append(files, File{
-					Name: entry.Name(),
+					Name: path,
 					Type: typ,
 					Size: utils.ByteCountIEC(info.Size()),
 				})
 			}
-		}
+
+			return nil
+		})
 		json.NewEncoder(w).Encode(files)
 	})
 
@@ -110,16 +130,16 @@ func (s *Server) Run(ctx context.Context) {
 			return
 		}
 
-		outName, err := convertImage(r.Context(), s.dir, imageArgs.Name, imageArgs.Q)
+		output, err := convertImage(r.Context(), filepath.Join(s.dir, imageArgs.Name), s.dir, imageArgs.Q)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
-		info := utils.Must1(os.Stat(filepath.Join(s.dir, outName)))
+		info := utils.Must1(os.Stat(output))
 		json.NewEncoder(w).Encode(map[string]any{
 			`Size`: utils.ByteCountIEC(info.Size()),
-			`Path`: outName,
+			`Path`: output,
 		})
 	})
 
@@ -134,16 +154,16 @@ func (s *Server) Run(ctx context.Context) {
 			return
 		}
 
-		outName, err := convertVideo(r.Context(), s.dir, videoArgs.Name, videoArgs.CRF)
+		output, err := convertVideo(r.Context(), filepath.Join(s.dir, videoArgs.Name), s.dir, videoArgs.CRF)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
-		info := utils.Must1(os.Stat(filepath.Join(s.dir, outName)))
+		info := utils.Must1(os.Stat(output))
 		json.NewEncoder(w).Encode(map[string]any{
 			`Size`: utils.ByteCountIEC(info.Size()),
-			`Path`: outName,
+			`Path`: output,
 		})
 	})
 
@@ -153,7 +173,7 @@ func (s *Server) Run(ctx context.Context) {
 	})
 
 	mux.HandleFunc(`GET /out/`, func(w http.ResponseWriter, r *http.Request) {
-		path := filepath.Join(s.dir, strings.TrimPrefix(r.URL.Path, `/out/`))
+		path := filepath.Clean(strings.TrimPrefix(r.URL.Path, `/out/`))
 		http.ServeFile(w, r, path)
 	})
 

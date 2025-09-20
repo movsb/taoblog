@@ -58,27 +58,25 @@ func convertHEIC(ctx context.Context, path string) string {
 	return path
 }
 
-func convertImage(ctx context.Context, dir, name string, q int) (string, error) {
-	outName := strings.TrimSuffix(filepath.Base(name), filepath.Ext(name)) + `.avif`
-	fullOutName := filepath.Join(dir, outName)
+func convertImage(ctx context.Context, input string, outputDir string, q int) (string, error) {
+	output := filepath.Join(outputDir, strings.TrimSuffix(filepath.Base(input), filepath.Ext(input))+`.avif`)
 
 	// avifenc ../IMG_0923.JPG 1.avif
 	// Directly copied JPEG pixel data (no YUV conversion): ../IMG_0923.JPG
 	// XMP extraction failed: invalid multiple standard XMP segments
 	// Cannot read input file: ../IMG_0923.JPG
-	err := run(ctx, `avifenc`, `-q`, fmt.Sprint(q), filepath.Join(dir, name), fullOutName)
+	err := run(ctx, `avifenc`, `-q`, fmt.Sprint(q), input, output)
 	if err != nil {
-		err = run(ctx, `ffmpeg`, `-y`, `-i`, filepath.Join(dir, name), fullOutName)
+		err = run(ctx, `ffmpeg`, `-y`, `-i`, input, output)
 	}
 	if err != nil {
-		return outName, err
+		return ``, err
 	}
-	defer os.Remove(fullOutName + `_original`)
-	return outName, run(ctx, `exiftool`, `-tagsFromFile`, filepath.Join(dir, name), fullOutName)
+	defer os.Remove(output + `_original`)
+	return output, run(ctx, `exiftool`, `-tagsFromFile`, input, output)
 }
 
-func convertVideo(ctx context.Context, dir, name string, crf int) (string, error) {
-	outName := strings.TrimSuffix(name, filepath.Ext(name)) + `.mp4`
-	fullOutPath := filepath.Join(dir, outName)
-	return outName, run(ctx, `ffmpeg`, `-y`, `-i`, filepath.Join(dir, name), `-crf`, fmt.Sprint(crf), fullOutPath)
+func convertVideo(ctx context.Context, input string, outputDir string, crf int) (string, error) {
+	output := filepath.Join(outputDir, strings.TrimSuffix(filepath.Base(input), filepath.Ext(input))+`.mp4`)
+	return output, run(ctx, `ffmpeg`, `-y`, `-i`, input, `-crf`, fmt.Sprint(crf), output)
 }
