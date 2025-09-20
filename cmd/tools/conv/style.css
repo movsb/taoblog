@@ -21,6 +21,7 @@ div.wrapper {
 	margin: 0;
 	width: 300px;
 	flex-shrink: 0;
+	font-family: monospace, monospace;
 }
 
 #list > li {

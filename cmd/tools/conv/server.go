@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -58,10 +59,16 @@ func (s *Server) Run(ctx context.Context) {
 		files := []File{}
 		const maxFiles = 100
 
+		skips := map[string]struct{}{}
+
 		filepath.WalkDir(s.dir, func(path string, d fs.DirEntry, err error) error {
 			if len(files) > maxFiles {
 				log.Println(`too many files`)
 				return filepath.SkipAll
+			}
+
+			if _, ok := skips[path]; ok {
+				return nil
 			}
 
 			if err != nil {
@@ -95,6 +102,7 @@ func (s *Server) Run(ctx context.Context) {
 						Type: typ,
 						Size: utils.ByteCountIEC(info.Size()),
 					})
+					skips[jpgPath] = struct{}{}
 					return nil
 				}
 
@@ -180,7 +188,9 @@ func (s *Server) Run(ctx context.Context) {
 	lis := utils.Must1(net.Listen(`tcp4`, `:3367`))
 	defer lis.Close()
 
-	log.Printf(`HTTP: http://%s`, lis.Addr().String())
+	addr := `http://` + lis.Addr().String()
+	log.Printf(`HTTP: %s`, addr)
+	exec.Command(`open`, addr).Run()
 
 	if err := http.Serve(lis, mux); err != nil {
 		log.Fatalln(err)
