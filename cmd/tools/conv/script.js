@@ -17,6 +17,11 @@ class UI {
 
 		/** @type {HTMLLIElement} */
 		this._lastActive = null;
+
+		this._preview.querySelector('.toggle').addEventListener('click', e => {
+			e.preventDefault();
+			this._preview.classList.toggle('full');
+		});
 	}
 
 	async preview(imageURL, videoURL) {
