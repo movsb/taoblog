@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<template id="file">
+	<li>
+		<form autocomplete="off">
+			<div><span class="name"></span></div>
+			<div>
+				<span class="size1"></span>
+				<span class="size2"></span>
+			</div>
+			<div class="image">
+				<input name="q" type="range" min="0" max="100" value="50">
+			</div>
+			<div class="video">
+				<input name="crf" type="range" min="-63" max="0" value="-25">
+			</div>
+			<div>
+				<button type="button" class="raw">原始</button>
+				<button type="submit">执行</button>
+			</div>
+		</form>
+	</li>
+</template>
+
+<div class="wrapper">
+	<ol id="list"></ol>
+	<div class="preview" style="flex: 1;">
+		<img>
+		<video controls></video>
+	</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

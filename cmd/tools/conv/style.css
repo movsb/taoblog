@@ -1,0 +1,81 @@
+@media (prefers-color-scheme: dark) {
+	body {
+		color: white;
+		background-color: black;
+	}
+}
+
+div.wrapper {
+	box-sizing: border-box;
+	position: fixed;
+	inset: 0;
+	padding: 10px;
+	display: flex;
+	gap: 10px;
+}
+
+#list {
+	list-style-type: none;
+	overflow: auto;
+	padding: 0;
+	margin: 0;
+	width: 300px;
+	flex-shrink: 0;
+}
+
+#list > li {
+	padding:  10px;
+	margin: 10px 0;
+}
+#list > li:first-child {
+	margin-top: 0;
+}
+#list > li:last-child {
+	margin-bottom: 0;
+}
+
+:root {
+	--selection-color: rgb(from black r g b / .1);
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--selection-color: rgb(from white r g b / .1);
+	}
+}
+
+#list > li:hover {
+	background-color: var(--selection-color);
+}
+#list > li.selected {
+	background-color: var(--selection-color);
+}
+
+.preview {
+	overscroll-behavior-x: contain;
+	overflow: auto;
+}
+.preview * {
+	display: none;
+	max-width: 100%;
+	max-height: 100%;
+	margin: 0 auto;
+}
+
+input {
+	color-scheme: light dark;
+}
+
+input[type=range] {
+	vertical-align: middle;
+	margin: 10px 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+span.name {
+	font-weight: bold;
+}
+
+span:is(.size1, .size2) {
+	font-size: 90%;
+}
