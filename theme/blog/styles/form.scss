@@ -25,7 +25,7 @@ button, input, select, textarea {
 }
 
 // 内边距 & 行高
-button, input {
+button, input, select {
 	line-height: 2;
 }
 // 所有类型的按钮
@@ -80,8 +80,9 @@ input[type=text],input[type=password],input[type=email],input[type=url],textarea
 
 select {
 	// 2px: 比同为 2em 的按钮要窄一点
-	height: calc(2em + 2px);
-	padding: var(--input-padding);
+	// height: calc(2em + 2px);
+	line-height: 2;
+	padding: var(--button-padding);
 	// Safari 显示很奇怪，直接全部去掉。
 	appearance: none;
 }

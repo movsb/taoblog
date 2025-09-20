@@ -381,6 +381,7 @@ class MyFileList extends HTMLElement {
 			return cmp(fi1, fi2);
 		}).map(li => li.dataset.id);
 		this._sortable.sort(sorted);
+		this._selected = this.querySelectorAll('li.selected file-list-item');
 	}
 
 	/**
@@ -601,6 +602,7 @@ class FileManagerDialog {
 	 *      onChooseFiles: () => void,
 	 *      onCreateFile: (type: string, path: string, data: string) => Promise<boolean>,
 	 *      onEditFile: (path: string) => void,
+	 *      onRefreshList: () => void,
 	 * }} options 
 	 */
 	constructor(options) {
@@ -646,6 +648,11 @@ class FileManagerDialog {
 			e.preventDefault();
 			e.stopPropagation();
 			this.switchView();
+		});
+		this._dialog.querySelector('button.refresh').addEventListener('click', e => {
+			e.preventDefault();
+			e.stopPropagation();
+			this._options.onRefreshList?.();
 		});
 		this._dialog.querySelector('.delete').addEventListener('click', ()=>{
 			const selected = this._fileList.selected;
@@ -1345,6 +1352,9 @@ class PostFormUI {
 				console.log('编辑：' + path);
 				await this._tabManager.open(path);
 				this._fileManager.close();
+			},
+			onRefreshList: async () => {
+				this._refreshFileList();
 			},
 		});
 
