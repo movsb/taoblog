@@ -14,7 +14,9 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
@@ -29,6 +31,7 @@ type File struct {
 	Name string
 	Type string
 	Size string
+	Time time.Time
 }
 
 func init() {
@@ -101,6 +104,7 @@ func (s *Server) Run(ctx context.Context) {
 						Name: jpgPath,
 						Type: typ,
 						Size: utils.ByteCountIEC(info.Size()),
+						Time: info.ModTime(),
 					})
 					skips[jpgPath] = struct{}{}
 					return nil
@@ -110,6 +114,7 @@ func (s *Server) Run(ctx context.Context) {
 					Name: path,
 					Type: typ,
 					Size: utils.ByteCountIEC(info.Size()),
+					Time: info.ModTime(),
 				})
 			} else if strings.HasPrefix(typ, `video/`) {
 				if typ == `video/mp4` || typ == `video/webm` {
@@ -119,11 +124,17 @@ func (s *Server) Run(ctx context.Context) {
 					Name: path,
 					Type: typ,
 					Size: utils.ByteCountIEC(info.Size()),
+					Time: info.ModTime(),
 				})
 			}
 
 			return nil
 		})
+
+		slices.SortFunc(files, func(a, b File) int {
+			return int(a.Time.Unix()) - int(b.Time.Unix())
+		})
+
 		json.NewEncoder(w).Encode(files)
 	})
 

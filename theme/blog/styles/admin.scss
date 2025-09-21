@@ -421,7 +421,7 @@ body.admin.editor {
 								}
 							}
 							font-size: 0.8em;
-							color: dimgray;
+							color: rgb(from var(--color-fg) r g b / .5);
 							.caption {
 								display: none;
 							}

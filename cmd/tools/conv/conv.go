@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/spf13/cobra"
@@ -44,6 +45,12 @@ func run(ctx context.Context, cmd ...string) error {
 	return c.Run()
 }
 
+func copyModTime(from, to string) {
+	info1 := utils.Must1(os.Stat(from))
+	modTime := info1.ModTime()
+	os.Chtimes(to, time.Time{}, modTime)
+}
+
 func convertHEIC(ctx context.Context, path string) string {
 	if ext := filepath.Ext(path); strings.EqualFold(ext, `.heic`) {
 		dir := filepath.Dir(path)
@@ -51,7 +58,8 @@ func convertHEIC(ctx context.Context, path string) string {
 		jpgName := strings.TrimSuffix(baseName, ext) + `.jpg`
 		jpgPath := filepath.Join(dir, jpgName)
 		if _, err := os.Stat(jpgPath); err != nil {
-			run(ctx, `sips`, `-s`, `format`, `jpeg`, path, `-o`, jpgPath)
+			utils.Must(run(ctx, `sips`, `-s`, `format`, `jpeg`, path, `-o`, jpgPath))
+			copyModTime(path, jpgPath)
 		}
 		return jpgPath
 	}
@@ -72,11 +80,22 @@ func convertImage(ctx context.Context, input string, outputDir string, q int) (s
 	if err != nil {
 		return ``, err
 	}
+
 	defer os.Remove(output + `_original`)
-	return output, run(ctx, `exiftool`, `-tagsFromFile`, input, output)
+	if err := run(ctx, `exiftool`, `-tagsFromFile`, input, output); err != nil {
+		return ``, err
+	}
+
+	copyModTime(input, output)
+
+	return output, nil
 }
 
 func convertVideo(ctx context.Context, input string, outputDir string, crf int) (string, error) {
 	output := filepath.Join(outputDir, strings.TrimSuffix(filepath.Base(input), filepath.Ext(input))+`.mp4`)
-	return output, run(ctx, `ffmpeg`, `-y`, `-i`, input, `-crf`, fmt.Sprint(crf), output)
+	if err := run(ctx, `ffmpeg`, `-y`, `-i`, input, `-crf`, fmt.Sprint(crf), output); err != nil {
+		return ``, err
+	}
+	copyModTime(input, output)
+	return output, nil
 }
