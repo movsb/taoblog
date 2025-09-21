@@ -285,7 +285,7 @@ body.admin.editor {
 		width: calc(1px*2 + 10px*2 + 10px + $buttons-width + 80px*4 + 4px*2*4 + 2px*2*4);
 
 		max-width: 100%;
-		height: 430px;
+		height: 460px;
 		max-height: 100%;
 		box-sizing: border-box;
 
@@ -358,6 +358,9 @@ body.admin.editor {
 						}
 						&.sortable-drag, &.sortable-ghost {
 							background-color: var(--highlight-color);
+						}
+						&.hidden {
+							display: none;
 						}
 					}
 				}

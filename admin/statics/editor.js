@@ -321,9 +321,6 @@ class MyFileList extends HTMLElement {
 		this.innerHTML = `<ol></ol>`
 		this._list = this.querySelector('ol');
 
-		/** @type {NodeListOf<FileItem>} */
-		this._selected = [];
-
 		this.addEventListener('click', (e) => {
 			const target = e.target;
 			if(target.tagName == 'A' && target.parentElement?.classList.contains('caption')) {
@@ -342,10 +339,9 @@ class MyFileList extends HTMLElement {
 			if (!li) { return; }
 			li.classList.toggle('selected');
 
-			this._selected = this.querySelectorAll('li.selected file-list-item');
-			console.log('选中的文件：', this._selected);
+			console.log('选中的文件：', this.getSelectedItems());
 			if (this._onSelectionChange) {
-				this._onSelectionChange(this._selected);
+				this._onSelectionChange(this.getSelectedItems());
 			}
 		});
 
@@ -367,6 +363,13 @@ class MyFileList extends HTMLElement {
 	}
 
 	/**
+	 * @returns {FileItem[]}
+	 */
+	getSelectedItems() {
+		return this.querySelectorAll('li.selected file-list-item');
+	}
+
+	/**
 	 * 
 	 * @param {(a: FileItem, b: FileItem) => number} cmp 
 	 */
@@ -381,7 +384,6 @@ class MyFileList extends HTMLElement {
 			return cmp(fi1, fi2);
 		}).map(li => li.dataset.id);
 		this._sortable.sort(sorted);
-		this._selected = this.querySelectorAll('li.selected file-list-item');
 	}
 
 	/**
@@ -390,40 +392,43 @@ class MyFileList extends HTMLElement {
 	 * @returns {boolean}
 	 */
 	select(path) {
+		// 取消任何选择。
+		Array.from(this.items).forEach(fi => {
+			const li = fi.closest('li');
+			li.classList.remove('selected');
+		});
+
 		const anchor = Array.from(this.items).find(fi => fi.spec.path == path);
 		if(anchor) {
 			anchor.scrollIntoView();
+
 			const li = anchor.closest('li');
 			li.classList.add('selected');
 
-			this._selected = [anchor];
-			console.log('选中的文件：', this._selected);
+			console.log('选中的文件：', this.getSelectedItems());
 			if (this._onSelectionChange) {
-				this._onSelectionChange(this._selected);
+				this._onSelectionChange(this.getSelectedItems());
 			}
 		}
 	}
 
+	/**
+	 * 选中所有文件（不包含隐藏的）。
+	 */
 	selectAll() {
-		const items = this.querySelectorAll('li');
+		const items = this.querySelectorAll('li:not(.hidden)');
 		items.forEach(item => item.classList.add('selected'));
-		this._selected = this.querySelectorAll('li.selected file-list-item');
-		console.log('选中的文件：', this._selected);
+		console.log('选中的文件：', this.getSelectedItems());
 		if (this._onSelectionChange) {
-			this._onSelectionChange(this._selected);
+			this._onSelectionChange(this.getSelectedItems());
 		}
 	}
 
 	clearSelection() {
-		this._selected = [];
 		this.querySelectorAll('li.selected').forEach(li => {
 			li.classList.remove('selected');
 		});
-		this._onSelectionChange && this._onSelectionChange(this._selected);
-	}
-
-	get selected() {
-		return this._selected;
+		this._onSelectionChange && this._onSelectionChange([]);
 	}
 
 	/**
@@ -508,15 +513,23 @@ class MyFileList extends HTMLElement {
 		});
 	}
 
-	get fileCount() {
-		return this.items.length;
-	}
-
 	/**
 	 * @returns {NodeListOf<FileItem>}
 	 */
 	get items() {
 		return this._list.querySelectorAll('file-list-item');
+	}
+
+	/**
+	 * 
+	 * @param {(fi: FileItem) => boolean} predicate
+	 */
+	filterItems(predicate) {
+		this.items.forEach(fi => {
+			const show = predicate(fi);
+			const li = fi.closest('li');
+			li.classList.toggle('hidden', !show);
+		});
 	}
 }
 
@@ -603,6 +616,7 @@ class FileManagerDialog {
 	 *      onCreateFile: (type: string, path: string, data: string) => Promise<boolean>,
 	 *      onEditFile: (path: string) => void,
 	 *      onRefreshList: () => void,
+	 *      onShowUnused: (b: boolean) => void,
 	 * }} options 
 	 */
 	constructor(options) {
@@ -626,7 +640,7 @@ class FileManagerDialog {
 		this._dialog.querySelector('.insert').addEventListener('click', e => {
 			e.stopPropagation();
 			e.preventDefault();
-			const selected = this._fileList.selected;
+			const selected = this._fileList.getSelectedItems();
 			if (selected.length <= 0) { return; }
 			if(Array.from(selected).some(fi => !fi.finished)) {
 				alert('选中了未完成处理的文件。');
@@ -654,8 +668,13 @@ class FileManagerDialog {
 			e.stopPropagation();
 			this._options.onRefreshList?.();
 		});
+		this._dialog.querySelector('button.filtered').addEventListener('click', e => {
+			e.preventDefault();
+			e.stopPropagation();
+			this._toggleShowUsed(e.target);
+		});
 		this._dialog.querySelector('.delete').addEventListener('click', ()=>{
-			const selected = this._fileList.selected;
+			const selected = this._fileList.getSelectedItems();
 			this._options?.onDelete?.(selected);
 		});
 		this._dialog.querySelector('.upload').addEventListener('click', ()=>{
@@ -665,7 +684,7 @@ class FileManagerDialog {
 			this._fileCreationDialog.showModal();
 		});
 		this._dialog.querySelector('button.edit').addEventListener('click', ()=>{
-			this._options.onEditFile(this._fileList.selected[0].spec.path);
+			this._options.onEditFile(this._fileList.getSelectedItems()[0].spec.path);
 		});
 
 		this._fileList.onSelectionChange(selected => {
@@ -742,18 +761,35 @@ class FileManagerDialog {
 		const name = 'view-tiled';
 		this._fileList.classList.toggle(name);
 	}
+	/**
+	 * 
+	 * @param {HTMLButtonElement} btn 
+	 */
+	_toggleShowUsed(btn) {
+		const unused = btn.dataset.unused == '1';
+		this._options.onShowUnused(!unused);
+		btn.dataset.unused = unused ? '0' : '1';
+		btn.textContent = !unused ? '显示全部' : '显示未用';
+	}
+
+	updateUsedFilesList() {
+		const btn = this._dialog.querySelector('button.filtered');
+		const unused = btn.dataset.unused == '1';
+		this._options.onShowUnused(unused);
+	}
+
+	/**
+	 * 
+	 * @param {(fi: FileItem) => boolean} predicate
+	 */
+	filterItems(predicate) {
+		this._fileList.filterItems(predicate);
+	}
 
 	set files(list) {
 		console.log(list);
 		this._fileList.files = list;
-	}
-
-	/**
-	 * 返回文件总数。
-	 * @returns {number}
-	 */
-	get fileCount() {
-		return this._fileList.fileCount;
+		this.updateUsedFilesList();
 	}
 
 	showUploadFile() {
@@ -1306,6 +1342,9 @@ class PostFormUI {
 		this._users = [];
 		this._contentChanged = false;
 
+		/** @type {string[]} */
+		this._pathsInUse = [];
+
 		this._fileManager = new FileManagerDialog({
 			onInsert: (selected) => {  this._handleInsertFiles(selected); },
 			onRetryUploadFile: async (fi) => {
@@ -1355,6 +1394,13 @@ class PostFormUI {
 			},
 			onRefreshList: async () => {
 				this._refreshFileList();
+			},
+			onShowUnused: b => {
+				this._fileManager.filterItems(fi => {
+					const path = fi.spec.path;
+					if(!b) return true;
+					return !this._pathsInUse.includes(path);
+				});
 			},
 		});
 
@@ -1739,9 +1785,6 @@ class PostFormUI {
 
 	showFileManager() {
 		this._fileManager.show();
-		// if(this._fileManager.fileCount <= 0) {
-		// 	this._fileManager.showUploadFile();
-		// }
 	}
 
 	/**
@@ -1763,6 +1806,8 @@ class PostFormUI {
 			this.setPreview(rsp.html, true);
 			this.setDiff(rsp.diff);
 			this._updateReferencedFiles(rsp.paths || []);
+			this._pathsInUse = rsp.paths || [];
+			this._fileManager.updateUsedFilesList();
 
 			if(autoSave) {
 				this._setContentChanged(false);
