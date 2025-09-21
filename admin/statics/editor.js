@@ -227,7 +227,13 @@ class FileItem extends HTMLElement {
 	set file(value) { this._file = value; }
 
 	get spec() { return this._spec; }
-	set spec(spec) {
+
+	/**
+	 * 
+	 * @param {{}} spec 
+	 * @param {boolean} preview 
+	 */
+	setSpec(spec, preview) {
 		if (!spec) { throw new Error('错误的文件元信息。'); }
 
 		/** @type {FileSpec} */
@@ -238,8 +244,8 @@ class FileItem extends HTMLElement {
 
 		const fullPath = `/v3/posts/${TaoBlog.post_id}/files/${encodeURIComponent(this._spec.path)}`;
 
-		const preview = this.querySelector('.preview');
-		preview.innerHTML = '';
+		const previewContainer = this.querySelector('.preview');
+		previewContainer.innerHTML = '';
 		let elem = null;
 
 		const type = spec.type ?? '';
@@ -248,21 +254,21 @@ class FileItem extends HTMLElement {
 
 		if(isImage) {
 			const img = document.createElement('img');
-			img.src = fullPath;
+			if(preview) img.src = fullPath;
 			elem = img;
 		} else if(isVideo) {
 			const video = document.createElement('video');
-			video.src = fullPath;
+			if(preview) video.src = fullPath;
 			elem = video;
 		} else {
 			const img = document.createElement('img');
-			img.src = 'file.png';
+			if(preview) img.src = 'file.png';
 			elem = img;
 		}
 
 		elem.title = `文件名：${this._spec.path}`;
 
-		preview.appendChild(elem);
+		previewContainer.appendChild(elem);
 	}
 
 	set finished(b) {
@@ -352,8 +358,9 @@ class MyFileList extends HTMLElement {
 				animation: 150,
 				onClone: function(event) {
 					const old = event.item.firstElementChild;
+					/** @type {FileItem} */
 					const cloned = event.clone.firstElementChild;
-					cloned.spec = old.spec;
+					cloned.setSpec(old.spec, true);
 					cloned.options = old.options;
 					cloned.file = old.file;
 					console.log('拷贝元素', event);
@@ -460,7 +467,7 @@ class MyFileList extends HTMLElement {
 		const items = this._list.querySelectorAll('file-list-item');
 		const existed = Array.from(items).filter(fi => fi.spec.path == spec.path);
 		if (existed?.length > 0) { return existed[0]; }
-		return this._insert(file, spec, options);
+		return this._insert(file, spec, options, false);
 	}
 
 	removeFile(fi) {
@@ -472,16 +479,17 @@ class MyFileList extends HTMLElement {
 	 * 
 	 * @param {HTMLUListElement|HTMLOListElement} list 
 	 * @param {File | null} file 
-	 * @param {*} spec 
+	 * @param {*} spec
+	 * @param {boolean} preview 
 	 * @returns 
 	 */
-	_insert(file, spec, options) {
+	_insert(file, spec, options, preview) {
 		const li = document.createElement('li');
 		li.dataset.id = spec.path;
 		const fi = new FileItem();
 		li.appendChild(fi);
 		this._list.appendChild(li);
-		fi.spec = spec;
+		fi.setSpec(spec, preview);
 		fi.file = file;
 		fi.options = options;
 		return fi;
@@ -501,14 +509,14 @@ class MyFileList extends HTMLElement {
 				this.removeFile(f);
 			}
 		});
-		fi.spec = spec;
+		fi.setSpec(spec, true);
 		fi.closest('li').dataset.id = spec.path;
 	}
 
 	set files(list) {
 		this._list.innerHTML = '';
 		list.forEach(f => {
-			const fi = this._insert(null, f, {});
+			const fi = this._insert(null, f, {}, true);
 			fi.finished = true;
 		});
 	}
