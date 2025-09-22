@@ -679,7 +679,7 @@ class FileManagerDialog {
 		this._dialog.querySelector('button.filtered').addEventListener('click', e => {
 			e.preventDefault();
 			e.stopPropagation();
-			this._toggleShowUsed(e.target);
+			this._toggleShowUnused(e.target);
 		});
 		this._dialog.querySelector('.delete').addEventListener('click', ()=>{
 			const selected = this._fileList.getSelectedItems();
@@ -773,7 +773,7 @@ class FileManagerDialog {
 	 * 
 	 * @param {HTMLButtonElement} btn 
 	 */
-	_toggleShowUsed(btn) {
+	_toggleShowUnused(btn) {
 		const unused = btn.dataset.unused == '1';
 		this._options.onShowUnused(!unused);
 		btn.dataset.unused = unused ? '0' : '1';
@@ -798,6 +798,7 @@ class FileManagerDialog {
 		console.log(list);
 		this._fileList.files = list;
 		this.updateUsedFilesList();
+		this._sortFiles();
 	}
 
 	showUploadFile() {
