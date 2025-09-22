@@ -1676,10 +1676,15 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 		// 应该 LOCK FOR UPDATE
 		utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(in.UserId)))
 
+		// 分类是原作者自己的，不能转移。
+		// 自动设置成“未分类”。
+		newCategory := 0
+
 		// 没有使用 UpdatePost 函数，有事务冲突。
 		s.tdb.Model(p).MustUpdateMap(taorm.M{
 			`modified`: time.Now().Unix(),
 			`user_id`:  in.UserId,
+			`category`: newCategory,
 		})
 
 		// 修改权限列表。
