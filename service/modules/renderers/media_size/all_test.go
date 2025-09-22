@@ -59,7 +59,7 @@ func TestArgs(t *testing.T) {
 		},
 		{
 			Markdown: `![](test.avif?cover)`,
-			HTML:     `<p><img src="test.avif" alt="" style="object-fit: cover; aspect-ratio: 1; width: 400px" width="168" height="76"/></p>`,
+			HTML:     `<p><img src="test.avif" alt="" style="object-fit: cover; aspect-ratio: 1; width: 400px" class="cover" width="168" height="76"/></p>`,
 		},
 		{
 			Markdown: `![](test.avif?w=100)`,

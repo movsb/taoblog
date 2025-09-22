@@ -83,7 +83,13 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 			if n > 0 {
 				cover = fmt.Sprintf(`%dpx`, n)
 			}
+
 			gold_utils.AddStyle(s, fmt.Sprintf(`object-fit: cover; aspect-ratio: 1; width: %s`, cover))
+
+			// 碎碎念比较窄，可以默认 100% 显示。
+			// TODO: 移动到 renderers/image 里面处理。
+			s.AddClass(`cover`)
+
 			q.Del(`cover`)
 		}
 

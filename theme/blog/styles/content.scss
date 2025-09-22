@@ -163,6 +163,15 @@ body:not(.wide) .entry {
 		margin: auto;
 	}
 }
+body:not(.wide) .tweet {
+	// 封面图片占满看起来比较舒服。
+	img.cover {
+		width: 100% !important;
+	}
+	.live-photo {
+		max-width: 100% !important;
+	}
+}
 
 $blockquote-color: var(--border-color);
 
