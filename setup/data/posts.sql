@@ -118,7 +118,6 @@ CREATE TABLE IF NOT EXISTS `files` (
     `updated_at` INTEGER NOT NULL,
     `post_id` INTEGER NOT NULL,
     `path` TEXT NOT NULL,
-    `mode` INTEGER NOT NULL,
     `mod_time` INTEGER  NOT NULL,
     `size` INTEGER  NOT NULL,
     `digest` TEXT NOT NULL,

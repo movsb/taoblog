@@ -347,7 +347,6 @@ message GetPostACLResponse {
 
 message FileSpec {
 	string path = 1;
-	uint32 mode = 2;
 	uint32 size = 3;
 	uint32 time = 4;
 

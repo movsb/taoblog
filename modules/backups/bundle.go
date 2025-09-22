@@ -166,7 +166,7 @@ func (b *Backup) BackupFiles(ctx context.Context) (outErr error) {
 				Typeflag: tar.TypeReg,
 				Name:     spec.Path,
 				Size:     int64(spec.Size),
-				Mode:     int64(spec.Mode),
+				Mode:     0644,
 				ModTime:  time.Unix(int64(spec.Time), 0),
 			}))
 

@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils/syncer"
@@ -19,10 +18,6 @@ func (s *SyncFileSpec) Compare(than *SyncFileSpec) int {
 }
 
 func (s *SyncFileSpec) DeepEqual(to *SyncFileSpec) bool {
-	lm, rm := os.FileMode(s.Mode), os.FileMode(to.Mode)
-	if lm.IsDir() != rm.IsDir() {
-		return false
-	}
 	if s.Size != to.Size {
 		return false
 	}
@@ -104,7 +99,6 @@ func (s *FilesSyncer) listLocalFilesFromPaths(root fs.FS, paths []string) ([]*pr
 		}
 		f := proto.FileSpec{
 			Path: file,
-			Mode: uint32(stat.Mode()),
 			Size: uint32(stat.Size()),
 			Time: uint32(stat.ModTime().Unix()),
 		}

@@ -24,7 +24,6 @@ type File struct {
 	UpdatedAt int64
 	PostID    int
 	Path      string
-	Mode      uint32
 	ModTime   int64
 	Size      uint32
 	Meta      FileMeta
@@ -142,7 +141,7 @@ type _InfoFile struct{ f *File }
 
 func (f *_InfoFile) Name() string       { return path.Base(f.f.Path) }
 func (f *_InfoFile) Size() int64        { return int64(f.f.Size) }
-func (f *_InfoFile) Mode() fs.FileMode  { return fs.FileMode(f.f.Mode) }
+func (f *_InfoFile) Mode() fs.FileMode  { return 0644 }
 func (f *_InfoFile) ModTime() time.Time { return time.Unix(f.f.ModTime, 0).Local() }
 func (f *_InfoFile) IsDir() bool        { return f.Mode().IsDir() }
 func (f *_InfoFile) Sys() any           { return f.f }

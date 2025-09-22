@@ -57,7 +57,6 @@ func TestRender(t *testing.T) {
 		utils.Must1(dbFS.ForPost(1)),
 		&proto.FileSpec{
 			Path: `1.avif`,
-			Mode: 0600,
 			Size: 3,
 			Time: 0,
 			Meta: &proto.FileSpec_Meta{
@@ -73,7 +72,6 @@ func TestRender(t *testing.T) {
 		utils.Must1(dbFS.ForPost(1)),
 		&proto.FileSpec{
 			Path: `2.avif`,
-			Mode: 0600,
 			Size: 3,
 			Time: 0,
 			Meta: &proto.FileSpec_Meta{
@@ -89,7 +87,6 @@ func TestRender(t *testing.T) {
 		utils.Must1(dbFS.ForPost(1)),
 		&proto.FileSpec{
 			Path: `3.jpg`,
-			Mode: 0600,
 			Size: 3,
 			Time: 0,
 			Meta: &proto.FileSpec_Meta{
@@ -105,7 +102,6 @@ func TestRender(t *testing.T) {
 		utils.Must1(dbFS.ForPost(1)),
 		&proto.FileSpec{
 			Path: `3.webm`,
-			Mode: 0600,
 			Size: 3,
 			Time: 0,
 			Meta: &proto.FileSpec_Meta{

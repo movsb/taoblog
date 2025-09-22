@@ -215,7 +215,6 @@ func convertToAVIF(spec *proto.FileSpec, data []byte, dropGPSTags bool) (_ *prot
 
 	specOutput := &proto.FileSpec{
 		Path: newPath,
-		Mode: spec.Mode,
 		Size: uint32(info.Size()),
 		Time: spec.Time,
 		Type: mime.TypeByExtension(path.Ext(newPath)),

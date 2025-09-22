@@ -82,7 +82,6 @@ class FilesManager {
 		let form = new FormData();
 		form.set(`spec`, JSON.stringify({
 			path: f.name,
-			mode: 0o644,
 			size: f.size,
 			time: Math.floor(f.lastModified/1000),
 			type: f.type, // 其实不应该上传，后端计算更靠谱。

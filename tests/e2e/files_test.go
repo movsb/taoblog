@@ -41,7 +41,6 @@ func TestFiles(t *testing.T) {
 	utils.Must(parts.WriteField(
 		`spec`, string(utils.Must1(jsonPB.Marshal(&proto.FileSpec{
 			Path: `blank.png.xxx`,
-			Mode: 0600,
 			Size: 4637,
 			Time: 0,
 
@@ -75,7 +74,7 @@ func TestFiles(t *testing.T) {
 	rsp := utils.Must1(http.DefaultClient.Do(req))
 	defer rsp.Body.Close()
 	rspBody := strings.TrimSpace(string(utils.Must1(io.ReadAll(rsp.Body))))
-	if rspBody != `{"spec":{"path":"blank.png.xxx","mode":384,"size":4637,"type":"application/octet-stream","meta":{"width":60,"height":60,"source":{"format":2,"caption":"123"}}}}` {
+	if rspBody != `{"spec":{"path":"blank.png.xxx","size":4637,"type":"application/octet-stream","meta":{"width":60,"height":60,"source":{"format":2,"caption":"123"}}}}` {
 		t.Error(`返回不正确`)
 		t.Log(rspBody)
 	}
@@ -148,11 +147,9 @@ func TestCreateEmptyFiles(t *testing.T) {
 
 	createFile(t, r, p.Id, &proto.FileSpec{
 		Path: `1.txt`,
-		Mode: 0644,
 	}, nil)
 	createFile(t, r, p.Id, &proto.FileSpec{
 		Path: `2.txt`,
-		Mode: 0644,
 	}, nil)
 }
 

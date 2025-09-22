@@ -70,7 +70,6 @@ func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 	for _, f := range files {
 		m[f.PostID] = append(m[f.PostID], &proto.FileSpec{
 			Path: f.Path,
-			Mode: f.Mode,
 			Size: f.Size,
 			Time: uint32(f.ModTime),
 			Type: mime.TypeByExtension(path.Ext(f.Path)),
@@ -88,13 +87,12 @@ func (fs *SQLite) ForPost(id int) (std_fs.FS, error) {
 
 var _ interface {
 	std_fs.FS
-	std_fs.StatFS
 	std_fs.SubFS
 	utils.DeleteFS
 	utils.WriteFS
 } = (*SQLiteForPost)(nil)
 
-const fileFields = `id,parent_id,created_at,updated_at,post_id,path,mode,mod_time,size,meta,digest`
+const fileFields = `id,parent_id,created_at,updated_at,post_id,path,mod_time,size,meta,digest`
 
 func (fs *SQLiteForPost) Open(name string) (std_fs.File, error) {
 	fullName := path.Clean(path.Join(fs.dir, name))
@@ -266,7 +264,6 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 
 		specs = append(specs, &proto.FileSpec{
 			Path: f.Path,
-			Mode: f.Mode,
 			Size: f.Size,
 			Time: uint32(f.ModTime),
 			Type: mime.TypeByExtension(path.Ext(f.Path)),
@@ -310,28 +307,6 @@ func (fs *SQLiteForPost) Delete(name string) error {
 	}
 
 	return fs.s.meta.From(models.File{}).Where(`post_id=? AND parent_id=?`, fs.pid, file.ID).Delete()
-}
-
-func (fs *SQLiteForPost) Stat(name string) (std_fs.FileInfo, error) {
-	fullName := path.Clean(path.Join(fs.dir, name))
-	if fullName == `.` {
-		return (&models.File{
-			Path:    `.`,
-			Mode:    uint32(std_fs.ModeDir) | 0755,
-			ModTime: time.Now().Unix(),
-			Size:    0,
-		}).InfoFile(), nil
-	}
-
-	var file models.File
-	if err := fs.s.meta.Select(fileFields).Where(`post_id=?`, fs.pid).
-		Where(`path=?`, fullName).Find(&file); err != nil {
-		if taorm.IsNotFoundError(err) {
-			return nil, os.ErrNotExist
-		}
-		return nil, err
-	}
-	return file.InfoFile(), nil
 }
 
 func (fs *SQLiteForPost) Sub(dir string) (std_fs.FS, error) {
@@ -418,7 +393,6 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 	if err := fs.s.meta.Where(`post_id=? AND path=?`, fs.pid, fullName).Find(&old); err == nil {
 		_, err := fs.s.meta.Model(&old).UpdateMap(taorm.M{
 			`updated_at`: now.Unix(),
-			`mode`:       spec.Mode,
 			`mod_time`:   spec.Time,
 			`size`:       spec.Size,
 			`meta`:       meta,
@@ -442,7 +416,6 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 		UpdatedAt: now.Unix(),
 		PostID:    fs.pid,
 		Path:      fullName,
-		Mode:      spec.Mode,
 		ModTime:   int64(spec.Time),
 		Size:      spec.Size,
 		Meta:      meta,
