@@ -146,4 +146,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			alert(e);
 		}
 	});
+
+	vim.bind('n', () => {
+		location.href='/admin/editor?new=1&type=markdown';
+	});
 });
