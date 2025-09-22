@@ -1,5 +1,6 @@
 /**
  * @typedef {import('../dynamic/script.js')} BUNDLE
+ * @typedef {import { Sortable } from "./sortable.js"}
  */
 
 class FilesManager {
@@ -364,6 +365,9 @@ class MyFileList extends HTMLElement {
 					cloned.file = old.file;
 					console.log('拷贝元素', event);
 				},
+				onEnd: () => {
+					this._onUserSorted?.();
+				},
 			},
 		)
 	}
@@ -452,6 +456,9 @@ class MyFileList extends HTMLElement {
 	 */
 	onRetry(callback) {
 		this._onRetry = callback;
+	}
+	onUserSorted(callback) {
+		this._onUserSorted = callback;
 	}
 
 	/**
@@ -745,6 +752,11 @@ class FileManagerDialog {
 			dialog.showModal();
 		});
 		this._fileList.onRetry(this._options.onRetryUploadFile);
+		this._fileList.onUserSorted(()=>{
+			/** @type {HTMLSelectElement} */
+			const select = this._dialog.querySelector('select.sort');
+			select.selectedIndex = 0;
+		});
 
 		this._dialog.querySelector('select.sort').addEventListener('change', e => {
 			this._sortFiles();
