@@ -3,7 +3,6 @@ p.alert {
 	align-items: center;
 	font-weight: bold;
 	font-family: var(--font-mono);
-	
 	svg {
 		// 与非宽屏模式的 svg only child 冲突了
 		// margin-right: .3em;
@@ -11,26 +10,33 @@ p.alert {
 		display: inline-block;
 		filter: none;
 		fill: currentColor;
+		border-radius: unset;
 	}
 }
 
 blockquote:has(p.alert-note) {
-	border-left-color: #0969da;
-	p.alert { color: #0969da;}
+	--border-color: #0969da;
 }
 blockquote:has(p.alert-tip) {
-	border-left-color: #1a7f37;
-	p.alert { color: #1a7f37;}
+	--border-color: #1a7f37;
 }
 blockquote:has(p.alert-important) {
-	border-left-color: #8250df;
-	p.alert { color: #8250df;}
+	--border-color: #8250df;
 }
 blockquote:has(p.alert-warning) {
-	border-left-color: #9a6700;
-	p.alert { color: #9a6700;}
+	--border-color: #9a6700;
 }
 blockquote:has(p.alert-caution) {
-	border-left-color: #cf222e;
-	p.alert { color: #cf222e;}
+	--border-color: #cf222e;
+}
+
+blockquote:has(p:is(.alert-note,.alert-tip,.alert-important,.alert-warning,.alert-caution)) {
+	border: 1px solid var(--border-color);
+	background-color: rgb(from var(--border-color) r g b / .2);
+	p.alert { color: var(--border-color); }
+}
+
+blockquote:has(p.alert) {
+	border-radius: var(--border-radius, 4px);
+	p { margin: 1em 0 !important; }
 }
