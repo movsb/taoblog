@@ -3,6 +3,7 @@ package alerts
 import (
 	"embed"
 	"fmt"
+	"html"
 	"regexp"
 	"strings"
 
@@ -97,11 +98,23 @@ func (e *Alerts) Transform(node *ast.Paragraph, reader text.Reader, pc parser.Co
 	node.SetLines(segments)
 }
 
+var chinese = map[string]string{
+	`note`:      `注意`,
+	`tip`:       `提示`,
+	`important`: `重要`,
+	`warning`:   `警告`,
+	`caution`:   `小心`,
+}
+
 func (e *Alerts) RenderAlert(writer util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
 	a := n.(*Alert)
 	if entering {
 		svg, _ := _embed.ReadFile(fmt.Sprintf(`assets/%s.svg`, strings.ToLower(a.text)))
-		fmt.Fprintf(writer, `<p class="alert alert-%s">%s%s`, strings.ToLower(a.text), svg, strings.Title(a.text))
+		localized := chinese[strings.ToLower(a.text)]
+		if localized == `` {
+			localized = strings.ToUpper(a.text)
+		}
+		fmt.Fprintf(writer, `<p class="alert alert-%s">%s%s`, strings.ToLower(a.text), svg, html.EscapeString(localized))
 		return ast.WalkSkipChildren, nil
 	} else {
 		fmt.Fprintln(writer, `</p>`)
