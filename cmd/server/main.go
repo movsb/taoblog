@@ -216,7 +216,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	cacheDB := migration.InitCache(cfg.Database.Cache)
 	s.fileCache = cache.NewFileCache(ctx, cacheDB)
 
-	postsDB := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
+	postsDB := migration.InitPosts(cfg.Database.Posts, false, s.createFirstPost)
 	defer postsDB.Close()
 
 	s.db = taorm.NewDB(postsDB)

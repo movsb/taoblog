@@ -8,6 +8,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/setup/migration"
 )
 
 type BackupClient struct {
@@ -25,7 +26,10 @@ func (b *BackupClient) Backup(w io.Writer) (outErr error) {
 
 	client := utils.Must1(b.cc.Management.Backup(
 		b.cc.Context(),
-		&proto.BackupRequest{Compress: false},
+		&proto.BackupRequest{
+			ClientDatabaseVersion: int32(migration.MaxVersionNumber()),
+			Compress:              false,
+		},
 	))
 	defer client.CloseSend()
 

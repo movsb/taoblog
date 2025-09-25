@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,9 +20,9 @@ import (
 )
 
 // 初始化文章数据库。
-func InitPosts(path string, createFirstPost bool) *sql.DB {
+func InitPosts(path string, testCompat bool, createFirstPost bool) *sql.DB {
 	db := createDatabase(path)
-	testPosts(db, createFirstPost)
+	testPosts(db, testCompat, createFirstPost)
 	return db
 }
 
@@ -142,10 +143,10 @@ func _initSQL(db *sql.DB, file string) {
 	_ = result
 }
 
-func testPosts(db *sql.DB, createFirstPost bool) {
-	var count int
-	row := db.QueryRow(`select count(1) from options`)
-	if err := row.Scan(&count); err != nil {
+func testPosts(db *sql.DB, testCompat bool, createFirstPost bool) {
+	var ver string
+	row := db.QueryRow(`select value from options where name='db_ver'`)
+	if err := row.Scan(&ver); err != nil {
 		if se, ok := err.(sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
 				initPosts(db)
@@ -177,6 +178,13 @@ func testPosts(db *sql.DB, createFirstPost bool) {
 			}
 		}
 		panic(err)
+	}
+
+	if testCompat {
+		n, _ := strconv.Atoi(ver)
+		if n != MaxVersionNumber() {
+			log.Fatalln(`不兼容的数据库版本。`)
+		}
 	}
 }
 

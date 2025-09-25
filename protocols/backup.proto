@@ -8,6 +8,9 @@ message BackupRequest {
 	// 是否需要去除日志（邮件、通知……）
 	// 本地备份用于测试的时候不需要线上的日志。
 	bool remove_logs = 2;
+
+	// 客户端数据库版本号。如果服务器大于此版本号，会出错。
+	int32 client_database_version = 3;
 }
 
 message BackupResponse {

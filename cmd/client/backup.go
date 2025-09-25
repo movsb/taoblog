@@ -21,8 +21,9 @@ import (
 // BackupPosts backups all blog database.
 func (c *Client) Backup(cmd *cobra.Command, compress bool, removeLogs bool) {
 	backupClient, err := c.Management.Backup(c.Context(), &proto.BackupRequest{
-		Compress:   compress,
-		RemoveLogs: removeLogs,
+		ClientDatabaseVersion: int32(migration.MaxVersionNumber()),
+		Compress:              compress,
+		RemoveLogs:            removeLogs,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -134,7 +135,7 @@ func (c *Client) BackupFiles() {
 	defer client.CloseSend()
 
 	localDB := migration.InitFiles(`files.db`)
-	postsDB := migration.InitPosts(`posts.db`, false)
+	postsDB := migration.InitPosts(`posts.db`, true, false)
 	dataStore := storage.NewDataStore(localDB)
 	postsStore := storage.NewSQLite(postsDB, dataStore, nil)
 

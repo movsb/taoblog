@@ -26,6 +26,13 @@ type _ReadCloseSizer struct {
 func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupServer) error {
 	s.MustBeAdmin(srv.Context())
 
+	if req.ClientDatabaseVersion < int32(migration.MaxVersionNumber()) {
+		return status.Errorf(codes.FailedPrecondition,
+			`版本不兼容：server: %d vs. client: %d`,
+			migration.MaxVersionNumber(), req.ClientDatabaseVersion,
+		)
+	}
+
 	sendPreparingProgress := func(progress float32) error {
 		return srv.Send(&proto.BackupResponse{
 			BackupResponseMessage: &proto.BackupResponse_Preparing_{
@@ -44,7 +51,7 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 
 	if req.RemoveLogs {
 		func() {
-			db := migration.InitPosts(path, false)
+			db := migration.InitPosts(path, true, false)
 			defer db.Close()
 			logs := logs.NewLogStore(db)
 			logs.DeleteAllLogs(context.Background())
