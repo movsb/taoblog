@@ -143,12 +143,9 @@ type ErrorData struct {
 
 // TODO 这个函数好像已经没有存在的意义？
 func (d *Data) Strip(obj any) (any, error) {
-	user := auth.Context(d.Context).User
+	// user := auth.Context(d.Context).User
 	switch typed := obj.(type) {
 	case *Post:
-		if user.ID == int64(typed.UserId) {
-			return typed.Post, nil
-		}
 		return &proto.Post{
 			Id:       typed.Id,
 			Date:     typed.Date,
