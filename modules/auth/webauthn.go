@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/phuslu/lru"
 )
@@ -157,7 +158,7 @@ func (a *WebAuthn) FinishLogin(w http.ResponseWriter, r *http.Request) {
 	a.auth.AddWebAuthnCredential(outUser, credential)
 	log.Println("登录成功，凭证已更新")
 
-	a.auth.MakeCookie(outUser, w, r)
+	cookies.MakeCookie(w, r, int(outUser.ID), outUser.Password, outUser.Nickname)
 
 	w.WriteHeader(http.StatusOK)
 }

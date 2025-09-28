@@ -3,7 +3,6 @@ package auth
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
 	"crypto/subtle"
 	"database/sql"
 	"fmt"
@@ -11,12 +10,11 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils/db"
-	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
@@ -104,19 +102,6 @@ func (o *Auth) DropUserCache(id int) {
 	o.userCache.Delete(id)
 }
 
-func login(username, password string) string {
-	return fmt.Sprintf(
-		`%s:%s`,
-		username,
-		shasum(password),
-	)
-}
-
-func shasum(in string) string {
-	h := sha1.Sum([]byte(in))
-	return fmt.Sprintf("%x", h)
-}
-
 // https://x.com/sebastienlorber/status/1932367017065025675
 func constantEqual(x, y string) bool {
 	return subtle.ConstantTimeCompare([]byte(x), []byte(y)) == 1
@@ -135,7 +120,7 @@ func (o *Auth) AuthLogin(username string, password string) *User {
 }
 
 func (o *Auth) authRequest(req *http.Request) *User {
-	loginCookie, err := req.Cookie(CookieNameLogin)
+	loginCookie, err := req.Cookie(cookies.CookieNameLogin)
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
 			if id, token, ok := ParseAuthorization(a); ok {
@@ -151,25 +136,17 @@ func (o *Auth) authRequest(req *http.Request) *User {
 }
 
 func (o *Auth) authCookie(login string, userAgent string) *User {
-	if userAgent == "" {
-		return guest
-	}
+	var user *models.User
 
-	splits := strings.Split(login, `:`)
-	if len(splits) != 2 {
-		return guest
-	}
-	id, err := strconv.Atoi(splits[0])
-	if err != nil {
-		return guest
-	}
-	u, err := o.GetUserByID(context.TODO(), int64(id))
-	if err != nil {
-		return guest
-	}
-
-	if login == cookieValue(userAgent, splits[0], u.Password) {
-		return &User{u}
+	if cookies.ValidateCookieValue(login, userAgent, func(userID int) (password string) {
+		u, err := o.GetUserByID(context.TODO(), int64(userID))
+		if err != nil {
+			return ``
+		}
+		user = u
+		return u.Password
+	}) {
+		return &User{user}
 	}
 
 	return guest
@@ -252,109 +229,25 @@ func (o *Auth) AuthGitHub(code string) *User {
 	*/
 }
 
-const (
-	CookieNameLogin    = `taoblog.login`
-	CookieNameUserID   = `taoblog.user_id`
-	CookieNameNickname = `taoblog.nickname`
-)
-
-func cookieValue(userAgent, username, password string) string {
-	return username + ":" + shasum(userAgent+login(username, password))
-}
-
-const maxAge = time.Hour * 24 * 7
-
-func (a *Auth) MakeCookie(u *User, w http.ResponseWriter, r *http.Request) {
-	agent := r.Header.Get("User-Agent")
-	cookie := cookieValue(agent, fmt.Sprint(u.ID), u.Password)
-	secure := !version.DevMode()
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieNameLogin,
-		Value:    cookie,
-		MaxAge:   int(maxAge.Seconds()),
-		Path:     `/`,
-		Domain:   ``,
-		Secure:   secure,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-	// 只用于前端展示使用，不能用作凭证。
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieNameUserID,
-		Value:    fmt.Sprint(u.ID),
-		MaxAge:   int(maxAge.Seconds()),
-		Path:     `/`,
-		Domain:   ``,
-		Secure:   secure,
-		HttpOnly: false,
-		SameSite: http.SameSiteLaxMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieNameNickname,
-		Value:    url.PathEscape(u.Nickname),
-		MaxAge:   int(maxAge.Seconds()),
-		Path:     `/`,
-		Domain:   ``,
-		Secure:   secure,
-		HttpOnly: false,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
 func (a *Auth) GenCookieForPasskeys(u *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie {
-	cookie := cookieValue(agent, fmt.Sprint(u.ID), u.Password)
+	cookie := cookies.CookieValue(agent, int(u.ID), u.Password)
 	return []*proto.FinishPasskeysLoginResponse_Cookie{
 		{
-			Name:     CookieNameLogin,
+			Name:     cookies.CookieNameLogin,
 			Value:    cookie,
 			HttpOnly: true,
 		},
 		{
-			Name:     CookieNameUserID,
+			Name:     cookies.CookieNameUserID,
 			Value:    fmt.Sprint(u.ID),
 			HttpOnly: false,
 		},
 		{
-			Name:     CookieNameNickname,
+			Name:     cookies.CookieNameNickname,
 			Value:    url.PathEscape(u.Nickname),
 			HttpOnly: false,
 		},
 	}
-}
-
-// RemoveCookie ...
-func (a *Auth) RemoveCookie(w http.ResponseWriter) {
-	secure := !version.DevMode()
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieNameLogin,
-		Value:    ``,
-		MaxAge:   -1,
-		Path:     `/`,
-		Domain:   ``,
-		Secure:   secure,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieNameUserID,
-		Value:    ``,
-		MaxAge:   -1,
-		Path:     `/`,
-		Domain:   ``,
-		Secure:   secure,
-		HttpOnly: false,
-		SameSite: http.SameSiteLaxMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieNameNickname,
-		Value:    ``,
-		MaxAge:   -1,
-		Path:     `/`,
-		Domain:   ``,
-		Secure:   secure,
-		HttpOnly: false,
-		SameSite: http.SameSiteLaxMode,
-	})
 }
 
 // 仅用于测试的帐号。
@@ -362,7 +255,7 @@ func (a *Auth) RemoveCookie(w http.ResponseWriter) {
 func TestingUserContextForClient(user *User) context.Context {
 	const userAgent = `go_test`
 	md := metadata.Pairs()
-	md.Append(GatewayCookie, cookieValue(userAgent, fmt.Sprint(user.ID), user.Password))
+	md.Append(GatewayCookie, cookies.CookieValue(userAgent, int(user.ID), user.Password))
 	md.Append(GatewayUserAgent, userAgent)
 	md.Append(`Authorization`, fmt.Sprintf(`token %d:%s`, user.ID, user.Password))
 	return metadata.NewOutgoingContext(context.TODO(), md)

@@ -21,6 +21,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -240,11 +241,11 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) getLogout(w http.ResponseWriter, r *http.Request) {
-	a.auth.RemoveCookie(w)
+	cookies.RemoveCookie(w)
 	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
 }
 func (a *Admin) postLogout(w http.ResponseWriter, r *http.Request) {
-	a.auth.RemoveCookie(w)
+	cookies.RemoveCookie(w)
 }
 
 type ProfileData struct {

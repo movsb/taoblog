@@ -12,6 +12,7 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"google.golang.org/grpc"
@@ -186,12 +187,12 @@ func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) contex
 		userAgent string
 	)
 
-	if cookies := md.Get(GatewayCookie); len(cookies) > 0 {
+	if cs := md.Get(GatewayCookie); len(cs) > 0 {
 		header := http.Header{}
-		for _, cookie := range cookies {
+		for _, cookie := range cs {
 			header.Add(`Cookie`, cookie)
 		}
-		if loginCookie, err := (&http.Request{Header: header}).Cookie(CookieNameLogin); err == nil {
+		if loginCookie, err := (&http.Request{Header: header}).Cookie(cookies.CookieNameLogin); err == nil {
 			login = loginCookie.Value
 		}
 	}

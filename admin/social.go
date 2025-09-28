@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/pquerna/otp/totp"
 )
 
@@ -42,7 +43,7 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	a.auth.MakeCookie(user, w, r)
+	cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
 	w.WriteHeader(http.StatusOK)
 
 	// 如果没有设置 OTP，强制提醒设置。
@@ -57,7 +58,7 @@ func (a *Admin) loginByGithub(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	user := a.auth.AuthGitHub(code)
 	if user.IsAdmin() {
-		a.auth.MakeCookie(user, w, r)
+		cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
 		http.Redirect(w, r, `/`, http.StatusFound)
 	} else {
 		http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
@@ -77,7 +78,7 @@ func (a *Admin) loginByGoogle(w http.ResponseWriter, r *http.Request) {
 	}
 	user := a.auth.AuthGoogle(t.Token)
 	if user.IsAdmin() {
-		a.auth.MakeCookie(user, w, r)
+		cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
