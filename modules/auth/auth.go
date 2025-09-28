@@ -119,7 +119,7 @@ func (o *Auth) AuthLogin(username string, password string) *User {
 	return guest
 }
 
-func (o *Auth) authRequest(req *http.Request) *User {
+func (o *Auth) authRequest(w http.ResponseWriter, req *http.Request) *User {
 	loginCookie, err := req.Cookie(cookies.CookieNameLogin)
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
@@ -132,24 +132,32 @@ func (o *Auth) authRequest(req *http.Request) *User {
 
 	login := loginCookie.Value
 	userAgent := req.Header.Get(`User-Agent`)
-	return o.authCookie(login, userAgent)
+	user, refresh := o.authCookie(login, userAgent)
+
+	// 只在 home 的时候检测并刷新 cookies，避免太频繁。
+	if refresh && req.URL.Path == `/` {
+		cookies.MakeCookie(w, req, int(user.ID), user.Password, user.Nickname)
+	}
+
+	return user
 }
 
-func (o *Auth) authCookie(login string, userAgent string) *User {
+func (o *Auth) authCookie(login string, userAgent string) (*User, bool) {
 	var user *models.User
 
-	if cookies.ValidateCookieValue(login, userAgent, func(userID int) (password string) {
+	valid, refresh := cookies.ValidateCookieValue(login, userAgent, func(userID int) (password string) {
 		u, err := o.GetUserByID(context.TODO(), int64(userID))
 		if err != nil {
 			return ``
 		}
 		user = u
 		return u.Password
-	}) {
-		return &User{user}
+	})
+	if !valid {
+		return guest, false
 	}
 
-	return guest
+	return &User{user}, refresh
 }
 
 func (o *Auth) AuthGoogle(token string) *User {

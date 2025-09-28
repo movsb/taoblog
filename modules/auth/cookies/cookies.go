@@ -45,14 +45,17 @@ func parseCookieValue(value string) (userID int, sum string, tm time.Time) {
 	return
 }
 
-func ValidateCookieValue(value string, userAgent string, getUser func(userID int) (password string)) bool {
+// 返回是否有效，是否应该刷新。
+func ValidateCookieValue(value string, userAgent string, getUser func(userID int) (password string)) (bool, bool) {
 	if userAgent == `` {
-		return false
+		return false, false
 	}
 	userID, _, tm := parseCookieValue(value)
 	password := getUser(userID)
+
 	expect := cookieValue(userAgent, userID, password, tm)
-	return value == expect
+	refresh := time.Since(tm) > maxAge/2
+	return value == expect, refresh
 }
 
 const maxAge = time.Hour * 24 * 7
@@ -126,8 +129,4 @@ func RemoveCookie(w http.ResponseWriter) {
 		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
-}
-
-func RefreshCookies(w http.ResponseWriter, r *http.Request) {
-
 }
