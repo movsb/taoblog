@@ -1,1 +1,1 @@
-../gateway/FEATURES.md
+../gateway/handlers/features/FEATURES.md
