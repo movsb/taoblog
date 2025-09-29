@@ -101,7 +101,8 @@ function redirect(to) {
 					try { obj = await resp.json();}
 					catch (e) { console.log(e); }
 
-					if(obj.otp_not_set) {
+					const args = new URLSearchParams(location.search);
+					if(obj.otp_not_set && args.get('u') == '/admin/') {
 						redirect('otp?prompt=1')
 					} else {
 						redirect();

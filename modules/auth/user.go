@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 )
@@ -26,14 +27,15 @@ func (u *User) IsAdmin() bool {
 }
 
 func (u *User) IsSystem() bool {
-	return u.ID == int64(systemID)
+	return u.ID == int64(SystemID)
 }
 
 func (u *User) tokenValue() string {
-	if u.IsSystem() {
-		return fmt.Sprintf(`%d:%s`, u.ID, systemKey)
-	}
-	return fmt.Sprintf(`%d:%s`, u.ID, u.Password)
+	return cookies.TokenValue(int(u.ID), u.Password)
+}
+
+func (u *User) AuthorizationValue() string {
+	return cookies.TokenName + ` ` + u.tokenValue()
 }
 
 var _ webauthn.User = (*WebAuthnUser)(nil)
@@ -78,18 +80,17 @@ var (
 			Nickname: `未登录用户`,
 		},
 	}
-	// TODO 怎么确保程序重启后一定不一样？
-	systemKey = randomKey()
-	systemID  = 1
-	system    = &User{
+	SystemID = 1
+	system   = &User{
 		User: &models.User{
-			ID: int64(systemID),
+			ID:       int64(SystemID),
+			Password: randomKey(),
 		},
 	}
 	AdminID = 2
 )
 
 // 仅能同进程内使用。
-func SystemToken() string {
+func SystemTokenValue() string {
 	return system.tokenValue()
 }

@@ -2,7 +2,6 @@ package e2e_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/movsb/taoblog/cmd/config"
@@ -17,6 +16,8 @@ import (
 type R struct {
 	server *server.Server
 	client *clients.ProtoClient
+
+	system context.Context
 	admin  context.Context
 	guest  context.Context
 	user1  context.Context
@@ -48,6 +49,7 @@ func Serve(ctx context.Context, options ...server.With) *R {
 
 	r.client = clients.NewFromAddress(r.server.GRPCAddr(), ``)
 
+	r.system = onBehalfOf(r, int64(auth.SystemID))
 	r.admin = onBehalfOf(r, int64(auth.AdminID))
 	r.guest = context.Background()
 
@@ -68,5 +70,5 @@ func onBehalfOf(r *R, user int64) context.Context {
 
 func (r *R) addAuth(req *http.Request, user int64) {
 	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(context.TODO(), user))}
-	req.Header.Set(`Authorization`, fmt.Sprintf(`token %d:%s`, u.ID, u.Password))
+	req.Header.Set(`Authorization`, u.AuthorizationValue())
 }

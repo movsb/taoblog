@@ -48,7 +48,7 @@ func (o *Auth) getDB(ctx context.Context) *taorm.DB {
 // TODO: 改成接口。
 // NOTE: 错误的时候也会缓存，nil 值，以避免不必要的查询。
 func (o *Auth) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
-	if id == int64(systemID) {
+	if id == int64(SystemID) {
 		return system.User, nil
 	}
 
@@ -108,13 +108,22 @@ func constantEqual(x, y string) bool {
 }
 
 // 增加用户系统后，用户名是用户编号。
+// 通过纯用户名/密码登录。
 func (o *Auth) AuthLogin(username string, password string) *User {
 	id, err := strconv.Atoi(username)
 	if err == nil {
-		u, err := o.userByKey(id, password)
+		u, err := o.userByPasswordOrToken(id, password, ``)
 		if err == nil {
 			return &User{u}
 		}
+	}
+	return guest
+}
+
+func (o *Auth) AuthToken(id int, token string) *User {
+	u, err := o.userByPasswordOrToken(id, ``, token)
+	if err == nil {
+		return &User{u}
 	}
 	return guest
 }
@@ -123,9 +132,8 @@ func (o *Auth) authRequest(w http.ResponseWriter, req *http.Request) *User {
 	loginCookie, err := req.Cookie(cookies.CookieNameLogin)
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
-			if id, token, ok := ParseAuthorization(a); ok {
-				return o.AuthLogin(fmt.Sprint(id), token)
-			}
+			id, token, _ := cookies.ParseAuthorization(a)
+			return o.AuthToken(id, token)
 		}
 		return guest
 	}
@@ -265,7 +273,7 @@ func TestingUserContextForClient(user *User) context.Context {
 	md := metadata.Pairs()
 	md.Append(GatewayCookie, cookies.CookieValue(userAgent, int(user.ID), user.Password))
 	md.Append(GatewayUserAgent, userAgent)
-	md.Append(`Authorization`, fmt.Sprintf(`token %d:%s`, user.ID, user.Password))
+	md.Append(`Authorization`, user.AuthorizationValue())
 	return metadata.NewOutgoingContext(context.TODO(), md)
 }
 

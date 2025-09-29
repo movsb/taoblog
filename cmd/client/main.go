@@ -21,6 +21,7 @@ import (
 	client_common "github.com/movsb/taoblog/cmd/client/common"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
+	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/spf13/cobra"
@@ -47,26 +48,84 @@ func InitHostConfigs() HostConfig {
 		panic(err)
 	}
 
-	// select which host to use
-	host := os.Getenv("HOST")
-	if host == "" {
-		host = "blog"
-		if version.DevMode() {
-			host = `blog.local`
+	name := utils.IIF(version.DevMode(), `dev`, `live`)
+	hostConfig, ok := hostConfigs[name]
+	if !ok {
+		panic("cannot find init config for host: " + name)
+	}
+
+	return hostConfig
+}
+
+func saveHostConfig(name string, home string, token string) {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	path := filepath.Join(usr.HomeDir, "/.taoblog.yml")
+	fp, err := os.Open(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			panic("cannot read init config: " + path)
 		}
 	}
-	hostConfig, ok := hostConfigs[host]
-	if !ok {
-		panic("cannot find init config for host: " + host)
+	hostConfigs := map[string]HostConfig{}
+	ymlDec := yaml.NewDecoder(fp)
+	if err := ymlDec.Decode(&hostConfigs); err != nil {
+		panic(err)
 	}
-	return hostConfig
+	fp.Close()
+
+	fp = utils.Must1(os.Create(path))
+	defer fp.Close()
+
+	hostConfigs[name] = HostConfig{
+		Home:  home,
+		Token: token,
+	}
+
+	yaml.NewEncoder(fp).Encode(hostConfigs)
 }
 
 var config HostConfig
 var client *Client
 
-// AddCommands ...
 func AddCommands(rootCmd *cobra.Command) {
+	loginCmd := &cobra.Command{
+		Use:   `login <home url>`,
+		Short: `登录到站点`,
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			homeURL, err := url.Parse(args[0])
+			if err != nil {
+				log.Fatalln(err)
+			}
+			// 用于生成登录挑战，不需要 token。
+			client := clients.NewFromHome(homeURL.String(), ``)
+			beginLogin := utils.Must1(client.Auth.ClientLogin(client.Context(), &proto.ClientLoginRequest{}))
+			defer beginLogin.CloseSend()
+
+			save := func(token string) {
+				name := utils.IIF(version.DevMode(), `dev`, `live`)
+				saveHostConfig(name, homeURL.String(), token)
+			}
+
+			for {
+				rsp := utils.Must1(beginLogin.Recv())
+				if open := rsp.GetOpen(); open != nil {
+					fmt.Println(`Open URL:`, open.AuthUrl)
+					continue
+				}
+				if succ := rsp.GetSuccess(); succ != nil {
+					save(succ.Token)
+					fmt.Println(`Success.`)
+					break
+				}
+			}
+		},
+	}
+	rootCmd.AddCommand(loginCmd)
+
 	preRun := func(cmd *cobra.Command, args []string) {
 		config = InitHostConfigs()
 		client = NewClient(config)

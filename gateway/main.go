@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "embed"
@@ -185,8 +186,14 @@ func userFromRequestContext(g *Gateway, r *http.Request) *auth.User {
 	return auth.Context(r.Context()).User
 }
 func userFromRequestQuery(g *Gateway, r *http.Request) *auth.User {
-	id, token, _ := auth.ParseAuthorizationValue(r.URL.Query().Get(`auth`))
-	return g.auther.AuthLogin(fmt.Sprint(id), token)
+	// TODO: 这里是密码，需要修复。
+	// auth: id:password
+	auth := r.URL.Query().Get(`auth`)
+	parts := strings.Split(auth, `:`)
+	if len(parts) != 2 {
+		parts = []string{``, ``}
+	}
+	return g.auther.AuthLogin(parts[0], parts[1])
 }
 
 func (g *Gateway) nonGuestHandler(fns ...AuthFunc) func(http.Handler) http.Handler {

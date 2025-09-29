@@ -285,7 +285,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		go s.createBackupTasks(ctx, cfg)
 	}
 	if s.initGitSyncTask {
-		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemToken()))
+		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue()))
 	}
 	if s.initMonitorDomain {
 		theService.SetDomainDays(-1)
@@ -385,6 +385,7 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 		panic(err)
 	}
 	p := auth.NewPasskeys(
+		u,
 		taorm.NewDB(db), wa,
 		theAuth.GenCookieForPasskeys,
 		theAuth.DropUserCache,
@@ -473,7 +474,7 @@ func (s *Server) createBackupTasks(
 	ctx context.Context,
 	cfg *config.Config,
 ) {
-	client := clients.NewFromAddress(s.GRPCAddr(), auth.SystemToken())
+	client := clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue())
 	ctx = auth.SystemForGateway(ctx)
 	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled && !version.DevMode() {
 		b := utils.Must1(backups.New(

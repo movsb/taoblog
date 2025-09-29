@@ -157,6 +157,7 @@ func (a *Admin) Handler() http.Handler {
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
 	m.HandleFunc(`GET /login/github`, a.loginByGithub)
 	m.HandleFunc(`POST /login/google`, a.loginByGoogle)
+	m.HandleFunc(`/login/client`, a.loginByClient)
 
 	const webAuthnPrefix = `/login/webauthn/`
 	m.Handle(webAuthnPrefix, a.webAuthn.Handler(webAuthnPrefix))

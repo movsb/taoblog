@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>授权</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="/style.css">
+{{ apply_site_theme_customs }}
+<script src="/script.js"></script>
+</head>
+<body class="admin client">
+<div id="wrapper">
+{{ if .Authorized }} 
+<div>已授权登录，请关闭此窗口。</div>
+{{ else }}
+<div>
+	<form method="post">
+		<input type="submit" value="立即授权">
+	</form>
+</div>
+{{ end }}
+</div>
+</body>
+</html>

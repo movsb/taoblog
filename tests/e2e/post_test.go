@@ -313,7 +313,7 @@ func TestRSS(t *testing.T) {
 		req := utils.Must1(http.NewRequestWithContext(
 			context.Background(),
 			http.MethodGet, rssURL, nil))
-		req.Header.Add(`Authorization`, `token `+auth.SystemToken())
+		r.addAuth(req, int64(auth.SystemID))
 		rsp := utils.Must1(http.DefaultClient.Do(req))
 		if rsp.StatusCode != 200 {
 			t.Fatal(`statusCode != 200`)

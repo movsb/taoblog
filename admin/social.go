@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/auth/cookies"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/pquerna/otp/totp"
 )
 
@@ -52,6 +55,47 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 			`otp_not_set`: true,
 		})
 	}
+}
+
+type _ClientLoginData struct {
+	Authorized bool
+}
+
+// 同时处理登录跳转、未授权页面、已授权页面。
+func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
+	random := r.URL.Query().Get(`random`)
+	if random == `` {
+		http.Error(w, `无效登录信息。`, 400)
+		return
+	}
+
+	ac := auth.Context(r.Context())
+
+	// 授权进行页面。
+	if !ac.User.IsGuest() && r.Method == http.MethodGet {
+		a.executeTemplate(w, `client.html`, _ClientLoginData{
+			Authorized: false,
+		})
+		return
+	}
+
+	// 授权完成页面。
+	if !ac.User.IsGuest() && r.Method == http.MethodPost {
+		a.auth.Passkeys.SetClientLoginToken(random, cookies.TokenValue(int(ac.User.ID), ac.User.Password))
+		a.executeTemplate(w, `client.html`, _ClientLoginData{
+			Authorized: true,
+		})
+		return
+	}
+
+	// 登录重定向页面。
+	u := utils.Must1(url.Parse(a.prefixed(`/login/client`)))
+	q := u.Query()
+	q.Set(`random`, random)
+	q.Set(`authorized`, `0`)
+	u.RawQuery = q.Encode()
+
+	a.redirectToLogin(w, r, u.String())
 }
 
 func (a *Admin) loginByGithub(w http.ResponseWriter, r *http.Request) {

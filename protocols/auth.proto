@@ -2,6 +2,23 @@ syntax = "proto3";
 package protocols;
 option go_package = "github.com/movsb/taoblog/proto";
 
+// 本地客户端登录请求。
+message ClientLoginRequest {}
+message ClientLoginResponse {
+	message Open {
+		// 需要在浏览器上打开此链接来授权。
+		string auth_url = 1;
+	}
+	message Success {
+		string token = 1;
+	}
+
+	oneof Response {
+		Open open = 1;
+		Success success = 2;
+	}
+}
+
 // 开始使用 Passkeys 登录的请求。
 message BeginPasskeysLoginRequest {}
 

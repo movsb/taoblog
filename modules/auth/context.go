@@ -3,11 +3,9 @@ package auth
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net"
 	"net/http"
 	"net/netip"
-	"strconv"
 	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -94,7 +92,7 @@ func GuestForLocal(ctx context.Context) context.Context {
 
 // 只能用于 Gateway，充当 System 用户。
 func SystemForGateway(ctx context.Context) context.Context {
-	md := metadata.Pairs(`Authorization`, `token `+system.tokenValue())
+	md := metadata.Pairs(`Authorization`, system.AuthorizationValue())
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
@@ -208,14 +206,12 @@ func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) contex
 	return _NewContext(ctx, user, remoteAddr, userAgent)
 }
 
-const TokenName = `token`
-
 // 把 Client 的 Token 转换成已登录用户。
 // 适用于服务端代码功能。
 func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = addUserContextToInterceptorForToken(ctx, func(id int, key string) *User {
-			u, err := a.userByKey(id, key)
+		ctx = addUserContextToInterceptorForToken(ctx, func(id int, token string) *User {
+			u, err := a.userByPasswordOrToken(id, ``, token)
 			if err == nil {
 				return &User{User: u}
 			}
@@ -229,8 +225,8 @@ func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerIntercept
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream: ss,
-			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), func(id int, key string) *User {
-				u, err := a.userByKey(id, key)
+			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), func(id int, token string) *User {
+				u, err := a.userByPasswordOrToken(id, ``, token)
 				if err == nil {
 					return &User{User: u}
 				}
@@ -241,24 +237,27 @@ func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerIntercept
 	}
 }
 
-func (a *Auth) userByKey(id int, key string) (*models.User, error) {
+func (a *Auth) userByPasswordOrToken(id int, password, token string) (*models.User, error) {
 	u, err := a.GetUserByID(context.Background(), int64(id))
 	if err != nil {
 		return nil, err
 	}
-	if u.ID == int64(systemID) && constantEqual(key, systemKey) {
-		return u, nil
-	}
 
-	if constantEqual(key, u.Password) {
-		return u, nil
+	if password != `` {
+		if constantEqual(password, u.Password) {
+			return u, nil
+		}
+	} else if token != `` {
+		if constantEqual(token, cookies.TokenValue(int(u.ID), u.Password)) {
+			return u, nil
+		}
 	}
 
 	return nil, sql.ErrNoRows
 }
 
 // TODO 密码错误的时候返回错误而不是游客。
-func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id int, key string) *User) context.Context {
+func addUserContextToInterceptorForToken(ctx context.Context, userByToken func(id int, token string) *User) context.Context {
 	if ac := _Context(ctx); ac != nil {
 		return ctx
 	}
@@ -273,12 +272,12 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id 
 		return ctx
 	}
 
-	id, token, ok := ParseAuthorization(authorizations[0])
+	id, token, ok := cookies.ParseAuthorization(authorizations[0])
 	if !ok {
 		return ctx
 	}
 
-	user := userByKey(id, token)
+	user := userByToken(id, token)
 
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
 
@@ -288,32 +287,6 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByKey func(id 
 	}
 
 	return _NewContext(ctx, user, remoteAddr, userAgent)
-}
-
-func ParseAuthorization(a string) (int, string, bool) {
-	splits := strings.Fields(a)
-	if len(splits) != 2 {
-		return 0, "", false
-	}
-	if splits[0] != TokenName {
-		return 0, "", false
-	}
-	return ParseAuthorizationValue(splits[1])
-}
-
-func ParseAuthorizationValue(v string) (int, string, bool) {
-	splits := strings.Split(v, `:`)
-	if len(splits) != 2 {
-		return 0, "", false
-	}
-
-	id, err := strconv.Atoi(splits[0])
-	if err != nil {
-		log.Println(err)
-		return 0, "", false
-	}
-
-	return id, splits[1], true
 }
 
 // grpc 服务是被代理过的，所以从 peer.Peer 拿到的是错误的。

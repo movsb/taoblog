@@ -10,7 +10,7 @@ import (
 
 	"github.com/movsb/http2tcp"
 	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc"
@@ -63,7 +63,7 @@ func (c *ProtoClient) ContextFrom(parent context.Context) context.Context {
 	if c.token == "" {
 		return parent
 	}
-	authValue := fmt.Sprintf(`%s %s`, auth.TokenName, c.token)
+	authValue := fmt.Sprintf(`%s %s`, cookies.TokenName, c.token)
 	return metadata.NewOutgoingContext(parent, metadata.Pairs(`Authorization`, authValue))
 }
 

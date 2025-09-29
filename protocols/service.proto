@@ -59,6 +59,8 @@ service Auth {
 	rpc BeginPasskeysLogin (BeginPasskeysLoginRequest) returns (BeginPasskeysLoginResponse);
 	rpc FinishPasskeysLogin (FinishPasskeysLoginRequest) returns (FinishPasskeysLoginResponse);
 
+	rpc ClientLogin (ClientLoginRequest) returns (stream ClientLoginResponse);
+
 	rpc CreateUser (User) returns (User) {
 		option (google.api.http) = {
 			post: "/v3/users";

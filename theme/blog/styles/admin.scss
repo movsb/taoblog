@@ -49,6 +49,14 @@ body.admin.reorder {
 	}
 }
 
+body.admin.client {
+	display: flex;
+	height: 100vh;
+	#wrapper {
+		margin: auto;
+	}
+}
+
 body.admin.login {
 	margin: 0;
 	padding: 1em;
