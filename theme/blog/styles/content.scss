@@ -260,8 +260,8 @@ article {
 }
 
 // 预览的时候不限制媒体的显示尺寸，以方便设定缩放参数。
-#preview-container {
-	iframe, img, svg, video {
-		max-width: unset;
-	}
-}
+// #preview-container {
+// 	iframe, img, svg, video {
+// 		max-width: unset;
+// 	}
+// }
