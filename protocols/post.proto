@@ -8,6 +8,7 @@ import "comment.proto";
 message Metas {
 	message Geo {
 		string name = 1;
+		// WGS-84 (not GCJ-02) 坐标。
 		float longitude = 2;
 		float latitude = 3;
 		// 是否私有地址。私有地址不对外展示。

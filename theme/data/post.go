@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"log"
 	"strings"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
+
+	wgs2gcj "github.com/googollee/eviltransform/go"
 )
 
 // PostData ...
@@ -179,14 +182,39 @@ func (p *Post) Wide() bool {
 }
 
 var geoTmpl = template.Must(template.New(`geo`).Parse(`
-<geo-link longitude="{{.Longitude}}" latitude="{{.Latitude}}">{{.Name}}</geo-link>
+<geo-link name="{{.Name}}" wgs84="{{.WGS84Array}}" gcj02="{{.GCJ02Array}}"></geo-link>
 `))
+
+type _GeoData struct {
+	Name string
+	// [latitude,longitude]
+	wgs84 [2]float32
+	gcj02 [2]float32
+}
+
+func (g _GeoData) WGS84Array() string {
+	return fmt.Sprintf(`[%f,%f]`, g.wgs84[0], g.wgs84[1])
+}
+func (g _GeoData) GCJ02Array() string {
+	return fmt.Sprintf(`[%f,%f]`, g.gcj02[0], g.gcj02[1])
+}
+
+func geoData(g *proto.Metas_Geo) _GeoData {
+	lat, lng := wgs2gcj.WGStoGCJ(float64(g.Latitude), float64(g.Longitude))
+	return _GeoData{
+		Name:  g.Name,
+		wgs84: [2]float32{g.Latitude, g.Longitude},
+		gcj02: [2]float32{float32(lat), float32(lng)},
+	}
+}
 
 func (d *Post) GeoElement() template.HTML {
 	g := d.GetMetas().GetGeo()
-	if g != nil && !g.Private && g.Longitude > 0 && g.Latitude > 0 && g.Name != "" {
+	if g != nil && !g.Private && g.Longitude != 0 && g.Latitude != 0 && g.Name != "" {
 		var buf bytes.Buffer
-		geoTmpl.Execute(&buf, g)
+		if err := geoTmpl.Execute(&buf, geoData(g)); err != nil {
+			log.Println(err)
+		}
 		return template.HTML(buf.String())
 	}
 	return ``

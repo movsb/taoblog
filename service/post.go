@@ -611,7 +611,8 @@ func (s *Service) getPostTitle(ctx context.Context, id int32) (string, error) {
 func isUpdatingUntitledPost(p *models.Post) bool {
 	return p.Date == p.Modified &&
 		p.Title == models.Untitled &&
-		(p.Source == models.UntitledSourceMarkdown)
+		(p.Source == models.UntitledSourceMarkdown) &&
+		(p.Metas.Geo == nil || p.Metas.Geo.Latitude == 0)
 }
 
 // 更新文章。

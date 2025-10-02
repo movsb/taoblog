@@ -95,41 +95,45 @@ class TimeWithZone {
 }
 
 class GeoLink extends HTMLElement {
-	constructor() {
-		super();
-		this.addEventListener('click', this.navigate);
-	}
 	connectedCallback() {
-		this.classList.add('like-a');
-		this.style.color = `inherit`;
-		this.style.cursor = 'pointer';
+		const a = document.createElement('a');
+		this.init(a);
+		this.appendChild(a);
 	}
-	navigate(event) {
-		const longitude = this.getAttribute('longitude');
-		const latitude = this.getAttribute('latitude');
-		this.openMap(longitude, latitude);
-	}
-	// 怎样在浏览器里面调用打开系统地图的链接。
-	// 增加了通过时区判断是否在中国，决定是否回退到谷歌打开。
-	openMap(lon, lat) {
-		const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+	/**
+	 * 
+	 * @param {HTMLAnchorElement} a 
+	 */
+	init(a) {
+		a.innerText = this.getAttribute('name');
+
+		const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		const maybeChina = /Asia\/(Shanghai|Beijing|Chongqing)/.test(timezone);
+
+		const [lat,lon] = JSON.parse(this.getAttribute(maybeChina ? 'gcj02' : 'wgs84'));
+
+		// 怎样在浏览器里面调用打开系统地图的链接。
+		// 增加了通过时区判断是否在中国，决定是否回退到谷歌打开。
+		// 对应中国，是 GCJ02 坐标。否则为 WGS04 坐标。
+		// [对国内地图坐标系统的一些观察 - 陪她去流浪](https://blog.twofei.com/1967/)
+		const isIOS = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
 		const isAndroid = /Android/.test(navigator.userAgent);
 
 		if (isIOS) {
-			// Apple Maps
-			window.location.href = `maps://?q=${lat},${lon}`;
+			// 在 ios/firefox 上不工作，换成 http 链接。
+			// a.href = `maps://?q=${lat},${lon}`;
+			// [Adopting unified Maps URLs | Apple Developer Documentation](https://developer.apple.com/documentation/mapkit/unified-map-urls)
+			// 还是好像还是不能工作，垃圾 firefox。
+			a.href = `https://maps.apple.com?query=${lat},${lon}`;
 		} else if (isAndroid) {
-			// Android Maps
-			window.location.href = `geo:${lat},${lon}`;
+			a.href = `geo:${lat},${lon}`;
 		} else {
-			const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			const maybeChina = /Asia\/(Shanghai|Beijing|Chongqing)/.test(timezone);
-			const encodedTitle = encodeURIComponent(this.innerText);
-			const url = maybeChina
-				? `https://map.baidu.com/?latlng=${lat},${lon}&title=${encodedTitle}`
-				: `https://www.google.com/maps?q=${lat},${lon}`
+			const url = china
+				? `https://uri.amap.com/marker?position=${lon},${lat}`
+				// t=k：卫星图，ChatGPT 说的，谷歌官方没找到文档。
+				: `https://www.google.com/maps?q=${lat},${lon}&t=k`
 				;
-			window.open(url, '_blank');
+			a.href = url;
 		}
 	}
 }
