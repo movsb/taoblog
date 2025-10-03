@@ -1356,6 +1356,8 @@ class PostFormUI {
 		this._api = new PostManagementAPI();
 		/** @type {HTMLFormElement} */
 		this._form = document.querySelector('#main');
+		/** @type {HTMLDivElement} */
+		this._editorContainer = document.querySelector('#editor-container');
 		this._previewCallbackReturned = true;
 		/** @type {HTMLInputElement} */
 		this._files = this._form.querySelector('#files');
@@ -1607,8 +1609,8 @@ class PostFormUI {
 		if(currentPost.source_type == 'markdown') {
 			if (typeof TinyMDE != 'undefined') {
 				this.editor = new TinyMDE.Editor({
-					element: document.querySelector('#editor-container'),
-					textarea: document.querySelector('#editor-container textarea'),
+					element: this._editorContainer,
+					textarea: this._editorContainer.querySelector('textarea'),
 				});
 				this.editorCommands = new TinyMDE.CommandBar({
 					element: document.getElementById('command-container'),
@@ -1636,11 +1638,11 @@ class PostFormUI {
 					],
 				});
 			} else {
-				const editor = document.querySelector('#editor-container textarea[name=source]');
+				const editor = this._editorContainer.querySelector('textarea[name=source]');
 				editor.style.display = 'block';
 			}
 		} else {
-			const editor = document.querySelector('#editor-container textarea[name=source]');
+			const editor = this._editorContainer.querySelector('textarea[name=source]');
 			editor.style.display = 'block';
 		}
 
@@ -1668,6 +1670,20 @@ class PostFormUI {
 			e.stopPropagation();
 			await this._handleSubmit(submit);
 		});
+
+		/** @type {HTMLInputElement} */
+		const fullscreenCheckbox = this._form.elements['fullscreen'];
+		const exitDiv = this._editorContainer.querySelector('.exit-fullscreen');
+		fullscreenCheckbox.addEventListener('change', e => {
+			const checked = fullscreenCheckbox.checked;
+			this._editorContainer.classList.toggle('stretch', checked);
+			exitDiv.style.display = checked ? 'block' : 'none';
+		});
+		exitDiv.querySelector('button').addEventListener('click', e => {
+			this._editorContainer.classList.remove('stretch');
+			exitDiv.style.display = 'none';
+			fullscreenCheckbox.checked = false;
+		});
 	}
 
 	_handleSourceChanged = (content) => {
@@ -1679,7 +1695,7 @@ class PostFormUI {
 		if(!('ontouchstart' in window)) { return; }
 		const wv = window.visualViewport;
 		/** @type {HTMLDivElement} */
-		const ec = document.querySelector('#editor-container');
+		const ec = this._editorContainer;
 		wv?.addEventListener('resize', ()=> {
 			if(wv.width < 500 && wv.height < 500) {
 				ec.classList.add('stretch');
@@ -2109,14 +2125,13 @@ class PostFormUI {
 		if (show) { this.updatePreview(this.source, false); }
 	}
 	setWrap(wrap) {
-		const editorContainer = this._form.querySelector('#editor-container');
 		const diffContainer = this._form.querySelector('#diff-container');
 
 		if(wrap) {
-			editorContainer.classList.remove('no-wrap');
+			this._editorContainer.classList.remove('no-wrap');
 			diffContainer.classList.remove('no-wrap');
 		} else {
-			editorContainer.classList.add('no-wrap');
+			this._editorContainer.classList.add('no-wrap');
 			diffContainer.classList.add('no-wrap');
 		}
 		localStorage.setItem('editor-config-wrap', wrap?'1':'0');

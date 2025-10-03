@@ -198,6 +198,13 @@ body.admin.editor {
 		}
 		#editor-container {
 			font-family: var(--font-mono);
+
+			.exit-fullscreen {
+				display: none;
+				position: absolute;
+				right: 10px;
+				top: 10px;
+			}
 		}
 
 		// 小屏幕下直接占满。
