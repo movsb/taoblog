@@ -12,15 +12,16 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/favicon"
 	"github.com/movsb/taoblog/gateway/handlers/roots"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/crypto"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
+	"github.com/movsb/taoblog/service/modules/calendar"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
@@ -100,6 +101,9 @@ type Service struct {
 	remindersTask *reminders.Task
 	// rss 任务
 	// rssTask *rss.Task
+
+	calendar *calendar.CalenderService
+	aesGCM   *crypto.AesGcm
 
 	// 文章内容缓存。
 	// NOTE：缓存 Key 是跟文章编号和内容选项相关的（因为内容选项不同内容也就不同），
@@ -188,6 +192,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		prefix: ``,
 	}
 
+	s.mustInitCrypto()
+
+	s.calendar = calendar.NewCalendarService(time.Now)
+	mux.HandleFunc(`GET /v3/calendars`, s.handleGetCalendar)
+
 	s.userRoots = roots.New(s.GetPluginStorage(`roots`), s.mux)
 
 	if u, err := url.Parse(cfg.Site.Home); err != nil {
@@ -221,9 +230,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 			s.updatePostMetadataTime(int64(id), time.Now())
 		},
 		s.GetPluginStorage(`reminders`),
+		s.calendar,
 	)
-	// TODO 注册到全局的，可能会导致测试冲突
-	addons.Handle(`/reminders/`, http.StripPrefix(`/reminders`, s.remindersTask.CalenderService()))
 
 	// s.rssTask = rss.NewTask(ctx, s.GetPluginStorage(`rss`), func(pid int) {
 	// 	s.deletePostContentCacheFor(int64(pid))
@@ -252,6 +260,16 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	proto.RegisterUtilsServer(sr, utilsService)
 
 	return s
+}
+
+func (s *Service) mustInitCrypto() {
+	aesKey, err := s.options.GetString(`aes_key`)
+	if taorm.IsNotFoundError(err) {
+		key := crypto.NewSecret()
+		utils.Must(s.options.SetString(`aes_key`, key.String()))
+		aesKey = key.String()
+	}
+	s.aesGCM = utils.Must1(crypto.NewAesGcm(utils.Must1(crypto.SecretFromString(aesKey))))
 }
 
 const noPerm = `此操作无权限。`

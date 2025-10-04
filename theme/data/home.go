@@ -32,7 +32,6 @@ type HomeData struct {
 
 func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
 	ac := auth.Context(ctx)
-	// settings := utils.Must1(service.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
 	d := &Data{
 		Context: ctx,
 		svc:     service,

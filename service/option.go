@@ -3,8 +3,11 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -274,6 +277,26 @@ func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettings
 
 	var out proto.Settings
 	utils.Must(jsonPB.Unmarshal([]byte(ss), &out))
+
+	{
+		u := s.home.JoinPath(`/v3/calendars`)
+		js := utils.Must1(json.Marshal(CalendarData{
+			UserID: int(ac.User.ID),
+		}))
+		q := url.Values{}
+
+		// 写固定 nonce 加密的数据，防止总是变化。
+		nonce := [12]byte{}
+		binary.LittleEndian.PutUint32(nonce[0:], uint32(ac.User.ID))
+		binary.LittleEndian.PutUint32(nonce[4:], uint32(ac.User.ID))
+		binary.LittleEndian.PutUint32(nonce[8:], uint32(ac.User.ID))
+		d := utils.Must1(s.aesGCM.Encrypt(js, nonce[:]))
+		encoded := base64.RawURLEncoding.EncodeToString(d)
+		q.Set(`data`, encoded)
+
+		u.RawQuery = q.Encode()
+		out.CalendarUrl = u.String()
+	}
 
 	return &out, nil
 }

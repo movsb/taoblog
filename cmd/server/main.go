@@ -26,7 +26,6 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	server_sync_tasks "github.com/movsb/taoblog/cmd/server/tasks/sync"
 	"github.com/movsb/taoblog/gateway"
-	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/backups"
@@ -545,8 +544,6 @@ func (s *Server) createMainServices(
 		service.WithCancel(cancel),
 		service.WithFileCache(s.fileCache),
 	}
-
-	addons.New()
 
 	return service.New(ctx, sr, cfg, db, rc, auth, mux, serviceOptions...)
 }

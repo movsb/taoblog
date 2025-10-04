@@ -253,6 +253,8 @@ type ProfileData struct {
 	a    *Admin
 	Name string
 	User *auth.User
+
+	CalendarURL string
 }
 
 // 输出的是 ID，不是 PublicKey。目前只作展示使用。
@@ -269,10 +271,12 @@ func (d *ProfileData) AvatarURL() string {
 }
 
 func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
+	settings := utils.Must1(a.svc.GetUserSettings(r.Context(), &proto.GetUserSettingsRequest{}))
 	d := &ProfileData{
-		a:    a,
-		Name: a.displayName,
-		User: auth.Context(r.Context()).User,
+		a:           a,
+		Name:        a.displayName,
+		User:        auth.Context(r.Context()).User,
+		CalendarURL: settings.CalendarUrl,
 	}
 	a.executeTemplate(w, `profile.html`, &d)
 }

@@ -6,13 +6,11 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	_ "embed"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/movsb/taoblog/gateway/addons"
 	"github.com/movsb/taoblog/gateway/handlers/api"
 	"github.com/movsb/taoblog/gateway/handlers/apidoc"
 	"github.com/movsb/taoblog/gateway/handlers/assets"
@@ -161,10 +159,7 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.client, g.service), g.lastPostTimeHandler)
 
 		// 调试相关
-		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler(userFromRequestContext, userFromRequestQuery))
-
-		// 附加组件提供的
-		mc.Handle(`/v3/addons/`, http.StripPrefix(`/v3/addons`, addons.Handler()), g.nonGuestHandler(userFromRequestContext, userFromRequestQuery))
+		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler(userFromRequestContext))
 	}
 
 	return nil
@@ -184,16 +179,6 @@ type AuthFunc func(g *Gateway, r *http.Request) *auth.User
 
 func userFromRequestContext(g *Gateway, r *http.Request) *auth.User {
 	return auth.Context(r.Context()).User
-}
-func userFromRequestQuery(g *Gateway, r *http.Request) *auth.User {
-	// TODO: 这里是密码，需要修复。
-	// auth: id:password
-	auth := r.URL.Query().Get(`auth`)
-	parts := strings.Split(auth, `:`)
-	if len(parts) != 2 {
-		parts = []string{``, ``}
-	}
-	return g.auther.AuthLogin(parts[0], parts[1])
 }
 
 func (g *Gateway) nonGuestHandler(fns ...AuthFunc) func(http.Handler) http.Handler {

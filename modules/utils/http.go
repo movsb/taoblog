@@ -90,3 +90,10 @@ func (d DataURL) String() string {
 	s := d.Type + `;` + `base64,` + base64.StdEncoding.EncodeToString(d.Data)
 	return (&urlpkg.URL{Scheme: `data`, Opaque: s}).String()
 }
+
+func AddHeader(h http.Handler, name, value string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add(name, value)
+		h.ServeHTTP(w, r)
+	})
+}

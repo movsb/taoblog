@@ -109,6 +109,10 @@ message UpdateUserResponse {}
 message Settings {
 	// 首页是否按分类展示文章？
 	bool group_posts_by_category = 100;
+
+	// 日历链接。
+	// 仅输出参数。
+	string calendar_url = 200;
 }
 
 message SetUserSettingsRequest {

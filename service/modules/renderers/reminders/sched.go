@@ -2,132 +2,89 @@ package reminders
 
 import (
 	"fmt"
-	"hash/crc32"
-	"io"
-	"log"
-	"net/http"
 	"sync"
 	"time"
 
-	ics "github.com/arran4/golang-ical"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/modules/version"
-	"github.com/movsb/taoblog/service/modules/renderers/reminders/solar"
+	"github.com/movsb/taoblog/service/modules/calendar"
 )
 
-type Job struct {
-	startAt UserDate
-	endAt   UserDate
-
-	message     string
-	messageFunc func() string
-
-	// 以下选一个有效。
-	isDaily    bool
-	firstDays  any
-	firstWeeks any
-}
-
-func (j Job) isAllDay() bool {
-	st, et := j.startAt, j.endAt
-	startHasTime := st.Hour() != 0 || st.Minute() != 0 || st.Second() != 0
-	endHasTime := et.Hour() != 0 || et.Minute() != 0 || et.Second() != 0
-	return !(startHasTime || endHasTime)
-}
-
-func (j Job) Message() string {
-	if j.messageFunc != nil {
-		return j.messageFunc()
-	}
-	return j.message
-}
-
 type Scheduler struct {
-	lock   sync.Mutex
-	jobs   map[int][]Job
-	firsts map[int][]Job
+	lock sync.Mutex
+	now  func() time.Time
+	cal  *calendar.CalenderService
 
-	now func() time.Time
-
-	// 最后更新时间。
-	// 可以用于日历生成时设定“最后修改时间”。
-	lastUpdatedAt time.Time
+	daily []_Daily
 }
 
-type SchedulerOption func(s *Scheduler)
-
-func WithNowFunc(now func() time.Time) SchedulerOption {
-	return func(s *Scheduler) {
-		s.now = now
-	}
+type _Daily struct {
+	r      *Reminder
+	userID int
+	postID int
 }
 
-func NewScheduler(options ...SchedulerOption) *Scheduler {
+func NewScheduler(cal *calendar.CalenderService, now func() time.Time) *Scheduler {
 	sched := &Scheduler{
-		jobs:   make(map[int][]Job),
-		firsts: make(map[int][]Job),
-	}
-
-	for _, opt := range options {
-		opt(sched)
+		now: now,
+		cal: cal,
 	}
 
 	if sched.now == nil {
 		sched.now = time.Now
 	}
 
-	sched.updateLastUpdatedAt()
-
 	return sched
 }
 
-func (s *Scheduler) UpdateLastUpdatedAt() {
-	s.withLock(s.updateLastUpdatedAt)
-}
+func (s *Scheduler) UpdateDaily(postID int) {
+	now := s.now()
 
-func (s *Scheduler) updateLastUpdatedAt() {
-	s.lastUpdatedAt = s.now()
-}
+	s.cal.Remove(func(e *calendar.Event) bool {
+		if e.PostID == postID {
+			_, isDaily := e.Tags[`daily`]
+			return isDaily
+		}
+		return false
+	})
 
-func (s *Scheduler) LastUpdatedAt() time.Time {
-	return s.lastUpdatedAt
-}
-
-func (s *Scheduler) withLock(fn func()) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	fn()
+
+	for _, daily := range s.daily {
+		if daily.postID != postID {
+			continue
+		}
+
+		r := daily.r
+
+		days := calendar.DaysPassed(now, r.Dates.Start.Time, r.Exclusive)
+		st, et := calendar.Daily(now, r.Dates.Start.Time, r.Dates.End.Time)
+		e := calendar.Event{
+			Message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, days),
+
+			Start: st,
+			End:   et,
+
+			UserID: daily.userID,
+			PostID: daily.postID,
+		}
+		s.cal.AddEvent(&e)
+	}
 }
 
-func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
-	defer s.updateLastUpdatedAt()
-
-	omitToday := false
+func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	if r.Remind.Daily {
-		s.lock.Lock()
-		s.firsts[postID] = append(s.firsts[postID], Job{
-			startAt: r.Dates.Start,
-			endAt:   r.Dates.End,
-			messageFunc: func() string {
-				days := solar.DaysPassed(s.now(), r.Dates.Start.Time, r.Exclusive)
-				return fmt.Sprintf(`%s 已经 %d 天了`, r.Title, days)
-			},
-			isDaily: true,
+		s.daily = append(s.daily, _Daily{
+			postID: postID,
+			userID: userID,
+			r:      r,
 		})
-		s.lock.Unlock()
-		// omitToday = true
 	}
 
-	createJob := func(t time.Time, message string) error {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-		s.jobs[postID] = append(s.jobs[postID], Job{
-			startAt: UserDate{Time: t},
-			message: message,
-		})
-		return nil
-	}
+	shouldCreateToday := true
 
 	for _, day := range r.Remind.Days {
 		if day == 1 {
@@ -135,72 +92,82 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 		}
 
 		if day < 0 {
-			s.withLock(func() {
-				s.firsts[postID] = append(s.firsts[postID], Job{
-					startAt:   r.Dates.Start,
-					endAt:     r.Dates.End,
-					message:   r.Title,
-					firstDays: -day,
-				})
-			})
-			omitToday = true
-			continue
-		}
+			days := calendar.FirstDays(r.Dates.Start.Time, r.Dates.End.Time, -day)
+			for _, pair := range days {
+				e := calendar.Event{
+					Message: fmt.Sprintf(`%s`, r.Title),
 
-		t := r.Dates.Start.AddDate(0, 0, utils.IIF(r.Exclusive, day, day-1))
+					Start: pair[0],
+					End:   pair[1],
 
-		if err := createJob(t, fmt.Sprintf(`%s 已经 %d 天了`, r.Title, day)); err != nil {
-			return err
+					UserID: userID,
+					PostID: postID,
+				}
+				s.cal.AddEvent(&e)
+			}
+			shouldCreateToday = false
+		} else {
+			st := r.Dates.Start.AddDate(0, 0, utils.IIF(r.Exclusive, day, day-1))
+			et := r.Dates.End.AddDate(0, 0, utils.IIF(r.Exclusive, day, day-1))
+			e := calendar.Event{
+				Message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, day),
+
+				Start: st,
+				End:   et,
+
+				UserID: userID,
+				PostID: postID,
+			}
+			s.cal.AddEvent(&e)
 		}
 	}
 
 	for _, week := range r.Remind.Weeks {
 		if week < 0 {
-			s.withLock(func() {
-				s.firsts[postID] = append(s.firsts[postID], Job{
-					startAt:    r.Dates.Start,
-					endAt:      r.Dates.End,
-					message:    r.Title,
-					firstWeeks: -week,
-				})
-			})
-			omitToday = true
-			continue
-		}
+			weeks := calendar.FirstWeeks(r.Dates.Start.Time, r.Dates.End.Time, -week)
+			for _, pair := range weeks {
+				e := calendar.Event{
+					Message: r.Title,
 
-		t := r.Dates.Start.AddDate(0, 0, week*7)
-		if err := createJob(t, fmt.Sprintf(`%s 已经 %d 周了`, r.Title, week)); err != nil {
-			return err
+					Start: pair[0],
+					End:   pair[1],
+
+					UserID: userID,
+					PostID: postID,
+				}
+				s.cal.AddEvent(&e)
+			}
+			shouldCreateToday = false
+		} else {
+			st := r.Dates.Start.AddDate(0, 0, 7*week)
+			et := r.Dates.End.AddDate(0, 0, 7*week)
+			e := calendar.Event{
+				Message: fmt.Sprintf(`%s 已经 %d 周了`, r.Title, week),
+
+				Start: st,
+				End:   et,
+
+				UserID: userID,
+				PostID: postID,
+			}
+			s.cal.AddEvent(&e)
 		}
 	}
 
 	for _, month := range r.Remind.Months {
-		if month < 1 {
-			return fmt.Errorf(`提醒月份不能小于 1 个月`)
-		}
+		st := calendar.AddMonths(r.Dates.Start.Time, month)
+		et := calendar.AddMonths(r.Dates.End.Time, month)
 
-		d1 := r.Dates.Start
-		d2 := d1.AddDate(0, month, 0)
+		e := calendar.Event{
+			Message: fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month),
 
-		// 注意 AddDate：
-		//
-		// 2014-10-31 +1 个月，期待：2014-11-30，但实际会是 2014-12-01 号。
-		// 2014-12-31 +2 个月，期待：2015-02-28，但实际会是 2015-03-03 号。
-		//
-		// 实际结果均与目前的设计有违，手动往前调整到上个月最后一天。
-		//
-		// 注意，12月到1月会 round
-		expect := int(d1.Month()) + month
-		if expect > 12 {
-			expect -= 12
-		}
-		for expect != int(d2.Month()) {
-			d2 = d2.AddDate(0, 0, -1)
-		}
+			Start: st,
+			End:   et,
 
-		if err := createJob(d2, fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month)); err != nil {
-			return err
+			UserID: userID,
+			PostID: postID,
 		}
+		s.cal.AddEvent(&e)
 	}
 
 	for _, year := range r.Remind.Years {
@@ -208,28 +175,32 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 			return fmt.Errorf(`提醒年份不能小于 1 年`)
 		}
 
-		d1 := r.Dates.Start
-		d2 := d1.AddDate(year, 0, 0)
+		st := calendar.AddYears(r.Dates.Start.Time, year)
+		et := calendar.AddYears(r.Dates.End.Time, year)
 
-		// 同上面月份的注意事项
-		expect := int(d1.Month())
-		for expect != int(d2.Month()) {
-			d2 = d2.AddDate(0, 0, -1)
-		}
+		e := calendar.Event{
+			Message: fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year),
 
-		if err := createJob(d2, fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year)); err != nil {
-			return err
+			Start: st,
+			End:   et,
+
+			UserID: userID,
+			PostID: postID,
 		}
+		s.cal.AddEvent(&e)
 	}
 
-	if !omitToday {
-		s.lock.Lock()
-		s.jobs[postID] = append(s.jobs[postID], Job{
-			startAt: UserDate{Time: r.Dates.Start.Time},
-			endAt:   UserDate{Time: r.Dates.End.Time},
-			message: r.Title,
-		})
-		s.lock.Unlock()
+	if shouldCreateToday {
+		e := calendar.Event{
+			Message: r.Title,
+
+			Start: r.Dates.Start.Time,
+			End:   r.Dates.End.Time,
+
+			UserID: userID,
+			PostID: postID,
+		}
+		s.cal.AddEvent(&e)
 	}
 
 	return nil
@@ -237,158 +208,17 @@ func (s *Scheduler) AddReminder(postID int, r *Reminder) error {
 
 // 根据文章编号删除提醒。
 func (s *Scheduler) DeleteRemindersByPostID(id int) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	defer s.updateLastUpdatedAt()
-	delete(s.jobs, id)
-	delete(s.firsts, id)
-}
-
-func (s *Scheduler) ForEachPost(fn func(id int, jobs []Job, firsts []Job)) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	ids := make(map[int]struct{}, len(s.jobs)+len(s.firsts))
-	for id := range s.jobs {
-		ids[id] = struct{}{}
-	}
-	for id := range s.firsts {
-		ids[id] = struct{}{}
-	}
-
-	for id := range ids {
-		jobs := s.jobs[id]
-		firsts := s.firsts[id]
-		fn(id, jobs, firsts)
-	}
-}
-
-// 用于把提醒事件导出为日历格式。
-//
-// https://icalendar.org/validator.html
-type CalenderService struct {
-	name  string
-	sched *Scheduler
-	*http.ServeMux
-}
-
-func NewCalendarService(name string, sched *Scheduler) *CalenderService {
-	s := &CalenderService{
-		name:     name,
-		sched:    sched,
-		ServeMux: http.NewServeMux(),
-	}
-	s.Handle(`/all.ics`, s.addHeaders(s.all))
-	return s
-}
-
-func (s *CalenderService) Marshal(now time.Time, w io.Writer) error {
-	cal := ics.NewCalendarFor(version.Name)
-	cal.SetMethod(ics.MethodPublish)
-	cal.SetLastModified(s.sched.LastUpdatedAt())
-	// TODO 写死了
-	cal.SetTimezoneId(`Asia/Shanghai`)
-	// 设置日历的名字为网站名。
-	cal.SetXWRCalName(s.name)
-
-	s.sched.ForEachPost(func(id int, jobs []Job, firsts []Job) {
-		for _, job := range jobs {
-			eventID := fmt.Sprintf(
-				`post_id:%d,job_id:%d,title:%x`,
-				id, job.startAt.Unix(), crc32.ChecksumIEEE([]byte(job.Message())),
-			)
-			e := cal.AddEvent(eventID)
-			e.SetSummary(job.Message())
-			e.SetDtStampTime(job.startAt.Time)
-
-			if job.isAllDay() {
-				e.SetAllDayStartAt(job.startAt.Time)
-				e.SetAllDayEndAt(job.startAt.AddDate(0, 0, 1))
-			} else {
-				e.SetStartAt(job.startAt.Time)
-				e.SetEndAt(job.endAt.Time)
-			}
-		}
-
-		for _, job := range firsts {
-			switch {
-			case job.isDaily:
-				eventID := fmt.Sprintf(`post_id:%d,job_id:%d,daily:true`, id, job.startAt.Unix())
-				e := cal.AddEvent(eventID)
-				e.SetSummary(job.Message())
-				e.SetDtStampTime(job.startAt.Time)
-
-				if job.isAllDay() {
-					e.SetAllDayStartAt(now)
-					e.SetAllDayEndAt(now.AddDate(0, 0, 1))
-				} else {
-					t := time.Date(
-						now.Year(), now.Month(), now.Day(),
-						job.startAt.Hour(),
-						job.startAt.Minute(),
-						job.startAt.Second(),
-						0, time.Local,
-					)
-					e.SetStartAt(t)
-					e.SetEndAt(t.AddDate(0, 0, 1))
-				}
-			case job.firstDays != nil:
-				days := job.firstDays.(int)
-
-				if job.isAllDay() {
-					eventID := fmt.Sprintf(`post_id:%d,job_id:%d,first_days:%d`, id, job.startAt.Unix(), days)
-					e := cal.AddEvent(eventID)
-					e.SetSummary(job.Message())
-					e.SetDtStampTime(job.startAt.Time)
-
-					e.SetAllDayStartAt(job.startAt.Time)
-					e.SetAllDayEndAt(job.startAt.AddDate(0, 0, days))
-				} else {
-					for i := 1; i <= days; i++ {
-						eventID := fmt.Sprintf(`post_id:%d,job_id:%d,first_days:%d:day:%d`, id, job.startAt.Unix(), days, i)
-						e := cal.AddEvent(eventID)
-						e.SetSummary(job.Message())
-						e.SetDtStampTime(job.startAt.Time)
-						e.SetStartAt(job.startAt.Time)
-						e.SetEndAt(job.endAt.AddDate(0, 0, i))
-					}
-				}
-			case job.firstWeeks != nil:
-				weeks := job.firstWeeks.(int)
-
-				if job.isAllDay() {
-					eventID := fmt.Sprintf(`post_id:%d,job_id:%d,first_weeks:%d`, id, job.startAt.Unix(), weeks)
-					e := cal.AddEvent(eventID)
-					e.SetSummary(job.Message())
-					e.SetDtStampTime(job.startAt.Time)
-					e.SetAllDayStartAt(job.startAt.Time)
-					e.SetAllDayEndAt(job.startAt.AddDate(0, 0, weeks))
-				} else {
-					for i := 1; i <= weeks; i++ {
-						eventID := fmt.Sprintf(`post_id:%d,job_id:%d,first_weeks:%d,week:%d`, id, job.startAt.Unix(), weeks, i)
-						e := cal.AddEvent(eventID)
-						e.SetSummary(job.Message())
-						e.SetDtStampTime(job.startAt.Time)
-						e.SetStartAt(job.startAt.Time.AddDate(0, 0, 7*(i-1)))
-						e.SetEndAt(job.endAt.AddDate(0, 0, 7*(i-1)))
-					}
-				}
-			}
-		}
-	})
-
-	return cal.SerializeTo(w, ics.WithNewLine("\r\n"))
-}
-
-func (s *CalenderService) addHeaders(h http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set(`Content-Type`, `text/calendar; charset=utf-8`)
-		h.ServeHTTP(w, r)
+	s.cal.Remove(func(e *calendar.Event) bool {
+		return e.PostID == id
 	})
 }
 
-func (s *CalenderService) all(w http.ResponseWriter, r *http.Request) {
-	if err := s.Marshal(time.Now(), w); err != nil {
-		log.Println(err)
+func (s *Scheduler) ForEachPost(fn func(id int)) {
+	ids := map[int]struct{}{}
+	s.cal.Each(func(e *calendar.Event) {
+		ids[e.PostID] = struct{}{}
+	})
+	for pid := range ids {
+		fn(pid)
 	}
 }

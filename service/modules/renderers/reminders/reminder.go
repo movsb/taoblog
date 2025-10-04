@@ -6,10 +6,12 @@ import (
 	"io"
 	"io/fs"
 	"sync"
+	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/modules/version"
+	"github.com/movsb/taoblog/service/modules/calendar"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/yuin/goldmark/parser"
 )
@@ -44,7 +46,7 @@ type Reminders struct {
 
 func New(options ...RemindersOption) *Reminders {
 	f := &Reminders{
-		sched: NewScheduler(),
+		sched: NewScheduler(calendar.NewCalendarService(time.Now), time.Now),
 	}
 
 	for _, opt := range options {
@@ -67,7 +69,7 @@ func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 	}
 
 	// 1：随便写的，因为 sched 是测试用的，没共享。
-	if err := r.sched.AddReminder(1, rm); err != nil {
+	if err := r.sched.AddReminder(1, 1, rm); err != nil {
 		return fmt.Errorf(`添加提醒失败：%w`, err)
 	}
 

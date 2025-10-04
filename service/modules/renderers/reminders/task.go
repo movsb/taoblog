@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/modules/calendar"
 	"github.com/movsb/taoblog/service/modules/renderers"
 )
 
@@ -31,12 +31,13 @@ type Task struct {
 func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 	invalidatePost func(id int),
 	store utils.PluginStorage,
+	cal *calendar.CalenderService,
 ) *Task {
 	t := &Task{
 		ctx:   ctx,
 		svc:   svc,
 		store: store,
-		sched: NewScheduler(),
+		sched: NewScheduler(cal, time.Now),
 
 		invalidatePost: invalidatePost,
 		posts:          make(map[int]struct{}),
@@ -46,11 +47,6 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 	go t.refreshPosts(ctx)
 	go t.refreshCalendar(ctx)
 	return t
-}
-
-func (t *Task) CalenderService() http.Handler {
-	info, _ := t.svc.GetInfo(t.ctx, &proto.GetInfoRequest{})
-	return NewCalendarService(info.Name, t.sched)
 }
 
 func (t *Task) load() {
@@ -169,7 +165,7 @@ func (t *Task) processSingle(p *proto.Post, silent bool) (_ bool, outErr error) 
 	rs := utils.Must1(t.parsePost(p))
 	t.sched.DeleteRemindersByPostID(int(p.Id))
 	for _, r := range rs {
-		utils.Must(t.sched.AddReminder(int(p.Id), r))
+		utils.Must(t.sched.AddReminder(int(p.Id), int(p.UserId), r))
 		if !silent {
 			log.Println(`提醒：处理完成：`, r.Title)
 		}
@@ -218,7 +214,7 @@ func (t *Task) parsePost(p *proto.Post) ([]*Reminder, error) {
 func (t *Task) refreshPosts(ctx context.Context) {
 	utils.AtMiddleNight(ctx, func() {
 		log.Println(`刷新文章提醒缓存：`, time.Now())
-		t.sched.ForEachPost(func(id int, _ []Job, _ []Job) {
+		t.sched.ForEachPost(func(id int) {
 			t.invalidatePost(id)
 			log.Println(`刷新文章缓存：`, id)
 		})
@@ -228,6 +224,8 @@ func (t *Task) refreshPosts(ctx context.Context) {
 func (t *Task) refreshCalendar(ctx context.Context) {
 	utils.AtMiddleNight(ctx, func() {
 		log.Println(`刷新日历：`, time.Now())
-		t.sched.UpdateLastUpdatedAt()
+		t.sched.ForEachPost(func(id int) {
+			t.sched.UpdateDaily(id)
+		})
 	})
 }

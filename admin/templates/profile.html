@@ -16,9 +16,10 @@
 	<p>昵称：{{ .User.Nickname }}</p>
 	<p>邮箱：{{ with .User.Email }}{{ . }}{{ else }}(无){{ end }}</p>
 	<p>公钥：{{ len .PublicKeys }}</p>
-	<p><button onclick="register()">注册通行密钥</button></p>
+	<p>日历：<input type="text" value="{{ .CalendarURL }}" readonly></p>
 </div>
 <div>
+	<p><button onclick="register()">注册通行密钥</button></p>
 	<p><button onclick="location.href='editor?new=1&type=markdown'">发表文章</button></p>
 	<p><button onclick="location.href='drafts'">草稿管理</button></p>
 	<p><button onclick="location.href='reorder'">置顶排序</button></p>

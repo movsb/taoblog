@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
-	"github.com/movsb/taoblog/service/modules/renderers/reminders/solar"
+	"github.com/movsb/taoblog/service/modules/calendar"
 )
 
 type UserDate struct {
@@ -106,7 +106,7 @@ type ReminderRemind struct {
 }
 
 func (r *Reminder) Days() int {
-	return solar.DaysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
+	return calendar.DaysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
 }
 
 func (r *Reminder) Start() string {
@@ -117,6 +117,10 @@ func ParseReminder(y []byte) (*Reminder, error) {
 	rm := Reminder{}
 	if err := yaml.UnmarshalWithOptions(y, &rm, yaml.Strict()); err != nil {
 		return nil, err
+	}
+	// 如果不指定结束，默认为全天事件。
+	if rm.Dates.End.IsZero() {
+		rm.Dates.End.Time = rm.Dates.Start.AddDate(0, 0, 1)
 	}
 	return &rm, nil
 }
