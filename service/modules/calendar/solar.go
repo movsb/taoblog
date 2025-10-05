@@ -98,10 +98,10 @@ func FirstWeeks(start, end time.Time, n int) [][2]time.Time {
 
 // 添加自然月。
 //
-// 注意 AddDate：
+// 注意 Go 的 AddDate：
 //
-// 2014-10-31 +1 个月，期待：2014-11-30，但实际会是 2014-12-01 号。
-// 2014-12-31 +2 个月，期待：2015-02-28，但实际会是 2015-03-03 号。
+//   - 2014-10-31 +1 个月，期待：2014-11-30，但实际会是 2014-12-01 号。
+//   - 2014-12-31 +2 个月，期待：2015-02-28，但实际会是 2015-03-03 号。
 //
 // 实际结果均与目前的设计有违，手动往前调整到上个月最后一天。
 //
@@ -130,4 +130,19 @@ func AddYears(t time.Time, n int) time.Time {
 	}
 
 	return d2
+}
+
+// 返回下一年的同一时间。
+func Anniversary(now, event time.Time) time.Time {
+	// 还没发生。
+	if event.After(now) {
+		return event
+	}
+
+	t := event
+	for t.Before(now) {
+		t = AddYears(t, 1)
+	}
+
+	return t
 }

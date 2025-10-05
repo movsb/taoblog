@@ -218,3 +218,68 @@ func TestFirstWeeks(t *testing.T) {
 		}
 	}
 }
+
+func TestAddMonths(t *testing.T) {
+	tcs := []struct {
+		date   string
+		add    int
+		expect string
+	}{
+		{`2014-10-01`, 1, `2014-11-01`},
+		{`2014-10-31`, 1, `2014-11-30`},
+		{`2014-12-31`, 2, `2015-02-28`},
+		{`2015-02-28`, 2, `2015-04-28`},
+	}
+
+	for _, tc := range tcs {
+		date := parse(time.DateOnly, tc.date)
+		want := parse(time.DateOnly, tc.expect)
+		got := calendar.AddMonths(date, tc.add)
+		if !got.Equal(want) {
+			t.Error(`not equal:`, got, want)
+		}
+	}
+}
+
+func TestAddYears(t *testing.T) {
+	tcs := []struct {
+		date   string
+		add    int
+		expect string
+	}{
+		{`2014-10-01`, 1, `2015-10-01`},
+		{`2024-02-29`, 1, `2025-02-28`},
+		{`2024-02-29`, 4, `2028-02-29`},
+	}
+
+	for i, tc := range tcs {
+		date := parse(time.DateOnly, tc.date)
+		want := parse(time.DateOnly, tc.expect)
+		got := calendar.AddYears(date, tc.add)
+		if !got.Equal(want) {
+			t.Errorf(`not equal: #%d %s %s`, i+1, want, got)
+		}
+	}
+}
+
+func TestAnniversary(t *testing.T) {
+	tcs := []struct {
+		date   string
+		expect string
+	}{
+		{`2014-12-24`, `2015-12-24`},
+		{`2014-12-31`, `2014-12-31`},
+		{`2015-03-31`, `2015-03-31`},
+	}
+
+	now := parse(time.DateOnly, `2014-12-30`)
+
+	for i, tc := range tcs {
+		date := parse(time.DateOnly, tc.date)
+		want := parse(time.DateOnly, tc.expect)
+		got := calendar.Anniversary(now, date)
+		if !got.Equal(want) {
+			t.Errorf(`not equal: #%d %s %s`, i+1, want, got)
+		}
+	}
+}
