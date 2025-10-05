@@ -30,7 +30,7 @@ message GetInfoResponse {
 
 	// 站点主页地址。
 	// 形如：https://blog.twofei.com
-	// 不带最后的 /。
+	// 或者：https://blog.twofei.com/
 	string home = 3;
 	
 	// Git 版本号

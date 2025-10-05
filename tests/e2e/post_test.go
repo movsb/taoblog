@@ -218,7 +218,7 @@ func TestSitemaps(t *testing.T) {
 	// NOTE: 硬编码的，难得解析了。
 	expect := `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-	<url><loc>http://localhost:2564/1/</loc></url>
+	<url><loc>` + r.server.JoinPath(`/1/`) + `</loc></url>
 </urlset>
 `
 
@@ -325,16 +325,16 @@ func TestRSS(t *testing.T) {
 		rsp := request(false)
 		defer rsp.Body.Close()
 
-		const expectedOutput = `<?xml version="1.0" encoding="UTF-8"?>
+		expectedOutput := `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
 	<title>未命名</title>
-	<link>http://localhost:2564</link>
+	<link>` + r.server.JoinPath() + `</link>
 	<description></description>
 	<lastBuildDate>Thu, 27 Mar 2025 01:00:00 TEST</lastBuildDate>
 	<item>
 		<title>user1</title>
-		<link>http://localhost:2564/1/</link>
+		<link>` + r.server.JoinPath(`/1/`) + `</link>
 		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
 		<description><![CDATA[]]></description>
 	</item>
@@ -354,28 +354,28 @@ func TestRSS(t *testing.T) {
 		rsp := request(true)
 		defer rsp.Body.Close()
 
-		const expectedOutput = `<?xml version="1.0" encoding="UTF-8"?>
+		expectedOutput := `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
 	<title>未命名</title>
-	<link>http://localhost:2564</link>
+	<link>` + r.server.JoinPath() + `</link>
 	<description></description>
 	<lastBuildDate>Thu, 27 Mar 2025 01:00:00 TEST</lastBuildDate>
 	<item>
 		<title>user1</title>
-		<link>http://localhost:2564/1/</link>
+		<link>` + r.server.JoinPath(`/1/`) + `</link>
 		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
 		<description><![CDATA[]]></description>
 	</item>
 	<item>
 		<title>user2</title>
-		<link>http://localhost:2564/2/</link>
+		<link>` + r.server.JoinPath(`/2/`) + `</link>
 		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
 		<description><![CDATA[]]></description>
 	</item>
 	<item>
 		<title>admin</title>
-		<link>http://localhost:2564/3/</link>
+		<link>` + r.server.JoinPath(`/3/`) + `</link>
 		<pubDate>Thu, 27 Mar 2025 00:00:00 TEST</pubDate>
 		<description><![CDATA[]]></description>
 	</item>

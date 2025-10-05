@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -58,6 +57,9 @@ type Service struct {
 	// 计划重启。
 	scheduledUpdate atomic.Bool
 
+	// 配置文件中写的站点地址。
+	// 可以被测试环境修改成临时地址。
+	// 对外的链接生成时使用这个地址。
 	home *url.URL
 
 	// 服务器默认的时区。
@@ -354,7 +356,7 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 	out := &proto.GetInfoResponse{
 		Name:        s.cfg.Site.Name,
 		Description: s.cfg.Site.Description,
-		Home:        strings.TrimSuffix(s.cfg.Site.Home, "/"),
+		Home:        s.home.String(),
 		Commit:      version.GitCommit,
 		Uptime:      int32(time.Since(version.Time).Seconds()),
 
