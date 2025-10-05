@@ -321,7 +321,7 @@ func (s *Service) DropAllPostAndCommentCache() {
 	s.postContentCaches = lru.NewTTLCache[_PostContentCacheKey, string](10240)
 	s.commentContentCaches = lru.NewTTLCache[_PostContentCacheKey, string](10240)
 
-	log.Println(`已清空所有文章和评论缓存`)
+	// log.Println(`已清空所有文章和评论缓存`)
 }
 
 func (s *Service) deletePostContentCacheFor(id int64) {
@@ -784,6 +784,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		})
 	}
 
+	// SetPostACL 也会修改文章时间，这里能确保拿到的是最新的。
 	return s.GetPost(ctx, &proto.GetPostRequest{
 		Id:             int32(in.Post.Id),
 		GetPostOptions: in.GetPostOptions,
@@ -1617,7 +1618,7 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 					s.notifier.SendInstant(
 						auth.SystemForLocal(context.Background()),
 						&proto.SendInstantRequest{
-							Title: fmt.Sprintf(`分享了新文章`),
+							Title: `分享了新文章`,
 							Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, s.home.JoinPath(s.plainLink(post.Id)).String()),
 							// TODO: 没判断为空的情况。如果为空，则分享给了站长。
 							BarkToken: to.BarkToken,
@@ -1626,6 +1627,9 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 				}()
 			}
 		}
+
+		// 确保文章修改时间更新，方便同步任何检测到文章权限变化。
+		s.tdb.MustExec(`UPDATE posts SET modified=? WHERE id=?`, time.Now().Unix(), in.PostId)
 
 		return nil
 	})

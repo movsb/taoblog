@@ -42,6 +42,10 @@ func (s *Service) handleGetCalendar(w http.ResponseWriter, r *http.Request) {
 		return cd.UserID == auth.AdminID || cd.UserID == e.UserID
 	})
 
+	events = events.Unique(func(e *calendar.Event) string {
+		return e.Tags[`uuid`].(string)
+	})
+
 	info, _ := s.GetInfo(r.Context(), &proto.GetInfoRequest{})
 	events.Marshal(info.Name, w)
 }

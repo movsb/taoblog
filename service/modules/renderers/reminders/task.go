@@ -7,18 +7,36 @@ import (
 	"sync"
 	"time"
 
+	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/calendar"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 )
+
+type RuntimeConfig struct {
+	RefreshNow bool `yaml:"refresh_now"`
+
+	refreshNow chan struct{}
+	config.Saver
+}
+
+func (c *RuntimeConfig) AfterSet(paths config.Segments, obj any) {
+	switch paths.At(0).Key {
+	case `refresh_now`:
+		c.refreshNow <- struct{}{}
+	}
+}
 
 type Task struct {
 	ctx   context.Context
 	svc   proto.TaoBlogServer
 	store utils.PluginStorage
 	sched *Scheduler
+	rc    *RuntimeConfig
 
 	invalidatePost func(id int)
 
@@ -38,9 +56,15 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 		svc:   svc,
 		store: store,
 		sched: NewScheduler(cal, time.Now),
+		rc: &RuntimeConfig{
+			refreshNow: make(chan struct{}),
+		},
 
 		invalidatePost: invalidatePost,
 		posts:          make(map[int]struct{}),
+	}
+	if r := runtime_config.FromContext(ctx); r != nil {
+		r.Register(`reminders`, t.rc)
 	}
 	go t.load()
 	go t.run(ctx)
@@ -86,7 +110,7 @@ func (t *Task) load() {
 			continue
 		}
 	}
-	log.Println(`Reminders.Task.load:`, `加载完成`)
+	// log.Println(`Reminders.Task.load:`, `加载完成`)
 }
 
 func (t *Task) save(new, old []int) error {
@@ -111,6 +135,10 @@ func (t *Task) run(ctx context.Context) {
 		select {
 		case <-t.ctx.Done():
 			return
+		case <-t.rc.refreshNow:
+			if err := t.runOnce(ctx); err != nil {
+				log.Println(`提醒:`, err)
+			}
 		case <-time.After(time.Minute):
 			if err := t.runOnce(ctx); err != nil {
 				log.Println(`提醒:`, err)
@@ -155,7 +183,9 @@ func (t *Task) runOnce(ctx context.Context) error {
 	}
 
 	// 前面在没有文章的时候提前退出了，此处不需要更新。
-	t.store.SetInteger(lastCheckTimeName, time.Now().Unix())
+	now := time.Now().Unix()
+	// log.Println(`当前时间：`, now)
+	t.store.SetInteger(lastCheckTimeName, now)
 
 	return nil
 }
@@ -166,8 +196,18 @@ func (t *Task) processSingle(p *proto.Post, silent bool) (_ bool, outErr error) 
 	t.sched.DeleteRemindersByPostID(int(p.Id))
 	for _, r := range rs {
 		utils.Must(t.sched.AddReminder(int(p.Id), int(p.UserId), r))
+
+		// 如果有分享用户，同时添加到分享用户。
+		if p.Status == models.PostStatusPartial {
+			for _, up := range p.UserPerms {
+				if up.CanRead {
+					utils.Must(t.sched.AddReminder(int(p.Id), int(up.UserId), r))
+				}
+			}
+		}
+
 		if !silent {
-			log.Println(`提醒：处理完成：`, r.Title)
+			log.Println(`提醒：处理完成：`, r.Title, p.Modified)
 		}
 	}
 	return len(rs) > 0, nil
@@ -181,10 +221,13 @@ func (t *Task) getUpdatedPosts(ctx context.Context) ([]*proto.Post, error) {
 		return nil, err
 	}
 
-	// now := time.Now().Unix()
+	// log.Println(`上次时间：`, lastCheckTime)
 
 	rsp, err := t.svc.ListPosts(auth.SystemForLocal(ctx), &proto.ListPostsRequest{
 		ModifiedNotBefore: int32(lastCheckTime),
+		GetPostOptions: &proto.GetPostOptions{
+			WithUserPerms: true,
+		},
 	})
 	if err != nil {
 		return nil, err

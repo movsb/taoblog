@@ -20,6 +20,7 @@ type Event struct {
 	Start time.Time
 	End   time.Time
 
+	// 用户ID不一定是文章作者，可能来自分享。
 	UserID int
 	PostID int
 
@@ -35,6 +36,19 @@ type Events []*Event
 
 func AddHeaders(w http.ResponseWriter) {
 	w.Header().Set(`Content-Type`, `text/calendar; charset=utf-8`)
+}
+
+// 同一份日历会因为共享的原因存在于两个用户下，并且由于管理员
+// 可以查看所有用户日历的原因，会存在重复，需要去重。
+func (es Events) Unique(id func(e *Event) string) (out Events) {
+	m := map[string]struct{}{}
+	for _, e := range es {
+		if _, ok := m[id(e)]; !ok {
+			m[id(e)] = struct{}{}
+			out = append(out, e)
+		}
+	}
+	return
 }
 
 func (es Events) Marshal(name string, w io.Writer) {

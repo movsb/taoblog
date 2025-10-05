@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/google/uuid"
 	"github.com/movsb/taoblog/service/modules/calendar"
 )
 
@@ -59,6 +60,10 @@ type Reminder struct {
 
 	// 提醒？
 	Remind ReminderRemind `yaml:"remind"`
+
+	// 文件共享后日历也可以共享给不同的用户
+	// 为了显示结果去重，用 uuid 标识给 event 分组。
+	uuid string
 }
 
 type ReminderDates struct {
@@ -118,6 +123,7 @@ func ParseReminder(y []byte) (*Reminder, error) {
 	if err := yaml.UnmarshalWithOptions(y, &rm, yaml.Strict()); err != nil {
 		return nil, err
 	}
+	rm.uuid = uuid.NewString()
 	// 如果不指定结束，默认为全天事件。
 	if rm.Dates.End.IsZero() {
 		rm.Dates.End.Time = rm.Dates.Start.AddDate(0, 0, 1)

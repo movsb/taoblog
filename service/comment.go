@@ -576,7 +576,7 @@ func NewCommentNotificationTask(s *Service, storage utils.PluginStorage) *_Comme
 		if err := t.storage.SetInteger(`id`, max); err != nil {
 			panic(err)
 		}
-		log.Println(`当前评论的最大编号：`, max)
+		// log.Println(`当前评论的最大编号：`, max)
 	}
 	go t.Run(s.ctx)
 	return &t

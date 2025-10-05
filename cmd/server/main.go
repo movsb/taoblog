@@ -371,7 +371,7 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 	a := admin.NewAdmin(version.DevMode(), s.Gateway(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
 		admin.WithCustomThemes(&cfg.Theme),
 	)
-	log.Println(`admin on`, prefix)
+	// log.Println(`admin on`, prefix)
 	mux.Handle(prefix, a.Handler())
 
 	config := &webauthn.Config{
@@ -668,6 +668,9 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 	// defer l.Close()
 	s.httpAddr = l.Addr().String()
 	s.httpServer = server
+	if s.testing {
+		s.Main().TestingSetHTTPAddr(s.JoinPath())
+	}
 	log.Println(`HTTP:`, s.httpAddr)
 
 	go func() {

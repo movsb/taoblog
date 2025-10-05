@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
@@ -108,7 +109,12 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, a
 	}
 
 	a.loadTemplates()
-	go a.detectNetwork()
+	go func() {
+		for {
+			a.detectNetwork()
+			time.Sleep(time.Minute * 10)
+		}
+	}()
 	return a
 }
 
@@ -125,7 +131,7 @@ func (a *Admin) detectNetwork() {
 	}
 	// 无需判断状态码，只需保证能访问（证书正确）即可。
 	yes := err == nil
-	log.Println(`google accessible: `, yes)
+	// log.Println(`google accessible: `, yes)
 	a.canGoogle.Store(yes)
 }
 

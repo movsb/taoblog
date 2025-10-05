@@ -67,11 +67,17 @@ func (s *Scheduler) UpdateDaily(postID int) {
 
 			UserID: daily.userID,
 			PostID: daily.postID,
+
+			Tags: map[string]any{
+				`daily`: true,
+				`uuid`:  r.uuid,
+			},
 		}
 		s.cal.AddEvent(&e)
 	}
 }
 
+// userID 可能来自分享。
 func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -102,6 +108,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 					UserID: userID,
 					PostID: postID,
+
+					Tags: map[string]any{
+						`uuid`: r.uuid,
+					},
 				}
 				s.cal.AddEvent(&e)
 			}
@@ -117,6 +127,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 				UserID: userID,
 				PostID: postID,
+
+				Tags: map[string]any{
+					`uuid`: r.uuid,
+				},
 			}
 			s.cal.AddEvent(&e)
 		}
@@ -134,6 +148,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 					UserID: userID,
 					PostID: postID,
+
+					Tags: map[string]any{
+						`uuid`: r.uuid,
+					},
 				}
 				s.cal.AddEvent(&e)
 			}
@@ -149,6 +167,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 				UserID: userID,
 				PostID: postID,
+
+				Tags: map[string]any{
+					`uuid`: r.uuid,
+				},
 			}
 			s.cal.AddEvent(&e)
 		}
@@ -166,6 +188,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 			UserID: userID,
 			PostID: postID,
+
+			Tags: map[string]any{
+				`uuid`: r.uuid,
+			},
 		}
 		s.cal.AddEvent(&e)
 	}
@@ -186,6 +212,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 			UserID: userID,
 			PostID: postID,
+
+			Tags: map[string]any{
+				`uuid`: r.uuid,
+			},
 		}
 		s.cal.AddEvent(&e)
 	}
@@ -199,6 +229,10 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 			UserID: userID,
 			PostID: postID,
+
+			Tags: map[string]any{
+				`uuid`: r.uuid,
+			},
 		}
 		s.cal.AddEvent(&e)
 	}
