@@ -57,6 +57,10 @@ import (
 )
 
 func AddCommands(rootCmd *cobra.Command) {
+	var (
+		monitorDomainInitialDelay bool
+	)
+
 	serveCommand := &cobra.Command{
 		Use:   `server`,
 		Short: `Run the server`,
@@ -85,6 +89,7 @@ func AddCommands(rootCmd *cobra.Command) {
 					}
 				}
 			}
+
 			s := NewServer(
 				WithRequestThrottler(request_throttler.New()),
 				WithCreateFirstPost(),
@@ -92,7 +97,7 @@ func AddCommands(rootCmd *cobra.Command) {
 				WithBackupTasks(true),
 				WithRSS(true),
 				WithMonitorCerts(true),
-				WithMonitorDomain(true),
+				WithMonitorDomain(true, monitorDomainInitialDelay),
 				WithConfigOverride(configOverride),
 			)
 			s.Serve(context.Background(), false, cfg, nil)
@@ -100,7 +105,9 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 
 	serveCommand.Flags().Bool(`demo`, false, `运行演示实例。`)
+	serveCommand.Flags().BoolVar(&monitorDomainInitialDelay, `test-monitor-domain-initial-delay`, true, `是否启用首次域名检测延时等待。`)
 
+	serveCommand.Flags().SortFlags = false
 	rootCmd.AddCommand(serveCommand)
 }
 
@@ -117,14 +124,17 @@ type Server struct {
 	throttler        grpc.UnaryServerInterceptor
 	throttlerEnabled atomic.Bool
 
-	createFirstPost   bool
-	initialTimezone   *time.Location
-	initGitSyncTask   bool
-	initBackupTasks   bool
-	initRssTasks      bool
-	initMonitorCerts  bool
-	initMonitorDomain bool
-	configOverride    func(cfg *config.Config)
+	createFirstPost  bool
+	initialTimezone  *time.Location
+	initGitSyncTask  bool
+	initBackupTasks  bool
+	initRssTasks     bool
+	initMonitorCerts bool
+
+	initMonitorDomain      bool
+	initMonitorDomainDelay bool
+
+	configOverride func(cfg *config.Config)
 
 	db      *taorm.DB
 	auth    *auth.Auth
@@ -288,7 +298,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}
 	if s.initMonitorDomain {
 		theService.SetDomainDays(-1)
-		go monitorDomain(ctx, cfg.Site.Home, notify, cfg.Others.Whois.ApiLayer.Key, func(days int) {
+		go monitorDomain(ctx, cfg.Site.Home, notify, cfg.Others.Whois.ApiLayer.Key, s.initMonitorDomainDelay, func(days int) {
 			theService.SetDomainDays(days)
 		})
 	}

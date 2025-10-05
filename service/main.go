@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
+	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -269,6 +271,7 @@ func (s *Service) mustInitCrypto() {
 	if taorm.IsNotFoundError(err) {
 		key := crypto.NewSecret()
 		utils.Must(s.options.SetString(`aes_key`, key.String()))
+		log.Println(`加密密钥：`, key.String())
 		aesKey = key.String()
 	}
 	s.aesGCM = utils.Must1(crypto.NewAesGcm(utils.Must1(crypto.SecretFromString(aesKey))))
@@ -377,13 +380,54 @@ func (s *Service) GetCurrentTimezone() *time.Location {
 	return s.timeLocation
 }
 
+// 可能小于0
 func (s *Service) SetCertDays(n int) {
 	s.certDaysLeft.Store(int32(n))
 	s.exporter.certDaysLeft.Set(float64(n))
+
+	s.calendar.Remove(func(e *calendar.Event) bool {
+		uuid, _ := e.Tags[`uuid`]
+		return uuid == `cert_days`
+	})
+
+	if n >= 0 && n < 15 {
+		st, et := calendar.AllDay(time.Now())
+		s.calendar.AddEvent(&calendar.Event{
+			Message: fmt.Sprintf(`证书剩余 %d 天`, n),
+			Start:   st,
+			End:     et,
+			UserID:  auth.SystemID,
+			PostID:  0,
+			Tags: map[string]any{
+				`uuid`: `cert_days`,
+			},
+		})
+	}
 }
+
+// 可能小于0
 func (s *Service) SetDomainDays(n int) {
 	s.domainExpirationDaysLeft.Store(int32(n))
 	s.exporter.domainDaysLeft.Set(float64(n))
+
+	s.calendar.Remove(func(e *calendar.Event) bool {
+		uuid, _ := e.Tags[`uuid`]
+		return uuid == `domain_days`
+	})
+
+	if n >= 0 && n < 15 {
+		st, et := calendar.AllDay(time.Now())
+		s.calendar.AddEvent(&calendar.Event{
+			Message: fmt.Sprintf(`域名剩余 %d 天`, n),
+			Start:   st,
+			End:     et,
+			UserID:  auth.SystemID,
+			PostID:  0,
+			Tags: map[string]any{
+				`uuid`: `domain_days`,
+			},
+		})
+	}
 }
 
 func (s *Service) SetLastBackupAt(t time.Time) {

@@ -48,9 +48,10 @@ func WithRSS(b bool) With {
 	}
 }
 
-func WithMonitorDomain(b bool) With {
+func WithMonitorDomain(b bool, initialDelay bool) With {
 	return func(s *Server) {
 		s.initMonitorDomain = b
+		s.initMonitorDomainDelay = initialDelay
 	}
 }
 

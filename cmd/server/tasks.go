@@ -52,8 +52,6 @@ func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, 
 			)
 		}
 		daysLeft := int(left.Hours() / 24)
-		// s.certDaysLeft.Store(int32(daysLeft))
-		// s.exporter.certDaysLeft.Set(float64(daysLeft))
 		update(daysLeft)
 		if daysLeft >= 15 {
 			return
@@ -79,7 +77,7 @@ func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, 
 }
 
 // 监控域名过期的剩余时间。
-func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer, apiKey string, update func(days int)) {
+func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
 	u, err := url.Parse(home)
 	if err != nil {
 		panic(err)
@@ -171,7 +169,9 @@ func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer
 	}
 	// ApiLayer 限制是一个月 3000 次，这样可以做到
 	// 即便不断重启，也会不超过限制。
-	time.Sleep(time.Minute * 15)
+	if initialDelay {
+		time.Sleep(time.Minute * 15)
+	}
 	check()
 	time.Sleep(time.Minute * 15)
 

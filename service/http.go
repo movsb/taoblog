@@ -22,8 +22,7 @@ func (s *Service) handleGetCalendar(w http.ResponseWriter, r *http.Request) {
 	encrypted, _ := base64.RawURLEncoding.DecodeString(encoded)
 	decrypted, err := s.aesGCM.Decrypt([]byte(encrypted))
 	if err != nil {
-		log.Println(`cannot decrypt:`, encrypted)
-		http.Error(w, `bad data`, 400)
+		http.Error(w, `invalid auth data`, 400)
 		return
 	}
 

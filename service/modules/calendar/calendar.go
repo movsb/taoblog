@@ -30,6 +30,10 @@ func (s *CalenderService) AddEvent(e *Event) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	if _, ok := e.Tags[`uuid`]; !ok {
+		panic(`need uuid`)
+	}
+
 	e.id = uuid.NewString()
 	e.now = s.now()
 	s.events = append(s.events, e)

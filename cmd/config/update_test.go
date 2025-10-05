@@ -39,13 +39,13 @@ func TestUpdate(t *testing.T) {
 	c1, c2 := config.DefaultConfig(), config.DefaultConfig()
 	u := config.NewUpdater(c2)
 	for _, s := range []_kv{
-		{`menus[1]`, `{"name":"后台"}`},
+		{`menus[1]`, `{"name":"后台台"}`},
 	} {
 		u.MustApply(s.Key, s.Value, func(path, value string) {})
 	}
 	assert(
-		jsonOf(c1.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"管理后台","Link":"/admin/","Blank":false,"Items":null}]`,
-		jsonOf(c2.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"后台","Link":"","Blank":false,"Items":null}]`,
+		jsonOf(c1.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"后台","Link":"/admin/","Blank":false,"Items":null}]`,
+		jsonOf(c2.Menus), `[{"Name":"首页","Link":"/","Blank":false,"Items":null},{"Name":"后台台","Link":"","Blank":false,"Items":null}]`,
 	)
 }
 

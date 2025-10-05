@@ -20,7 +20,7 @@ func DefaultMenuConfig() []MenuItem {
 			Link: `/`,
 		},
 		{
-			Name: `管理后台`,
+			Name: `后台`,
 			Link: `/admin/`,
 		},
 	}

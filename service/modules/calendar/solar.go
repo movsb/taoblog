@@ -32,6 +32,13 @@ func truncate(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
+// 扩展当前时间到全天任务时间。
+func AllDay(t time.Time) (time.Time, time.Time) {
+	st := truncate(t)
+	et := st.AddDate(0, 0, 1)
+	return st, et
+}
+
 func isAllDay(st, et time.Time) bool {
 	startHasTime := st.Hour() != 0 || st.Minute() != 0 || st.Second() != 0
 	endHasTime := et.Hour() != 0 || et.Minute() != 0 || et.Second() != 0
