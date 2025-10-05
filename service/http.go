@@ -43,7 +43,9 @@ func (s *Service) handleGetCalendar(w http.ResponseWriter, r *http.Request) {
 	})
 
 	events = events.Unique(func(e *calendar.Event) string {
-		return e.Tags[`uuid`].(string)
+		uuid := e.Tags[`uuid`].(string)
+		repeat, _ := e.Tags[`repeat`].(string)
+		return uuid + repeat
 	})
 
 	info, _ := s.GetInfo(r.Context(), &proto.GetInfoRequest{})

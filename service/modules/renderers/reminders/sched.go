@@ -99,7 +99,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 		if day < 0 {
 			days := calendar.FirstDays(r.Dates.Start.Time, r.Dates.End.Time, -day)
-			for _, pair := range days {
+			for i, pair := range days {
 				e := calendar.Event{
 					Message: fmt.Sprintf(`%s`, r.Title),
 
@@ -110,7 +110,8 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 					PostID: postID,
 
 					Tags: map[string]any{
-						`uuid`: r.uuid,
+						`uuid`:   r.uuid,
+						`repeat`: fmt.Sprintf(`day@%d`, i),
 					},
 				}
 				s.cal.AddEvent(&e)
@@ -129,7 +130,8 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 				PostID: postID,
 
 				Tags: map[string]any{
-					`uuid`: r.uuid,
+					`uuid`:   r.uuid,
+					`repeat`: fmt.Sprintf(`day@%d`, day),
 				},
 			}
 			s.cal.AddEvent(&e)
@@ -139,7 +141,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 	for _, week := range r.Remind.Weeks {
 		if week < 0 {
 			weeks := calendar.FirstWeeks(r.Dates.Start.Time, r.Dates.End.Time, -week)
-			for _, pair := range weeks {
+			for i, pair := range weeks {
 				e := calendar.Event{
 					Message: r.Title,
 
@@ -150,7 +152,8 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 					PostID: postID,
 
 					Tags: map[string]any{
-						`uuid`: r.uuid,
+						`uuid`:   r.uuid,
+						`repeat`: fmt.Sprintf(`week@%d`, i),
 					},
 				}
 				s.cal.AddEvent(&e)
@@ -169,7 +172,8 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 				PostID: postID,
 
 				Tags: map[string]any{
-					`uuid`: r.uuid,
+					`uuid`:   r.uuid,
+					`repeat`: fmt.Sprintf(`week@%d`, week),
 				},
 			}
 			s.cal.AddEvent(&e)
@@ -190,7 +194,8 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 			PostID: postID,
 
 			Tags: map[string]any{
-				`uuid`: r.uuid,
+				`uuid`:   r.uuid,
+				`repeat`: fmt.Sprintf(`month@%d`, month),
 			},
 		}
 		s.cal.AddEvent(&e)
@@ -214,7 +219,8 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 			PostID: postID,
 
 			Tags: map[string]any{
-				`uuid`: r.uuid,
+				`uuid`:   r.uuid,
+				`repeat`: fmt.Sprintf(`year@%d`, year),
 			},
 		}
 		s.cal.AddEvent(&e)
