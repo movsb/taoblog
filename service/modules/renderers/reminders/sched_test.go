@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -17,12 +18,51 @@ const calPrefix = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//TaoBlog//Golang ICS Library
 METHOD:PUBLISH
-LAST-MODIFIED:20020702T170203Z
 TIMEZONE-ID:Asia/Shanghai
 X-WR-CALNAME:Cal
 `
 const calSuffix = `
 END:VCALENDAR`
+
+var reRemoveUID = regexp.MustCompile(`(?m:^UID:.*\n)`)
+var reLastModified = regexp.MustCompile(`(?m:^LAST-MODIFIED:.*\n)`)
+
+func runCal(t *testing.T, cal *calendar.CalenderService, sched *reminders.Scheduler, reminder string, expect string) {
+	sched.DeleteRemindersByPostID(1)
+
+	r := utils.Must1(reminders.ParseReminder([]byte(reminder)))
+
+	// debugger
+	if r.Title == `每天` {
+		r.Title += ``
+	}
+
+	utils.Must(sched.AddReminder(1, 1, r))
+
+	sched.UpdateDaily(1)
+	sched.UpdateEvery(1)
+
+	all := cal.Filter(func(e *calendar.Event) bool { return true })
+	buf := bytes.NewBuffer(nil)
+	all.Marshal(`Cal`, buf)
+	got := strings.ReplaceAll(strings.TrimSpace(buf.String()), "\r\n", "\n")
+	got = reRemoveUID.ReplaceAllLiteralString(got, ``)
+	got = reLastModified.ReplaceAllLiteralString(got, ``)
+
+	want := strings.TrimSpace(expect)
+	fullWant := calPrefix + want + calSuffix
+
+	if got != fullWant {
+		t1, _ := os.Create("/tmp/1")
+		t1.WriteString(got)
+		t2, _ := os.Create("/tmp/2")
+		t2.WriteString(fullWant)
+		t.Logf("输出不相等：\n%s\ngot:  %s\nwant: %s", reminder, t1.Name(), t2.Name())
+		_, file, line, _ := runtime.Caller(1)
+		t.Logf(`%s:%d`, file, line)
+		t.Fatalf("输出不相等：\ngot: \n%s\n\nwant: %s", got, fullWant)
+	}
+}
 
 func TestScheduler(t *testing.T) {
 	tests := []struct {
@@ -255,42 +295,120 @@ DTSTART:20250307T112000Z
 DTEND:20250307T121900Z
 END:VEVENT`,
 		},
+		{
+			Reminder: `
+title: 每天
+dates:
+  start: 2025-10-06
+remind:
+  every: [1d]`,
+			Calendar: `
+BEGIN:VEVENT
+SUMMARY:每天 已经 1 天了
+DTSTART;VALUE=DATE:20251006
+DTEND;VALUE=DATE:20251007
+END:VEVENT`,
+		},
+		{
+			Reminder: `
+title: 每天（不包含当天）
+dates:
+  start: 2002-07-03
+exclusive: true
+remind:
+  every: [1d]`,
+			Calendar: `
+BEGIN:VEVENT
+SUMMARY:每天（不包含当天） 已经 1 天了
+DTSTART;VALUE=DATE:20020704
+DTEND;VALUE=DATE:20020705
+END:VEVENT`,
+		},
+		{
+			Reminder: `
+title: 每周月年
+dates:
+  start: 2025-10-06
+remind:
+  every: [1d,2w,3m,4y]`,
+			Calendar: `
+BEGIN:VEVENT
+SUMMARY:每周月年 已经 1 天了
+DTSTART;VALUE=DATE:20251006
+DTEND;VALUE=DATE:20251007
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:每周月年 已经 2 周了
+DTSTART;VALUE=DATE:20251020
+DTEND;VALUE=DATE:20251021
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:每周月年 已经 3 个月了
+DTSTART;VALUE=DATE:20260106
+DTEND;VALUE=DATE:20260107
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:每周月年 已经 4 年了
+DTSTART;VALUE=DATE:20291006
+DTEND;VALUE=DATE:20291007
+END:VEVENT`,
+		},
 	}
 
 	fixed := time.FixedZone(`fixed`, 8*60*60)
 	now := time.Date(2002, time.July, 3, 1, 2, 3, 0, fixed)
 
-	reRemoveUID := regexp.MustCompile(`(?m:^UID:.*\n)`)
-
 	for _, test := range tests {
 		cal := calendar.NewCalendarService(func() time.Time { return now })
 		sched := reminders.NewScheduler(cal, func() time.Time { return now })
-		r := utils.Must1(reminders.ParseReminder([]byte(test.Reminder)))
-
-		// debugger
-		if r.Title == `测试前2天` {
-			r.Title += ``
-		}
-
-		utils.Must(sched.AddReminder(1, 1, r))
-
-		sched.UpdateDaily(1)
-
-		all := cal.Filter(func(e *calendar.Event) bool { return true })
-		buf := bytes.NewBuffer(nil)
-		all.Marshal(`Cal`, buf)
-		got := strings.ReplaceAll(strings.TrimSpace(buf.String()), "\r\n", "\n")
-		got = reRemoveUID.ReplaceAllLiteralString(got, ``)
-
-		want := strings.TrimSpace(test.Calendar)
-		fullWant := calPrefix + want + calSuffix
-		if got != fullWant {
-			t1, _ := os.Create("/tmp/1")
-			t1.WriteString(got)
-			t2, _ := os.Create("/tmp/2")
-			t2.WriteString(fullWant)
-			t.Logf("输出不相等：\n%s\ngot:  %s\nwant: %s", test.Reminder, t1.Name(), t2.Name())
-			t.Fatalf("输出不相等：\ngot: \n%s\n\nwant: %s", got, fullWant)
-		}
+		runCal(t, cal, sched, test.Reminder, test.Calendar)
 	}
+}
+
+func TestUpdateDaily(t *testing.T) {
+	fixed := time.FixedZone(`fixed`, 8*60*60)
+	var now time.Time
+
+	cal := calendar.NewCalendarService(func() time.Time { return now })
+	sched := reminders.NewScheduler(cal, func() time.Time { return now })
+
+	reminder := `
+title: t1
+dates:
+  start: 2002-07-04
+remind:
+  daily: true
+`
+
+	// 2002-07-03
+	now = time.Date(2002, time.July, 3, 1, 2, 3, 0, fixed)
+
+	runCal(t, cal, sched, reminder, `
+BEGIN:VEVENT
+SUMMARY:t1
+DTSTART;VALUE=DATE:20020704
+DTEND;VALUE=DATE:20020705
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:t1 已经 -1 天了
+DTSTART;VALUE=DATE:20020703
+DTEND;VALUE=DATE:20020704
+END:VEVENT
+`)
+
+	// 2002-07-10
+	now = now.AddDate(0, 0, 7)
+
+	runCal(t, cal, sched, reminder, `
+BEGIN:VEVENT
+SUMMARY:t1
+DTSTART;VALUE=DATE:20020704
+DTEND;VALUE=DATE:20020705
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:t1 已经 7 天了
+DTSTART;VALUE=DATE:20020710
+DTEND;VALUE=DATE:20020711
+END:VEVENT
+`)
 }

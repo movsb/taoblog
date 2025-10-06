@@ -210,6 +210,8 @@ func (t *Task) processSingle(p *proto.Post, silent bool) (_ bool, outErr error) 
 			log.Println(`提醒：处理完成：`, r.Title, p.Modified)
 		}
 	}
+	t.sched.UpdateDaily(int(p.Id))
+	t.sched.UpdateEvery(int(p.Id))
 	return len(rs) > 0, nil
 }
 
@@ -257,6 +259,8 @@ func (t *Task) parsePost(p *proto.Post) ([]*Reminder, error) {
 func (t *Task) refreshPosts(ctx context.Context) {
 	utils.AtMiddleNight(ctx, func() {
 		log.Println(`刷新文章提醒缓存：`, time.Now())
+		// 等下面的刷新日历先执行。
+		time.Sleep(time.Second * 5)
 		t.sched.ForEachPost(func(id int) {
 			t.invalidatePost(id)
 			log.Println(`刷新文章缓存：`, id)
@@ -269,6 +273,7 @@ func (t *Task) refreshCalendar(ctx context.Context) {
 		log.Println(`刷新日历：`, time.Now())
 		t.sched.ForEachPost(func(id int) {
 			t.sched.UpdateDaily(id)
+			t.sched.UpdateEvery(id)
 		})
 	})
 }

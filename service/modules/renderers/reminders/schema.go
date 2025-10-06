@@ -106,6 +106,12 @@ type ReminderRemind struct {
 	// 即：仅用于日历展示。
 	Daily bool `yaml:"daily"`
 
+	// 每……
+	// [1d,2w,3m,4y]
+	// 每1天、每2周、每3个月、每4年
+	// 只保留下一个事件。
+	Every []string `yaml:"every"`
+
 	// TODO not used
 	First int `yaml:"first"`
 }
