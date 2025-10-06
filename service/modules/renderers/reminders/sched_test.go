@@ -412,3 +412,35 @@ DTEND;VALUE=DATE:20020711
 END:VEVENT
 `)
 }
+
+func TestEvery(t *testing.T) {
+	fixed := time.FixedZone(`fixed`, 8*60*60)
+	var now time.Time
+
+	cal := calendar.NewCalendarService(func() time.Time { return now })
+	sched := reminders.NewScheduler(cal, func() time.Time { return now })
+
+	reminder := `
+title: 给车充电
+dates:
+  start: 2025-04-14
+remind:
+  every: [1w]
+`
+
+	// 2025-10-06
+	now = time.Date(2025, time.October, 6, 14, 30, 0, 0, fixed)
+
+	runCal(t, cal, sched, reminder, `
+BEGIN:VEVENT
+SUMMARY:给车充电
+DTSTART;VALUE=DATE:20250414
+DTEND;VALUE=DATE:20250415
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:给车充电 已经 25 周了
+DTSTART;VALUE=DATE:20251006
+DTEND;VALUE=DATE:20251007
+END:VEVENT
+`)
+}

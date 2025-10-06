@@ -206,53 +206,53 @@ func (s *Scheduler) addYear(r *Reminder, pid, uid int, year int, tags map[string
 
 func (s *Scheduler) addEvery(r *Reminder, pid, uid int, d calendar.Duration, shouldCreateToday *bool) {
 	now := s.now()
-	st := r.Dates.Start.Time
 	tags := map[string]any{
 		`every`: true,
 	}
+
+	today := func(t time.Time) bool {
+		return t.Year() == now.Year() && t.Month() == now.Month() && t.Day() == now.Day()
+	}
+
 	switch d.Unit {
 	case calendar.UnitDay:
-		n := d.N
-		for {
-			st = st.AddDate(0, 0, utils.IIF(r.Exclusive, n, n-1))
-			if st.After(now) {
+		for i := 1; ; i++ {
+			n := d.N * i
+			st := r.Dates.Start.AddDate(0, 0, utils.IIF(r.Exclusive, n, n-1))
+			if !st.Before(now) || today(st) {
 				s.addDay(r, pid, uid, n, tags)
 				if n == 1 && shouldCreateToday != nil {
 					*shouldCreateToday = false
 				}
 				break
 			}
-			n *= 2
 		}
 	case calendar.UnitWeek:
-		n := d.N
-		for {
-			st = st.AddDate(0, 0, 7*n)
-			if st.After(now) {
+		for i := 1; ; i++ {
+			n := d.N * i
+			st := r.Dates.Start.AddDate(0, 0, 7*n)
+			if !st.Before(now) || today(st) {
 				s.addWeek(r, pid, uid, n, tags)
 				break
 			}
-			n *= 2
 		}
 	case calendar.UnitMonth:
-		n := d.N
-		for {
-			st = calendar.AddMonths(st, n)
-			if st.After(now) {
+		for i := 1; ; i++ {
+			n := d.N * i
+			st := calendar.AddMonths(r.Dates.Start.Time, n)
+			if !st.Before(now) || today(st) {
 				s.addMonth(r, pid, uid, n, tags)
 				break
 			}
-			n *= 2
 		}
 	case calendar.UnitYear:
-		n := d.N
-		for {
-			st = calendar.AddYears(st, n)
-			if st.After(now) {
+		for i := 1; ; i++ {
+			n := d.N * i
+			st := calendar.AddYears(r.Dates.Start.Time, n)
+			if !st.Before(now) || today(st) {
 				s.addYear(r, pid, uid, n, tags)
 				break
 			}
-			n *= 2
 		}
 	}
 }
