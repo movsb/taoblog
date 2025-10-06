@@ -1,17 +1,18 @@
 div.divider {
 	margin: 1.5em 0;
-	border-top: 2px double var(--border-color);
+	border-top: 6px double var(--border-color);
 	text-align: center;
 	line-height: 0;
 	overflow: visible;
 }
 .divider span {
-	padding: 0 .3em;
+	padding: 0 6px;
 	background-color: var(--color-bg);
+	transition: background-color .2s linear;
 	color: var(--border-color);
 	text-shadow: none;
 	font-weight: bold;
-	// border 2px 偏移了一点点，修正一下。
+	// border 导致偏移了一点点，修正一下。
 	position: relative;
-	top: -1px;
+	top: -3px;
 }
