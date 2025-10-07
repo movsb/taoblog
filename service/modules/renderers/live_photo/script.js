@@ -78,14 +78,17 @@ const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
 		video.pause();
 	};
 
-	const hover = hoverElement ?? icon;
-	hover.addEventListener('mouseenter',   start);
-	hover.addEventListener('mouseleave',   leave);
-
-	const touch = touchElement ?? image;
-	touch.addEventListener('touchstart',  start);
-	touch.addEventListener('touchend',    leave);
-	touch.addEventListener('touchcancel', leave);
+	const isMobile = 'ontouchstart' in window;
+	if(isMobile) {
+		const touch = touchElement ?? image;
+		touch.addEventListener('touchstart',  start);
+		touch.addEventListener('touchend',    leave);
+		touch.addEventListener('touchcancel', leave);
+	} else {
+		const hover = hoverElement ?? icon;
+		hover.addEventListener('mouseenter',   start);
+		hover.addEventListener('mouseleave',   leave);
+	}
 
 	video.addEventListener('ended', () => {
 		livePhoto.classList.remove('zoom');
