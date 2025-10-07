@@ -4,6 +4,9 @@ class API {
 		const json = await rsp.json();
 		return json;
 	}
+	static async deleteFile(path) {
+		return fetch(path, { method: 'DELETE'});
+	}
 }
 
 class UI {
@@ -71,6 +74,13 @@ class UI {
 		}
 		if(li._isVideo) {
 			this.preview(undefined, path);
+		}
+	}
+	handleDelete = async li => {
+		const path = li._path; // 含查询。
+		if(path) {
+			await API.deleteFile(path);
+			li._valid = false;
 		}
 	}
 
@@ -168,6 +178,9 @@ class UI {
 				range.addEventListener('change', e => {
 					li._valid = false;
 				});
+			});
+			li.querySelector('.delete').addEventListener('click', () => {
+				this.handleDelete(li);
 			});
 
 			/** @type {string} */

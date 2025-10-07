@@ -196,6 +196,11 @@ func (s *Server) Run(ctx context.Context) {
 		http.ServeFile(w, r, path)
 	})
 
+	mux.HandleFunc(`DELETE /out/`, func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Clean(strings.TrimPrefix(r.URL.Path, `/out/`))
+		os.Remove(path)
+	})
+
 	lis := utils.Must1(net.Listen(`tcp4`, `:3367`))
 	defer lis.Close()
 
