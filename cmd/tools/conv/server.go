@@ -132,7 +132,7 @@ func (s *Server) Run(ctx context.Context) {
 		})
 
 		slices.SortFunc(files, func(a, b File) int {
-			return int(a.Time.Unix()) - int(b.Time.Unix())
+			return strings.Compare(a.Name, b.Name)
 		})
 
 		json.NewEncoder(w).Encode(files)
