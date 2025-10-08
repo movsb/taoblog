@@ -27,18 +27,37 @@ type Auth struct {
 
 	userCache *lru.TTLCache[int, *models.User]
 
-	// 临时]
-	Passkeys *Passkeys
+	passkeys *Passkeys
 }
 
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
-func New(db *taorm.DB) *Auth {
+func New(db *taorm.DB, home *url.URL, siteName string) *Auth {
 	a := Auth{
 		db: db,
 
 		userCache: lru.NewTTLCache[int, *models.User](16),
 	}
+
+	config := &webauthn.Config{
+		RPID:          home.Hostname(),
+		RPDisplayName: siteName,
+		RPOrigins:     []string{home.String()},
+	}
+	wa, err := webauthn.New(config)
+	if err != nil {
+		panic(err)
+	}
+	p := NewPasskeys(home, db, wa,
+		a.GenCookieForPasskeys,
+		a.DropUserCache,
+	)
+	a.passkeys = p
+
 	return &a
+}
+
+func (o *Auth) Passkeys() *Passkeys {
+	return o.passkeys
 }
 
 func (o *Auth) getDB(ctx context.Context) *taorm.DB {

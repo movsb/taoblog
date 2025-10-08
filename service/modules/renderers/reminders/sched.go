@@ -22,9 +22,9 @@ type Scheduler struct {
 
 // TODO 重命名，同时适用于 every
 type _Daily struct {
-	r      *Reminder
-	userID int
-	postID int
+	reminder *Reminder
+	userID   int
+	postID   int
 }
 
 func NewScheduler(cal *calendar.CalenderService, now func() time.Time) *Scheduler {
@@ -40,72 +40,68 @@ func NewScheduler(cal *calendar.CalenderService, now func() time.Time) *Schedule
 	return sched
 }
 
-func (s *Scheduler) UpdateDaily(postID int) {
-	now := s.now()
-
-	s.cal.Remove(func(e *calendar.Event) bool {
-		if e.PostID == postID {
-			_, isDaily := e.Tags[`daily`]
-			return isDaily
-		}
-		return false
-	})
-
+func (s *Scheduler) UpdateDaily() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	now := s.now()
+
 	for _, daily := range s.daily {
-		if daily.postID != postID {
-			continue
-		}
-
-		r := daily.r
-
-		days := calendar.DaysPassed(now, r.Dates.Start.Time, r.Exclusive)
-		st, et := calendar.Daily(now, r.Dates.Start.Time, r.Dates.End.Time)
-		e := calendar.Event{
-			Message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, days),
-
-			Start: st,
-			End:   et,
-
-			UserID: daily.userID,
-			PostID: daily.postID,
-
-			Tags: map[string]any{
-				`daily`: true,
-				`uuid`:  r.uuid,
-			},
-		}
-		s.cal.AddEvent(&e)
+		s.updateDaily(now, daily)
 	}
 }
 
-func (s *Scheduler) UpdateEvery(postID int) {
+func (s *Scheduler) updateDaily(now time.Time, d _Daily) {
+	r := d.reminder
 	s.cal.Remove(func(e *calendar.Event) bool {
-		if e.PostID == postID {
-			_, isEvery := e.Tags[`every`]
-			return isEvery
-		}
-		return false
+		uuid, _ := e.Tags[`uuid`]
+		_, isDaily := e.Tags[`daily`]
+		return uuid == r.uuid && isDaily
 	})
 
+	days := calendar.DaysPassed(now, r.Dates.Start.Time, r.Exclusive)
+	st, et := calendar.Daily(now, r.Dates.Start.Time, r.Dates.End.Time)
+	e := calendar.Event{
+		Message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, days),
+
+		Start: st,
+		End:   et,
+
+		UserID: d.userID,
+		PostID: d.postID,
+
+		Tags: map[string]any{
+			`daily`: true,
+			`uuid`:  r.uuid,
+		},
+	}
+	s.cal.AddEvent(&e)
+}
+
+func (s *Scheduler) UpdateEvery() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	for _, every := range s.every {
-		if every.postID != postID {
+		s.updateEvery(every, nil)
+	}
+}
+
+func (s *Scheduler) updateEvery(d _Daily, shouldCreateToday *bool) {
+	r := d.reminder
+	s.cal.Remove(func(e *calendar.Event) bool {
+		uuid, _ := e.Tags[`uuid`]
+		_, isEvery := e.Tags[`every`]
+		return uuid == r.uuid && isEvery
+	})
+
+	for _, duration := range r.Remind.Every {
+		dd, err := calendar.ParseDuration(duration)
+		if err != nil {
+			log.Println(err)
 			continue
 		}
-
-		for _, d := range every.r.Remind.Every {
-			dd, err := calendar.ParseDuration(d)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			s.addEvery(every.r, every.postID, every.userID, dd, nil)
-		}
+		s.addEvery(r, d.postID, d.userID, dd, shouldCreateToday)
 	}
 }
 
@@ -263,22 +259,27 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	shouldCreateToday := true
+
 	if r.Remind.Daily {
-		s.daily = append(s.daily, _Daily{
-			postID: postID,
-			userID: userID,
-			r:      r,
-		})
+		d := _Daily{
+			postID:   postID,
+			userID:   userID,
+			reminder: r,
+		}
+		s.daily = append(s.daily, d)
+		s.updateDaily(s.now(), d)
+		shouldCreateToday = false
 	}
 	if len(r.Remind.Every) > 0 {
-		s.every = append(s.every, _Daily{
-			postID: postID,
-			userID: userID,
-			r:      r,
-		})
+		d := _Daily{
+			postID:   postID,
+			userID:   userID,
+			reminder: r,
+		}
+		s.every = append(s.every, d)
+		s.updateEvery(d, &shouldCreateToday)
 	}
-
-	shouldCreateToday := true
 
 	for _, day := range r.Remind.Days {
 		if day == 1 {
@@ -346,14 +347,6 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 		}
 
 		s.addYear(r, postID, userID, year, nil)
-	}
-
-	for _, every := range r.Remind.Every {
-		d, err := calendar.ParseDuration(every)
-		if err != nil {
-			return err
-		}
-		s.addEvery(r, postID, userID, d, &shouldCreateToday)
 	}
 
 	if shouldCreateToday {

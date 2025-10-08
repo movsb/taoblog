@@ -158,6 +158,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	s := &Service{
 		ctx: ctx,
 
+		AuthServer: auther.Passkeys(),
+
 		notifier: &proto.UnimplementedNotifyServer{},
 
 		cfg:        cfg,

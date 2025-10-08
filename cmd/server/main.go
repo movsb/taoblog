@@ -19,7 +19,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-webauthn/webauthn/webauthn"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/admin"
@@ -213,8 +212,11 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.testing = testing
 
+	home := utils.Must1(url.Parse(cfg.Site.Home))
+
 	log.Println(`DevMode:`, version.DevMode())
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
+	log.Println(`Home:`, home.String())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -246,7 +248,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	theAuth := auth.New(taorm.NewDB(postsDB))
+	theAuth := auth.New(taorm.NewDB(postsDB), home, cfg.Site.Name)
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
@@ -274,7 +276,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		s.initRSS()
 	}
 
-	s.createAdmin(ctx, cfg, postsDB, theService, theAuth, mux)
+	s.createAdmin(ctx, cfg, theService, theAuth, mux)
 
 	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth)
 	canon := canonical.New(theme, theService, s.metrics)
@@ -370,7 +372,7 @@ func (s *Server) initRSS() {
 	s.rss = rss
 }
 
-func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
+func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
 	prefix := `/admin/`
 
 	u, err := url.Parse(cfg.Site.Home)
@@ -383,24 +385,6 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, db *sql.DB
 	)
 	// log.Println(`admin on`, prefix)
 	mux.Handle(prefix, a.Handler())
-
-	config := &webauthn.Config{
-		RPID:          u.Hostname(),
-		RPDisplayName: cfg.Site.Name,
-		RPOrigins:     []string{u.String()},
-	}
-	wa, err := webauthn.New(config)
-	if err != nil {
-		panic(err)
-	}
-	p := auth.NewPasskeys(
-		u,
-		taorm.NewDB(db), wa,
-		theAuth.GenCookieForPasskeys,
-		theAuth.DropUserCache,
-	)
-	theService.AuthServer = p
-	theAuth.Passkeys = p
 }
 
 func (s *Server) sendNotify(title, message string) {

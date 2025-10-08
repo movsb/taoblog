@@ -420,7 +420,7 @@ func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
 		barkToken = r.PostFormValue(`bark_token`)
 	)
 
-	utils.Must1(a.auth.Passkeys.UpdateUser(
+	utils.Must1(a.auth.Passkeys().UpdateUser(
 		r.Context(),
 		&proto.UpdateUserRequest{
 			User: &proto.User{

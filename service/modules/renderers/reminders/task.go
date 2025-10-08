@@ -97,6 +97,9 @@ func (t *Task) load() {
 			auth.SystemForLocal(t.ctx),
 			&proto.GetPostRequest{
 				Id: int32(p),
+				GetPostOptions: &proto.GetPostOptions{
+					WithUserPerms: true,
+				},
 			},
 		)
 		if err != nil {
@@ -110,7 +113,9 @@ func (t *Task) load() {
 			continue
 		}
 	}
-	// log.Println(`Reminders.Task.load:`, `加载完成`)
+	if len(posts) > 0 {
+		log.Println(`Reminders.Task.load:`, `加载完成`)
+	}
 }
 
 func (t *Task) save(new, old []int) error {
@@ -210,8 +215,6 @@ func (t *Task) processSingle(p *proto.Post, silent bool) (_ bool, outErr error) 
 			log.Println(`提醒：处理完成：`, r.Title, p.Modified)
 		}
 	}
-	t.sched.UpdateDaily(int(p.Id))
-	t.sched.UpdateEvery(int(p.Id))
 	return len(rs) > 0, nil
 }
 
@@ -271,9 +274,7 @@ func (t *Task) refreshPosts(ctx context.Context) {
 func (t *Task) refreshCalendar(ctx context.Context) {
 	utils.AtMiddleNight(ctx, func() {
 		log.Println(`刷新日历：`, time.Now())
-		t.sched.ForEachPost(func(id int) {
-			t.sched.UpdateDaily(id)
-			t.sched.UpdateEvery(id)
-		})
+		t.sched.UpdateDaily()
+		t.sched.UpdateEvery()
 	})
 }

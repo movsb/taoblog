@@ -39,9 +39,6 @@ func runCal(t *testing.T, cal *calendar.CalenderService, sched *reminders.Schedu
 
 	utils.Must(sched.AddReminder(1, 1, r))
 
-	sched.UpdateDaily(1)
-	sched.UpdateEvery(1)
-
 	all := cal.Filter(func(e *calendar.Event) bool { return true })
 	buf := bytes.NewBuffer(nil)
 	all.Marshal(`Cal`, buf)
@@ -215,11 +212,6 @@ remind:
 `,
 			Calendar: `
 BEGIN:VEVENT
-SUMMARY:测试每天
-DTSTART;VALUE=DATE:20020701
-DTEND;VALUE=DATE:20020702
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:测试每天 已经 3 天了
 DTSTART;VALUE=DATE:20020703
 DTEND;VALUE=DATE:20020704
@@ -385,11 +377,6 @@ remind:
 
 	runCal(t, cal, sched, reminder, `
 BEGIN:VEVENT
-SUMMARY:t1
-DTSTART;VALUE=DATE:20020704
-DTEND;VALUE=DATE:20020705
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:t1 已经 -1 天了
 DTSTART;VALUE=DATE:20020703
 DTEND;VALUE=DATE:20020704
@@ -400,11 +387,6 @@ END:VEVENT
 	now = now.AddDate(0, 0, 7)
 
 	runCal(t, cal, sched, reminder, `
-BEGIN:VEVENT
-SUMMARY:t1
-DTSTART;VALUE=DATE:20020704
-DTEND;VALUE=DATE:20020705
-END:VEVENT
 BEGIN:VEVENT
 SUMMARY:t1 已经 7 天了
 DTSTART;VALUE=DATE:20020710
@@ -433,14 +415,14 @@ remind:
 
 	runCal(t, cal, sched, reminder, `
 BEGIN:VEVENT
-SUMMARY:给车充电
-DTSTART;VALUE=DATE:20250414
-DTEND;VALUE=DATE:20250415
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:给车充电 已经 25 周了
 DTSTART;VALUE=DATE:20251006
 DTEND;VALUE=DATE:20251007
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:给车充电
+DTSTART;VALUE=DATE:20250414
+DTEND;VALUE=DATE:20250415
 END:VEVENT
 `)
 }
