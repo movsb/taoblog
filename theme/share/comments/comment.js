@@ -979,4 +979,4 @@ document.addEventListener('DOMContentLoaded', () => {
 	let comment = new CommentManager(TaoBlog.post_id);
 	window.comment = comment; // 全局变量，供 HTML 事件处理器使用
 	comment.init();
-});
+}, {once: true});

@@ -2213,4 +2213,4 @@ document.addEventListener('DOMContentLoaded', () => {
 	const post = TaoBlog.posts[TaoBlog.post_id];
 	const form = new PostFormUI();
 	form.initFrom(post);
-});
+}, {once: true});

@@ -24,4 +24,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
 	videos.forEach(v => {
 		observer.observe(v);
 	});
-});
+}, {once: true});

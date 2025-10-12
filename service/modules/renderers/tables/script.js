@@ -33,4 +33,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
 			wrap.insertAdjacentElement('afterbegin', toolbar);
 		}
 	});
-}, { once: true});
+}, {once: true});

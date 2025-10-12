@@ -62,7 +62,7 @@ TaoBlog.fn.getNickname = function() {
 if (TaoBlog.fn.getUserID() > 0) {
 	document.addEventListener('DOMContentLoaded', ()=>{
 		document.body.classList.add('signed-in');
-	});
+	}, {once: true});
 }
 
 class TimeWithZone {

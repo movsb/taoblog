@@ -174,4 +174,4 @@ document.addEventListener('DOMContentLoaded', () => {
 		return img;
 	});
 	window.TaoBlog.imgView = new ImageView(objects);
-});
+}, {once: true});

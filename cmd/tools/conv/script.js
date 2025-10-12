@@ -199,4 +199,4 @@ class UI {
 document.addEventListener('DOMContentLoaded', async () => {
 	const ui = new UI();
 	await ui.listFiles();
-});
+}, {once: true});

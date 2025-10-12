@@ -83,4 +83,4 @@ window.addEventListener('resize', () => {
 
 }
 
-document.addEventListener('DOMContentLoaded', setupAnniversary);
+document.addEventListener('DOMContentLoaded', setupAnniversary, {once: true});

@@ -97,4 +97,4 @@ const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
 
 document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('.live-photo:not(.clone)').forEach(p => livePhotoBindEvents(p));
-});
+}, {once: true});

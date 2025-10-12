@@ -204,4 +204,4 @@ document.addEventListener('DOMContentLoaded', () => {
 			editorAreaManager.handleDirty(id, dirty);
 		}
 	});
-});
+}, {once: true});

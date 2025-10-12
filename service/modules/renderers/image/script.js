@@ -23,4 +23,4 @@ document.addEventListener(`DOMContentLoaded`, () => {
 			}, 3000);
 		}, { capture: true });
 	});
-});
+}, {once: true});

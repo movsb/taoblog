@@ -150,4 +150,4 @@ document.addEventListener('DOMContentLoaded', function() {
 	vim.bind('n', () => {
 		location.href='/admin/editor?new=1&type=markdown';
 	});
-});
+}, {once: true});

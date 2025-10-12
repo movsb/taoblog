@@ -76,4 +76,4 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.body.classList.add('wide');
 		document.body.classList.add('embed-drafts');
 	}
-});
+}, {once: true});
