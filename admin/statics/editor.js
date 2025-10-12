@@ -1690,6 +1690,14 @@ class PostFormUI {
 			exitDiv.style.display = 'none';
 			fullscreenCheckbox.checked = false;
 		});
+
+		// 这行代码用于允许接收 drop 事件。
+		// [HTML Drag and Drop API - Web APIs | MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API#drop_target)
+		document.addEventListener('dragover', e => e.preventDefault());
+		document.addEventListener('drop', e => {
+			e.preventDefault();
+			this._handleSelectFiles(e.dataTransfer.files);
+		});
 	}
 
 	_handleSourceChanged = (content) => {
@@ -2203,7 +2211,9 @@ class PostFormUI {
 			return true;
 		} catch(e) {
 			now.error(`错误：${e.message ?? e}`, true);
-			options.showError && alert('错误：' + e);
+			if(options.showError || !this._fileManager._dialog.open) {
+				alert('错误：' + e);
+			}
 			return false;
 		}
 	}
