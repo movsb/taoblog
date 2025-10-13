@@ -32,7 +32,7 @@ blockquote:has(p.alert-caution) {
 
 blockquote:has(p:is(.alert-note,.alert-tip,.alert-important,.alert-warning,.alert-caution)) {
 	border: 1px solid var(--border-color);
-	background-color: rgb(from var(--border-color) r g b / .2);
+	background-color: rgb(from var(--border-color) r g b / .1);
 	p.alert { color: var(--border-color); }
 }
 

@@ -38,7 +38,7 @@ type Task struct {
 }
 
 func (t *Task) Run(ctx context.Context) {
-	ticker := time.NewTicker(time.Second * 3)
+	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
 	for {

@@ -1,5 +1,32 @@
 const userID = TaoBlog.fn.getUserID();
 
+async function register() {
+	let wa = new WebAuthn();
+	try {
+		await wa.register();
+		alert('新的通行密钥注册成功。');
+	} catch(e) {
+		if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+			console.log('已取消操作。');
+			return;
+		}
+		alert(e);
+	}
+}
+async function switchUser() {
+	let wa = new WebAuthn();
+	try {
+		await wa.login();
+		location.reload();
+	} catch(e) {
+		if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+			console.log('已取消操作。');
+			return;
+		}
+		alert(e);
+	}
+}
+
 document.getElementById('change-nickname').addEventListener('click', async () => {
 	const elem = document.getElementById('nickname');
 	const current = elem.textContent;
