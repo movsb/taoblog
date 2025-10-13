@@ -248,11 +248,11 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) getLogout(w http.ResponseWriter, r *http.Request) {
-	cookies.RemoveCookie(w)
+	cookies.RemoveCookie(w, r)
 	http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
 }
 func (a *Admin) postLogout(w http.ResponseWriter, r *http.Request) {
-	cookies.RemoveCookie(w)
+	cookies.RemoveCookie(w, r)
 }
 
 type ProfileData struct {

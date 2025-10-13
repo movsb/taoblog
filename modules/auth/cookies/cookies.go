@@ -60,10 +60,15 @@ func ValidateCookieValue(value string, userAgent string, getUser func(userID int
 
 const maxAge = time.Hour * 24 * 7
 
+func isHTTPS(r *http.Request) bool {
+	u, _ := url.Parse(r.Header.Get(`Origin`))
+	return u != nil && strings.ToLower(u.Scheme) == `https`
+}
+
 func MakeCookie(w http.ResponseWriter, r *http.Request, userID int, password string, nickname string) {
 	agent := r.Header.Get("User-Agent")
 	cookie := CookieValue(agent, userID, password)
-	secure := !version.DevMode()
+	secure := !version.DevMode() && isHTTPS(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    cookie,
@@ -97,8 +102,8 @@ func MakeCookie(w http.ResponseWriter, r *http.Request, userID int, password str
 	})
 }
 
-func RemoveCookie(w http.ResponseWriter) {
-	secure := !version.DevMode()
+func RemoveCookie(w http.ResponseWriter, r *http.Request) {
+	secure := !version.DevMode() && isHTTPS(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
 		Value:    ``,
