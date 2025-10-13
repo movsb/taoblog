@@ -202,13 +202,18 @@ func (p *Passkeys) UpdateUser(ctx context.Context, in *proto.UpdateUserRequest) 
 
 	if in.UpdateAvatar {
 		d := utils.Must1(utils.ParseDataURL(in.User.Avatar))
-		if len(d.Data) > 100<<10 {
-			panic(`头像太大。`)
-		}
 		if !strings.HasPrefix(d.Type, `image/`) {
 			panic(`不是图片文件。`)
 		}
-		m[`avatar`] = in.User.Avatar
+		if len(d.Data) > 220<<10 {
+			d, err := utils.ResizeImage(d.Type, bytes.NewReader(d.Data), 220, 220)
+			if err != nil {
+				return nil, err
+			}
+			m[`avatar`] = d.String()
+		} else {
+			m[`avatar`] = in.User.Avatar
+		}
 	}
 	if in.UpdateEmail {
 		if in.User.Email != `` && !utils.IsEmail(in.User.Email) {

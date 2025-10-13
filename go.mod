@@ -26,11 +26,13 @@ require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/alecthomas/chroma/v2 v2.13.0
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.2.1
+	github.com/anthonynsimon/bild v0.14.0
 	github.com/arran4/golang-ical v0.3.2
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.8
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.61
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.0
+	github.com/buckket/go-blurhash v1.1.0
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/dop251/goja_nodejs v0.0.0-20250325151027-56d2092bee9a
@@ -39,6 +41,8 @@ require (
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/goccy/go-graphviz v0.2.9
 	github.com/goccy/go-yaml v1.17.1
+	github.com/google/uuid v1.6.0
+	github.com/googollee/eviltransform v0.0.0-20231101174306-03ba58d92dfd
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/go-image-avif-size v0.0.0-20250607015031-0e19c3e4a9c8
@@ -73,7 +77,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.16 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
-	github.com/buckket/go-blurhash v1.1.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
@@ -92,8 +95,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-tpm v0.9.0 // indirect
 	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/googollee/eviltransform v0.0.0-20231101174306-03ba58d92dfd // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

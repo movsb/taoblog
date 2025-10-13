@@ -72,3 +72,62 @@ document.getElementById('change-email').addEventListener('click', async () => {
 		elem.textContent = name;
 	}
 });
+
+/**
+ * 
+ * @param {File} f 
+ * @returns {Promise<string>}
+ */
+async function readFileAsDataURL(f) {
+	const r = new FileReader();
+	return new Promise((resolve) => {
+		r.onload = () => {
+			resolve(r.result);
+		};
+		r.readAsDataURL(f);
+	});
+}
+
+/** @type {HTMLImageElement} */
+const avatarImg = document.getElementById('avatar');
+avatarImg.addEventListener('click', () => {
+	/** @type {HTMLInputElement} */
+	const file = document.getElementById('avatar-file');
+	file.onchange = async () => {
+		console.log(file.files);
+		if(file.files.length != 1) {
+			return;
+		}
+		const url = await readFileAsDataURL(file.files[0]);
+		console.log(url);
+
+		/** @type {HTMLParagraphElement} */
+		const status = document.querySelector('#avatar-wrapper .uploading');
+		status.style.display = 'block';
+
+		try {
+			const rsp = await fetch(`/v3/users/${userID}`, {
+				method: `PATCH`,
+				body: JSON.stringify({
+					user: {
+						avatar: url,
+					},
+					update_avatar: true,
+				}),
+			});
+			if(!rsp.ok) {
+				throw await rsp.text();
+			}
+			const u = new URL(avatarImg.src);
+			const s = new URLSearchParams(u.search);
+			s.set('_', new Date().getTime());
+			u.search = '?' + s.toString();
+			avatarImg.src = u.toString();
+		} catch (e) {
+			alert('更新失败：' + e);
+		} finally {
+			status.style.display = 'none';
+		}
+	};
+	file.click();
+});
