@@ -102,6 +102,7 @@ message UpdateUserRequest {
 	bool update_avatar = 10;
 	bool update_email = 11;
 	bool update_bark_token = 12;
+	bool update_nickname = 13;
 }
 
 message UpdateUserResponse {}

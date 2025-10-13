@@ -1,7 +1,7 @@
 body.admin {
 	margin: 1em;
 	
-	&.login, &.profile {
+	&.login {
 		input, button {
 			width: 100%;
 				margin: 4px 0 4px;
@@ -11,6 +11,13 @@ body.admin {
 }
 
 body.admin.profile {
+	.buttons {
+		input, button {
+			width: 100%;
+				margin: 4px 0 4px;
+			max-width: 250px;
+		}
+	}
 	.avatar {
 		width: 120px;
 		height: 120px;

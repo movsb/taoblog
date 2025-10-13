@@ -13,12 +13,12 @@
 <h1>{{ .Name }}</h1>
 <div class="user-info">
 	<p><img class="avatar" src="{{.AvatarURL}}"></p>
-	<p>昵称：{{ .User.Nickname }}</p>
-	<p>邮箱：{{ with .User.Email }}{{ . }}{{ else }}(无){{ end }}</p>
+	<p>昵称：<span id="nickname">{{.User.Nickname}}</span> <button id="change-nickname">修改</button></p>
+	<p>邮箱：<span id="email">{{ with .User.Email }}{{ . }}{{ else }}(无){{ end }}</span> <button id="change-email">修改</button></p>
 	<p>公钥：{{ len .PublicKeys }}</p>
 	<p>日历：<input type="text" value="{{ .CalendarURL }}" readonly></p>
 </div>
-<div>
+<div class="buttons">
 	<p><button onclick="register()">注册通行密钥</button></p>
 	<p><button onclick="location.href='editor?new=1&type=markdown'">发表文章</button></p>
 	<p><button onclick="location.href='drafts'">草稿管理</button></p>
@@ -58,5 +58,6 @@ async function switchUser() {
 	}
 }
 </script>
+<script src="profile.js"></script>
 </body>
 </html>

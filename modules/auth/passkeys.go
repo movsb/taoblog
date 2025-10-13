@@ -222,6 +222,9 @@ func (p *Passkeys) UpdateUser(ctx context.Context, in *proto.UpdateUserRequest) 
 		}
 		m[`bark_token`] = in.User.BarkToken
 	}
+	if in.UpdateNickname {
+		m[`nickname`] = in.User.Nickname
+	}
 
 	if len(m) > 0 {
 		r := p.db.Model(models.User{ID: in.User.Id}).MustUpdateMap(m)
