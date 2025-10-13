@@ -229,10 +229,7 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 
 	sendFile := func(req *proto.BackupFilesRequest_SendFileRequest) error {
 		log.Printf("send file: %d/%s", req.PostId, req.Path)
-		fs, err := s.postDataFS.ForPost(int(req.PostId))
-		if err != nil {
-			return err
-		}
+		fs := s.postDataFS.ForPost(int(req.PostId))
 		f, err := fs.Open(req.Path)
 		if err != nil {
 			return err

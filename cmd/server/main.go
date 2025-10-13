@@ -237,7 +237,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	os.Mkdir(tmpDir, 0755)
 	tmpRoot := utils.Must1(os.OpenRoot(tmpDir))
 	log.Println(`临时目录：`, tmpDir)
-	filesStore := theme_fs.FS(storage.NewSQLite(postsDB, storage.NewDataStore(filesDB), tmpRoot))
+	filesStore := storage.NewSQLite(postsDB, storage.NewDataStore(filesDB), tmpRoot)
 
 	migration.Migrate(postsDB, filesDB, cacheDB)
 
@@ -528,7 +528,7 @@ func (s *Server) createMainServices(
 	notifier proto.NotifyServer,
 	cancel func(),
 	auth *auth.Auth,
-	filesStore theme_fs.FS,
+	filesStore *storage.SQLite,
 	rc *runtime_config.Runtime,
 	mux *http.ServeMux,
 ) *service.Service {

@@ -15,7 +15,7 @@ type FS interface {
 	// 用于整个备份。
 	AllFiles() (map[int][]*proto.FileSpec, error)
 	// 针对单篇文章/评论的文件系统。
-	ForPost(id int) (fs.FS, error)
+	ForPost(id int) fs.FS
 }
 
 type Empty struct{}
@@ -26,8 +26,8 @@ func (Empty) AllFiles() (map[int][]*proto.FileSpec, error) {
 	return nil, nil
 }
 
-func (Empty) ForPost(id int) (fs.FS, error) {
-	return empty, nil
+func (Empty) ForPost(id int) fs.FS {
+	return empty
 }
 
 type FileURLGetter interface {

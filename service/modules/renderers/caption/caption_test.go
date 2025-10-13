@@ -54,7 +54,7 @@ func TestRender(t *testing.T) {
 	db2 := migration.InitFiles(``)
 	dbFS := storage.NewSQLite(db1, storage.NewDataStore(db2), nil)
 	utils.Must(utils.Write(
-		utils.Must1(dbFS.ForPost(1)),
+		dbFS.ForPost(1),
 		&proto.FileSpec{
 			Path: `1.avif`,
 			Size: 3,
@@ -69,7 +69,7 @@ func TestRender(t *testing.T) {
 		strings.NewReader("123")),
 	)
 	utils.Must(utils.Write(
-		utils.Must1(dbFS.ForPost(1)),
+		dbFS.ForPost(1),
 		&proto.FileSpec{
 			Path: `2.avif`,
 			Size: 3,
@@ -84,7 +84,7 @@ func TestRender(t *testing.T) {
 		strings.NewReader("234")),
 	)
 	utils.Must(utils.Write(
-		utils.Must1(dbFS.ForPost(1)),
+		dbFS.ForPost(1),
 		&proto.FileSpec{
 			Path: `3.jpg`,
 			Size: 3,
@@ -99,7 +99,7 @@ func TestRender(t *testing.T) {
 		strings.NewReader("345")),
 	)
 	utils.Must(utils.Write(
-		utils.Must1(dbFS.ForPost(1)),
+		dbFS.ForPost(1),
 		&proto.FileSpec{
 			Path: `3.webm`,
 			Size: 3,
@@ -116,10 +116,10 @@ func TestRender(t *testing.T) {
 
 	for i, tc := range testCases {
 		cap := caption.New(gold_utils.NewWebFileSystem(
-			utils.Must1(dbFS.ForPost(1)),
+			dbFS.ForPost(1),
 			utils.Must1(url.Parse(`/`)),
 		))
-		md := renderers.NewMarkdown(cap, live_photo.New(context.Background(), gold_utils.NewWebFileSystem(utils.Must1(dbFS.ForPost(1)), &url.URL{Path: `/`})))
+		md := renderers.NewMarkdown(cap, live_photo.New(context.Background(), gold_utils.NewWebFileSystem(dbFS.ForPost(1), &url.URL{Path: `/`})))
 		html, err := md.Render(tc.Markdown)
 		if err != nil {
 			t.Errorf("%d: %v", i, err.Error())

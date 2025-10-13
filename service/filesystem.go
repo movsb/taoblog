@@ -61,7 +61,8 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr erro
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
 				// TODO 没鉴权。
-				pfs, err = s.postDataFS.ForPost(int(init.Id))
+				pfs = s.postDataFS.ForPost(int(init.Id))
+				err = nil
 			}
 			if err != nil {
 				return status.Error(codes.Internal, err.Error())
@@ -143,7 +144,7 @@ func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRe
 		panic(noPerm)
 	}
 
-	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
+	pfs := s.postDataFS.ForPost(int(in.PostId))
 	if err := utils.Delete(pfs, in.Path); err != nil {
 		if os.IsNotExist(err) {
 			panic(status.Error(codes.NotFound, `file not found`))
@@ -164,7 +165,7 @@ func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCap
 	}
 
 	// TODO: 强制转换了，只应有这一种实例。
-	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId))).(*storage.SQLiteForPost)
+	pfs := s.postDataFS.ForPost(int(in.PostId)).(*storage.SQLiteForPost)
 	utils.Must(pfs.UpdateCaption(in.Path, &proto.FileSpec_Meta_Source{
 		Format:  proto.FileSpec_Meta_Source_Markdown,
 		Caption: in.Caption,
@@ -185,7 +186,7 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 		panic(noPerm)
 	}
 
-	pfs := utils.Must1(s.postDataFS.ForPost(int(in.PostId)))
+	pfs := s.postDataFS.ForPost(int(in.PostId))
 	files := utils.Must1(utils.ListFiles(pfs))
 
 	filtered := make([]*proto.FileSpec, 0, len(files))
@@ -251,7 +252,7 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
 	}
 
-	pfs := utils.Must1(s.postDataFS.ForPost(int(postID)))
+	pfs := s.postDataFS.ForPost(int(postID))
 
 	if !localOnly {
 		if cache := s.getFasterFileURL(r, pfs, p, file); cache != nil && cache.Get != `` {

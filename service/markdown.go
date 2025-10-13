@@ -11,6 +11,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/alerts"
 	"github.com/movsb/taoblog/service/modules/renderers/blocknote"
+	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
 	"github.com/movsb/taoblog/service/modules/renderers/caption"
 	"github.com/movsb/taoblog/service/modules/renderers/colors"
 	"github.com/movsb/taoblog/service/modules/renderers/custom_break"
@@ -141,6 +142,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		),
 		alerts.New(),
 		colors.New(),
+		blur_image.New(assets),
 
 		page_link.New(ctx, s.getPostTitle, nil),
 

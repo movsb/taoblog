@@ -25,11 +25,13 @@ import (
 	"github.com/movsb/taoblog/service/modules/calendar"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
+	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/search"
+	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
@@ -73,7 +75,9 @@ type Service struct {
 	runtime *runtime_config.Runtime
 
 	// TODO 包装并鉴权。
-	postDataFS theme_fs.FS
+	postDataFS  theme_fs.FS
+	mainStorage *storage.SQLite
+
 	// 动态管理的静态文件。
 	userRoots *roots.Root
 
@@ -105,6 +109,8 @@ type Service struct {
 	remindersTask *reminders.Task
 	// rss 任务
 	// rssTask *rss.Task
+	// 模糊缩略图任务
+	blurhashTask *blur_image.Task
 
 	calendar *calendar.CalenderService
 	aesGCM   *crypto.AesGcm
@@ -238,6 +244,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.GetPluginStorage(`reminders`),
 		s.calendar,
 	)
+
+	s.blurhashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`blurhash`), s.mainStorage, func(pid int) {
+		s.deletePostContentCacheFor(int64(pid))
+		s.updatePostMetadataTime(int64(pid), time.Now())
+	})
 
 	// s.rssTask = rss.NewTask(ctx, s.GetPluginStorage(`rss`), func(pid int) {
 	// 	s.deletePostContentCacheFor(int64(pid))

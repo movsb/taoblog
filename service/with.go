@@ -3,14 +3,15 @@ package service
 import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/cache"
-	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
+	"github.com/movsb/taoblog/service/modules/storage"
 )
 
 type With func(s *Service)
 
 // 用于指定文章的附件存储。
-func WithPostDataFileSystem(fsys theme_fs.FS) With {
+func WithPostDataFileSystem(fsys *storage.SQLite) With {
 	return func(s *Service) {
+		s.mainStorage = fsys
 		s.postDataFS = fsys
 	}
 }

@@ -51,6 +51,8 @@ type FileMeta struct {
 	Encryption FileEncryptionMeta
 
 	Source *proto.FileSpec_Meta_Source
+
+	Blurhash string
 }
 
 type FileEncryptionMeta struct {

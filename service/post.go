@@ -230,11 +230,7 @@ func (f _OpenPostFile) Open(name string) (fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs, err := f.s.postDataFS.ForPost(id)
-	if err != nil {
-		return nil, err
-	}
-	return fs.Open(after)
+	return f.s.postDataFS.ForPost(id).Open(after)
 }
 
 func (s *Service) getPostContentCached(ctx context.Context, p *proto.Post, co *proto.PostContentOptions) (string, error) {

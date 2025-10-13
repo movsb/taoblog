@@ -61,6 +61,25 @@ var _ interface {
 	theme_fs.FS
 } = (*SQLite)(nil)
 
+func (fs *SQLite) GetUpdatedFiles(notBefore time.Time) ([]*models.File, error) {
+	var files []*models.File
+	if err := fs.meta.Select(fileFields).Where(`updated_at >= ?`, notBefore.Unix()).Find(&files); err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (fs *SQLite) Open(pid int, path string) (std_fs.File, error) {
+	return fs.ForPost(pid).Open(path)
+}
+
+func (fs *SQLite) UpdateFileMeta(fid int, meta *models.FileMeta) error {
+	_, err := fs.meta.Model(&models.File{ID: fid}).UpdateMap(taorm.M{
+		`meta`: meta,
+	})
+	return err
+}
+
 func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 	var files []*models.File
 	if err := fs.meta.Select(fileFields).Find(&files); err != nil {
@@ -81,8 +100,8 @@ func (fs *SQLite) AllFiles() (map[int][]*proto.FileSpec, error) {
 	return m, nil
 }
 
-func (fs *SQLite) ForPost(id int) (std_fs.FS, error) {
-	return &SQLiteForPost{s: fs, pid: id, dir: ``}, nil
+func (fs *SQLite) ForPost(id int) std_fs.FS {
+	return &SQLiteForPost{s: fs, pid: id, dir: ``}
 }
 
 var _ interface {

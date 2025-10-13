@@ -74,7 +74,7 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 	)).GetPosts()
 
 	for _, up := range updated {
-		pfs := utils.Must1(s.pfs.ForPost(int(up.Id)))
+		pfs := s.pfs.ForPost(int(up.Id))
 		specs := utils.Must1(utils.ListFiles(pfs))
 		for _, spec := range specs {
 			utils.Must(s.upload(ctx, up, pfs, int(up.Id), spec.Path))
