@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 		if(a>b) {
 			return [u, Math.floor(Math.max(b/(a/u), l))];
 		} else {
-			return [Math.floor(Math.max(a/(b/u)), l)];
+			return [Math.floor(Math.max(a/(b/u), l)), u];
 		}
 	};
 	/** @type {NodeListOf<HTMLImageElement>} */
@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 		if (width <=0 || height <= 0) { return; }
 
 		[width, height] = scale(width, height, 1, 32);
-		// console.log(width, height);
 
 		const url = await createBlurImageFromHash(img.dataset.blurhash, width, height, width, height);
 		img.style.backgroundImage = `url("${url}")`;
