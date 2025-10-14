@@ -129,3 +129,11 @@ func TestSaver2(t *testing.T) {
 		t.Logf(`保存：%s: %s`, path, value)
 	})
 }
+
+func TestPrintSavers(t *testing.T) {
+	var c config.Config
+	updater := config.NewUpdater(&c)
+	updater.EachSaver(func(path string, obj any) {
+		log.Println(`将会保存：`, path, obj)
+	})
+}

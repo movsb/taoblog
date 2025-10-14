@@ -55,11 +55,13 @@ func (t *Theme) funcs() map[string]any {
 		},
 		// 服务器开始运行的时间。
 		`siteSince`: func() string {
-			return t.cfg.Site.Since.String()
+			t := time.Unix(int64(t.cfg.Site.Since), 0)
+			return t.Format(`2006年01月02日`)
 		},
 		// 服务器已经运行了多少天。
 		`siteDays`: func() int {
-			return t.cfg.Site.Since.Days()
+			t := time.Unix(int64(t.cfg.Site.Since), 0)
+			return int(time.Since(t).Hours()/24) + 1
 		},
 		// 站点名。
 		`siteName`: func() string {

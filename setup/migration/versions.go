@@ -884,3 +884,14 @@ func v63(posts, files, cache *taorm.DB) {
 func v64(posts, files, cache *taorm.DB) {
 	posts.MustExec(`ALTER TABLE files DROP COLUMN mode`)
 }
+
+func v65(posts, files, cache *taorm.DB) {
+	var s struct{ Value int32 }
+	if err := posts.Raw(`SELECT value FROM options WHERE name='site.since'`).Find(&s); err != nil {
+		if !taorm.IsNotFoundError(err) {
+			panic(err)
+		}
+		posts.MustExec(`INSERT INTO options (name,value) VALUES ('site.since','1419350400')`)
+		return
+	}
+}

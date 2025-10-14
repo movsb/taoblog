@@ -98,6 +98,14 @@ func initPosts(db *sql.DB) {
 		}).MustCreate()
 	})
 
+	// 写入建站时间。
+	tdb.MustTxCall(func(tx *taorm.DB) {
+		tx.Model(&models.Option{
+			Name:  `site.since`,
+			Value: fmt.Sprint(now),
+		}).MustCreate()
+	})
+
 	tdb.MustTxCall(func(tx *taorm.DB) {
 		var r [16]byte
 		utils.Must1(rand.Read(r[:]))

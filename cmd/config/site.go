@@ -4,53 +4,30 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"time"
 )
 
-type _Since time.Time
+type Since int32
 
-func (s *_Since) UnmarshalYAML(unmarshal func(any) error) error {
-	var str string
-	if err := unmarshal(&str); err != nil {
-		return err
-	}
-	t := (*time.Time)(s)
-	r, err := time.Parse(time.RFC3339, str)
-	if err != nil {
-		return err
-	}
-	*t = r
-	return nil
-}
+func (Since) CanSave() {}
 
-func (s _Since) String() string {
-	return time.Time(s).Format(`2006年01月02日`)
-}
-
-func (s _Since) Days() int {
-	return int(time.Since(time.Time(s)).Hours()) / 24
-}
-
-// SiteConfig ...
 type SiteConfig struct {
 	Home        string `yaml:"home"`
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
-	Since       _Since `yaml:"since,omitempty"`
+
+	// 初始化时写入数据库，表示建站时间。
+	Since Since `json:"since" yaml:"since,omitempty"`
 
 	Notify SiteNotifyConfig `json:"notify" yaml:"notify"`
-
-	Sync SiteSyncConfig `yaml:"sync"`
+	Sync   SiteSyncConfig   `yaml:"sync"`
 }
 
 // DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
-	since := _Since(time.Date(2014, time.December, 24, 0, 0, 0, 0, time.Local))
 	return SiteConfig{
 		Home:        `http://localhost:2564/`,
 		Name:        `未命名`,
 		Description: ``,
-		Since:       since,
 		Notify:      DefaultSiteNotifyConfig(),
 	}
 }
