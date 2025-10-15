@@ -24,7 +24,7 @@ async function createBlob(pixels, width, height) {
 }
 
 /**
- * 
+ * 返回 Object URL，需要手动调用 URL.revokeObjectURL 释放内存。
  * @param {string} hash 
  */
 async function decodeBlurHashToBlob(hash, decodeWidth, decodeHeight, renderWidth, renderHeight) {

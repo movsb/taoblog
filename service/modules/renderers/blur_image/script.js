@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
 		const url = await createBlurImageFromHash(img.dataset.blurhash, width, height, width, height);
 
 		// createBlurImageFromHash 有等待，返回的时候可能已经 complete 了。
-		if(img.complete) { return removeBlurhash(); }
+		if(img.complete) {
+			URL.revokeObjectURL(url);
+			return removeBlurhash();
+		}
 
 		img.style.backgroundImage = `url("${url}")`;
 		img.style.backgroundRepeat = 'no-repeat';
@@ -33,7 +36,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 			img.style.removeProperty('background-image');
 			img.style.removeProperty('background-repeat');
 			img.style.removeProperty('background-size');
-			img.removeAttribute('data-blurhash');
+
+			URL.revokeObjectURL(url);
+			removeBlurhash();
 		});
 	});
 }, {once: true});
