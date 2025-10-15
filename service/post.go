@@ -203,7 +203,7 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 	case proto.LinkKind_LinkKindRooted:
 		p.Link = s.GetPlainLink(p.Id)
 	case proto.LinkKind_LinkKindFull:
-		p.Link = s.home.JoinPath(s.GetPlainLink(p.Id)).String()
+		p.Link = utils.Must1(url.Parse(s.getHome())).JoinPath(s.GetPlainLink(p.Id)).String()
 	default:
 		panic(`unknown link kind`)
 	}
@@ -212,7 +212,7 @@ func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
 func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
 	return gold_utils.NewWebFileSystem(
 		_OpenPostFile{s: s},
-		s.home.JoinPath(fmt.Sprintf("/%d/", id)),
+		utils.Must1(url.Parse(s.getHome())).JoinPath(fmt.Sprintf("/%d/", id)),
 	)
 }
 
@@ -1611,11 +1611,12 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 					// TODO s 内部有 db 事务
 					// 异步的时候 goroutine 会拷贝 s 导致事务已提交
 					// 所以部分代码放在了 go 之外。
+					u := utils.Must1(url.Parse(s.getHome())).JoinPath(s.plainLink(post.Id)).String()
 					s.notifier.SendInstant(
 						auth.SystemForLocal(context.Background()),
 						&proto.SendInstantRequest{
 							Title: `分享了新文章`,
-							Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, s.home.JoinPath(s.plainLink(post.Id)).String()),
+							Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, u),
 							// TODO: 没判断为空的情况。如果为空，则分享给了站长。
 							BarkToken: to.BarkToken,
 						},

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
@@ -243,22 +244,85 @@ func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateR
 	return &proto.ScheduleUpdateResponse{}, nil
 }
 
-func (s *Service) SetFavicon(ctx context.Context, in *proto.SetFaviconRequest) (*proto.SetFaviconResponse, error) {
+func (s *Service) GetSiteConfig(ctx context.Context, in *proto.GetSiteConfigRequest) (*proto.GetSiteConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
-	const maxData = 100 * 1024
+	c := proto.SiteConfig{
+		Name:        s.Config().Site.GetName(),
+		Description: s.Config().Site.GetDescription(),
 
-	if len(in.Data) > maxData {
-		return nil, status.Error(codes.InvalidArgument, `图标太大。`)
+		// TODO 可能是覆盖值，不允许前端修改。
+		Home: s.Config().Site.GetHome(),
+
+		Icon: utils.CreateDataURL(s.Favicon().Data).String(),
+	}
+	return &proto.GetSiteConfigResponse{
+		Config: &c,
+	}, nil
+}
+
+func (s *Service) UpdateSiteConfig(ctx context.Context, in *proto.UpdateSiteConfigRequest) (*proto.UpdateSiteConfigResponse, error) {
+	s.MustBeAdmin(ctx)
+
+	u := config.NewUpdater(s.cfg)
+	store := s.GetPluginStorage(`config`)
+	save := func(path string, value string) {
+		utils.Must(store.SetString(path, value))
 	}
 
-	s.options.SetString(`favicon`, base64.RawURLEncoding.EncodeToString(in.Data))
-
-	if s.favicon != nil {
-		s.favicon.SetData(time.Now(), in.Data)
+	if name := in.Config.Name; strings.TrimSpace(name) == `` || len(name) > 100 {
+		return nil, status.Errorf(codes.InvalidArgument, `网站名称不能为空，且不能超过 100 字符。`)
+	} else {
+		u.MustApply(`site.name`, in.Config.Name, save)
 	}
 
-	return &proto.SetFaviconResponse{}, nil
+	if desc := in.Config.Description; len(desc) > 500 {
+		return nil, status.Errorf(codes.InvalidArgument, `网站描述不能超过 500 字符。`)
+	} else {
+		u.MustApply(`site.description`, in.Config.Description, save)
+	}
+
+	if homeURL, err := url.Parse(in.Config.Home); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, `网站首页 URL 错误：%v`, err)
+	} else {
+		if homeURL.Scheme != `http` && homeURL.Scheme != `https` {
+			return nil, status.Errorf(codes.InvalidArgument, `网站首页 URL 必须是 “http” 或 “https” 协议。`)
+		}
+		if homeURL.Path != `` && homeURL.Path != `/` {
+			return nil, status.Errorf(codes.InvalidArgument, `网站首页 URL 不能带路径部分。`)
+		}
+		u.MustApply(`site.home`, in.Config.Home, save)
+	}
+
+	rspConfig := proto.UpdateSiteConfigResponse{
+		Config: &proto.SiteConfig{
+			Name:        in.Config.Name,
+			Description: in.Config.Description,
+			Home:        in.Config.Home,
+		},
+	}
+
+	if in.UpdateIcon {
+		d, err := utils.ParseDataURL(in.Config.Icon)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, `网站图标错误：%v`, err)
+		}
+		if !strings.HasPrefix(d.Type, `image/`) {
+			return nil, status.Errorf(codes.InvalidArgument, `网站图标必须是图片格式。`)
+		}
+		if len(d.Data) > 100<<10 {
+			d, err = utils.ResizeImage(d.Type, bytes.NewReader(d.Data), 100, 100)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, `网站图标处理失败：%v`, err)
+			}
+		}
+
+		s.options.SetString(`favicon`, d.String())
+		s.favicon.SetData(time.Now(), d)
+		rspConfig.Config.Icon = d.String()
+	}
+
+	return &rspConfig, nil
 }
 
 var jsonPB = &runtime.JSONPb{
@@ -279,7 +343,7 @@ func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettings
 	utils.Must(jsonPB.Unmarshal([]byte(ss), &out))
 
 	{
-		u := s.home.JoinPath(`/v3/calendars`)
+		u := utils.Must1(url.Parse(s.getHome())).JoinPath(`/v3/calendars`)
 		js := utils.Must1(json.Marshal(CalendarData{
 			UserID: int(ac.User.ID),
 		}))

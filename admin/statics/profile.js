@@ -1,3 +1,7 @@
+/**
+ * @import { readFileAsDataURL } from '../dynamic/utils.js';
+ */
+
 const userID = TaoBlog.fn.getUserID();
 
 async function register() {
@@ -72,21 +76,6 @@ document.getElementById('change-email').addEventListener('click', async () => {
 		elem.textContent = name;
 	}
 });
-
-/**
- * 
- * @param {File} f 
- * @returns {Promise<string>}
- */
-async function readFileAsDataURL(f) {
-	const r = new FileReader();
-	return new Promise((resolve) => {
-		r.onload = () => {
-			resolve(r.result);
-		};
-		r.readAsDataURL(f);
-	});
-}
 
 /** @type {HTMLImageElement} */
 const avatarImg = document.getElementById('avatar');

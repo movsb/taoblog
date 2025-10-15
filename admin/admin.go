@@ -41,7 +41,7 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `admin`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
-		dynamic.WithScripts(module, `dynamic/script.js`)
+		dynamic.WithScripts(module, `dynamic/utils.js`, `dynamic/script.js`)
 	})
 }
 
@@ -59,24 +59,26 @@ type Admin struct {
 	rootFS fs.FS
 	tmplFS fs.FS
 
-	prefix    string
-	auth      *auth.Auth
-	webAuthn  *auth.WebAuthn
+	prefix string
+	auth   *auth.Auth
+
 	canGoogle atomic.Bool
 
 	// NOTE：这是进程内直接调用的。
 	// 如果改成连接，需要考虑 metadata 转发问题。
-	svc     proto.TaoBlogServer
-	gateway *gateway.Gateway
+	management proto.ManagementServer
+	svc        proto.TaoBlogServer
+	gateway    *gateway.Gateway
 
 	customTheme *config.ThemeConfig
 
 	templates *utils.TemplateLoader
 
-	displayName string
+	getName func() string
+	getHome func() string
 }
 
-func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix string, domain, displayName string, origins []string, options ...Option) *Admin {
+func NewAdmin(devMode bool, gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
@@ -94,14 +96,14 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, a
 	}
 
 	a := &Admin{
-		rootFS:      rootFS,
-		tmplFS:      tmplFS,
-		svc:         svc,
-		gateway:     gateway,
-		prefix:      prefix,
-		auth:        auth1,
-		displayName: displayName,
-		webAuthn:    auth.NewWebAuthn(auth1, domain, displayName, origins),
+		rootFS:     rootFS,
+		tmplFS:     tmplFS,
+		management: management,
+		svc:        svc,
+		gateway:    gateway,
+		prefix:     prefix,
+		auth:       auth1,
+		getName:    getName,
 	}
 
 	for _, opt := range options {
@@ -116,6 +118,10 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, svc proto.TaoBlogServer, a
 		}
 	}()
 	return a
+}
+
+func (a *Admin) handleWebAuthn(w http.ResponseWriter, r *http.Request) {
+	a.auth.GetWebAuthnHandler().ServeHTTP(w, r)
 }
 
 // 下面的网址在中国已经能访问，不能再用它来判断是否可以访问 Google 主站。
@@ -150,6 +156,7 @@ func (a *Admin) Handler() http.Handler {
 	m.HandleFunc(`GET /logout`, a.getLogout)
 	m.HandleFunc(`POST /logout`, a.postLogout)
 
+	m.Handle(`GET /config`, a.requireLogin(a.getConfig))
 	m.Handle(`GET /profile`, a.requireLogin(a.getProfile))
 	m.Handle(`GET /editor`, a.requireLogin(a.getEditor))
 	m.Handle(`GET /drafts`, a.requireLogin(a.getDrafts))
@@ -166,7 +173,7 @@ func (a *Admin) Handler() http.Handler {
 	m.HandleFunc(`/login/client`, a.loginByClient)
 
 	const webAuthnPrefix = `/login/webauthn/`
-	m.Handle(webAuthnPrefix, a.webAuthn.Handler(webAuthnPrefix))
+	m.Handle(webAuthnPrefix, http.StripPrefix(strings.TrimSuffix(webAuthnPrefix, `/`), http.HandlerFunc(a.handleWebAuthn)))
 
 	return http.StripPrefix(strings.TrimSuffix(a.prefix, "/"), m)
 }
@@ -237,7 +244,7 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := LoginData{
-		Name: a.displayName,
+		Name: a.getName(),
 	}
 	if a.canGoogle.Load() {
 		// d.GoogleClientID = a.auth.Config().Google.ClientID
@@ -253,6 +260,27 @@ func (a *Admin) getLogout(w http.ResponseWriter, r *http.Request) {
 }
 func (a *Admin) postLogout(w http.ResponseWriter, r *http.Request) {
 	cookies.RemoveCookie(w, r)
+}
+
+type ConfigData struct {
+	Name string
+	User *auth.User
+
+	SiteConfig *proto.SiteConfig
+}
+
+func (c ConfigData) IconDataURL() template.URL {
+	return template.URL(c.SiteConfig.Icon)
+}
+
+func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
+	ac := auth.MustBeAdmin(r.Context())
+	d := &ConfigData{
+		Name:       a.getName(),
+		User:       ac.User,
+		SiteConfig: utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
+	}
+	a.executeTemplate(w, `config.html`, &d)
 }
 
 type ProfileData struct {
@@ -280,7 +308,7 @@ func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 	settings := utils.Must1(a.svc.GetUserSettings(r.Context(), &proto.GetUserSettingsRequest{}))
 	d := &ProfileData{
 		a:           a,
-		Name:        a.displayName,
+		Name:        a.getName(),
 		User:        auth.Context(r.Context()).User,
 		CalendarURL: settings.CalendarUrl,
 	}
@@ -332,7 +360,7 @@ func (a *Admin) getOTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		key := utils.Must1(totp.Generate(totp.GenerateOpts{
-			Issuer:      a.displayName,
+			Issuer:      a.getName(),
 			AccountName: fmt.Sprint(ac.User.ID),
 		}))
 

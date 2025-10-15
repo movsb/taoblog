@@ -269,3 +269,14 @@ dialog {
 
 // SVG
 text { cursor: text; }
+
+dl {
+	margin: 1em 0;
+	dt {
+		font-weight: bold;
+		margin-bottom: 8px;
+	}
+	dd {
+		margin: 0;
+	}
+}

@@ -19,17 +19,14 @@ import (
 )
 
 // 监控证书过期的剩余时间。
-func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, update func(days int)) {
-	u, err := url.Parse(home)
-	if err != nil {
-		panic(err)
-	}
-	if u.Scheme != `https` {
-		return
-	}
-	port := utils.IIF(u.Port() == "", "443", u.Port())
-	addr := net.JoinHostPort(u.Hostname(), port)
+func monitorCert(ctx context.Context, getHome func() string, notifier proto.NotifyServer, update func(days int)) {
 	check := func() {
+		u := utils.Must1(url.Parse(getHome()))
+		if u.Scheme != `https` {
+			return
+		}
+		port := utils.IIF(u.Port() == "", "443", u.Port())
+		addr := net.JoinHostPort(u.Hostname(), port)
 		conn, err := tls.Dial(`tcp`, addr, &tls.Config{})
 		if err != nil {
 			log.Println(err)
@@ -77,26 +74,24 @@ func monitorCert(ctx context.Context, home string, notifier proto.NotifyServer, 
 }
 
 // 监控域名过期的剩余时间。
-func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
-	u, err := url.Parse(home)
-	if err != nil {
-		panic(err)
-	}
-	hostname := strings.ToLower(u.Hostname())
-	fields := strings.Split(hostname, `.`)
-	suffix := []string{}
-	switch fields[len(fields)-1] {
-	case `com`:
-		if len(fields) >= 2 {
-			suffix = fields[len(fields)-2:]
+func monitorDomain(ctx context.Context, getHome func() string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
+	getDomainSuffix := func() string {
+		u := utils.Must1(url.Parse(getHome()))
+		hostname := strings.ToLower(u.Hostname())
+		fields := strings.Split(hostname, `.`)
+		suffix := []string{}
+		switch fields[len(fields)-1] {
+		case `com`:
+			if len(fields) >= 2 {
+				suffix = fields[len(fields)-2:]
+			}
 		}
+		if len(suffix) <= 0 {
+			log.Println(`没有已知的域名后缀：`, getHome())
+			return ``
+		}
+		return strings.Join(suffix, ".")
 	}
-	if len(suffix) <= 0 {
-		log.Println(`没有已知的域名后缀：`, home)
-		return
-	}
-
-	domainSuffix := strings.Join(suffix, ".")
 
 	check := func() error {
 		// curl --request GET \
@@ -108,7 +103,7 @@ func monitorDomain(ctx context.Context, home string, notifier proto.NotifyServer
 			return err
 		}
 		q := u.Query()
-		q.Set(`domain`, domainSuffix)
+		q.Set(`domain`, getDomainSuffix())
 		u.RawQuery = q.Encode()
 		req, err := http.NewRequestWithContext(context.Background(),
 			http.MethodGet, u.String(), nil)

@@ -26,9 +26,9 @@ import (
 
 // TODO 更改成 Auth 服务。
 type Passkeys struct {
-	home      *url.URL
+	getHome   func() string
 	db        *taorm.DB
-	wa        *webauthn.WebAuthn
+	wa        func() *webauthn.WebAuthn
 	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie
 	dropCache func(id int)
 
@@ -45,14 +45,14 @@ type _ClientLoginSessionData struct {
 }
 
 func NewPasskeys(
-	home *url.URL,
+	getHome func() string,
 	db *taorm.DB,
-	wa *webauthn.WebAuthn,
+	wa func() *webauthn.WebAuthn,
 	cookieGen func(user *User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie,
 	dropCache func(id int),
 ) *Passkeys {
 	return &Passkeys{
-		home:          home,
+		getHome:       getHome,
 		db:            db,
 		wa:            wa,
 		cookieGen:     cookieGen,
@@ -65,7 +65,7 @@ func NewPasskeys(
 
 // BeginPasskeysLogin implements proto.AuthServer.
 func (p *Passkeys) BeginPasskeysLogin(context.Context, *proto.BeginPasskeysLoginRequest) (*proto.BeginPasskeysLoginResponse, error) {
-	options, session, err := p.wa.BeginDiscoverableLogin()
+	options, session, err := p.wa().BeginDiscoverableLogin()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -126,7 +126,7 @@ func (p *Passkeys) FinishPasskeysLogin(ctx context.Context, in *proto.FinishPass
 	}
 
 	var outUser *User
-	credential, err := p.wa.FinishDiscoverableLogin(
+	credential, err := p.wa().FinishDiscoverableLogin(
 		func(rawID, userHandle []byte) (webauthn.User, error) {
 			id := binary.LittleEndian.Uint32(userHandle)
 			var user models.User
@@ -277,7 +277,7 @@ func (p *Passkeys) ClientLogin(in *proto.ClientLoginRequest, srv proto.Auth_Clie
 	var random [16]byte
 	rand.Read(random[:])
 
-	u := p.home.JoinPath(`admin`, `login`, `client`)
+	u := utils.Must1(url.Parse(p.getHome())).JoinPath(`admin`, `login`, `client`)
 	q := u.Query()
 
 	randomString := fmt.Sprintf(`%x`, random)

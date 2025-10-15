@@ -36,4 +36,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
 			img.removeAttribute('data-blurhash');
 		});
 	});
-});
+}, {once: true});

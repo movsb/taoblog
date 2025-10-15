@@ -10,10 +10,12 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/modules/auth/cookies"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -25,35 +27,67 @@ import (
 type Auth struct {
 	db *taorm.DB
 
+	getHome, getName func() string
+
 	userCache *lru.TTLCache[int, *models.User]
+
+	// 站点名字和主页地址可能变动，变动后重建。
+	webAuthn        atomic.Pointer[WebAuthn]
+	webAuthnHandler atomic.Value // http.Handler
 
 	passkeys *Passkeys
 }
 
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。
-func New(db *taorm.DB, home *url.URL, siteName string) *Auth {
+func New(db *taorm.DB, getHome, getName func() string) *Auth {
 	a := Auth{
 		db: db,
+
+		getHome: getHome,
+		getName: getName,
 
 		userCache: lru.NewTTLCache[int, *models.User](16),
 	}
 
-	config := &webauthn.Config{
-		RPID:          home.Hostname(),
-		RPDisplayName: siteName,
-		RPOrigins:     []string{home.String()},
-	}
-	wa, err := webauthn.New(config)
-	if err != nil {
-		panic(err)
-	}
-	p := NewPasskeys(home, db, wa,
+	a.createWebAuthn()
+
+	// TODO 需要订阅配置变更并重建。
+	go func() {
+		lastName, lastHome := getName(), getHome()
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			name, home := getName(), getHome()
+			if name != lastName || home != lastHome {
+				lastName, lastHome = name, home
+				a.createWebAuthn()
+			}
+		}
+	}()
+
+	p := NewPasskeys(getHome, db,
+		a.getWA,
 		a.GenCookieForPasskeys,
 		a.DropUserCache,
 	)
 	a.passkeys = p
 
 	return &a
+}
+
+func (o *Auth) getWA() *webauthn.WebAuthn {
+	return o.webAuthn.Load().wa
+}
+
+func (o *Auth) createWebAuthn() {
+	u := utils.Must1(url.Parse(o.getHome()))
+	w := NewWebAuthn(o, u.Hostname(), o.getName(), []string{u.String()})
+	o.webAuthn.Store(w)
+	o.webAuthnHandler.Store(w.Handler())
+}
+
+func (o *Auth) GetWebAuthnHandler() http.Handler {
+	return o.webAuthnHandler.Load().(http.Handler)
 }
 
 func (o *Auth) Passkeys() *Passkeys {

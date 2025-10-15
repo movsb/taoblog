@@ -1,7 +1,6 @@
 package service
 
 import (
-	"net/url"
 	"time"
 )
 
@@ -15,5 +14,5 @@ func (s *Service) TestingSetTimezone(t *time.Location) {
 }
 
 func (s *Service) TestingSetHTTPAddr(u string) {
-	s.home, _ = url.Parse(u)
+	s.getHome = func() string { return u }
 }

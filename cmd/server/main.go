@@ -212,11 +212,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.testing = testing
 
-	home := utils.Must1(url.Parse(cfg.Site.Home))
-
 	log.Println(`DevMode:`, version.DevMode())
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
-	log.Println(`Home:`, home.String())
+	log.Println(`Home:`, cfg.Site.GetHome())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -248,7 +246,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	var mux = http.NewServeMux()
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	theAuth := auth.New(taorm.NewDB(postsDB), home, cfg.Site.Name)
+	theAuth := auth.New(taorm.NewDB(postsDB), cfg.Site.GetHome, cfg.Site.GetName)
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
@@ -300,13 +298,13 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}
 	if s.initMonitorDomain {
 		theService.SetDomainDays(-1)
-		go monitorDomain(ctx, cfg.Site.Home, notify, cfg.Others.Whois.ApiLayer.Key, s.initMonitorDomainDelay, func(days int) {
+		go monitorDomain(ctx, cfg.Site.GetHome, notify, cfg.Others.Whois.ApiLayer.Key, s.initMonitorDomainDelay, func(days int) {
 			theService.SetDomainDays(days)
 		})
 	}
 	if s.initMonitorCerts {
 		theService.SetCertDays(-1)
-		go monitorCert(ctx, cfg.Site.Home, notify, func(days int) {
+		go monitorCert(ctx, cfg.Site.GetHome, notify, func(days int) {
 			theService.SetCertDays(days)
 		})
 	}
@@ -353,6 +351,15 @@ func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
 		log.Println(`加载配置：`, path)
 	})
 
+	var options []*models.Option
+	taorm.NewDB(db).Where(`name LIKE 'config:%'`).MustFind(&options)
+	for _, opt := range options {
+		path := strings.TrimPrefix(opt.Name, `config:`)
+		updater.MustApply(path, opt.Value, func(path, value string) {
+			log.Println(`加载配置：`, path)
+		})
+	}
+
 	// 加载覆盖配置。
 	if s.configOverride != nil {
 		s.configOverride(cfg)
@@ -375,15 +382,13 @@ func (s *Server) initRSS() {
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
 	prefix := `/admin/`
 
-	u, err := url.Parse(cfg.Site.Home)
-	if err != nil {
-		panic(err)
-	}
-
-	a := admin.NewAdmin(version.DevMode(), s.Gateway(), theService, theAuth, prefix, u.Hostname(), cfg.Site.Name, []string{u.String()},
+	a := admin.NewAdmin(
+		version.DevMode(),
+		s.Gateway(), theService, theService, theAuth,
+		prefix, cfg.Site.GetHome, cfg.Site.GetName,
 		admin.WithCustomThemes(&cfg.Theme),
 	)
-	// log.Println(`admin on`, prefix)
+
 	mux.Handle(prefix, a.Handler())
 }
 

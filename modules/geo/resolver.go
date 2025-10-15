@@ -19,10 +19,10 @@ type GeoLocationResolver interface {
 
 type Baidu struct {
 	ak       string
-	referrer string
+	referrer func() string
 }
 
-func NewBaidu(ak string, referrer string) *Baidu {
+func NewBaidu(ak string, referrer func() string) *Baidu {
 	return &Baidu{ak, referrer}
 }
 
@@ -48,7 +48,7 @@ func (b *Baidu) ResolveGeoLocation(ctx context.Context, latitude, longitude floa
 	url.RawQuery = args.Encode()
 
 	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil))
-	req.Header.Add(`Referer`, b.referrer)
+	req.Header.Add(`Referer`, b.referrer())
 	req.Header.Add(`User-Agent`, version.Name)
 
 	rsp := utils.Must1(http.DefaultClient.Do(req))

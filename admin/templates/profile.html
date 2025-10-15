@@ -13,17 +13,19 @@
 <h1>{{ .Name }}</h1>
 <div class="user-info">
 	<div id="avatar-wrapper">
-		<img id="avatar" class="avatar" src="{{.AvatarURL}}" style="cursor: pointer;">
+		<img id="avatar" class="avatar" src="{{.AvatarURL}}" style="cursor: pointer;" title="点击修改头像">
 		<input type="file" id="avatar-file" accept="image/jpeg, image/png" style="display: none;">
 		<p class="uploading" style="display: none;"><span class="icon-loading"> 上传中...</span></p>
 	</div>
 	<p>昵称：<span id="nickname">{{.User.Nickname}}</span> <button id="change-nickname">修改</button></p>
 	<p>邮箱：<span id="email">{{ with .User.Email }}{{ . }}{{ else }}(无){{ end }}</span> <button id="change-email">修改</button></p>
-	<p>公钥：{{ len .PublicKeys }}</p>
+	<p>公钥：{{ len .PublicKeys }} <button onclick="register()">注册</button></p>
 	<p>日历：<input type="text" value="{{ .CalendarURL }}" readonly></p>
 </div>
 <div class="buttons">
-	<p><button onclick="register()">注册通行密钥</button></p>
+	{{ if .User.IsAdmin }}
+	<p><button onclick="location.href='config'">网站管理</button></p>
+	{{ end }}
 	<p><button onclick="location.href='editor?new=1&type=markdown'">发表文章</button></p>
 	<p><button onclick="location.href='drafts'">草稿管理</button></p>
 	<p><button onclick="location.href='reorder'">置顶排序</button></p>

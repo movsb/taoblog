@@ -65,10 +65,10 @@ func (t *Theme) funcs() map[string]any {
 		},
 		// 站点名。
 		`siteName`: func() string {
-			return t.cfg.Site.Name
+			return t.cfg.Site.GetName()
 		},
 		`sitePageTitle`: func(s string) string {
-			name := t.cfg.Site.Name
+			name := t.cfg.Site.GetName()
 			if s != `` {
 				return fmt.Sprintf(`%s - %s`, s, name)
 			}

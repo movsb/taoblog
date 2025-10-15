@@ -22,6 +22,16 @@ type SiteConfig struct {
 	Sync   SiteSyncConfig   `yaml:"sync"`
 }
 
+func (s *SiteConfig) GetHome() string {
+	return s.Home
+}
+func (s *SiteConfig) GetName() string {
+	return s.Name
+}
+func (s *SiteConfig) GetDescription() string {
+	return s.Description
+}
+
 // DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
 	return SiteConfig{

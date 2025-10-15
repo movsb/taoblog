@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -56,7 +55,7 @@ func writeJsonBody(w http.ResponseWriter, data any) error {
 	return nil
 }
 
-func (a *WebAuthn) Handler(prefix string) http.Handler {
+func (a *WebAuthn) Handler() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc(`POST /register:begin`, a.BeginRegistration)
@@ -64,7 +63,7 @@ func (a *WebAuthn) Handler(prefix string) http.Handler {
 	mux.HandleFunc(`POST /login:begin`, a.BeginLogin)
 	mux.HandleFunc(`POST /login:finish`, a.FinishLogin)
 
-	return http.StripPrefix(strings.TrimSuffix(prefix, "/"), mux)
+	return mux
 }
 
 func (a *WebAuthn) BeginRegistration(w http.ResponseWriter, r *http.Request) {

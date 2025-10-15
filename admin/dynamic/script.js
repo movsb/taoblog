@@ -1,14 +1,3 @@
-/**
- * 
- * @param {Response} rsp 
- */
-async function throwAPIError(rsp) {
-	let exception = await rsp.text();
-	try { exception = JSON.parse(exception); }
-	catch {}
-	throw exception.message ?? exception;
-}
-
 class WebAuthnAPI {
 	constructor(){}
 

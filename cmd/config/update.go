@@ -3,12 +3,14 @@ package config
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 type Settable interface {
@@ -71,13 +73,6 @@ func (u *Updater) MustApply(path string, value string, save func(path string, va
 	u.set(new.Interface(), value)
 	newVal := new.Elem().Interface()
 
-	if saver == nil {
-		saver, _ = u.obj.(Saver)
-		if saver == nil {
-			panic("尝试修改的值找不到存储者。")
-		}
-	}
-
 	if settable == nil {
 		settable, _ = u.obj.(Settable)
 		if settable == nil {
@@ -97,22 +92,43 @@ func (u *Updater) MustApply(path string, value string, save func(path string, va
 		as.AfterSet(segments[settableSegments+1:], newVal)
 	}
 
-	var saverPath string
-	for i := 0; i <= saveSegmentIndex; i++ {
-		if i != saveSegmentIndex && segments[i].Index != nil {
-			panic(`数组或对象必须整体存储。`)
+	var (
+		outputPath    string
+		dataToMarshal any
+	)
+
+	if saver != nil {
+		var saverPath string
+		for i := 0; i <= saveSegmentIndex; i++ {
+			if i != saveSegmentIndex && segments[i].Index != nil {
+				panic(`数组或对象必须整体存储。`)
+			}
+			if saverPath != "" {
+				saverPath += "."
+			}
+			saverPath += segments[i].Key
 		}
-		if saverPath != "" {
-			saverPath += "."
-		}
-		saverPath += segments[i].Key
+		outputPath = saverPath
+		dataToMarshal = saver
+	} else {
+		outputPath = path
+		dataToMarshal = p
 	}
 
-	if b, err := json.Marshal(saver); err != nil {
-		panic(err)
-	} else {
-		save(saverPath, string(b))
+	var data []byte
+
+	t := reflect.TypeOf(dataToMarshal)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+		dataToMarshal = reflect.ValueOf(dataToMarshal).Elem().Interface()
 	}
+	if t.Kind() == reflect.Struct || t.Kind() == reflect.Slice || t.Kind() == reflect.Map {
+		data = utils.Must1(json.Marshal(dataToMarshal))
+	} else {
+		data = fmt.Append(nil, dataToMarshal)
+	}
+
+	save(outputPath, string(data))
 }
 
 func (u *Updater) EachSaver(fn func(path string, obj any)) {

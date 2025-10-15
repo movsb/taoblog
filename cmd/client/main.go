@@ -562,28 +562,6 @@ func AddCommands(rootCmd *cobra.Command) {
 	}
 	rootCmd.AddCommand(updateCmd)
 
-	setIconCmd := &cobra.Command{
-		Use:    `set-icon <path>`,
-		Short:  `更新网站图标`,
-		Args:   cobra.ExactArgs(1),
-		PreRun: preRun,
-		Run: func(cmd *cobra.Command, args []string) {
-			f := utils.Must1(os.Open(args[0]))
-			defer f.Close()
-			size := utils.Must1(f.Stat()).Size()
-			if size == 0 || size > 100*1024 {
-				log.Fatalln(`图标太多。`)
-			}
-			client.Management.SetFavicon(
-				client.Context(),
-				&proto.SetFaviconRequest{
-					Data: utils.Must1(io.ReadAll(f)),
-				},
-			)
-		},
-	}
-	rootCmd.AddCommand(setIconCmd)
-
 	infoCmd := &cobra.Command{
 		Use:    `info`,
 		Short:  ``,

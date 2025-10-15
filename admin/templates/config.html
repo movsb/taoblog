@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>网站管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="/style.css">
+{{ apply_site_theme_customs }}
+<script src="/script.js"></script>
+<style>
+	input {
+		margin: 0;
+	}
+</style>
+</head>
+<body class="admin config">
+<div id="wrapper">
+
+<h2>基本信息</h2>
+<form id="form-basic">
+	<dl>
+		<dt>网站名字</dt>
+		<dd><input type="text" id="name" value="{{ .SiteConfig.Name }}"></dd>
+	</dl>
+	<dl>
+		<dt>网站描述</dt>
+		<dd><input type="text" id="description" value="{{ .SiteConfig.Description }}"></dd>
+	</dl>
+	<dl>
+		<dt>网站首页</dt>
+		<dd>
+			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}"></p>
+			<p>形如：<code>https://blog.twofei.com</code>，暂时不支持带路径。</p>
+		</dd>
+	</dl>
+	<dl>
+		<dt>网站图标</dt>
+		<dd><img id="icon" style="cursor: pointer; width: 100px; height: 100px;" class="static" src="{{ .IconDataURL }}"></dd>
+		<input type="file" id="icon-file" accept="image/jpeg, image/png" style="display: none;">
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-basic-icon"></span>
+	</p>
+</form>
+
+</div>
+<script src="config.js"></script>
+</body>
+</html>

@@ -71,7 +71,39 @@ message RestartResponse {
 message ScheduleUpdateRequest {}
 message ScheduleUpdateResponse {}
 
-message SetFaviconRequest {
-	bytes data = 1;
+message SiteConfig {
+	// 站点名称。
+	string name = 1;
+
+	// 站点描述。
+	string description = 2;
+
+	// 站点主页地址。
+	// 形如：https://blog.twofei.com
+	// 暂不支持带路径。
+	string home = 3;
+
+	// 站点图标。
+	// DataURL.
+	string icon = 4;
 }
-message SetFaviconResponse {}
+
+message GetSiteConfigRequest {}
+message GetSiteConfigResponse {
+	SiteConfig config = 1;
+}
+
+message UpdateSiteConfigRequest {
+	SiteConfig config = 1;
+
+	// 这几个总是默认修改/有传值。
+	// bool update_name = 10;
+	// bool update_description = 11;
+	// bool update_home = 12;
+
+	bool update_icon = 13;
+}
+
+message UpdateSiteConfigResponse {
+	SiteConfig config = 1;
+}

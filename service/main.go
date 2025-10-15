@@ -3,11 +3,9 @@ package service
 import (
 	"context"
 	"database/sql"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -64,7 +62,7 @@ type Service struct {
 	// 配置文件中写的站点地址。
 	// 可以被测试环境修改成临时地址。
 	// 对外的链接生成时使用这个地址。
-	home *url.URL
+	getHome func() string
 
 	// 服务器默认的时区。
 	timeLocation *time.Location
@@ -164,6 +162,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	s := &Service{
 		ctx: ctx,
 
+		getHome: cfg.Site.GetHome,
+
 		AuthServer: auther.Passkeys(),
 
 		notifier: &proto.UnimplementedNotifyServer{},
@@ -210,13 +210,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	mux.HandleFunc(`GET /v3/calendars`, s.handleGetCalendar)
 
 	s.userRoots = roots.New(s.GetPluginStorage(`roots`), s.mux)
-
-	if u, err := url.Parse(cfg.Site.Home); err != nil {
-		panic(err)
-	} else {
-		s.home = u
-	}
-
 	s.avatarCache = cache.NewAvatarHash()
 
 	s.cmtntf = comment_notify.New(s.notifier)
@@ -260,8 +253,10 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	s.exporter = _NewExporter(s)
 
 	if value, err := s.options.GetString(`favicon`); err == nil {
-		d, _ := base64.RawURLEncoding.DecodeString(value)
-		s.favicon.SetData(time.Now(), d)
+		u, _ := utils.ParseDataURL(value)
+		if u != nil {
+			s.favicon.SetData(time.Now(), u)
+		}
 	}
 
 	proto.RegisterAuthServer(sr, s)
@@ -271,7 +266,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 	utilOptions := []UtilOption{}
 	if ak := cfg.Others.Geo.Baidu.AccessKey; ak != `` {
-		utilOptions = append(utilOptions, WithBaidu(ak, cfg.Site.Home))
+		utilOptions = append(utilOptions, WithBaidu(ak, s.getHome))
 	}
 	utilsService := NewUtils(utilOptions...)
 	proto.RegisterUtilsServer(sr, utilsService)
@@ -370,9 +365,9 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 	}
 
 	out := &proto.GetInfoResponse{
-		Name:        s.cfg.Site.Name,
-		Description: s.cfg.Site.Description,
-		Home:        s.home.String(),
+		Name:        s.cfg.Site.GetName(),
+		Description: s.cfg.Site.GetDescription(),
+		Home:        s.getHome(),
 		Commit:      version.GitCommit,
 		Uptime:      int32(time.Since(version.Time).Seconds()),
 

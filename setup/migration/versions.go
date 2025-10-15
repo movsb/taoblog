@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -894,4 +895,18 @@ func v65(posts, files, cache *taorm.DB) {
 		posts.MustExec(`INSERT INTO options (name,value) VALUES ('site.since','1419350400')`)
 		return
 	}
+}
+
+func v66(posts, files, cache *taorm.DB) {
+	var s struct{ Value string }
+	if err := posts.Raw(`SELECT value FROM options WHERE name='favicon'`).Find(&s); err != nil {
+		if !taorm.IsNotFoundError(err) {
+			panic(err)
+		}
+		return
+	}
+
+	raw, _ := base64.RawURLEncoding.DecodeString(s.Value)
+	u := utils.CreateDataURL(raw)
+	posts.MustExec(`UPDATE options SET value=? WHERE name='favicon'`, u.String())
 }

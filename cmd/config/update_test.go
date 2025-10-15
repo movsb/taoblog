@@ -137,3 +137,23 @@ func TestPrintSavers(t *testing.T) {
 		log.Println(`将会保存：`, path, obj)
 	})
 }
+
+func TestUpdateNotSaver(t *testing.T) {
+	c := config.Config{}
+	u := config.NewUpdater(&c)
+
+	called := false
+	// 这个字段是 string 类型，所以直接传，不是 json。
+	u.MustApply("site.name", `My Blog`, func(path, value string) {
+		t.Logf("save: %s: %s", path, value)
+		// 普通类型，无双引号。
+		assert(path, `site.name`, value, `My Blog`)
+		called = true
+	})
+	assert(called, true)
+
+	// 最终值是没有引号的。
+	if c.Site.Name != `My Blog` {
+		t.Fatal(`不相等。`)
+	}
+}

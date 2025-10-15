@@ -139,8 +139,19 @@ service Management {
 	// 此状态在 GetInfo 的接口的字段中标识。
 	rpc ScheduleUpdate(ScheduleUpdateRequest) returns (ScheduleUpdateResponse) {}
 
-	// 修改网站图标。
-	rpc SetFavicon (SetFaviconRequest) returns (SetFaviconResponse) {}
+	rpc GetSiteConfig(GetSiteConfigRequest) returns (GetSiteConfigResponse) {
+		option (google.api.http) = {
+			get: "/v3/configs/site";
+		};
+	}
+
+	// 更新网站配置。
+	rpc UpdateSiteConfig(UpdateSiteConfigRequest) returns (UpdateSiteConfigResponse) {
+		option (google.api.http) = {
+			post: "/v3/configs/site";
+			body: "*";
+		};
+	}
 }
 
 service Search {
