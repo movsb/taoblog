@@ -118,18 +118,18 @@ func calcHash(info *models.File, fp fs.File) (string, error) {
 	case `.png`:
 		data, err = png.Decode(fp)
 	case `.avif`:
-		tmp, err := os.CreateTemp(``, ``)
-		if err != nil {
-			return ``, err
+		tmp, err2 := os.CreateTemp(``, ``)
+		if err2 != nil {
+			return ``, err2
 		}
 		defer os.Remove(tmp.Name())
 		if _, err := io.Copy(tmp, fp); err != nil {
 			return ``, err
 		}
 		tmp.Close()
-		tmp2, err := os.CreateTemp(``, `*.png`)
-		if err != nil {
-			return ``, err
+		tmp2, err2 := os.CreateTemp(``, `*.png`)
+		if err2 != nil {
+			return ``, err2
 		}
 		defer os.Remove(tmp2.Name())
 		cmd := exec.Command(`avifdec`, tmp.Name(), tmp2.Name())
@@ -138,9 +138,9 @@ func calcHash(info *models.File, fp fs.File) (string, error) {
 		if err := cmd.Run(); err != nil {
 			return ``, err
 		}
-		fp, err := os.Open(tmp2.Name())
-		if err != nil {
-			return ``, err
+		fp, err2 := os.Open(tmp2.Name())
+		if err2 != nil {
+			return ``, err2
 		}
 		defer fp.Close()
 		data, err = png.Decode(fp)
