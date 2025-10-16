@@ -17,23 +17,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func main() {
+func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	version.ForceEnableDevMode = os.Getenv(`DEV`)
+	cobra.EnableCommandSorting = false
+}
 
+func main() {
 	rootCmd := &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
 		Short: `TaoBlog client & server program.`,
 	}
 
-	version.AddCommands(rootCmd)
-	client.AddCommands(rootCmd)
 	server.AddCommands(rootCmd)
+	client.AddCommands(rootCmd)
 	daemon.AddCommands(rootCmd)
 	imports.AddCommands(rootCmd)
-	conv.AddCommands(rootCmd)
 	tools.AddCommands(rootCmd)
+	conv.AddCommands(rootCmd)
+	version.AddCommands(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
