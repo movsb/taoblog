@@ -91,7 +91,17 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpFile.FindStringSubmatch(path)
 			postID := utils.Must1(strconv.Atoi(matches[1]))
 			file := matches[2]
-			c.fileServer.ServeFile(w, req, int64(postID), file, false)
+
+			localOnly := false
+
+			// 如果是编辑器页面，暂时不处理文件加速服务。
+			// 因为：编辑频繁，可以避免缓存问题。
+			// NOTE: 简单判断一下就行，不需要非常严谨。
+			if strings.Contains(req.Referer(), `/admin/editor`) {
+				localOnly = true
+			}
+
+			c.fileServer.ServeFile(w, req, int64(postID), file, localOnly)
 			return
 		}
 
