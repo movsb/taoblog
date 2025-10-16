@@ -73,6 +73,11 @@ input[type=checkbox] {
 input[type=text],input[type=password],input[type=email],input[type=url],textarea {
 	caret-color: var(--accent-color);
 	box-sizing: border-box;
+
+	&:invalid {
+		color: rgba(255, 0, 0, 0.6);
+	}
+
 	&::placeholder {
 		opacity: .45;
 	}

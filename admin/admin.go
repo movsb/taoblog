@@ -27,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils/dir"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/pquerna/otp"
@@ -266,6 +267,8 @@ type ConfigData struct {
 	Name string
 	User *auth.User
 
+	IconSize int
+
 	SiteConfig *proto.SiteConfig
 }
 
@@ -278,6 +281,7 @@ func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
 	d := &ConfigData{
 		Name:       a.getName(),
 		User:       ac.User,
+		IconSize:   service.IconSize,
 		SiteConfig: utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
 	}
 	a.executeTemplate(w, `config.html`, &d)

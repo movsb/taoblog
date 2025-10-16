@@ -11,6 +11,9 @@
 	input {
 		margin: 0;
 	}
+	input[type="text"] {
+		width: 30ch;
+	}
 </style>
 </head>
 <body class="admin config">
@@ -20,7 +23,7 @@
 <form id="form-basic">
 	<dl>
 		<dt>网站名字</dt>
-		<dd><input type="text" id="name" value="{{ .SiteConfig.Name }}"></dd>
+		<dd><input type="text" id="name" value="{{ .SiteConfig.Name }}" pattern="[^ ]+.*[^ ]+"></dd>
 	</dl>
 	<dl>
 		<dt>网站描述</dt>
@@ -29,14 +32,17 @@
 	<dl>
 		<dt>网站首页</dt>
 		<dd>
-			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}"></p>
+			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}" pattern="https?://\w+(\.\w+)+/?"></p>
 			<p>形如：<code>https://blog.twofei.com</code>，暂时不支持带路径。</p>
 		</dd>
 	</dl>
 	<dl>
 		<dt>网站图标</dt>
-		<dd><img id="icon" style="cursor: pointer; width: 100px; height: 100px;" class="static" src="{{ .IconDataURL }}"></dd>
-		<input type="file" id="icon-file" accept="image/jpeg, image/png" style="display: none;">
+		<dd>
+			<img id="icon" style="cursor: pointer; width: 100px; height: 100px;" class="static" src="{{ .IconDataURL }}">
+			<input type="file" id="icon-file" accept="image/jpeg, image/png" style="display: none;">
+			<p>点击以替换图标。太大的图标会被裁剪到 {{.IconSize}}x{{.IconSize}} 大小。</p>
+		</dd>
 	</dl>
 	<p>
 		<input type="submit" class="bold" value="保存">

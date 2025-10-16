@@ -261,6 +261,9 @@ func (s *Service) GetSiteConfig(ctx context.Context, in *proto.GetSiteConfigRequ
 	}, nil
 }
 
+// 网站图标默认尺寸。
+const IconSize = 100
+
 func (s *Service) UpdateSiteConfig(ctx context.Context, in *proto.UpdateSiteConfigRequest) (*proto.UpdateSiteConfigResponse, error) {
 	s.MustBeAdmin(ctx)
 
@@ -311,7 +314,7 @@ func (s *Service) UpdateSiteConfig(ctx context.Context, in *proto.UpdateSiteConf
 			return nil, status.Errorf(codes.InvalidArgument, `网站图标必须是图片格式。`)
 		}
 		if len(d.Data) > 100<<10 {
-			d, err = utils.ResizeImage(d.Type, bytes.NewReader(d.Data), 100, 100)
+			d, err = utils.ResizeImage(d.Type, bytes.NewReader(d.Data), IconSize, IconSize)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, `网站图标处理失败：%v`, err)
 			}

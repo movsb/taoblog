@@ -42,6 +42,8 @@ code {
 	text-decoration: underline var(--accent-color) wavy;
 	// 如果字体 <= 14px，波浪线会非常细，不好看。
 	text-decoration-thickness: 1px;
+	// 不要间断。
+	text-decoration-skip-ink: none;
 }
 // a 本身有下划线，不需要混合。
 a > code:hover {
