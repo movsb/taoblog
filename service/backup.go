@@ -4,16 +4,15 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
-	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/setup/migration"
+	"github.com/ncruces/go-sqlite3/driver"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -139,6 +138,7 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 }
 
 // https://www.sqlite.org/c3ref/backup_finish.html
+// [driver package - github.com/ncruces/go-sqlite3/driver - Go Packages](https://pkg.go.dev/github.com/ncruces/go-sqlite3/driver#Conn)
 func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage float32) error) (string, error) {
 	tmpFile, err := os.CreateTemp(``, `taoblog-*`)
 	if err != nil {
@@ -146,38 +146,24 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 	}
 	tmpFile.Close()
 
-	dstDB, err := sql.Open(`sqlite3`, tmpFile.Name())
+	srcConn, err := s.db.Conn(ctx)
 	if err != nil {
 		return ``, err
 	}
-	defer dstDB.Close()
+	defer srcConn.Close()
 
-	dstConn, err := dstDB.Conn(ctx)
-	if err != nil {
-		return ``, err
-	}
-	defer dstConn.Close()
-
-	if err := dstConn.Raw(func(dstDC any) error {
-		rawDstConn := dstDC.(*sqlite3.SQLiteConn)
-
-		srcConn, err := s.db.Conn(ctx)
-		if err != nil {
-			return err
-		}
-		defer srcConn.Close()
-
+	execute := func() error {
 		return srcConn.Raw(func(srcDC any) error {
-			rawSrcConn := srcDC.(*sqlite3.SQLiteConn)
-			backup, err := rawDstConn.Backup(`main`, rawSrcConn, `main`)
+			rawSrcConn := srcDC.(driver.Conn).Raw()
+
+			backup, err := rawSrcConn.BackupInit(`main`, tmpFile.Name())
 			if err != nil {
 				return err
 			}
-			defer backup.Close() // close twice
+			defer backup.Close() // closed twice, safe
 
 			if progress == nil {
 				progress = func(p float32) error {
-					// fmt.Println(p)
 					return nil
 				}
 			}
@@ -215,7 +201,9 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 
 			return backup.Close()
 		})
-	}); err != nil {
+	}
+
+	if err := execute(); err != nil {
 		return ``, err
 	}
 

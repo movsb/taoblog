@@ -11,12 +11,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattn/go-sqlite3"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
 	"github.com/movsb/taorm"
+
+	"github.com/ncruces/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 // 初始化文章数据库。
@@ -155,7 +158,7 @@ func testPosts(db *sql.DB, testCompat bool, createFirstPost bool) {
 	var ver string
 	row := db.QueryRow(`select value from options where name='db_ver'`)
 	if err := row.Scan(&ver); err != nil {
-		if se, ok := err.(sqlite3.Error); ok {
+		if se, ok := err.(*sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
 				initPosts(db)
 
@@ -200,7 +203,7 @@ func testFiles(db *sql.DB) {
 	var count int
 	row := db.QueryRow(`select count(1) from files`)
 	if err := row.Scan(&count); err != nil {
-		if se, ok := err.(sqlite3.Error); ok {
+		if se, ok := err.(*sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
 				initFiles(db)
 				return
@@ -214,7 +217,7 @@ func testCache(db *sql.DB) {
 	var count int
 	row := db.QueryRow(`select count(1) from cache`)
 	if err := row.Scan(&count); err != nil {
-		if se, ok := err.(sqlite3.Error); ok {
+		if se, ok := err.(*sqlite3.Error); ok {
 			if strings.Contains(se.Error(), `no such table`) {
 				initCache(db)
 				return

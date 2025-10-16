@@ -179,6 +179,7 @@ table {
 	tr:has(th):not(:has(td)) {
 		position: sticky;
 		top: 0;
+		z-index: 1;
 		th {
 			// 这两条语句看起来非常优雅地解决了， sticky th 没有 border 的问题。
 			// 但是我不知道为什么要设置 offset（就算 th 没有 border 也要设置）。
