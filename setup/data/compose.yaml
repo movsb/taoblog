@@ -1,0 +1,16 @@
+services:
+  taoblog:
+    image: taocker/taoblog:amd64-latest
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./taoblog.yml:/workspace/taoblog.yml:ro
+      - ./posts.db:/workspace/posts.db
+      - ./files.db:/workspace/files.db
+      - ./cache.db:/workspace/cache.db
+      - ./access.log:/workspace/access.log
+      - /tmp/:/tmp/
+    ports:
+      - 127.0.0.1:2564:2564
+    restart: always
+    cpus: 0.9
