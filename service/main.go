@@ -124,6 +124,9 @@ type Service struct {
 	commentContentCaches *lru.TTLCache[_PostContentCacheKey, string]
 	commentCaches        *cache.RelativeCacheKeys[int64, _PostContentCacheKey]
 
+	// 神经病一样，没有 clear 方法，要清空只能新建一个。
+	relatesCaches atomic.Pointer[lru.TTLCache[int64, []*proto.Post]]
+
 	avatarCache *cache.AvatarHash
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
@@ -247,6 +250,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	// 	s.deletePostContentCacheFor(int64(pid))
 	// 	s.updatePostMetadataTime(int64(pid), time.Now())
 	// })
+
+	s.relatesCaches.Store(lru.NewTTLCache[int64, []*proto.Post](128))
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)

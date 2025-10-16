@@ -431,6 +431,13 @@ func (s *Service) getPageParentID(parents string) int64 {
 // TODO cache
 // TODO 添加权限测试
 // 只能获取公开的或自己创建的。
+func (s *Service) getRelatedPostsCached(ctx context.Context, id int64) ([]*proto.Post, error) {
+	return utils.DropLast2(s.relatesCaches.Load().GetOrLoad(ctx, id, func(context.Context, int64) ([]*proto.Post, time.Duration, error) {
+		posts, err := s.getRelatedPosts(ctx, id)
+		return posts, time.Hour, err
+	}))
+}
+
 func (s *Service) getRelatedPosts(ctx context.Context, id int64) ([]*proto.Post, error) {
 	ac := auth.Context(ctx)
 
@@ -769,6 +776,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	if in.UpdateTop {
 		s.updateUserTopPosts(int(ac.User.ID), int(in.Post.Id), in.Post.Top)
 	}
+
+	// 文件更新后“相关文章”也会变化，但是难以计算出哪些文章被影响。
+	// 为简单起见，直接清空所有“相关文章”缓存。
+	s.relatesCaches.Store(lru.NewTTLCache[int64, []*proto.Post](128))
 
 	// 通知新文章创建
 	// TODO 异步执行。
@@ -1292,7 +1303,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 		}
 
 		if opts.WithRelates {
-			relates, err := s.getRelatedPosts(ctx, int64(p.Id))
+			relates, err := s.getRelatedPostsCached(ctx, int64(p.Id))
 			if err != nil {
 				return err
 			}

@@ -18,9 +18,6 @@ ldflags="\
 -X 'github.com/movsb/taoblog/modules/version.GitCommit=$gitCommit' \
 "
 
-# 静态链接、SQLite 与 CGO
-# https://www.arp242.net/static-go.html
-ldflags="$ldflags -extldflags=-static"
-tags="osusergo,netgo,sqlite_omit_load_extension"
+tags=""
 
-go build -ldflags "$ldflags" -tags "$tags" -v -o "$OUTPUT"
+CGO_ENABLED=0 go build -ldflags "$ldflags" -tags "$tags" -v -o "$OUTPUT"
