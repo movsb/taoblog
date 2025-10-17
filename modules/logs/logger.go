@@ -2,7 +2,6 @@ package logs
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"strings"
@@ -37,9 +36,9 @@ type LogStore struct {
 	tdb *taorm.DB
 }
 
-func NewLogStore(db *sql.DB) *LogStore {
+func NewLogStore(db *taorm.DB) *LogStore {
 	return &LogStore{
-		tdb: taorm.NewDB(db),
+		tdb: db,
 	}
 }
 

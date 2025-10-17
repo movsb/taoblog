@@ -7,9 +7,12 @@ import (
 	"io"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/xeonx/timeago"
 )
 
 // Data holds all data for rendering the site.
@@ -86,11 +89,62 @@ func (d *Data) Kind() string {
 	return `unknown`
 }
 
-func (d *Data) Info() (*proto.GetInfoResponse, error) {
+type _Info struct {
+	proto *proto.GetInfoResponse
+}
+
+func (info _Info) ExpiryStatus() string {
+	var a []string
+	if d := info.proto.CertDaysLeft; d > 0 {
+		a = append(a, fmt.Sprintf(`证书有效期剩余 %d 天`, d))
+	}
+	if d := info.proto.DomainDaysLeft; d > 0 {
+		a = append(a, fmt.Sprintf(`域名有效期剩余 %d 天`, d))
+	}
+	if len(a) == 0 {
+		return ``
+	}
+	return `运维状态：` + strings.Join(a, `，`) + `。`
+}
+
+func (info _Info) BackupStatus() string {
+	friendly := func(t int32) string {
+		tm := time.Unix(int64(t), 0)
+		return timeago.Chinese.Format(tm)
+	}
+
+	var a []string
+	if d := info.proto.LastBackupAt; d > 0 {
+		a = append(a, fmt.Sprintf(`上次备份于 %s`, friendly(d)))
+	}
+	if d := info.proto.LastSyncAt; d > 0 {
+		a = append(a, fmt.Sprintf(`上次同步于 %s`, friendly(d)))
+	}
+	if len(a) == 0 {
+		return ``
+	}
+	return `备份状态：` + strings.Join(a, `，`) + `。`
+}
+
+func (info _Info) StorageStatus() string {
+	var a []string
+	if d := info.proto.GetStorage().GetPosts(); d > 0 {
+		a = append(a, fmt.Sprintf(`文章数据库：%s`, utils.ByteCountIEC(d)))
+	}
+	if d := info.proto.GetStorage().GetFiles(); d > 0 {
+		a = append(a, fmt.Sprintf(`文件数据库：%s`, utils.ByteCountIEC(d)))
+	}
+	if len(a) == 0 {
+		return ``
+	}
+	return `存储状态：` + strings.Join(a, `，`) + `。`
+}
+
+func (d *Data) Info() *_Info {
 	if d.Context == nil {
 		d.Context = auth.GuestForLocal(context.Background())
 	}
-	return d.svc.GetInfo(d.Context, &proto.GetInfoRequest{})
+	return &_Info{utils.Must1(d.svc.GetInfo(d.Context, &proto.GetInfoRequest{}))}
 }
 
 func (d *Data) ExecutePartial(t *template.Template, partial any) error {

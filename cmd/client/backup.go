@@ -15,6 +15,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
+	"github.com/movsb/taorm"
 	"github.com/spf13/cobra"
 )
 
@@ -136,8 +137,8 @@ func (c *Client) BackupFiles() {
 
 	localDB := migration.InitFiles(`files.db`)
 	postsDB := migration.InitPosts(`posts.db`, true, false)
-	dataStore := storage.NewDataStore(localDB)
-	postsStore := storage.NewSQLite(postsDB, dataStore, nil)
+	dataStore := storage.NewDataStore(taorm.NewDB(localDB))
+	postsStore := storage.NewSQLite(taorm.NewDB(postsDB), dataStore, nil)
 
 	var localSpecs, remoteSpecs []SpecWithPostID
 	digest2path := make(map[Digest2Path]string)

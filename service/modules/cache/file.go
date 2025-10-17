@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"hash/fnv"
 	"log"
@@ -46,9 +45,9 @@ type FileCache struct {
 	touched map[int]int64
 }
 
-func NewFileCache(ctx context.Context, db *sql.DB) *FileCache {
+func NewFileCache(ctx context.Context, db *taorm.DB) *FileCache {
 	cc := &FileCache{
-		db:      taorm.NewDB(db),
+		db:      db,
 		touched: make(map[int]int64),
 	}
 	go cc.run(ctx)

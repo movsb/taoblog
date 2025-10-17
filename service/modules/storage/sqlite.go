@@ -2,7 +2,6 @@ package storage
 
 import (
 	"bytes"
-	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -33,16 +32,16 @@ type DataStore struct {
 	data *taorm.DB
 }
 
-func NewDataStore(data *sql.DB) *DataStore {
+func NewDataStore(data *taorm.DB) *DataStore {
 	return &DataStore{
-		data: taorm.NewDB(data),
+		data: data,
 	}
 }
 
 // cache: 可以为空。
-func NewSQLite(meta *sql.DB, data *DataStore, cache *os.Root) *SQLite {
+func NewSQLite(meta *taorm.DB, data *DataStore, cache *os.Root) *SQLite {
 	sq := &SQLite{
-		meta: taorm.NewDB(meta),
+		meta: meta,
 		data: data,
 	}
 	if cache != nil {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/setup/migration"
+	"github.com/movsb/taorm"
 )
 
 type A struct{}
@@ -24,7 +25,7 @@ func TestTypes(t *testing.T) {
 	t.Log(typeHash(A{}))
 	t.Log(typeHash(B{}))
 
-	db := migration.InitCache(``)
+	db := taorm.NewDB(migration.InitCache(``))
 	h := NewFileCache(context.Background(), db)
 	c := C{}
 	var out []byte

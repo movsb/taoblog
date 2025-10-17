@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"expvar"
 	"fmt"
@@ -135,13 +134,10 @@ type Server struct {
 
 	configOverride func(cfg *config.Config)
 
-	db      *taorm.DB
 	auth    *auth.Auth
 	main    *service.Service
 	gateway *gateway.Gateway
 	rss     *rss.RSS
-
-	fileCache *cache.FileCache
 
 	metrics *metrics.Registry
 
@@ -192,9 +188,6 @@ func (s *Server) Main() *service.Service {
 	}
 	return s.main
 }
-func (s *Server) DB() *taorm.DB {
-	return s.db
-}
 func (s *Server) Gateway() *gateway.Gateway {
 	return s.gateway
 }
@@ -222,31 +215,16 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	rc := runtime_config.NewRuntime()
 	ctx = runtime_config.Context(ctx, rc)
 
-	cacheDB := migration.InitCache(cfg.Database.Cache)
-	s.fileCache = cache.NewFileCache(ctx, cacheDB)
+	postsDB, _, cacheDB, filesStore, dbStatsFunc, closeAllDatabases := s.initDatabases(ctx, cfg)
+	defer closeAllDatabases()
 
-	postsDB := migration.InitPosts(cfg.Database.Posts, false, s.createFirstPost)
-	defer postsDB.Close()
-
-	s.db = taorm.NewDB(postsDB)
-
-	filesDB := migration.InitFiles(cfg.Database.Files)
-	tmpDir := filepath.Join(os.TempDir(), version.NameLowercase)
-	os.Mkdir(tmpDir, 0755)
-	tmpRoot := utils.Must1(os.OpenRoot(tmpDir))
-	log.Println(`临时目录：`, tmpDir)
-	filesStore := storage.NewSQLite(postsDB, storage.NewDataStore(filesDB), tmpRoot)
-
-	migration.Migrate(postsDB, filesDB, cacheDB)
-
-	utils.Must(s.initConfig(cfg, postsDB))
-
-	s.metrics = metrics.NewRegistry(context.TODO())
+	utils.Must(s.initConfigFromDatabase(cfg, postsDB))
 
 	var mux = http.NewServeMux()
+	s.metrics = metrics.NewRegistry(context.TODO())
 	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
-	theAuth := auth.New(taorm.NewDB(postsDB), cfg.Site.GetHome, cfg.Site.GetName)
+	theAuth := auth.New(postsDB, cfg.Site.GetHome, cfg.Site.GetName)
 	s.auth = theAuth
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
@@ -254,8 +232,14 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	notify := s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
 	s.notifyServer = notify
 
-	theService := s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, rc, mux)
+	fileCache := cache.NewFileCache(ctx, cacheDB)
+	theService := s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, fileCache, rc, mux)
 	s.main = theService
+
+	go dbStatsFunc(func(posts, files int64) {
+		theService.SetPostsStorageSize(posts)
+		theService.SetFilesStorageSize(files)
+	})
 
 	if testing && s.initialTimezone != nil {
 		theService.TestingSetTimezone(s.initialTimezone)
@@ -268,7 +252,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
-	s.gateway.SetAvatar(ctx, s.fileCache, s.Main().ResolveAvatar)
+	s.gateway.SetAvatar(ctx, fileCache, s.Main().ResolveAvatar)
 
 	if s.initRssTasks {
 		s.initRSS()
@@ -333,12 +317,12 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	<-ctx.Done()
 }
 
-func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
+func (s *Server) initConfigFromDatabase(cfg *config.Config, db *taorm.DB) error {
 	updater := config.NewUpdater(cfg)
 	updater.EachSaver(func(path string, obj any) {
 		// TODO 改成 grpc 配置服务。
 		var option models.Option
-		err := taorm.NewDB(db).Model(option).Where(`name=?`, path).Find(&option)
+		err := db.Model(option).Where(`name=?`, path).Find(&option)
 		if err != nil {
 			if !taorm.IsNotFoundError(err) {
 				panic(err)
@@ -352,7 +336,7 @@ func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
 	})
 
 	var options []*models.Option
-	taorm.NewDB(db).Where(`name LIKE 'config:%'`).MustFind(&options)
+	db.Where(`name LIKE 'config:%'`).MustFind(&options)
 	for _, opt := range options {
 		path := strings.TrimPrefix(opt.Name, `config:`)
 		updater.MustApply(path, opt.Value, func(path, value string) {
@@ -367,6 +351,77 @@ func (s *Server) initConfig(cfg *config.Config, db *sql.DB) error {
 	}
 
 	return nil
+}
+
+func (s *Server) initDatabases(ctx context.Context, cfg *config.Config) (
+	postsDB, filesDB, cacheDB *taorm.DB,
+	filesStore *storage.SQLite,
+	statsFunc func(func(posts int64, files int64)),
+	closer func(),
+) {
+	postsDBRaw := migration.InitPosts(cfg.Database.Posts, false, s.createFirstPost)
+	filesDBRaw := migration.InitFiles(cfg.Database.Files)
+	cacheDBRaw := migration.InitCache(cfg.Database.Cache)
+
+	migration.Migrate(postsDBRaw, filesDBRaw, cacheDBRaw)
+
+	postsDB = taorm.NewDB(postsDBRaw)
+	cacheDB = taorm.NewDB(cacheDBRaw)
+	filesDB = taorm.NewDB(filesDBRaw)
+
+	tmpDir := filepath.Join(os.TempDir(), version.NameLowercase)
+	os.Mkdir(tmpDir, 0755)
+	tmpRoot := utils.Must1(os.OpenRoot(tmpDir))
+	log.Println(`临时目录：`, tmpDir)
+
+	dataStore := storage.NewDataStore(filesDB)
+	filesStore = storage.NewSQLite(postsDB, dataStore, tmpRoot)
+
+	statsFunc = func(f func(int64, int64)) {
+		stat := func() {
+			var postsSize, filesSize int64
+			if p := cfg.Database.Posts; p != `` {
+				info, err := os.Stat(p)
+				if err != nil {
+					log.Println(err)
+				} else {
+					postsSize = info.Size()
+				}
+			}
+			if p := cfg.Database.Files; p != `` {
+				info, err := os.Stat(p)
+				if err != nil {
+					log.Println(err)
+				} else {
+					filesSize = info.Size()
+				}
+			}
+			f(postsSize, filesSize)
+		}
+
+		stat()
+
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				stat()
+			}
+		}
+	}
+
+	closer = func() {
+		postsDBRaw.Close()
+		filesDBRaw.Close()
+		cacheDBRaw.Close()
+		tmpRoot.Close()
+	}
+
+	return
 }
 
 func (s *Server) initRSS() {
@@ -529,11 +584,15 @@ func (s *Server) createBackupTasks(
 }
 
 func (s *Server) createMainServices(
-	ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar,
+	ctx context.Context,
+	db *taorm.DB,
+	cfg *config.Config,
+	sr grpc.ServiceRegistrar,
 	notifier proto.NotifyServer,
 	cancel func(),
 	auth *auth.Auth,
 	filesStore *storage.SQLite,
+	fileCache *cache.FileCache,
 	rc *runtime_config.Runtime,
 	mux *http.ServeMux,
 ) *service.Service {
@@ -541,13 +600,13 @@ func (s *Server) createMainServices(
 		service.WithPostDataFileSystem(filesStore),
 		service.WithNotifier(notifier),
 		service.WithCancel(cancel),
-		service.WithFileCache(s.fileCache),
+		service.WithFileCache(fileCache),
 	}
 
 	return service.New(ctx, sr, cfg, db, rc, auth, mux, serviceOptions...)
 }
 
-func (s *Server) createNotifyService(ctx context.Context, db *sql.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
+func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
 	var options []notify.With
 
 	if ch := cfg.Notify.Bark; ch.Token != `` {

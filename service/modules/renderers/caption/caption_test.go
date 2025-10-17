@@ -14,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
+	"github.com/movsb/taorm"
 )
 
 func TestRender(t *testing.T) {
@@ -50,8 +51,8 @@ func TestRender(t *testing.T) {
 		},
 	}
 
-	db1 := migration.InitPosts(``, false, false)
-	db2 := migration.InitFiles(``)
+	db1 := taorm.NewDB(migration.InitPosts(``, false, false))
+	db2 := taorm.NewDB(migration.InitFiles(``))
 	dbFS := storage.NewSQLite(db1, storage.NewDataStore(db2), nil)
 	utils.Must(utils.Write(
 		dbFS.ForPost(1),

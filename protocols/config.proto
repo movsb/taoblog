@@ -58,6 +58,19 @@ message GetInfoResponse {
 
 	// 上次同步时间（时间戳）。
 	int32 last_sync_at = 15;
+
+	// 存储使用状态。
+	// 返回数据库的大小情况，单位：字节。
+	// 大于 0 表示有效数据。
+	// 比如：可能因为使用内存数据库而无法统计。
+	// 非实时数据，稍有延迟。
+	message StorageStatus {
+		// 主要数据库。
+		int64 posts = 1;
+		// 文件数据库。
+		int64 files = 2;
+	}
+	StorageStatus storage = 16;
 }
 
 message RestartRequest {

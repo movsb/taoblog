@@ -12,6 +12,7 @@ import (
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/setup/migration"
+	"github.com/movsb/taorm"
 	"github.com/ncruces/go-sqlite3/driver"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,7 +53,7 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 		func() {
 			db := migration.InitPosts(path, true, false)
 			defer db.Close()
-			logs := logs.NewLogStore(db)
+			logs := logs.NewLogStore(taorm.NewDB(db))
 			logs.DeleteAllLogs(context.Background())
 			log.Println(`备份：删除所有日志`)
 		}()

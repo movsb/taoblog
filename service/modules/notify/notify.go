@@ -3,7 +3,6 @@ package notify
 import (
 	"cmp"
 	"context"
-	"database/sql"
 
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/logs"
@@ -31,9 +30,9 @@ var _ proto.NotifyServer = (*Notify)(nil)
 
 type With func(n *Notify)
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, db *sql.DB, options ...With) *Notify {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, db *taorm.DB, options ...With) *Notify {
 	n := Notify{
-		db:           taorm.NewDB(db),
+		db:           db,
 		storedNotify: instant.NewNotifyLogger(logs.NewLogStore(db)),
 	}
 

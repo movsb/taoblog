@@ -151,6 +151,10 @@ type Service struct {
 	lastBackupAt atomic.Int32
 	lastSyncAt   atomic.Int32
 
+	// 存储状态报告。
+	postsStorageSize atomic.Int64
+	filesStorageSize atomic.Int64
+
 	proto.AuthServer
 	proto.TaoBlogServer
 	proto.ManagementServer
@@ -161,7 +165,7 @@ func (s *Service) Favicon() *favicon.Favicon {
 	return s.favicon
 }
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *sql.DB, rc *runtime_config.Runtime, auther *auth.Auth, mux *http.ServeMux, options ...With) *Service {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *taorm.DB, rc *runtime_config.Runtime, auther *auth.Auth, mux *http.ServeMux, options ...With) *Service {
 	s := &Service{
 		ctx: ctx,
 
@@ -178,13 +182,13 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		// TODO 可配置使用的时区，而不是使用服务器当前时间或者硬编码成+8时区。
 		timeLocation: time.Now().Location(),
 
-		db:   db,
-		tdb:  taorm.NewDB(db),
+		db:   db.Underlying(),
+		tdb:  db,
 		auth: auther,
 		mux:  mux,
 
 		cache:     lru.NewTTLCache[string, any](10240),
-		fileCache: cache.NewFileCache(ctx, migration.InitCache(``)),
+		fileCache: cache.NewFileCache(ctx, taorm.NewDB(migration.InitCache(``))),
 		fileURLs:  lru.NewLRUCache[_FileURLCacheKey, *_FileURLCacheValue](1024),
 
 		postFullCaches:       lru.NewTTLCache[int64, *models.Post](1024),
@@ -384,6 +388,11 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 		LastSyncAt:   s.lastSyncAt.Load(),
 
 		ScheduledUpdate: s.scheduledUpdate.Load(),
+
+		Storage: &proto.GetInfoResponse_StorageStatus{
+			Posts: s.postsStorageSize.Load(),
+			Files: s.filesStorageSize.Load(),
+		},
 	}
 
 	return out, nil
@@ -448,4 +457,10 @@ func (s *Service) SetLastBackupAt(t time.Time) {
 }
 func (s *Service) SetLastSyncAt(t time.Time) {
 	s.lastSyncAt.Store(int32(t.Unix()))
+}
+func (s *Service) SetPostsStorageSize(size int64) {
+	s.postsStorageSize.Store(size)
+}
+func (s *Service) SetFilesStorageSize(size int64) {
+	s.filesStorageSize.Store(size)
 }

@@ -6,7 +6,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
-	github.com/movsb/taorm v0.0.0-20250530121051-f6f1b039f9fe
+	github.com/movsb/taorm v0.0.0-20251017130818-570067a98e77
 	github.com/mssola/user_agent v0.5.3
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/cobra v1.0.0
