@@ -3,8 +3,10 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"expvar"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -74,7 +76,7 @@ func AddCommands(rootCmd *cobra.Command) {
 			} else {
 				cfg2 := config.DefaultConfig()
 				if err := config.ApplyFromFile(cfg2, dir, `taoblog.yml`); err != nil {
-					if !os.IsNotExist(err) {
+					if !os.IsNotExist(err) && !errors.Is(err, io.EOF) {
 						log.Fatalln(err)
 					}
 				}
