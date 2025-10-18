@@ -392,6 +392,10 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		if otherVal != nil {
 			return otherVal, nil
 		}
+		// 外国没配，那就再使用中国的。
+		if chinaVal != nil {
+			return chinaVal, nil
+		}
 
 		return nil, io.EOF
 	})
