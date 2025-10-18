@@ -207,10 +207,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.testing = testing
 
-	log.Println(`DevMode:`, version.DevMode())
-	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
-	log.Println(`Home:`, cfg.Site.GetHome())
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -221,6 +217,10 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	defer closeAllDatabases()
 
 	utils.Must(s.initConfigFromDatabase(cfg, postsDB))
+
+	log.Println(`DevMode:`, version.DevMode())
+	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
+	log.Println(`Home:`, cfg.Site.GetHome())
 
 	var mux = http.NewServeMux()
 	s.metrics = metrics.NewRegistry(context.TODO())
