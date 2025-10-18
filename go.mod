@@ -105,6 +105,7 @@ require (
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	github.com/yl2chen/cidranger v1.0.2 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect
