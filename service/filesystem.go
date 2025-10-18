@@ -284,13 +284,16 @@ type _FileURLCacheKey struct {
 	Pid    int
 	Status string
 	Path   string
+	China  bool
 }
 
 type _FileURLCacheValue struct {
-	Get       string
-	Head      string
+	Time time.Time
+
+	Get  string
+	Head string
+
 	Encrypted bool
-	Time      time.Time
 	Nonce     []byte
 	Key       []byte
 }
@@ -308,13 +311,18 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 
 	ac := auth.Context(r.Context())
 	// 测试阶段，只给登录用户使用。
-	if ac.User.IsGuest() {
-		return nil
+	// if ac.User.IsGuest() {
+	// 	return nil
+	// }
+
+	const ttl = time.Hour * 24
+
+	key := _FileURLCacheKey{
+		Pid:    int(p.Id),
+		Status: p.Status,
+		Path:   file,
+		China:  ac.InChina,
 	}
-
-	const ttl = time.Hour
-
-	key := _FileURLCacheKey{Pid: int(p.Id), Status: p.Status, Path: file}
 	if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < ttl-time.Minute {
 		// 更改权限会导致文件立即失效，所有总是校验。
 		rsp, err := http.Head(val.Head)
@@ -329,9 +337,6 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 	s.fileURLs.Delete(key)
 
 	val, err, _ := s.fileURLs.GetOrLoad(r.Context(), key, func(ctx context.Context, fuk _FileURLCacheKey) (*_FileURLCacheValue, error) {
-		val := _FileURLCacheValue{
-			Time: time.Now(),
-		}
 		fp, err := pfs.Open(file)
 		if err != nil {
 			return nil, err
@@ -353,8 +358,14 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 			return nil, io.EOF
 		}
 
-		s.fileURLGetters.Range(func(key, value any) bool {
-			if get, head, enc, err := value.(theme_fs.FileURLGetter).GetFileURL(p, file, ttl); err == nil {
+		var chinaVal, otherVal *_FileURLCacheValue
+
+		s.fileURLGetters.Range(func(_, value any) bool {
+			val := &_FileURLCacheValue{
+				Time: time.Now(),
+			}
+			getter := value.(theme_fs.FileURLGetter)
+			if get, head, enc, err := getter.GetFileURL(p, file, ttl); err == nil {
 				val.Get = get
 				val.Head = head
 				val.Encrypted = enc
@@ -362,16 +373,27 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 					val.Nonce = file.Meta.Encryption.Nonce
 					val.Key = file.Meta.Encryption.Key
 				}
-				return false
+
+				if getter.GetCountry() == `china` {
+					chinaVal = val
+				} else {
+					otherVal = val
+				}
 			}
 			return true
 		})
 
-		if val.Get == `` {
-			return nil, io.EOF
+		// 用户在中国，且在中国有存储，则使用。
+		if key.China && chinaVal != nil {
+			return chinaVal, nil
 		}
 
-		return &val, nil
+		// 用户不在中国或者没在中国存储，则使用外国的。
+		if otherVal != nil {
+			return otherVal, nil
+		}
+
+		return nil, io.EOF
 	})
 
 	if err != nil {

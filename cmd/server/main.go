@@ -815,24 +815,28 @@ func liveCheck(ctx context.Context, s *Server, svc *service.Service) {
 
 func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore theme_fs.FS) {
 	for _, backend := range []struct {
-		config *config.OSSConfigWithEnabled
-		name   string
-		store  string
+		config  *config.OSSConfigWithEnabled
+		name    string
+		store   string
+		country string
 	}{
 		{
-			config: &cfg.Site.Sync.Aliyun,
-			name:   `aliyun`,
-			store:  `site.sync.aliyun`,
+			config:  &cfg.Site.Sync.Aliyun,
+			name:    `aliyun`,
+			store:   `site.sync.aliyun`,
+			country: `china`,
 		},
 		{
-			config: &cfg.Site.Sync.COS,
-			name:   `cos`,
-			store:  `site.sync.cos`,
+			config:  &cfg.Site.Sync.COS,
+			name:    `cos`,
+			store:   `site.sync.cos`,
+			country: `china`,
 		},
 		{
-			config: &cfg.Site.Sync.R2,
-			name:   `r2`,
-			store:  `site.sync.r2`,
+			config:  &cfg.Site.Sync.R2,
+			name:    `r2`,
+			store:   `site.sync.r2`,
+			country: `america`,
 		},
 		{
 			config: &cfg.Site.Sync.Minio,
@@ -851,8 +855,17 @@ func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore t
 				log.Println(err)
 				continue
 			}
-			s.Main().RegisterFileURLGetter(backend.name, oss)
+			s.Main().RegisterFileURLGetter(backend.name, _OssWithCountry{oss, backend.country})
 			log.Println(`启动同步：`, backend.name)
 		}
 	}
+}
+
+type _OssWithCountry struct {
+	*server_sync_tasks.SyncToOSS
+	country string
+}
+
+func (oss _OssWithCountry) GetCountry() string {
+	return oss.country
 }

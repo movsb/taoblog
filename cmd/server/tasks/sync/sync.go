@@ -53,7 +53,7 @@ func (s *SyncToOSS) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * 30):
 			if err := s.run(ctx); err != nil {
 				log.Println(err)
 			}

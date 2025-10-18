@@ -31,5 +31,6 @@ func (Empty) ForPost(id int) fs.FS {
 }
 
 type FileURLGetter interface {
+	GetCountry() string
 	GetFileURL(post *proto.Post, file *models.File, ttl time.Duration) (string, string, bool, error)
 }

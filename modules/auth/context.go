@@ -11,6 +11,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/modules/auth/cookies"
+	"github.com/movsb/taoblog/modules/geo/geoip"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"google.golang.org/grpc"
@@ -35,6 +36,10 @@ type AuthContext struct {
 	// 始终不为空。
 	RemoteAddr netip.Addr
 
+	// RemoteAddr 是否在中国。
+	// 用于加速资源访问。
+	InChina bool
+
 	// 用户使用的代理端名字。
 	UserAgent string
 }
@@ -57,6 +62,7 @@ func _NewContext(parent context.Context, user *User, remoteAddr netip.Addr, user
 	if !remoteAddr.IsValid() {
 		panic("无效的远程地址。")
 	}
+	ac.InChina = geoip.IsInChina(remoteAddr)
 	return context.WithValue(parent, ctxAuthKey{}, &ac)
 }
 
