@@ -9,6 +9,7 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -38,6 +39,7 @@ type Task struct {
 	sched *Scheduler
 	rc    *RuntimeConfig
 
+	timezone       func() *time.Location
 	invalidatePost func(id int)
 
 	// 包含日历的文章编号。
@@ -50,6 +52,7 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 	invalidatePost func(id int),
 	store utils.PluginStorage,
 	cal *calendar.CalenderService,
+	getTimezone func() *time.Location,
 ) *Task {
 	t := &Task{
 		ctx:   ctx,
@@ -60,6 +63,7 @@ func NewTask(ctx context.Context, svc proto.TaoBlogServer,
 			refreshNow: make(chan struct{}),
 		},
 
+		timezone:       getTimezone,
 		invalidatePost: invalidatePost,
 		posts:          make(map[int]struct{}),
 	}
@@ -248,7 +252,10 @@ func (t *Task) parsePost(p *proto.Post) ([]*Reminder, error) {
 
 	var out []*Reminder
 	md := renderers.NewMarkdown(
-		renderers.WithFencedCodeBlockRenderer(`reminder`, New(WithOutputReminders(&out))),
+		renderers.WithFencedCodeBlockRenderer(`reminder`, New(
+			WithOutputReminders(&out),
+			WithTimezone(globals.LoadTimezoneOrDefault(p.DateTimezone, t.timezone())),
+		)),
 	)
 	_, err := md.Render(p.Source)
 	if err != nil {

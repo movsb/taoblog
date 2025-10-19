@@ -9,6 +9,11 @@ import (
 	"github.com/phuslu/lru"
 )
 
+// 服务器当前时区。
+func SystemTimezone() *time.Location {
+	return time.Now().Location()
+}
+
 var (
 	timezoneLocations         *lru.LRUCache[string, *time.Location]
 	onceInitTimezoneLocations sync.Once

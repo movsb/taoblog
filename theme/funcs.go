@@ -13,7 +13,6 @@ import (
 func (t *Theme) funcs() map[string]any {
 	menustr := createMenus(t.cfg.Menus, false)
 	customTheme := t.cfg.Theme.Stylesheets.Render()
-	fixedZone := time.FixedZone(`+8`, 8*60*60)
 
 	return map[string]any{
 		// https://githut.com/golang/go/issues/14256
@@ -38,9 +37,11 @@ func (t *Theme) funcs() map[string]any {
 		},
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
 		"friendlyDateTime": func(s int32) template.HTML {
-			t := time.Unix(int64(s), 0).In(fixedZone)
+			tz := t.cfg.Site.GetTimezoneLocation()
+			now := time.Now().In(tz)
+			t := time.Unix(int64(s), 0).In(tz)
 			r := t.Format(time.RFC3339)
-			f := timeago.Chinese.Format(t)
+			f := timeago.Chinese.FormatReference(t, now)
 			return template.HTML(fmt.Sprintf(
 				`<time class="date" datetime="%s" title="%s" data-unix="%d">%s</time>`,
 				r, r, s, f,

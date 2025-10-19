@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"time"
+
+	"github.com/movsb/taoblog/modules/globals"
 )
 
 type Since int32
@@ -14,6 +17,8 @@ type SiteConfig struct {
 	Home        string `yaml:"home"`
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
+
+	Timezone string `yaml:"timezone"`
 
 	// 初始化时写入数据库，表示建站时间。
 	Since Since `json:"since" yaml:"since,omitempty"`
@@ -31,6 +36,22 @@ func (s *SiteConfig) GetName() string {
 func (s *SiteConfig) GetDescription() string {
 	return s.Description
 }
+func (s *SiteConfig) GetTimezoneLocation() *time.Location {
+	return globals.LoadTimezoneOrDefault(s.Timezone, globals.SystemTimezone())
+}
+func (s *SiteConfig) BeforeSet(paths Segments, obj any) error {
+	switch key := paths[0].Key; key {
+	case `timezone`:
+		value := obj.(string)
+		loc, err := time.LoadLocation(value)
+		if err != nil {
+			return err
+		}
+		s.Timezone = value
+		time.Local = loc
+	}
+	return nil
+}
 
 // DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
@@ -38,6 +59,7 @@ func DefaultSiteConfig() SiteConfig {
 		Home:        `http://localhost:2564/`,
 		Name:        `未命名`,
 		Description: ``,
+		Timezone:    `Local`,
 		Notify:      DefaultSiteNotifyConfig(),
 	}
 }

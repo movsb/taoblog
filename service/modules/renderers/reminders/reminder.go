@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/modules/version"
@@ -38,15 +39,25 @@ func WithOutputReminders(out *[]*Reminder) RemindersOption {
 	}
 }
 
+func WithTimezone(location *time.Location) RemindersOption {
+	return func(r *Reminders) {
+		r.timezone = location
+	}
+}
+
 type Reminders struct {
 	sched *Scheduler
 
 	out *[]*Reminder
+
+	timezone *time.Location
 }
 
 func New(options ...RemindersOption) *Reminders {
 	f := &Reminders{
 		sched: NewScheduler(calendar.NewCalendarService(time.Now), time.Now),
+		// TODO 传文章的时区进来。
+		timezone: globals.SystemTimezone(),
 	}
 
 	for _, opt := range options {
@@ -63,7 +74,7 @@ var t = sync.OnceValue(func() *utils.TemplateLoader {
 func (r *Reminders) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	rm, err := ParseReminder(source)
+	rm, err := ParseReminder(source, r.timezone)
 	if err != nil {
 		return fmt.Errorf(`解析提醒失败：%w`, err)
 	}

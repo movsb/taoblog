@@ -243,6 +243,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		},
 		s.GetPluginStorage(`reminders`),
 		s.calendar,
+		cfg.Site.GetTimezoneLocation,
 	)
 
 	s.blurhashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`blurhash`), s.mainStorage, func(pid int) {
@@ -276,6 +277,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	utilOptions := []UtilOption{}
 	if ak := cfg.Others.Geo.Baidu.AccessKey; ak != `` {
 		utilOptions = append(utilOptions, WithBaidu(ak, s.getHome))
+		utilOptions = append(utilOptions, WithTimezone(cfg.Site.GetTimezoneLocation))
 	}
 	utilsService := NewUtils(utilOptions...)
 	proto.RegisterUtilsServer(sr, utilsService)

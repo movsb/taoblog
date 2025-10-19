@@ -8,6 +8,7 @@ import (
 	"time"
 
 	graphviz "github.com/goccy/go-graphviz"
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders/lunar"
@@ -39,14 +40,15 @@ func (d *Date) UnmarshalYAML(unmarshal func(any) error) (outErr error) {
 		return nil
 	}
 
-	if dd, err := reminders.NewUserDateFromString(raw); err == nil {
+	// TODO 这两个地方目前使用的是系统时区。最准确的应该是文章时区，但是不严重。
+	if dd, err := reminders.NewUserDateFromString(raw, globals.SystemTimezone()); err == nil {
 		d.Solar = lunar.SolarDate(dd.Time)
 		return nil
 	}
 
-	dates := strings.Split(raw, `,`)
-	for _, date := range dates {
-		if dd, err := reminders.NewUserDateFromString(date); err == nil {
+	dates := strings.SplitSeq(raw, `,`)
+	for date := range dates {
+		if dd, err := reminders.NewUserDateFromString(date, globals.SystemTimezone()); err == nil {
 			d.Solar = lunar.SolarDate(dd.Time)
 			continue
 		}

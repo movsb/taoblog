@@ -14,6 +14,8 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 )
 
+var fixed = time.FixedZone(`fixed`, 8*60*60)
+
 const calPrefix = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//TaoBlog//Golang ICS Library
@@ -30,7 +32,7 @@ var reLastModified = regexp.MustCompile(`(?m:^LAST-MODIFIED:.*\n)`)
 func runCal(t *testing.T, cal *calendar.CalenderService, sched *reminders.Scheduler, reminder string, expect string) {
 	sched.DeleteRemindersByPostID(1)
 
-	r := utils.Must1(reminders.ParseReminder([]byte(reminder)))
+	r := utils.Must1(reminders.ParseReminder([]byte(reminder), fixed))
 
 	// debugger
 	if r.Title == `每天` {
@@ -347,7 +349,6 @@ END:VEVENT`,
 		},
 	}
 
-	fixed := time.FixedZone(`fixed`, 8*60*60)
 	now := time.Date(2002, time.July, 3, 1, 2, 3, 0, fixed)
 
 	for _, test := range tests {
@@ -358,7 +359,6 @@ END:VEVENT`,
 }
 
 func TestUpdateDaily(t *testing.T) {
-	fixed := time.FixedZone(`fixed`, 8*60*60)
 	var now time.Time
 
 	cal := calendar.NewCalendarService(func() time.Time { return now })
@@ -396,7 +396,6 @@ END:VEVENT
 }
 
 func TestEvery(t *testing.T) {
-	fixed := time.FixedZone(`fixed`, 8*60*60)
 	var now time.Time
 
 	cal := calendar.NewCalendarService(func() time.Time { return now })

@@ -15,16 +15,17 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var fixedZone = time.Now().Local().Location()
-
 type Utils struct {
 	proto.UnimplementedUtilsServer
 
+	timezone            func() *time.Location
 	geoLocationResolver geo.GeoLocationResolver
 }
 
 func NewUtils(options ...UtilOption) *Utils {
-	u := &Utils{}
+	u := &Utils{
+		timezone: globals.SystemTimezone,
+	}
 
 	for _, opt := range options {
 		opt(u)
@@ -41,6 +42,12 @@ func WithBaidu(ak string, getHome func() string) UtilOption {
 	}
 }
 
+func WithTimezone(getTimezone func() *time.Location) UtilOption {
+	return func(u *Utils) {
+		u.timezone = getTimezone
+	}
+}
+
 func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*proto.FormatTimeResponse, error) {
 	formatted := make([]*proto.FormatTimeResponse_Formatted, len(in.Times))
 	for i, ts := range in.Times {
@@ -50,7 +57,7 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 		// TODO 用浏览器时区。
 		r.Friendly = timeago.Chinese.Format(t)
 
-		r.Server = t.In(fixedZone).Format(time.RFC3339)
+		r.Server = t.In(u.timezone()).Format(time.RFC3339)
 
 		if ts.Timezone != `` {
 			loc := globals.LoadTimezoneOrDefault(ts.Timezone, nil)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
 )
@@ -155,5 +156,16 @@ func TestUpdateNotSaver(t *testing.T) {
 	// 最终值是没有引号的。
 	if c.Site.Name != `My Blog` {
 		t.Fatal(`不相等。`)
+	}
+}
+
+func TestUpdateLocalTime(t *testing.T) {
+	c := config.Config{}
+	u := config.NewUpdater(&c)
+	u.MustApply(`site.timezone`, `Asia/Chongqing`, func(path, value string) {
+		t.Log(path, value)
+	})
+	if time.Now().Location().String() != `Asia/Chongqing` {
+		t.Fatal(`时区更新不正确`)
 	}
 }

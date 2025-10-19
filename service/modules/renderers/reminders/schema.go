@@ -11,6 +11,9 @@ import (
 
 type UserDate struct {
 	time.Time
+
+	// 只用作 parse 的时候参考值。
+	timezone *time.Location
 }
 
 var layouts = [...]string{
@@ -18,14 +21,11 @@ var layouts = [...]string{
 	`2006-01-02 15:04`,
 }
 
-// TODO 需要修改成服务器时间。
-var FixedZone = time.FixedZone(`fixed`, 8*60*60)
-
-func NewUserDateFromString(s string) (UserDate, error) {
+func NewUserDateFromString(s string, timezone *time.Location) (UserDate, error) {
 	outErr := fmt.Errorf(`无法解析日期：%v`, s)
 	for _, layout := range layouts {
 		// TODO 需要区分 Parse 与 ParseInLocation
-		t, err := time.ParseInLocation(layout, s, FixedZone)
+		t, err := time.ParseInLocation(layout, s, timezone)
 		if err != nil {
 			outErr = err
 			continue
@@ -40,7 +40,7 @@ func (u *UserDate) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&s); err != nil {
 		return err
 	}
-	d, err := NewUserDateFromString(s)
+	d, err := NewUserDateFromString(s, u.timezone)
 	if err != nil {
 		return err
 	}
@@ -49,9 +49,11 @@ func (u *UserDate) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Reminder struct {
-	Title       string        `yaml:"title"`
-	Description string        `yaml:"description"`
-	Dates       ReminderDates `yaml:"dates"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
+
+	// 务必初始化时区。
+	Dates ReminderDates `yaml:"dates"`
 
 	// * 对于发生在过去的事件时间，是否排除当天。
 	// * 如果正值事件当天，此参数也有效。
@@ -124,8 +126,13 @@ func (r *Reminder) Start() string {
 	return r.Dates.Start.Format(`2006-01-02`)
 }
 
-func ParseReminder(y []byte) (*Reminder, error) {
-	rm := Reminder{}
+func ParseReminder(y []byte, location *time.Location) (*Reminder, error) {
+	rm := Reminder{
+		Dates: ReminderDates{
+			Start: UserDate{timezone: location},
+			End:   UserDate{timezone: location},
+		},
+	}
 	if err := yaml.UnmarshalWithOptions(y, &rm, yaml.Strict()); err != nil {
 		return nil, err
 	}
