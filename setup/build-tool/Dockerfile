@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-RUN apt update -y && apt install -y curl unzip
+RUN apt update -y && apt install -y curl unzip make
 RUN apt install -y ca-certificates
 RUN apt install -y git
 RUN git config --global --add safe.directory /workspace
