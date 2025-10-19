@@ -292,6 +292,11 @@ class CommentNodeUI {
 	setContent(html) { this.elemContent.innerHTML = html; }
 	locate() { this._node.scrollIntoView({behavior: 'smooth'}); }
 	remove() { this.htmlNode.remove(); }
+
+	setEdited(edited) {
+		const time = this._node.querySelector('time');
+		time.classList.toggle('edited', edited);
+	}
 }
 
 // 预览管理对象。
@@ -492,6 +497,7 @@ class CommentListUI {
 	update(comment) {
 		let ui = new CommentNodeUI(comment.id);
 		ui.setContent(comment.content);
+		ui.setEdited(comment.date != comment.modified);
 		this._comments[comment.id] = comment;
 	}
 
@@ -736,7 +742,7 @@ class CommentManager {
 	<div class="comment-meta">
 		<span class="nickname${isAuthor ? " author" : ""}">${h2t(cmt.author)}</span>
 		${urlContent}
-		<time class="date" datetime="${date.toJSON()}" data-timezone="${date.zone}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
+		<time class="date${cmt.date!=cmt.modified?' edited':''}" datetime="${date.toJSON()}" data-timezone="${date.zone}" data-unix="${date.time}">${cmt.date_fuzzy}</time>
 	</div>
 	${cmt.source_type === 'markdown'
 				? `<div class="comment-content html-content reset-list-style-type">${cmt.content}</div>`
