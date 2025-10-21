@@ -123,10 +123,6 @@ func (f *File) FsFile(r io.ReadSeekCloser) fs.File {
 	return &_FsFile{f: f, ReadSeekCloser: r}
 }
 
-func (f *File) InfoFile() fs.FileInfo {
-	return &_InfoFile{f: f}
-}
-
 func (f *File) GetImageDimension() (int, int) {
 	return f.Meta.Width, f.Meta.Height
 }
