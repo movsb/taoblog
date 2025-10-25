@@ -656,12 +656,4 @@ body.admin.editor.embed-drafts {
 	&, #workspace {
 		margin: 0;
 	}
-	#post-editor {
-		p:is(.date,.type,.category,.status,.top,.toc,.geo) {
-			display: none;
-		}
-		div.save {
-			display: none;
-		}
-	}
 }
