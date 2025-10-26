@@ -124,7 +124,19 @@ class GeoLink extends HTMLElement {
 			// a.href = `maps://?q=${lat},${lon}`;
 			// [Adopting unified Maps URLs | Apple Developer Documentation](https://developer.apple.com/documentation/mapkit/unified-map-urls)
 			// 还是好像还是不能工作，垃圾 firefox。
-			a.href = `https://maps.apple.com?query=${lat},${lon}`;
+			// a.href = `https://maps.apple.com?query=${lat},${lon}`;
+			//
+			// 新版地址有变化。
+			// https://developer.apple.com/documentation/mapkit/unified-map-urls#Show-the-place-card-of-a-POI
+			// 参考这个地址：
+			// https://maps.apple.com/place?coordinate=40.864791,-73.931723&name=My%20Favorite%20Place.
+			// 问题是：官方文档并没有给出 name 的介绍。
+			const url = new URL('https://maps.apple.com/place');
+			const query = new URLSearchParams();
+			query.set('coordinate', `${lat},${lon}`);
+			query.set('name', this.getAttribute('name'));
+			url.search = '?' + query.toString();
+			a.href = url.toString();
 		} else if (isAndroid) {
 			a.href = `geo:${lat},${lon}`;
 		} else {
