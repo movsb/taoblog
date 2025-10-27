@@ -7,3 +7,7 @@
 考虑到 blurhash 已经有其它竞争产品[^th]，所以暂时不直接用它作为目录名字，后面可能考虑替换。
 
 [^th]: [ThumbHash: A very compact representation of an image placeholder](https://evanw.github.io/thumbhash/)
+
+## 相关阅读
+
+- [How we made Blurhash 128x faster | Uploadcare](https://uploadcare.com/blog/faster-blurhash/)
