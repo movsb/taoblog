@@ -183,10 +183,10 @@ air, moon roof, loaded",4799.0
 
 ### 输入框
 
-* 文本：<input type=text>
-* 密码：<input type=password>
-* 网址：<input type=url>
-* 邮箱：<input type=email>
+* 文本：<input type=text value="Text"><input type=text value="Text" disabled>
+* 密码：<input type=password value="Password"><input type=password value="Password" disabled>
+* 网址：<input type=url><input type=url disabled>
+* 邮箱：<input type=email><input type=email disabled>
 * 日期：<input type=datetime-local>
 * 编辑：<textarea></textarea>
 

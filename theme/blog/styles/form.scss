@@ -70,12 +70,17 @@ input[type=checkbox] {
 	top: 1px;
 }
 
+// 各种文本输入框。
 input[type=text],input[type=password],input[type=email],input[type=url],textarea {
 	caret-color: var(--accent-color);
 	box-sizing: border-box;
 
 	&:invalid {
 		color: rgba(255, 0, 0, 0.6);
+	}
+
+	&:disabled {
+		color: rgb(from currentColor r g b / 0.3);
 	}
 
 	&::placeholder {
