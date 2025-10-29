@@ -52,7 +52,8 @@ type FileMeta struct {
 
 	Source *proto.FileSpec_Meta_Source
 
-	Blurhash string
+	// [ThumbHash: A very compact representation of an image placeholder](https://evanw.github.io/thumbhash/)
+	ThumbHash string
 }
 
 type FileEncryptionMeta struct {

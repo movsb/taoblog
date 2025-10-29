@@ -910,3 +910,7 @@ func v66(posts, files, cache *taorm.DB) {
 	u := utils.CreateDataURL(raw)
 	posts.MustExec(`UPDATE options SET value=? WHERE name='favicon'`, u.String())
 }
+
+func v67(posts, files, cache *taorm.DB) {
+	posts.MustExec(`DELETE FROM options WHERE name='blurhash:last'`)
+}

@@ -246,7 +246,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		cfg.Site.GetTimezoneLocation,
 	)
 
-	s.blurhashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`blurhash`), s.mainStorage, func(pid int) {
+	s.blurhashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`thumb_hash`), s.mainStorage, func(pid int) {
 		s.deletePostContentCacheFor(int64(pid))
 		s.updatePostMetadataTime(int64(pid), time.Now())
 	})

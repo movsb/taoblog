@@ -2,6 +2,7 @@ package blur_image
 
 import (
 	"context"
+	"encoding/base64"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -15,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buckket/go-blurhash"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/storage"
+	"go.n16f.net/thumbhash"
 )
 
 func NewTask(ctx context.Context, store utils.PluginStorage, fs *storage.SQLite, invalidate func(pid int)) *Task {
@@ -66,7 +67,7 @@ func (t *Task) run() {
 		return
 	}
 	for _, file := range updated {
-		if file.Meta.Blurhash != `` {
+		if file.Meta.ThumbHash != `` {
 			continue
 		}
 		log.Println(`计算Hash：`, file.PostID, file.Path)
@@ -83,7 +84,7 @@ func (t *Task) run() {
 		if hash == `` {
 			continue
 		}
-		file.Meta.Blurhash = hash
+		file.Meta.ThumbHash = hash
 		if err := t.fs.UpdateFileMeta(file.ID, &file.Meta); err != nil {
 			log.Println(err)
 			return
@@ -154,21 +155,6 @@ func calcHash(info *models.File, fp fs.File) (string, error) {
 		return ``, err
 	}
 
-	x, y := 5, 5
-	if info.Meta.Width > 0 && info.Meta.Height > 0 {
-		x, y = scale(x, y, 1, 8)
-	}
-
-	return blurhash.Encode(x, y, data)
-}
-
-func scale(a, b, L, U int) (a2, b2 int) {
-	if a > b {
-		a2 = U
-		b2 = max(int(float32(b)/(float32(a)/float32(U))+0.5), L)
-	} else {
-		b2 = U
-		a2 = max(int(float32(a)/(float32(b)/float32(U))+0.5), L)
-	}
-	return
+	hash := thumbhash.EncodeImage(data)
+	return base64.StdEncoding.EncodeToString(hash), nil
 }

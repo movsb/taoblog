@@ -13,7 +13,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 )
 
-//go:embed fast-blurhash/hash.js script.js
+//go:embed thumbhash/hash.js script.js
 var _embed embed.FS
 var _root = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
@@ -21,7 +21,7 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `blur_image`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
-		dynamic.WithScripts(module, `fast-blurhash/hash.js`, `script.js`)
+		dynamic.WithScripts(module, `thumbhash/hash.js`, `script.js`)
 	})
 }
 
@@ -65,8 +65,8 @@ func (m *BlurImage) TransformHtml(doc *goquery.Document) error {
 		if !ok {
 			return
 		}
-		if hash := info.Meta.Blurhash; hash != `` {
-			s.SetAttr(`data-blurhash`, hash)
+		if hash := info.Meta.ThumbHash; hash != `` {
+			s.SetAttr(`data-thumb-hash`, hash)
 		}
 	})
 	return nil

@@ -106,12 +106,13 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
+	go.n16f.net/thumbhash v1.1.0 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
-	golang.org/x/image v0.21.0 // indirect
-	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/image v0.32.0 // indirect
+	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/time v0.4.0 // indirect
-	golang.org/x/tools v0.36.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
@@ -142,9 +143,9 @@ require (
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.43.0
-	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/net v0.44.0
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
