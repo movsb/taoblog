@@ -4,7 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', ()=>{
 	/** @type {NodeListOf<HTMLImageElement>} */
-	const images = document.querySelectorAll('img[data-thumb-hash]:not(.static)');
+	const images = document.querySelectorAll('.entry img[data-thumb-hash]:not(.static)');
 	images.forEach(async img => {
 		const removeHash = () => {
 			img.removeAttribute('data-thumb-hash');

@@ -108,7 +108,7 @@ type Service struct {
 	// rss 任务
 	// rssTask *rss.Task
 	// 模糊缩略图任务
-	blurhashTask *blur_image.Task
+	thumbHashTask *blur_image.Task
 
 	calendar *calendar.CalenderService
 	aesGCM   *crypto.AesGcm
@@ -246,7 +246,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		cfg.Site.GetTimezoneLocation,
 	)
 
-	s.blurhashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`thumb_hash`), s.mainStorage, func(pid int) {
+	s.thumbHashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`thumb_hash`), s.mainStorage, func(pid int) {
 		s.deletePostContentCacheFor(int64(pid))
 		s.updatePostMetadataTime(int64(pid), time.Now())
 	})

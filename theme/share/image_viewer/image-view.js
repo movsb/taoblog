@@ -14,12 +14,19 @@ class ImageView {
 
 			/** @type {HTMLImageElement} */
 			const img = clone.querySelector('img') ?? clone;
+
 			// 不再使用 blur 类。
 			img.classList.remove('blur');
+
 			// 移除封面效果。
 			img.style.removeProperty('object-fit');
 			img.style.removeProperty('aspect-ratio');
 			img.style.removeProperty('width');
+
+			// 移除模糊预览图。
+			img.style.removeProperty('background-image');
+			img.style.removeProperty('background-repeat');
+			img.style.removeProperty('background-size');
 
 			this._initMetadata(img.dataset.metadata, img);
 
