@@ -10,7 +10,6 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/alerts"
-	"github.com/movsb/taoblog/service/modules/renderers/blocknote"
 	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
 	"github.com/movsb/taoblog/service/modules/renderers/caption"
 	"github.com/movsb/taoblog/service/modules/renderers/colors"
@@ -72,13 +71,9 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		return tr.Render(source)
 	case `plain`:
 		return html.EscapeString(source), nil
+	// 老旧的格式，已弃用。
 	case `blocknote`:
-		options := []blocknote.Option{}
-		if !co.KeepTitleHeading {
-			options = append(options, blocknote.DoNotRenderTitle())
-		}
-		tr := blocknote.New(options...)
-		return tr.Render(source)
+		return html.EscapeString(source), nil
 	}
 
 	if sourceType != `markdown` {

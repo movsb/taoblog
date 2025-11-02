@@ -27,7 +27,6 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/assets"
-	"github.com/movsb/taoblog/service/modules/renderers/blocknote"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/page_link"
@@ -843,18 +842,6 @@ func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (
 			References: refs,
 		}
 		return d, nil
-	case `blocknote`:
-		var title string
-		tr := blocknote.New(
-			blocknote.WithTitle(&title),
-		)
-		_, err := tr.Render(source)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		return &_Derived{
-			Title: title,
-		}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "no renderer was found for: %q", sourceType)
 	}
