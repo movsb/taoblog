@@ -2,8 +2,8 @@
  * 绑定实况照片的事件处理元素。
  * 独立出来的原因是 image-view 那边也会用到。
  * @param {HTMLDivElement} livePhoto 
- * @param {HTMLElement} hoverElement
- * @param {HTMLElement} touchElement 
+ * @param {HTMLElement} hoverElement 桌面设备的鼠标悬停事件元素
+ * @param {HTMLElement} touchElement 移动设备的长按事件元素
  */
 const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
 	const container = livePhoto.querySelector('.container');

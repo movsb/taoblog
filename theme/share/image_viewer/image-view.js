@@ -47,7 +47,7 @@ class ImageView {
 				div.appendChild(icon);
 
 				// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。
-				livePhotoBindEvents(clone, icon);
+				livePhotoBindEvents(clone, icon, div);
 
 				clone = div;
 			}
