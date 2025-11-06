@@ -96,7 +96,7 @@ func (t *Task) extract(id int, name string, stat fs.FileInfo, key _CacheKey, r i
 
 	md, err := exif_exports.Extract(r)
 	if err != nil {
-		log.Println(`exif.task.extract`, err)
+		log.Println(`exif.task.extract`, err, id, name, stat.Name())
 		return
 	}
 	md.FileName = name

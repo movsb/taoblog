@@ -163,7 +163,7 @@ body:not(.wide) .entry {
 		margin: auto;
 	}
 }
-body:not(.wide) .tweet {
+body:not(.wide).tweet {
 	// 封面图片占满看起来比较舒服。
 	img.cover {
 		width: 100% !important;
@@ -231,21 +231,11 @@ blockquote {
 	}
 }
 
-.content-wrap {
-	&.outdated {
-		> .disclaimer {
-			border: 1px solid var(--border-color);
-			border-radius: var(--border-radius);
-			padding: 0 1em;
-		}
-	}
-}
-
 article {
 	container-type: inline-size;
 }
 
-.tweet, .tweets {
+.tweets {
 	article {
 		margin: 1em 0;
 		padding: 0 1em;

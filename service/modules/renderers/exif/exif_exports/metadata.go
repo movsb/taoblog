@@ -25,7 +25,7 @@ type Metadata struct {
 	Make         string      `json:"EXIF:Make"`             // 设置制造商
 	FNumber      float32     `json:"EXIF:FNumber"`          // 光圈数
 	FocalLength  string      `json:"EXIF:FocalLength"`      // 焦距
-	ExposureTime string      `json:"EXIF:ExposureTime"`     // 曝光时间
+	ExposureTime IntOrString `json:"EXIF:ExposureTime"`     // 曝光时间
 	ISO          int         `json:"EXIF:ISO"`              // 感光度
 	GPSPosition  string      `json:"Composite:GPSPosition"` // 坐标
 	GPSAltitude  string      `json:"Composite:GPSAltitude"` // 海拔
@@ -117,7 +117,7 @@ func (m *Metadata) String() []string {
 		lenInfo = append(lenInfo, m.FocalLength)
 	}
 	if m.ExposureTime != "" {
-		lenInfo = append(lenInfo, m.ExposureTime+`s`)
+		lenInfo = append(lenInfo, string(m.ExposureTime)+`s`)
 	}
 	if m.ISO > 0 {
 		lenInfo = append(lenInfo, fmt.Sprintf(`ISO/%v`, m.ISO))

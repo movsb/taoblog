@@ -323,14 +323,7 @@ func (t *Theme) QueryByPage(w http.ResponseWriter, r *http.Request, path string)
 // TODO 304 不要放这里处理。
 func (t *Theme) tempRenderPost(w http.ResponseWriter, req *http.Request, p *proto.Post) {
 	d := data.NewDataForPost(req.Context(), t.service, p)
-
-	var name string
-	if p.Type == `tweet` {
-		name = `tweet.html`
-	} else {
-		name = `post.html`
-	}
-	t.executeTemplate(name, w, d)
+	t.executeTemplate(`post.html`, w, d)
 }
 
 func (t *Theme) QueryByTags(w http.ResponseWriter, req *http.Request, tags []string) {

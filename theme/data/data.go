@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"reflect"
 	"strings"
 	"time"
 
@@ -59,7 +58,7 @@ func (d *Data) SetWriterAndTemplate(w io.Writer, t *template.Template) {
 
 func (d *Data) ShowHeader() bool {
 	switch d.Data.(type) {
-	case *PostData:
+	case *PostData, *TweetsData:
 		return false
 	}
 	return true
@@ -193,19 +192,4 @@ type MetaData struct {
 
 type ErrorData struct {
 	Message string
-}
-
-// TODO 这个函数好像已经没有存在的意义？
-func (d *Data) Strip(obj any) (any, error) {
-	// user := auth.Context(d.Context).User
-	switch typed := obj.(type) {
-	case *Post:
-		return &proto.Post{
-			Id:       typed.Id,
-			Date:     typed.Date,
-			Modified: typed.Modified,
-			UserId:   typed.UserId,
-		}, nil
-	}
-	return "", fmt.Errorf(`不知道如何列集：%v`, reflect.TypeOf(obj).String())
 }

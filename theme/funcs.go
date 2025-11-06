@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"reflect"
 	"time"
 
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/theme/data"
 	"github.com/xeonx/timeago"
 )
@@ -82,6 +84,20 @@ func (t *Theme) funcs() map[string]any {
 				}
 			}
 			return ``
+		},
+		// TODO 这个函数好像已经没有存在的意义？
+		`strip`: func(obj any) (any, error) {
+			// user := auth.Context(d.Context).User
+			switch typed := obj.(type) {
+			case *data.Post:
+				return &proto.Post{
+					Id:       typed.Id,
+					Date:     typed.Date,
+					Modified: typed.Modified,
+					UserId:   typed.UserId,
+				}, nil
+			}
+			return "", fmt.Errorf(`不知道如何列集：%v`, reflect.TypeOf(obj).String())
 		},
 	}
 }
