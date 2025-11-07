@@ -474,17 +474,6 @@ func (s *Server) createGitSyncTasks(
 		err := gs.Sync()
 		if err == nil {
 			log.Println(`git 同步成功`)
-			/*
-				s.notifyServer.SendInstant(
-					auth.SystemForLocal(context.Background()),
-					&proto.SendInstantRequest{
-						Title: `同步成功`,
-						Body:  `全部完成，没有错误。`,
-						Group: `同步与备份`,
-						Level: proto.SendInstantRequest_Passive,
-					},
-				)
-			*/
 			s.main.SetLastSyncAt(time.Now())
 		} else {
 			s.notifyServer.SendInstant(
@@ -500,8 +489,6 @@ func (s *Server) createGitSyncTasks(
 
 		return err
 	}
-
-	// log.Println(sync())
 
 	const every = time.Hour * 1
 	ticker := time.NewTicker(every)

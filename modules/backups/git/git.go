@@ -252,9 +252,10 @@ func (g *GitSync) push(repo *git.Repository) error {
 	return nil
 }
 
+// 根据日期创建文章对应的目录。
 func (g *GitSync) createPostDir(t int32, id int64) (string, error) {
 	createdAt := time.Unix(int64(t), 0).Local()
-	dir := createdAt.Format(`2006/01/02`)
+	dir := createdAt.Format(`2006/01`)
 	dir = filepath.Join(dir, fmt.Sprint(id))
 	fullDir := filepath.Join(g.tmpDir, dir)
 	if err := os.MkdirAll(fullDir, 0755); err != nil {
