@@ -9,6 +9,7 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/calendar"
+	"github.com/movsb/taoblog/service/modules/calendar/solar"
 )
 
 type Scheduler struct {
@@ -59,8 +60,8 @@ func (s *Scheduler) updateDaily(now time.Time, d _Daily) {
 		return uuid == r.uuid && isDaily
 	})
 
-	days := calendar.DaysPassed(now, r.Dates.Start.Time, r.Exclusive)
-	st, et := calendar.Daily(now, r.Dates.Start.Time, r.Dates.End.Time)
+	days := solar.DaysPassed(now, r.Dates.Start.Time, r.Exclusive)
+	st, et := solar.Daily(now, r.Dates.Start.Time, r.Dates.End.Time)
 	e := calendar.Event{
 		Message: fmt.Sprintf(`%s 已经 %d 天了`, r.Title, days),
 
@@ -157,8 +158,8 @@ func (s *Scheduler) addWeek(r *Reminder, pid, uid int, week int, tags map[string
 }
 
 func (s *Scheduler) addMonth(r *Reminder, pid, uid int, month int, tags map[string]any) {
-	st := calendar.AddMonths(r.Dates.Start.Time, month)
-	et := calendar.AddMonths(r.Dates.End.Time, month)
+	st := solar.AddMonths(r.Dates.Start.Time, month)
+	et := solar.AddMonths(r.Dates.End.Time, month)
 
 	e := calendar.Event{
 		Message: fmt.Sprintf(`%s 已经 %d 个月了`, r.Title, month),
@@ -179,8 +180,8 @@ func (s *Scheduler) addMonth(r *Reminder, pid, uid int, month int, tags map[stri
 }
 
 func (s *Scheduler) addYear(r *Reminder, pid, uid int, year int, tags map[string]any) {
-	st := calendar.AddYears(r.Dates.Start.Time, year)
-	et := calendar.AddYears(r.Dates.End.Time, year)
+	st := solar.AddYears(r.Dates.Start.Time, year)
+	et := solar.AddYears(r.Dates.End.Time, year)
 
 	e := calendar.Event{
 		Message: fmt.Sprintf(`%s 已经 %d 年了`, r.Title, year),
@@ -235,7 +236,7 @@ func (s *Scheduler) addEvery(r *Reminder, pid, uid int, d calendar.Duration, sho
 	case calendar.UnitMonth:
 		for i := 1; ; i++ {
 			n := d.N * i
-			st := calendar.AddMonths(r.Dates.Start.Time, n)
+			st := solar.AddMonths(r.Dates.Start.Time, n)
 			if !st.Before(now) || today(st) {
 				s.addMonth(r, pid, uid, n, tags)
 				break
@@ -244,7 +245,7 @@ func (s *Scheduler) addEvery(r *Reminder, pid, uid int, d calendar.Duration, sho
 	case calendar.UnitYear:
 		for i := 1; ; i++ {
 			n := d.N * i
-			st := calendar.AddYears(r.Dates.Start.Time, n)
+			st := solar.AddYears(r.Dates.Start.Time, n)
 			if !st.Before(now) || today(st) {
 				s.addYear(r, pid, uid, n, tags)
 				break
@@ -287,7 +288,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 		}
 
 		if day < 0 {
-			days := calendar.FirstDays(r.Dates.Start.Time, r.Dates.End.Time, -day)
+			days := solar.FirstDays(r.Dates.Start.Time, r.Dates.End.Time, -day)
 			for i, pair := range days {
 				e := calendar.Event{
 					Message: fmt.Sprintf(`%s`, r.Title),
@@ -313,7 +314,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 	for _, week := range r.Remind.Weeks {
 		if week < 0 {
-			weeks := calendar.FirstWeeks(r.Dates.Start.Time, r.Dates.End.Time, -week)
+			weeks := solar.FirstWeeks(r.Dates.Start.Time, r.Dates.End.Time, -week)
 			for i, pair := range weeks {
 				e := calendar.Event{
 					Message: r.Title,

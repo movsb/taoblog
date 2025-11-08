@@ -1,4 +1,4 @@
-package calendar_test
+package solar_test
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/movsb/taoblog/service/modules/calendar"
+	"github.com/movsb/taoblog/service/modules/calendar/solar"
 )
 
 func TestDaysPassed(t *testing.T) {
@@ -31,7 +31,7 @@ func TestDaysPassed(t *testing.T) {
 }
 
 func expect(t *testing.T, now, at time.Time, exclusive bool, n int) {
-	if calendar.DaysPassed(now, at, exclusive) != n {
+	if solar.DaysPassed(now, at, exclusive) != n {
 		_, file, line, _ := runtime.Caller(1)
 		t.Fatal(`计算错误:`, now, at, exclusive, n, fmt.Sprintf(`%s:%d`, file, line))
 	}
@@ -70,7 +70,7 @@ func TestDaily(t *testing.T) {
 	// 		es := parse(layout, tc[3])
 	// 		ee := parse(layout, tc[4])
 
-	// 		gotES, gotEE := calendar.Daily(now, s, e)
+	// 		gotES, gotEE := solar.Daily(now, s, e)
 	// 		if !es.Equal(gotES) {
 	// 			panic(`not equal`)
 	// 		}
@@ -103,7 +103,7 @@ func TestDaily(t *testing.T) {
 			es := parse(layout, tc[3])
 			ee := parse(layout, tc[4])
 
-			gotES, gotEE := calendar.Daily(now, s, e)
+			gotES, gotEE := solar.Daily(now, s, e)
 			if !es.Equal(gotES) {
 				panic(`not equal`)
 			}
@@ -119,7 +119,7 @@ func TestFirstDays(t *testing.T) {
 		layout := `2006-01-02`
 		start := `2002-07-03`
 		end := `2002-07-04`
-		times := calendar.FirstDays(parse(layout, start), parse(layout, end), 3)
+		times := solar.FirstDays(parse(layout, start), parse(layout, end), 3)
 		expect := [][2]time.Time{
 			{
 				parse(layout, `2002-07-03`),
@@ -135,7 +135,7 @@ func TestFirstDays(t *testing.T) {
 		layout := `2006-01-02`
 		start := `2002-07-03`
 		end := `2002-07-05`
-		times := calendar.FirstDays(parse(layout, start), parse(layout, end), 3)
+		times := solar.FirstDays(parse(layout, start), parse(layout, end), 3)
 		expect := [][2]time.Time{
 			{
 				parse(layout, `2002-07-03`),
@@ -150,7 +150,7 @@ func TestFirstDays(t *testing.T) {
 		layout := `2006-01-02 15:04`
 		start := `2002-07-03 13:00`
 		end := `2002-07-03 14:00`
-		times := calendar.FirstDays(parse(layout, start), parse(layout, end), 3)
+		times := solar.FirstDays(parse(layout, start), parse(layout, end), 3)
 		expect := [][2]time.Time{
 			{
 				parse(layout, `2002-07-03 13:00`),
@@ -175,7 +175,7 @@ func TestFirstWeeks(t *testing.T) {
 	{
 		layout := `2006-01-02`
 		start := `2025-10-04`
-		times := calendar.FirstWeeks(parse(layout, start), parse(layout, start), 3)
+		times := solar.FirstWeeks(parse(layout, start), parse(layout, start), 3)
 		expect := [][2]time.Time{
 			{
 				parse(layout, `2025-10-04`),
@@ -198,7 +198,7 @@ func TestFirstWeeks(t *testing.T) {
 		layout := `2006-01-02 15:04`
 		start := `2025-10-04 08:00`
 		end := `2025-10-04 12:00`
-		times := calendar.FirstWeeks(parse(layout, start), parse(layout, end), 3)
+		times := solar.FirstWeeks(parse(layout, start), parse(layout, end), 3)
 		expect := [][2]time.Time{
 			{
 				parse(layout, `2025-10-04 08:00`),
@@ -234,7 +234,7 @@ func TestAddMonths(t *testing.T) {
 	for _, tc := range tcs {
 		date := parse(time.DateOnly, tc.date)
 		want := parse(time.DateOnly, tc.expect)
-		got := calendar.AddMonths(date, tc.add)
+		got := solar.AddMonths(date, tc.add)
 		if !got.Equal(want) {
 			t.Error(`not equal:`, got, want)
 		}
@@ -255,7 +255,7 @@ func TestAddYears(t *testing.T) {
 	for i, tc := range tcs {
 		date := parse(time.DateOnly, tc.date)
 		want := parse(time.DateOnly, tc.expect)
-		got := calendar.AddYears(date, tc.add)
+		got := solar.AddYears(date, tc.add)
 		if !got.Equal(want) {
 			t.Errorf(`not equal: #%d %s %s`, i+1, want, got)
 		}
@@ -277,7 +277,7 @@ func TestAnniversary(t *testing.T) {
 	for i, tc := range tcs {
 		date := parse(time.DateOnly, tc.date)
 		want := parse(time.DateOnly, tc.expect)
-		got := calendar.Anniversary(now, date)
+		got := solar.Anniversary(now, date)
 		if !got.Equal(want) {
 			t.Errorf(`not equal: #%d %s %s`, i+1, want, got)
 		}

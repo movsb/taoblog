@@ -1,4 +1,4 @@
-package calendar
+package solar
 
 import (
 	"time"
@@ -39,7 +39,7 @@ func AllDay(t time.Time) (time.Time, time.Time) {
 	return st, et
 }
 
-func isAllDay(st, et time.Time) bool {
+func IsAllDay(st, et time.Time) bool {
 	startHasTime := st.Hour() != 0 || st.Minute() != 0 || st.Second() != 0
 	endHasTime := et.Hour() != 0 || et.Minute() != 0 || et.Second() != 0
 	return !(startHasTime || endHasTime)
@@ -64,7 +64,7 @@ func Daily(now time.Time, start, end time.Time) (time.Time, time.Time) {
 // 如果为全天事件，只返回一组数据。
 // 如果全天事件大于 1 天，参数无效，不处理。
 func FirstDays(start, end time.Time, n int) [][2]time.Time {
-	if isAllDay(start, end) {
+	if IsAllDay(start, end) {
 		if end.Sub(start) > time.Hour*24 {
 			return [][2]time.Time{
 				{start, end},

@@ -21,6 +21,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/calendar"
+	"github.com/movsb/taoblog/service/modules/calendar/solar"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
 	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
@@ -415,7 +416,7 @@ func (s *Service) SetCertDays(n int) {
 	})
 
 	if n >= 0 && n < 15 {
-		st, et := calendar.AllDay(time.Now())
+		st, et := solar.AllDay(time.Now())
 		s.calendar.AddEvent(&calendar.Event{
 			Message: fmt.Sprintf(`证书剩余 %d 天`, n),
 			Start:   st,
@@ -440,7 +441,7 @@ func (s *Service) SetDomainDays(n int) {
 	})
 
 	if n >= 0 && n < 15 {
-		st, et := calendar.AllDay(time.Now())
+		st, et := solar.AllDay(time.Now())
 		s.calendar.AddEvent(&calendar.Event{
 			Message: fmt.Sprintf(`域名剩余 %d 天`, n),
 			Start:   st,

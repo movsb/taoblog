@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Lofanmi/chinese-calendar-golang/calendar"
-	"github.com/movsb/taoblog/service/modules/renderers/reminders/lunar"
+	"github.com/movsb/taoblog/service/modules/calendar/lunar"
 )
 
 func TestLunar(t *testing.T) {

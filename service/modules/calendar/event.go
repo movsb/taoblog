@@ -8,6 +8,7 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 	"github.com/movsb/taoblog/modules/version"
+	"github.com/movsb/taoblog/service/modules/calendar/solar"
 )
 
 // 日历中的一条独立的记录。
@@ -29,7 +30,7 @@ type Event struct {
 
 // 如果只包含日期（不包含时间），则认为是全天事件。
 func (e *Event) isAllDay() bool {
-	return isAllDay(e.Start, e.End)
+	return solar.IsAllDay(e.Start, e.End)
 }
 
 type Events []*Event

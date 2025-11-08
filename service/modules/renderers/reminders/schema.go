@@ -6,7 +6,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/google/uuid"
-	"github.com/movsb/taoblog/service/modules/calendar"
+	"github.com/movsb/taoblog/service/modules/calendar/solar"
 )
 
 type UserDate struct {
@@ -119,7 +119,7 @@ type ReminderRemind struct {
 }
 
 func (r *Reminder) Days() int {
-	return calendar.DaysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
+	return solar.DaysPassed(time.Now(), r.Dates.Start.Time, r.Exclusive)
 }
 
 func (r *Reminder) Start() string {

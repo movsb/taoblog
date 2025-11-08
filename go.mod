@@ -46,13 +46,16 @@ require (
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/go-image-avif-size v0.0.0-20250607015031-0e19c3e4a9c8
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
+	github.com/ncruces/go-sqlite3 v0.29.1
 	github.com/phuslu/lru v1.0.18
 	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/tdewolff/parse/v2 v2.7.19
+	github.com/yl2chen/cidranger v1.0.2
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/hashtag v0.3.1
 	go.abhg.dev/goldmark/toc v0.11.0
+	go.n16f.net/thumbhash v1.1.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1
 )
 
@@ -97,7 +100,6 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/ncruces/go-sqlite3 v0.29.1 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -105,8 +107,6 @@ require (
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/yl2chen/cidranger v1.0.2 // indirect
-	go.n16f.net/thumbhash v1.1.0 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/image v0.32.0 // indirect
 	golang.org/x/mod v0.28.0 // indirect

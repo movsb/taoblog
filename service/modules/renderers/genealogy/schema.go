@@ -10,8 +10,8 @@ import (
 	graphviz "github.com/goccy/go-graphviz"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/calendar/lunar"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
-	"github.com/movsb/taoblog/service/modules/renderers/reminders/lunar"
 )
 
 type Date struct {
