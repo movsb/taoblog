@@ -1,6 +1,7 @@
 package lunar_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Lofanmi/chinese-calendar-golang/calendar"
@@ -85,25 +86,37 @@ func TestLunarDateAddDays(t *testing.T) {
 	}
 }
 
+func N(ll []lunar.LunarDate, n int) []lunar.LunarDate {
+	if len(ll) != n {
+		panic(`农历个数不一样。`)
+	}
+	return ll
+}
+
+func LE(l lunar.LunarDate, s string) {
+	if l.DateString() != s {
+		panic(fmt.Sprintf(`农历不相等：%s, %s`, l.DateString(), s))
+	}
+}
+
 func TestLunarDateAddYears(t *testing.T) {
-	l := lunar.NewLunarDate(2005, 3, 8, 0, 0, 0, false)
-	if s := l.AddYears(1).DateString(); s != `二零零六年三月初八` {
-		t.Fatalf(`农历不相等：%v`, s)
-	}
-	if s := l.AddYears(20).DateString(); s != `二零二五年三月初八` {
-		t.Fatalf(`农历不相等：%v`, s)
-	}
-	if s := l.AddYears(26).DateString(); s != `二零三一年三月初八` {
-		t.Fatalf(`农历不相等：%v`, s)
-	}
-	for i := 0; i < 50; i++ {
-		t.Log(l.AddYears(i).DateString())
-	}
+	l := lunar.NewLunarDate(1991, 2, 20, 0, 0, 0, false)
+
+	ll := N(l.AddYears(1), 1)
+	LE(ll[0], `一九九二年二月二十`)
+
+	// 2004 年含闰月。
+	ll = N(l.AddYears(13), 2)
+	LE(ll[0], `二零零四年二月二十`)
+	LE(ll[1], `二零零四年闰二月二十`)
+
+	// 2091 年，100 岁生日。
+	ll = N(l.AddYears(100), 1)
+	LE(ll[0], `二零九一年二月二十`)
 }
 
 func TestLunarDateAddYears2(t *testing.T) {
 	l := lunar.NewLunarDate(2005, 2, 30, 0, 0, 0, false)
-	if s := l.AddYears(1).DateString(); s != `二零零六年二月廿九` {
-		t.Fatalf(`农历不相等：%v`, s)
-	}
+	ll := N(l.AddYears(1), 1)
+	LE(ll[0], `二零零六年二月廿九`)
 }

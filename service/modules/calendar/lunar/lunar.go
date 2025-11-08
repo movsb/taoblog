@@ -50,8 +50,10 @@ func (d LunarDate) AddDays(n int) LunarDate {
 }
 
 // 返回“添加 N 年”后的农历日期。
-// 对于月份，目前只保证数字相等，不包含“闰”。
-func (d LunarDate) AddYears(n int) LunarDate {
+//
+// 添加的是自然年，也是是 N 年前是/后的同一天（或最接近）。
+// 由于存在闰月，所以会返回 1~2 个结果，前者是不闰的，后者是闰的（如果有闰月的话）。
+func (d LunarDate) AddYears(n int) []LunarDate {
 	var (
 		l             = d.c.Lunar
 		expectedYear  = int(l.GetYear()) + n
@@ -59,7 +61,9 @@ func (d LunarDate) AddYears(n int) LunarDate {
 		expectedDay   = l.GetDay()
 	)
 
-	calc := func(near time.Time) bool {
+	// 计算给定的时间是否是符合上述期望的时间
+	// 第二个返回值表示是否是闰月。
+	expected := func(near time.Time) (bool, bool) {
 		lu := LunarDate{c: calendar.ByTimestamp(near.Unix())}
 		gotYear := lu.c.Lunar.GetYear()
 		gotMonth := lu.c.Lunar.GetMonth()
@@ -67,34 +71,66 @@ func (d LunarDate) AddYears(n int) LunarDate {
 		gotDay := lu.c.Lunar.GetDay()
 
 		if expectedYear == int(gotYear) && expectedMonth == gotMonth {
-			if expectedDay == gotDay && !isLeapMonth {
-				return true
+			if expectedDay == gotDay {
+				return true, isLeapMonth
 			}
 		}
-		return false
+		return false, false
 	}
 
+	// 先根据阳历计算出一个模糊的 N 年后的日子。
 	base := d.SolarTime().AddDate(n, 0, 0)
 
-	// 前后计算 1000 天以推算到最接近的一天。
-	for i := range 1000 {
+	// 农历平年比阳历短约 11 天（365 − 354 ≈ 11）。
+	// 前后计算大概 100 天以推算到最接近的一天。
+
+	var (
+		notLeap time.Time
+		leap    time.Time
+	)
+
+retry:
+	for i := range 100 {
 		near1 := base.AddDate(0, 0, i)
-		if calc(near1) {
-			return LunarDate{c: calendar.ByTimestamp(near1.Unix())}
+		if ok, l := expected(near1); ok {
+			if l {
+				leap = near1
+			} else {
+				notLeap = near1
+			}
 		}
 
 		near2 := base.AddDate(0, 0, -i)
-		if calc(near2) {
-			return LunarDate{c: calendar.ByTimestamp(near2.Unix())}
+		if ok, l := expected(near2); ok {
+			if l {
+				leap = near2
+			} else {
+				notLeap = near2
+			}
 		}
 	}
 
-	// 最后一天天数可能不一样，前进到下一个月，然后减一天。
-	if expectedDay != 1 && d.AddDays(1).c.Lunar.GetDay() == 1 {
-		return d.AddDays(1).AddYears(n).AddDays(-1)
+	// 没找到。
+	if notLeap.IsZero() && leap.IsZero() {
+		// 有可能是因为是月末，但是另一年没有该天。
+		if d.AddDays(1).c.Lunar.GetDay() == 1 {
+			expectedDay--
+			goto retry
+		} else {
+			panic(fmt.Sprintf(`找不到对应的农历：%s + %d Year`, d.DateString(), n))
+		}
 	}
 
-	panic(fmt.Sprintf(`找不到对应的农历：%s + %d Year`, d.DateString(), n))
+	if notLeap.IsZero() {
+		panic(`没有找到对应的农历`)
+	}
+
+	ret := []LunarDate{{c: calendar.ByTimestamp(notLeap.Unix())}}
+	if !leap.IsZero() {
+		ret = append(ret, LunarDate{c: calendar.ByTimestamp(leap.Unix())})
+	}
+
+	return ret
 }
 
 // 解析农历日期。
