@@ -41,7 +41,7 @@ func runCal(t *testing.T, cal *calendar.CalenderService, sched *reminders.Schedu
 
 	utils.Must(sched.AddReminder(1, 1, r))
 
-	all := cal.Filter(func(e *calendar.Event) bool { return true })
+	all := cal.Filter(calendar.AnyKind, func(e *calendar.Event) bool { return true })
 	buf := bytes.NewBuffer(nil)
 	all.Marshal(`Cal`, buf)
 	got := strings.ReplaceAll(strings.TrimSpace(buf.String()), "\r\n", "\n")

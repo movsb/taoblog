@@ -52,9 +52,15 @@ func (s *Scheduler) UpdateDaily() {
 	}
 }
 
+var calKind = calendar.RegisterKind(func(e *calendar.Event) string {
+	uuid := e.Tags[`uuid`].(string)
+	repeat, _ := e.Tags[`repeat`].(string)
+	return uuid + repeat
+})
+
 func (s *Scheduler) updateDaily(now time.Time, d _Daily) {
 	r := d.reminder
-	s.cal.Remove(func(e *calendar.Event) bool {
+	s.cal.Remove(calKind, func(e *calendar.Event) bool {
 		uuid, _ := e.Tags[`uuid`]
 		_, isDaily := e.Tags[`daily`]
 		return uuid == r.uuid && isDaily
@@ -76,7 +82,7 @@ func (s *Scheduler) updateDaily(now time.Time, d _Daily) {
 			`uuid`:  r.uuid,
 		},
 	}
-	s.cal.AddEvent(&e)
+	s.cal.AddEvent(calKind, &e)
 }
 
 func (s *Scheduler) UpdateEvery() {
@@ -90,7 +96,7 @@ func (s *Scheduler) UpdateEvery() {
 
 func (s *Scheduler) updateEvery(d _Daily, shouldCreateToday *bool) {
 	r := d.reminder
-	s.cal.Remove(func(e *calendar.Event) bool {
+	s.cal.Remove(calKind, func(e *calendar.Event) bool {
 		uuid, _ := e.Tags[`uuid`]
 		_, isEvery := e.Tags[`every`]
 		return uuid == r.uuid && isEvery
@@ -133,7 +139,7 @@ func (s *Scheduler) addDay(r *Reminder, pid, uid int, day int, tags map[string]a
 		},
 	}
 	setTags(&e, tags)
-	s.cal.AddEvent(&e)
+	s.cal.AddEvent(calKind, &e)
 }
 
 func (s *Scheduler) addWeek(r *Reminder, pid, uid int, week int, tags map[string]any) {
@@ -154,7 +160,7 @@ func (s *Scheduler) addWeek(r *Reminder, pid, uid int, week int, tags map[string
 		},
 	}
 	setTags(&e, tags)
-	s.cal.AddEvent(&e)
+	s.cal.AddEvent(calKind, &e)
 }
 
 func (s *Scheduler) addMonth(r *Reminder, pid, uid int, month int, tags map[string]any) {
@@ -176,7 +182,7 @@ func (s *Scheduler) addMonth(r *Reminder, pid, uid int, month int, tags map[stri
 		},
 	}
 	setTags(&e, tags)
-	s.cal.AddEvent(&e)
+	s.cal.AddEvent(calKind, &e)
 }
 
 func (s *Scheduler) addYear(r *Reminder, pid, uid int, year int, tags map[string]any) {
@@ -198,7 +204,7 @@ func (s *Scheduler) addYear(r *Reminder, pid, uid int, year int, tags map[string
 		},
 	}
 	setTags(&e, tags)
-	s.cal.AddEvent(&e)
+	s.cal.AddEvent(calKind, &e)
 }
 
 func (s *Scheduler) addEvery(r *Reminder, pid, uid int, d calendar.Duration, shouldCreateToday *bool) {
@@ -304,7 +310,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 						`repeat`: fmt.Sprintf(`day@%d`, i),
 					},
 				}
-				s.cal.AddEvent(&e)
+				s.cal.AddEvent(calKind, &e)
 			}
 			shouldCreateToday = false
 		} else {
@@ -330,7 +336,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 						`repeat`: fmt.Sprintf(`week@%d`, i),
 					},
 				}
-				s.cal.AddEvent(&e)
+				s.cal.AddEvent(calKind, &e)
 			}
 			shouldCreateToday = false
 		} else {
@@ -364,7 +370,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 				`uuid`: r.uuid,
 			},
 		}
-		s.cal.AddEvent(&e)
+		s.cal.AddEvent(calKind, &e)
 	}
 
 	return nil
@@ -372,7 +378,7 @@ func (s *Scheduler) AddReminder(postID int, userID int, r *Reminder) error {
 
 // 根据文章编号删除提醒。
 func (s *Scheduler) DeleteRemindersByPostID(id int) {
-	s.cal.Remove(func(e *calendar.Event) bool {
+	s.cal.Remove(calKind, func(e *calendar.Event) bool {
 		return e.PostID == id
 	})
 	s.lock.Lock()
@@ -388,7 +394,7 @@ func (s *Scheduler) DeleteRemindersByPostID(id int) {
 
 func (s *Scheduler) ForEachPost(fn func(id int)) {
 	ids := map[int]struct{}{}
-	s.cal.Each(func(e *calendar.Event) {
+	s.cal.Each(calKind, func(e *calendar.Event) {
 		ids[e.PostID] = struct{}{}
 	})
 	for pid := range ids {

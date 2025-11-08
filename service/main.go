@@ -27,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
+	"github.com/movsb/taoblog/service/modules/renderers/genealogy"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/search"
@@ -110,6 +111,8 @@ type Service struct {
 	// rssTask *rss.Task
 	// 模糊缩略图任务
 	thumbHashTask *blur_image.Task
+	// 族谱图任务
+	genealogyTask *genealogy.Task
 
 	calendar *calendar.CalenderService
 	aesGCM   *crypto.AesGcm
@@ -245,6 +248,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.GetPluginStorage(`reminders`),
 		s.calendar,
 		cfg.Site.GetTimezoneLocation,
+	)
+
+	s.genealogyTask = genealogy.NewTask(ctx, s,
+		s.GetPluginStorage(`genealogy`),
+		s.calendar,
 	)
 
 	s.thumbHashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`thumb_hash`), s.mainStorage, func(pid int) {
@@ -410,14 +418,14 @@ func (s *Service) SetCertDays(n int) {
 	s.certDaysLeft.Store(int32(n))
 	s.exporter.certDaysLeft.Set(float64(n))
 
-	s.calendar.Remove(func(e *calendar.Event) bool {
+	s.calendar.Remove(svcCalKind, func(e *calendar.Event) bool {
 		uuid, _ := e.Tags[`uuid`]
 		return uuid == `cert_days`
 	})
 
 	if n >= 0 && n < 15 {
 		st, et := solar.AllDay(time.Now())
-		s.calendar.AddEvent(&calendar.Event{
+		s.calendar.AddEvent(svcCalKind, &calendar.Event{
 			Message: fmt.Sprintf(`证书剩余 %d 天`, n),
 			Start:   st,
 			End:     et,
@@ -435,14 +443,14 @@ func (s *Service) SetDomainDays(n int) {
 	s.domainExpirationDaysLeft.Store(int32(n))
 	s.exporter.domainDaysLeft.Set(float64(n))
 
-	s.calendar.Remove(func(e *calendar.Event) bool {
+	s.calendar.Remove(svcCalKind, func(e *calendar.Event) bool {
 		uuid, _ := e.Tags[`uuid`]
 		return uuid == `domain_days`
 	})
 
 	if n >= 0 && n < 15 {
 		st, et := solar.AllDay(time.Now())
-		s.calendar.AddEvent(&calendar.Event{
+		s.calendar.AddEvent(svcCalKind, &calendar.Event{
 			Message: fmt.Sprintf(`域名剩余 %d 天`, n),
 			Start:   st,
 			End:     et,

@@ -77,11 +77,17 @@ type Individual struct {
 	// 配偶。只需单方记录。
 	Spouse string `yaml:"spouse"`
 
-	// 直系亲属（上级）。
+	// 直系亲属（上级）唯一标识。
 	Father string `yaml:"father"`
 	Mother string `yaml:"mother"`
 
-	// 生日 & 逝世
+	// 生日 & 忌日。
+	//
+	// 可以同时写阳历和农历。
+	// 写了阳历就会创建阳历日历，写了农历就会创建农历日历。
+	// 同时写时，两者用英文逗号分隔，顺序无关。
+	//
+	// 阳历形如：1992-02-20；农历用纯中文写。
 	Birth Date `yaml:"birth"`
 	Death Date `yaml:"death"`
 }

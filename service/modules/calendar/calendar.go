@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"fmt"
 	"slices"
 	"sync"
 	"time"
@@ -26,36 +27,50 @@ func NewCalendarService(now func() time.Time) *CalenderService {
 	return s
 }
 
-func (s *CalenderService) AddEvent(e *Event) {
+type Kind int
+
+var nextID = Kind(1)
+
+const AnyKind = Kind(0)
+
+var uniqueFuncs = map[Kind]func(e *Event) string{}
+
+func RegisterKind(unique func(e *Event) string) Kind {
+	n := nextID
+	nextID++
+	uniqueFuncs[n] = unique
+	return n
+}
+
+func (s *CalenderService) AddEvent(kind Kind, e *Event) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if _, ok := e.Tags[`uuid`]; !ok {
-		panic(`need uuid`)
-	}
-
 	e.id = uuid.NewString()
 	e.now = s.now()
+	e.kind = kind
 	s.events = append(s.events, e)
 }
 
-func (s *CalenderService) Each(callback func(e *Event)) {
+func (s *CalenderService) Each(kind Kind, callback func(e *Event)) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	for _, e := range s.events {
-		callback(e)
+		if kind == AnyKind || e.kind == kind {
+			callback(e)
+		}
 	}
 }
 
-func (s *CalenderService) Filter(predicate func(e *Event) bool) Events {
+func (s *CalenderService) Filter(kind Kind, predicate func(e *Event) bool) Events {
 	events := Events{}
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	for _, e := range s.events {
-		if predicate(e) {
+		if (kind == AnyKind || e.kind == kind) && predicate(e) {
 			events = append(events, e)
 		}
 	}
@@ -64,9 +79,17 @@ func (s *CalenderService) Filter(predicate func(e *Event) bool) Events {
 }
 
 // 移除所有满足 predicate 的事件。
-func (s *CalenderService) Remove(predicate func(e *Event) bool) {
+func (s *CalenderService) Remove(kind Kind, predicate func(e *Event) bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.events = slices.DeleteFunc(s.events, predicate)
+	s.events = slices.DeleteFunc(s.events, func(e *Event) bool {
+		return (kind == AnyKind || e.kind == kind) && predicate(e)
+	})
+}
+
+func (s *CalenderService) Unique(events Events) Events {
+	return events.Unique(func(e *Event) string {
+		return fmt.Sprintf(`%d:%s`, e.kind, uniqueFuncs[e.kind](e))
+	})
 }

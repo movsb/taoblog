@@ -9,10 +9,19 @@ import (
 	"github.com/yuin/goldmark/parser"
 )
 
-type Genealogy struct{}
+type Genealogy struct {
+	output      *[]*Individual
+	doNotRender bool
+}
 
-func New() *Genealogy {
-	return &Genealogy{}
+func New(options ...Option) *Genealogy {
+	g := &Genealogy{}
+
+	for _, opt := range options {
+		opt(g)
+	}
+
+	return g
 }
 
 func (e *Genealogy) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) (outErr error) {
@@ -22,13 +31,34 @@ func (e *Genealogy) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 	d := yaml.NewDecoder(bytes.NewReader(source), yaml.Strict())
 	utils.Must(d.Decode(&individuals))
 
+	// TODO: name不能重复，整个文章范围内。
 	for _, p := range individuals {
 		if p.ID == `` {
 			panic(`编号ID不能为空`)
 		}
 	}
 
-	gen(w, individuals)
+	if e.output != nil {
+		*e.output = append(*e.output, individuals...)
+	}
+
+	if !e.doNotRender {
+		gen(w, individuals)
+	}
 
 	return nil
+}
+
+type Option func(g *Genealogy)
+
+func WithOutput(individuals *[]*Individual) Option {
+	return func(g *Genealogy) {
+		g.output = individuals
+	}
+}
+
+func WithoutRender() Option {
+	return func(g *Genealogy) {
+		g.doNotRender = true
+	}
 }

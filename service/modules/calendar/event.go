@@ -16,6 +16,11 @@ type Event struct {
 	id  string // 事件的唯一编号
 	now time.Time
 
+	// 种类，各插件自用。
+	kind Kind
+
+	unique func() string
+
 	Message string
 
 	Start time.Time
@@ -26,6 +31,10 @@ type Event struct {
 	PostID int
 
 	Tags map[string]any
+}
+
+func (e *Event) Unique() string {
+	return e.unique()
 }
 
 // 如果只包含日期（不包含时间），则认为是全天事件。
