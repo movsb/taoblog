@@ -122,7 +122,7 @@ func (m *Metadata) String() []string {
 	if m.ISO > 0 {
 		lenInfo = append(lenInfo, fmt.Sprintf(`ISO/%v`, m.ISO))
 	}
-	add(strings.Join(lenInfo, `, `), `镜头`)
+	add(strings.Join(lenInfo, `, `), `参数`)
 
 	add(m.GPSPosition, `位置`)
 	add(m.GPSAltitude, `海拔`)
