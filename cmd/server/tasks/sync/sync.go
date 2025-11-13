@@ -100,8 +100,13 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid int, path string) error {
 	fp := utils.Must1(pfs.Open(path))
 	defer fp.Close()
+
 	info := utils.Must1(fp.Stat())
-	sysFile := info.Sys().(*models.File)
+	sysFile, ok := info.Sys().(*models.File)
+	// 不是用户上传的普通文件。
+	if !ok {
+		return nil
+	}
 
 	log.Println(`正在上传文件到对象存储:`, pid, path)
 

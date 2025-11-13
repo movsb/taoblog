@@ -14,6 +14,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 )
 
@@ -179,8 +180,8 @@ func size(fs gold_utils.WebFileSystem, parsedURL *urlpkg.URL, localOnly bool) (*
 		defer f.Close()
 
 		if stat, err := f.Stat(); err == nil {
-			if g, ok := stat.Sys().(utils.ImageDimensionGetter); ok {
-				w, h := g.GetImageDimension()
+			if file, ok := stat.Sys().(*models.File); ok {
+				w, h := file.Meta.Width, file.Meta.Height
 				if w > 0 && h > 0 {
 					return &Metadata{
 						Width:  w,

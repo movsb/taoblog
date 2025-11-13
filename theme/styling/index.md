@@ -252,6 +252,10 @@ $$
 \ce{CO2 + C -> 2 CO}
 $$
 
+### 实况照片
+
+![](桂花.avif)
+
 ### PlantUML
 
 ```plantuml

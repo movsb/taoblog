@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -164,8 +165,11 @@ func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCap
 		panic(noPerm)
 	}
 
-	// TODO: 强制转换了，只应有这一种实例。
-	pfs := s.postDataFS.ForPost(int(in.PostId)).(*storage.SQLiteForPost)
+	pfs, ok := s.postDataFS.ForPost(int(in.PostId)).(*storage.SQLiteForPost)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, `此文件系统不支持更新文件元数据。`)
+	}
+
 	utils.Must(pfs.UpdateCaption(in.Path, &proto.FileSpec_Meta_Source{
 		Format:  proto.FileSpec_Meta_Source_Markdown,
 		Caption: in.Caption,
@@ -343,7 +347,10 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 		}
 		defer fp.Close()
 		info := utils.Must1(fp.Stat())
-		file := info.Sys().(*models.File)
+		file, ok := info.Sys().(*models.File)
+		if !ok {
+			return nil, fmt.Errorf(`not user uploaded file`)
+		}
 
 		// 垃圾阿里云会自动给 html 文件增加 `Content-Disposition: attachment`，导致变成下载。
 		//

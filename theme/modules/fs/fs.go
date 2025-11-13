@@ -14,7 +14,11 @@ import (
 type FS interface {
 	// 用于整个备份。
 	AllFiles() (map[int][]*proto.FileSpec, error)
+
 	// 针对单篇文章/评论的文件系统。
+	//
+	// Open 返回的 File.Sys() 不一定有值。如果
+	// 没有值，说明文件不是用户上传的。
 	ForPost(id int) fs.FS
 }
 

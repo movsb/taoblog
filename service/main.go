@@ -34,6 +34,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
+	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
@@ -75,7 +76,7 @@ type Service struct {
 	runtime *runtime_config.Runtime
 
 	// TODO 包装并鉴权。
-	postDataFS  theme_fs.FS
+	postDataFS  *WrappedPostFilesFileSystem
 	mainStorage *storage.SQLite
 
 	// 动态管理的静态文件。
@@ -181,7 +182,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 		cfg:        cfg,
 		runtime:    rc,
-		postDataFS: &theme_fs.Empty{},
+		postDataFS: &WrappedPostFilesFileSystem{FS: &theme_fs.Empty{}},
 
 		// TODO 可配置使用的时区，而不是使用服务器当前时间或者硬编码成+8时区。
 		timeLocation: time.Now().Location(),
@@ -276,6 +277,9 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		if u != nil {
 			s.favicon.SetData(time.Now(), u)
 		}
+	}
+	if value, err := s.options.GetInteger(`styling_page_id`); err == nil {
+		s.postDataFS.Register(int(value), styling.Root)
 	}
 
 	proto.RegisterAuthServer(sr, s)

@@ -1,6 +1,7 @@
 /**
  * @typedef {import('../dynamic/script.js')} BUNDLE
  * @typedef {import { Sortable } from "./sortable.js"}
+ * @import * from '../dynamic/utils.js';
  */
 
 class FilesManager {
@@ -19,11 +20,7 @@ class FilesManager {
 	async list() {
 		const url = `/v3/posts/${this._post_id}/files`;
 		let rsp = await fetch(url);
-		if (!rsp.ok) {
-			throw rsp;
-		}
-		rsp = await rsp.json();
-		return rsp.files;
+		return (await decodeResponse(rsp)).files;
 	}
 
 	async delete(path) {
@@ -31,9 +28,7 @@ class FilesManager {
 		let rsp = await fetch(url, {
 			method: 'DELETE',
 		});
-		if (!rsp.ok) {
-			throw rsp;
-		}
+		return await decodeResponse(rsp);
 	}
 
 	async updateCaption(path, caption) {

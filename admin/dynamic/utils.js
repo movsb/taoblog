@@ -11,6 +11,7 @@ async function throwAPIError(rsp) {
 
 /**
  * 尝试解析 JSON 响应，如果失败则抛出异常。
+ * 会自动判断响应是否 ok。
  * @param {Response} rsp 
  */
 async function decodeResponse(rsp) {

@@ -1473,7 +1473,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 
 	source := in.Source
 	if source == `` {
-		source = string(utils.Must1(styling.Root.ReadFile(`index.md`)))
+		source = string(utils.Must1(fs.ReadFile(styling.Root, `index.md`)))
 	}
 
 	id, err := s.options.GetInteger(`styling_page_id`)
@@ -1492,6 +1492,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 		})
 		if err == nil {
 			s.options.SetInteger(`styling_page_id`, p.Id)
+			s.postDataFS.Register(int(p.Id), styling.Root)
 		}
 	} else {
 		var p *proto.Post
