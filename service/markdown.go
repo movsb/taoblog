@@ -45,7 +45,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/movsb/taoblog/service/modules/renderers/tables"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
-	"github.com/yuin/goldmark/extension"
 
 	assetsParser "github.com/movsb/taoblog/service/modules/renderers/assets"
 
@@ -130,7 +129,6 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		live_photo.New(ctx, assets),
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),
-		extension.GFM,
 		footnotes.New(
 			utils.IIF(commentID > 0, footnotes.Comment, footnotes.Article),
 			int(utils.IIF(commentID > 0, commentID, postId)),

@@ -154,4 +154,4 @@ go 1.24.2
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
 
 // replace github.com/yuin/goldmark => /Users/tao/code/goldmark
-replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.4.1-0.20250917133208-9e62946384f5
+replace github.com/yuin/goldmark => github.com/movsb/goldmark v1.7.14-0.20251113181510-127fed7467a9

@@ -14,6 +14,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	xnethtml "golang.org/x/net/html"
@@ -64,6 +65,7 @@ type _Markdown struct {
 	noRendering bool
 	noTransform bool
 	xhtml       bool
+	withoutCJK  bool
 
 	htmlPrettifier          HtmlPrettifier
 	fencedCodeBlockRenderer map[string]gold_utils.FencedCodeBlockRenderer
@@ -189,6 +191,16 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 	}
 
 	extensions := []goldmark.Extender{}
+
+	if !me.withoutCJK {
+		extensions = append(extensions,
+			// 有 GFM 的情况下 spec 测试通不过。暂时放这儿。
+			extension.GFM,
+			extension.NewCJK(
+				extension.WithEastAsianLineBreaks(extension.EastAsianLineBreaksSimple),
+			),
+		)
+	}
 
 	for _, opt := range me.opts {
 		if tr, ok := opt.(goldmark.Extender); ok {

@@ -247,6 +247,24 @@ func TestMarkdownAll(t *testing.T) {
 			Markdown: `[doge][doge]`,
 			Html:     `<p><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[doge]" title="doge" class="static emoji weixin"/><img src="/v3/dynamic/emojis/weixin/doge.png" alt="[doge]" title="doge" class="static emoji weixin"/></p>`,
 		},
+		{
+			ID:          16.0,
+			Description: `不要添加额外的空格字符在软回车后`,
+			Markdown: `台痕上阶绿，
+草色入帘青。`,
+			Html: `<p>台痕上阶绿，草色入帘青。</p>`, // 注意逗号后面没有多余的空格。
+		},
+		// {
+		// 	ID:          17.0,
+		// 	Description: `强调加粗允许在中文符号附近`,
+		// 	Markdown:    `我**我（我）**。`,
+		// 	Html:        `<p>我<strong>我（我）</strong>。</p>`,
+		// },
+		// {
+		// 	ID:       17.1,
+		// 	Markdown: `我**我（我）**然后。`,
+		// 	Html:     `<p>我<strong>我（我）</strong>然后。</p>`,
+		// },
 	}
 	for _, tc := range cases {
 		if tc.ID == 14.0 {
@@ -291,6 +309,7 @@ func TestSpec(t *testing.T) {
 			}, nil),
 			renderers.WithXHTML(),
 			renderers.WithoutTransform(),
+			renderers.WithoutCJK(),
 		)
 		h, err := md.Render(tc.Markdown)
 		if err != nil {

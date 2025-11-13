@@ -41,3 +41,9 @@ func WithHtmlPrettifier(p HtmlPrettifier) OptionNoError {
 		me.htmlPrettifier = p
 	}
 }
+
+func WithoutCJK() OptionNoError {
+	return func(me *_Markdown) {
+		me.withoutCJK = true
+	}
+}
