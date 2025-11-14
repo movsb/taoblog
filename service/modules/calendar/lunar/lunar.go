@@ -283,7 +283,7 @@ func ParseLunarDate(s string) (*LunarDate, error) {
 			day = -1
 		}
 	}
-	if day == -1 {
+	if day <= 0 {
 		return nil, err
 	}
 

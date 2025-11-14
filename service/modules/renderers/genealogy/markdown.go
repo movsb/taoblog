@@ -2,10 +2,12 @@ package genealogy
 
 import (
 	"bytes"
+	"errors"
 	"io"
 
 	"github.com/goccy/go-yaml"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/yuin/goldmark/parser"
 )
 
@@ -29,12 +31,17 @@ func (e *Genealogy) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 
 	var individuals []*Individual
 	d := yaml.NewDecoder(bytes.NewReader(source), yaml.Strict())
-	utils.Must(d.Decode(&individuals))
+
+	if err := d.Decode(&individuals); err != nil {
+		gold_utils.RenderError(w, err)
+		return nil
+	}
 
 	// TODO: name不能重复，整个文章范围内。
 	for _, p := range individuals {
 		if p.ID == `` {
-			panic(`编号ID不能为空`)
+			gold_utils.RenderError(w, errors.New(`编号ID不能为空`))
+			return nil
 		}
 	}
 

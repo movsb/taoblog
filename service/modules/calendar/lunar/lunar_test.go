@@ -61,6 +61,7 @@ func TestParseLunarDate(t *testing.T) {
 		{cc(2005, 12, 20, false), `二零零五年腊月二十`},
 		{cc(2005, 12, 23, false), `二零零五年腊月廿三`},
 		{cc(2025, 6, 1, true), `二零二五年闰六月初一`},
+		{cc(2002, 5, 23, false), `二零零二年五月廿三`},
 	}
 	for _, test := range tests {
 		want := test.l.DateString()
@@ -74,6 +75,10 @@ func TestParseLunarDate(t *testing.T) {
 		}
 	}
 }
+
+// func TestParseLunarDate2(t *testing.T) {
+// 	lunar.ParseLunarDate(`二零零二年五月甘三`)
+// }
 
 // 在 GitHub Actions 上面偶尔可能跑不过，暂时不测试。
 func TestLunarDateAddDays(t *testing.T) {
