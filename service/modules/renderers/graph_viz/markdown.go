@@ -5,9 +5,9 @@ import (
 	"context"
 	"embed"
 	"io"
-	"sync"
 
 	"github.com/goccy/go-graphviz"
+	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/service/modules/dynamic"
@@ -35,12 +35,13 @@ func New() *GraphViz {
 	return &GraphViz{}
 }
 
-// TODO close global instance
-var gv = sync.OnceValue(func() *graphviz.Graphviz {
-	return utils.Must1(graphviz.New(context.Background()))
-})
-
 func (gg *GraphViz) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attributes, source []byte) error {
+	globals.GraphVizLock.Lock()
+	defer globals.GraphVizLock.Unlock()
+
+	gv := utils.Must1(graphviz.New(context.Background()))
+	defer gv.Close()
+
 	graph, err := graphviz.ParseBytes(source)
 	if err != nil {
 		gold_utils.RenderError(w, err)
@@ -51,7 +52,7 @@ func (gg *GraphViz) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attrib
 
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(`<div class="graphviz">`)
-	if err := gv().Render(context.Background(), graph, graphviz.SVG, buf); err != nil {
+	if err := gv.Render(context.Background(), graph, graphviz.SVG, buf); err != nil {
 		gold_utils.RenderError(w, err)
 		return nil
 	}

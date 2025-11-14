@@ -94,6 +94,9 @@ type Individual struct {
 
 // 从测试代码偷过来的，写得很乱。
 func gen(w io.Writer, individuals []*Individual) {
+	globals.GraphVizLock.Lock()
+	defer globals.GraphVizLock.Unlock()
+
 	g, _ := graphviz.New(context.Background())
 	defer g.Close()
 	graph, _ := g.Graph()
