@@ -6,7 +6,10 @@ async function throwAPIError(rsp) {
 	let exception = await rsp.text();
 	try { exception = JSON.parse(exception); }
 	catch {}
-	throw exception.message ?? exception;
+	throw new Error(
+		exception.message ?? exception,
+		{ cause: rsp },
+	);
 }
 
 /**

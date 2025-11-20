@@ -4,17 +4,24 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mime"
 	"os"
 	"os/exec"
+	pathpkg "path"
 	"path/filepath"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-func isImageFile(path string) bool {
+func shouldConvertImage(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	return ext == ".jpg" || ext == ".jpeg" || ext == ".png"
+}
+
+func isImageFile(path string) bool {
+	typ := mime.TypeByExtension(pathpkg.Ext(path))
+	return strings.HasPrefix(typ, "image/")
 }
 
 // 输入：
@@ -31,7 +38,7 @@ func isImageFile(path string) bool {
 func ConvertToAVIF(ctx context.Context, path string, input string, keepTags bool) (_ string, _ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	if !isImageFile(path) {
+	if !shouldConvertImage(path) {
 		return "", "", fmt.Errorf("不支持的文件类型：%s", path)
 	}
 

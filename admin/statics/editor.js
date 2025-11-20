@@ -1375,7 +1375,7 @@ class PostFormUI {
 					try {
 						await new FilesManager(TaoBlog.post_id).delete(path);
 					} catch(e) {
-						if (!(e instanceof Response && e.status == 404)) {
+						if (!(e instanceof Error && e.cause instanceof Response && e.cause.status == 404)) {
 							alert('文件删除失败：' + e);
 							return;
 						}

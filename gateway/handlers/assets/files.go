@@ -52,7 +52,7 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 	})
 }
 
-func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Request) (_ *proto.FileSpec, _ Options, _ []byte, _ proto.Management_FileSystemClient, _ bool) {
+func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Request) (_ *proto.FileSpec, _ Options, _ io.ReadCloser, _ proto.Management_FileSystemClient, _ bool) {
 	ac := auth.Context(r.Context())
 	id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
 	po, err := client.Blog.GetPost(
@@ -122,18 +122,11 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 		utils.HTTPError(w, http.StatusBadRequest)
 		return
 	}
-	defer data.Close()
 
-	all, err := io.ReadAll(data)
-	if err != nil {
-		utils.HTTPError(w, http.StatusBadRequest)
-		return
-	}
-
-	return spec, options, all, fsc, true
+	return spec, options, data, fsc, true
 }
 
-func single(fsc proto.Management_FileSystemClient, spec *proto.FileSpec, data []byte, options Options) (*proto.FileSpec, error) {
+func single(fsc proto.Management_FileSystemClient, spec *proto.FileSpec, data io.ReadCloser, options Options) (*proto.FileSpec, error) {
 	if spec.Type == `` {
 		spec.Type = mime.TypeByExtension(path.Ext(spec.Path))
 		if spec.Type == `` {
@@ -141,27 +134,54 @@ func single(fsc proto.Management_FileSystemClient, spec *proto.FileSpec, data []
 		}
 	}
 
-	var err error
+	if shouldConvertImage(spec.Path) || options.DropGPSTags {
+		// 仅在必要的时候把数据写到临时文件，避免不必要的开销。
+		tmpInputFile := utils.Must1(os.CreateTemp("", "*"+path.Ext(spec.Path)))
+		defer os.Remove(tmpInputFile.Name())
+		utils.Must1(io.Copy(tmpInputFile, data))
 
-	if isImageFile(spec.Path) {
-		utils.LimitExec(
-			`convertToAVIF`, &numberOfAvifProcesses, stdRuntime.NumCPU(),
-			func() {
-				// 跨线程写没问题吧？
-				spec, data, err = convertToAVIF(spec, data, options.DropGPSTags)
-			},
-		)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		nextPath := tmpInputFile.Name()
+
+		if shouldConvertImage(nextPath) {
+			var err error
+			var newPath string
+			utils.LimitExec(
+				`convertToAVIF`, &numberOfAvifProcesses, stdRuntime.NumCPU(),
+				func() {
+					// 跨线程写没问题吧？因为 LimitExec 会阻塞直到完成。
+					newPath, nextPath, err = convertToAVIF(spec.Path, nextPath)
+				},
+			)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+
+			spec.Path = newPath
+			spec.Type = mime.TypeByExtension(path.Ext(spec.Path))
+
+			defer os.Remove(nextPath)
 		}
+
+		if isImageFile(nextPath) && options.DropGPSTags {
+			_ = utils.Must1(DropGPSTags(nextPath))
+		}
+
+		data.Close()
+
+		fp := utils.Must1(os.Open(nextPath))
+		data = fp
+		stat := utils.Must1(fp.Stat())
+		spec.Size = uint32(stat.Size())
 	}
+
+	defer data.Close()
 
 	utils.Must(fsc.Send(&proto.FileSystemRequest{
 		Request: &proto.FileSystemRequest_WriteFile{
 			WriteFile: &proto.FileSystemRequest_WriteFileRequest{
 				Spec: spec,
-				Data: data,
+				Data: utils.Must1(io.ReadAll(data)),
 			},
 		},
 	}))
@@ -181,47 +201,23 @@ var numberOfAvifProcesses atomic.Int32
 // TODO:
 // 自动加上版权信息（方法一）：
 // https://chatgpt.com/share/6880633e-4858-8008-9b01-ba02bdd8c245
-//
-// dropGPSTags: 先完成转换之后再 Drop。
-func convertToAVIF(spec *proto.FileSpec, data []byte, dropGPSTags bool) (_ *proto.FileSpec, _ []byte, outErr error) {
+// 输出的临时文件需要调用方删除。
+func convertToAVIF(rawPath string, inputPath string) (_ string, _ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	tmpInputFile := utils.Must1(os.CreateTemp("", ""))
-	defer os.Remove(tmpInputFile.Name())
-	utils.Must1(tmpInputFile.Write(data))
-	tmpInputFile.Close()
+	newPath, tmpOutputPath := utils.Must2(ConvertToAVIF(context.Background(), rawPath, inputPath, true))
 
-	newPath, tmpOutputPath := utils.Must2(ConvertToAVIF(context.Background(), spec.Path, tmpInputFile.Name(), true))
-
-	output := utils.Must1(CopyTags(tmpInputFile.Name(), tmpOutputPath))
+	output := utils.Must1(CopyTags(inputPath, tmpOutputPath))
 	// Warning: Error rebuilding maker notes (may be corrupt)
 	if strings.Contains(output, `Error rebuilding maker notes`) {
 		// utils.Must(DropMakerNotes(tmpOutputPath))
 		// 如果拷贝原始文件的元数据失败，可能是因为 MakerNotes 有问题。
 		// 直接重新转换，并不拷贝。
 		os.Remove(tmpOutputPath)
-		newPath, tmpOutputPath = utils.Must2(ConvertToAVIF(context.Background(), spec.Path, tmpInputFile.Name(), false))
+		newPath, tmpOutputPath = utils.Must2(ConvertToAVIF(context.Background(), rawPath, inputPath, false))
 	}
 
-	if dropGPSTags {
-		utils.Must1(DropGPSTags(tmpOutputPath))
-	}
-
-	fpOutput := utils.Must1(os.Open(tmpOutputPath))
-	defer os.Remove(tmpOutputPath)
-	defer fpOutput.Close()
-
-	info := utils.Must1(fpOutput.Stat())
-
-	specOutput := &proto.FileSpec{
-		Path: newPath,
-		Size: uint32(info.Size()),
-		Time: spec.Time,
-		Type: mime.TypeByExtension(path.Ext(newPath)),
-		Meta: spec.Meta, // TODO: 需要转换吗？能拷贝吗？能直接用吗？
-	}
-
-	return specOutput, utils.Must1(io.ReadAll(fpOutput)), nil
+	return newPath, tmpOutputPath, nil
 }
 
 // NOTE: 这个接口仅限登录用户使用。
