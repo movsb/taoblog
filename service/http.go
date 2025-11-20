@@ -46,7 +46,7 @@ func (s *Service) handleGetCalendar(w http.ResponseWriter, r *http.Request) {
 		return cd.UserID == auth.AdminID || cd.UserID == e.UserID
 	})
 
-	// 管理员把自己的文章分享给他人后会获取到重复的数据。
+	// 把自己的文章分享给他人后会获取到重复的数据。
 	events = s.calendar.Unique(events)
 
 	info, _ := s.GetInfo(r.Context(), &proto.GetInfoRequest{})

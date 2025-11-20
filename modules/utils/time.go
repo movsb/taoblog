@@ -16,6 +16,8 @@ func (LocalTimezoneGetter) GetCurrentTimezone() *time.Location {
 }
 
 // 每天凌晨时执行函数。
+// 函数不会主动返回，除非 ctx 完成。
+// fn 在当前线程内执行。
 func AtMiddleNight(ctx context.Context, fn func()) {
 	ticker := time.NewTicker(time.Second * 50)
 	defer ticker.Stop()
@@ -29,6 +31,8 @@ func AtMiddleNight(ctx context.Context, fn func()) {
 			if (now.Hour() == 0 && now.Minute() == 0) || (last.Day() != now.Day()) {
 				fn()
 				last = now
+				// 前面睡眠 50s，避免一分钟内触发两次。
+				time.Sleep(time.Minute)
 			}
 		}
 	}

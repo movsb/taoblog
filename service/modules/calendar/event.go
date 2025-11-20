@@ -13,15 +13,12 @@ import (
 
 // 日历中的一条独立的记录。
 type Event struct {
-	id  string // 事件的唯一编号
-	now time.Time
-
-	// 种类，各插件自用。
-	kind Kind
-
+	id     string // 事件的唯一编号
+	now    time.Time
+	kind   Kind // 种类
 	unique func() string
 
-	Message string
+	Message string // 事件标题。
 
 	Start time.Time
 	End   time.Time
@@ -29,6 +26,9 @@ type Event struct {
 	// 用户ID不一定是文章作者，可能来自分享。
 	UserID int
 	PostID int
+
+	URL         string // 链接地址。
+	Description string // 详细描述信息。
 
 	Tags map[string]any
 }
@@ -99,5 +99,12 @@ func (es Events) single(cal *ics.Calendar, event *Event) {
 	} else {
 		e.SetStartAt(event.Start)
 		e.SetEndAt(event.End)
+	}
+
+	if event.URL != `` {
+		e.SetURL(event.URL)
+	}
+	if event.Description != `` {
+		e.SetDescription(event.Description)
 	}
 }

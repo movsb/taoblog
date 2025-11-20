@@ -280,6 +280,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.postDataFS.Register(int(value), styling.Root)
 	}
 
+	s.startReviewersTask(ctx)
+
 	proto.RegisterAuthServer(sr, s)
 	proto.RegisterTaoBlogServer(sr, s)
 	proto.RegisterManagementServer(sr, s)
