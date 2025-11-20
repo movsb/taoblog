@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,14 +31,12 @@ type FileServer interface {
 type Canonical struct {
 	renderer   Renderer
 	fileServer FileServer
-	mr         *metrics.Registry
 }
 
-func New(renderer Renderer, fileServer FileServer, mr *metrics.Registry) *Canonical {
+func New(renderer Renderer, fileServer FileServer) *Canonical {
 	c := &Canonical{
 		renderer:   renderer,
 		fileServer: fileServer,
-		mr:         mr,
 	}
 	return c
 }
@@ -63,8 +60,6 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet || req.Method == http.MethodHead || req.Method == http.MethodOptions {
 		if regexpHome.MatchString(path) {
 			c.renderer.QueryHome(w, req)
-			c.mr.CountHome()
-			c.mr.UserAgent(req.UserAgent())
 			return
 		}
 
@@ -82,8 +77,6 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				panic(status.Error(codes.NotFound, ""))
 			}
 			c.renderer.QueryByID(w, req, id)
-			c.mr.CountPageView(id)
-			c.mr.UserAgent(req.UserAgent())
 			return
 		}
 
@@ -120,8 +113,7 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			matches := regexpByPage.FindStringSubmatch(path)
 			id, err := c.renderer.QueryByPage(w, req, matches[0])
 			if err == nil {
-				c.mr.CountPageView(id)
-				c.mr.UserAgent(req.UserAgent())
+				_ = id
 			}
 			return
 		}

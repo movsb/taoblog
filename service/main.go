@@ -144,7 +144,6 @@ type Service struct {
 	// 网站图标，临时放这儿。
 	favicon *favicon.Favicon
 
-	exporter *_Exporter
 	// 证书剩余天数。
 	// >= 0 表示值有效。
 	certDaysLeft atomic.Int32
@@ -270,7 +269,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 	s.certDaysLeft.Store(-1)
 	s.domainExpirationDaysLeft.Store(-1)
-	s.exporter = _NewExporter(s)
 
 	if value, err := s.options.GetString(`favicon`); err == nil {
 		u, _ := utils.ParseDataURL(value)
@@ -420,7 +418,6 @@ func (s *Service) GetCurrentTimezone() *time.Location {
 // 可能小于0
 func (s *Service) SetCertDays(n int) {
 	s.certDaysLeft.Store(int32(n))
-	s.exporter.certDaysLeft.Set(float64(n))
 
 	s.calendar.Remove(svcCalKind, func(e *calendar.Event) bool {
 		uuid, _ := e.Tags[`uuid`]
@@ -445,7 +442,6 @@ func (s *Service) SetCertDays(n int) {
 // 可能小于0
 func (s *Service) SetDomainDays(n int) {
 	s.domainExpirationDaysLeft.Store(int32(n))
-	s.exporter.domainDaysLeft.Set(float64(n))
 
 	s.calendar.Remove(svcCalKind, func(e *calendar.Event) bool {
 		uuid, _ := e.Tags[`uuid`]

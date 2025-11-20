@@ -31,7 +31,6 @@ import (
 	"github.com/movsb/taoblog/modules/backups"
 	backups_git "github.com/movsb/taoblog/modules/backups/git"
 	"github.com/movsb/taoblog/modules/logs"
-	"github.com/movsb/taoblog/modules/metrics"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -141,8 +140,6 @@ type Server struct {
 	gateway *gateway.Gateway
 	rss     *rss.RSS
 
-	metrics *metrics.Registry
-
 	notifyServer proto.NotifyServer
 }
 
@@ -223,8 +220,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	log.Println(`Home:`, cfg.Site.GetHome())
 
 	var mux = http.NewServeMux()
-	s.metrics = metrics.NewRegistry(context.TODO())
-	mux.Handle(`/v3/metrics`, s.metrics.Handler()) // TODO: insecure
 
 	theAuth := auth.New(postsDB, cfg.Site.GetHome, cfg.Site.GetName)
 	s.auth = theAuth
@@ -249,8 +244,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	go startGRPC()
 
-	s.metrics.MustRegister(theService.Exporter())
-
 	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
@@ -263,7 +256,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.createAdmin(ctx, cfg, theService, theAuth, mux)
 
 	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth)
-	canon := canonical.New(theme, theService, s.metrics)
+	canon := canonical.New(theme, theService)
 	mux.Handle(`/`, canon)
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
@@ -700,7 +693,7 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 			// 但是，gateway 虽然有了 auth context，但是如果使用的是 grpc-client，
 			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
 			s.auth.UserFromCookieHandler,
-			logs.NewRequestLoggerHandler(`access.log`, logs.WithSentBytesCounter(s.metrics)),
+			logs.NewRequestLoggerHandler(`access.log`),
 			s.main.MaintenanceMode().Handler(func(ctx context.Context) bool {
 				return auth.Context(ctx).User.IsAdmin()
 			}),
