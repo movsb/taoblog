@@ -60,7 +60,7 @@ class __Vim {
 				location.reload();
 			},
 			b: function() {
-				location.pathname = '/';
+				location = '/';
 			},
 			'?': function() {
 				console.log('Vim Help');
@@ -148,6 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	});
 
 	vim.bind('n', () => {
-		location.href='/admin/editor?new=1&type=markdown';
+		if(location.pathname != '/admin/editor') {
+			location.href='/admin/editor?new=1&type=markdown';
+		}
 	});
 }, {once: true});
