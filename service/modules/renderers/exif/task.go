@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/renderers/exif/exif_exports"
 )
@@ -71,7 +72,12 @@ func (t *Task) get(id int, u string, f fs.File) string {
 		return ""
 	}
 
-	key := _CacheKey{Name: baseName, Time: stat.ModTime().Unix()}
+	time := stat.ModTime().Unix()
+	if file := stat.Sys().(*models.File); file != nil {
+		time = file.UpdatedAt
+	}
+
+	key := _CacheKey{Name: baseName, Time: time}
 	value := _CacheValue{}
 	if err := t.cache.GetOrLoad(
 		key, ttl, &value,
