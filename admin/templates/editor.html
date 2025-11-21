@@ -102,8 +102,12 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 					<button name="set-acl">选择可见的人</button>
 				</p>
 				<dialog name="set-acl-dialog">
+					<div><b>选择可以查看此文章的用户：</b></div>
 					<ol class="list"></ol>
-					<div><button>✅ 确定</button></div>
+					<p>
+						<label><input type="checkbox" name="send-user-notify" autocomplete="off" checked>发送用户通知？</label>
+					</p>
+					<div style="text-align: center;"><button>确定</button></div>
 				</dialog>
 				<p class="top">
 					<label>

@@ -197,6 +197,9 @@ message UpdatePostRequest {
 	// 是否更新用户权限。
 	bool update_user_perms = 101;
 	repeated int32 user_perms = 102;
+	// 是否发送用户通知。
+	// 仅通知新增加的用户。
+	bool send_user_notify = 103;
 }
 
 message DeletePostRequest {
@@ -325,6 +328,7 @@ message UserPerm {
 message SetPostACLRequest {
 	int64 post_id = 1;
 	map<int32, UserPerm> users = 2;
+	bool send_user_notify = 3;
 }
 
 message SetPostACLResponse {

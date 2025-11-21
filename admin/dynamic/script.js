@@ -110,6 +110,7 @@ class PostManagementAPI
 		if(obj.post.status == 'partial') {
 			obj.update_user_perms = true;
 			obj.user_perms = extra.users;
+			obj.send_user_notify = extra.send_user_notify;
 		}
 
 		obj.update_top = true;

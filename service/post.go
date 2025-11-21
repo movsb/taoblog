@@ -769,7 +769,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 
 	// TODO TODO TODO 事务冲突，暂时放外面！！
 	if in.UpdateUserPerms {
-		s.setPostACL(in.Post.Id, in.UserPerms)
+		s.setPostACL(in.Post.Id, in.UserPerms, in.SendUserNotify)
 	}
 
 	if in.UpdateTop {
@@ -782,7 +782,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 
 	// 通知新文章创建
 	// TODO 异步执行。
-	if isUpdatingUntitledPost(oldPost) && s.cfg.Site.Notify.NewPost && oldPost.UserID != int32(auth.AdminID) {
+	if isUpdatingUntitledPost(oldPost) && oldPost.UserID != int32(auth.AdminID) {
 		title, _ := m[`title`].(string)
 		s.notifier.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
 			Title: `新文章发表`,
@@ -797,7 +797,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	})
 }
 
-func (s *Service) setPostACL(postID int64, users []int32) {
+func (s *Service) setPostACL(postID int64, users []int32, notify bool) {
 	m := map[int32]*proto.UserPerm{}
 	for _, id := range users {
 		m[id] = &proto.UserPerm{
@@ -806,8 +806,9 @@ func (s *Service) setPostACL(postID int64, users []int32) {
 	}
 	utils.Must1(s.SetPostACL(auth.SystemForLocal(context.Background()),
 		&proto.SetPostACLRequest{
-			PostId: postID,
-			Users:  m,
+			PostId:         postID,
+			Users:          m,
+			SendUserNotify: notify,
 		},
 	))
 }
@@ -1592,34 +1593,36 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 				}
 				s.tdb.Model(&ace).MustCreate()
 
-				// 发送通知。
-				// TODO 异步任务
-				to := utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(b.UserID)))
-				go func() {
-					// 仅在分享权限下通知。
-					// NOTE：如果更改了受众，但是权限又不是partial，下次更改为 partial 时会丢失分享通知。
-					// 因为权限位和受众是独立存储的。
-					if post.Status != models.PostStatusPartial {
-						return
-					}
+				if in.SendUserNotify {
+					// 发送通知。
+					// TODO 异步任务
+					to := utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(b.UserID)))
+					go func() {
+						// 仅在分享权限下通知。
+						// NOTE：如果更改了受众，但是权限又不是partial，下次更改为 partial 时会丢失分享通知。
+						// 因为权限位和受众是独立存储的。
+						if post.Status != models.PostStatusPartial {
+							return
+						}
 
-					// 假装延时一下，以把“新文章发表”通知提前。
-					time.Sleep(time.Second * 5)
+						// 假装延时一下，以把“新文章发表”通知提前。
+						time.Sleep(time.Second * 5)
 
-					// TODO s 内部有 db 事务
-					// 异步的时候 goroutine 会拷贝 s 导致事务已提交
-					// 所以部分代码放在了 go 之外。
-					u := utils.Must1(url.Parse(s.getHome())).JoinPath(s.plainLink(post.Id)).String()
-					s.notifier.SendInstant(
-						auth.SystemForLocal(context.Background()),
-						&proto.SendInstantRequest{
-							Title: `分享了新文章`,
-							Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, u),
-							// TODO: 没判断为空的情况。如果为空，则分享给了站长。
-							BarkToken: to.BarkToken,
-						},
-					)
-				}()
+						// TODO s 内部有 db 事务
+						// 异步的时候 goroutine 会拷贝 s 导致事务已提交
+						// 所以部分代码放在了 go 之外。
+						u := utils.Must1(url.Parse(s.getHome())).JoinPath(s.plainLink(post.Id)).String()
+						s.notifier.SendInstant(
+							auth.SystemForLocal(context.Background()),
+							&proto.SendInstantRequest{
+								Title: `分享了新文章`,
+								Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, u),
+								// TODO: 没判断为空的情况。如果为空，则分享给了站长。
+								BarkToken: to.BarkToken,
+							},
+						)
+					}()
+				}
 			}
 		}
 

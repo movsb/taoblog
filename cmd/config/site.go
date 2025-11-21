@@ -23,8 +23,7 @@ type SiteConfig struct {
 	// 初始化时写入数据库，表示建站时间。
 	Since Since `json:"since" yaml:"since,omitempty"`
 
-	Notify SiteNotifyConfig `json:"notify" yaml:"notify"`
-	Sync   SiteSyncConfig   `yaml:"sync"`
+	Sync SiteSyncConfig `yaml:"sync"`
 }
 
 func (s *SiteConfig) GetHome() string {
@@ -60,17 +59,6 @@ func DefaultSiteConfig() SiteConfig {
 		Name:        `未命名`,
 		Description: ``,
 		Timezone:    `Local`,
-		Notify:      DefaultSiteNotifyConfig(),
-	}
-}
-
-type SiteNotifyConfig struct {
-	NewPost bool `json:"new_post" yaml:"new_post"`
-}
-
-func DefaultSiteNotifyConfig() SiteNotifyConfig {
-	return SiteNotifyConfig{
-		NewPost: true,
 	}
 }
 

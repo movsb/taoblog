@@ -1780,6 +1780,7 @@ class PostFormUI {
 			newPost,
 			{
 				users: this.usersForRequest,
+				send_user_notify: this._form['send-user-notify'].checked,
 			},
 		);
 	}
@@ -2218,4 +2219,5 @@ document.addEventListener('DOMContentLoaded', () => {
 	const post = TaoBlog.posts[TaoBlog.post_id];
 	const form = new PostFormUI();
 	form.initFrom(post);
+	console.log('form', form);
 }, {once: true});

@@ -289,15 +289,12 @@ body.admin.editor {
 	dialog[name="set-acl-dialog"] {
 		ol {
 			list-style-type: none;
-			padding: 0;
+			padding: 0 2em;
 			max-height: 100%;
 			max-height: 300px;
-		}
-		div {
-			text-align: center;
-		}
-		input {
-			margin-right: 8px;
+			input {
+				margin-right: 8px;
+			}
 		}
 	}
 	dialog[name="file-manager"] {
