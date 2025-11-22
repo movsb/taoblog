@@ -237,15 +237,33 @@ func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
 }
 
 func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64, file string, localOnly bool) {
-	ac := auth.Context(r.Context())
+	// 此处没有鉴权。
+	p := utils.Must1(s.getPostCached(r.Context(), int(postID)))
 
-	// 权限检查
-	// TODO 应该调用带缓存接口（注意鉴权），否则会频繁查数据库。
-	p := utils.Must1(s.GetPost(r.Context(), &proto.GetPostRequest{Id: int32(postID)}))
+	// 此处鉴权。
+	// 不调用 GetPost，并发多图片下性能不好。
+	ac := auth.Context(r.Context())
+	switch {
+	// 系统有所有权限
+	case ac.User.IsSystem():
+		break
+	// 是公开文章
+	case p.Status == models.PostStatusPublic:
+		break
+	// 是本人
+	case ac.User.ID == int64(p.UserID):
+		break
+	// 分享文章。
+	case p.Status == models.PostStatusPartial && s.canNonAuthorUserReadPost(r.Context(), ac.User.ID, int(postID)):
+		break
+	default:
+		http.NotFound(w, r)
+		return
+	}
 
 	// 仅系统和本人可以访问特殊文件：以 . 或者 _ 开头的文件或目录。
-	// 分享用户无法访问。
-	if !(ac.User.IsSystem() || ac.User.ID == int64(p.UserId)) {
+	// 注意：分享用户也无法访问。
+	if !(ac.User.IsSystem() || ac.User.ID == int64(p.UserID)) {
 		for part := range strings.SplitSeq(file, `/`) {
 			if part[0] == '.' || part[0] == '_' {
 				http.Error(w, `尝试访问不允许访问的文件。`, http.StatusForbidden)
@@ -300,7 +318,7 @@ type _FileURLCacheValue struct {
 	Key       []byte
 }
 
-func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, file string) *_FileURLCacheValue {
+func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *models.Post, file string) *_FileURLCacheValue {
 	getterCount := 0
 	// 神经，居然不能获取大小。
 	s.fileURLGetters.Range(func(key, value any) bool {
@@ -312,19 +330,16 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 	}
 
 	ac := auth.Context(r.Context())
-	// 测试阶段，只给登录用户使用。
-	// if ac.User.IsGuest() {
-	// 	return nil
-	// }
 
 	const ttl = time.Hour * 24
 
 	key := _FileURLCacheKey{
-		Pid:    int(p.Id),
+		Pid:    int(p.ID),
 		Status: p.Status,
 		Path:   file,
 		China:  ac.InChina,
 	}
+
 	if val, ok := s.fileURLs.Peek(key); ok && time.Since(val.Time) < ttl-time.Minute {
 		// 更改权限会导致文件立即失效，所有总是校验。
 		rsp, err := http.Head(val.Head)
@@ -365,16 +380,29 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *proto.Post, fi
 
 		var chinaVal, otherVal *_FileURLCacheValue
 
+		postIsPublic := p.Status == models.PostStatusPublic
+
+		// 文件摘要。
+		remoteFileDigest := utils.IIF(postIsPublic,
+			file.Digest,
+			file.Meta.Encryption.Digest,
+		)
+		// 文件在远程服务器的路径。
+		remotePath := utils.IIF(postIsPublic,
+			path.Join(`files`, fmt.Sprint(file.PostID), file.Path),
+			path.Join(`objects`, fmt.Sprint(file.PostID), remoteFileDigest),
+		)
+
 		s.fileURLGetters.Range(func(_, value any) bool {
 			val := &_FileURLCacheValue{
 				Time: time.Now(),
 			}
 			getter := value.(theme_fs.FileURLGetter)
-			if get, head, enc, err := getter.GetFileURL(p, file, ttl); err == nil {
+			if get, head, err := getter.GetFileURL(remotePath, remoteFileDigest, ttl); err == nil {
 				val.Get = get
 				val.Head = head
-				val.Encrypted = enc
-				if enc {
+				val.Encrypted = !postIsPublic
+				if val.Encrypted {
 					val.Nonce = file.Meta.Encryption.Nonce
 					val.Key = file.Meta.Encryption.Key
 				}

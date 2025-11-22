@@ -593,6 +593,7 @@ func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitl
 	}, err
 }
 
+// 缓存的是数据库中的完整原始文章数据。
 func (s *Service) getPostCached(ctx context.Context, id int) (*models.Post, error) {
 	p, err, _ := s.postFullCaches.GetOrLoad(ctx, int64(id), func(ctx context.Context, i int64) (*models.Post, time.Duration, error) {
 		var post models.Post
@@ -1656,6 +1657,26 @@ func (s *Service) GetPostACL(ctx context.Context, in *proto.GetPostACLRequest) (
 	}
 
 	return &proto.GetPostACLResponse{Users: users}, nil
+}
+
+// 快速判断非文章本人用户是否有权限访问被分享的文章。
+// NOTE：用于替代 GetPost (withUserPerms)，以提高性能。
+// NOTE：系统管理员始终有权限访问。
+// NOTE：判断的是**非本人**，本人访问文章不能调用此函数判断。
+// NOTE：需保证前提：文章是分享状态。
+// TODO：加缓存
+func (s *Service) canNonAuthorUserReadPost(ctx context.Context, uid int64, pid int) bool {
+	if uid == int64(auth.SystemID) {
+		return true
+	}
+
+	var acl []models.AccessControlEntry
+	tdb := db.FromContextDefault(ctx, s.tdb)
+	tdb.Where(`post_id=?`, pid).MustFind(&acl)
+
+	return slices.ContainsFunc(acl, func(ace models.AccessControlEntry) bool {
+		return ace.UserID == uid && ace.Permission == models.PermRead
+	})
 }
 
 // 将文章转移到用户名下。
