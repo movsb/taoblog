@@ -187,7 +187,7 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 	ac := auth.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
 	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
-		panic(noPerm)
+		return nil, status.Error(codes.PermissionDenied, noPerm)
 	}
 
 	pfs := s.postDataFS.ForPost(int(in.PostId))
@@ -237,23 +237,21 @@ func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
 }
 
 func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64, file string, localOnly bool) {
+	ac := auth.Context(r.Context())
+
 	// 权限检查
 	// TODO 应该调用带缓存接口（注意鉴权），否则会频繁查数据库。
 	p := utils.Must1(s.GetPost(r.Context(), &proto.GetPostRequest{Id: int32(postID)}))
 
-	// 所有人禁止访问特殊文件：以 . 或者 _ 开头的文件或目录。
-	// TODO：以及 config.yaml | README.md
-	switch file[0] {
-	case '.', '_':
-		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
-	}
-	switch path.Base(file)[0] {
-	case '.', '_':
-		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
-	}
-	// 为了不区分大小写，所以没有用 switch。
-	if strings.EqualFold(file, `config.yml`) || strings.EqualFold(file, `config.yaml`) || strings.EqualFold(file, `README.md`) {
-		panic(status.Error(codes.PermissionDenied, `尝试访问不允许访问的文件。`))
+	// 仅系统和本人可以访问特殊文件：以 . 或者 _ 开头的文件或目录。
+	// 分享用户无法访问。
+	if !(ac.User.IsSystem() || ac.User.ID == int64(p.UserId)) {
+		for part := range strings.SplitSeq(file, `/`) {
+			if part[0] == '.' || part[0] == '_' {
+				http.Error(w, `尝试访问不允许访问的文件。`, http.StatusForbidden)
+				return
+			}
+		}
 	}
 
 	pfs := s.postDataFS.ForPost(int(postID))

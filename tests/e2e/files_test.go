@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -15,8 +16,12 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -191,4 +196,92 @@ func TestCreateGeneratedFiles(t *testing.T) {
 	if len(list) != 0 {
 		t.Fatal(`列表不正确`, list)
 	}
+}
+
+func TestFilePerm(t *testing.T) {
+	r := Serve(t.Context())
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		SourceType: `markdown`,
+		Source:     `# 123`,
+	}))
+
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path: `1.txt`,
+	}, nil)
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path: `_x.txt`,
+	}, nil)
+
+	// 管理员及自己可以访问。
+	for _, user := range []context.Context{r.system, r.admin, r.user1} {
+		_, err := r.client.Blog.ListPostFiles(user, &proto.ListPostFilesRequest{PostId: int32(p.Id)})
+		if err != nil {
+			t.Fatal(`列举文件应该成功`, user, err)
+		}
+	}
+	// 其它用户不可以访问（私密文章）。
+	for _, user := range []context.Context{r.guest, r.user2} {
+		_, err := r.client.Blog.ListPostFiles(user, &proto.ListPostFilesRequest{PostId: int32(p.Id)})
+		if err == nil {
+			t.Fatal(`列举文件不应该成功`, user)
+		}
+		if st, ok := status.FromError(err); !ok || st.Code() != codes.PermissionDenied {
+			t.Fatal(`列举文件状态错误`, err)
+		}
+	}
+
+	// 列举文件暂时仍然会列出不可访问的文件。
+	list := utils.Must1(r.client.Blog.ListPostFiles(r.user1, &proto.ListPostFilesRequest{PostId: int32(p.Id)})).Files
+	if len(list) != 2 {
+		t.Fatal(`文件列表不正确`, list)
+	}
+
+	expect := func(t *testing.T, userID int, file string, wantStatus int) {
+		req := utils.Must1(http.NewRequest(http.MethodGet, r.server.JoinPath(fmt.Sprint(p.Id), file), nil))
+		if userID > 0 {
+			r.addAuth(req, int64(userID))
+		}
+		rsp := utils.Must1(http.DefaultClient.Do(req))
+		defer rsp.Body.Close()
+		if rsp.StatusCode != wantStatus {
+			// io.Copy(os.Stderr, rsp.Body)
+			_, file, line, _ := stdRuntime.Caller(1)
+			t.Fatal(`文件访问失败`, rsp.Status, file, line)
+		}
+	}
+
+	// 系统可以访问私有文章，也可以访问特殊文件。
+	expect(t, auth.SystemID, `1.txt`, 200)
+	expect(t, auth.SystemID, `_x.txt`, 200)
+
+	// 本人可以访问特殊文件。
+	expect(t, int(r.user1ID), `1.txt`, 200)
+	expect(t, int(r.user1ID), `_x.txt`, 200)
+
+	// 因无法访问私有文章，所以均 404
+	expect(t, auth.AdminID, `1.txt`, 404)
+	expect(t, auth.AdminID, `_x.txt`, 404)
+	expect(t, 0, `1.txt`, 404)
+	expect(t, 0, `_x.txt`, 404)
+
+	expect(t, int(r.user2ID), `1.txt`, 404)
+	expect(t, int(r.user2ID), `_x.txt`, 404)
+
+	utils.Must1(r.client.Blog.SetPostStatus(r.system, &proto.SetPostStatusRequest{
+		Id:     p.Id,
+		Status: models.PostStatusPartial,
+	}))
+	utils.Must1(r.client.Blog.SetPostACL(r.system, &proto.SetPostACLRequest{
+		PostId: p.Id,
+		Users: map[int32]*proto.UserPerm{
+			int32(r.user2ID): {
+				Perms: []proto.Perm{
+					proto.Perm_PermRead,
+				},
+			},
+		},
+	}))
+
+	expect(t, int(r.user2ID), `1.txt`, 200)
+	expect(t, int(r.user2ID), `_x.txt`, 403)
 }
