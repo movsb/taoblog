@@ -186,7 +186,7 @@ func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequ
 
 	ac := auth.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
-	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+	if !(ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		return nil, status.Error(codes.PermissionDenied, noPerm)
 	}
 

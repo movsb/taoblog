@@ -213,14 +213,14 @@ func TestFilePerm(t *testing.T) {
 	}, nil)
 
 	// 管理员及自己可以访问。
-	for _, user := range []context.Context{r.system, r.admin, r.user1} {
+	for _, user := range []context.Context{r.system, r.user1} {
 		_, err := r.client.Blog.ListPostFiles(user, &proto.ListPostFilesRequest{PostId: int32(p.Id)})
 		if err != nil {
 			t.Fatal(`列举文件应该成功`, user, err)
 		}
 	}
 	// 其它用户不可以访问（私密文章）。
-	for _, user := range []context.Context{r.guest, r.user2} {
+	for _, user := range []context.Context{r.admin, r.guest, r.user2} {
 		_, err := r.client.Blog.ListPostFiles(user, &proto.ListPostFilesRequest{PostId: int32(p.Id)})
 		if err == nil {
 			t.Fatal(`列举文件不应该成功`, user)
