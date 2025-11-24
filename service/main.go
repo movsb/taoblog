@@ -288,8 +288,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	proto.RegisterSearchServer(sr, s)
 
 	utilOptions := []UtilOption{}
-	if ak := cfg.Others.Geo.Baidu.AccessKey; ak != `` {
-		utilOptions = append(utilOptions, WithBaidu(ak, s.getHome))
+	if ak := cfg.Others.Geo.GeoDe.Key; ak != `` {
+		utilOptions = append(utilOptions, WithGaoDe(ak))
 		utilOptions = append(utilOptions, WithTimezone(cfg.Site.GetTimezoneLocation))
 	}
 	utilsService := NewUtils(utilOptions...)

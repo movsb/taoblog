@@ -36,9 +36,9 @@ func NewUtils(options ...UtilOption) *Utils {
 
 type UtilOption func(u *Utils)
 
-func WithBaidu(ak string, getHome func() string) UtilOption {
+func WithGaoDe(ak string) UtilOption {
 	return func(u *Utils) {
-		u.geoLocationResolver = geo.NewBaidu(ak, getHome)
+		u.geoLocationResolver = geo.NewGeoDe(ak)
 	}
 }
 

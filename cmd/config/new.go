@@ -33,11 +33,11 @@ func (c *WhoisApiLayerConfig) BeforeSet(paths Segments, obj any) error {
 }
 
 type GeoConfig struct {
-	Baidu BaiduConfig `json:"baidu" yaml:"baidu"`
+	GeoDe GaoDe `json:"gaode" yaml:"gaode"`
 }
 
-type BaiduConfig struct {
-	AccessKey string `json:"access_key" yaml:"access_key"`
+type GaoDe struct {
+	Key string `json:"key" yaml:"key"`
 }
 
-func (BaiduConfig) CanSave() {}
+func (GaoDe) CanSave() {}

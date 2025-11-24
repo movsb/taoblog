@@ -914,3 +914,7 @@ func v66(posts, files, cache *taorm.DB) {
 func v67(posts, files, cache *taorm.DB) {
 	posts.MustExec(`DELETE FROM options WHERE name='blurhash:last'`)
 }
+
+func v68(posts, files, cache *taorm.DB) {
+	posts.MustExec(`DELETE FROM options WHERE name='others.geo.baidu'`)
+}
