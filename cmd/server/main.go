@@ -25,6 +25,7 @@ import (
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
 	server_sync_tasks "github.com/movsb/taoblog/cmd/server/tasks/sync"
+	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/modules/auth"
@@ -98,6 +99,7 @@ func AddCommands(rootCmd *cobra.Command) {
 				WithMonitorCerts(true),
 				WithMonitorDomain(true, monitorDomainInitialDelay),
 				WithConfigOverride(configOverride),
+				WithYearProgress(),
 			)
 			s.Serve(context.Background(), false, cfg, nil)
 		},
@@ -129,6 +131,7 @@ type Server struct {
 	initBackupTasks  bool
 	initRssTasks     bool
 	initMonitorCerts bool
+	initYearProgress bool
 
 	initMonitorDomain      bool
 	initMonitorDomainDelay bool
@@ -286,6 +289,9 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		go monitorCert(ctx, cfg.Site.GetHome, notify, func(days int) {
 			theService.SetCertDays(days)
 		})
+	}
+	if s.initYearProgress {
+		year_progress.New(ctx, s.Main().CalenderService())
 	}
 
 	s.initSyncs(ctx, cfg, filesStore)

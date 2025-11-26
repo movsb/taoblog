@@ -477,3 +477,7 @@ func (s *Service) SetPostsStorageSize(size int64) {
 func (s *Service) SetFilesStorageSize(size int64) {
 	s.filesStorageSize.Store(size)
 }
+
+func (s *Service) CalenderService() *calendar.CalenderService {
+	return s.calendar
+}

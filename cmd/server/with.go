@@ -67,3 +67,9 @@ func WithConfigOverride(fn func(*config.Config)) With {
 		s.configOverride = fn
 	}
 }
+
+func WithYearProgress() With {
+	return func(s *Server) {
+		s.initYearProgress = true
+	}
+}
