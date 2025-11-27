@@ -1,4 +1,4 @@
-package server_sync_tasks
+package sync_files
 
 import (
 	"bytes"

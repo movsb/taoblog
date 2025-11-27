@@ -24,7 +24,7 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
 	"github.com/movsb/taoblog/cmd/server/tasks/git_repo"
-	server_sync_tasks "github.com/movsb/taoblog/cmd/server/tasks/sync"
+	"github.com/movsb/taoblog/cmd/server/tasks/sync_files"
 	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
@@ -684,7 +684,7 @@ func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore t
 		},
 	} {
 		if backend.config.Enabled {
-			oss, err := server_sync_tasks.NewSyncToOSS(
+			oss, err := sync_files.NewSyncToOSS(
 				ctx, backend.name, &backend.config.OSSConfig, s.Main(),
 				s.Main().GetPluginStorage(backend.store),
 				filesStore,
@@ -701,7 +701,7 @@ func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore t
 }
 
 type _OssWithCountry struct {
-	*server_sync_tasks.SyncToOSS
+	*sync_files.SyncToOSS
 	country string
 }
 
