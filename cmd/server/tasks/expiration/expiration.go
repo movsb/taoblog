@@ -1,4 +1,4 @@
-package server
+package expiration
 
 import (
 	"context"
@@ -19,7 +19,9 @@ import (
 )
 
 // 监控证书过期的剩余时间。
-func monitorCert(ctx context.Context, getHome func() string, notifier proto.NotifyServer, update func(days int)) {
+//
+// 同步函数，除非 ctx 结束，否则不会返回。
+func MonitorCert(ctx context.Context, getHome func() string, notifier proto.NotifyServer, update func(days int)) {
 	check := func() {
 		u := utils.Must1(url.Parse(getHome()))
 		if u.Scheme != `https` {
@@ -64,17 +66,26 @@ func monitorCert(ctx context.Context, getHome func() string, notifier proto.Noti
 			},
 		)
 	}
+
 	check()
 
 	ticker := time.NewTicker(time.Hour * 24)
 	defer ticker.Stop()
-	for range ticker.C {
-		check()
+
+	for {
+		select {
+		case <-ticker.C:
+			check()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
 // 监控域名过期的剩余时间。
-func monitorDomain(ctx context.Context, getHome func() string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
+//
+// 同步函数，除非 ctx 结束，否则不会返回。
+func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
 	getDomainSuffix := func() string {
 		u := utils.Must1(url.Parse(getHome()))
 		hostname := strings.ToLower(u.Hostname())
@@ -162,15 +173,24 @@ func monitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 
 		return nil
 	}
+
 	// ApiLayer 限制是一个月 3000 次，这样可以做到
-	// 即便不断重启，也会不超过限制。
+	// 即便由于代码问题程序不断重启，也不会超过请求限制。
 	if initialDelay {
 		time.Sleep(time.Minute * 15)
 	}
+
 	check()
+
 	time.Sleep(time.Minute * 15)
 
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		if check() == nil {
 			time.Sleep(time.Hour * 24)
 		} else {

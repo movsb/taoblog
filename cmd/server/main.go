@@ -24,6 +24,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
 	server_sync_tasks "github.com/movsb/taoblog/cmd/server/tasks/sync"
 	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
@@ -268,33 +269,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 		s.sendNotify(`网站状态`, `现在开始运行。`)
 	}
 
-	if !version.DevMode() {
-		go liveCheck(ctx, s, theService)
-	}
-
-	if s.initBackupTasks {
-		go s.createBackupTasks(ctx, cfg)
-	}
-	if s.initGitSyncTask {
-		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue()))
-	}
-	if s.initMonitorDomain {
-		theService.SetDomainDays(-1)
-		go monitorDomain(ctx, cfg.Site.GetHome, notify, cfg.Others.Whois.ApiLayer.Key, s.initMonitorDomainDelay, func(days int) {
-			theService.SetDomainDays(days)
-		})
-	}
-	if s.initMonitorCerts {
-		theService.SetCertDays(-1)
-		go monitorCert(ctx, cfg.Site.GetHome, notify, func(days int) {
-			theService.SetCertDays(days)
-		})
-	}
-	if s.initYearProgress {
-		year_progress.New(ctx, s.Main().CalenderService())
-	}
-
-	s.initSyncs(ctx, cfg, filesStore)
+	s.initSubTasks(ctx, cfg, filesStore)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -854,4 +829,40 @@ type _OssWithCountry struct {
 
 func (oss _OssWithCountry) GetCountry() string {
 	return oss.country
+}
+
+func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStore *storage.SQLite) {
+	if !version.DevMode() {
+		go liveCheck(ctx, s, s.Main())
+	}
+
+	if s.initBackupTasks {
+		go s.createBackupTasks(ctx, cfg)
+	}
+
+	if s.initGitSyncTask {
+		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue()))
+	}
+
+	if s.initMonitorDomain {
+		s.Main().SetDomainDays(-1)
+		go expiration.MonitorDomain(
+			ctx, cfg.Site.GetHome, s.notifyServer, cfg.Others.Whois.ApiLayer.Key, s.initMonitorDomainDelay,
+			s.Main().SetDomainDays,
+		)
+	}
+
+	if s.initMonitorCerts {
+		s.Main().SetCertDays(-1)
+		go expiration.MonitorCert(
+			ctx, cfg.Site.GetHome, s.notifyServer,
+			s.Main().SetCertDays,
+		)
+	}
+
+	if s.initYearProgress {
+		year_progress.New(ctx, s.Main().CalenderService())
+	}
+
+	s.initSyncs(ctx, cfg, filesStore)
 }
