@@ -23,13 +23,13 @@ import (
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
+	"github.com/movsb/taoblog/cmd/server/tasks/git_repo"
 	server_sync_tasks "github.com/movsb/taoblog/cmd/server/tasks/sync"
 	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/backups"
-	backups_git "github.com/movsb/taoblog/modules/backups/git"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
@@ -366,59 +366,6 @@ func (s *Server) sendNotify(title, message string) {
 			Body:  message,
 		},
 	)
-}
-
-func (s *Server) createGitSyncTasks(
-	ctx context.Context,
-	client *clients.ProtoClient,
-) {
-	gs := backups_git.New(ctx, client, false)
-
-	sync := func() error {
-		if version.DevMode() {
-			log.Println(`开发模式不运行 git 同步`)
-			return nil
-		}
-
-		err := gs.Sync()
-		if err == nil {
-			log.Println(`git 同步成功`)
-			s.main.SetLastSyncAt(time.Now())
-		} else {
-			s.notifyServer.SendInstant(
-				auth.SystemForLocal(context.Background()),
-				&proto.SendInstantRequest{
-					Title: `同步失败`,
-					Body:  err.Error(),
-					Group: `同步与备份`,
-					Level: proto.SendInstantRequest_Active,
-				},
-			)
-		}
-
-		return err
-	}
-
-	const every = time.Hour * 1
-	ticker := time.NewTicker(every)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println(`git 同步任务退出`)
-			return
-		case <-gs.Do():
-			log.Println(`立即执行同步中`)
-			if err := sync(); err != nil {
-				log.Println(err)
-			}
-		case <-ticker.C:
-			if err := sync(); err != nil {
-				log.Println(err)
-			}
-		}
-	}
 }
 
 func (s *Server) createBackupTasks(
@@ -776,7 +723,10 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 	}
 
 	if s.initGitSyncTask {
-		go s.createGitSyncTasks(ctx, clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue()))
+		go git_repo.Sync(ctx,
+			clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue()),
+			s.notifyServer, s.main.SetLastSyncAt,
+		)
 	}
 
 	if s.initMonitorDomain {

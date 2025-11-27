@@ -30,6 +30,9 @@ func WithTimezone(loc *time.Location) With {
 	}
 }
 
+// 是否创建自动化 Git 仓库同步提交任务。
+//
+// 此任务自动把文章变更提交到 Git 仓库。
 func WithGitSyncTask(b bool) With {
 	return func(s *Server) {
 		s.initGitSyncTask = b
