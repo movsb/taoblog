@@ -205,8 +205,7 @@ func TestSitemaps(t *testing.T) {
 	log.Println(`状态：`, p1.Status, p2.Status)
 
 	// TODO hard-coded URL
-	u := fmt.Sprintf(`http://%s/sitemap.xml`, r.server.HTTPAddr())
-	rsp := utils.Must1(http.Get(u))
+	rsp := utils.Must1(http.Get(r.server.JoinPath(`sitemap.xml`)))
 	defer rsp.Body.Close()
 	if rsp.StatusCode != 200 {
 		t.Fatal(`状态码不正确。`)
@@ -309,10 +308,9 @@ func TestRSS(t *testing.T) {
 	request := func(pri bool) *http.Response {
 		r.server.RSS().TestingEnablePrivate(pri)
 
-		rssURL := fmt.Sprintf(`http://%s/rss`, r.server.HTTPAddr())
 		req := utils.Must1(http.NewRequestWithContext(
-			context.Background(),
-			http.MethodGet, rssURL, nil))
+			context.Background(), http.MethodGet,
+			r.server.JoinPath(`rss`), nil))
 		r.addAuth(req, int64(auth.SystemID))
 		rsp := utils.Must1(http.DefaultClient.Do(req))
 		if rsp.StatusCode != 200 {

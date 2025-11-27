@@ -3,10 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"expvar"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -42,7 +40,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/notify"
 	"github.com/movsb/taoblog/service/modules/notify/mailer"
-	"github.com/movsb/taoblog/service/modules/request_throttler"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
@@ -50,73 +47,18 @@ import (
 	"github.com/movsb/taoblog/theme/modules/canonical"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
 	"github.com/movsb/taorm"
-	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-func AddCommands(rootCmd *cobra.Command) {
-	var (
-		monitorDomainInitialDelay bool
-	)
-
-	serveCommand := &cobra.Command{
-		Use:   `server`,
-		Short: `Run the server`,
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			var cfg *config.Config
-			dir := os.DirFS(`.`)
-			demo := utils.Must1(cmd.Flags().GetBool(`demo`))
-			if demo {
-				cfg = config.DefaultDemoConfig()
-				// 并且强制关闭本地环境。
-				version.ForceEnableDevMode = `0`
-			} else {
-				cfg2 := config.DefaultConfig()
-				if err := config.ApplyFromFile(cfg2, dir, `taoblog.yml`); err != nil {
-					if !os.IsNotExist(err) && !errors.Is(err, io.EOF) {
-						log.Fatalln(err)
-					}
-				}
-				cfg = cfg2
-			}
-			configOverride := func(cfg *config.Config) {
-				if err := config.ApplyFromFile(cfg, dir, `taoblog.override.yml`); err != nil {
-					if !os.IsNotExist(err) {
-						log.Fatalln(err)
-					}
-				}
-			}
-
-			s := NewServer(
-				WithRequestThrottler(request_throttler.New()),
-				WithCreateFirstPost(),
-				WithGitSyncTask(true),
-				WithBackupTasks(true),
-				WithRSS(true),
-				WithMonitorCerts(true),
-				WithMonitorDomain(true, monitorDomainInitialDelay),
-				WithConfigOverride(configOverride),
-				WithYearProgress(),
-			)
-			s.Serve(context.Background(), false, cfg, nil)
-		},
-	}
-
-	serveCommand.Flags().Bool(`demo`, false, `运行演示实例。`)
-	serveCommand.Flags().BoolVar(&monitorDomainInitialDelay, `test-monitor-domain-initial-delay`, true, `是否启用首次域名检测延时等待。`)
-
-	serveCommand.Flags().SortFlags = false
-	rootCmd.AddCommand(serveCommand)
-}
-
 // 服务器实例。
 type Server struct {
 	testing bool
 
+	// 运行时的真实 HTTP 地址。
+	// 形如：127.0.0.1:2564，不包含协议、路径等。
 	httpAddr   string
 	httpServer *http.Server
 
@@ -156,18 +98,12 @@ func NewServer(with ...With) *Server {
 	return s
 }
 
-// 运行时的真实 HTTP 地址。
-// 形如：127.0.0.1:2564，不包含协议、路径等。
-func (s *Server) HTTPAddr() string {
-	if s.httpAddr == `` {
-		panic(`no http addr`)
-	}
-	return s.httpAddr
-}
-
-// 基于 HTTPAddr 创建请求端点地址。
+// 基于服务器运行时的真实 HTTP 地址创建请求路径。
+//
+// NOTE：不同于 path.Join，JoinPath 会保留最后的 /（如果有的话）。
 func (s *Server) JoinPath(paths ...string) string {
-	return utils.Must1(url.Parse(`http://` + s.HTTPAddr())).JoinPath(paths...).String()
+	p := utils.Must1(url.Parse(`http://` + s.httpAddr))
+	return p.JoinPath(paths...).String()
 }
 
 // 运行时的真实 GRPC 地址。
@@ -190,9 +126,6 @@ func (s *Server) Main() *service.Service {
 		panic(`main service is not created`)
 	}
 	return s.main
-}
-func (s *Server) Gateway() *gateway.Gateway {
-	return s.gateway
 }
 func (s *Server) RSS() *rss.RSS {
 	if s.rss == nil {
@@ -252,10 +185,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	s.gateway.SetFavicon(theService.Favicon())
 	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
 	s.gateway.SetAvatar(ctx, fileCache, s.Main().ResolveAvatar)
-
-	if s.initRssTasks {
-		s.initRSS()
-	}
 
 	s.createAdmin(ctx, cfg, theService, theAuth, mux)
 
@@ -415,7 +344,7 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService
 
 	a := admin.NewAdmin(
 		version.DevMode(),
-		s.Gateway(), theService, theService, theAuth,
+		s.gateway, theService, theService, theAuth,
 		prefix, cfg.Site.GetHome, cfg.Site.GetName,
 		admin.WithCustomThemes(&cfg.Theme),
 	)
@@ -615,7 +544,12 @@ func (s *Server) serveGRPC(ctx context.Context) (func(), grpc.ServiceRegistrar) 
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
 			s.auth.UserFromGatewayUnaryInterceptor(),
 			s.auth.UserFromClientTokenUnaryInterceptor(),
-			s.throttlerGatewayInterceptor,
+			func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+				if s.throttlerEnabled.Load() && s.throttler != nil {
+					return s.throttler(ctx, req, info, handler)
+				}
+				return handler(ctx, req)
+			},
 			grpcLoggerUnary,
 		),
 		grpc_middleware.WithStreamServerChain(
@@ -643,13 +577,6 @@ func (s *Server) serveGRPC(ctx context.Context) (func(), grpc.ServiceRegistrar) 
 		defer l.Close()
 		server.Serve(l)
 	}, server
-}
-
-func (s *Server) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	if s.throttlerEnabled.Load() && s.throttler != nil {
-		return s.throttler(ctx, req, info, handler)
-	}
-	return handler(ctx, req)
 }
 
 // 运行 HTTP 服务。
@@ -834,6 +761,10 @@ func (oss _OssWithCountry) GetCountry() string {
 func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStore *storage.SQLite) {
 	if !version.DevMode() {
 		go liveCheck(ctx, s, s.Main())
+	}
+
+	if s.initRssTasks {
+		s.initRSS()
 	}
 
 	if s.initBackupTasks {

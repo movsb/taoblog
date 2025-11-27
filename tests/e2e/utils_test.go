@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"runtime"
 	"testing"
@@ -13,10 +12,7 @@ import (
 )
 
 func expectHTTPGetWithStatusCode(r *R, relativeURL string, code int) {
-	u := utils.Must1(url.Parse(`http://` + r.server.HTTPAddr()))
-	ur := utils.Must1(url.Parse(relativeURL))
-	urlFinal := u.ResolveReference(ur)
-	rsp, err := http.Get(urlFinal.String())
+	rsp, err := http.Get(r.server.JoinPath(relativeURL))
 	if err != nil {
 		panic(err)
 	}
@@ -34,11 +30,9 @@ func ExpectError(t *testing.T, err error) {
 }
 
 func expect304(r *R, relativeURL string) {
-	u := utils.Must1(url.Parse(`http://` + r.server.HTTPAddr()))
-	ur := utils.Must1(url.Parse(relativeURL))
-	urlFinal := u.ResolveReference(ur)
+	u := r.server.JoinPath(relativeURL)
 
-	req := utils.Must1(http.NewRequest(http.MethodGet, urlFinal.String(), nil))
+	req := utils.Must1(http.NewRequest(http.MethodGet, u, nil))
 	rsp := utils.Must1(http.DefaultClient.Do(req))
 	if rsp.StatusCode != 200 {
 		panic(`not 200`)
@@ -46,7 +40,7 @@ func expect304(r *R, relativeURL string) {
 	lastModified := rsp.Header.Get(`Last-Modified`)
 	eTag := rsp.Header.Get(`ETag`)
 
-	req = utils.Must1(http.NewRequest(http.MethodGet, urlFinal.String(), nil))
+	req = utils.Must1(http.NewRequest(http.MethodGet, u, nil))
 	if lastModified != `` {
 		req.Header.Set(`If-Modified-Since`, lastModified)
 	}

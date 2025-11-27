@@ -7,7 +7,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"reflect"
 	stdRuntime "runtime"
@@ -67,12 +66,10 @@ func TestFiles(t *testing.T) {
 	utils.Must1(io.Copy(fw, fp))
 	utils.Must(parts.Close())
 
-	endpoint := fmt.Sprintf(`http://%s`, r.server.HTTPAddr())
-	u := utils.Must1(url.Parse(endpoint)).JoinPath(`/v3/posts`, fmt.Sprint(p.Id), `/files`)
-
 	req := utils.Must1(http.NewRequestWithContext(
 		r.user1, http.MethodPost,
-		u.String(), bytes.NewBuffer(body.Bytes()),
+		r.server.JoinPath(`/v3/posts`, fmt.Sprint(p.Id), `/files`),
+		bytes.NewBuffer(body.Bytes()),
 	))
 	req.Header.Set(`Content-Type`, parts.FormDataContentType())
 	r.addAuth(req, r.user1ID)
