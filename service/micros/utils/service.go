@@ -1,4 +1,4 @@
-package service
+package micros_utils
 
 import (
 	"context"
@@ -11,18 +11,12 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/xeonx/timeago"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type Utils struct {
-	proto.UnimplementedUtilsServer
-
-	timezone            func() *time.Location
-	geoLocationResolver geo.GeoLocationResolver
-}
-
-func NewUtils(options ...UtilOption) *Utils {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, options ...Option) {
 	u := &Utils{
 		timezone: globals.SystemTimezone,
 	}
@@ -31,18 +25,25 @@ func NewUtils(options ...UtilOption) *Utils {
 		opt(u)
 	}
 
-	return u
+	proto.RegisterUtilsServer(sr, u)
 }
 
-type UtilOption func(u *Utils)
+type Utils struct {
+	proto.UnimplementedUtilsServer
 
-func WithGaoDe(ak string) UtilOption {
+	timezone            func() *time.Location
+	geoLocationResolver geo.GeoLocationResolver
+}
+
+type Option func(u *Utils)
+
+func WithGaoDe(ak string) Option {
 	return func(u *Utils) {
 		u.geoLocationResolver = geo.NewGeoDe(ak)
 	}
 }
 
-func WithTimezone(getTimezone func() *time.Location) UtilOption {
+func WithTimezone(getTimezone func() *time.Location) Option {
 	return func(u *Utils) {
 		u.timezone = getTimezone
 	}

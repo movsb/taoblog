@@ -287,14 +287,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 	proto.RegisterManagementServer(sr, s)
 	proto.RegisterSearchServer(sr, s)
 
-	utilOptions := []UtilOption{}
-	if ak := cfg.Others.Geo.GeoDe.Key; ak != `` {
-		utilOptions = append(utilOptions, WithGaoDe(ak))
-		utilOptions = append(utilOptions, WithTimezone(cfg.Site.GetTimezoneLocation))
-	}
-	utilsService := NewUtils(utilOptions...)
-	proto.RegisterUtilsServer(sr, utilsService)
-
 	return s
 }
 

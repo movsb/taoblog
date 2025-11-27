@@ -36,6 +36,7 @@ import (
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	micros_utils "github.com/movsb/taoblog/service/micros/utils"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/notify"
@@ -163,6 +164,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
+	s.createUtilsService(ctx, cfg, serviceRegistrar)
 	s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
 
 	fileCache := cache.NewFileCache(ctx, cacheDB)
@@ -447,6 +449,18 @@ func (s *Server) createMainServices(
 	}
 
 	s.main = service.New(ctx, sr, cfg, db, rc, s.Auth(), mux, serviceOptions...)
+}
+
+func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar) {
+	options := []micros_utils.Option{
+		micros_utils.WithTimezone(cfg.Site.GetTimezoneLocation),
+	}
+
+	if key := cfg.Others.Geo.GeoDe.Key; key != `` {
+		options = append(options, micros_utils.WithGaoDe(key))
+	}
+
+	micros_utils.New(ctx, sr, options...)
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {
