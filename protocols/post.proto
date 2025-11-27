@@ -96,12 +96,16 @@ message Post {
 	repeated Post relates = 18;
 
 	// 文章的链接。
+	// 仅输出。
 	string link = 19;
 	
 	// 创建时间和修改时间所在的时区。
 	string date_timezone = 20;
 	string modified_timezone = 21;
 
+	// 文章的创建者。
+	// 由调用 CreatePost 的用户决定。
+	// 仅输出。
 	int32 user_id = 22;
 	
 	// 评论列表。

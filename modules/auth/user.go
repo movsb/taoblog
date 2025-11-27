@@ -72,6 +72,11 @@ func randomKey() string {
 	return fmt.Sprintf(`%x`, b)
 }
 
+const (
+	SystemID = 1
+	AdminID  = 2
+)
+
 var (
 	// TODO 移除，用 nil 代表未登录用户。
 	guest = &User{
@@ -80,14 +85,12 @@ var (
 			Nickname: `未登录用户`,
 		},
 	}
-	SystemID = 1
-	system   = &User{
+	system = &User{
 		User: &models.User{
 			ID:       int64(SystemID),
 			Password: randomKey(),
 		},
 	}
-	AdminID = 2
 )
 
 // 仅能同进程内使用。

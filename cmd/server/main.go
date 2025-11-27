@@ -163,42 +163,35 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
-	notify := s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
-	s.notifyServer = notify
+	s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
 
 	fileCache := cache.NewFileCache(ctx, cacheDB)
-	theService := s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, notify, cancel, theAuth, filesStore, fileCache, rc, mux)
-	s.main = theService
+	s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, cancel, filesStore, fileCache, rc, mux)
+
+	// 虽然是异步开始的，但是内部只是开始 Accept 连接。
+	// 如果有接口在这之前就发生了调用，也不会出问题（在 backlog 中）。
+	go startGRPC()
 
 	go dbStatsFunc(func(posts, files int64) {
-		theService.SetPostsStorageSize(posts)
-		theService.SetFilesStorageSize(files)
+		s.Main().SetPostsStorageSize(posts)
+		s.Main().SetFilesStorageSize(files)
 	})
 
 	if testing && s.initialTimezone != nil {
-		theService.TestingSetTimezone(s.initialTimezone)
+		s.Main().TestingSetTimezone(s.initialTimezone)
 	}
 
-	go startGRPC()
-
-	s.gateway = gateway.NewGateway(s.grpcAddr, theService, theAuth, mux, notify)
-	s.gateway.SetFavicon(theService.Favicon())
-	s.gateway.SetDynamic(theService.DropAllPostAndCommentCache)
-	s.gateway.SetAvatar(ctx, fileCache, s.Main().ResolveAvatar)
-
-	s.createAdmin(ctx, cfg, theService, theAuth, mux)
-
-	theme := theme.New(ctx, version.DevMode(), cfg, theService, theService, theService, theAuth)
-	canon := canonical.New(theme, theService)
-	mux.Handle(`/`, canon)
+	s.createGateway(ctx, mux, fileCache)
+	s.createAdmin(ctx, cfg, s.Main(), theAuth, mux)
+	s.createTheme(ctx, cfg, mux)
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
+
+	s.initSubTasks(ctx, cfg, filesStore)
 
 	if !version.DevMode() {
 		s.sendNotify(`网站状态`, `现在开始运行。`)
 	}
-
-	s.initSubTasks(ctx, cfg, filesStore)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
@@ -214,7 +207,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}
 
 	log.Println("server shutting down")
-	theService.MaintenanceMode().Enter(`服务关闭中...`, time.Second*30)
+	s.Main().MaintenanceMode().Enter(`服务关闭中...`, time.Second*30)
 	s.httpServer.Shutdown(context.Background())
 	log.Println("server shut down")
 
@@ -339,6 +332,13 @@ func (s *Server) initRSS() {
 	s.rss = rss
 }
 
+func (s *Server) createGateway(ctx context.Context, mux *http.ServeMux, fileCache *cache.FileCache) {
+	s.gateway = gateway.NewGateway(s.grpcAddr, s.Main(), s.Auth(), mux, s.notifyServer)
+	s.gateway.SetFavicon(s.Main().Favicon())
+	s.gateway.SetDynamic(s.Main().DropAllPostAndCommentCache)
+	s.gateway.SetAvatar(ctx, fileCache, s.Main().ResolveAvatar)
+}
+
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
 	prefix := `/admin/`
 
@@ -350,6 +350,12 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService
 	)
 
 	mux.Handle(prefix, a.Handler())
+}
+
+func (s *Server) createTheme(ctx context.Context, cfg *config.Config, mux *http.ServeMux) {
+	theme := theme.New(ctx, version.DevMode(), cfg, s.Main(), s.Main(), s.Main(), s.Auth())
+	canon := canonical.New(theme, s.Main())
+	mux.Handle(`/`, canon)
 }
 
 func (s *Server) sendNotify(title, message string) {
@@ -480,25 +486,23 @@ func (s *Server) createMainServices(
 	db *taorm.DB,
 	cfg *config.Config,
 	sr grpc.ServiceRegistrar,
-	notifier proto.NotifyServer,
 	cancel func(),
-	auth *auth.Auth,
 	filesStore *storage.SQLite,
 	fileCache *cache.FileCache,
 	rc *runtime_config.Runtime,
 	mux *http.ServeMux,
-) *service.Service {
+) {
 	serviceOptions := []service.With{
 		service.WithPostDataFileSystem(filesStore),
-		service.WithNotifier(notifier),
+		service.WithNotifier(s.notifyServer),
 		service.WithCancel(cancel),
 		service.WithFileCache(fileCache),
 	}
 
-	return service.New(ctx, sr, cfg, db, rc, auth, mux, serviceOptions...)
+	s.main = service.New(ctx, sr, cfg, db, rc, s.Auth(), mux, serviceOptions...)
 }
 
-func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) proto.NotifyServer {
+func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {
 	var options []notify.With
 
 	if ch := cfg.Notify.Bark; ch.Token != `` {
@@ -532,7 +536,7 @@ func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *con
 		}
 	}()
 
-	return n
+	s.notifyServer = n
 }
 
 // 因为 GRPC 服务启动后不能注册，所以返回了一个函数用于适时启动。
