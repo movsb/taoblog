@@ -18,6 +18,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
@@ -36,6 +37,8 @@ type Auth struct {
 	webAuthnHandler atomic.Value // http.Handler
 
 	passkeys *Passkeys
+
+	TmpClientLoginService *micros_auth.ClientLoginService
 }
 
 // DevMode：开发者模式不会限制 Cookie 的 Secure 属性，此属性只允许 HTTPS 和 localhost 的 Cookie。

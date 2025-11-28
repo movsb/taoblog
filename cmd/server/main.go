@@ -36,6 +36,7 @@ import (
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	micros_utils "github.com/movsb/taoblog/service/micros/utils"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
@@ -166,6 +167,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 	s.createUtilsService(ctx, cfg, serviceRegistrar)
 	s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
+	s.createClientLoginService(ctx, cfg, serviceRegistrar)
 
 	fileCache := cache.NewFileCache(ctx, cacheDB)
 	s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, cancel, filesStore, fileCache, rc, mux)
@@ -461,6 +463,11 @@ func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr 
 	}
 
 	micros_utils.New(ctx, sr, options...)
+}
+
+func (s *Server) createClientLoginService(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar) {
+	cs := micros_auth.NewClientLoginService(ctx, sr, cfg.Site.GetHome)
+	s.Auth().TmpClientLoginService = cs
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {

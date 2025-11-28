@@ -30,14 +30,15 @@ func NewFromAddress(grpcAddress string, token string) *ProtoClient {
 
 func _NewFromCC(cc *grpc.ClientConn, token string) *ProtoClient {
 	return &ProtoClient{
-		cc:         cc,
-		token:      token,
-		Auth:       proto.NewAuthClient(cc),
-		Utils:      proto.NewUtilsClient(cc),
-		Blog:       proto.NewTaoBlogClient(cc),
-		Management: proto.NewManagementClient(cc),
-		Search:     proto.NewSearchClient(cc),
-		Notify:     proto.NewNotifyClient(cc),
+		cc:          cc,
+		token:       token,
+		Auth:        proto.NewAuthClient(cc),
+		Utils:       proto.NewUtilsClient(cc),
+		Blog:        proto.NewTaoBlogClient(cc),
+		Management:  proto.NewManagementClient(cc),
+		Search:      proto.NewSearchClient(cc),
+		Notify:      proto.NewNotifyClient(cc),
+		ClientLogin: proto.NewClientLoginClient(cc),
 	}
 }
 
@@ -45,12 +46,13 @@ type ProtoClient struct {
 	cc    *grpc.ClientConn
 	token string
 
-	Auth       proto.AuthClient
-	Utils      proto.UtilsClient
-	Blog       proto.TaoBlogClient
-	Management proto.ManagementClient
-	Search     proto.SearchClient
-	Notify     proto.NotifyClient
+	Auth        proto.AuthClient
+	Utils       proto.UtilsClient
+	Blog        proto.TaoBlogClient
+	Management  proto.ManagementClient
+	Search      proto.SearchClient
+	Notify      proto.NotifyClient
+	ClientLogin proto.ClientLoginClient
 }
 
 func (c *ProtoClient) Context() context.Context {

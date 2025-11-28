@@ -7,9 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -34,14 +32,7 @@ type Passkeys struct {
 
 	loginSessions *lru.TTLCache[string, *webauthn.SessionData]
 
-	// 映射挑战数据到会话数据。
-	clientLoginSessions *lru.TTLCache[string, *_ClientLoginSessionData]
-
 	proto.UnimplementedAuthServer
-}
-
-type _ClientLoginSessionData struct {
-	token string
 }
 
 func NewPasskeys(
@@ -58,8 +49,6 @@ func NewPasskeys(
 		cookieGen:     cookieGen,
 		dropCache:     dropCache,
 		loginSessions: lru.NewTTLCache[string, *webauthn.SessionData](8),
-
-		clientLoginSessions: lru.NewTTLCache[string, *_ClientLoginSessionData](8),
 	}
 }
 
@@ -265,54 +254,4 @@ func (p *Passkeys) ListUsers(ctx context.Context, in *proto.ListUsersRequest) (_
 	return &proto.ListUsersResponse{
 		Users: utils.Map(users, func(u *models.User) *proto.User { return u.ToProto() }),
 	}, nil
-}
-
-func (p *Passkeys) SetClientLoginToken(random, token string) {
-	p.clientLoginSessions.Set(random, &_ClientLoginSessionData{
-		token: token,
-	}, time.Second*5)
-}
-
-func (p *Passkeys) ClientLogin(in *proto.ClientLoginRequest, srv proto.Auth_ClientLoginServer) error {
-	var random [16]byte
-	rand.Read(random[:])
-
-	u := utils.Must1(url.Parse(p.getHome())).JoinPath(`admin`, `login`, `client`)
-	q := u.Query()
-
-	randomString := fmt.Sprintf(`%x`, random)
-	q.Set(`random`, randomString)
-	u.RawQuery = q.Encode()
-
-	p.clientLoginSessions.Set(randomString, &_ClientLoginSessionData{}, time.Minute*5)
-
-	if err := srv.Send(&proto.ClientLoginResponse{
-		Response: &proto.ClientLoginResponse_Open_{
-			Open: &proto.ClientLoginResponse_Open{
-				AuthUrl: u.String(),
-			},
-		},
-	}); err != nil {
-		return err
-	}
-
-	for {
-		value, found := p.clientLoginSessions.Get(randomString)
-		if !found {
-			return status.Error(codes.Aborted, `超时已取消授权。`)
-		}
-		if value.token != `` {
-			p.clientLoginSessions.Delete(randomString)
-			srv.Send(&proto.ClientLoginResponse{
-				Response: &proto.ClientLoginResponse_Success_{
-					Success: &proto.ClientLoginResponse_Success{
-						Token: value.token,
-					},
-				},
-			})
-			return nil
-		}
-		log.Println(`等等登录授权：`, randomString)
-		time.Sleep(time.Second)
-	}
 }

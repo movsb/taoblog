@@ -81,7 +81,7 @@ func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 
 	// 授权完成页面。
 	if !ac.User.IsGuest() && r.Method == http.MethodPost {
-		a.auth.Passkeys().SetClientLoginToken(random, cookies.TokenValue(int(ac.User.ID), ac.User.Password))
+		a.auth.TmpClientLoginService.SetClientLoginToken(random, cookies.TokenValue(int(ac.User.ID), ac.User.Password))
 		a.executeTemplate(w, `client.html`, _ClientLoginData{
 			Authorized: true,
 		})

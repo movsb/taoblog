@@ -98,7 +98,7 @@ func AddCommands(rootCmd *cobra.Command) {
 			}
 			// 用于生成登录挑战，不需要 token。
 			client := clients.NewFromHome(homeURL.String(), ``)
-			beginLogin := utils.Must1(client.Auth.ClientLogin(client.Context(), &proto.ClientLoginRequest{}))
+			beginLogin := utils.Must1(client.ClientLogin.ClientLogin(client.Context(), &proto.ClientLoginRequest{}))
 			defer beginLogin.CloseSend()
 
 			save := func(token string) {
