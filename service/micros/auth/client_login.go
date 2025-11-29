@@ -85,7 +85,7 @@ func (s *ClientLoginService) ClientLogin(in *proto.ClientLoginRequest, srv proto
 			})
 			return nil
 		}
-		log.Println(`等等登录授权：`, randomString)
+		log.Println(`等待登录授权：`, randomString)
 		time.Sleep(time.Second)
 	}
 }

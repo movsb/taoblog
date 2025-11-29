@@ -15,6 +15,8 @@ import (
 
 type R struct {
 	server *server.Server
+
+	// 无凭证的客户端。
 	client *clients.ProtoClient
 
 	system context.Context
