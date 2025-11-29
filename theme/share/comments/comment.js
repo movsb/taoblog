@@ -7,7 +7,7 @@ const commentHTML = function(){/*
 	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
 	<span class="right item login-panel">
 		<a class="sign-in pointer" onclick="comment.login()">登录</a>
-		<a class="sign-out pointer" onclick="comment.logout()">登出</a>
+		<span class="sign-out"><span class="login-name"></span>(<a class="pointer" onclick="comment.logout()">登出</a>)</span>
 	</span>
 </div>
 <!-- 评论列表  -->
@@ -564,6 +564,16 @@ class CommentManager {
 		this.preload();
 
 		new TextareaWithTab(this.form.elemSource)
+
+		this.updateLoginName();
+	}
+
+	updateLoginName() {
+		const nickName = TaoBlog?.fn?.getNickname?.();
+		if(nickName != '') {
+			const elem = document.querySelector('#comments .login-name');
+			elem.textContent = nickName;
+		}
 	}
 
 	preload() {
@@ -951,6 +961,7 @@ class CommentManager {
 		try {
 			await wa.login();
 			document.body.classList.add('signed-in');
+			this.updateLoginName();
 		} catch(e) {
 			if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
 				console.log('已取消操作。');
