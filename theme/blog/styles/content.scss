@@ -49,8 +49,8 @@ body:not(.wide) {
 	&.tweet, &.tweets {
 		#content {
 			// 按照 Gallery 一行四张图片估：
-			// 150px*4 + (gap:1px)*3 + (content padding:1em)*2 + (article padding: 1px)*2
-			max-width: calc(150px*4 + 1px*3 + 1em*2 + 1px*2);
+			// 150px*4 + (gap:3px)*3 + (content padding:1em)*2 + (article padding: 1px)*2
+			max-width: calc(150px*4 + 3px*3 + 1em*2 + 1px*2);
 		}
 	}
 }

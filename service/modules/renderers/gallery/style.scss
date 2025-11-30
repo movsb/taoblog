@@ -20,10 +20,12 @@
 	}
 }
 
+// content.scss 那边有 .tweets 计算页面整体宽度的，记得同步过去。
+
 .gallery {
 	// 人生第一次使用 display: grid
 	display: grid;
-	gap: 1px;
+	gap: 3px;
 	// 本来是 auto-fit，但 Safari 不支持。
 	grid-template-columns: repeat(auto-fill, 150px);
 	> img, > div {
@@ -37,7 +39,7 @@
 
 // 手机上显示3张？
 // 150px * 3 + gap * 2
-@container (max-width: 452px) {
+@container (max-width: 456px) {
 	.gallery {
 		grid-template-columns: repeat(3, 1fr);
 	}
