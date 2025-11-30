@@ -6,6 +6,12 @@ protos:
 test:
 	go test ./...
 
+.PHONY: cover
+cover:
+	dir="$$TMPDIR"; \
+	go test -coverpkg=./... -coverprofile="$$dir"/coverage.out ./...; \
+	go tool cover -html="$$dir"/coverage.out
+
 .PHONY: generate
 generate:
 	go generate ./...

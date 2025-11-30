@@ -392,7 +392,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		IP:         ac.RemoteAddr.String(),
 		Date:       0,
 		SourceType: in.SourceType,
-		Source:     in.Source,
+		Source:     strings.TrimSpace(in.Source),
 	}
 
 	if ac.User.ID > 0 {
