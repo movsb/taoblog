@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/theme/data"
 	"github.com/xeonx/timeago"
 )
@@ -70,12 +71,18 @@ func (t *Theme) funcs() map[string]any {
 		`siteName`: func() string {
 			return t.cfg.Site.GetName()
 		},
-		`sitePageTitle`: func(s string) string {
+		`sitePageTitle`: func(d *data.Data) string {
 			name := t.cfg.Site.GetName()
-			if s != `` {
-				return fmt.Sprintf(`%s - %s`, s, name)
+			if d.Title() == `` {
+				return name
 			}
-			return name
+
+			// 非公开内容不返回 html title，以防止出现在浏览器地址栏的历史记录中（边输入边出现）。
+			if p, ok := d.Data.(*data.PostData); ok && p.Post.Status != models.PostStatusPublic {
+				return ``
+			}
+
+			return fmt.Sprintf(`%s - %s`, d.Title(), name)
 		},
 		`editLinkHTML`: func(d *data.Data) template.HTML {
 			if p, ok := d.Data.(*data.PostData); ok {
