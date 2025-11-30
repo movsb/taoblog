@@ -61,7 +61,6 @@ func (s *SyncToOSS) Run(ctx context.Context) {
 	}
 }
 
-// TODO 可选不上传私有文章。
 func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 	last := utils.Must1(s.options.GetIntegerDefault(`last`, 1))
@@ -82,6 +81,7 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 		// 删除不再需要的文件：
 		// - 公开后，以前加密的
 		// - 私密后，以前公开的
+		//
 		if up.Status == models.PostStatusPublic {
 			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`objects/%d/`, up.Id))
 		} else {
@@ -115,6 +115,7 @@ func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid
 	var size int
 	var reader io.Reader
 
+	// TODO: 公开文章的私有文件（以 _ 和 . 开头的那些）也应该加密保存。
 	if post.Status == models.PostStatusPublic {
 		// files/文章编号/文件路径，没有前缀 /。
 		fullPath = pathpkg.Join(`files`, fmt.Sprint(pid), path)
