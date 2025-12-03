@@ -11,7 +11,6 @@ import (
 	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/models"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
@@ -66,9 +65,9 @@ func TestPerm(t *testing.T) {
 		ids    []int
 	}{
 		{user.GuestForLocal(context.TODO()), `文章`, []int{1}},
-		{micros_auth.TestingUserContextForServer(u1), `文章`, []int{1}},
-		{micros_auth.TestingUserContextForServer(u2), `文章`, []int{1, 2}},
-		{micros_auth.TestingUserContextForServer(u3), `文章`, []int{1, 3}},
+		{user.TestingUserContextForServer(u1), `文章`, []int{1}},
+		{user.TestingUserContextForServer(u2), `文章`, []int{1, 2}},
+		{user.TestingUserContextForServer(u3), `文章`, []int{1, 3}},
 	}
 
 	for _, tc := range testCases {

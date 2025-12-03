@@ -10,14 +10,12 @@ import (
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	server_auth "github.com/movsb/taoblog/cmd/server/auth"
 	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/auth/user"
 	auth_webauthn "github.com/movsb/taoblog/modules/auth/webauthn"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taorm"
-	"google.golang.org/grpc/metadata"
 )
 
 type Auth struct {
@@ -248,19 +246,4 @@ func (a *Auth) GenCookieForPasskeys(u *user.User, agent string) []*proto.FinishP
 			HttpOnly: false,
 		},
 	}
-}
-
-// 仅用于测试的帐号。
-// 可同时用于 HTTP 和 GRPC 请求。
-func TestingUserContextForClient(user *user.User) context.Context {
-	const userAgent = `go_test`
-	md := metadata.Pairs()
-	md.Append(server_auth.GatewayCookie, cookies.CookieValue(userAgent, int(user.ID), user.Password))
-	md.Append(server_auth.GatewayUserAgent, userAgent)
-	md.Append(`Authorization`, user.AuthorizationValue())
-	return metadata.NewOutgoingContext(context.TODO(), md)
-}
-
-func TestingUserContextForServer(u *user.User) context.Context {
-	return user.NewContext(context.Background(), u, user.Localhost, `go_test`)
 }

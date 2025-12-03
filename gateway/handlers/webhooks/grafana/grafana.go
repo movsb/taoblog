@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	server_auth "github.com/movsb/taoblog/cmd/server/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/grpc/status"
@@ -23,7 +23,7 @@ func New(notify proto.NotifyClient) http.Handler {
 		if x, ok := m[`message`]; ok {
 			message, _ = x.(string)
 		}
-		ctx := server_auth.NewContextForRequestAsGateway(r)
+		ctx := user.ForwardRequestContext(r)
 		_, err := notify.SendInstant(ctx, &proto.SendInstantRequest{
 			Title: `监控告警`,
 			// https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/

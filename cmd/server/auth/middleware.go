@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/auth/user"
 	"google.golang.org/grpc"
@@ -54,31 +53,6 @@ func (m *Middleware) UserFromCookieHandler(h http.Handler) http.Handler {
 	})
 }
 
-// 把请求中的 Cookie 等信息转换成 Gateway 要求格式以通过 grpc-client 传递给 server。
-// server 然后转换成 local auth context 以表示用户。
-//
-// 并不是特别完善，是否应该参考 runtime.AnnotateContext？
-//
-// TODO 移除
-func NewContextForRequestAsGateway(r *http.Request) context.Context {
-	md := metadata.Pairs()
-	for _, cookie := range r.Header.Values(`cookie`) {
-		md.Append(GatewayCookie, cookie)
-	}
-	for _, userAgent := range r.Header.Values(`user-agent`) {
-		md.Append(GatewayUserAgent, userAgent)
-	}
-	for _, authorization := range r.Header.Values(`authorization`) {
-		md.Append(`Authorization`, authorization)
-	}
-	return metadata.NewOutgoingContext(r.Context(), md)
-}
-
-const (
-	GatewayCookie    = runtime.MetadataPrefix + "cookie"
-	GatewayUserAgent = runtime.MetadataPrefix + "user-agent"
-)
-
 // 把 Gateway 的 Cookie 转换成已登录用户。
 // 适用于服务端代码功能。
 //
@@ -123,7 +97,7 @@ func (m *Middleware) addUserContextToInterceptorForGateway(ctx context.Context) 
 		userAgent string
 	)
 
-	if cs := md.Get(GatewayCookie); len(cs) > 0 {
+	if cs := md.Get(user.GatewayCookie); len(cs) > 0 {
 		header := http.Header{}
 		for _, cookie := range cs {
 			header.Add(`Cookie`, cookie)
@@ -133,7 +107,7 @@ func (m *Middleware) addUserContextToInterceptorForGateway(ctx context.Context) 
 		}
 	}
 
-	if userAgents := md.Get(GatewayUserAgent); len(userAgents) > 0 {
+	if userAgents := md.Get(user.GatewayUserAgent); len(userAgents) > 0 {
 		userAgent = userAgents[0]
 	}
 

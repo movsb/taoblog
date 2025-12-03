@@ -15,7 +15,6 @@ import (
 	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	server_auth "github.com/movsb/taoblog/cmd/server/auth"
 	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -57,8 +56,7 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 	ac := user.Context(r.Context())
 	id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
 	po, err := client.Blog.GetPost(
-		// TODO 不应该实现在那里
-		server_auth.NewContextForRequestAsGateway(r),
+		user.ForwardRequestContext(r),
 		&proto.GetPostRequest{
 			Id: int32(id),
 		},
@@ -78,9 +76,7 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	fsc, err := client.Management.FileSystem(
-		server_auth.NewContextForRequestAsGateway(r),
-	)
+	fsc, err := client.Management.FileSystem(user.ForwardRequestContext(r))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

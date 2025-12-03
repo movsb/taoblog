@@ -2,8 +2,11 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"net/netip"
 
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/geo/geoip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -101,6 +104,29 @@ func SystemForGateway(ctx context.Context) context.Context {
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
+// 把请求中的 Cookie 等信息转换成 Gateway 要求格式以通过 grpc-client 传递给 server。
+// server 然后转换成 local auth context 以表示用户。
+//
+// 并不是特别完善，是否应该参考 runtime.AnnotateContext？
+func ForwardRequestContext(r *http.Request) context.Context {
+	md := metadata.Pairs()
+	for _, cookie := range r.Header.Values(`cookie`) {
+		md.Append(GatewayCookie, cookie)
+	}
+	for _, userAgent := range r.Header.Values(`user-agent`) {
+		md.Append(GatewayUserAgent, userAgent)
+	}
+	for _, authorization := range r.Header.Values(`authorization`) {
+		md.Append(`Authorization`, authorization)
+	}
+	return metadata.NewOutgoingContext(r.Context(), md)
+}
+
+const (
+	GatewayCookie    = runtime.MetadataPrefix + "cookie"
+	GatewayUserAgent = runtime.MetadataPrefix + "user-agent"
+)
+
 const noPerm = `此操作无权限。`
 
 func MustNotBeGuest(ctx context.Context) *AuthContext {
@@ -117,4 +143,19 @@ func MustBeAdmin(ctx context.Context) *AuthContext {
 		return ac
 	}
 	panic(status.Error(codes.PermissionDenied, noPerm))
+}
+
+// 仅用于测试的帐号。
+// 可同时用于 HTTP 和 GRPC 请求。
+func TestingUserContextForClient(uu *User) context.Context {
+	const userAgent = `go_test`
+	md := metadata.Pairs()
+	md.Append(GatewayCookie, cookies.CookieValue(userAgent, int(uu.ID), uu.Password))
+	md.Append(GatewayUserAgent, userAgent)
+	md.Append(`Authorization`, uu.AuthorizationValue())
+	return metadata.NewOutgoingContext(context.TODO(), md)
+}
+
+func TestingUserContextForServer(u *User) context.Context {
+	return NewContext(context.Background(), u, Localhost, `go_test`)
 }

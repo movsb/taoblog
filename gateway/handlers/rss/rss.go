@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	server_auth "github.com/movsb/taoblog/cmd/server/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -117,7 +117,7 @@ func (r *RSS) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	rsp, err := r.client.Blog.ListPosts(
-		server_auth.NewContextForRequestAsGateway(req),
+		user.ForwardRequestContext(req),
 		&proto.ListPostsRequest{
 			Limit:   int32(r.config.articleCount),
 			OrderBy: `date desc`,

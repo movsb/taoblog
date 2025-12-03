@@ -11,7 +11,6 @@ import (
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 )
 
 type R struct {
@@ -68,7 +67,7 @@ func Serve(ctx context.Context, options ...server.With) *R {
 
 func onBehalfOf(r *R, uid int64) context.Context {
 	u := utils.Must1(r.server.AuthFrontend().GetUserByID(int(uid)))
-	return micros_auth.TestingUserContextForClient(u)
+	return user.TestingUserContextForClient(u)
 }
 
 func (r *R) addAuth(req *http.Request, uid int64) {
