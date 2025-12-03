@@ -17,7 +17,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	micros_auth "github.com/movsb/taoblog/service/micros/auth"
+	"github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
@@ -91,7 +91,7 @@ type Service struct {
 	mux *http.ServeMux
 
 	notifier    proto.NotifyServer
-	userManager *micros_auth.UserManager
+	userManager *auth.UserManager
 
 	cmtntf        *comment_notify.CommentNotifier
 	cmtNotifyTask *_CommentNotificationTask
@@ -168,7 +168,7 @@ func (s *Service) Favicon() *favicon.Favicon {
 	return s.favicon
 }
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *taorm.DB, rc *runtime_config.Runtime, mux *http.ServeMux, userManager *micros_auth.UserManager, options ...With) *Service {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *taorm.DB, rc *runtime_config.Runtime, mux *http.ServeMux, userManager *auth.UserManager, options ...With) *Service {
 	s := &Service{
 		ctx: ctx,
 

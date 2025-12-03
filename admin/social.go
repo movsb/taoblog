@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/pquerna/otp/totp"
 )

@@ -1,4 +1,4 @@
-package micros_auth
+package passkeys
 
 import (
 	"bytes"

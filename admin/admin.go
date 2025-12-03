@@ -21,14 +21,15 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
-	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
-	micros_auth "github.com/movsb/taoblog/service/micros/auth"
+	"github.com/movsb/taoblog/service/micros/auth"
+	"github.com/movsb/taoblog/service/micros/auth/client_login"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/modules/handle304"
@@ -77,15 +78,14 @@ type Admin struct {
 	templates *utils.TemplateLoader
 
 	getName func() string
-	getHome func() string
 
 	webAuthnHandler http.Handler
-	userManager     *micros_auth.UserManager
-	authFrontend    *micros_auth.Auth
-	clientLogin     *micros_auth.ClientLoginService
+	userManager     *auth.UserManager
+	authFrontend    *auth.Auth
+	clientLogin     *client_login.ClientLoginService
 }
 
-func NewAdmin(gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, userManager *micros_auth.UserManager, authFrontend *micros_auth.Auth, clientLogin *micros_auth.ClientLoginService, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
+func NewAdmin(gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, userManager *auth.UserManager, authFrontend *auth.Auth, clientLogin *client_login.ClientLoginService, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}

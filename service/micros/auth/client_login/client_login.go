@@ -1,4 +1,4 @@
-package micros_auth
+package client_login
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package micros_auth
+package auth
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	auth_webauthn "github.com/movsb/taoblog/service/micros/auth/webauthn"
 	"github.com/movsb/taorm"

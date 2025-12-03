@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/models"
 )
 

@@ -18,7 +18,7 @@ import (
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
-	micros_auth "github.com/movsb/taoblog/service/micros/auth"
+	"github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/blog"
@@ -46,15 +46,15 @@ type Theme struct {
 	service      proto.TaoBlogServer
 	impl         service.ToBeImplementedByRpc
 	searcher     proto.SearchServer
-	userManager  *micros_auth.UserManager
-	authFrontend *micros_auth.Auth
+	userManager  *auth.UserManager
+	authFrontend *auth.Auth
 
 	templates        *utils.TemplateLoader
 	specialMux       *http.ServeMux
 	incViewDebouncer *_IncViewDebouncer
 }
 
-func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, userManager *micros_auth.UserManager, authFrontend *micros_auth.Auth) *Theme {
+func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, userManager *auth.UserManager, authFrontend *auth.Auth) *Theme {
 	var rootFS, tmplFS fs.FS
 
 	if devMode {

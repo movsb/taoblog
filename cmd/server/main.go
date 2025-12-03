@@ -36,7 +36,9 @@ import (
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
-	micros_auth "github.com/movsb/taoblog/service/micros/auth"
+	"github.com/movsb/taoblog/service/micros/auth"
+	"github.com/movsb/taoblog/service/micros/auth/client_login"
+	"github.com/movsb/taoblog/service/micros/auth/passkeys"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	micros_utils "github.com/movsb/taoblog/service/micros/utils"
 	"github.com/movsb/taoblog/service/models"
@@ -84,9 +86,9 @@ type Server struct {
 
 	configOverride func(cfg *config.Config)
 
-	authFrontend       *micros_auth.Auth
-	userManager        *micros_auth.UserManager
-	clientLoginService *micros_auth.ClientLoginService
+	authFrontend       *auth.Auth
+	userManager        *auth.UserManager
+	clientLoginService *client_login.ClientLoginService
 
 	// 由于是先启动 grpc 才会提供给各服务注册，所以中间件这里
 	// 暂时拿不到底层的 auth 接口，真正启动 grpc 时才设置。
@@ -125,13 +127,13 @@ func (s *Server) GRPCAddr() string {
 	return s.grpcAddr
 }
 
-func (s *Server) Auth() *micros_auth.UserManager {
+func (s *Server) Auth() *auth.UserManager {
 	if s.userManager == nil {
 		panic(`auth service is not created`)
 	}
 	return s.userManager
 }
-func (s *Server) AuthFrontend() *micros_auth.Auth {
+func (s *Server) AuthFrontend() *auth.Auth {
 	if s.authFrontend == nil {
 		panic(`auth frontend is empty`)
 	}
@@ -479,11 +481,11 @@ func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr 
 }
 
 func (s *Server) createAuthServices(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar, db *taorm.DB) {
-	s.clientLoginService = micros_auth.NewClientLoginService(ctx, sr, cfg.Site.GetHome)
-	s.userManager = micros_auth.NewUsersService(ctx, db, sr)
-	s.authFrontend = micros_auth.NewAuth(db, cfg.Site.GetHome, cfg.Site.GetName, s.userManager)
+	s.clientLoginService = client_login.NewClientLoginService(ctx, sr, cfg.Site.GetHome)
+	s.userManager = auth.NewUsersService(ctx, db, sr)
+	s.authFrontend = auth.NewAuth(db, cfg.Site.GetHome, cfg.Site.GetName, s.userManager)
 	s.authMiddleware.SetAuth(s.authFrontend)
-	micros_auth.NewPasskeysService(ctx, sr, s.authFrontend.GetWA, s.authFrontend.GenCookieForPasskeys)
+	passkeys.NewPasskeysService(ctx, sr, s.authFrontend.GetWA, s.authFrontend.GenCookieForPasskeys)
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {

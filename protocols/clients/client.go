@@ -10,9 +10,9 @@ import (
 
 	"github.com/movsb/http2tcp"
 	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
-	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"

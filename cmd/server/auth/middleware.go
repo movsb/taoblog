@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/movsb/taoblog/modules/auth/cookies"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

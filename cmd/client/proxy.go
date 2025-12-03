@@ -8,8 +8,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 )
 
 func proxy(ctx context.Context, listen string, home, token string) {
