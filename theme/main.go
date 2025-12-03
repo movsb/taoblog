@@ -13,12 +13,13 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/blog"
 	"github.com/movsb/taoblog/theme/data"
@@ -42,17 +43,18 @@ type Theme struct {
 
 	// NOTE：这是进程内直接调用的。
 	// 如果改成连接，需要考虑 metadata 转发问题。
-	service  proto.TaoBlogServer
-	impl     service.ToBeImplementedByRpc
-	searcher proto.SearchServer
-	auth     *auth.Auth
+	service      proto.TaoBlogServer
+	impl         service.ToBeImplementedByRpc
+	searcher     proto.SearchServer
+	userManager  *micros_auth.UserManager
+	authFrontend *micros_auth.Auth
 
 	templates        *utils.TemplateLoader
 	specialMux       *http.ServeMux
 	incViewDebouncer *_IncViewDebouncer
 }
 
-func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, auth *auth.Auth) *Theme {
+func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, searcher proto.SearchServer, userManager *micros_auth.UserManager, authFrontend *micros_auth.Auth) *Theme {
 	var rootFS, tmplFS fs.FS
 
 	if devMode {
@@ -73,11 +75,12 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 		tmplFS: tmplFS,
 		merged: &Merged{root: rootFS},
 
-		cfg:      cfg,
-		service:  service,
-		impl:     impl,
-		searcher: searcher,
-		auth:     auth,
+		cfg:          cfg,
+		service:      service,
+		impl:         impl,
+		searcher:     searcher,
+		userManager:  userManager,
+		authFrontend: authFrontend,
 
 		specialMux: http.NewServeMux(),
 	}
@@ -160,7 +163,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusForbidden)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Context: req.Context(),
-					User:    auth.Context(req.Context()).User,
+					User:    user.Context(req.Context()).User,
 					Data: &data.ErrorData{
 						Message: "你无权查看此内容：" + st.Message(),
 					},
@@ -170,7 +173,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 				w.WriteHeader(http.StatusNotFound)
 				t.executeTemplate(`error.html`, w, &data.Data{
 					Context: req.Context(),
-					User:    auth.Context(req.Context()).User,
+					User:    user.Context(req.Context()).User,
 					Data: &data.ErrorData{
 						Message: `你查看的内容不存在。`,
 					},
@@ -182,7 +185,7 @@ func (t *Theme) Exception(w http.ResponseWriter, req *http.Request, e any) bool 
 			w.WriteHeader(http.StatusNotFound)
 			t.executeTemplate(`error.html`, w, &data.Data{
 				Context: req.Context(),
-				User:    auth.Context(req.Context()).User,
+				User:    user.Context(req.Context()).User,
 				Data: &data.ErrorData{
 					Message: `你查看的内容不存在。`,
 				},
@@ -214,7 +217,7 @@ func (t *Theme) lastPostTime304HandlerFunc(h http.HandlerFunc) http.Handler {
 func (t *Theme) lastPostTime304Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		info := utils.Must1(t.service.GetInfo(r.Context(), &proto.GetInfoRequest{}))
-		ac := auth.Context(r.Context())
+		ac := user.Context(r.Context())
 		h3 := handle304.New(nil,
 			handle304.WithNotModified(time.Unix(int64(info.LastPostedAt), 0)),
 			handle304.WithEntityTag(version.GitCommit, dynamic.Mod, info.LastPostedAt, ac.User.ID),
@@ -241,7 +244,7 @@ func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (t *Theme) post304Handler(w http.ResponseWriter, r *http.Request, p *proto.Post) (handle304.BundleHandler, bool) {
-	ac := auth.Context(r.Context())
+	ac := user.Context(r.Context())
 	h3 := handle304.New(nil,
 		handle304.WithNotModified(time.Unix(int64(p.Modified), 0)),
 		handle304.WithEntityTag(version.GitCommit, dynamic.Mod, p.Modified, p.LastCommentedAt, ac.User.ID),

@@ -5,7 +5,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/geo"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
@@ -85,7 +85,7 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 func (u *Utils) ResolveGeoLocation(ctx context.Context, in *proto.ResolveGeoLocationRequest) (_ *proto.ResolveGeoLocationResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	auth.MustNotBeGuest(ctx)
+	user.MustNotBeGuest(ctx)
 
 	if u.geoLocationResolver == nil {
 		panic(status.Errorf(codes.Unavailable, `未初始化。`))

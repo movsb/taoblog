@@ -22,13 +22,14 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
+	server_auth "github.com/movsb/taoblog/cmd/server/auth"
 	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
 	"github.com/movsb/taoblog/cmd/server/tasks/git_repo"
 	"github.com/movsb/taoblog/cmd/server/tasks/sync_files"
 	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/backups"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/utils"
@@ -83,7 +84,14 @@ type Server struct {
 
 	configOverride func(cfg *config.Config)
 
-	auth    *auth.Auth
+	authFrontend       *micros_auth.Auth
+	userManager        *micros_auth.UserManager
+	clientLoginService *micros_auth.ClientLoginService
+
+	// 由于是先启动 grpc 才会提供给各服务注册，所以中间件这里
+	// 暂时拿不到底层的 auth 接口，真正启动 grpc 时才设置。
+	authMiddleware *server_auth.Middleware
+
 	main    *service.Service
 	gateway *gateway.Gateway
 	rss     *rss.RSS
@@ -117,11 +125,17 @@ func (s *Server) GRPCAddr() string {
 	return s.grpcAddr
 }
 
-func (s *Server) Auth() *auth.Auth {
-	if s.auth == nil {
+func (s *Server) Auth() *micros_auth.UserManager {
+	if s.userManager == nil {
 		panic(`auth service is not created`)
 	}
-	return s.auth
+	return s.userManager
+}
+func (s *Server) AuthFrontend() *micros_auth.Auth {
+	if s.authFrontend == nil {
+		panic(`auth frontend is empty`)
+	}
+	return s.authFrontend
 }
 func (s *Server) Main() *service.Service {
 	if s.main == nil {
@@ -158,16 +172,14 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	log.Println(`Time.Now:`, time.Now().Format(time.RFC3339))
 	log.Println(`Home:`, cfg.Site.GetHome())
 
-	var mux = http.NewServeMux()
+	s.authMiddleware = server_auth.NewMiddleware()
 
-	theAuth := auth.New(postsDB, cfg.Site.GetHome, cfg.Site.GetName)
-	s.auth = theAuth
-
+	mux := http.NewServeMux()
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
 	s.createUtilsService(ctx, cfg, serviceRegistrar)
 	s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
-	s.createClientLoginService(ctx, cfg, serviceRegistrar)
+	s.createAuthServices(ctx, cfg, serviceRegistrar, postsDB)
 
 	fileCache := cache.NewFileCache(ctx, cacheDB)
 	s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, cancel, filesStore, fileCache, rc, mux)
@@ -186,7 +198,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}
 
 	s.createGateway(ctx, mux, fileCache)
-	s.createAdmin(ctx, cfg, s.Main(), theAuth, mux)
+	s.createAdmin(ctx, cfg, s.Main(), mux)
 	s.createTheme(ctx, cfg, mux)
 
 	s.serveHTTP(ctx, cfg.Server.HTTPListen, mux)
@@ -328,7 +340,7 @@ func (s *Server) initDatabases(ctx context.Context, cfg *config.Config) (
 
 func (s *Server) initRSS() {
 	client := clients.NewFromAddress(s.GRPCAddr(), ``)
-	rss := rss.New(s.auth, client,
+	rss := rss.New(client,
 		rss.WithArticleCount(10),
 		rss.WithCurrentLocationGetter(s.Main()),
 	)
@@ -337,34 +349,35 @@ func (s *Server) initRSS() {
 }
 
 func (s *Server) createGateway(ctx context.Context, mux *http.ServeMux, fileCache *cache.FileCache) {
-	s.gateway = gateway.NewGateway(s.grpcAddr, s.Main(), s.Auth(), mux, s.notifyServer)
+	s.gateway = gateway.NewGateway(s.grpcAddr, s.Main(), mux, s.notifyServer)
 	s.gateway.SetFavicon(s.Main().Favicon())
 	s.gateway.SetDynamic(s.Main().DropAllPostAndCommentCache)
 	s.gateway.SetAvatar(ctx, fileCache, s.Main().ResolveAvatar)
 }
 
-func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService *service.Service, theAuth *auth.Auth, mux *http.ServeMux) {
+func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService *service.Service, mux *http.ServeMux) {
 	prefix := `/admin/`
 
 	a := admin.NewAdmin(
-		version.DevMode(),
-		s.gateway, theService, theService, theAuth,
+		s.gateway, theService, theService, s.Auth(),
+		s.authFrontend, s.clientLoginService,
 		prefix, cfg.Site.GetHome, cfg.Site.GetName,
 		admin.WithCustomThemes(&cfg.Theme),
+		admin.WithWebAuthnHandler(s.authFrontend.GetWebAuthnHandler()),
 	)
 
 	mux.Handle(prefix, a.Handler())
 }
 
 func (s *Server) createTheme(ctx context.Context, cfg *config.Config, mux *http.ServeMux) {
-	theme := theme.New(ctx, version.DevMode(), cfg, s.Main(), s.Main(), s.Main(), s.Auth())
+	theme := theme.New(ctx, version.DevMode(), cfg, s.Main(), s.Main(), s.Main(), s.Auth(), s.authFrontend)
 	canon := canonical.New(theme, s.Main())
 	mux.Handle(`/`, canon)
 }
 
 func (s *Server) sendNotify(title, message string) {
 	s.notifyServer.SendInstant(
-		auth.SystemForLocal(context.Background()),
+		user.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
 			Title: title,
 			Body:  message,
@@ -376,8 +389,8 @@ func (s *Server) createBackupTasks(
 	ctx context.Context,
 	cfg *config.Config,
 ) {
-	client := clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue())
-	ctx = auth.SystemForGateway(ctx)
+	client := clients.NewFromAddress(s.GRPCAddr(), user.SystemTokenValue())
+	ctx = user.SystemForGateway(ctx)
 	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled && !version.DevMode() {
 		b := utils.Must1(backups.New(
 			ctx, s.main.GetPluginStorage(`backups.r2`), client,
@@ -409,7 +422,7 @@ func (s *Server) createBackupTasks(
 			}
 			if len(messages) > 0 {
 				s.notifyServer.SendInstant(
-					auth.SystemForLocal(context.Background()),
+					user.SystemForLocal(context.Background()),
 					&proto.SendInstantRequest{
 						Title: `文章和附件备份`,
 						Body:  strings.Join(messages, "\n"),
@@ -450,7 +463,7 @@ func (s *Server) createMainServices(
 		service.WithFileCache(fileCache),
 	}
 
-	s.main = service.New(ctx, sr, cfg, db, rc, s.Auth(), mux, serviceOptions...)
+	s.main = service.New(ctx, sr, cfg, db, rc, mux, s.Auth(), serviceOptions...)
 }
 
 func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar) {
@@ -465,9 +478,12 @@ func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr 
 	micros_utils.New(ctx, sr, options...)
 }
 
-func (s *Server) createClientLoginService(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar) {
-	cs := micros_auth.NewClientLoginService(ctx, sr, cfg.Site.GetHome)
-	s.Auth().TmpClientLoginService = cs
+func (s *Server) createAuthServices(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar, db *taorm.DB) {
+	s.clientLoginService = micros_auth.NewClientLoginService(ctx, sr, cfg.Site.GetHome)
+	s.userManager = micros_auth.NewUsersService(ctx, db, sr)
+	s.authFrontend = micros_auth.NewAuth(db, cfg.Site.GetHome, cfg.Site.GetName, s.userManager)
+	s.authMiddleware.SetAuth(s.authFrontend)
+	micros_auth.NewPasskeysService(ctx, sr, s.authFrontend.GetWA, s.authFrontend.GenCookieForPasskeys)
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {
@@ -494,7 +510,7 @@ func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *con
 			case <-time.After(time.Minute * 10):
 				store := logs.NewLogStore(db)
 				if c := store.CountStaleLogs(time.Minute * 10); c > 0 {
-					n.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
+					n.SendInstant(user.SystemForLocal(ctx), &proto.SendInstantRequest{
 						Title:       `有堆积的日志未处理`,
 						Body:        fmt.Sprintf(`条数：%d`, c),
 						Immediately: true,
@@ -514,8 +530,8 @@ func (s *Server) serveGRPC(ctx context.Context) (func(), grpc.ServiceRegistrar) 
 		grpc.MaxSendMsgSize(100<<20),
 		grpc_middleware.WithUnaryServerChain(
 			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
-			s.auth.UserFromGatewayUnaryInterceptor(),
-			s.auth.UserFromClientTokenUnaryInterceptor(),
+			s.authMiddleware.UserFromGatewayUnaryInterceptor(),
+			s.authMiddleware.UserFromClientTokenUnaryInterceptor(),
 			func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 				if s.throttlerEnabled.Load() && s.throttler != nil {
 					return s.throttler(ctx, req, info, handler)
@@ -526,8 +542,8 @@ func (s *Server) serveGRPC(ctx context.Context) (func(), grpc.ServiceRegistrar) 
 		),
 		grpc_middleware.WithStreamServerChain(
 			grpc_recovery.StreamServerInterceptor(grpc_recovery.WithRecoveryHandler(exceptionRecoveryHandler)),
-			s.auth.UserFromGatewayStreamInterceptor(),
-			s.auth.UserFromClientTokenStreamInterceptor(),
+			s.authMiddleware.UserFromGatewayStreamInterceptor(),
+			s.authMiddleware.UserFromClientTokenStreamInterceptor(),
 			grpcLoggerStream,
 		),
 	)
@@ -572,10 +588,10 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 			//
 			// 但是，gateway 虽然有了 auth context，但是如果使用的是 grpc-client，
 			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
-			s.auth.UserFromCookieHandler,
+			s.authMiddleware.UserFromCookieHandler,
 			logs.NewRequestLoggerHandler(`access.log`),
 			s.main.MaintenanceMode().Handler(func(ctx context.Context) bool {
-				return auth.Context(ctx).User.IsAdmin()
+				return user.Context(ctx).User.IsAdmin()
 			}),
 		),
 	}
@@ -645,7 +661,7 @@ func grpcLogger(ctx context.Context, method string) {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		log.Println(md)
 	}
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	log.Println(method, ac.UserAgent)
 }
 
@@ -659,7 +675,7 @@ func liveCheck(ctx context.Context, s *Server, svc *service.Service) {
 	for range t.C {
 		for !func() bool {
 			now := time.Now()
-			svc.GetPost(auth.SystemForLocal(context.TODO()), &proto.GetPostRequest{Id: 1})
+			svc.GetPost(user.SystemForLocal(context.TODO()), &proto.GetPostRequest{Id: 1})
 			if elapsed := time.Since(now); elapsed > time.Second*10 {
 				svc.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
 				log.Println(`服务接口响应非常慢了。`)
@@ -745,7 +761,7 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 
 	if s.initGitSyncTask {
 		go git_repo.Sync(ctx,
-			clients.NewFromAddress(s.GRPCAddr(), auth.SystemTokenValue()),
+			clients.NewFromAddress(s.GRPCAddr(), user.SystemTokenValue()),
 			s.notifyServer, s.main.SetLastSyncAt,
 		)
 	}

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/blugelabs/bluge/search/highlight"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/search"
@@ -88,7 +88,7 @@ func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 
 func (s *Service) reIndex(ctx context.Context, engine *search.Engine, lastCheck *int64) {
 	now := time.Now()
-	rsp, err := s.ListPosts(auth.SystemForLocal(ctx), &proto.ListPostsRequest{
+	rsp, err := s.ListPosts(user.SystemForLocal(ctx), &proto.ListPostsRequest{
 		GetPostOptions: &proto.GetPostOptions{
 			ContentOptions: co.For(co.SearchIndex),
 			WithLink:       proto.LinkKind_LinkKindRooted,

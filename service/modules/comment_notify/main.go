@@ -9,7 +9,7 @@ import (
 	"log"
 	text_template "text/template"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -116,7 +116,7 @@ func (cn *CommentNotifier) NotifyGuests(data *Data, recipients []Recipient) {
 
 func (cn *CommentNotifier) sendNotify(subject, body string, token string) {
 	cn.notifier.SendInstant(
-		auth.SystemForLocal(context.Background()),
+		user.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
 			Title:     subject,
 			Body:      body,
@@ -127,7 +127,7 @@ func (cn *CommentNotifier) sendNotify(subject, body string, token string) {
 
 func (cn *CommentNotifier) sendEmail(subject, body string, name, address string) {
 	cn.notifier.SendEmail(
-		auth.SystemForLocal(context.Background()),
+		user.SystemForLocal(context.Background()),
 		&proto.SendEmailRequest{
 			Subject:  subject,
 			Body:     body,

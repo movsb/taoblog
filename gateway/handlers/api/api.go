@@ -42,7 +42,7 @@ func New(ctx context.Context, client *clients.ProtoClient, before, after func(mu
 	utils.Must(proto.RegisterTaoBlogHandlerClient(ctx, mux, client.Blog))
 	utils.Must(proto.RegisterSearchHandlerClient(ctx, mux, client.Search))
 	utils.Must(proto.RegisterNotifyHandlerClient(ctx, mux, client.Notify))
-	utils.Must(proto.RegisterAuthHandlerClient(ctx, mux, client.Auth))
+	utils.Must(proto.RegisterUsersHandlerClient(ctx, mux, client.Users))
 	utils.Must(proto.RegisterManagementHandlerClient(ctx, mux, client.Management))
 
 	if after != nil {

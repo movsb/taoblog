@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -20,13 +20,13 @@ const TweetName = `碎碎念`
 func NewDataForTweets(ctx context.Context, svc proto.TaoBlogServer) *Data {
 	d := &Data{
 		Context: ctx,
-		User:    auth.Context(ctx).User,
+		User:    user.Context(ctx).User,
 		svc:     svc,
 	}
 
 	d.Meta.Title = d.TweetName()
 
-	user := auth.Context(ctx).User
+	user := user.Context(ctx).User
 	ownership := utils.IIF(user.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
 
 	posts, err := svc.ListPosts(ctx,

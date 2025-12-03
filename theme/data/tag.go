@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/service"
 )
 
@@ -17,7 +17,7 @@ type TagData struct {
 func NewDataForTag(ctx context.Context, service service.ToBeImplementedByRpc, tags []string) *Data {
 	d := &Data{
 		Context: ctx,
-		User:    auth.Context(ctx).User,
+		User:    user.Context(ctx).User,
 	}
 	td := &TagData{
 		Names: tags,

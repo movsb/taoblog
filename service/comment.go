@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -26,7 +26,7 @@ import (
 )
 
 func (s *Service) getCommentContentCached(ctx context.Context, id int64, sourceType, source string, postID int64, co *proto.PostContentOptions) (string, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	key := _PostContentCacheKey{
 		ID:      id,
 		Options: co.String(),
@@ -61,7 +61,7 @@ func (s *Service) deleteCommentContentCacheFor(id int64) {
 
 func (s *Service) UserAvatarEphemeral(ctx context.Context, uid int, email string) uint32 {
 	if uid > 0 {
-		user, err := s.auth.GetUserByID(ctx, int64(uid))
+		user, err := s.userManager.GetUserByID(ctx, uid)
 		if err == nil {
 			if len(user.Avatar.Data) > 0 {
 				return s.avatarCache.User(int(user.ID))
@@ -77,7 +77,7 @@ func (s *Service) UserAvatarEphemeral(ctx context.Context, uid int, email string
 }
 
 func (s *Service) setCommentExtraFields(ctx context.Context, co *proto.PostContentOptions) func(c *proto.Comment) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	if co == nil {
 		co = &proto.PostContentOptions{}
@@ -154,7 +154,7 @@ func in5min(t int32) bool {
 // NOTE：带上时间戳，防止异地多次更新的冲突（太严格了吧！）
 // NOTE：带节流。
 func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentRequest) (*proto.Comment, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	cmtOld := s.getComment2(req.Comment.Id)
 
 	// 1. 同 IP 的游客五分钟内允许
@@ -237,7 +237,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 //
 // TODO：清理数据库的脏数据（有一部分 parent 评论已经不存在）。
 func (s *Service) DeleteComment(ctx context.Context, in *proto.DeleteCommentRequest) (*proto.DeleteCommentResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	// 点击“删除”的评论。
 	cmt := s.getComment2(int64(in.Id))
@@ -273,7 +273,7 @@ func (s *Service) DeleteComment(ctx context.Context, in *proto.DeleteCommentRequ
 }
 
 func (s *Service) ListComments(ctx context.Context, in *proto.ListCommentsRequest) (*proto.ListCommentsResponse, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	if in.Limit <= 0 || in.Limit > 100 {
 		panic(status.Errorf(codes.InvalidArgument, `limit out of range`))
@@ -375,7 +375,7 @@ const (
 // NOTE: 默认的 modified 修改时间为 0，表示从未被修改过。
 // NOTE: 带节流。
 func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.Comment, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	// 尽早查询地理信息
 	s.cmtgeo.Get(ac.RemoteAddr.String())
@@ -507,7 +507,7 @@ func (s *Service) updateCommentsCount() {
 // SetCommentPostID 把某条顶级评论及其子评论转移到另一篇文章下
 // TODO：禁止转移内容中引用了当前文章资源的评论，或者处理这个问题。
 func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPostIDRequest) (*proto.SetCommentPostIDResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(txs *Service) error {
 		cmt := txs.getComment2(in.Id)
@@ -538,7 +538,7 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPost
 }
 
 func (s *Service) PreviewComment(ctx context.Context, in *proto.PreviewCommentRequest) (*proto.PreviewCommentResponse, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	content, err := s.renderMarkdown(ctx, ac.User.IsAdmin(), int64(in.PostId), 0, `markdown`, in.Markdown, models.PostMeta{}, co.For(co.PreviewComment), s.isPostPublic(ctx, int(in.PostId)))
 	return &proto.PreviewCommentResponse{Html: content}, err
 }
@@ -642,7 +642,7 @@ func (t *_CommentNotificationTask) getNewComment() (*models.Comment, error) {
 }
 
 func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
-	post, err := t.s.GetPost(auth.SystemForLocal(context.Background()), &proto.GetPostRequest{
+	post, err := t.s.GetPost(user.SystemForLocal(context.Background()), &proto.GetPostRequest{
 		Id: int32(c.PostID),
 		GetPostOptions: &proto.GetPostOptions{
 			WithLink:       proto.LinkKind_LinkKindFull,
@@ -653,7 +653,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 		return err
 	}
 
-	pu, err := t.s.auth.GetUserByID(context.TODO(), int64(post.UserId))
+	pu, err := t.s.userManager.GetUserByID(context.TODO(), int(post.UserId))
 	if err != nil {
 		log.Println(`获取文章作者失败：`, err)
 		return err
@@ -709,7 +709,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 	distinct := map[string]bool{}
 	recipients := []comment_notify.Recipient{}
 	for _, parent := range parents {
-		if parent.UserID == int32(auth.AdminID) {
+		if parent.UserID == int32(user.AdminID) {
 			continue
 		}
 		if parent.UserID == post.UserId {
@@ -734,7 +734,7 @@ func (t *_CommentNotificationTask) queueForSingle(c *models.Comment) error {
 		email := parent.Email
 		// 而如果是登录用户，则优先使用配置的邮箱/即时通知。
 		if parent.UserID > 0 {
-			parentUser, err := t.s.auth.GetUserByID(context.TODO(), int64(parent.UserID))
+			parentUser, err := t.s.userManager.GetUserByID(context.TODO(), int(parent.UserID))
 			if err == nil {
 				email = parentUser.Email
 				r.BarkToken = parentUser.BarkToken
@@ -799,7 +799,7 @@ func (s *Service) ResolveAvatar(id uint32) (string, time.Time, io.ReadSeekCloser
 	if email != `` {
 		return email, time.Time{}, nil
 	}
-	user, err := s.auth.GetUserByID(context.Background(), int64(userID))
+	user, err := s.userManager.GetUserByID(context.Background(), int(userID))
 	if err != nil || len(user.Avatar.Data) <= 0 {
 		return ``, time.Time{}, nil
 	}

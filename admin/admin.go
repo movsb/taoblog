@@ -21,13 +21,15 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/auth/cookies"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
+	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/theme/modules/handle304"
 	"github.com/pquerna/otp"
@@ -61,7 +63,6 @@ type Admin struct {
 	tmplFS fs.FS
 
 	prefix string
-	auth   *auth.Auth
 
 	canGoogle atomic.Bool
 
@@ -77,9 +78,14 @@ type Admin struct {
 
 	getName func() string
 	getHome func() string
+
+	webAuthnHandler http.Handler
+	userManager     *micros_auth.UserManager
+	authFrontend    *micros_auth.Auth
+	clientLogin     *micros_auth.ClientLoginService
 }
 
-func NewAdmin(devMode bool, gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, auth1 *auth.Auth, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
+func NewAdmin(gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, userManager *micros_auth.UserManager, authFrontend *micros_auth.Auth, clientLogin *micros_auth.ClientLoginService, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
@@ -87,7 +93,7 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, management proto.Managemen
 	var rootFS fs.FS
 	var tmplFS fs.FS
 
-	if devMode {
+	if version.DevMode() {
 		dir := dir.SourceRelativeDir()
 		rootFS = os.DirFS(dir.Join(`statics`))
 		tmplFS = utils.NewOSDirFS(dir.Join(`templates`))
@@ -97,14 +103,17 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, management proto.Managemen
 	}
 
 	a := &Admin{
-		rootFS:     rootFS,
-		tmplFS:     tmplFS,
-		management: management,
-		svc:        svc,
-		gateway:    gateway,
-		prefix:     prefix,
-		auth:       auth1,
-		getName:    getName,
+		rootFS:  rootFS,
+		tmplFS:  tmplFS,
+		svc:     svc,
+		gateway: gateway,
+		prefix:  prefix,
+		getName: getName,
+
+		userManager:  userManager,
+		management:   management,
+		authFrontend: authFrontend,
+		clientLogin:  clientLogin,
 	}
 
 	for _, opt := range options {
@@ -122,7 +131,11 @@ func NewAdmin(devMode bool, gateway *gateway.Gateway, management proto.Managemen
 }
 
 func (a *Admin) handleWebAuthn(w http.ResponseWriter, r *http.Request) {
-	a.auth.GetWebAuthnHandler().ServeHTTP(w, r)
+	if a.webAuthnHandler != nil {
+		a.webAuthnHandler.ServeHTTP(w, r)
+		return
+	}
+	http.NotFound(w, r)
 }
 
 // 下面的网址在中国已经能访问，不能再用它来判断是否可以访问 Google 主站。
@@ -198,7 +211,7 @@ func (a *Admin) redirectToLogin(w http.ResponseWriter, r *http.Request, to strin
 
 func (a *Admin) requireLogin(h http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !auth.Context(r.Context()).User.IsGuest() {
+		if !user.Context(r.Context()).User.IsGuest() {
 			w.Header().Add(`Cache-Control`, `no-store`)
 			h.ServeHTTP(w, r)
 			return
@@ -235,7 +248,7 @@ func (a *Admin) executeTemplate(w io.Writer, name string, data any) {
 }
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
-	if !auth.Context(r.Context()).User.IsGuest() {
+	if !user.Context(r.Context()).User.IsGuest() {
 		to := a.prefixed(`/profile`)
 		if u := r.URL.Query().Get(`u`); u != "" {
 			to = u
@@ -265,7 +278,7 @@ func (a *Admin) postLogout(w http.ResponseWriter, r *http.Request) {
 
 type ConfigData struct {
 	Name string
-	User *auth.User
+	User *user.User
 
 	IconSize int
 
@@ -277,7 +290,7 @@ func (c ConfigData) IconDataURL() template.URL {
 }
 
 func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
-	ac := auth.MustBeAdmin(r.Context())
+	ac := user.MustBeAdmin(r.Context())
 	d := &ConfigData{
 		Name:       a.getName(),
 		User:       ac.User,
@@ -290,7 +303,7 @@ func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
 type ProfileData struct {
 	a    *Admin
 	Name string
-	User *auth.User
+	User *user.User
 
 	CalendarURL string
 }
@@ -313,7 +326,7 @@ func (a *Admin) getProfile(w http.ResponseWriter, r *http.Request) {
 	d := &ProfileData{
 		a:           a,
 		Name:        a.getName(),
-		User:        auth.Context(r.Context()).User,
+		User:        user.Context(r.Context()).User,
 		CalendarURL: settings.CalendarUrl,
 	}
 	a.executeTemplate(w, `profile.html`, &d)
@@ -331,7 +344,7 @@ func (a *Admin) getReorder(w http.ResponseWriter, r *http.Request) {
 }
 
 type OTPData struct {
-	User *auth.User
+	User *user.User
 
 	Prompt bool
 
@@ -344,7 +357,7 @@ type OTPData struct {
 }
 
 func (a *Admin) getOTP(w http.ResponseWriter, r *http.Request) {
-	ac := auth.MustNotBeGuest(r.Context())
+	ac := user.MustNotBeGuest(r.Context())
 
 	isPrompt := r.URL.Query().Get(`prompt`) == `1`
 	if isPrompt {
@@ -389,7 +402,7 @@ func (a *Admin) getOTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) postOTP(w http.ResponseWriter, r *http.Request) {
-	ac := auth.MustNotBeGuest(r.Context())
+	ac := user.MustNotBeGuest(r.Context())
 
 	isValidate := r.URL.Query().Get(`validate`) == `1`
 	if isValidate {
@@ -415,7 +428,7 @@ func (a *Admin) postOTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		a.auth.SetUserOTPSecret(ac.User, key.Secret())
+		a.userManager.SetUserOTPSecret(ac.User, key.Secret())
 
 		d := OTPData{
 			Validate: true,
@@ -434,7 +447,7 @@ type NotifyData struct {
 }
 
 func (a *Admin) getNotify(w http.ResponseWriter, r *http.Request) {
-	ac := auth.MustNotBeGuest(r.Context())
+	ac := user.MustNotBeGuest(r.Context())
 
 	d := NotifyData{
 		Email:     ac.User.Email,
@@ -445,14 +458,14 @@ func (a *Admin) getNotify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) postNotify(w http.ResponseWriter, r *http.Request) {
-	ac := auth.MustNotBeGuest(r.Context())
+	ac := user.MustNotBeGuest(r.Context())
 
 	var (
 		email     = r.PostFormValue(`email`)
 		barkToken = r.PostFormValue(`bark_token`)
 	)
 
-	utils.Must1(a.auth.Passkeys().UpdateUser(
+	utils.Must1(a.userManager.UpdateUser(
 		r.Context(),
 		&proto.UpdateUserRequest{
 			User: &proto.User{
@@ -474,7 +487,7 @@ type CategoryData struct {
 }
 
 func (a *Admin) getCategory(w http.ResponseWriter, r *http.Request) {
-	ac := auth.MustNotBeGuest(r.Context())
+	ac := user.MustNotBeGuest(r.Context())
 	_ = ac
 
 	d := CategoryData{
@@ -486,13 +499,13 @@ func (a *Admin) getCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 type EditorData struct {
-	User *auth.User
+	User *user.User
 	Post *proto.Post
 	Cats []*proto.Category
 }
 
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
-	ac := auth.Context(r.Context())
+	ac := user.Context(r.Context())
 
 	if isNew := r.URL.Query().Get(`new`) == `1`; isNew {
 		ty := `markdown`
@@ -547,7 +560,7 @@ type DraftsData struct {
 }
 
 func (a *Admin) getDrafts(w http.ResponseWriter, r *http.Request) {
-	auth.MustNotBeGuest(r.Context())
+	user.MustNotBeGuest(r.Context())
 
 	d := DraftsData{
 		Posts: utils.Must1(a.svc.ListPosts(r.Context(), &proto.ListPostsRequest{

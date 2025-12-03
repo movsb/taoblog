@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -31,8 +31,7 @@ import (
 func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	// TODO 如果是评论，允许用户上传文件。
-	auth.MustNotBeGuest(srv.Context())
+	user.MustNotBeGuest(srv.Context())
 
 	initialized := false
 
@@ -139,7 +138,7 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr erro
 func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRequest) (_ *proto.DeletePostFileResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
 	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		panic(noPerm)
@@ -159,7 +158,7 @@ func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRe
 func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCaptionRequest) (_ *proto.UpdateFileCaptionResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
 	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		panic(noPerm)
@@ -181,10 +180,12 @@ func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCap
 	return &proto.UpdateFileCaptionResponse{}, nil
 }
 
+const noPerm = `此操作无权限。`
+
 func (s *Service) ListPostFiles(ctx context.Context, in *proto.ListPostFilesRequest) (_ *proto.ListPostFilesResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
 	if !(ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		return nil, status.Error(codes.PermissionDenied, noPerm)
@@ -242,7 +243,7 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 
 	// 此处鉴权。
 	// 不调用 GetPost，并发多图片下性能不好。
-	ac := auth.Context(r.Context())
+	ac := user.Context(r.Context())
 	switch {
 	// 系统有所有权限
 	case ac.User.IsSystem():
@@ -329,7 +330,7 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *models.Post, f
 		return nil
 	}
 
-	ac := auth.Context(r.Context())
+	ac := user.Context(r.Context())
 
 	const ttl = time.Hour * 24
 

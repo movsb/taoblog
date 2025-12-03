@@ -9,7 +9,7 @@ import (
 
 	"github.com/blugelabs/bluge"
 	"github.com/blugelabs/bluge/search"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
@@ -141,7 +141,7 @@ func (e *Engine) SearchPosts(ctx context.Context, search string) (posts []*Searc
 	matchContent.SetField(`source`)
 	query.AddShould(matchContent)
 
-	user := auth.Context(ctx).User
+	user := user.Context(ctx).User
 	if user.IsGuest() {
 		matchStatus := bluge.NewTermQuery(`public`)
 		matchStatus.SetField(`status`)

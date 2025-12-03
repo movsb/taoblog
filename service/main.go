@@ -13,11 +13,12 @@ import (
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway/handlers/favicon"
 	"github.com/movsb/taoblog/gateway/handlers/roots"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/crypto"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/calendar"
@@ -38,8 +39,6 @@ import (
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type ToBeImplementedByRpc interface {
@@ -87,12 +86,13 @@ type Service struct {
 	// 防止每个请求总是生成不同的 URL。
 	fileURLs *lru.LRUCache[_FileURLCacheKey, *_FileURLCacheValue]
 
-	db   *sql.DB
-	tdb  *taorm.DB
-	auth *auth.Auth
-	mux  *http.ServeMux
+	db  *sql.DB
+	tdb *taorm.DB
+	mux *http.ServeMux
 
-	notifier      proto.NotifyServer
+	notifier    proto.NotifyServer
+	userManager *micros_auth.UserManager
+
 	cmtntf        *comment_notify.CommentNotifier
 	cmtNotifyTask *_CommentNotificationTask
 	cmtgeo        *commentgeo.Task
@@ -159,7 +159,6 @@ type Service struct {
 	postsStorageSize atomic.Int64
 	filesStorageSize atomic.Int64
 
-	proto.AuthServer
 	proto.TaoBlogServer
 	proto.ManagementServer
 	proto.SearchServer
@@ -169,15 +168,14 @@ func (s *Service) Favicon() *favicon.Favicon {
 	return s.favicon
 }
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *taorm.DB, rc *runtime_config.Runtime, auther *auth.Auth, mux *http.ServeMux, options ...With) *Service {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *taorm.DB, rc *runtime_config.Runtime, mux *http.ServeMux, userManager *micros_auth.UserManager, options ...With) *Service {
 	s := &Service{
 		ctx: ctx,
 
 		getHome: cfg.Site.GetHome,
 
-		AuthServer: auther.Passkeys(),
-
-		notifier: &proto.UnimplementedNotifyServer{},
+		userManager: userManager,
+		notifier:    &proto.UnimplementedNotifyServer{},
 
 		cfg:        cfg,
 		runtime:    rc,
@@ -186,10 +184,9 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		// TODO 可配置使用的时区，而不是使用服务器当前时间或者硬编码成+8时区。
 		timeLocation: time.Now().Location(),
 
-		db:   db.Underlying(),
-		tdb:  db,
-		auth: auther,
-		mux:  mux,
+		db:  db.Underlying(),
+		tdb: db,
+		mux: mux,
 
 		cache:     lru.NewTTLCache[string, any](10240),
 		fileCache: cache.NewFileCache(ctx, taorm.NewDB(migration.InitCache(``))),
@@ -282,7 +279,6 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 
 	s.startReviewersTask(ctx)
 
-	proto.RegisterAuthServer(sr, s)
 	proto.RegisterTaoBlogServer(sr, s)
 	proto.RegisterManagementServer(sr, s)
 	proto.RegisterSearchServer(sr, s)
@@ -301,36 +297,6 @@ func (s *Service) mustInitCrypto() {
 	s.aesGCM = utils.Must1(crypto.NewAesGcm(utils.Must1(crypto.SecretFromString(aesKey))))
 }
 
-const noPerm = `此操作无权限。`
-
-// 从 Context 中取出用户并且必须为 Admin/System，否则 panic。
-func (s *Service) MustBeAdmin(ctx context.Context) *auth.AuthContext {
-	return MustBeAdmin(ctx)
-}
-
-func (s *Service) MustCanCreatePost(ctx context.Context) *auth.AuthContext {
-	ac := auth.Context(ctx)
-	if ac == nil {
-		panic("AuthContext 不应为 nil")
-	}
-	if ac.User.IsGuest() {
-		panic(status.Error(codes.PermissionDenied, noPerm))
-	}
-	return ac
-}
-
-func MustBeAdmin(ctx context.Context) *auth.AuthContext {
-	ac := auth.Context(ctx)
-	if ac == nil {
-		panic("AuthContext 不应为 nil")
-	}
-	if !ac.User.IsAdmin() && !ac.User.IsSystem() {
-		panic(status.Error(codes.PermissionDenied, noPerm))
-	}
-	return ac
-}
-
-// Config ...
 func (s *Service) Config() *config.Config {
 	return s.cfg
 }
@@ -424,7 +390,7 @@ func (s *Service) SetCertDays(n int) {
 			Message: fmt.Sprintf(`证书剩余 %d 天`, n),
 			Start:   st,
 			End:     et,
-			UserID:  auth.SystemID,
+			UserID:  user.SystemID,
 			PostID:  0,
 			Tags: map[string]any{
 				`uuid`: `cert_days`,
@@ -448,7 +414,7 @@ func (s *Service) SetDomainDays(n int) {
 			Message: fmt.Sprintf(`域名剩余 %d 天`, n),
 			Start:   st,
 			End:     et,
-			UserID:  auth.SystemID,
+			UserID:  user.SystemID,
 			PostID:  0,
 			Tags: map[string]any{
 				`uuid`: `domain_days`,

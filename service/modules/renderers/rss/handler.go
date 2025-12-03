@@ -3,8 +3,6 @@ package rss
 import (
 	"net/http"
 	"time"
-
-	"github.com/movsb/taoblog/modules/auth"
 )
 
 type Handler struct {
@@ -15,7 +13,8 @@ func NewHandler(t *Task) http.Handler {
 	h := &Handler{t: t}
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/open`, h.open)
-	return auth.RequireLogin(mux)
+	panic(`需要登录才能看`)
+	// return auth.RequireLogin(mux)
 }
 
 func (h *Handler) open(w http.ResponseWriter, r *http.Request) {

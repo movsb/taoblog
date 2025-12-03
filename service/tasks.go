@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -36,7 +36,7 @@ func (t *_ReviewerTask) Run(ctx context.Context) {
 
 func (t *_ReviewerTask) run(ctx context.Context) {
 	listRsp, err := t.s.ListPosts(
-		auth.SystemForLocal(ctx),
+		user.SystemForLocal(ctx),
 		&proto.ListPostsRequest{
 			GetPostOptions: &proto.GetPostOptions{
 				ContentOptions: &proto.PostContentOptions{},
@@ -77,7 +77,7 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 //
 // TODO: 没有处理文章时区信息。
 func (t *_ReviewerTask) scheduleNext(ctx context.Context, p *proto.Post) {
-	pp, err := t.s.getPostContentCached(auth.SystemForLocal(ctx), p, &proto.PostContentOptions{
+	pp, err := t.s.getPostContentCached(user.SystemForLocal(ctx), p, &proto.PostContentOptions{
 		WithContent:  true,
 		PrettifyHtml: true,
 	})

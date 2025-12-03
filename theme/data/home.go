@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -31,11 +31,11 @@ type HomeData struct {
 }
 
 func NewDataForHome(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc) *Data {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	d := &Data{
 		Context: ctx,
 		svc:     service,
-		User:    auth.Context(ctx).User,
+		User:    user.Context(ctx).User,
 	}
 
 	home := &HomeData{

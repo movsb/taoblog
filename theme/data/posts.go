@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
@@ -26,7 +26,7 @@ type PostsData struct {
 func NewDataForPosts(ctx context.Context, service proto.TaoBlogServer, impl service.ToBeImplementedByRpc, r *http.Request) *Data {
 	d := &Data{
 		Context: ctx,
-		User:    auth.Context(ctx).User,
+		User:    user.Context(ctx).User,
 	}
 
 	postsData := &PostsData{
@@ -51,7 +51,7 @@ func NewDataForPosts(ctx context.Context, service proto.TaoBlogServer, impl serv
 		sort[1] = "desc"
 	}
 
-	user := auth.Context(ctx).User
+	user := user.Context(ctx).User
 	ownership := utils.IIF(user.IsAdmin(), proto.Ownership_OwnershipAll, proto.Ownership_OwnershipMineAndShared)
 
 	posts, err := service.ListPosts(ctx,

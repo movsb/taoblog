@@ -16,7 +16,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -106,7 +106,7 @@ func (s *Service) GetDefaultIntegerOption(name string, def int64) int64 {
 }
 
 func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	if strings.HasPrefix(req.Path, runtime_config.Prefix) || req.Path+`.` == runtime_config.Prefix {
 		return s.runtime.GetConfig(ctx, req)
@@ -130,7 +130,7 @@ func (s *Service) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*
 }
 
 func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*proto.SetConfigResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	if strings.HasPrefix(req.Path, runtime_config.Prefix) {
 		return s.runtime.SetConfig(ctx, req)
@@ -213,7 +213,7 @@ func (s *Service) GetPluginStorage(name string) utils.PluginStorage {
 }
 
 func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*proto.RestartResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	if s.cancel == nil {
 		return nil, status.Error(codes.Unimplemented, `服务器不支持此操作。`)
@@ -228,7 +228,7 @@ func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*prot
 }
 
 func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateRequest) (*proto.ScheduleUpdateResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	if s.cancel == nil {
 		return nil, status.Error(codes.Unimplemented, `服务器不支持此操作。`)
@@ -245,7 +245,7 @@ func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateR
 }
 
 func (s *Service) GetSiteConfig(ctx context.Context, in *proto.GetSiteConfigRequest) (*proto.GetSiteConfigResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	c := proto.SiteConfig{
 		Name:        s.Config().Site.GetName(),
@@ -265,7 +265,7 @@ func (s *Service) GetSiteConfig(ctx context.Context, in *proto.GetSiteConfigRequ
 const IconSize = 100
 
 func (s *Service) UpdateSiteConfig(ctx context.Context, in *proto.UpdateSiteConfigRequest) (*proto.UpdateSiteConfigResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	u := config.NewUpdater(s.cfg)
 	store := s.GetPluginStorage(`config`)
@@ -338,7 +338,7 @@ var jsonPB = &runtime.JSONPb{
 func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettingsRequest) (_ *proto.Settings, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	ss := utils.Must1(s.options.GetStringDefault(fmt.Sprintf(`user_settings:%d`, ac.User.ID), `{}`))
 
@@ -371,7 +371,7 @@ func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettings
 func (s *Service) SetUserSettings(ctx context.Context, in *proto.SetUserSettingsRequest) (_ *proto.Settings, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	old := utils.Must1(s.GetUserSettings(ctx, &proto.GetUserSettingsRequest{}))
 

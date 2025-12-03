@@ -24,7 +24,7 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
 	"github.com/movsb/taoblog/gateway/handlers/webhooks/github"
 	"github.com/movsb/taoblog/gateway/handlers/webhooks/grafana"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -39,7 +39,6 @@ type Gateway struct {
 	mux     *http.ServeMux
 	mc      *utils.ServeMuxChain
 	service *service.Service
-	auther  *auth.Auth
 
 	// 未鉴权的
 	client *clients.ProtoClient
@@ -47,12 +46,11 @@ type Gateway struct {
 	notify proto.NotifyServer
 }
 
-func NewGateway(serverAddr string, service *service.Service, auther *auth.Auth, mux *http.ServeMux, notify proto.NotifyServer) *Gateway {
+func NewGateway(serverAddr string, service *service.Service, mux *http.ServeMux, notify proto.NotifyServer) *Gateway {
 	g := &Gateway{
 		mux:     mux,
 		mc:      &utils.ServeMuxChain{ServeMux: mux},
 		service: service,
-		auther:  auther,
 
 		client: clients.NewFromAddress(serverAddr, ``),
 
@@ -175,16 +173,16 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 	})
 }
 
-type AuthFunc func(g *Gateway, r *http.Request) *auth.User
+type AuthFunc func(g *Gateway, r *http.Request) *user.User
 
-func userFromRequestContext(g *Gateway, r *http.Request) *auth.User {
-	return auth.Context(r.Context()).User
+func userFromRequestContext(g *Gateway, r *http.Request) *user.User {
+	return user.Context(r.Context()).User
 }
 
 func (g *Gateway) nonGuestHandler(fns ...AuthFunc) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var u *auth.User
+			var u *user.User
 			for _, fn := range fns {
 				u = fn(g, r)
 				if !u.IsGuest() {

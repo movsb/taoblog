@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/server"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -311,7 +311,7 @@ func TestRSS(t *testing.T) {
 		req := utils.Must1(http.NewRequestWithContext(
 			context.Background(), http.MethodGet,
 			r.server.JoinPath(`rss`), nil))
-		r.addAuth(req, int64(auth.SystemID))
+		r.addAuth(req, int64(user.SystemID))
 		rsp := utils.Must1(http.DefaultClient.Do(req))
 		if rsp.StatusCode != 200 {
 			t.Fatal(`statusCode != 200`)

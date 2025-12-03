@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -46,7 +46,7 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 		switch w.Conclusion {
 		case `success`:
 			_, err := g.client.Management.ScheduleUpdate(
-				auth.SystemForGateway(context.Background()),
+				user.SystemForGateway(context.Background()),
 				&proto.ScheduleUpdateRequest{},
 			)
 			if err != nil {
@@ -61,7 +61,7 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 
 func (g *_GitHub) notify(subject, body string) {
 	g.notifier.SendInstant(
-		auth.SystemForLocal(context.Background()),
+		user.SystemForLocal(context.Background()),
 		&proto.SendInstantRequest{
 			Title: subject,
 			Body:  body,

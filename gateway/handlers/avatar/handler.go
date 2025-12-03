@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 )
 
 type ResolveFunc func(id uint32) (email string, mod time.Time, file io.ReadSeekCloser)
@@ -39,7 +39,7 @@ func (h *_Avatar) Handler() http.Handler {
 		}
 
 		forceQuery := r.URL.Query().Get(`force`)
-		force := forceQuery == `1` && auth.Context(r.Context()).User.IsAdmin()
+		force := forceQuery == `1` && user.Context(r.Context()).User.IsAdmin()
 
 		// 客户端缓存失效了也可以继续用，后台慢慢刷新就行。
 		// 如果失败，会被 ServeFileFS 自动删除。

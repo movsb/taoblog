@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	backups_git "github.com/movsb/taoblog/modules/backups/git"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -28,7 +28,7 @@ func Sync(ctx context.Context, client *clients.ProtoClient, notifier proto.Notif
 			setLastSyncedAt(time.Now())
 		} else {
 			notifier.SendInstant(
-				auth.SystemForLocal(context.Background()),
+				user.SystemForLocal(context.Background()),
 				&proto.SendInstantRequest{
 					Title: `同步失败`,
 					Body:  err.Error(),

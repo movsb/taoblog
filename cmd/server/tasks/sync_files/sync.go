@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/backups/oss"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -66,7 +66,7 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 	last := utils.Must1(s.options.GetIntegerDefault(`last`, 1))
 	now := time.Now()
 	updated := utils.Must1(s.blog.ListPosts(
-		auth.SystemForLocal(ctx),
+		user.SystemForLocal(ctx),
 		&proto.ListPostsRequest{
 			ModifiedNotBefore: int32(last),
 		},

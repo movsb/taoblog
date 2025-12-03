@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -45,7 +45,7 @@ func New(client *clients.ProtoClient, impl service.ToBeImplementedByRpc) http.Ha
 }
 
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := s.impl.ListAllPostsIds(auth.SystemForLocal(req.Context()))
+	rsp, err := s.impl.ListAllPostsIds(user.SystemForLocal(req.Context()))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

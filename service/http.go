@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/calendar"
 )
@@ -43,7 +43,7 @@ func (s *Service) handleGetCalendar(w http.ResponseWriter, r *http.Request) {
 
 	events := s.calendar.Filter(calendar.AnyKind, func(e *calendar.Event) bool {
 		// 管理员获取全部，其它用户获取自己。
-		return cd.UserID == auth.AdminID || cd.UserID == e.UserID
+		return cd.UserID == user.AdminID || cd.UserID == e.UserID
 	})
 
 	// 把自己的文章分享给他人后会获取到重复的数据。

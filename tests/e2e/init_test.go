@@ -6,11 +6,12 @@ import (
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/cmd/server"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 )
 
 type R struct {
@@ -51,26 +52,26 @@ func Serve(ctx context.Context, options ...server.With) *R {
 
 	r.client = clients.NewFromAddress(r.server.GRPCAddr(), ``)
 
-	r.system = onBehalfOf(r, int64(auth.SystemID))
-	r.admin = onBehalfOf(r, int64(auth.AdminID))
+	r.system = onBehalfOf(r, int64(user.SystemID))
+	r.admin = onBehalfOf(r, int64(user.AdminID))
 	r.guest = context.Background()
 
-	u := utils.Must1(r.client.Auth.CreateUser(r.admin, &proto.User{Nickname: `用户1`}))
+	u := utils.Must1(r.client.Users.CreateUser(r.admin, &proto.User{Nickname: `用户1`}))
 	r.user1 = onBehalfOf(r, u.Id)
 	r.user1ID = u.Id
-	u = utils.Must1(r.client.Auth.CreateUser(r.admin, &proto.User{Nickname: `用户2`}))
+	u = utils.Must1(r.client.Users.CreateUser(r.admin, &proto.User{Nickname: `用户2`}))
 	r.user2 = onBehalfOf(r, u.Id)
 	r.user2ID = u.Id
 
 	return r
 }
 
-func onBehalfOf(r *R, user int64) context.Context {
-	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(context.TODO(), user))}
-	return auth.TestingUserContextForClient(u)
+func onBehalfOf(r *R, uid int64) context.Context {
+	u := utils.Must1(r.server.AuthFrontend().GetUserByID(int(uid)))
+	return micros_auth.TestingUserContextForClient(u)
 }
 
-func (r *R) addAuth(req *http.Request, user int64) {
-	u := &auth.User{User: utils.Must1(r.server.Auth().GetUserByID(context.TODO(), user))}
+func (r *R) addAuth(req *http.Request, uid int64) {
+	u := utils.Must1(r.server.Auth().GetUserByID(context.TODO(), int(uid)))
 	req.Header.Set(`Authorization`, u.AuthorizationValue())
 }

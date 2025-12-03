@@ -15,7 +15,8 @@ import (
 	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/movsb/taoblog/modules/auth"
+	server_auth "github.com/movsb/taoblog/cmd/server/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -53,10 +54,11 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 }
 
 func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Request) (_ *proto.FileSpec, _ Options, _ io.ReadCloser, _ proto.Management_FileSystemClient, _ bool) {
-	ac := auth.Context(r.Context())
+	ac := user.Context(r.Context())
 	id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
 	po, err := client.Blog.GetPost(
-		auth.NewContextForRequestAsGateway(r),
+		// TODO 不应该实现在那里
+		server_auth.NewContextForRequestAsGateway(r),
 		&proto.GetPostRequest{
 			Id: int32(id),
 		},
@@ -77,7 +79,7 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 	}
 
 	fsc, err := client.Management.FileSystem(
-		auth.NewContextForRequestAsGateway(r),
+		server_auth.NewContextForRequestAsGateway(r),
 	)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -222,6 +224,6 @@ func convertToAVIF(rawPath string, inputPath string) (_ string, _ string, outErr
 
 // NOTE: 这个接口仅限登录用户使用。
 func GetFile(s canonical.FileServer, w http.ResponseWriter, r *http.Request, pid int, path string) {
-	_ = auth.MustNotBeGuest(r.Context())
+	_ = user.MustNotBeGuest(r.Context())
 	s.ServeFile(w, r, int64(pid), path, true)
 }

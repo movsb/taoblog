@@ -1,12 +1,9 @@
-package auth
+package user
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"fmt"
-	"math"
 
-	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/modules/auth/cookies"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
@@ -38,40 +35,13 @@ func (u *User) AuthorizationValue() string {
 	return cookies.TokenName + ` ` + u.tokenValue()
 }
 
-var _ webauthn.User = (*WebAuthnUser)(nil)
-
-type WebAuthnUser struct {
-	*User
-	credentials []webauthn.Credential
-}
-
-func (u *WebAuthnUser) WebAuthnID() []byte {
-	if u.ID <= 0 || u.ID > math.MaxInt32 {
-		panic(`user id is invalid`)
-	}
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, uint32(u.ID))
-	return buf
-}
-func (u *WebAuthnUser) WebAuthnName() string {
-	return fmt.Sprintf(`%s (id:%d)`, u.Nickname, u.ID)
-}
-func (u *WebAuthnUser) WebAuthnDisplayName() string {
-	return u.Nickname
-}
-func (u *WebAuthnUser) WebAuthnCredentials() []webauthn.Credential {
-	return u.credentials
-}
-func (u *WebAuthnUser) WebAuthnIcon() string {
-	return ""
-}
-
 func randomKey() string {
 	b := [32]byte{}
 	utils.Must1(rand.Read(b[:]))
 	return fmt.Sprintf(`%x`, b)
 }
 
+// 必须大于零
 const (
 	SystemID = 1
 	AdminID  = 2
@@ -79,13 +49,13 @@ const (
 
 var (
 	// TODO 移除，用 nil 代表未登录用户。
-	guest = &User{
+	Guest = &User{
 		User: &models.User{
 			ID:       0,
 			Nickname: `未登录用户`,
 		},
 	}
-	system = &User{
+	System = &User{
 		User: &models.User{
 			ID:       int64(SystemID),
 			Password: randomKey(),
@@ -95,5 +65,5 @@ var (
 
 // 仅能同进程内使用。
 func SystemTokenValue() string {
-	return system.tokenValue()
+	return System.tokenValue()
 }

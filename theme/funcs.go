@@ -1,7 +1,6 @@
 package theme
 
 import (
-	"context"
 	"fmt"
 	"html/template"
 	"reflect"
@@ -51,7 +50,7 @@ func (t *Theme) funcs() map[string]any {
 			))
 		},
 		"authorName": func(p *data.Post) string {
-			u, err := t.auth.GetUserByID(context.TODO(), int64(p.UserId))
+			u, err := t.authFrontend.GetUserByID(int(p.UserId))
 			if err != nil {
 				panic(err)
 			}

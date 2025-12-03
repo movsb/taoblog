@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/xeonx/timeago"
@@ -21,7 +21,7 @@ type Data struct {
 	template *template.Template
 
 	Context context.Context
-	User    *auth.User
+	User    *user.User
 
 	// Metadata
 	Meta MetaData
@@ -141,7 +141,7 @@ func (info _Info) StorageStatus() string {
 
 func (d *Data) Info() *_Info {
 	if d.Context == nil {
-		d.Context = auth.GuestForLocal(context.Background())
+		d.Context = user.GuestForLocal(context.Background())
 	}
 	return &_Info{utils.Must1(d.svc.GetInfo(d.Context, &proto.GetInfoRequest{}))}
 }

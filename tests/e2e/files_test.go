@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -248,16 +248,16 @@ func TestFilePerm(t *testing.T) {
 	}
 
 	// 系统可以访问私有文章，也可以访问特殊文件。
-	expect(t, auth.SystemID, `1.txt`, 200)
-	expect(t, auth.SystemID, `_x.txt`, 200)
+	expect(t, user.SystemID, `1.txt`, 200)
+	expect(t, user.SystemID, `_x.txt`, 200)
 
 	// 本人可以访问特殊文件。
 	expect(t, int(r.user1ID), `1.txt`, 200)
 	expect(t, int(r.user1ID), `_x.txt`, 200)
 
 	// 因无法访问私有文章，所以均 404
-	expect(t, auth.AdminID, `1.txt`, 404)
-	expect(t, auth.AdminID, `_x.txt`, 404)
+	expect(t, user.AdminID, `1.txt`, 404)
+	expect(t, user.AdminID, `_x.txt`, 404)
 	expect(t, 0, `1.txt`, 404)
 	expect(t, 0, `_x.txt`, 404)
 

@@ -4,7 +4,7 @@ protos:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -v ./...
 
 .PHONY: cover
 cover:

@@ -4,7 +4,7 @@ import (
 	"cmp"
 	"context"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -46,7 +46,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, db *taorm.DB, options ..
 }
 
 func (n *Notify) SendEmail(ctx context.Context, in *proto.SendEmailRequest) (*proto.SendEmailResponse, error) {
-	auth.MustNotBeGuest(ctx)
+	user.MustNotBeGuest(ctx)
 
 	if n.mailer == nil {
 		return nil, status.Error(codes.Unimplemented, `未实现邮件服务。`)
@@ -65,7 +65,7 @@ func (n *Notify) SendEmail(ctx context.Context, in *proto.SendEmailRequest) (*pr
 }
 
 func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) (*proto.SendInstantResponse, error) {
-	auth.MustNotBeGuest(ctx)
+	user.MustNotBeGuest(ctx)
 
 	if n.defaultBarkToken == `` && in.BarkToken == `` {
 		return nil, status.Error(codes.Unimplemented, `未实现即时通知服务。`)

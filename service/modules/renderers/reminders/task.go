@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -98,7 +98,7 @@ func (t *Task) load() {
 
 	for _, p := range posts {
 		pp, err := t.svc.GetPost(
-			auth.SystemForLocal(t.ctx),
+			user.SystemForLocal(t.ctx),
 			&proto.GetPostRequest{
 				Id: int32(p),
 				GetPostOptions: &proto.GetPostOptions{
@@ -232,7 +232,7 @@ func (t *Task) getUpdatedPosts(ctx context.Context) ([]*proto.Post, error) {
 
 	// log.Println(`上次时间：`, lastCheckTime)
 
-	rsp, err := t.svc.ListPosts(auth.SystemForLocal(ctx), &proto.ListPostsRequest{
+	rsp, err := t.svc.ListPosts(user.SystemForLocal(ctx), &proto.ListPostsRequest{
 		ModifiedNotBefore: int32(lastCheckTime),
 		GetPostOptions: &proto.GetPostOptions{
 			WithUserPerms: true,

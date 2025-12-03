@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/setup/migration"
@@ -24,7 +25,7 @@ type _ReadCloseSizer struct {
 }
 
 func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupServer) error {
-	s.MustBeAdmin(srv.Context())
+	user.MustBeAdmin(srv.Context())
 
 	if req.ClientDatabaseVersion < int32(migration.MaxVersionNumber()) {
 		return status.Errorf(codes.FailedPrecondition,
@@ -214,7 +215,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 }
 
 func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
-	s.MustBeAdmin(srv.Context())
+	user.MustBeAdmin(srv.Context())
 
 	sendFile := func(req *proto.BackupFilesRequest_SendFileRequest) error {
 		log.Printf("send file: %d/%s", req.PostId, req.Path)
@@ -267,7 +268,7 @@ func (s *Service) BackupFiles(srv proto.Management_BackupFilesServer) error {
 }
 
 func (s *Service) GetSyncConfig(ctx context.Context, in *proto.GetSyncConfigRequest) (*proto.GetSyncConfigResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	if !s.cfg.Maintenance.Backups.Sync.Enabled {
 		return nil, status.Error(codes.FailedPrecondition, `服务器未开启同步。`)

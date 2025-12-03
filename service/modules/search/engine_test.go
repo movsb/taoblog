@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/blugelabs/bluge/search/highlight"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	micros_auth "github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/models"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
@@ -27,7 +28,7 @@ func TestEngine(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	result, err := engine.SearchPosts(auth.GuestForLocal(context.TODO()), `内容`)
+	result, err := engine.SearchPosts(user.GuestForLocal(context.TODO()), `内容`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,9 +49,9 @@ func TestPerm(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	u1 := &auth.User{User: &models.User{ID: 1}}
-	u2 := &auth.User{User: &models.User{ID: 2}}
-	u3 := &auth.User{User: &models.User{ID: 3}}
+	u1 := &user.User{User: &models.User{ID: 1}}
+	u2 := &user.User{User: &models.User{ID: 2}}
+	u3 := &user.User{User: &models.User{ID: 3}}
 	if err := engine.IndexPosts(context.TODO(), []*proto.Post{
 		{Id: 1, Title: `公开文章`, Status: models.PostStatusPublic, UserId: int32(u1.ID)},
 		{Id: 2, Title: `私有文章`, Status: models.PostStatusPrivate, UserId: int32(u2.ID)},
@@ -64,10 +65,10 @@ func TestPerm(t *testing.T) {
 		search string
 		ids    []int
 	}{
-		{auth.GuestForLocal(context.TODO()), `文章`, []int{1}},
-		{auth.TestingUserContextForServer(u1), `文章`, []int{1}},
-		{auth.TestingUserContextForServer(u2), `文章`, []int{1, 2}},
-		{auth.TestingUserContextForServer(u3), `文章`, []int{1, 3}},
+		{user.GuestForLocal(context.TODO()), `文章`, []int{1}},
+		{micros_auth.TestingUserContextForServer(u1), `文章`, []int{1}},
+		{micros_auth.TestingUserContextForServer(u2), `文章`, []int{1, 2}},
+		{micros_auth.TestingUserContextForServer(u3), `文章`, []int{1, 3}},
 	}
 
 	for _, tc := range testCases {
@@ -80,7 +81,7 @@ func TestPerm(t *testing.T) {
 		})
 		slices.Sort(ids)
 		if !reflect.DeepEqual(ids, tc.ids) {
-			user := auth.Context(tc.user).User
+			user := user.Context(tc.user).User
 			t.Errorf("user: %d, search: %s, expect ids: %v, got: %v", user.ID, tc.search, tc.ids, ids)
 			continue
 		}

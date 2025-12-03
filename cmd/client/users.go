@@ -23,7 +23,7 @@ func createUsersCommands() *cobra.Command {
 		Short: `创建用户命令`,
 		Run: func(cmd *cobra.Command, args []string) {
 			nickname := utils.Must1(cmd.Flags().GetString(`nickname`))
-			u, err := client.Auth.CreateUser(client.Context(),
+			u, err := client.Users.CreateUser(client.Context(),
 				&proto.User{
 					Nickname: nickname,
 				},
@@ -43,7 +43,7 @@ func createUsersCommands() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			hidden := utils.Must1(cmd.Flags().GetBool(`hidden`))
 			unnamed := utils.Must1(cmd.Flags().GetBool(`unnamed`))
-			u, err := client.Auth.ListUsers(client.Context(),
+			u, err := client.Users.ListUsers(client.Context(),
 				&proto.ListUsersRequest{
 					WithHidden:  hidden,
 					WithUnnamed: unnamed,
@@ -86,7 +86,7 @@ func createUsersCommands() *cobra.Command {
 				req.UpdateAvatar = true
 			}
 
-			utils.Must1(client.Auth.UpdateUser(client.Context(), req))
+			utils.Must1(client.Users.UpdateUser(client.Context(), req))
 		},
 	}
 	updateCmd.Flags().String(`avatar`, ``, `头像文件路径。`)

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
 	"github.com/movsb/taoblog/protocols/go/proto"
@@ -214,7 +214,7 @@ func (s *Service) CreateCategory(ctx context.Context, in *proto.Category) (_ *pr
 		panic(`分类名字太短或太长。`)
 	}
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	cat := models.Category{
 		UserID: int32(ac.User.ID),
@@ -230,7 +230,7 @@ func (s *Service) CreateCategory(ctx context.Context, in *proto.Category) (_ *pr
 func (s *Service) UpdateCategory(ctx context.Context, in *proto.UpdateCategoryRequest) (_ *proto.Category, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	m := map[string]any{}
 
@@ -258,7 +258,7 @@ func (s *Service) UpdateCategory(ctx context.Context, in *proto.UpdateCategoryRe
 func (s *Service) ListCategories(ctx context.Context, in *proto.ListCategoriesRequest) (_ *proto.ListCategoriesResponse, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 	db := db.FromContextDefault(ctx, s.tdb)
 
 	var cats models.Categories
@@ -288,7 +288,7 @@ func (s *Service) checkPostCat(ctx context.Context, id int32) error {
 		return fmt.Errorf(`获取分类失败：%w`, err)
 	}
 
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	if ac.User.ID != int64(cat.UserID) {
 		return fmt.Errorf(`获取分类失败：分类不存在`)
 	}

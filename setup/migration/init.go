@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
@@ -168,7 +168,7 @@ func testPosts(db *sql.DB, testCompat bool, createFirstPost bool) {
 				if createFirstPost {
 					tdb.MustTxCall(func(tx *taorm.DB) {
 						tx.Model(&models.Post{
-							UserID:     int32(auth.AdminID),
+							UserID:     int32(user.AdminID),
 							Date:       int32(now),
 							Modified:   int32(now),
 							Title:      `你好，世界`,

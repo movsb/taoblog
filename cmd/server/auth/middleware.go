@@ -1,8 +1,7 @@
-package auth
+package server_auth
 
 import (
 	"context"
-	"database/sql"
 	"net"
 	"net/http"
 	"net/netip"
@@ -11,9 +10,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/modules/auth/cookies"
-	"github.com/movsb/taoblog/modules/geo/geoip"
-	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/service/models"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -21,88 +18,23 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type ctxAuthKey struct{}
-
-// 鉴权后保存的用户信息。
-// 进程内使用（不含 Gateway）。
-type AuthContext struct {
-	// 当前请求所引用的用户。
-	//
-	// 始终不为空；如果是未登录用户，则为 guest。
-	User *User
-
-	// 请求来源 IP 地址。
-	// 包括 HTTP 请求，GRPC 请求。
-	// 始终不为空。
-	RemoteAddr netip.Addr
-
-	// RemoteAddr 是否在中国。
-	// 用于加速资源访问。
-	InChina bool
-
-	// 用户使用的代理端名字。
-	UserAgent string
+type Auth interface {
+	AuthRequest(w http.ResponseWriter, r *http.Request) *user.User
+	AuthCookie(login, userAgent string) (*user.User, bool)
+	GetUserByToken(id int, token string) (*user.User, error)
 }
 
-// 只获取不添加默认。
-func _Context(ctx context.Context) *AuthContext {
-	if value, ok := ctx.Value(ctxAuthKey{}).(*AuthContext); ok {
-		return value
-	}
-	return nil
+func NewMiddleware() *Middleware {
+	return &Middleware{}
 }
 
-// 创建一个新的 Context，包含相关信息。
-func _NewContext(parent context.Context, user *User, remoteAddr netip.Addr, userAgent string) context.Context {
-	ac := AuthContext{
-		User:       user,
-		RemoteAddr: remoteAddr,
-		UserAgent:  userAgent,
-	}
-	if !remoteAddr.IsValid() {
-		panic("无效的远程地址。")
-	}
-	ac.InChina = geoip.IsInChina(remoteAddr)
-	return context.WithValue(parent, ctxAuthKey{}, &ac)
+func (m *Middleware) SetAuth(a Auth) {
+	m.a = a
 }
 
-// 从 Context 里面提取出当前的用户信息。
-//
-// Note：在当前的实现下，非登录用户/无权限用户被表示为 Guest（id==0）的用户，
-// 所以此函数的返回值始终不为空。因此，如果取不到用户信息，会 panic。
-func Context(ctx context.Context) *AuthContext {
-	if ac := _Context(ctx); ac != nil {
-		return ac
-	}
-	panic(`Context 中未包含登录用户信息。`)
+type Middleware struct {
+	a Auth
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-var localhost = netip.AddrFrom4([4]byte{127, 0, 0, 1})
-
-// 系统管理员身份。相当于后台任务执行者。拥有所有权限。
-// 不用 == Admin：一个是真人，一个是拟人。
-// 权限可以一样，也可以不一样。
-// 比如 System 不允许真实登录，只是后台操作。
-// 只能进程内/本地使用，不能跨网络使用（包括 gateway 也不行）。
-func SystemForLocal(ctx context.Context) context.Context {
-	return _NewContext(ctx, system, localhost, `system_admin`)
-}
-
-// 访客身份。
-// 只能进程内/本地使用，不能跨网络使用（包括 gateway 也不行）。
-func GuestForLocal(ctx context.Context) context.Context {
-	return _NewContext(ctx, guest, localhost, `guest_context`)
-}
-
-// 只能用于 Gateway，充当 System 用户。
-func SystemForGateway(ctx context.Context) context.Context {
-	md := metadata.Pairs(`Authorization`, system.AuthorizationValue())
-	return metadata.NewOutgoingContext(ctx, md)
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 // 把 Cookie/Authorization 转换成已登录用户。
 //
@@ -112,12 +44,12 @@ func SystemForGateway(ctx context.Context) context.Context {
 //
 // 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
-func (a *Auth) UserFromCookieHandler(h http.Handler) http.Handler {
+func (m *Middleware) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := a.authRequest(w, r)
+		u := m.a.AuthRequest(w, r)
 		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
 		userAgent := r.Header.Get(`User-Agent`)
-		ac := _NewContext(r.Context(), user, remoteAddr, userAgent)
+		ac := user.NewContext(r.Context(), u, remoteAddr, userAgent)
 		h.ServeHTTP(w, r.WithContext(ac))
 	})
 }
@@ -154,26 +86,26 @@ const (
 // 而 metadata 只是一个普通的 map[string][]string，不能传递指针。
 // 纵使本博客程序的 Gateway 和 Service 写在同一个进程，从而允许传递指针。
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
-func (a *Auth) UserFromGatewayUnaryInterceptor() grpc.UnaryServerInterceptor {
+func (m *Middleware) UserFromGatewayUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = a.addUserContextToInterceptorForGateway(ctx)
+		ctx = m.addUserContextToInterceptorForGateway(ctx)
 		return handler(ctx, req)
 	}
 }
 
-func (a *Auth) UserFromGatewayStreamInterceptor() grpc.StreamServerInterceptor {
+func (m *Middleware) UserFromGatewayStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream:   ss,
-			WrappedContext: a.addUserContextToInterceptorForGateway(ss.Context()),
+			WrappedContext: m.addUserContextToInterceptorForGateway(ss.Context()),
 		}
 		return handler(srv, &wss)
 	}
 }
 
 // TODO 没更改的话不要改变 ServerStream 的 context。
-func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) context.Context {
-	if ac := _Context(ctx); ac != nil {
+func (m *Middleware) addUserContextToInterceptorForGateway(ctx context.Context) context.Context {
+	if user.HasContext(ctx) {
 		return ctx
 	}
 
@@ -205,66 +137,47 @@ func (a *Auth) addUserContextToInterceptorForGateway(ctx context.Context) contex
 		userAgent = userAgents[0]
 	}
 
-	user, _ := a.authCookie(login, userAgent)
+	u, _ := m.a.AuthCookie(login, userAgent)
 
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
 
-	return _NewContext(ctx, user, remoteAddr, userAgent)
+	return user.NewContext(ctx, u, remoteAddr, userAgent)
 }
 
 // 把 Client 的 Token 转换成已登录用户。
 // 适用于服务端代码功能。
-func (a *Auth) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
+func (m *Middleware) UserFromClientTokenUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		ctx = addUserContextToInterceptorForToken(ctx, func(id int, token string) *User {
-			u, err := a.userByPasswordOrToken(id, ``, token)
+		ctx = addUserContextToInterceptorForToken(ctx, func(id int, token string) *user.User {
+			u, err := m.a.GetUserByToken(id, token)
 			if err == nil {
-				return &User{User: u}
+				return u
 			}
-			return guest
+			return user.Guest
 		})
 		return handler(ctx, req)
 	}
 }
 
-func (a *Auth) UserFromClientTokenStreamInterceptor() grpc.StreamServerInterceptor {
+func (m *Middleware) UserFromClientTokenStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream: ss,
-			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), func(id int, token string) *User {
-				u, err := a.userByPasswordOrToken(id, ``, token)
+			WrappedContext: addUserContextToInterceptorForToken(ss.Context(), func(id int, token string) *user.User {
+				u, err := m.a.GetUserByToken(id, token)
 				if err == nil {
-					return &User{User: u}
+					return u
 				}
-				return guest
+				return user.Guest
 			}),
 		}
 		return handler(srv, &wss)
 	}
 }
 
-func (a *Auth) userByPasswordOrToken(id int, password, token string) (*models.User, error) {
-	u, err := a.GetUserByID(context.Background(), int64(id))
-	if err != nil {
-		return nil, err
-	}
-
-	if password != `` {
-		if constantEqual(password, u.Password) {
-			return u, nil
-		}
-	} else if token != `` {
-		if constantEqual(token, cookies.TokenValue(int(u.ID), u.Password)) {
-			return u, nil
-		}
-	}
-
-	return nil, sql.ErrNoRows
-}
-
 // TODO 密码错误的时候返回错误而不是游客。
-func addUserContextToInterceptorForToken(ctx context.Context, userByToken func(id int, token string) *User) context.Context {
-	if ac := _Context(ctx); ac != nil {
+func addUserContextToInterceptorForToken(ctx context.Context, userByToken func(id int, token string) *user.User) context.Context {
+	if user.HasContext(ctx) {
 		return ctx
 	}
 
@@ -283,7 +196,7 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByToken func(i
 		return ctx
 	}
 
-	user := userByToken(id, token)
+	u := userByToken(id, token)
 
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
 
@@ -292,7 +205,7 @@ func addUserContextToInterceptorForToken(ctx context.Context, userByToken func(i
 		userAgent = userAgents[0]
 	}
 
-	return _NewContext(ctx, user, remoteAddr, userAgent)
+	return user.NewContext(ctx, u, remoteAddr, userAgent)
 }
 
 // grpc 服务是被代理过的，所以从 peer.Peer 拿到的是错误的。
@@ -338,33 +251,4 @@ func parseRemoteAddr(f string) netip.Addr {
 		f = f[:p]
 	}
 	return netip.MustParseAddr(f)
-}
-
-const noPerm = `此操作无权限。`
-
-func MustNotBeGuest(ctx context.Context) *AuthContext {
-	ac := Context(ctx)
-	if !ac.User.IsGuest() {
-		return ac
-	}
-	panic(status.Error(codes.PermissionDenied, noPerm))
-}
-
-func MustBeAdmin(ctx context.Context) *AuthContext {
-	ac := Context(ctx)
-	if ac.User.IsAdmin() || ac.User.IsSystem() {
-		return ac
-	}
-	panic(status.Error(codes.PermissionDenied, noPerm))
-}
-
-func RequireLogin(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ac := Context(r.Context())
-		if !ac.User.IsGuest() {
-			h.ServeHTTP(w, r)
-			return
-		}
-		utils.HTTPError(w, http.StatusForbidden)
-	})
 }

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/movsb/taoblog/modules/auth"
 	"github.com/movsb/taoblog/modules/auth/cookies"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/pquerna/otp/totp"
 )
@@ -26,7 +26,7 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := a.auth.AuthLogin(t.Username, t.Password)
+	user := a.authFrontend.AuthLogin(t.Username, t.Password)
 	if user.IsGuest() {
 		http.Error(w, `用户不存在/密码不正确。`, http.StatusUnauthorized)
 		return
@@ -69,7 +69,7 @@ func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ac := auth.Context(r.Context())
+	ac := user.Context(r.Context())
 
 	// 授权进行页面。
 	if !ac.User.IsGuest() && r.Method == http.MethodGet {
@@ -81,7 +81,7 @@ func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 
 	// 授权完成页面。
 	if !ac.User.IsGuest() && r.Method == http.MethodPost {
-		a.auth.TmpClientLoginService.SetClientLoginToken(random, cookies.TokenValue(int(ac.User.ID), ac.User.Password))
+		a.clientLogin.SetClientLoginToken(random, cookies.TokenValue(int(ac.User.ID), ac.User.Password))
 		a.executeTemplate(w, `client.html`, _ClientLoginData{
 			Authorized: true,
 		})
@@ -100,7 +100,7 @@ func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 
 func (a *Admin) loginByGithub(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
-	user := a.auth.AuthGitHub(code)
+	user := a.authFrontend.AuthGitHub(code)
 	if user.IsAdmin() {
 		cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
 		http.Redirect(w, r, `/`, http.StatusFound)
@@ -120,7 +120,7 @@ func (a *Admin) loginByGoogle(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `invalid body: %v`, err)
 		return
 	}
-	user := a.auth.AuthGoogle(t.Token)
+	user := a.authFrontend.AuthGoogle(t.Token)
 	if user.IsAdmin() {
 		cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
 		w.WriteHeader(http.StatusOK)

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
@@ -41,7 +41,7 @@ func MonitorCert(ctx context.Context, getHome func() string, notifier proto.Noti
 		if left <= 0 {
 			log.Println(`已过期`)
 			notifier.SendInstant(
-				auth.SystemForLocal(ctx),
+				user.SystemForLocal(ctx),
 				&proto.SendInstantRequest{
 					Title: `证书`,
 					Body:  `已经过期`,
@@ -57,7 +57,7 @@ func MonitorCert(ctx context.Context, getHome func() string, notifier proto.Noti
 		}
 		log.Println(`证书剩余天数：`, daysLeft)
 		notifier.SendInstant(
-			auth.SystemForLocal(ctx),
+			user.SystemForLocal(ctx),
 			&proto.SendInstantRequest{
 				Title: `证书`,
 				Body:  fmt.Sprintf(`剩余天数：%v`, daysLeft),
@@ -161,7 +161,7 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		if daysLeft < 15 {
 			log.Println(`域名剩余天数：`, daysLeft)
 			notifier.SendInstant(
-				auth.SystemForLocal(ctx),
+				user.SystemForLocal(ctx),
 				&proto.SendInstantRequest{
 					Title: `域名`,
 					Body:  fmt.Sprintf(`剩余天数：%v`, daysLeft),

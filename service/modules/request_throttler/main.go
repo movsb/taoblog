@@ -5,7 +5,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -80,7 +80,7 @@ type _RequestThrottlerKey struct {
 }
 
 func throttlerKeyOf(ctx context.Context) _RequestThrottlerKey {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	method, ok := grpc.Method(ctx)
 	if !ok {
 		panic(status.Error(codes.Internal, "没有找到调用方法。"))

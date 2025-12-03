@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth"
+	server_auth "github.com/movsb/taoblog/cmd/server/auth"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -76,7 +76,7 @@ type _Config struct {
 	articleCount int
 }
 
-func New(auther *auth.Auth, client *clients.ProtoClient, options ...Option) *RSS {
+func New(client *clients.ProtoClient, options ...Option) *RSS {
 	r := &RSS{
 		config: _Config{
 			articleCount: 10,
@@ -117,7 +117,7 @@ func (r *RSS) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	rsp, err := r.client.Blog.ListPosts(
-		auth.NewContextForRequestAsGateway(req),
+		server_auth.NewContextForRequestAsGateway(req),
 		&proto.ListPostsRequest{
 			Limit:   int32(r.config.articleCount),
 			OrderBy: `date desc`,

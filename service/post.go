@@ -19,7 +19,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/movsb/taoblog/modules/auth"
+	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
@@ -68,7 +68,7 @@ func (s *Service) posts() *taorm.Stmt {
 // TODO: 好像对于登录用于 status=public 没用上。
 // TODO: distinct posts.* 是正确的用法吗？
 func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*proto.ListPostsResponse, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	var posts models.Posts
 
@@ -140,7 +140,7 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 
 // 只会列出公开的。
 func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 	var posts models.Posts
 	if err := s.tdb.Select(`id`).Where(`status=?`, models.PostStatusPublic).Find(&posts); err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (s *Service) ListAllPostsIds(ctx context.Context) ([]int32, error) {
 func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *proto.Post, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	var p models.Post
 
@@ -233,7 +233,7 @@ func (f _OpenPostFile) Open(name string) (fs.File, error) {
 }
 
 func (s *Service) getPostContentCached(ctx context.Context, p *proto.Post, co *proto.PostContentOptions) (string, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	id := p.Id
 	key := _PostContentCacheKey{
 		ID:      id,
@@ -268,7 +268,7 @@ func (s *Service) getPostSourceCached(ctx context.Context, id int64) (_ string, 
 		UserID int
 		Source string
 	}
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	key := fmt.Sprintf(`post_source:%d`, id)
 	cache := utils.Must1(utils.DropLast2(s.cache.GetOrLoad(ctx, key, func(ctx context.Context, _ string) (any, time.Duration, error) {
 		log.Println(`无 source 缓存，从数据库加载……`)
@@ -371,7 +371,7 @@ func (s *Service) IncrementViewCount(m map[int]int) {
 
 // 只能获取公开的或自己创建的。
 func (s *Service) GetPostsByTags(ctx context.Context, tagNames []string) ([]*proto.Post, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	var ids []int64
 	for _, tag := range tagNames {
 		t := s.GetTagByName(tag)
@@ -438,7 +438,7 @@ func (s *Service) getRelatedPostsCached(ctx context.Context, id int64) ([]*proto
 }
 
 func (s *Service) getRelatedPosts(ctx context.Context, id int64) ([]*proto.Post, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	tagIDs := s.getObjectTagIDs(id, true)
 	if len(tagIDs) == 0 {
@@ -482,7 +482,7 @@ func (s *Service) updatePostMetadataTime(pid int64, t time.Time) {
 }
 
 func (s *Service) CreatePost(ctx context.Context, in *proto.Post) (*proto.Post, error) {
-	ac := s.MustCanCreatePost(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	now := int32(time.Now().Unix())
 
@@ -621,7 +621,7 @@ func isUpdatingUntitledPost(p *models.Post) bool {
 // 更新文章。
 // 需要携带版本号，像评论一样。
 func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (*proto.Post, error) {
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	if in.Post == nil || in.Post.Id == 0 || in.UpdateMask == nil {
 		return nil, status.Error(codes.InvalidArgument, "无效文章编号、更新字段")
@@ -783,9 +783,9 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 
 	// 通知新文章创建
 	// TODO 异步执行。
-	if isUpdatingUntitledPost(oldPost) && oldPost.UserID != int32(auth.AdminID) {
+	if isUpdatingUntitledPost(oldPost) && oldPost.UserID != int32(user.AdminID) {
 		title, _ := m[`title`].(string)
-		s.notifier.SendInstant(auth.SystemForLocal(ctx), &proto.SendInstantRequest{
+		s.notifier.SendInstant(user.SystemForLocal(ctx), &proto.SendInstantRequest{
 			Title: `新文章发表`,
 			Body:  fmt.Sprintf(`%s 发表了新文章 %s`, ac.User.Nickname, title),
 		})
@@ -805,7 +805,7 @@ func (s *Service) setPostACL(postID int64, users []int32, notify bool) {
 			Perms: []proto.Perm{proto.Perm_PermRead},
 		}
 	}
-	utils.Must1(s.SetPostACL(auth.SystemForLocal(context.Background()),
+	utils.Must1(s.SetPostACL(user.SystemForLocal(context.Background()),
 		&proto.SetPostACLRequest{
 			PostId:         postID,
 			Users:          m,
@@ -852,7 +852,7 @@ func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (
 // 用于删除一篇文章。
 // 这个函数基本没怎么测试过，因为基本上只是设置为不公开。
 func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (*empty.Empty, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	var p models.Post
 
@@ -875,7 +875,7 @@ func (s *Service) DeletePost(ctx context.Context, in *proto.DeletePostRequest) (
 
 // TODO 文章编号可能是 0️⃣
 func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest) (*proto.PreviewPostResponse, error) {
-	auth.MustNotBeGuest(ctx)
+	user.MustNotBeGuest(ctx)
 
 	out := proto.PreviewPostResponse{}
 
@@ -1106,7 +1106,7 @@ func (s *Service) deleteReferences(ctx context.Context, self int32, refs *models
 // 会总是更新 LastCommentedAt 时间。
 // TODO 改成内部调用 UpdatePost，并检查 status 是否合法。
 func (s *Service) SetPostStatus(ctx context.Context, in *proto.SetPostStatusRequest) (*proto.SetPostStatusResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	s.MustTxCall(func(s *Service) error {
 		var post models.Post
@@ -1188,7 +1188,7 @@ func (s *Service) updateUserTopPosts(id int, postID int, top bool) {
 func (s *Service) ReorderTopPosts(ctx context.Context, in *proto.ReorderTopPostsRequest) (_ *empty.Empty, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := auth.MustNotBeGuest(ctx)
+	ac := user.MustNotBeGuest(ctx)
 
 	old := s.getUserTopPosts(int(ac.User.ID))
 	if len(old) != len(in.Ids) {
@@ -1204,7 +1204,7 @@ func (s *Service) ReorderTopPosts(ctx context.Context, in *proto.ReorderTopPosts
 
 // TODO 不需要公开 api
 func (s *Service) GetTopPosts(ctx context.Context, in *proto.GetTopPostsRequest) (*proto.GetTopPostsResponse, error) {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 	if ac.User.IsGuest() {
 		return &proto.GetTopPostsResponse{}, nil
 	}
@@ -1238,7 +1238,7 @@ func (s *Service) GetTopPosts(ctx context.Context, in *proto.GetTopPostsRequest)
 
 // 由于“相关文章”目前只在 GetPost 时返回，所以不在这里设置。
 func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOptions) func(c *proto.Post) error {
-	ac := auth.Context(ctx)
+	ac := user.Context(ctx)
 
 	if opts == nil {
 		opts = &proto.GetPostOptions{}
@@ -1318,9 +1318,9 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 		}
 
 		if opts.WithUserPerms {
-			ac := auth.MustNotBeGuest(ctx)
+			ac := user.MustNotBeGuest(ctx)
 			userPerms := utils.Must1(s.GetPostACL(
-				auth.SystemForLocal(ctx),
+				user.SystemForLocal(ctx),
 				&proto.GetPostACLRequest{PostId: int64(p.Id)}),
 			).Users
 			canRead := func(userID int32) bool {
@@ -1329,8 +1329,8 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 				}
 				return false
 			}
-			allUsers := utils.Must1(s.ListUsers(
-				auth.SystemForLocal(ctx),
+			allUsers := utils.Must1(s.userManager.ListUsers(
+				user.SystemForLocal(ctx),
 				&proto.ListUsersRequest{}),
 			).Users
 			allUsers = slices.DeleteFunc(allUsers, func(u *proto.User) bool {
@@ -1390,7 +1390,7 @@ func truncateTitle(title string, length int) string {
 
 // 请保持文章和评论的代码同步。
 func (s *Service) CheckPostTaskListItems(ctx context.Context, in *proto.CheckTaskListItemsRequest) (*proto.CheckTaskListItemsResponse, error) {
-	auth.MustNotBeGuest(ctx)
+	user.MustNotBeGuest(ctx)
 
 	p, err := s.GetPost(ctx,
 		&proto.GetPostRequest{
@@ -1471,7 +1471,7 @@ func (s *Service) applyTaskChecks(modified int32, sourceType, rawSource string, 
 }
 
 func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStylingPageRequest) (*proto.CreateStylingPageResponse, error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	source := in.Source
 	if source == `` {
@@ -1526,17 +1526,17 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 
 func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (*proto.SetPostACLResponse, error) {
 	// TODO 临时
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	// 发通知用。
 	// 为了取得自动生成的标题，不要使用 getPostCached.
 	post := utils.Must1(s.GetPost(
-		auth.SystemForLocal(context.Background()),
+		user.SystemForLocal(context.Background()),
 		&proto.GetPostRequest{
 			Id: int32(in.PostId),
 		},
 	))
-	owner := utils.Must1(s.auth.GetUserByID(context.Background(), int64(post.UserId)))
+	owner := utils.Must1(s.userManager.GetUserByID(context.Background(), int(post.UserId)))
 
 	return &proto.SetPostACLResponse{}, s.TxCall(func(s *Service) error {
 		// 获取当前的。
@@ -1597,7 +1597,7 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 				if in.SendUserNotify {
 					// 发送通知。
 					// TODO 异步任务
-					to := utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(b.UserID)))
+					to := utils.Must1(s.userManager.GetUserByID(db.WithContext(ctx, s.tdb), int(b.UserID)))
 					go func() {
 						// 仅在分享权限下通知。
 						// NOTE：如果更改了受众，但是权限又不是partial，下次更改为 partial 时会丢失分享通知。
@@ -1614,7 +1614,7 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 						// 所以部分代码放在了 go 之外。
 						u := utils.Must1(url.Parse(s.getHome())).JoinPath(s.plainLink(post.Id)).String()
 						s.notifier.SendInstant(
-							auth.SystemForLocal(context.Background()),
+							user.SystemForLocal(context.Background()),
 							&proto.SendInstantRequest{
 								Title: `分享了新文章`,
 								Body:  fmt.Sprintf("文章：%s\n来源：%s\n链接：%s", post.Title, owner.Nickname, u),
@@ -1636,7 +1636,7 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 
 func (s *Service) GetPostACL(ctx context.Context, in *proto.GetPostACLRequest) (*proto.GetPostACLResponse, error) {
 	// TODO 临时
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	var acl []models.AccessControlEntry
 	s.tdb.Where(`post_id=?`, in.PostId).MustFind(&acl)
@@ -1666,7 +1666,7 @@ func (s *Service) GetPostACL(ctx context.Context, in *proto.GetPostACLRequest) (
 // NOTE：需保证前提：文章是分享状态。
 // TODO：加缓存
 func (s *Service) canNonAuthorUserReadPost(ctx context.Context, uid int64, pid int) bool {
-	if uid == int64(auth.SystemID) {
+	if uid == int64(user.SystemID) {
 		return true
 	}
 
@@ -1685,7 +1685,7 @@ func (s *Service) canNonAuthorUserReadPost(ctx context.Context, uid int64, pid i
 //
 // 前置条件：
 func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequest) (_ *proto.SetPostUserIDResponse, outErr error) {
-	s.MustBeAdmin(ctx)
+	user.MustBeAdmin(ctx)
 
 	s.MustTxCallNoError(func(s *Service) {
 		p := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
@@ -1698,7 +1698,7 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 
 		// 确保用户存在。
 		// 应该 LOCK FOR UPDATE
-		utils.Must1(s.auth.GetUserByID(db.WithContext(ctx, s.tdb), int64(in.UserId)))
+		utils.Must1(s.userManager.GetUserByID(db.WithContext(ctx, s.tdb), int(in.UserId)))
 
 		// 分类是原作者自己的，不能转移。
 		// 自动设置成“未分类”。
