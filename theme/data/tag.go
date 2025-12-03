@@ -3,8 +3,8 @@ package data
 import (
 	"context"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 // TagData ...

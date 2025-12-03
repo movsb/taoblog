@@ -9,9 +9,9 @@ import (
 
 	"github.com/blugelabs/bluge"
 	"github.com/blugelabs/bluge/search"
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
 

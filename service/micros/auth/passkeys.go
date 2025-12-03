@@ -11,9 +11,9 @@ import (
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	auth_webauthn "github.com/movsb/taoblog/service/micros/auth/webauthn"
 	"github.com/phuslu/lru"
 	"google.golang.org/grpc"

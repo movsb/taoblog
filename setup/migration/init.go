@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
 	setup_data "github.com/movsb/taoblog/setup/data"
 	"github.com/movsb/taorm"

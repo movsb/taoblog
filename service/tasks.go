@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/calendar"
 	"github.com/movsb/taoblog/service/modules/calendar/solar"

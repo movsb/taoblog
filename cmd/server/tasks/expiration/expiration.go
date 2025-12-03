@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 // 监控证书过期的剩余时间。

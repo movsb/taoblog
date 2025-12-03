@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 type _GitHub struct {

@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
 
 	wgs2gcj "github.com/googollee/eviltransform/go"

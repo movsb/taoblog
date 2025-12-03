@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	backups_git "github.com/movsb/taoblog/modules/backups/git"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 // client：带凭证的客户端。

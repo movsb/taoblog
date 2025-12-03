@@ -9,9 +9,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taorm"
 	"github.com/ncruces/go-sqlite3/driver"

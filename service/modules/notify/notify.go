@@ -4,10 +4,10 @@ import (
 	"cmp"
 	"context"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/logs"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/modules/notify/instant"
 	"github.com/movsb/taoblog/service/modules/notify/mailer"
 	"github.com/movsb/taorm"

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 type ResolveFunc func(id uint32) (email string, mod time.Time, file io.ReadSeekCloser)

@@ -5,11 +5,11 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/geo"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/xeonx/timeago"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 type Option func(*RequestLogger)

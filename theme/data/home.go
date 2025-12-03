@@ -4,11 +4,11 @@ import (
 	"context"
 	"slices"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 )
 
 type GroupedPosts struct {

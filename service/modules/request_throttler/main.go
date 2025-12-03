@@ -5,8 +5,8 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/movsb/taoblog/modules/auth/user"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/service/micros/auth/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
