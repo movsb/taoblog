@@ -365,7 +365,7 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService
 		s.authFrontend, s.clientLoginService,
 		prefix, cfg.Site.GetHome, cfg.Site.GetName,
 		admin.WithCustomThemes(&cfg.Theme),
-		admin.WithWebAuthnHandler(s.authFrontend.GetWebAuthnHandler()),
+		admin.WithWebAuthnHandler(s.authFrontend.GetWebAuthnHandler),
 	)
 
 	mux.Handle(prefix, a.Handler())

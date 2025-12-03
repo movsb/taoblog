@@ -102,20 +102,15 @@ func (o *Auth) GetUserByToken(id int, token string) (*user.User, error) {
 	return o.userManager.GetUserByToken(context.Background(), id, token)
 }
 
-func (o *Auth) AuthToken(id int, token string) *user.User {
-	u, err := o.userManager.GetUserByToken(context.Background(), id, token)
-	if err == nil {
-		return u
-	}
-	return user.Guest
-}
-
 func (o *Auth) AuthRequest(w http.ResponseWriter, req *http.Request) *user.User {
 	loginCookie, err := req.Cookie(cookies.CookieNameLogin)
 	if err != nil {
 		if a := req.Header.Get(`Authorization`); a != "" {
 			id, token, _ := cookies.ParseAuthorization(a)
-			return o.AuthToken(id, token)
+			u, err := o.userManager.GetUserByToken(context.Background(), id, token)
+			if err == nil {
+				return u
+			}
 		}
 		return user.Guest
 	}

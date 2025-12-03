@@ -14,7 +14,7 @@ func WithCustomThemes(t *config.ThemeConfig) Option {
 	}
 }
 
-func WithWebAuthnHandler(handler http.Handler) Option {
+func WithWebAuthnHandler(handler func() http.Handler) Option {
 	return func(a *Admin) {
 		a.webAuthnHandler = handler
 	}

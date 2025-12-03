@@ -79,7 +79,7 @@ type Admin struct {
 
 	getName func() string
 
-	webAuthnHandler http.Handler
+	webAuthnHandler func() http.Handler
 	userManager     *auth.UserManager
 	authFrontend    *auth.Auth
 	clientLogin     *client_login.ClientLoginService
@@ -132,7 +132,7 @@ func NewAdmin(gateway *gateway.Gateway, management proto.ManagementServer, svc p
 
 func (a *Admin) handleWebAuthn(w http.ResponseWriter, r *http.Request) {
 	if a.webAuthnHandler != nil {
-		a.webAuthnHandler.ServeHTTP(w, r)
+		a.webAuthnHandler().ServeHTTP(w, r)
 		return
 	}
 	http.NotFound(w, r)
