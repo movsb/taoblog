@@ -45,7 +45,7 @@ func New(client *clients.ProtoClient, impl service.ToBeImplementedByRpc) http.Ha
 }
 
 func (s *Sitemap) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsp, err := s.impl.ListAllPostsIds(user.SystemForLocal(req.Context()))
+	rsp, err := s.impl.ListAllPostsIds(user.SystemForLocal(context.Background()))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

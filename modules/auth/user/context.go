@@ -43,6 +43,11 @@ func _Context(ctx context.Context) *AuthContext {
 
 // 创建一个新的 Context，包含相关信息。
 func NewContext(parent context.Context, user *User, remoteAddr netip.Addr, userAgent string) context.Context {
+	// 正常来说是不应该设置的，但是 System(ctx) 很有可能重复设置
+	// 目前在对应的地方换成 context.Background() 了。
+	if HasContext(parent) {
+		panic(`重复设置登录信息`)
+	}
 	ac := AuthContext{
 		User:       user,
 		RemoteAddr: remoteAddr,

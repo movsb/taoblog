@@ -785,7 +785,7 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 	// TODO 异步执行。
 	if isUpdatingUntitledPost(oldPost) && oldPost.UserID != int32(user.AdminID) {
 		title, _ := m[`title`].(string)
-		s.notifier.SendInstant(user.SystemForLocal(ctx), &proto.SendInstantRequest{
+		s.notifier.SendInstant(user.SystemForLocal(context.Background()), &proto.SendInstantRequest{
 			Title: `新文章发表`,
 			Body:  fmt.Sprintf(`%s 发表了新文章 %s`, ac.User.Nickname, title),
 		})
@@ -1320,7 +1320,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 		if opts.WithUserPerms {
 			ac := user.MustNotBeGuest(ctx)
 			userPerms := utils.Must1(s.GetPostACL(
-				user.SystemForLocal(ctx),
+				user.SystemForLocal(context.Background()),
 				&proto.GetPostACLRequest{PostId: int64(p.Id)}),
 			).Users
 			canRead := func(userID int32) bool {
@@ -1330,7 +1330,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 				return false
 			}
 			allUsers := utils.Must1(s.userManager.ListUsers(
-				user.SystemForLocal(ctx),
+				user.SystemForLocal(context.Background()),
 				&proto.ListUsersRequest{}),
 			).Users
 			allUsers = slices.DeleteFunc(allUsers, func(u *proto.User) bool {
