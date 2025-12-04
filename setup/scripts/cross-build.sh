@@ -18,6 +18,7 @@ ldflags="\
 -X 'github.com/movsb/taoblog/modules/version.GitCommit=$gitCommit' \
 "
 
-tags=""
+# nodynamic 是 	"github.com/gen2brain/avif" 库要求的。移除后可以去掉
+tags="nodynamic"
 
 CGO_ENABLED=0 go build -ldflags "$ldflags" -tags "$tags" -v -o "$OUTPUT"
