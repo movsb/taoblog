@@ -68,6 +68,7 @@ func (t *Task) run() {
 		}
 
 		if mime.TypeByExtension(path.Ext(file.Path)) == `image/avif` {
+			time.Sleep(time.Second * 10)
 			log.Println(`运行垃圾回收`)
 			runtime.GC()
 		}
