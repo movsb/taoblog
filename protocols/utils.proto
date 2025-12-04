@@ -30,3 +30,20 @@ message ResolveGeoLocationRequest {
 message ResolveGeoLocationResponse {
 	repeated string names = 1;
 }
+
+message AutoImageBorderRequest {
+	bytes data = 1;
+
+	uint32 r = 2;
+	uint32 g = 3;
+	uint32 b = 4;
+
+	float ratio = 5;
+
+	uint32 post_id = 10;
+	string path = 11;
+}
+
+message AutoImageBorderResponse {
+	float value = 1;
+}

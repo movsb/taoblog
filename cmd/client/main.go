@@ -370,6 +370,16 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	rootCmd.AddCommand(proxyCmd)
+
+	handleAutoImageBorderCmd := &cobra.Command{
+		Use:              `handle-auto-image-border`,
+		Short:            `远程处理图片数据`,
+		PersistentPreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			client.handleAutoImageBorder()
+		},
+	}
+	rootCmd.AddCommand(handleAutoImageBorderCmd)
 }
 
 func edit(value string, fileSuffix string) (string, bool) {

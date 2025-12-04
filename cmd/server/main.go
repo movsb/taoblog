@@ -45,6 +45,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/notify"
 	"github.com/movsb/taoblog/service/modules/notify/mailer"
+	"github.com/movsb/taoblog/service/modules/renderers/auto_image_border"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
@@ -97,6 +98,7 @@ type Server struct {
 	main    *service.Service
 	gateway *gateway.Gateway
 	rss     *rss.RSS
+	utils   *micros_utils.Utils
 
 	notifyServer proto.NotifyServer
 }
@@ -477,7 +479,7 @@ func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr 
 		options = append(options, micros_utils.WithGaoDe(key))
 	}
 
-	micros_utils.New(ctx, sr, options...)
+	s.utils = micros_utils.New(ctx, sr, options...)
 }
 
 func (s *Server) createAuthServices(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar, db *taorm.DB) {
@@ -789,4 +791,14 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 	}
 
 	s.initSyncs(ctx, cfg, filesStore)
+
+	createImageBorderTask := func() *auto_image_border.Task {
+		return auto_image_border.NewTask(
+			s.Main().GetPluginStorage(`auto_image_border`),
+			filesStore, func(id int) {
+				s.Main().InvalidatePost(id)
+			})
+	}
+
+	s.utils.SetAutoImageBorderCreator(createImageBorderTask)
 }

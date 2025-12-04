@@ -10,13 +10,14 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
+	"github.com/movsb/taoblog/service/modules/renderers/auto_image_border"
 	"github.com/xeonx/timeago"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func New(ctx context.Context, sr grpc.ServiceRegistrar, options ...Option) {
+func New(ctx context.Context, sr grpc.ServiceRegistrar, options ...Option) *Utils {
 	u := &Utils{
 		timezone: globals.SystemTimezone,
 	}
@@ -26,6 +27,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, options ...Option) {
 	}
 
 	proto.RegisterUtilsServer(sr, u)
+
+	return u
 }
 
 type Utils struct {
@@ -33,6 +36,8 @@ type Utils struct {
 
 	timezone            func() *time.Location
 	geoLocationResolver geo.GeoLocationResolver
+
+	autoImageBorderCreator func() *auto_image_border.Task
 }
 
 type Option func(u *Utils)

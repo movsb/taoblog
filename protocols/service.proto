@@ -53,6 +53,8 @@ service Utils {
 			description: "从坐标解析位置。";
 		};
 	}
+
+	rpc RegisterAutoImageBorderHandler(stream AutoImageBorderResponse) returns (stream AutoImageBorderRequest);
 }
 
 service ClientLogin {

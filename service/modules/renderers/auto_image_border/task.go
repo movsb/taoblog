@@ -2,6 +2,7 @@ package auto_image_border
 
 import (
 	"context"
+	"io"
 	"log"
 	"mime"
 	"path"
@@ -9,17 +10,17 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/storage"
 )
 
-func NewTask(ctx context.Context, store utils.PluginStorage, fs *storage.SQLite, invalidate func(id int)) *Task {
+func NewTask(store utils.PluginStorage, fs *storage.SQLite, invalidate func(id int)) *Task {
 	t := &Task{
 		store:      store,
 		fs:         fs,
 		invalidate: invalidate,
 	}
-	go t.Run(ctx)
 	return t
 }
 
@@ -29,21 +30,26 @@ type Task struct {
 	invalidate func(id int)
 }
 
-func (t *Task) Run(ctx context.Context) {
+func (t *Task) Run(ctx context.Context, s proto.Utils_RegisterAutoImageBorderHandlerServer) {
 	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
+
+	t.run(s)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			t.run()
+			t.run(s)
+		case <-s.Context().Done():
+			log.Println(`handler server context down`)
+			return
 		}
 	}
 }
 
-func (t *Task) run() {
+func (t *Task) run(s proto.Utils_RegisterAutoImageBorderHandlerServer) {
 	now := time.Now()
 
 	last, err := t.store.GetIntegerDefault(`last`, 0)
@@ -62,7 +68,7 @@ func (t *Task) run() {
 			continue
 		}
 
-		if err := calcFile(t, file); err != nil {
+		if err := calcFile(t, file, s); err != nil {
 			log.Println(err, file)
 			return
 		}
@@ -81,7 +87,7 @@ func (t *Task) run() {
 	t.store.SetInteger(`last`, now.Unix())
 }
 
-func calcFile(t *Task, file *models.File) error {
+func calcFile(t *Task, file *models.File, s proto.Utils_RegisterAutoImageBorderHandlerServer) error {
 	log.Println(`计算可访问性：`, file.PostID, file.Path)
 
 	// debug
@@ -95,7 +101,12 @@ func calcFile(t *Task, file *models.File) error {
 	}
 	defer fp.Close()
 
-	value := BorderContrastRatio(fp, 255, 255, 255, 1)
+	// value := BorderContrastRatio(fp, 255, 255, 255, 1)
+	value, err := remoteCalc(s, file, fp, 255, 255, 255, 1)
+	if err != nil {
+		return err
+	}
+
 	// 零为特殊值，计算过的始终不为零。
 	if value < 0.001 {
 		value = 0.001
@@ -111,4 +122,25 @@ func calcFile(t *Task, file *models.File) error {
 	t.invalidate(file.PostID)
 
 	return nil
+}
+
+func remoteCalc(s proto.Utils_RegisterAutoImageBorderHandlerServer, file *models.File, fp io.Reader, r, g, b byte, ratio float32) (value float32, outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	log.Println(`发送数据`)
+
+	utils.Must(s.Send(&proto.AutoImageBorderRequest{
+		PostId: uint32(file.PostID),
+		Path:   file.Path,
+
+		Data:  utils.Must1(io.ReadAll(fp)),
+		R:     uint32(r),
+		G:     uint32(g),
+		B:     uint32(b),
+		Ratio: ratio,
+	}))
+
+	log.Println(`等待接收数据`)
+
+	return utils.Must1(s.Recv()).GetValue(), nil
 }

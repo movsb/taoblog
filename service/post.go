@@ -1747,8 +1747,7 @@ func (s *Service) SetPostUserID(ctx context.Context, in *proto.SetPostUserIDRequ
 		}
 	})
 
-	s.deletePostContentCacheFor(in.PostId)
-	s.updatePostMetadataTime(in.PostId, time.Now())
+	s.InvalidatePost(int(in.PostId))
 
 	return &proto.SetPostUserIDResponse{}, nil
 }
@@ -1760,4 +1759,9 @@ func (s *Service) isPostPublic(ctx context.Context, pid int) bool {
 		return false
 	}
 	return p.Status == models.PostStatusPublic
+}
+
+func (s *Service) InvalidatePost(id int) {
+	s.deletePostContentCacheFor(int64(id))
+	s.updatePostMetadataTime(int64(id), time.Now())
 }
