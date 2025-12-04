@@ -18,6 +18,9 @@ class ImageView {
 			// 不再使用 blur 类。
 			img.classList.remove('blur');
 
+			// 不再包含边框。
+			img.classList.remove('border');
+
 			// 移除封面效果。
 			img.style.removeProperty('object-fit');
 			img.style.removeProperty('aspect-ratio');
@@ -46,7 +49,7 @@ class ImageView {
 				
 				const button = document.createElement('button');
 				button.classList.add('play');
-				button.textContent = '按住以播放实况照片';
+				button.textContent = '播放实况照片';
 				div.appendChild(button);
 
 				// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。

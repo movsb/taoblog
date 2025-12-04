@@ -216,6 +216,10 @@ func renderImage(w util.BufWriter, url *url.URL, n *ast.Image, source []byte) {
 		classes = append(classes, n)
 		q.Del(n)
 	}
+	if n := `border`; q.Has(n) {
+		classes = append(classes, n)
+		q.Del(n)
+	}
 
 	url.RawQuery = q.Encode()
 

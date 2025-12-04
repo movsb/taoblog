@@ -51,6 +51,10 @@ func TestRenderByType(t *testing.T) {
 			Markdown: `![](1.jpg?light&padding)`,
 			HTML:     `<p><img src="1.jpg" alt="" class="light-on-dark padding"></p>`,
 		},
+		{
+			Markdown: `![](1.jpg?border)`,
+			HTML:     `<p><img src="1.jpg" alt="" class="border"></p>`,
+		},
 	}
 
 	for _, tc := range testCases {
