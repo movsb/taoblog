@@ -217,11 +217,13 @@ func TestMarkdownAll(t *testing.T) {
 		<video src="1.mp4" playsinline="" onerror="decryptFile(this)" onended="fixVideoCache(this)"></video>
 		<img src="1.jpg" alt="" width="460" height="460" onerror="decryptFile(this)"/>
 	</div>
-	<div class="icon">
-		<img src="/v3/dynamic/live-photo/live.png" class="static"/>
-		<span>实况</span>
+	<div class="overlay">
+		<div class="icon">
+			<img src="/v3/dynamic/live-photo/live.png" class="static"/>
+			<span>实况</span>
+		</div>
+		<div class="warning" style="opacity: 0;"></div>
 	</div>
-	<div class="warning" style="opacity: 0;"></div>
 </div>
 </div>`,
 		},

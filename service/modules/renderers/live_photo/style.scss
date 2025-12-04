@@ -2,8 +2,10 @@
 	// 必须在代码里面计算并设置在 inline style 上。
 	// width: 252px;
 	// height: 336px;
+
 	// 允许子元素为 absolute
 	position: relative;
+
 	// 允许缩放
 	overflow: hidden;
 	border-radius: var(--border-radius);
@@ -70,45 +72,75 @@
 		}
 	}
 
-	.warning {
-		padding: 4px 6px;
-		margin: 10px;
-		color: #9a6700;
-		border-radius: var(--border-radius);
-		position: absolute;
-		left: 0;
-		top: 40px;
-		background-color: #f0ffffab;
-		transition: opacity .5s linear;
-		&.show {
-			opacity: 1 !important;
-			display: inline-block !important;
+	.overlay {
+		.icon {
+			display: inline-flex;
+			align-items: center;
+			padding: 2px;
+			border-radius: var(--border-radius);
+			height: 22px;
+			background-color: #f0ffffab;
+			cursor: pointer;
+			user-select: none;
+
+			img {
+				width: 22px;
+				height: 22px;
+			}
+			span {
+				padding: 3px;
+				color: #606060;
+				font-size: 80%;
+			}
+		}
+
+		.warning {
+			padding: 4px 6px;
+			margin: 10px;
+			color: #9a6700;
+			border-radius: var(--border-radius);
+			background-color: #f0ffffab;
+			transition: opacity .5s linear;
+			&.show {
+				opacity: 1 !important;
+				display: inline-block !important;
+			}
 		}
 	}
 }
 
-// 提出来是为了图片预览时也有效果。
-// 比较 hack 的手法。
-.live-photo .icon, .live-photo-icon {
-	display: inline-flex;
-	align-items: center;
-	padding: 2px;
-	border-radius: var(--border-radius);
-	position: relative;
-	left: 10px;
-	top: 10px;
-	height: 22px;
-	background-color: #f0ffffab;
-	cursor: pointer;
-	user-select: none;
+// 提取出单独设置位置。
 
-	img {
-		width: 22px;
-		height: 22px;
+.live-photo {
+	.overlay {
+		> .icon {
+			position: relative;
+			left: 10px;
+			top: 10px;
+		}
+
+		> .warning {
+			position: absolute;
+			left: 0;
+			top: 40px;
+		}
 	}
-	span {
-		padding: 3px;
-		color: #606060;
-		font-size: 80%;
+}
+
+// 在手机上的时候把图标放下面，并把事件从全图挪开（影响页面滚动）。
+@media (hover: none) {
+	.live-photo .overlay {
+		> .warning {
+			position: absolute;
+			left: 0;
+			top: 10px;
+		}
+
+		> .icon {
+			position: absolute;
+			left: 10px;
+			bottom: 10px;
+			top: unset;
+		}
 	}
 }

@@ -43,11 +43,14 @@ class ImageView {
 				/** @type {HTMLDivElement} */
 				const icon = clone.querySelector('.icon');
 				icon.remove();
-				icon.classList.add('live-photo-icon');
-				div.appendChild(icon);
+				
+				const button = document.createElement('button');
+				button.classList.add('play');
+				button.textContent = '按住以播放实况照片';
+				div.appendChild(button);
 
 				// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。
-				livePhotoBindEvents(clone, icon, div);
+				livePhotoBindEvents(clone, button);
 
 				clone = div;
 			}

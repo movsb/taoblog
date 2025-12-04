@@ -2,14 +2,13 @@
  * 绑定实况照片的事件处理元素。
  * 独立出来的原因是 image-view 那边也会用到。
  * @param {HTMLDivElement} livePhoto 
- * @param {HTMLElement} hoverElement 桌面设备的鼠标悬停事件元素
- * @param {HTMLElement} touchElement 移动设备的长按事件元素
+ * @param {HTMLElement} element 桌面设备的鼠标悬停事件元素 或 移动设备的长按事件元素
  */
-const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
+const livePhotoBindEvents = (livePhoto, eventElement) => {
 	const container = livePhoto.querySelector('.container');
 	const icon = livePhoto.querySelector('.icon');
 	const video = container.querySelector('video');
-	const image = container.querySelector('img');
+	// const image = container.querySelector('img');
 	const warning = livePhoto.querySelector('.warning');
 
 	// TODO 优化：等图片可用的时候再把视频显示出来，测试出现
@@ -24,9 +23,6 @@ const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
 	// fix: 鼠标进入 → 开始加载 → 鼠标离开（加载成功前） → 加载失败。
 	let within = false;
 
-	// 在移动设备上模拟点击。
-	let touchTimer = null;
-
 	/**
 	 * @param {MouseEvent | TouchEvent} e 
 	 */
@@ -35,12 +31,6 @@ const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
 		e.preventDefault();
 
 		within = true;
-
-		if(e.touches) {
-			touchTimer = setTimeout(()=>{
-				!touchTimer && image.click();
-			}, 250);
-		}
 
 		try {
 			video.currentTime = 0;
@@ -71,21 +61,17 @@ const livePhotoBindEvents = (livePhoto, hoverElement, touchElement) => {
 		// 成功返回，就会进入异常处理。
 		within = false;
 
-		if(touchTimer) {
-			touchTimer = null;
-		}
-
 		video.pause();
 	};
 
 	const isMobile = 'ontouchstart' in window;
 	if(isMobile) {
-		const touch = touchElement ?? image;
+		const touch = eventElement ?? icon;
 		touch.addEventListener('touchstart',  start);
 		touch.addEventListener('touchend',    leave);
 		touch.addEventListener('touchcancel', leave);
 	} else {
-		const hover = hoverElement ?? icon;
+		const hover = eventElement ?? icon;
 		hover.addEventListener('mouseenter',   start);
 		hover.addEventListener('mouseleave',   leave);
 	}

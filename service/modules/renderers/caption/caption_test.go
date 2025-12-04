@@ -41,11 +41,13 @@ func TestRender(t *testing.T) {
 		<video src="3.webm" playsinline=""></video>
 		<img src="3.jpg" width="100" height="100"/>
 	</div>
-	<div class="icon">
-		<img src="/v3/dynamic/live-photo/live.png" class="static"/>
-		<span>实况</span>
+	<div class="overlay">
+		<div class="icon">
+			<img src="/v3/dynamic/live-photo/live.png" class="static"/>
+			<span>实况</span>
+		</div>
+		<div class="warning" style="opacity: 0;"></div>
 	</div>
-	<div class="warning" style="opacity: 0;"></div>
 </div>
 <figcaption><p><strong>bold</strong> <em>italic</em> 说明</p></figcaption></figure>`,
 		},

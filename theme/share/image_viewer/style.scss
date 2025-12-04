@@ -42,9 +42,12 @@
 			margin: auto;
 			max-width: unset;
 		}
-		.live-photo-icon {
-			// 重新调整为左上角。
+		.play {
 			position: absolute;
+			background-color: #f0ffffab;
+			left: 50%;
+			bottom: 10%;
+			transform: translateX(-50%);
 		}
 	}
 	// 不知道为什么多出来一丢丢 y 滚动。
