@@ -3,6 +3,9 @@ package auto_image_border
 import (
 	"context"
 	"log"
+	"mime"
+	"path"
+	"runtime"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -63,6 +66,11 @@ func (t *Task) run() {
 			log.Println(err, file)
 			return
 		}
+
+		if mime.TypeByExtension(path.Ext(file.Path)) == `image/avif` {
+			log.Println(`运行垃圾回收`)
+			runtime.GC()
+		}
 	}
 
 	if len(updated) > 0 {
@@ -87,6 +95,10 @@ func calcFile(t *Task, file *models.File) error {
 	defer fp.Close()
 
 	value := BorderContrastRatio(fp, 255, 255, 255, 1)
+	// 零为特殊值，计算过的始终不为零。
+	if value < 0.001 {
+		value = 0.001
+	}
 	file.Meta.BorderContrastRatio = value
 
 	if err := t.fs.UpdateFileMeta(file.ID, &file.Meta); err != nil {

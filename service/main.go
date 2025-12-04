@@ -255,11 +255,11 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.calendar,
 	)
 
-	// s.imageBorderTask = auto_image_border.NewTask(ctx,
-	// 	s.GetPluginStorage(`auto_image_border`), s.mainStorage, func(id int) {
-	// 		s.deletePostContentCacheFor(int64(id))
-	// 		s.updatePostMetadataTime(int64(id), time.Now())
-	// 	})
+	s.imageBorderTask = auto_image_border.NewTask(ctx,
+		s.GetPluginStorage(`auto_image_border`), s.mainStorage, func(id int) {
+			s.deletePostContentCacheFor(int64(id))
+			s.updatePostMetadataTime(int64(id), time.Now())
+		})
 
 	s.thumbHashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`thumb_hash`), s.mainStorage, func(pid int) {
 		s.deletePostContentCacheFor(int64(pid))

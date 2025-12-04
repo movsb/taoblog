@@ -68,9 +68,11 @@ func (m *AutoImageBorder) TransformHtml(doc *goquery.Document) error {
 		if !ok {
 			return
 		}
-		s.SetAttr(`data-contrast-ratio`, fmt.Sprint(info.Meta.BorderContrastRatio))
-		if info.Meta.BorderContrastRatio < 0.4 {
-			s.AddClass(`border`)
+		if r := info.Meta.BorderContrastRatio; r > 0 {
+			s.SetAttr(`data-contrast-ratio`, fmt.Sprint(info.Meta.BorderContrastRatio))
+			if r < 0.4 {
+				s.AddClass(`border`)
+			}
 		}
 	})
 	return nil
