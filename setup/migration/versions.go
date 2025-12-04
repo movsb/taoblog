@@ -918,3 +918,7 @@ func v67(posts, files, cache *taorm.DB) {
 func v68(posts, files, cache *taorm.DB) {
 	posts.MustExec(`DELETE FROM options WHERE name='others.geo.baidu'`)
 }
+
+func v69(posts, files, cache *taorm.DB) {
+	posts.MustExec("CREATE INDEX `files_updated_at` on `files` (`updated_at`)")
+}

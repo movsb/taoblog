@@ -126,4 +126,6 @@ CREATE TABLE IF NOT EXISTS `files` (
 
 CREATE UNIQUE INDEX `post_id__path` ON `files` (`post_id`,`path`);
 
+CREATE INDEX `files_updated_at` on `files` (`updated_at`);
+
 COMMIT;

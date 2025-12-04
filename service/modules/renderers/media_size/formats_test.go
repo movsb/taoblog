@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	avif "github.com/movsb/go-image-avif-size"
 	"github.com/movsb/taoblog/modules/utils"
 	test_utils "github.com/movsb/taoblog/modules/utils/test"
 )
@@ -32,6 +33,8 @@ func TestSvg(t *testing.T) {
 }
 
 func TestAvif(t *testing.T) {
+	avif.Init()
+
 	var testCases = []struct {
 		path          string
 		width, height int

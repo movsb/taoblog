@@ -34,6 +34,7 @@ require (
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/dop251/goja_nodejs v0.0.0-20250325151027-56d2092bee9a
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/gen2brain/avif v0.4.4
 	github.com/go-git/go-git/v5 v5.13.2
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/goccy/go-graphviz v0.2.9
@@ -42,7 +43,7 @@ require (
 	github.com/googollee/eviltransform v0.0.0-20231101174306-03ba58d92dfd
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
-	github.com/movsb/go-image-avif-size v0.0.0-20250607015031-0e19c3e4a9c8
+	github.com/movsb/go-image-avif-size v0.0.0-20251204153653-47851b126de5
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
 	github.com/ncruces/go-sqlite3 v0.30.1
 	github.com/phuslu/lru v1.0.18
@@ -54,6 +55,7 @@ require (
 	go.abhg.dev/goldmark/hashtag v0.3.1
 	go.abhg.dev/goldmark/toc v0.11.0
 	go.n16f.net/thumbhash v1.1.0
+	golang.org/x/image v0.33.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1
 )
 
@@ -81,6 +83,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
+	github.com/ebitengine/purego v0.8.3 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
@@ -106,11 +109,10 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/image v0.32.0 // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/time v0.4.0 // indirect
-	golang.org/x/tools v0.37.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
@@ -135,9 +137,9 @@ require (
 	github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.45.0
+	golang.org/x/net v0.46.0
 	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

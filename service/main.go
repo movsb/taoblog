@@ -25,6 +25,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/calendar/solar"
 	commentgeo "github.com/movsb/taoblog/service/modules/comment_geo"
 	"github.com/movsb/taoblog/service/modules/comment_notify"
+	"github.com/movsb/taoblog/service/modules/renderers/auto_image_border"
 	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
@@ -114,6 +115,8 @@ type Service struct {
 	thumbHashTask *blur_image.Task
 	// 族谱图任务
 	genealogyTask *genealogy.Task
+	// 图片边框任务
+	imageBorderTask *auto_image_border.Task
 
 	calendar *calendar.CalenderService
 	aesGCM   *crypto.AesGcm
@@ -251,6 +254,12 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		s.GetPluginStorage(`genealogy`),
 		s.calendar,
 	)
+
+	s.imageBorderTask = auto_image_border.NewTask(ctx,
+		s.GetPluginStorage(`auto_image_border`), s.mainStorage, func(id int) {
+			s.deletePostContentCacheFor(int64(id))
+			s.updatePostMetadataTime(int64(id), time.Now())
+		})
 
 	s.thumbHashTask = blur_image.NewTask(s.ctx, s.GetPluginStorage(`thumb_hash`), s.mainStorage, func(pid int) {
 		s.deletePostContentCacheFor(int64(pid))

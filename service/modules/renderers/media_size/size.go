@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	avif "github.com/movsb/go-image-avif-size"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
@@ -222,6 +223,7 @@ func All(r io.Reader) (*Metadata, error) {
 
 	for _, d := range []func(r io.Reader) (*Metadata, error){
 		normal,
+		calcAvif,
 		svg,
 	} {
 		md, err := d(dup())
@@ -231,4 +233,9 @@ func All(r io.Reader) (*Metadata, error) {
 		errs = append(errs, err)
 	}
 	return nil, fmt.Errorf(`no decoder applicable: %w`, errors.Join(errs...))
+}
+
+func calcAvif(r io.Reader) (*Metadata, error) {
+	w, h, err := avif.Size(r)
+	return &Metadata{w, h}, err
 }

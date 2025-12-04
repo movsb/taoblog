@@ -43,6 +43,9 @@ func (FileData) TableName() string {
 
 // 元数据。
 // 由 Stat.Sys() 返回文件拿到。
+//
+// 非严格 JSON 解析，因此：字段可以随便加，随便减；
+// 一旦更新，不能解析的字段自动被删除。
 type FileMeta struct {
 	// 如果是图片，则包含宽高。
 	// 只能是空值。上传的时候浏览器计算。
@@ -54,6 +57,9 @@ type FileMeta struct {
 
 	// [ThumbHash: A very compact representation of an image placeholder](https://evanw.github.io/thumbhash/)
 	ThumbHash string
+
+	// 是否应该给图片加边框。
+	BorderContrastRatio float32
 }
 
 type FileEncryptionMeta struct {
