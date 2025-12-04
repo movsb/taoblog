@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	auth_webauthn "github.com/movsb/taoblog/service/micros/auth/webauthn"
 	"github.com/phuslu/lru"
@@ -21,14 +23,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type AuthBackend interface {
-	GetUserByID(id int) (*user.User, error)
-}
-
 type PasskeysService struct {
-	authBackend AuthBackend
-	wa          func() *webauthn.WebAuthn
-	cookieGen   func(user *user.User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie
+	wa      func() *webauthn.WebAuthn
+	getUser func(id int) (*user.User, error)
 
 	loginSessions *lru.TTLCache[string, *webauthn.SessionData]
 
@@ -39,11 +36,12 @@ func NewPasskeysService(
 	ctx context.Context,
 	sr grpc.ServiceRegistrar,
 	wa func() *webauthn.WebAuthn,
-	cookieGen func(user *user.User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie,
+	getUser func(id int) (*user.User, error),
 ) *PasskeysService {
 	return &PasskeysService{
-		wa:            wa,
-		cookieGen:     cookieGen,
+		wa:      wa,
+		getUser: getUser,
+
 		loginSessions: lru.NewTTLCache[string, *webauthn.SessionData](8),
 	}
 }
@@ -114,7 +112,7 @@ func (p *PasskeysService) FinishPasskeysLogin(ctx context.Context, in *proto.Fin
 	credential, err := p.wa().FinishDiscoverableLogin(
 		func(rawID, userHandle []byte) (webauthn.User, error) {
 			id := binary.LittleEndian.Uint32(userHandle)
-			u, err := p.authBackend.GetUserByID(int(id))
+			u, err := p.getUser(int(id))
 			if err != nil {
 				return nil, err
 			}
@@ -132,8 +130,29 @@ func (p *PasskeysService) FinishPasskeysLogin(ctx context.Context, in *proto.Fin
 
 	return &proto.FinishPasskeysLoginResponse{
 		Token:   fmt.Sprintf(`%d:%s`, outUser.ID, outUser.Password),
-		Cookies: p.cookieGen(outUser, in.UserAgent),
+		Cookies: genCookies(outUser, in.UserAgent),
 	}, nil
 }
 
 var _ proto.PasskeysServer = (*PasskeysService)(nil)
+
+func genCookies(u *user.User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie {
+	cookie := cookies.CookieValue(agent, int(u.ID), u.Password)
+	return []*proto.FinishPasskeysLoginResponse_Cookie{
+		{
+			Name:     cookies.CookieNameLogin,
+			Value:    cookie,
+			HttpOnly: true,
+		},
+		{
+			Name:     cookies.CookieNameUserID,
+			Value:    fmt.Sprint(u.ID),
+			HttpOnly: false,
+		},
+		{
+			Name:     cookies.CookieNameNickname,
+			Value:    url.PathEscape(u.Nickname),
+			HttpOnly: false,
+		},
+	}
+}

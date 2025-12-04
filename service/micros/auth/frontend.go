@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	auth_webauthn "github.com/movsb/taoblog/service/micros/auth/webauthn"
@@ -220,25 +218,4 @@ func (o *Auth) AuthGitHub(code string) *user.User {
 
 		return &User{User: &user}
 	*/
-}
-
-func (a *Auth) GenCookieForPasskeys(u *user.User, agent string) []*proto.FinishPasskeysLoginResponse_Cookie {
-	cookie := cookies.CookieValue(agent, int(u.ID), u.Password)
-	return []*proto.FinishPasskeysLoginResponse_Cookie{
-		{
-			Name:     cookies.CookieNameLogin,
-			Value:    cookie,
-			HttpOnly: true,
-		},
-		{
-			Name:     cookies.CookieNameUserID,
-			Value:    fmt.Sprint(u.ID),
-			HttpOnly: false,
-		},
-		{
-			Name:     cookies.CookieNameNickname,
-			Value:    url.PathEscape(u.Nickname),
-			HttpOnly: false,
-		},
-	}
 }
