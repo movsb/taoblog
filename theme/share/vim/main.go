@@ -1,4 +1,4 @@
-package image_viewer
+package vim
 
 import (
 	"embed"
