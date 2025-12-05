@@ -7,18 +7,70 @@
 <link rel="stylesheet" type="text/css" href="/style.css">
 {{ apply_site_theme_customs }}
 <script src="/script.js"></script>
+<style>
+	body.admin {
+		margin: 0;
+	}
+	header {
+		position: fixed;
+		left: 0;
+		top: 0;
+		width: 100%;
+		padding: 1em;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.sitename {
+		font-size: 120%;
+		font-weight: bold;
+	}
+	input[type=submit] {
+		padding: .5em 4em;
+		margin: 2em 4em;
+	}
+	.nickname {
+		text-align: right;
+		cursor: pointer;
+	}
+</style>
 </head>
 <body class="admin client">
 <div id="wrapper">
 {{ if .Authorized }} 
 <div>已授权登录，请关闭此窗口。</div>
 {{ else }}
+<header>
+	<div class="sitename">{{.SiteName}}</div>
+	<div class="nickname">{{.Nickname}}</div>
+</header>
 <div>
 	<form method="post">
-		<input type="submit" value="立即授权">
+		<div>
+			<input type="submit" value="授权登录">
+		</div>
+		<div>
+
+		</div>
 	</form>
 </div>
 {{ end }}
 </div>
+<script>
+document.querySelector('.nickname').addEventListener('click', async () => {
+	let wa = new WebAuthn();
+	try {
+		await wa.login();
+		location.reload();
+	} catch(e) {
+		if (e instanceof DOMException && ["NotAllowedError", "AbortError"].includes(e.name)) {
+			console.log('已取消操作。');
+			return;
+		}
+		alert(e);
+	}
+});
+</script>
 </body>
 </html>

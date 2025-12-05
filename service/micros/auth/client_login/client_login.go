@@ -46,6 +46,11 @@ func (s *ClientLoginService) SetClientLoginToken(random, token string) {
 	}, time.Second*5)
 }
 
+func (s *ClientLoginService) HasRandom(random string) bool {
+	_, _, ok := s.clientLoginSessions.Peek(random)
+	return ok
+}
+
 func (s *ClientLoginService) ClientLogin(in *proto.ClientLoginRequest, srv proto.ClientLogin_ClientLoginServer) error {
 	var random [16]byte
 	rand.Read(random[:])
@@ -57,7 +62,7 @@ func (s *ClientLoginService) ClientLogin(in *proto.ClientLoginRequest, srv proto
 	q.Set(`random`, randomString)
 	u.RawQuery = q.Encode()
 
-	s.clientLoginSessions.Set(randomString, &_ClientLoginSessionData{}, time.Minute*5)
+	s.clientLoginSessions.Set(randomString, &_ClientLoginSessionData{}, time.Minute)
 
 	if err := srv.Send(&proto.ClientLoginResponse{
 		Response: &proto.ClientLoginResponse_Open_{

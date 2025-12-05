@@ -58,13 +58,15 @@ func (a *Admin) loginByPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 type _ClientLoginData struct {
+	SiteName   string
+	Nickname   string
 	Authorized bool
 }
 
 // 同时处理登录跳转、未授权页面、已授权页面。
 func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 	random := r.URL.Query().Get(`random`)
-	if random == `` {
+	if random == `` || !a.clientLogin.HasRandom(random) {
 		http.Error(w, `无效登录信息。`, 400)
 		return
 	}
@@ -74,6 +76,8 @@ func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 	// 授权进行页面。
 	if !ac.User.IsGuest() && r.Method == http.MethodGet {
 		a.executeTemplate(w, `client.html`, _ClientLoginData{
+			SiteName:   a.getName(),
+			Nickname:   ac.User.Nickname,
 			Authorized: false,
 		})
 		return
