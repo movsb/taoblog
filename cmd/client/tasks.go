@@ -16,7 +16,11 @@ func (c *Client) handleAutoImageBorder() {
 
 	for {
 		req, err := client.Recv()
-		if err != nil && strings.Contains(err.Error(), `EOF`) {
+		if err != nil {
+			if strings.Contains(err.Error(), `EOF`) {
+				return
+			}
+			log.Println(err)
 			return
 		}
 

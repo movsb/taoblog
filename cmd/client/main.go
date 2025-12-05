@@ -59,20 +59,23 @@ func saveHostConfig(name string, home string, token string) {
 		panic(err)
 	}
 	path := filepath.Join(usr.HomeDir, "/.taoblog.yml")
-	fp, err := os.Open(path)
-	if err != nil {
+	var r io.Reader
+	if fp, err := os.Open(path); err != nil {
 		if !os.IsNotExist(err) {
 			panic("cannot read init config: " + path)
 		}
+		r = strings.NewReader(`{}`)
+	} else {
+		defer fp.Close()
+		r = fp
 	}
 	hostConfigs := map[string]HostConfig{}
-	ymlDec := yaml.NewDecoder(fp)
+	ymlDec := yaml.NewDecoder(r)
 	if err := ymlDec.Decode(&hostConfigs); err != nil {
 		panic(err)
 	}
-	fp.Close()
 
-	fp = utils.Must1(os.Create(path))
+	fp := utils.Must1(os.Create(path))
 	defer fp.Close()
 
 	hostConfigs[name] = HostConfig{
