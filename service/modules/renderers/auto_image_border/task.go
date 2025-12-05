@@ -6,7 +6,7 @@ import (
 	"log"
 	"mime"
 	"path"
-	"runtime"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -68,15 +68,13 @@ func (t *Task) run(s proto.Utils_RegisterAutoImageBorderHandlerServer) {
 			continue
 		}
 
+		if !strings.HasPrefix(mime.TypeByExtension(path.Ext(file.Path)), `image/`) {
+			continue
+		}
+
 		if err := calcFile(t, file, s); err != nil {
 			log.Println(err, file)
 			return
-		}
-
-		if mime.TypeByExtension(path.Ext(file.Path)) == `image/avif` {
-			time.Sleep(time.Second * 10)
-			log.Println(`运行垃圾回收`)
-			runtime.GC()
 		}
 	}
 
