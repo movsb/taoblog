@@ -142,6 +142,7 @@ body.signed-in {
 	display: none;
 	resize: both;
 	overflow: auto; /* this is to enable resize area */
+	opacity: 0.95;
 
 	.nc {
 		height: 38px;

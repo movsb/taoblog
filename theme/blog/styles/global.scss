@@ -233,32 +233,6 @@ dialog {
 	border-radius: var(--border-radius);
 }
 
-@keyframes fadeIn {
-	0% { opacity: 0; display: block; }
-	100% { opacity: 1;}
-}
-@keyframes fadeIn95 {
-	0% { opacity: 0; display: block; }
-	100% { opacity: .95;}
-}
-@keyframes fadeOut {
-	0% { opacity: 1;}
-	100% { opacity: 0; display: none; }
-}
-@keyframes fadeOut95 {
-	0% { opacity: .95;}
-	100% { opacity: 0; display: none; }
-}
-
-.fade-in, .fade-in-95, .fade-out, .fade-out-95 {
-	animation-duration: .35s;
-	animation-fill-mode:forwards;
-}
-.fade-in { animation-name: fadeIn; }
-.fade-in-95 { animation-name: fadeIn95; }
-.fade-out { animation-name: fadeOut; }
-.fade-out-95 { animation-name: fadeOut95; }
-
 @keyframes spin {
 	from {transform:rotate(0deg);}
 	to {transform:rotate(360deg);}

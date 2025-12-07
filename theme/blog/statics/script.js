@@ -8,43 +8,6 @@ function __TaoBlog()
 
 var TaoBlog = window.TaoBlog = new __TaoBlog();
 
-TaoBlog.fn.fadeIn = function(elem, callback) {
-	return TaoBlog.fn._fadeIn(elem, callback, 'fade-in');
-};
-TaoBlog.fn.fadeIn95 = function(elem, callback) {
-	return TaoBlog.fn._fadeIn(elem, callback, 'fade-in-95');
-};
-TaoBlog.fn._fadeIn = function(elem, callback, name) {
-	elem.classList.remove('fade-out');
-	elem.classList.remove('fade-out-95');
-	elem.style.display = 'block';
-	if (typeof callback == 'function') {
-		elem.addEventListener('animationend', function(event) {
-			// console.log('fade-in animationend');
-			callback();
-		}, { once: true});
-	}
-	elem.classList.add(name);
-};
-TaoBlog.fn.fadeOut = function(elem, callback, name) {
-	return TaoBlog.fn._fadeOut(elem, callback, 'fade-out');
-}
-TaoBlog.fn.fadeOut95 = function(elem, callback, name) {
-	return TaoBlog.fn._fadeOut(elem, callback, 'fade-out-95');
-}
-TaoBlog.fn._fadeOut = function(elem, callback, name) {
-	elem.classList.remove('fade-in');
-	elem.classList.remove('fade-in-95');
-	elem.addEventListener('animationend', function(event) {
-		// console.log('fade-out animationend');
-		elem.style.display = 'none';
-		if (typeof callback == 'function') {
-			callback();
-		}
-	}, { once: true});
-	elem.classList.add(name);
-};
-
 TaoBlog.fn.parseCookies = function() {
 	return Object.fromEntries(
 	  document.cookie

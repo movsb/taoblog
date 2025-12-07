@@ -422,9 +422,6 @@ class CommentListUI {
 		// 所有的原始评论对象。
 		// 缓存起来是为了再编辑。
 		this._comments = {};
-
-		// 插入时是否慢动作？
-		this.animation = true;
 	}
 
 	get comments()  { return this._comments; }
@@ -452,11 +449,7 @@ class CommentListUI {
 			parent.appendChild(elem);
 		}
 
-		if (this.animation) {
-			TaoBlog.fn.fadeIn(elem);
-		} else {
-			elem.style.display = 'block';
-		}
+		elem.style.display = 'block';
 
 		this._comments[rawComment.id] = rawComment;
 	}
@@ -582,9 +575,7 @@ class CommentManager {
 		for (let i=0; i<comments.length; i++) {
 			comments[i] = this.api._normalize(comments[i]);
 		}
-		this.list.animation = false;
 		this.list.insert(comments);
-		this.list.animation = true;
 		this.toggle_post_comment_button();
 	}
 
@@ -615,7 +606,13 @@ class CommentManager {
 		if (!show && (box.style.display == '' || box.style.display == 'none')) {
 			return;
 		}
-		(show ? TaoBlog.fn.fadeIn95 : TaoBlog.fn.fadeOut95)(box, callback);
+
+		if(show) {
+			box.style.display = 'block';
+			this.focus();
+		} else {
+			box.style.display = 'none';
+		}
 
 		if (show) {
 			if (typeof options != 'object') {
