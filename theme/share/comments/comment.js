@@ -562,7 +562,7 @@ class CommentManager {
 	}
 
 	updateLoginName() {
-		const nickName = TaoBlog?.fn?.getNickname?.();
+		const nickName = TaoBlog.getNickname();
 		if(nickName != '') {
 			const elem = document.querySelector('#comments .login-name');
 			elem.textContent = nickName;
@@ -647,8 +647,8 @@ class CommentManager {
 
 				// 新发表，使用登录用户信息。
 				if (this.being_edited <= 0) {
-					const userID = TaoBlog.fn.getUserID();
-					const nickname = TaoBlog.fn.getNickname();
+					const userID = TaoBlog.getUserID();
+					const nickname = TaoBlog.getNickname();
 					if (userID > 0 && nickname != ``) {
 						this.form.author = nickname;
 						this.form.email = 'unused@example.com';

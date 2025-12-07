@@ -45,7 +45,7 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `admin`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
-		dynamic.WithScripts(module, `dynamic/utils.js`, `dynamic/script.js`)
+		dynamic.WithScripts(module, `dynamic/cookies.js`, `dynamic/utils.js`, `dynamic/script.js`)
 	})
 }
 

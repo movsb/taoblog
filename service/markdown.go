@@ -51,8 +51,10 @@ import (
 
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	_ "github.com/movsb/taoblog/theme/share/comments"
+	_ "github.com/movsb/taoblog/theme/share/components"
 	_ "github.com/movsb/taoblog/theme/share/lightbox"
 	_ "github.com/movsb/taoblog/theme/share/loaded"
+	_ "github.com/movsb/taoblog/theme/share/supplementary"
 	_ "github.com/movsb/taoblog/theme/share/vim"
 )
 

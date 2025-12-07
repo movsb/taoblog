@@ -3,6 +3,7 @@ package theme
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"html"
 	"io"
@@ -31,7 +32,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Theme ...
+//go:embed init.js
+var _initScript []byte
+
 type Theme struct {
 	ctx context.Context
 
@@ -73,7 +76,10 @@ func New(ctx context.Context, devMode bool, cfg *config.Config, service proto.Ta
 
 		rootFS: rootFS,
 		tmplFS: tmplFS,
-		merged: &Merged{root: rootFS},
+		merged: &Merged{
+			root:       rootFS,
+			initScript: _initScript,
+		},
 
 		cfg:          cfg,
 		service:      service,
@@ -349,7 +355,9 @@ func (t *Theme) QueryStatic(w http.ResponseWriter, req *http.Request, file strin
 
 // 合并 /style.css 和 /v3/dynamic/styles.css
 type Merged struct {
-	root fs.FS
+	root       fs.FS
+	initScript []byte
+	initStyle  []byte
 
 	lock        sync.Mutex
 	lastStyles  time.Time
@@ -391,10 +399,23 @@ func (m *Merged) prepare(file string) *_MergedContent {
 	defer m.lock.Unlock()
 	if (file == `/style.css` && merged.time.After(m.lastStyles)) || (file == `/script.js` && merged.time.After(m.lastScripts)) {
 		log.Println(`重新准备数据：`, file)
+
 		buf := bytes.NewBuffer(nil)
+
+		// 1. 基础依赖
+		switch file {
+		case `/style.css`:
+			buf.Write(m.initStyle)
+		case `/script.js`:
+			buf.Write(m.initScript)
+		}
+
+		// 2. 主题依赖
 		if fp != nil {
 			io.Copy(buf, fp)
 		}
+
+		// 3. 动态依赖
 		switch file {
 		case `/style.css`:
 			buf.WriteByte('\n')

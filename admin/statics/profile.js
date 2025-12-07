@@ -2,7 +2,7 @@
  * @import { readFileAsDataURL } from '../dynamic/utils.js';
  */
 
-const userID = TaoBlog.fn.getUserID();
+const userID = TaoBlog.getUserID();
 
 async function register() {
 	let wa = new WebAuthn();
