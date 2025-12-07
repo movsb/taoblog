@@ -51,7 +51,7 @@ import (
 
 	wikitable "github.com/movsb/goldmark-wiki-table"
 	_ "github.com/movsb/taoblog/theme/share/comments"
-	_ "github.com/movsb/taoblog/theme/share/image_viewer"
+	_ "github.com/movsb/taoblog/theme/share/lightbox"
 	_ "github.com/movsb/taoblog/theme/share/loaded"
 	_ "github.com/movsb/taoblog/theme/share/vim"
 )

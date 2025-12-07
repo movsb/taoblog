@@ -1,4 +1,4 @@
-package image_viewer
+package lightbox
 
 import (
 	"embed"
@@ -10,15 +10,15 @@ import (
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
-//go:embed image-view.js style.css
+//go:embed lightbox.js style.css
 var _embed embed.FS
 var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
 func init() {
 	dynamic.RegisterInit(func() {
-		const module = `image-viewer`
+		const module = `lightbox`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
 		dynamic.WithStyles(module, `style.css`)
-		dynamic.WithScripts(module, `image-view.js`)
+		dynamic.WithScripts(module, `lightbox.js`)
 	})
 }

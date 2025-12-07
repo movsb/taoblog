@@ -1,6 +1,6 @@
 /**
  * 绑定实况照片的事件处理元素。
- * 独立出来的原因是 image-view 那边也会用到。
+ * 独立出来的原因是 lightbox 那边也会用到。
  * @param {HTMLDivElement} livePhoto 
  * @param {HTMLElement} element 桌面设备的鼠标悬停事件元素 或 移动设备的长按事件元素
  */

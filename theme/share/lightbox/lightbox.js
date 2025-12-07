@@ -1,76 +1,16 @@
-class ImageView {
+class LightBox {
 	/**
 	 * @param {Array<HTMLImageElement|HTMLPictureElement|HTMLDivElement>} objects 
 	 */
 	constructor(objects) {
 		const div = document.createElement('div');
-		div.innerHTML = `<div id="img-view"></div>`;
+		div.innerHTML = `<div id="lightbox"></div>`;
 		/** @type {HTMLDivElement} */
 		this.root = div.firstElementChild;
 		document.body.appendChild(this.root);
 
 		objects.forEach((obj, index)  => {
-			let clone = obj.cloneNode(true);
-
-			/** @type {HTMLImageElement} */
-			const img = clone.querySelector('img') ?? clone;
-
-			// 不再使用 blur 类。
-			img.classList.remove('blur');
-
-			// 不再包含边框。
-			img.classList.remove('border');
-
-			// 移除封面效果。
-			img.style.removeProperty('object-fit');
-			img.style.removeProperty('aspect-ratio');
-			img.style.removeProperty('width');
-
-			// 移除模糊预览图。
-			img.style.removeProperty('background-image');
-			img.style.removeProperty('background-repeat');
-			img.style.removeProperty('background-size');
-
-			this._initMetadata(img.dataset.metadata, img);
-
-			// 实况照片本身要宽高限制，不适于设置 100%，包一层。
-			if(clone.classList.contains('live-photo')) {
-				// 防止被 live photo js 把克隆的也处理了，因为执行顺序不确定。
-				clone.classList.add('clone');
-
-				const div = document.createElement('div');
-				div.classList.add('live-photo-wrapper');
-				div.appendChild(clone);
-
-				// 预览的时候是全屏的，为了更醒目，把图标提出来。
-				/** @type {HTMLDivElement} */
-				const icon = clone.querySelector('.icon');
-				icon.remove();
-				
-				const button = document.createElement('button');
-				button.classList.add('play');
-				button.textContent = '播放实况照片';
-				div.appendChild(button);
-
-				// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。
-				livePhotoBindEvents(clone, button);
-
-				clone = div;
-			}
-			this.root.appendChild(clone);
-
-			const clickable = obj instanceof HTMLImageElement ? obj : obj.querySelector('img');
-			clickable.addEventListener('click', (e) => {
-				this.view(index, clone);
-				e.preventDefault();
-				e.stopPropagation();
-			});
-
-			clone.addEventListener('click', (e) => {
-				this.hide();
-				e.preventDefault();
-				e.stopPropagation();
-			});
+			this._initSingle(obj, index);
 		});
 
 		let resizeDebouncer = null;
@@ -85,12 +25,116 @@ class ImageView {
 
 		this._keydownHandlerBound = this._keydownHandler.bind(this);
 	}
+	
+	/**
+	 * 
+	 * @param {HTMLElement} obj 主体对象元素。
+	 * @param {number} index 在页面上的索引。
+	 */
+	_initSingle(obj, index) {
+		/** @type {HTMLElement} */
+		let clone = obj.cloneNode(true);
+
+		/** @type {HTMLImageElement} */
+		const img = clone.querySelector('img') ?? clone;
+
+		// 不再使用 blur 类。
+		img.classList.remove('blur');
+
+		// 不再包含边框。
+		img.classList.remove('border');
+
+		// 移除封面效果。
+		img.style.removeProperty('object-fit');
+		img.style.removeProperty('aspect-ratio');
+		img.style.removeProperty('width');
+
+		// 移除模糊预览图。
+		img.style.removeProperty('background-image');
+		img.style.removeProperty('background-repeat');
+		img.style.removeProperty('background-size');
+
+		this._initMetadata(img.dataset.metadata, img);
+
+		// 实况照片本身要宽高限制，不适于设置 100%，包一层。
+		if(clone.classList.contains('live-photo')) {
+			// 防止被 live photo js 把克隆的也处理了，因为执行顺序不确定。
+			clone.classList.add('clone');
+
+			const div = document.createElement('div');
+			div.classList.add('live-photo-wrapper');
+			div.appendChild(clone);
+
+			// 预览的时候是全屏的，为了更醒目，把图标提出来。
+			/** @type {HTMLDivElement} */
+			const icon = clone.querySelector('.icon');
+			icon.remove();
+			
+			const button = document.createElement('button');
+			button.classList.add('play');
+			button.textContent = '播放实况照片';
+			div.appendChild(button);
+
+			// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。
+			livePhotoBindEvents(clone, button);
+
+			clone = div;
+		}
+
+		this.root.appendChild(clone);
+
+		// 页面上的可点击对象（图片）。
+		const clickable = obj instanceof HTMLImageElement ? obj : obj.querySelector('img');
+		clickable.addEventListener('click', (e) => {
+			this.view(index, clone);
+			e.preventDefault();
+			e.stopPropagation();
+		});
+
+		// 克隆后的可点击对象。
+		clone.addEventListener('click', (e) => {
+			this.hide();
+			e.preventDefault();
+			e.stopPropagation();
+		});
+
+		// 保存一下原始的图片，因为原始图片可能需要解密，但不想再解密一遍。
+		clone._original = obj;
+		obj._clone = clone;
+	}
+
 	/**
 	 * 
 	 * @param {number} index 
 	 * @param {HTMLImageElement | HTMLPictureElement | HTMLDivElement} obj 
 	 */
 	view(index, obj) {
+		// 如果发现原始链接变化了（解密了），优先使用原始链接。
+		if(obj instanceof HTMLImageElement && obj.src != obj._original.src) {
+			obj.src = obj._original.src;
+			console.log('替换为解密后的地址', obj.src);
+		} else if(obj instanceof HTMLPictureElement) {
+			const img1 = obj.querySelector('img');
+			const img2 = obj._original.querySelector('img');
+			if(img1 && img2 && img1.src != img2.src) {
+				img1.src = img2.src;
+				console.log('替换为解密后的地址', img1.src);
+			}
+		} else if(obj.querySelector('div.live-photo')) {
+			const img1 = obj.querySelector('img');
+			const vid1 = obj.querySelector('video');
+			const img2 = obj._original.querySelector('img');
+			const vid2 = obj._original.querySelector('video');
+			if(img1 && img2 && img1.src != img2.src) {
+				img1.src = img2.src;
+				console.log('替换为解密后的地址', img1.src);
+			}
+			if(vid1 && vid2 && vid1.src != vid2.src) {
+				vid1.src = vid2.src;
+				console.log('替换为解密后的地址', vid1.src);
+			}
+		}
+
 		console.log('viewing object:', index);
 		this.root.style.opacity = 0;
 		this.root.style.display = 'flex';
@@ -126,7 +170,7 @@ class ImageView {
 	 * @param {KeyboardEvent} e 
 	 */
 	_keydownHandler(e) {
-		console.log('image-view:', e);
+		console.log('lightbox:', e);
 		if(e.key == 'Escape') {
 			this.hide();
 			e.preventDefault();
@@ -177,6 +221,8 @@ class ImageView {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+	// 取页面上所有的主体可预览对象列表。
+	// 指：单张的图片、实况照片、<picture> 元素等。
 	/** @type {HTMLImageElement[]} */
 	let images = document.querySelectorAll('.entry img:not(.static)');
 	let objects = Array.from(images).map(img => {
@@ -186,5 +232,5 @@ document.addEventListener('DOMContentLoaded', () => {
 		if(livePhoto) return livePhoto;
 		return img;
 	});
-	window.TaoBlog.imgView = new ImageView(objects);
+	window.TaoBlog.lightBox = new LightBox(objects);
 }, {once: true});
