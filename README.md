@@ -46,6 +46,7 @@ protocols/  | 协议定义
 service/    | 服务实现
 setup/      | 安装管理
 theme/      | 主题目录
+tests/      | 端到端测试
 main.go     | 入口程序
 
 ## 功能列表（部分）
