@@ -72,6 +72,10 @@ async function decryptFile(img) {
 function fixVideoCache(video) {
 	if (video.onerror) {
 		let url = new URL(video.src);
+
+		// 有可能灯箱的 URL 是从原始图片拷过来（已经解码过了）。
+		if(url.protocol == 'blob:') { return; }
+
 		url.searchParams.set('_', '');
 		video.src = url.toString();
 	}
