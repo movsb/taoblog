@@ -54,7 +54,10 @@ const livePhotoBindEvents = (livePhoto, eventElement) => {
 
 	const leave = (e) => {
 		livePhoto.classList.remove('zoom');
+
 		warning.classList.remove('show');
+		// 小图的时候文字依然占用较大的空间，导致无法点击预览，把它置空。
+		warning.textContent = '';
 
 		// await play() 可能一直卡住不返回。
 		// 在 pause 之前设置，如果  await play() 还没
