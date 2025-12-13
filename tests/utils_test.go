@@ -16,7 +16,11 @@ import (
 )
 
 func expectHTTPGetWithStatusCode(r *R, relativeURL string, code int) {
-	rsp, err := http.Get(r.server.JoinPath(relativeURL))
+	expectHTTPGetWithStatusCodeAbsoluteURL(r, r.server.JoinPath(relativeURL), code)
+}
+
+func expectHTTPGetWithStatusCodeAbsoluteURL(r *R, u string, code int) {
+	rsp, err := http.Get(u)
 	if err != nil {
 		panic(err)
 	}

@@ -141,6 +141,9 @@ service Management {
 	// NOTE：实际上只是退出，借助于 docker 的自动重启容器，所以相当于重启。
 	rpc Restart(RestartRequest) returns (RestartResponse) {}
 
+	// 进入调试页面环境。
+	rpc EnterDebug(stream EnterDebugRequest) returns (stream EnterDebugResponse) {}
+
 	// 置“镜像需要更新”状态，守护进程获取此状态后更新镜像并重启。
 	// 此状态在 GetInfo 的接口的字段中标识。
 	rpc ScheduleUpdate(ScheduleUpdateRequest) returns (ScheduleUpdateResponse) {}

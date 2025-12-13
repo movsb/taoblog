@@ -157,7 +157,7 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 		mc.Handle(`GET /sitemap.xml`, sitemap.New(g.client, g.service), g.lastPostTimeHandler)
 
 		// 调试相关
-		mc.Handle(`/debug/`, http.StripPrefix(`/debug`, debug.Handler()), g.nonGuestHandler(userFromRequestContext))
+		mc.Handle(`/debug/{session}/`, debug.Handler())
 	}
 
 	return nil
@@ -174,26 +174,3 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 }
 
 type AuthFunc func(g *Gateway, r *http.Request) *user.User
-
-func userFromRequestContext(g *Gateway, r *http.Request) *user.User {
-	return user.Context(r.Context()).User
-}
-
-func (g *Gateway) nonGuestHandler(fns ...AuthFunc) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var u *user.User
-			for _, fn := range fns {
-				u = fn(g, r)
-				if !u.IsGuest() {
-					break
-				}
-			}
-			if u != nil && !u.IsGuest() {
-				h.ServeHTTP(w, r)
-				return
-			}
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		})
-	}
-}

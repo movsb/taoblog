@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/goccy/go-yaml"
@@ -383,6 +384,24 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	rootCmd.AddCommand(handleAutoImageBorderCmd)
+
+	enterDebugCmd := &cobra.Command{
+		Use:              `debug`,
+		Short:            `创建调试页面会话链接。`,
+		PersistentPreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			stream := utils.Must1(client.Management.EnterDebug(client.Context()))
+			rsp := utils.Must1(stream.Recv())
+			fmt.Println(rsp.Url)
+			for {
+				if err := stream.Send(&proto.EnterDebugRequest{}); err != nil {
+					break
+				}
+				time.Sleep(time.Second * 3)
+			}
+		},
+	}
+	rootCmd.AddCommand(enterDebugCmd)
 }
 
 func edit(value string, fileSuffix string) (string, bool) {

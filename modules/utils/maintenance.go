@@ -61,7 +61,7 @@ func (m *Maintenance) EstimatedString() string {
 	return time.Now().Add(m.Estimated).Format(time.RFC3339)
 }
 
-func (m *Maintenance) Handler(exception func(ctx context.Context) bool) func(http.Handler) http.Handler {
+func (m *Maintenance) Handler(exception func(ctx context.Context, r *http.Request) bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		tmpl := Must1(template.New("").Parse(`网站不可用，请稍候再试。
 
@@ -72,7 +72,7 @@ func (m *Maintenance) Handler(exception func(ctx context.Context) bool) func(htt
 			m.lock.RLock()
 			copy := *m //no warn
 			m.lock.RUnlock()
-			if copy.in() && (exception == nil || !exception(r.Context())) {
+			if copy.in() && (exception == nil || !exception(r.Context(), r)) {
 				if m.Estimated > 0 {
 					w.Header().Add(`Retry-After`, fmt.Sprint(int32(m.Estimated.Seconds())))
 				}

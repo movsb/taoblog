@@ -596,8 +596,8 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
 			s.authMiddleware.UserFromCookieHandler,
 			logs.NewRequestLoggerHandler(`access.log`),
-			s.main.MaintenanceMode().Handler(func(ctx context.Context) bool {
-				return user.Context(ctx).User.IsAdmin()
+			s.main.MaintenanceMode().Handler(func(ctx context.Context, r *http.Request) bool {
+				return user.Context(ctx).User.IsAdmin() || strings.HasPrefix(r.URL.Path, `/debug/`)
 			}),
 		),
 	}

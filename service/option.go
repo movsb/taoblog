@@ -16,6 +16,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/gateway/handlers/debug"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
@@ -225,6 +226,46 @@ func (s *Service) Restart(ctx context.Context, req *proto.RestartRequest) (*prot
 	time.AfterFunc(time.Second*3, s.cancel)
 
 	return &proto.RestartResponse{}, nil
+}
+
+func (s *Service) EnterDebug(srv proto.Management_EnterDebugServer) error {
+	user.MustBeAdmin(srv.Context())
+
+	session := debug.Enter()
+	defer debug.Leave(session)
+
+	u := utils.Must1(url.Parse(s.getHome()))
+	u = u.JoinPath(`/debug/`, session, `/`)
+
+	srv.Send(&proto.EnterDebugResponse{
+		Url: u.String(),
+	})
+
+	log.Println(`客户端已进入：`, session)
+
+	// 各种 context 大法、recv 大法都试了不无法在客户端连接断开的时候
+	// 自动退出。有此下策。
+	ch := make(chan struct{})
+	go func() {
+		for {
+			_, err := srv.Recv()
+			if err != nil {
+				break
+			}
+			ch <- struct{}{}
+		}
+	}()
+
+retry:
+	select {
+	case <-time.After(time.Second * 5):
+		break
+	case <-ch:
+		goto retry
+	}
+
+	log.Println(`客户端已退出：`, session)
+	return nil
 }
 
 func (s *Service) ScheduleUpdate(ctx context.Context, req *proto.ScheduleUpdateRequest) (*proto.ScheduleUpdateResponse, error) {
