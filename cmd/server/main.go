@@ -25,6 +25,7 @@ import (
 	server_auth "github.com/movsb/taoblog/cmd/server/auth"
 	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
 	"github.com/movsb/taoblog/cmd/server/tasks/git_repo"
+	"github.com/movsb/taoblog/cmd/server/tasks/live_check"
 	"github.com/movsb/taoblog/cmd/server/tasks/sync_files"
 	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
@@ -81,6 +82,7 @@ type Server struct {
 	initRssTasks     bool
 	initMonitorCerts bool
 	initYearProgress bool
+	initLiveCheck    bool
 
 	initMonitorDomain      bool
 	initMonitorDomainDelay bool
@@ -669,30 +671,6 @@ func grpcLogger(ctx context.Context, method string) {
 	log.Println(method, ac.UserAgent)
 }
 
-// TODO 文章 1 必须存在。可以是非公开状态。
-// TODO 放在服务里面 tasks.go
-// TODO 放在 daemon 里面（同 webhooks）
-func liveCheck(ctx context.Context, s *Server, svc *service.Service) {
-	t := time.NewTicker(time.Minute * 1)
-	defer t.Stop()
-
-	for range t.C {
-		for !func() bool {
-			now := time.Now()
-			svc.GetPost(user.SystemForLocal(context.TODO()), &proto.GetPostRequest{Id: 1})
-			if elapsed := time.Since(now); elapsed > time.Second*10 {
-				svc.MaintenanceMode().Enter(`我也不知道为什么，反正就是服务接口卡住了🥵。`, -1)
-				log.Println(`服务接口响应非常慢了。`)
-				s.sendNotify(`服务不可用`, `保活检测卡住了`)
-				return false
-			}
-			svc.MaintenanceMode().Leave()
-			return true
-		}() {
-		}
-	}
-}
-
 func (s *Server) initSyncs(ctx context.Context, cfg *config.Config, filesStore theme_fs.FS) {
 	for _, backend := range []struct {
 		config  *config.OSSConfigWithEnabled
@@ -751,8 +729,8 @@ func (oss _OssWithCountry) GetCountry() string {
 }
 
 func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStore *storage.SQLite) {
-	if !version.DevMode() {
-		go liveCheck(ctx, s, s.Main())
+	if s.initLiveCheck {
+		go live_check.LiveCheck(ctx, s.Main(), s.sendNotify)
 	}
 
 	if s.initRssTasks {

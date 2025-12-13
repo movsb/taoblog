@@ -76,3 +76,9 @@ func WithYearProgress() With {
 		s.initYearProgress = true
 	}
 }
+
+func WithLiveCheck() With {
+	return func(s *Server) {
+		s.initLiveCheck = true
+	}
+}
