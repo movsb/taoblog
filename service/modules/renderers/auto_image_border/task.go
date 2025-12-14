@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/storage"
 )
@@ -30,26 +29,25 @@ type Task struct {
 	invalidate func(id int)
 }
 
-func (t *Task) Run(ctx context.Context, s proto.Utils_RegisterAutoImageBorderHandlerServer) {
-	ticker := time.NewTicker(time.Second * 30)
+type Calculate func(file *models.File, input io.Reader, r, g, b byte, ratio float32) (float32, error)
+
+func (t *Task) Run(ctx context.Context, calc Calculate) {
+	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
-	t.run(s)
+	t.run(calc)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			t.run(s)
-		case <-s.Context().Done():
-			log.Println(`handler server context down`)
-			return
+			t.run(calc)
 		}
 	}
 }
 
-func (t *Task) run(s proto.Utils_RegisterAutoImageBorderHandlerServer) {
+func (t *Task) run(calc Calculate) {
 	now := time.Now()
 
 	last, err := t.store.GetIntegerDefault(`last`, 0)
@@ -72,7 +70,7 @@ func (t *Task) run(s proto.Utils_RegisterAutoImageBorderHandlerServer) {
 			continue
 		}
 
-		if err := calcFile(t, file, s); err != nil {
+		if err := calcFile(t, file, calc); err != nil {
 			log.Println(err, file)
 			return
 		}
@@ -85,7 +83,7 @@ func (t *Task) run(s proto.Utils_RegisterAutoImageBorderHandlerServer) {
 	t.store.SetInteger(`last`, now.Unix())
 }
 
-func calcFile(t *Task, file *models.File, s proto.Utils_RegisterAutoImageBorderHandlerServer) error {
+func calcFile(t *Task, file *models.File, calc Calculate) error {
 	log.Println(`计算可访问性：`, file.PostID, file.Path)
 
 	// debug
@@ -100,7 +98,7 @@ func calcFile(t *Task, file *models.File, s proto.Utils_RegisterAutoImageBorderH
 	defer fp.Close()
 
 	// value := BorderContrastRatio(fp, 255, 255, 255, 1)
-	value, err := remoteCalc(s, file, fp, 255, 255, 255, 1)
+	value, err := calc(file, fp, 255, 255, 255, 1)
 	if err != nil {
 		return err
 	}
@@ -120,25 +118,4 @@ func calcFile(t *Task, file *models.File, s proto.Utils_RegisterAutoImageBorderH
 	t.invalidate(file.PostID)
 
 	return nil
-}
-
-func remoteCalc(s proto.Utils_RegisterAutoImageBorderHandlerServer, file *models.File, fp io.Reader, r, g, b byte, ratio float32) (value float32, outErr error) {
-	defer utils.CatchAsError(&outErr)
-
-	log.Println(`发送数据`)
-
-	utils.Must(s.Send(&proto.AutoImageBorderRequest{
-		PostId: uint32(file.PostID),
-		Path:   file.Path,
-
-		Data:  utils.Must1(io.ReadAll(fp)),
-		R:     uint32(r),
-		G:     uint32(g),
-		B:     uint32(b),
-		Ratio: ratio,
-	}))
-
-	log.Println(`等待接收数据`)
-
-	return utils.Must1(s.Recv()).GetValue(), nil
 }

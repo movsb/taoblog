@@ -2,6 +2,7 @@ package micros_utils
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 	_ "time/tzdata"
 
@@ -37,21 +38,8 @@ type Utils struct {
 	timezone            func() *time.Location
 	geoLocationResolver geo.GeoLocationResolver
 
-	autoImageBorderCreator func() *auto_image_border.Task
-}
-
-type Option func(u *Utils)
-
-func WithGaoDe(ak string) Option {
-	return func(u *Utils) {
-		u.geoLocationResolver = geo.NewGeoDe(ak)
-	}
-}
-
-func WithTimezone(getTimezone func() *time.Location) Option {
-	return func(u *Utils) {
-		u.timezone = getTimezone
-	}
+	autoImageBorderCreator        func() *auto_image_border.Task
+	currentAutoImageBorderHandler atomic.Bool
 }
 
 func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*proto.FormatTimeResponse, error) {

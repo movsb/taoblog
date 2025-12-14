@@ -183,12 +183,13 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	mux := http.NewServeMux()
 	startGRPC, serviceRegistrar := s.serveGRPC(ctx)
 
-	s.createUtilsService(ctx, cfg, serviceRegistrar)
 	s.createNotifyService(ctx, postsDB, cfg, serviceRegistrar)
 	s.createAuthServices(ctx, cfg, serviceRegistrar, postsDB)
 
 	fileCache := cache.NewFileCache(ctx, cacheDB)
 	s.createMainServices(ctx, postsDB, cfg, serviceRegistrar, cancel, filesStore, fileCache, rc, mux)
+
+	s.createUtilsService(ctx, cfg, filesStore, serviceRegistrar)
 
 	// 虽然是异步开始的，但是内部只是开始 Accept 连接。
 	// 如果有接口在这之前就发生了调用，也不会出问题（在 backlog 中）。
@@ -472,7 +473,7 @@ func (s *Server) createMainServices(
 	s.main = service.New(ctx, sr, cfg, db, rc, mux, s.Auth(), serviceOptions...)
 }
 
-func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr grpc.ServiceRegistrar) {
+func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, fileStore *storage.SQLite, sr grpc.ServiceRegistrar) {
 	options := []micros_utils.Option{
 		micros_utils.WithTimezone(cfg.Site.GetTimezoneLocation),
 	}
@@ -480,6 +481,15 @@ func (s *Server) createUtilsService(ctx context.Context, cfg *config.Config, sr 
 	if key := cfg.Others.Geo.GeoDe.Key; key != `` {
 		options = append(options, micros_utils.WithGaoDe(key))
 	}
+
+	options = append(options, micros_utils.WithAutoImageBorderCreator(func() *auto_image_border.Task {
+		return auto_image_border.NewTask(
+			s.Main().GetPluginStorage(`auto_image_border`),
+			fileStore, func(id int) {
+				s.Main().InvalidatePost(id)
+			},
+		)
+	}))
 
 	s.utils = micros_utils.New(ctx, sr, options...)
 }
@@ -769,14 +779,4 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 	}
 
 	s.initSyncs(ctx, cfg, filesStore)
-
-	createImageBorderTask := func() *auto_image_border.Task {
-		return auto_image_border.NewTask(
-			s.Main().GetPluginStorage(`auto_image_border`),
-			filesStore, func(id int) {
-				s.Main().InvalidatePost(id)
-			})
-	}
-
-	s.utils.SetAutoImageBorderCreator(createImageBorderTask)
 }
