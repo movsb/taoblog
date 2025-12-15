@@ -4,6 +4,16 @@
 	background-color: var(--selection-background-color);
 }
 
+// 开启 CJK 的自动加空白处理。
+//
+// https://x.com/yisibl/status/1979132340942041270
+// https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/text-autospace
+//
+// 目前多数浏览器基本只支持 normal，后期可以考虑 replace（自动替换多余的空格字符）。
+//
+// 另：不确定是否应该全局开启。textarea？code？pre？
+:root { text-autospace: normal; }
+
 html, body {
 	color: var(--color-fg);
 	background-color: var(--color-bg);
