@@ -85,6 +85,8 @@ func MonitorCert(ctx context.Context, getHome func() string, notifier proto.Noti
 // 监控域名过期的剩余时间。
 //
 // 同步函数，除非 ctx 结束，否则不会返回。
+//
+// notifier 可以为空。
 func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
 	getDomainSuffix := func() string {
 		u := utils.Must1(url.Parse(getHome()))
@@ -110,7 +112,6 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		// --header 'apikey: YOUR API KEY HERE'
 		u, err := url.Parse(`https://api.apilayer.com/whois/query?domain=`)
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 		q := u.Query()
@@ -119,7 +120,6 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		req, err := http.NewRequestWithContext(context.Background(),
 			http.MethodGet, u.String(), nil)
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 
@@ -131,13 +131,11 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		req.Header.Add(`apikey`, apiKey)
 		rsp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 		defer rsp.Body.Close()
 		if rsp.StatusCode != 200 {
-			log.Println(`Status != 200`, rsp.StatusCode)
-			return err
+			return fmt.Errorf(`status != 200: %d`, rsp.StatusCode)
 		}
 		var result struct {
 			Result struct {
@@ -146,29 +144,31 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 			} `json:"result"`
 		}
 		if err := json.NewDecoder(rsp.Body).Decode(&result); err != nil {
-			log.Println(err)
 			return err
 		}
-		// TODO 不知道时区。
-		t, err := time.Parse(time.DateTime, result.Result.ExpirationDate)
+		t, err := time.Parse(time.DateTime+`-07:00`, result.Result.ExpirationDate)
 		if err != nil {
-			log.Println(err)
-			return err
+			t, err = time.Parse(time.DateTime, result.Result.ExpirationDate)
+			if err != nil {
+				return err
+			}
 		}
 
 		daysLeft := int(time.Until(t) / time.Hour / 24)
 		update(daysLeft)
 		if daysLeft < 15 {
 			log.Println(`域名剩余天数：`, daysLeft)
-			notifier.SendInstant(
-				user.SystemForLocal(ctx),
-				&proto.SendInstantRequest{
-					Title: `域名`,
-					Body:  fmt.Sprintf(`剩余天数：%v`, daysLeft),
-					Group: `系统状态`,
-					Level: proto.SendInstantRequest_Passive,
-				},
-			)
+			if notifier != nil {
+				notifier.SendInstant(
+					user.SystemForLocal(ctx),
+					&proto.SendInstantRequest{
+						Title: `域名`,
+						Body:  fmt.Sprintf(`剩余天数：%v`, daysLeft),
+						Group: `系统状态`,
+						Level: proto.SendInstantRequest_Passive,
+					},
+				)
+			}
 		}
 
 		return nil
@@ -180,21 +180,18 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		time.Sleep(time.Minute * 15)
 	}
 
-	check()
-
-	time.Sleep(time.Minute * 15)
+	if err := check(); err != nil {
+		log.Println(err)
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-		}
-
-		if check() == nil {
-			time.Sleep(time.Hour * 24)
-		} else {
-			time.Sleep(time.Minute * 15)
+		case <-time.After(time.Hour):
+			if err := check(); err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
