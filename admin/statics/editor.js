@@ -2183,7 +2183,7 @@ class PostFormUI {
 		}, options);
 
 		try {
-			if (f.size > (10 << 20)) {
+			if (f.size > (100 << 20)) {
 				throw new Error(`文件太大，不予上传。`);
 			}
 

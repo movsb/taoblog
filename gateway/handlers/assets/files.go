@@ -93,7 +93,7 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 	}))
 	utils.Must1(fsc.Recv())
 
-	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, 101<<20)
 
 	specValue := r.FormValue(`spec`)
 	spec := &proto.FileSpec{}
