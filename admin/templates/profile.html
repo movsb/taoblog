@@ -13,8 +13,8 @@
 <h1>{{ .Name }}</h1>
 <div class="user-info">
 	<div id="avatar-wrapper">
-		<img id="avatar" class="avatar" src="{{.AvatarURL}}" style="cursor: pointer;" title="点击修改头像">
-		<input type="file" id="avatar-file" accept="image/jpeg, image/png" style="display: none;">
+		<img id="avatar" class="avatar" src="{{.AvatarURL}}" style="cursor: pointer;" title="点击修改头像（支持 JPEG/PNG/AVIF 格式）">
+		<input type="file" id="avatar-file" accept="image/jpeg, image/png, image/avif" style="display: none;">
 		<p class="uploading" style="display: none;"><span class="icon-loading"> 上传中...</span></p>
 	</div>
 	<p>昵称：<span id="nickname">{{.User.Nickname}}</span> <button id="change-nickname">修改</button></p>

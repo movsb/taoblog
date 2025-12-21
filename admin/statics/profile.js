@@ -87,7 +87,13 @@ avatarImg.addEventListener('click', () => {
 		if(file.files.length != 1) {
 			return;
 		}
-		const url = await readFileAsDataURL(file.files[0]);
+
+		const f0 = file.files[0];
+		if(f0.size <= 0 || f0.size > 10<<20) {
+			alert('文件太小或太大。');
+			return;
+		}
+		const url = await readFileAsDataURL(f0);
 		console.log(url);
 
 		/** @type {HTMLParagraphElement} */

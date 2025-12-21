@@ -94,6 +94,9 @@ func (m *UserManager) UpdateUser(ctx context.Context, in *proto.UpdateUserReques
 		if !strings.HasPrefix(d.Type, `image/`) {
 			panic(`不是图片文件。`)
 		}
+		if len(d.Data) > 10<<20 {
+			return nil, status.Error(codes.InvalidArgument, `图片太大。`)
+		}
 		if len(d.Data) > 220<<10 {
 			d, err := utils.ResizeImage(d.Type, bytes.NewReader(d.Data), 220, 220)
 			if err != nil {
