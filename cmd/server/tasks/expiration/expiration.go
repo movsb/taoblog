@@ -69,17 +69,7 @@ func MonitorCert(ctx context.Context, getHome func() string, notifier proto.Noti
 
 	check()
 
-	ticker := time.NewTicker(time.Hour * 24)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			check()
-		case <-ctx.Done():
-			return
-		}
-	}
+	utils.AtMiddleNight(ctx, check)
 }
 
 // 监控域名过期的剩余时间。
@@ -184,14 +174,9 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		log.Println(err)
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Hour):
-			if err := check(); err != nil {
-				log.Println(err)
-			}
+	utils.AtMiddleNight(ctx, func() {
+		if err := check(); err != nil {
+			log.Println(err)
 		}
-	}
+	})
 }

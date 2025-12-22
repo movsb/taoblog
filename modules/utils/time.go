@@ -19,20 +19,19 @@ func (LocalTimezoneGetter) GetCurrentTimezone() *time.Location {
 // 函数不会主动返回，除非 ctx 完成。
 // fn 在当前线程内执行。
 func AtMiddleNight(ctx context.Context, fn func()) {
-	ticker := time.NewTicker(time.Second * 50)
-	defer ticker.Stop()
-	last := time.Now()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case now := <-ticker.C:
-			if (now.Hour() == 0 && now.Minute() == 0) || (last.Day() != now.Day()) {
+		case now := <-time.After(time.Second * 45):
+			if now.Hour() == 0 && now.Minute() == 0 {
 				fn()
-				last = now
-				// 前面睡眠 50s，避免一分钟内触发两次。
-				time.Sleep(time.Minute)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Hour * 2):
+					// 担心时区变化，睡两个小时看看。
+				}
 			}
 		}
 	}
