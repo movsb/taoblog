@@ -95,12 +95,28 @@ audio, iframe, img, svg, video {
 text { cursor: text; }
 
 // 太长的媒体文件开启页面滚动（微信有此效果）。
-p:has(>img:only-child) {
+p:has(>img:only-child), p:has(>picture:only-child) {
 	max-height: 60vh;
 	overflow-y: auto;
 
-	img {
+	> img {
 		// TODO 加在 .border 全局类上。
 		box-sizing: border-box;
+	}
+}
+// 留出部分触摸安全区域
+div.image-scroll-outer {
+	position: relative;
+	// 不要用 before，否则需要加 z-index，会导致浮于 lightbox 上。
+	&::after {
+		content: "";
+		display: inline-block;
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 50px;
+		// 调试时打开可观察具体区域。
+		// background-color: red;
 	}
 }

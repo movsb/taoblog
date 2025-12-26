@@ -19,41 +19,41 @@ func TestRenderByType(t *testing.T) {
 	}{
 		{
 			Markdown: `![](1.jpg)`,
-			HTML:     `<p><img src="1.jpg" alt=""></p>`,
+			HTML:     `<div class="image-scroll-outer"><p><img src="1.jpg" alt=""/></p></div>`,
 		},
 		{
 			Markdown: `![](1.mp3)`,
-			HTML:     `<p><audio controls src="1.mp3"></audio></p>`,
+			HTML:     `<p><audio controls="" src="1.mp3"></audio></p>`,
 		},
 		{
 			Markdown: `![](1.mp4)`,
-			HTML:     `<p><video controls src="1.mp4"></video></p>`,
+			HTML:     `<p><video controls="" src="1.mp4"></video></p>`,
 		},
 		{
 			Markdown: `![](1.tldraw)`,
-			HTML: `<p><picture>
-	<source media="(prefers-color-scheme: dark)" srcset="1.tldraw.dark.svg">
-	<img src="1.tldraw.light.svg">
-</picture></p>`,
+			HTML: `<div class="image-scroll-outer"><p><picture>
+	<source media="(prefers-color-scheme: dark)" srcset="1.tldraw.dark.svg"/>
+	<img src="1.tldraw.light.svg"/>
+</picture></p></div>`,
 		},
 		{
 			Markdown: `![](1.tldraw?w=500)`,
-			HTML: `<p><picture>
-	<source media="(prefers-color-scheme: dark)" srcset="1.tldraw.dark.svg">
-	<img src="1.tldraw.light.svg?w=500">
-</picture></p>`,
+			HTML: `<div class="image-scroll-outer"><p><picture>
+	<source media="(prefers-color-scheme: dark)" srcset="1.tldraw.dark.svg"/>
+	<img src="1.tldraw.light.svg?w=500"/>
+</picture></p></div>`,
 		},
 		{
 			Markdown: `![](1.drawio?w=500)`,
-			HTML:     `<p><img src="1.drawio.svg?w=500"></p>`,
+			HTML:     `<div class="image-scroll-outer"><p><img src="1.drawio.svg?w=500"/></p></div>`,
 		},
 		{
 			Markdown: `![](1.jpg?light&padding)`,
-			HTML:     `<p><img src="1.jpg" alt="" class="light-on-dark padding"></p>`,
+			HTML:     `<div class="image-scroll-outer"><p><img src="1.jpg" alt="" class="light-on-dark padding"/></p></div>`,
 		},
 		{
 			Markdown: `![](1.jpg?border)`,
-			HTML:     `<p><img src="1.jpg" alt="" class="border"></p>`,
+			HTML:     `<div class="image-scroll-outer"><p><img src="1.jpg" alt="" class="border"/></p></div>`,
 		},
 	}
 
@@ -64,7 +64,7 @@ func TestRenderByType(t *testing.T) {
 			continue
 		}
 		if strings.TrimSpace(output) != tc.HTML {
-			t.Errorf("结果不一样：\n%s\n%s", output, tc.HTML)
+			t.Errorf("结果不一样：\n%s\n%s\n\n", output, tc.HTML)
 			continue
 		}
 	}
