@@ -1,0 +1,95 @@
+// 非宽屏模式下图片居中（宽屏模式居中看着太不协调了）
+body:not(.wide) .entry {
+	p {
+		img, svg, video {
+			&:not(.emoji):only-child {
+				display: block;
+				margin: auto;
+			}
+		}
+	}
+	iframe {
+		display: block;
+		margin: auto;
+	}
+	picture img {
+		display: block;
+		margin: auto;
+	}
+}
+body:not(.wide):is(.tweet,.tweets) {
+	// 封面图片占满看起来比较舒服。
+	img.cover {
+		width: 100% !important;
+	}
+	.live-photo {
+		max-width: 100% !important;
+	}
+}
+
+.entry {
+	object.pdf {
+		width: 100%;
+		height: 600px;
+		height: 80vh;
+		opacity: 0.8;
+	}
+}
+
+figure {
+	margin: 1em 0;
+	
+	// 仅有一张图片的时候才居中，因为会继承，不能
+	// 影响其它元素，比如实况照片。
+	&:has(> img:first-child) {
+		text-align: center;
+	}
+
+	figcaption {
+		text-align: center;
+	}
+}
+
+iframe {
+	display: block;
+}
+
+img, svg {
+	&.f-r {
+		float: right;
+		margin-left: 1em !important;
+	}
+}
+
+:root {
+	--image-filter: brightness(1);
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--image-filter: brightness(.7);
+	}
+	iframe, img, svg, video {
+		filter: var(--image-filter);
+	}
+	audio {
+		filter: brightness(.6);
+	}
+}
+
+// 限制图片、视频等的最大大小。
+// 注意：iframe 没法自动响应式大小，需要手动根据 size 计算 aspect-ratio。
+// 参考：service/modules/renderers/media_size
+iframe, img, svg, video {
+	max-width: 100%;
+	// 否则较宽的图片被压窄时，高度会保持不变，使宽高比例失效。
+	// 但是又不会影响正常的图片。因为正常图片是通过 <img width= 设置的，
+	// 没有走 style="" 设置。
+	height: auto;
+}
+
+audio, iframe, img, svg, video {
+	border-radius: var(--border-radius);
+}
+
+// SVG
+text { cursor: text; }

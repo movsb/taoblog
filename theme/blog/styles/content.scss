@@ -57,7 +57,7 @@ body:not(.wide) {
 
 #content {
     margin: auto;
-    padding: 0 1em;
+	padding: 1px 1em;
 }
 
 /* 文章 */
@@ -144,35 +144,6 @@ body:not(.wide) {
 	}
 }
 
-// 非宽屏模式下图片居中（宽屏模式居中看着太不协调了）
-body:not(.wide) .entry {
-	p {
-		img, svg, video {
-			&:not(.emoji):only-child {
-				display: block;
-				margin: auto;
-			}
-		}
-	}
-	iframe {
-		display: block;
-		margin: auto;
-	}
-	picture img {
-		display: block;
-		margin: auto;
-	}
-}
-body:not(.wide):is(.tweet,.tweets) {
-	// 封面图片占满看起来比较舒服。
-	img.cover {
-		width: 100% !important;
-	}
-	.live-photo {
-		max-width: 100% !important;
-	}
-}
-
 $blockquote-color: var(--border-color);
 
 blockquote {
@@ -193,13 +164,6 @@ blockquote {
 }
 
 .entry {
-    object.pdf {
-        width: 100%;
-        height: 600px;
-        height: 80vh;
-        opacity: 0.8;
-    }
-
     li {
         text-align: initial;
     }
