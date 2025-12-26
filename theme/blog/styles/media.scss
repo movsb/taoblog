@@ -93,3 +93,14 @@ audio, iframe, img, svg, video {
 
 // SVG
 text { cursor: text; }
+
+// 太长的媒体文件开启页面滚动（微信有此效果）。
+p:has(>img:only-child) {
+	max-height: 60vh;
+	overflow-y: auto;
+
+	img {
+		// TODO 加在 .border 全局类上。
+		box-sizing: border-box;
+	}
+}
