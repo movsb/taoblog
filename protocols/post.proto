@@ -300,6 +300,8 @@ message PreviewPostResponse {
 }
 
 message CreateStylingPageRequest {
+	// 文章内容源文件。
+	// 如果为空，使用 styling/index.md.
 	string source = 1;
 }
 message CreateStylingPageResponse {}

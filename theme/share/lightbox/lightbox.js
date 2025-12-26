@@ -73,6 +73,10 @@ class LightBox {
 			const button = document.createElement('button');
 			button.classList.add('play');
 			button.textContent = '播放实况照片';
+			button.onclick = function(e) {
+				e.stopPropagation();
+				e.preventDefault();
+			};
 			div.appendChild(button);
 
 			// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。

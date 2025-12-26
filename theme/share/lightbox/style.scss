@@ -48,6 +48,9 @@
 			left: 50%;
 			bottom: 10%;
 			transform: translateX(-50%);
+			border: none;
+			color: #f0ffffab;
+			text-shadow: 0 0 .5px;
 		}
 	}
 	// 不知道为什么多出来一丢丢 y 滚动。

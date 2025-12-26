@@ -21,6 +21,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
+	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
@@ -1475,7 +1476,11 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 
 	source := in.Source
 	if source == `` {
-		source = string(utils.Must1(fs.ReadFile(styling.Root, `index.md`)))
+		if version.DevMode() {
+			source = string(utils.Must1(os.ReadFile(styling.Dir.Join(`index.md`))))
+		} else {
+			source = string(styling.Index)
+		}
 	}
 
 	id, err := s.options.GetInteger(`styling_page_id`)
