@@ -49,6 +49,7 @@ func NewTask(cache *cache.FileCache, invalidate InvalidateCacheFor) *Task {
 }
 
 // 负责关闭文件。
+// url 仅用来获取文件名并用作缓存键。
 func (t *Task) get(id int, u string, f fs.File) string {
 	shouldCloseFile := true
 	defer func() {
@@ -72,7 +73,7 @@ func (t *Task) get(id int, u string, f fs.File) string {
 	}
 
 	time := stat.ModTime().Unix()
-	if file := stat.Sys().(*models.File); file != nil {
+	if file, ok := stat.Sys().(*models.File); ok {
 		time = file.UpdatedAt
 	}
 
