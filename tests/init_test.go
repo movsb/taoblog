@@ -26,6 +26,7 @@ type R struct {
 	user2  context.Context
 
 	user1ID, user2ID int64
+	user1Password    string
 }
 
 // 会在服务启动后快速返回。
@@ -58,6 +59,7 @@ func Serve(ctx context.Context, options ...server.With) *R {
 	u := utils.Must1(r.client.Users.CreateUser(r.admin, &proto.User{Nickname: `用户1`}))
 	r.user1 = onBehalfOf(r, u.Id)
 	r.user1ID = u.Id
+	r.user1Password = u.Password
 	u = utils.Must1(r.client.Users.CreateUser(r.admin, &proto.User{Nickname: `用户2`}))
 	r.user2 = onBehalfOf(r, u.Id)
 	r.user2ID = u.Id

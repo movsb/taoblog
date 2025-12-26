@@ -58,7 +58,12 @@ func ValidateCookieValue(value string, userAgent string, getUser func(userID int
 	return value == expect, refresh
 }
 
-const maxAge = time.Hour * 24 * 7
+var maxAge = time.Hour * 24
+
+// 设置 Cookies 的最大有效期。
+func SetMaxAge(d time.Duration) {
+	maxAge = d
+}
 
 func isHTTPS(r *http.Request) bool {
 	u, _ := url.Parse(r.Header.Get(`Origin`))
