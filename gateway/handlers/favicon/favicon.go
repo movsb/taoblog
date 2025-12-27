@@ -1,7 +1,6 @@
 package favicon
 
 import (
-	"bytes"
 	_ "embed"
 	"net/http"
 	"time"
@@ -9,7 +8,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-//go:embed favicon.ico
+// //go:embed favicon.ico
 var _default []byte
 
 type Favicon struct {
@@ -34,5 +33,6 @@ func (h *Favicon) SetData(t time.Time, d *utils.DataURL) {
 
 func (h *Favicon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(`Content-Type`, h.Type)
-	http.ServeContent(w, r, `favicon.ico`, h.Mod, bytes.NewReader(h.Data))
+	w.WriteHeader(http.StatusNoContent)
+	// http.ServeContent(w, r, `favicon.ico`, h.Mod, bytes.NewReader(h.Data))
 }
