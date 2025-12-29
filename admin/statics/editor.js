@@ -1471,10 +1471,6 @@ class PostFormUI {
 
 		this._tabManager.open('文章');
 
-		this._form.querySelector('p.file-manager-button .all').addEventListener('click', () => {
-			this.showFileManager();
-		});
-		
 		document.querySelector('#geo_modify').addEventListener('click', (e)=> {
 			e.preventDefault();
 			navigator.geolocation.getCurrentPosition(
@@ -1607,36 +1603,32 @@ class PostFormUI {
 					element: this._editorContainer,
 					textarea: this._editorContainer.querySelector('textarea'),
 				});
-				this.editorCommands = new TinyMDE.CommandBar({
-					element: document.getElementById('command-container'),
-					editor: this.editor,
-					commands: [
-						{
-							name: `insertTaskItem`,
-							title: `插入任务`,
-							innerHTML: `☑️ 任务`,
-							action: editor => {
-								editor.paste('- [ ] ');
-							},
-						},
-						{
-							name: `divider`,
-							title: `插入当时时间分割线`,
-							innerHTML: `✂️ 分隔符`,
-							action: editor => {
-								const date = new Date();
-								const year = date.getFullYear();
-								const month = (date.getMonth() + 1).toString().padStart(2, "0");
-								const day = date.getDate().toString().padStart(2, "0");
-								const hours = date.getHours().toString().padStart(2, "0");
-								const minutes = date.getMinutes().toString().padStart(2, "0");
-								const seconds = date.getSeconds().toString().padStart(2, "0");
-								
-								const formatted = `\n--- ${year}-${month}-${day} ${hours}:${minutes}:${seconds} ---\n\n`;
-								editor.paste(formatted);
-							},
-						},
-					],
+
+				const commandContainer = document.querySelector('#command-container');
+				commandContainer.querySelector('.insert-task-item').addEventListener('click', (e)=>{
+					e.stopPropagation();
+					e.preventDefault();
+					this.editor.paste('- [ ] ');
+				});
+				commandContainer.querySelector('.insert-separator').addEventListener('click', (e)=>{
+					e.stopPropagation();
+					e.preventDefault();
+					
+					const date = new Date();
+					const year = date.getFullYear();
+					const month = (date.getMonth() + 1).toString().padStart(2, "0");
+					const day = date.getDate().toString().padStart(2, "0");
+					const hours = date.getHours().toString().padStart(2, "0");
+					const minutes = date.getMinutes().toString().padStart(2, "0");
+					const seconds = date.getSeconds().toString().padStart(2, "0");
+					
+					const formatted = `--- ${year}-${month}-${day} ${hours}:${minutes}:${seconds} ---\n\n`;
+					this.editor.paste(formatted);
+				});
+				commandContainer.querySelector('.open-file-manager').addEventListener('click',e=>{
+					e.stopPropagation();
+					e.preventDefault();
+					this.showFileManager();
 				});
 			} else {
 				const editor = this._editorContainer.querySelector('textarea[name=source]');
@@ -1878,7 +1870,7 @@ class PostFormUI {
 	 * @param {string[]} paths 
 	 */
 	_updateReferencedFiles(paths) {
-		const buttonsParent = document.querySelector('p.file-manager-button');
+		const buttonsParent = document.querySelector('#command-container');
 		buttonsParent.querySelectorAll('.file').forEach(b => b.remove());
 
 		// note: 路径是有重复的，需要拖动去重

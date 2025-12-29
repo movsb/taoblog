@@ -44,7 +44,11 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 					<div id="preview-container"></div>
 					<div id="diff-container"></div>
 				</div>
-				<div id="command-container"></div>
+				<div id="command-container">
+					<button class="insert-task-item">☑️ 插入任务列表</button>
+					<button class="insert-separator">✂️ 插入分隔线</button>
+					<button class="open-file-manager">📄 文件管理器</button>
+				</div>
 				<hr>
 				<p>
 					选项：
@@ -55,10 +59,6 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 					<label><input type="checkbox" name="fullscreen" autocomplete="off">全屏编辑</label>
 				</p>
 				<hr>
-				<p class="file-manager-button">
-					文件：
-					<button type="button" class="all">管理</button>
-				</p>
 				<p class="date">
 					<label>
 						日期：
