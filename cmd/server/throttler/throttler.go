@@ -1,4 +1,4 @@
-package request_throttler
+package throttler
 
 import (
 	"context"

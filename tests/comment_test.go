@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/movsb/taoblog/cmd/server"
+	"github.com/movsb/taoblog/cmd/server/throttler"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/movsb/taoblog/service/modules/request_throttler"
 )
 
 func TestPreviewComment(t *testing.T) {
@@ -40,7 +40,7 @@ func TestCreateComment(t *testing.T) {
 func TestThrottler(t *testing.T) {
 	r := Serve(t.Context(),
 		server.WithCreateFirstPost(),
-		server.WithRequestThrottler(request_throttler.New()),
+		server.WithRequestThrottler(throttler.New()),
 	)
 	r.server.TestEnableRequestThrottler(true)
 	defer r.server.TestEnableRequestThrottler(false)

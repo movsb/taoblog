@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/cmd/server/throttler"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
-	"github.com/movsb/taoblog/service/modules/request_throttler"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +49,7 @@ func AddCommands(rootCmd *cobra.Command) {
 			}
 
 			s := NewServer(
-				WithRequestThrottler(request_throttler.New()),
+				WithRequestThrottler(throttler.New()),
 				WithCreateFirstPost(),
 				WithGitSyncTask(true),
 				WithBackupTasks(true),
