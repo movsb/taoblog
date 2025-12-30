@@ -1,6 +1,7 @@
 package favicon
 
 import (
+	"bytes"
 	_ "embed"
 	"net/http"
 	"time"
@@ -32,7 +33,8 @@ func (h *Favicon) SetData(t time.Time, d *utils.DataURL) {
 }
 
 func (h *Favicon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set(`Content-Type`, h.Type)
-	w.WriteHeader(http.StatusNoContent)
-	// http.ServeContent(w, r, `favicon.ico`, h.Mod, bytes.NewReader(h.Data))
+	if len(h.Data) > 0 {
+		w.Header().Set(`Content-Type`, h.Type)
+	}
+	http.ServeContent(w, r, `favicon.ico`, h.Mod, bytes.NewReader(h.Data))
 }
