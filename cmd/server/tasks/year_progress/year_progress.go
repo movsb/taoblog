@@ -14,7 +14,7 @@ func isLeapYear(y int) bool {
 	return y%400 == 0 || (y%4 == 0 && y%100 != 0)
 }
 
-// 返回当前进度百分比（1-100），0为无效。
+// 返回当前进度百分比 [0-100]，-1为无效。
 func calculate(t time.Time) int {
 	var (
 		yearTotal = utils.IIF(isLeapYear(t.Year()), 366, 365)
@@ -23,7 +23,7 @@ func calculate(t time.Time) int {
 
 	switch yearDay {
 	case 1:
-		return 1
+		return 0
 	case yearTotal:
 		return 100
 	default:
@@ -31,7 +31,7 @@ func calculate(t time.Time) int {
 		todayPercent := int(float32(yearDay) / float32(yearTotal) * 100)
 		yesterdayPercent := int(float32(yearDay-1) / float32(yearTotal) * 100)
 		if todayPercent == yesterdayPercent {
-			return 0
+			return -1
 		}
 		return todayPercent
 	}
@@ -51,6 +51,7 @@ func schedule(cal *calendar.CalenderService) {
 	for i := -5; i <= +5; i++ {
 		other := now.AddDate(0, 0, i)
 		p := calculate(other)
+		// 特别地：0% 也去除
 		if p <= 0 {
 			continue
 		}
