@@ -9,6 +9,7 @@ import (
 	"html"
 	"io/fs"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -26,6 +27,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
+	open_graph "github.com/movsb/taoblog/service/modules/opengraph"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/assets"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
@@ -595,6 +597,7 @@ func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitl
 }
 
 // 缓存的是数据库中的完整原始文章数据。
+// 不鉴权。
 func (s *Service) getPostCached(ctx context.Context, id int) (*models.Post, error) {
 	p, err, _ := s.postFullCaches.GetOrLoad(ctx, int64(id), func(ctx context.Context, i int64) (*models.Post, time.Duration, error) {
 		var post models.Post
@@ -1665,10 +1668,11 @@ func (s *Service) GetPostACL(ctx context.Context, in *proto.GetPostACLRequest) (
 }
 
 // 快速判断非文章本人用户是否有权限访问被分享的文章。
-// NOTE：用于替代 GetPost (withUserPerms)，以提高性能。
-// NOTE：系统管理员始终有权限访问。
-// NOTE：判断的是**非本人**，本人访问文章不能调用此函数判断。
-// NOTE：需保证前提：文章是分享状态。
+//   - NOTE：用于替代 GetPost (withUserPerms)，以提高性能。
+//   - NOTE：系统管理员始终有权限访问。
+//   - NOTE：判断的是**非本人**，本人访问文章不能调用此函数判断。
+//   - NOTE：需保证前提：文章是分享状态。
+//
 // TODO：加缓存
 func (s *Service) canNonAuthorUserReadPost(ctx context.Context, uid int64, pid int) bool {
 	if uid == int64(user.SystemID) {
@@ -1769,4 +1773,62 @@ func (s *Service) isPostPublic(ctx context.Context, pid int) bool {
 func (s *Service) InvalidatePost(id int) {
 	s.deletePostContentCacheFor(int64(id))
 	s.updatePostMetadataTime(int64(id), time.Now())
+}
+
+type _OpenGraphImageCacheKey struct {
+	SiteName string
+	PostID   int
+	Time     int
+}
+type _OpenGraphImageCacheValue struct {
+	Image []byte
+}
+
+func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request) {
+	id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
+	p := utils.Must1(s.getPostCached(r.Context(), id))
+
+	// 只有公开文章可访问。
+	if p.Status != models.PostStatusPublic {
+		http.NotFound(w, r)
+		return
+	}
+
+	user, err := s.userManager.GetUserByID(r.Context(), int(p.UserID))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, `user error`, 503)
+		return
+	}
+
+	key := _OpenGraphImageCacheKey{
+		SiteName: s.Config().Site.GetName(),
+		PostID:   id,
+		Time:     int(p.Modified),
+	}
+
+	value := _OpenGraphImageCacheValue{}
+
+	utils.Must(s.fileCache.GetOrLoad(
+		key,
+		time.Hour*24,
+		&value,
+		func() (any, error) {
+			png, err := open_graph.GenerateImage(
+				key.SiteName, p.Title,
+				bytes.NewReader(user.Avatar.Data),
+				nil,
+			)
+			log.Println(`生成分享图：`, p.ID, p.Title, err)
+			return _OpenGraphImageCacheValue{
+				Image: png,
+			}, err
+		},
+	))
+
+	http.ServeContent(w, r,
+		`og.png`,
+		time.Unix(int64(key.Time), 0).Local(),
+		bytes.NewReader(value.Image),
+	)
 }

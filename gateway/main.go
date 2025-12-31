@@ -91,6 +91,11 @@ func (g *Gateway) SetAvatar(ctx context.Context, cache *cache.FileCache, resolve
 	g.mc.Handle(`GET /v3/avatar/{id}`, a.Handler())
 }
 
+// 文章 Open Graph 背景图。
+func (g *Gateway) SetOpenGraphImageHandler(h http.HandlerFunc) {
+	g.mc.HandleFunc(`GET /v3/posts/{id}/open_graph.png`, h)
+}
+
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
 	mc := utils.ServeMuxChain{ServeMux: mux}
 

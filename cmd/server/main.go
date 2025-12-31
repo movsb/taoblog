@@ -360,6 +360,7 @@ func (s *Server) createGateway(ctx context.Context, mux *http.ServeMux, fileCach
 	s.gateway.SetFavicon(s.Main().Favicon())
 	s.gateway.SetDynamic(s.Main().DropAllPostAndCommentCache)
 	s.gateway.SetAvatar(ctx, fileCache, s.Main().ResolveAvatar)
+	s.gateway.SetOpenGraphImageHandler(s.Main().ServePostOpenGraphImage)
 }
 
 func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService *service.Service, mux *http.ServeMux) {

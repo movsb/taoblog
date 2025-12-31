@@ -1,4 +1,4 @@
-package main
+package open_graph
 
 import (
 	"bytes"
