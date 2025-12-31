@@ -3,9 +3,11 @@ package theme
 import (
 	"fmt"
 	"html/template"
+	"net/url"
 	"reflect"
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/theme/data"
@@ -69,6 +71,10 @@ func (t *Theme) funcs() map[string]any {
 		// 站点名。
 		`siteName`: func() string {
 			return t.cfg.Site.GetName()
+		},
+		`openGraphURL`: func(id int64) string {
+			home := utils.Must1(url.Parse(t.cfg.Site.GetHome()))
+			return home.JoinPath(`/v3/posts`, fmt.Sprint(id), `open_graph.png`).String()
 		},
 		`sitePageTitle`: func(d *data.Data) string {
 			name := t.cfg.Site.GetName()
