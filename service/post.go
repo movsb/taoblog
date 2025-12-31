@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -38,6 +39,9 @@ import (
 	"github.com/movsb/taorm"
 	"github.com/phuslu/lru"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/text"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -264,7 +268,7 @@ func (s *Service) getPostContentCached(ctx context.Context, p *proto.Post, co *p
 
 // 用于预览文章的时候快速 diff。
 // 编辑操作很频繁，不需要一直刷数据库。
-// 只能原作者获取。
+// 只能原作者获取，否则返回错误。
 func (s *Service) getPostSourceCached(ctx context.Context, id int64) (_ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 	type _SourceCacheKey struct {
@@ -1814,10 +1818,37 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 		time.Hour*24,
 		&value,
 		func() (any, error) {
+			var bg io.ReadCloser
+
+			if p.SourceType == `markdown` {
+				// 解析 markdown 并提取背景图。
+				md := goldmark.New()
+				doc := md.Parser().Parse(text.NewReader([]byte(p.Source)))
+				ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+					if img, ok := n.(*ast.Image); ok {
+						if img.Parent() != nil && img.Parent().Kind() == ast.KindParagraph && img.NextSibling() == nil && img.PreviousSibling() == nil {
+							u, _ := url.Parse(string(img.Destination))
+							if u != nil && !u.IsAbs() && u.Host == `` && u.Query().Has(`og`) {
+								fp, _ := s.OpenAsset(p.ID).OpenURL(u.String())
+								if fp != nil {
+									bg = fp
+								}
+							}
+						}
+					}
+					return ast.WalkContinue, nil
+				})
+				if bg != nil {
+					defer bg.Close()
+				}
+			}
+
+			avatar := utils.IIF(len(user.Avatar.Data) == 0, s.favicon.Data, user.Avatar.Data)
+
 			png, err := open_graph.GenerateImage(
 				key.SiteName, p.Title,
-				bytes.NewReader(user.Avatar.Data),
-				nil,
+				bytes.NewReader(avatar),
+				bg,
 			)
 			log.Println(`生成分享图：`, p.ID, p.Title, err)
 			return _OpenGraphImageCacheValue{

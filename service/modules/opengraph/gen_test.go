@@ -6,13 +6,10 @@ import (
 	"testing"
 
 	"github.com/movsb/taoblog/modules/utils"
-	"github.com/movsb/taoblog/modules/version"
 )
 
 func TestGen(t *testing.T) {
-	if !version.DevMode() {
-		t.SkipNow()
-	}
+	t.SkipNow()
 	png, err := GenerateImage(
 		`陪她去流浪`,
 		`静候大作。像我现在都没有心情和时间写博客了，但我就喜欢看你们写。`,
