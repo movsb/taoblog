@@ -1,8 +1,6 @@
 {{define "custom_header"}}
-<meta name="og:type" value="article">
-<meta name="og:title" value="{{.Data.Post.Title}}">
-<meta name="og:image" value="{{openGraphURL .Data.Post.ID}}">
 <base href="/{{.Data.Post.ID}}/">
+{{- tmplOpenGraph $.Data.Post -}}
 <script>
 TaoBlog.posts["{{.Data.Post.Id}}"] = {{strip .Data.Post}};
 TaoBlog.post_id = +"{{.Data.Post.Id}}";

@@ -1,10 +1,12 @@
 package theme
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"net/url"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -13,6 +15,23 @@ import (
 	"github.com/movsb/taoblog/theme/data"
 	"github.com/xeonx/timeago"
 )
+
+type _OpenGraphData struct {
+	Title string
+	Image template.URL
+	URL   template.URL
+}
+
+var tmplOpenGraph = sync.OnceValue(func() *template.Template {
+	return template.Must(template.New(`open graph`).Parse(`
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{.Title}}">
+<meta property="og:image" content="{{.Image}}">
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:title" content="{{.Title}}">
+<meta property="twitter:image" content="{{.Image}}">
+`))
+})
 
 func (t *Theme) funcs() map[string]any {
 	menustr := createMenus(t.cfg.Menus, false)
@@ -72,9 +91,17 @@ func (t *Theme) funcs() map[string]any {
 		`siteName`: func() string {
 			return t.cfg.Site.GetName()
 		},
-		`openGraphURL`: func(id int64) string {
+		`tmplOpenGraph`: func(p *data.Post) template.HTML {
 			home := utils.Must1(url.Parse(t.cfg.Site.GetHome()))
-			return home.JoinPath(`/v3/posts`, fmt.Sprint(id), `open_graph.png`).String()
+
+			data := _OpenGraphData{
+				Title: p.Title,
+				Image: template.URL(home.JoinPath(`/v3/posts`, fmt.Sprint(p.ID), `open_graph.png`).String()),
+			}
+
+			buf := bytes.NewBuffer(nil)
+			tmplOpenGraph().Execute(buf, data)
+			return template.HTML(buf.String())
 		},
 		`sitePageTitle`: func(d *data.Data) string {
 			name := t.cfg.Site.GetName()
