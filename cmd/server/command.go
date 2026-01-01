@@ -51,7 +51,6 @@ func AddCommands(rootCmd *cobra.Command) {
 			s := NewServer(
 				WithRequestThrottler(throttler.New()),
 				WithCreateFirstPost(),
-				WithGitSyncTask(true),
 				WithBackupTasks(true),
 				WithRSS(true),
 				WithMonitorCerts(true),
@@ -60,6 +59,10 @@ func AddCommands(rootCmd *cobra.Command) {
 				WithYearProgress(),
 				WithLiveCheck(),
 			)
+
+			if cfg.Maintenance.Backups.Sync.Enabled {
+				s.AddOptions(WithGitSyncTask(true))
+			}
 
 			s.Serve(context.Background(), false, cfg, nil)
 		},

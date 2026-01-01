@@ -105,13 +105,18 @@ type Server struct {
 	notifyServer proto.NotifyServer
 }
 
-// 主要用于测试启动。
 func NewServer(with ...With) *Server {
 	s := &Server{}
 	for _, w := range with {
 		w(s)
 	}
 	return s
+}
+
+func (s *Server) AddOptions(opts ...With) {
+	for _, opt := range opts {
+		opt(s)
+	}
 }
 
 // 基于服务器运行时的真实 HTTP 地址创建请求路径。

@@ -129,9 +129,13 @@ func (c *FileCache) sync() {
 			`expiring_at`: t,
 		})
 	}
-	log.Println(`更新文件缓存并清空已过期缓存：`, len(c.touched))
+
+	if len(c.touched) > 0 {
+		log.Println(`更新文件缓存并清空已过期缓存：`, len(c.touched))
+	}
 
 	clear(c.touched)
+
 	c.db.Model(_FileCacheItem{}).Where(`expiring_at<?`, time.Now().Unix()).Delete()
 }
 
