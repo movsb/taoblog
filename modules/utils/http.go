@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"net/url"
 	urlpkg "net/url"
 	"strings"
 
@@ -96,4 +97,9 @@ func AddHeader(h http.Handler, name, value string) http.Handler {
 		w.Header().Add(name, value)
 		h.ServeHTTP(w, r)
 	})
+}
+
+// 判断文件路径是否是本地路径。
+func IsLocalPathURL(u *url.URL) bool {
+	return u.Scheme == `` && u.Opaque == `` && u.Host == ``
 }

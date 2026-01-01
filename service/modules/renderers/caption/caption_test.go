@@ -27,8 +27,8 @@ func TestRender(t *testing.T) {
 			HTML:     `<p><img src="a.avif" alt=""/></p>`,
 		},
 		{
-			Markdown: `![](1.avif)`,
-			HTML:     `<figure><img src="1.avif" alt=""/><figcaption>普通&lt;文本&gt;说明</figcaption></figure>`,
+			Markdown: `![](1.avif?a=1&og)`,
+			HTML:     `<figure><img src="1.avif?a=1&amp;og" alt=""/><figcaption>普通&lt;文本&gt;说明</figcaption></figure>`,
 		},
 		{
 			Markdown: `![](2.avif)`,

@@ -77,7 +77,7 @@ func (m *_Caption) TransformHtml(doc *goquery.Document) error {
 			log.Println(src, err)
 			return
 		}
-		if url.EscapedPath() != url.String() {
+		if !utils.IsLocalPathURL(url) {
 			return
 		}
 
