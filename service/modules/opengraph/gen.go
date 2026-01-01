@@ -35,16 +35,20 @@ const (
 	fullWidth        = 1200 // Open Graph 总尺寸
 	fullHeight       = 630
 	avatarRadius     = 100
-	lineHeight       = 1.5
+	lineHeight       = 1.3
 	chineseFontPath  = `经典粗宋简/经典粗宋简.ttf`
 	fontSizeSiteName = 80
-	fontSizeTitle    = 50
-	fontSizeExcerpt  = 30
+	fontSizeTitle    = 55
+	fontSizeExcerpt  = 40
 )
 
+var debug = false
+
 // 根据指定的参数生成 OpenGraph 图像（PNG格式）。
-func GenerateImage(siteName string, title string, avatar, background io.Reader) (_ []byte, outErr error) {
-	defer utils.CatchAsError(&outErr)
+//
+// excerpt（摘要）会被自动裁剪以适合高度。
+func GenerateImage(siteName string, title, excerpt string, avatar, background io.Reader) (_ []byte, outErr error) {
+	// defer utils.CatchAsError(&outErr)
 
 	// 初始化字体。
 	if !loadAllFonts() {
@@ -53,12 +57,63 @@ func GenerateImage(siteName string, title string, avatar, background io.Reader) 
 
 	dc := gg.NewContext(fullWidth, fullHeight)
 
+	// 背景图片打底。
+	// 背景图片默认每篇文章总是不一样，所以本函数内不缓存，需要外部缓存。
+	drawBackground(dc, background)
+
+	y := padding
+	w := 0
+	h := 0
+
+	// 绘制站点名。
+	w = fullWidth - padding*2 - avatarRadius*2 - padding
+	y += drawString(dc, siteName, padding, y, 0xFFFFFFFF, fontSiteName, w, 0)
+
+	y += 25
+	// 绘制标题
+	w = fullWidth - padding*2 - avatarRadius*2 - padding
+	y += drawString(dc, title, padding, y, 0xFFF0F0F0, fontTitle, w, 0)
+
+	y += 35
+
+	// 绘制摘要。
+	w = fullWidth - padding*2
+	h = fullHeight - y - padding
+	y += drawString(dc, excerpt, padding, y, 0xFFF0F0F0, fontExcerpt, w, h)
+
+	// 绘制头像
+	// 奇怪，不知道为什么要放后面才正确，否则文字无法显示。
+	drawAvatar(dc, avatar)
+
+	// 导出
+	output := bytes.NewBuffer(nil)
+	utils.Must(png.Encode(output, dc.Image()))
+
+	return output.Bytes(), nil
+}
+
+func drawString(dc *gg.Context, s string, x, y int, color uint32, face font.Face, maxWidth, maxHeight int) int {
+	dc.SetRGB255(int(color>>0&0xFF), int(color>>8&0xFF), int(color>>16&0xFF))
+	dc.SetFontFace(face)
+	s, n := breakString(dc, s, maxWidth, maxHeight)
+	dc.DrawStringWrapped(s, float64(x), float64(y), 0, 0, float64(maxWidth), lineHeight, gg.AlignLeft)
+
+	height := n * int(dc.FontHeight()*lineHeight)
+
+	if debug {
+		dc.SetRGB(.5, 0, 0)
+		dc.DrawRectangle(float64(x), float64(y), float64(maxWidth), float64(height))
+		dc.Stroke()
+	}
+
+	return height
+}
+
+func drawBackground(dc *gg.Context, background io.Reader) {
 	// 默认黑色背景
 	dc.SetRGB(0, 0, 0)
 	dc.Clear()
 
-	// 背景图片打底。
-	// 背景图片默认每篇文章总是不一样，所以本函数内不缓存，需要外部缓存。
 	if background != nil {
 		img := utils.Must1(decodeImage(background))
 
@@ -69,42 +124,15 @@ func GenerateImage(siteName string, title string, avatar, background io.Reader) 
 		dc.DrawImage(blurred, 0, 0)
 	}
 
-	y := float64(padding)
+	// 调试：内边距
+	if debug {
+		dc.SetRGB(.5, 0, 0)
+		dc.DrawRectangle(padding, padding, fullWidth-padding*2, fullHeight-padding*2)
+		dc.Stroke()
+	}
+}
 
-	// 绘制站点名。
-	dc.SetRGB(1, 1, 1)
-	dc.SetFontFace(fontSiteName)
-	dc.DrawStringWrapped(siteName,
-		padding, y,
-		0, 0,
-		fullWidth-padding*2-avatarRadius-padding,
-		lineHeight,
-		gg.AlignLeft,
-	)
-
-	y += fontSizeSiteName + padding
-
-	// 绘制标题
-	dc.SetRGB(.98, .98, .98)
-	dc.SetFontFace(fontTitle)
-	// 没有返回值，不告诉我画了几行，我咋知道 y+=?，服了。
-	titleMaxWidth := fullWidth - padding*2 - avatarRadius*2 - padding
-	alteredTitle, titleLines := breakString(dc, title, titleMaxWidth)
-	dc.DrawStringWrapped(alteredTitle,
-		padding, y,
-		0, 0,
-		float64(titleMaxWidth),
-		lineHeight,
-		gg.AlignLeft,
-	)
-
-	y += float64(fontSizeTitle)*float64(titleLines) + float64(titleLines-1)*lineHeight
-
-	// 绘制摘要。
-	_ = fontExcerpt
-
-	// 绘制头像
-	// 奇怪，不知道为什么要放后面才正确，否则文字无法显示。
+func drawAvatar(dc *gg.Context, avatar io.Reader) {
 	if avatar != nil {
 		img := utils.Must1(decodeImageWithCache(avatar))
 		scaled := transform.Resize(img, avatarRadius*2, avatarRadius*2, transform.Lanczos)
@@ -114,30 +142,55 @@ func GenerateImage(siteName string, title string, avatar, background io.Reader) 
 		dc.DrawImageAnchored(scaled, fullWidth-padding-avatarRadius, padding+avatarRadius, 0.5, 0.5)
 		dc.Pop()
 	}
-
-	// 导出
-	output := bytes.NewBuffer(nil)
-	utils.Must(png.Encode(output, dc.Image()))
-
-	return output.Bytes(), nil
 }
 
 // gg 只能按空格折行，否则会超出绘制区域。
 // 这里手动加换行符以达到效果。
-// TODO: 限制高度以避免超出下边界。
-func breakString(dc *gg.Context, s string, maxWidth int) (string, int) {
-	var lines []string
-
+// 写得乱七八糟。
+func breakString(dc *gg.Context, s string, maxWidth, maxHeight int) (string, int) {
+	lines := []string{}
 	runes := []rune(s)
+	line := []rune{}
+	height := 0
+	shouldFix := true
 
-	var line []rune
+	fixHeight := func() bool {
+		height += int(dc.FontHeight() * lineHeight)
+		if maxHeight > 0 && float64(height) > float64(maxHeight) && len(lines) > 0 {
+			lines = lines[:len(lines)-1]
+			if len(lines) <= 0 {
+				return true
+			}
+			last := []rune(lines[len(lines)-1])
+			last = last[:max(0, len(last)-5)] // 实际上减3就够了
+			last = append(last, '.', '.', '.')
+			lines[len(lines)-1] = string(last)
+			line = line[:0]
+			return true
+		}
+		return false
+	}
+
 	for i := 0; i < len(runes); i++ {
 		line = append(line, runes[i])
 		w, _ := dc.MeasureString(string(line))
+		if runes[i] == '\n' {
+			lines = append(lines, string(line[:len(line)-1]))
+			height += int(dc.FontHeight() * lineHeight)
+			if maxHeight > 0 && float64(height) > float64(maxHeight) {
+				break
+			}
+			line = line[:0]
+			continue
+		}
 		// maxWidth 不要太小，否则会 panic
 		if w > float64(maxWidth) {
 			lines = append(lines, string(line[:len(line)-1]))
 			line = line[:0]
+			if fixHeight() {
+				shouldFix = false
+				break
+			}
 			i--
 			continue
 		}
@@ -145,6 +198,10 @@ func breakString(dc *gg.Context, s string, maxWidth int) (string, int) {
 
 	if len(line) > 0 {
 		lines = append(lines, string(line))
+	}
+
+	if shouldFix {
+		fixHeight()
 	}
 
 	return strings.Join(lines, "\n"), len(lines)

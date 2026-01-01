@@ -174,9 +174,10 @@ func (*_ContentPrettifier) PrettifyHtml(doc *html.Node) ([]byte, error) {
 }
 
 // 简化并美化 Markdown 的展示。
+//
 // 比如：
-// - 不显示复杂的链接、图片、表格、代码块等元素。
-// - 不显示脚注。
+//   - 不显示复杂的链接、图片、表格、代码块等元素。
+//   - 不显示脚注。
 //
 // NOTE 因为 Markdown 只能解析而不能还原，所以这里处理的是 HTML 内容。
 // HTML 可以在 NODE 之间等价转换。

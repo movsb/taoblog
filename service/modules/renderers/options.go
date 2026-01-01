@@ -14,6 +14,9 @@ type Option2 = any
 type EnteringWalker interface {
 	WalkEntering(n ast.Node) (ast.WalkStatus, error)
 }
+type EnteringWalkerWithSource interface {
+	WalkEntering(n ast.Node, source []byte) (ast.WalkStatus, error)
+}
 
 type HtmlPrettifier interface {
 	PrettifyHtml(doc *html.Node) ([]byte, error)

@@ -10,9 +10,11 @@ import (
 
 func TestGen(t *testing.T) {
 	t.SkipNow()
+	// debug = true
 	png, err := GenerateImage(
 		`陪她去流浪`,
-		`静候大作。像我现在都没有心情和时间写博客了，但我就喜欢看你们写。`,
+		`以前为了学习编程语言标准库，单独建，后来发现更新得很慢`,
+		`这这里是一段摘要内容这里是一段摘要内容这里是一段摘要内容这里是一段摘要内容这里是一段摘要内容这里是一段摘要内容这里是一段摘要内容这里是一段摘要内容里是一段摘要内容`,
 		bytes.NewReader(utils.Must1(os.ReadFile(`av.png`))),
 		bytes.NewReader(utils.Must1(os.ReadFile(`bg.avif`))),
 	)

@@ -34,6 +34,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/page_link"
+	"github.com/movsb/taoblog/service/modules/renderers/stringify/excerpt"
 	"github.com/movsb/taoblog/service/modules/renderers/toc"
 	"github.com/movsb/taoblog/theme/styling"
 	"github.com/movsb/taorm"
@@ -1845,10 +1846,19 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 
 			avatar := utils.IIF(len(user.Avatar.Data) == 0, s.favicon.Data, user.Avatar.Data)
 
+			var excerptString string
+
+			if p.SourceType == `markdown` {
+				md := renderers.NewMarkdown(
+					renderers.WithoutRendering(),
+					excerpt.New(&excerptString),
+				)
+				md.Render(p.Source)
+			}
+
 			png, err := open_graph.GenerateImage(
-				key.SiteName, p.Title,
-				bytes.NewReader(avatar),
-				bg,
+				key.SiteName, p.Title, excerptString,
+				bytes.NewReader(avatar), bg,
 			)
 			log.Println(`生成分享图：`, p.ID, p.Title, err)
 			return _OpenGraphImageCacheValue{

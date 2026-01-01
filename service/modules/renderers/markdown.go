@@ -280,6 +280,14 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 				return ast.WalkContinue, nil
 			}))
 		}
+		if walker, ok := opt.(EnteringWalkerWithSource); ok {
+			utils.Must(ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+				if entering {
+					return walker.WalkEntering(n, sourceBytes)
+				}
+				return ast.WalkContinue, nil
+			}))
+		}
 	}
 
 	if me.noRendering {
@@ -287,7 +295,7 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 	}
 
 	buf := bytes.NewBuffer(nil)
-	utils.Must(md.Renderer().Render(buf, []byte(source), doc))
+	utils.Must(md.Renderer().Render(buf, sourceBytes, doc))
 
 	htmlText := buf.Bytes()
 
@@ -308,9 +316,12 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 	return string(htmlText), nil
 }
 
+// 传入参数是不包含 <html><body>... 的
 func (me *_Markdown) prettifyHtml(raw []byte) (_ []byte, outErr error) {
 	defer utils.CatchAsError(&outErr)
+	// 这里解析出来会包含 doc > html > body
 	htmlDoc := utils.Must1(xnethtml.Parse(bytes.NewReader(raw)))
+	// 但是由于它们不包含文本节点，所以没有影响到最后结果。
 	filtered := utils.Must1(me.htmlPrettifier.PrettifyHtml(htmlDoc))
 	return filtered, nil
 }

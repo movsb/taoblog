@@ -1,4 +1,4 @@
-package friends
+package anniversary
 
 import (
 	"embed"
