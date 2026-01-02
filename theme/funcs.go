@@ -96,7 +96,7 @@ func (t *Theme) funcs() map[string]any {
 
 			data := _OpenGraphData{
 				Title: p.Title,
-				Image: template.URL(home.JoinPath(`/v3/posts`, fmt.Sprint(p.ID), `open_graph.png`).String()),
+				Image: template.URL(home.JoinPath(`/v0/posts`, fmt.Sprint(p.ID), `open_graph.png`).String()),
 			}
 
 			buf := bytes.NewBuffer(nil)

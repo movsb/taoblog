@@ -93,7 +93,8 @@ func (g *Gateway) SetAvatar(ctx context.Context, cache *cache.FileCache, resolve
 
 // 文章 Open Graph 背景图。
 func (g *Gateway) SetOpenGraphImageHandler(h http.HandlerFunc) {
-	g.mc.HandleFunc(`GET /v3/posts/{id}/open_graph.png`, h)
+	// /v3/ 被 robots.txt 禁掉了，但是通配符支持有限，暂时不放在 allows 里面。
+	g.mc.HandleFunc(`GET /v0/posts/{id}/open_graph.png`, h)
 }
 
 func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.ServeMux) error {
