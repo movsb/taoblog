@@ -60,3 +60,30 @@ sup:has(>.footnote-ref) {
 		// }
 	}
 }
+
+div.footnote-preview {
+	padding: 0 1em;
+	background-color: var(--color-bg);
+	border: 2px solid var(--accent-color);
+	border-radius: var(--border-radius);
+	box-sizing: border-box;
+	position: fixed;
+	min-width: 100px;
+	max-width: 100%;
+	--anchor-left: 0px;
+
+	&::after {
+		content: " ";
+		display: inline-block;
+		width: 10px;
+		height: 10px;
+		box-sizing: border-box;
+		border-left: 2px solid var(--accent-color);
+		border-bottom: 2px solid var(--accent-color);
+		transform: rotateZ(-45deg);
+		position: absolute;
+		bottom: -6px;
+		left: var(--anchor-left);
+		background-color: var(--color-bg);
+	}
+}

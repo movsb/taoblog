@@ -15,7 +15,7 @@ import (
 
 //go:generate sass --style compressed --no-source-map style.scss style.css
 
-//go:embed style.css
+//go:embed style.css script.js
 var _embed embed.FS
 var _root = utils.NewOSDirFS(dir.SourceAbsoluteDir().Join())
 
@@ -24,6 +24,7 @@ func init() {
 		const module = `footnotes`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
 		dynamic.WithStyles(module, `style.css`)
+		dynamic.WithScripts(module, `script.js`)
 	})
 }
 
