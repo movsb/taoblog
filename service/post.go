@@ -1781,6 +1781,7 @@ func (s *Service) InvalidatePost(id int) {
 }
 
 type _OpenGraphImageCacheKey struct {
+	Version  int `json:"v"`
 	SiteName string
 	PostID   int
 	Time     int
@@ -1802,11 +1803,12 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 	user, err := s.userManager.GetUserByID(r.Context(), int(p.UserID))
 	if err != nil {
 		log.Println(err)
-		http.Error(w, `user error`, 503)
+		http.Error(w, `user error`, http.StatusServiceUnavailable)
 		return
 	}
 
 	key := _OpenGraphImageCacheKey{
+		Version:  open_graph.Version,
 		SiteName: s.Config().Site.GetName(),
 		PostID:   id,
 		Time:     int(p.Modified),
@@ -1816,7 +1818,7 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 
 	utils.Must(s.fileCache.GetOrLoad(
 		key,
-		time.Hour*24,
+		time.Hour*24*7,
 		&value,
 		func() (any, error) {
 			var bg io.ReadCloser
@@ -1868,7 +1870,7 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 	))
 
 	http.ServeContent(w, r,
-		`og.png`,
+		`open_graph.png`,
 		time.Unix(int64(key.Time), 0).Local(),
 		bytes.NewReader(value.Image),
 	)

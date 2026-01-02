@@ -68,6 +68,7 @@ func (c *FileCache) run(ctx context.Context) {
 }
 
 // key 应该为结构体，并可被 json 化。
+// key 内部的字段（别名）应该尽量简短。
 func (c *FileCache) GetOrLoad(key any, ttl time.Duration, out any, loader Loader) error {
 	if err := c.getFromDB(key, ttl, out, false); err == nil {
 		return nil

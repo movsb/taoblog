@@ -30,6 +30,11 @@ import (
 	"golang.org/x/image/font"
 )
 
+// 生成器当前的版本号。
+//
+// 修改内部算法时外部应该失效，外部缓存时同时记录版本号。
+const Version = 1
+
 const (
 	padding          = 80   // 整体内边距
 	fullWidth        = 1200 // Open Graph 总尺寸
