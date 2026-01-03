@@ -82,3 +82,9 @@ func WithLiveCheck() With {
 		s.initLiveCheck = true
 	}
 }
+
+func WithReviewerTask() With {
+	return func(s *Server) {
+		s.initReviewerTask = true
+	}
+}

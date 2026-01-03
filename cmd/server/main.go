@@ -26,6 +26,7 @@ import (
 	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
 	"github.com/movsb/taoblog/cmd/server/tasks/git_repo"
 	"github.com/movsb/taoblog/cmd/server/tasks/live_check"
+	"github.com/movsb/taoblog/cmd/server/tasks/reviewer"
 	"github.com/movsb/taoblog/cmd/server/tasks/sync_files"
 	"github.com/movsb/taoblog/cmd/server/tasks/year_progress"
 	"github.com/movsb/taoblog/gateway"
@@ -83,6 +84,7 @@ type Server struct {
 	initMonitorCerts bool
 	initYearProgress bool
 	initLiveCheck    bool
+	initReviewerTask bool
 
 	initMonitorDomain      bool
 	initMonitorDomainDelay bool
@@ -785,4 +787,8 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 	}
 
 	s.initSyncs(ctx, cfg, filesStore)
+
+	if s.initReviewerTask {
+		go reviewer.RunReviewersTask(ctx, s.Main())
+	}
 }

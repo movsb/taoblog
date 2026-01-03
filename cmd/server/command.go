@@ -58,6 +58,7 @@ func AddCommands(rootCmd *cobra.Command) {
 				WithConfigOverride(configOverride),
 				WithYearProgress(),
 				WithLiveCheck(),
+				WithReviewerTask(),
 			)
 
 			if cfg.Maintenance.Backups.Sync.Enabled {

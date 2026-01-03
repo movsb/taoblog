@@ -1,14 +1,16 @@
-package service
+package reviewer
 
 import (
 	"context"
 	"fmt"
 	"iter"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/calendar"
@@ -19,13 +21,13 @@ var reviewerCalKind = calendar.RegisterKind(func(e *calendar.Event) string {
 	return fmt.Sprint(e.PostID)
 })
 
-func (s *Service) startReviewersTask(ctx context.Context) {
-	t := &_ReviewerTask{s: s}
-	go t.Run(ctx)
+func RunReviewersTask(ctx context.Context, svc *service.Service) {
+	t := &_ReviewerTask{s: svc}
+	t.Run(ctx)
 }
 
 type _ReviewerTask struct {
-	s *Service
+	s *service.Service
 }
 
 func (t *_ReviewerTask) Run(ctx context.Context) {
@@ -49,7 +51,7 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 		return
 	}
 
-	t.s.calendar.Remove(reviewerCalKind, func(e *calendar.Event) bool {
+	t.s.CalenderService().Remove(reviewerCalKind, func(e *calendar.Event) bool {
 		return true
 	})
 
@@ -60,11 +62,6 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 		if p.Type == `page` {
 			continue
 		}
-		// TODO 测试阶段。
-		if p.UserId != 83 {
-			continue
-		}
-
 		t.scheduleNext(ctx, p)
 	}
 
@@ -77,15 +74,6 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 //
 // TODO: 没有处理文章时区信息。
 func (t *_ReviewerTask) scheduleNext(ctx context.Context, p *proto.Post) {
-	pp, err := t.s.getPostContentCached(user.SystemForLocal(ctx), p, &proto.PostContentOptions{
-		WithContent:  true,
-		PrettifyHtml: true,
-	})
-	if err != nil {
-		log.Println(`渲染出错：`, err)
-		return
-	}
-
 	var (
 		now, _       = solar.AllDay(time.Now())
 		createdAt, _ = solar.AllDay(time.Unix(int64(p.Date), 0).Local())
@@ -108,6 +96,24 @@ func (t *_ReviewerTask) scheduleNext(ctx context.Context, p *proto.Post) {
 		return b.Sub(a) <= time.Hour*24*time.Duration(n)
 	}
 
+	// lazy evaluation.
+	render := sync.OnceValue(func() string {
+		pp, err := t.s.GetPost(user.SystemForLocal(ctx), &proto.GetPostRequest{
+			Id: int32(p.Id),
+			GetPostOptions: &proto.GetPostOptions{
+				ContentOptions: &proto.PostContentOptions{
+					WithContent:  true,
+					PrettifyHtml: true,
+				},
+			},
+		})
+		if err != nil {
+			log.Println(`渲染出错：`, err, p.Id)
+			return ``
+		}
+		return pp.Content
+	})
+
 	for tt := range func(yield func(time.Time) bool) {
 		if !last.IsZero() && latest(last, now, 3) {
 			if !yield(last) {
@@ -122,7 +128,7 @@ func (t *_ReviewerTask) scheduleNext(ctx context.Context, p *proto.Post) {
 	} {
 		st, et := solar.AllDay(tt)
 
-		t.s.calendar.AddEvent(reviewerCalKind, &calendar.Event{
+		t.s.CalenderService().AddEvent(reviewerCalKind, &calendar.Event{
 			Message: p.Title,
 
 			Start: st,
@@ -132,7 +138,7 @@ func (t *_ReviewerTask) scheduleNext(ctx context.Context, p *proto.Post) {
 			PostID: int(p.Id),
 
 			URL:         p.Link,
-			Description: pp,
+			Description: render(),
 		})
 	}
 }
