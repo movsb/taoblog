@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -34,11 +33,12 @@ func DevMode() bool {
 	}
 
 	var envDev bool
+
 	switch {
-	case GitCommit == ``:
-		envDev = true
-	case strings.EqualFold(GitCommit, `head`):
-		envDev = true
+	// case GitCommit == ``:
+	// 	envDev = true
+	// case strings.EqualFold(GitCommit, `head`):
+	// 	envDev = true
 	case exists(`go.mod`):
 		envDev = true
 	}
@@ -61,7 +61,6 @@ func init() {
 	}
 }
 
-// AddCommands ...
 func AddCommands(rootCmd *cobra.Command) {
 	versionCmd := &cobra.Command{
 		Use:   `version`,
