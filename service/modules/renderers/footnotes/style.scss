@@ -69,7 +69,7 @@ div.footnote-preview {
 	box-sizing: border-box;
 	position: fixed;
 	min-width: 100px;
-	max-width: 100%;
+	max-width: min(500px, 80%);
 	--anchor-left: 0px;
 
 	&::after {

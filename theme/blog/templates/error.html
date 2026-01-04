@@ -10,7 +10,7 @@
 <div class="sitename" style="position:absolute;top:1em;left:1em;font-size: 80%;" ><a href="/" title="{{ siteName }}">{{ siteName }}</a></div>
 {{ if .User.IsGuest }}
 <div style="position: absolute; top: 1em; right: 1em; font-size: 80%;">
-	<a onclick="login()">未登录？点击登录</a>
+	<a onclick="login()" style="cursor: pointer;">未登录？点击登录</a>
 	<script>
 		async function login() {
 			let wa = new WebAuthn();
