@@ -759,7 +759,7 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 		go s.createBackupTasks(ctx, cfg)
 	}
 
-	if s.initGitSyncTask {
+	if s.initGitSyncTask && cfg.Maintenance.Backups.Sync.Enabled {
 		go git_repo.Sync(ctx,
 			clients.NewFromAddress(s.GRPCAddr(), user.SystemTokenValue()),
 			s.notifyServer, s.main.SetLastSyncAt,

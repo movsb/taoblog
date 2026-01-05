@@ -59,11 +59,8 @@ func AddCommands(rootCmd *cobra.Command) {
 				WithYearProgress(),
 				WithLiveCheck(),
 				WithReviewerTask(),
+				WithGitSyncTask(true),
 			)
-
-			if cfg.Maintenance.Backups.Sync.Enabled {
-				s.AddOptions(WithGitSyncTask(true))
-			}
 
 			s.Serve(context.Background(), false, cfg, nil)
 		},
