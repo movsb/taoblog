@@ -269,4 +269,4 @@ func loadAllFonts() bool {
 var embedChineseFontDir embed.FS
 var localChineseFontDir = os.DirFS(dir.SourceAbsoluteDir().Join())
 
-//go:generate bash -c "! [ -d 经典粗宋简 ] && curl -L -o 经典粗宋简.tar https://github.com/movsb/taoblog/raw/refs/heads/assets/assets/%E7%BB%8F%E5%85%B8%E7%B2%97%E5%AE%8B%E7%AE%80.tar && tar xvf 经典粗宋简.tar"
+//go:generate bash -c "! [ -d 经典粗宋简 ] && curl -L -o 经典粗宋简.tar https://github.com/movsb/taoblog/raw/refs/heads/assets/assets/%E7%BB%8F%E5%85%B8%E7%B2%97%E5%AE%8B%E7%AE%80.tar && tar xvf 经典粗宋简.tar || true"
