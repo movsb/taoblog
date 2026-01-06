@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 	"time"
+
+	"github.com/xeonx/timeago"
 )
 
 type CurrentTimezoneGetter interface {
@@ -35,4 +37,33 @@ func AtMiddleNight(ctx context.Context, fn func()) {
 			}
 		}
 	}
+}
+
+var _friendlyChineseDateFormat = timeago.Config{
+	PastPrefix:   "",
+	PastSuffix:   "前",
+	FuturePrefix: "于",
+	FutureSuffix: "",
+
+	Periods: []timeago.FormatPeriod{
+		{D: time.Second, One: "1秒", Many: "%d秒"},
+		{D: time.Minute, One: "1分钟", Many: "%d分钟"},
+		{D: time.Hour, One: "1小时", Many: "%d小时"},
+		{D: timeago.Day, One: "1天", Many: "%d天"},
+		{D: timeago.Month, One: "1月", Many: "%d月"},
+		{D: timeago.Year, One: "1年", Many: "%d年"},
+	},
+
+	Zero: "1秒",
+
+	Max:           73 * time.Hour,
+	DefaultLayout: "2006-01-02",
+}
+
+func RelativeDateFrom(t time.Time, from time.Time) string {
+	return _friendlyChineseDateFormat.FormatReference(t, from)
+}
+
+func RelativeDate(t time.Time) string {
+	return _friendlyChineseDateFormat.FormatReference(t, time.Now())
 }

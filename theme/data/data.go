@@ -11,7 +11,6 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
-	"github.com/xeonx/timeago"
 )
 
 // Data holds all data for rendering the site.
@@ -95,10 +94,10 @@ type _Info struct {
 func (info _Info) ExpiryStatus() string {
 	var a []string
 	if d := info.proto.CertDaysLeft; d > 0 {
-		a = append(a, fmt.Sprintf(`证书有效期剩余 %d 天`, d))
+		a = append(a, fmt.Sprintf(`证书有效期剩余%d天`, d))
 	}
 	if d := info.proto.DomainDaysLeft; d > 0 {
-		a = append(a, fmt.Sprintf(`域名有效期剩余 %d 天`, d))
+		a = append(a, fmt.Sprintf(`域名有效期剩余%d天`, d))
 	}
 	if len(a) == 0 {
 		return ``
@@ -109,15 +108,15 @@ func (info _Info) ExpiryStatus() string {
 func (info _Info) BackupStatus() string {
 	friendly := func(t int32) string {
 		tm := time.Unix(int64(t), 0)
-		return timeago.Chinese.Format(tm)
+		return utils.RelativeDate(tm)
 	}
 
 	var a []string
 	if d := info.proto.LastBackupAt; d > 0 {
-		a = append(a, fmt.Sprintf(`上次备份于 %s`, friendly(d)))
+		a = append(a, fmt.Sprintf(`上次备份于%s`, friendly(d)))
 	}
 	if d := info.proto.LastSyncAt; d > 0 {
-		a = append(a, fmt.Sprintf(`上次同步于 %s`, friendly(d)))
+		a = append(a, fmt.Sprintf(`上次同步于%s`, friendly(d)))
 	}
 	if len(a) == 0 {
 		return ``

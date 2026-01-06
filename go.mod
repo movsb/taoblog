@@ -32,12 +32,14 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/dop251/goja_nodejs v0.0.0-20250325151027-56d2092bee9a
+	github.com/fogleman/gg v1.3.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gen2brain/avif v0.4.4
 	github.com/go-git/go-git/v5 v5.13.2
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/goccy/go-graphviz v0.2.9
 	github.com/goccy/go-yaml v1.17.1
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/google/uuid v1.6.0
 	github.com/googollee/eviltransform v0.0.0-20231101174306-03ba58d92dfd
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
@@ -85,7 +87,6 @@ require (
 	github.com/ebitengine/purego v0.8.3 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
-	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/forPelevin/gomoji v1.1.3 // indirect
 	github.com/fxamacker/cbor/v2 v2.6.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
@@ -93,7 +94,6 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-webauthn/x v0.1.9 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
-	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-tpm v0.9.0 // indirect
 	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect

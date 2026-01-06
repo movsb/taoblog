@@ -3,8 +3,8 @@ package models
 import (
 	"time"
 
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
-	"github.com/xeonx/timeago"
 )
 
 type Comment struct {
@@ -54,7 +54,7 @@ func (c *Comment) ToProto(redact func(c *proto.Comment)) *proto.Comment {
 		Source:     c.Source,
 
 		// TODO 用评论自带时区。
-		DateFuzzy: timeago.Chinese.Format(time.Unix(int64(c.Date), 0)),
+		DateFuzzy: utils.RelativeDate(time.Unix(int64(c.Date), 0)),
 
 		DateTimezone:     c.DateTimezone,
 		ModifiedTimezone: c.ModifiedTimezone,

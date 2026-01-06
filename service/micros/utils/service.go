@@ -12,7 +12,6 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/modules/renderers/auto_image_border"
-	"github.com/xeonx/timeago"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -49,7 +48,7 @@ func (u *Utils) FormatTime(ctx context.Context, in *proto.FormatTimeRequest) (*p
 		t := time.Unix(int64(ts.Unix), 0)
 
 		// TODO 用浏览器时区。
-		r.Friendly = timeago.Chinese.Format(t)
+		r.Friendly = utils.RelativeDate(t)
 
 		r.Server = t.In(u.timezone()).Format(time.RFC3339)
 

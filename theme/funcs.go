@@ -13,7 +13,6 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/theme/data"
-	"github.com/xeonx/timeago"
 )
 
 type _OpenGraphData struct {
@@ -64,7 +63,7 @@ func (t *Theme) funcs() map[string]any {
 			now := time.Now().In(tz)
 			t := time.Unix(int64(s), 0).In(tz)
 			r := t.Format(time.RFC3339)
-			f := timeago.Chinese.FormatReference(t, now)
+			f := utils.RelativeDateFrom(t, now)
 			return template.HTML(fmt.Sprintf(
 				`<time class="date" datetime="%s" title="%s" data-unix="%d">%s</time>`,
 				r, r, s, f,
