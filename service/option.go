@@ -379,9 +379,19 @@ var jsonPB = &runtime.JSONPb{
 func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettingsRequest) (_ *proto.Settings, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := user.MustNotBeGuest(ctx)
+	user := user.MustNotBeGuest(ctx).User
+	if user.IsSystem() {
+		if in.UserId <= 1 {
+			return nil, status.Errorf(codes.InvalidArgument, `无效用户编号。`)
+		}
+		u, err := s.userManager.GetUserByID(context.Background(), int(in.UserId))
+		if err != nil {
+			return nil, err
+		}
+		user = u
+	}
 
-	ss := utils.Must1(s.options.GetStringDefault(fmt.Sprintf(`user_settings:%d`, ac.User.ID), `{}`))
+	ss := utils.Must1(s.options.GetStringDefault(fmt.Sprintf(`user_settings:%d`, user.ID), `{}`))
 
 	var out proto.Settings
 	utils.Must(jsonPB.Unmarshal([]byte(ss), &out))
@@ -389,15 +399,15 @@ func (s *Service) GetUserSettings(ctx context.Context, in *proto.GetUserSettings
 	{
 		u := utils.Must1(url.Parse(s.getHome())).JoinPath(`/v3/calendars`)
 		js := utils.Must1(json.Marshal(CalendarData{
-			UserID: int(ac.User.ID),
+			UserID: int(user.ID),
 		}))
 		q := url.Values{}
 
 		// 写固定 nonce 加密的数据，防止总是变化。
 		nonce := [12]byte{}
-		binary.LittleEndian.PutUint32(nonce[0:], uint32(ac.User.ID))
-		binary.LittleEndian.PutUint32(nonce[4:], uint32(ac.User.ID))
-		binary.LittleEndian.PutUint32(nonce[8:], uint32(ac.User.ID))
+		binary.LittleEndian.PutUint32(nonce[0:], uint32(user.ID))
+		binary.LittleEndian.PutUint32(nonce[4:], uint32(user.ID))
+		binary.LittleEndian.PutUint32(nonce[8:], uint32(user.ID))
 		d := utils.Must1(s.aesGCM.Encrypt(js, nonce[:]))
 		encoded := base64.RawURLEncoding.EncodeToString(d)
 		q.Set(`data`, encoded)
@@ -418,6 +428,9 @@ func (s *Service) SetUserSettings(ctx context.Context, in *proto.SetUserSettings
 
 	if in.UpdateGroupPostsByCategory {
 		old.GroupPostsByCategory = in.Settings.GroupPostsByCategory
+	}
+	if in.UpdateReviewPostsInCalendar {
+		old.ReviewPostsInCalendar = in.Settings.ReviewPostsInCalendar
 	}
 
 	by := utils.Must1(jsonPB.Marshal(old))

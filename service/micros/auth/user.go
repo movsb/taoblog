@@ -161,6 +161,8 @@ func (m *UserManager) ListUsers(ctx context.Context, in *proto.ListUsersRequest)
 }
 
 // NOTE: 错误的时候也会缓存，nil 值，以避免不必要的查询。
+//
+// 不鉴权，ctx 用来获取数据库连接。
 func (m *UserManager) GetUserByID(ctx context.Context, id int) (*user.User, error) {
 	// 系统是虚的，不在数据库内。
 	if id == user.SystemID {

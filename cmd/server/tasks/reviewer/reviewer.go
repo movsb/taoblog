@@ -55,6 +55,8 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 		return true
 	})
 
+	userEnabled := map[int]bool{}
+
 	for _, p := range listRsp.GetPosts() {
 		if p.Status == models.PostStatusDraft {
 			continue
@@ -62,6 +64,26 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 		if p.Type == `page` {
 			continue
 		}
+
+		enabled, ok := userEnabled[int(p.UserId)]
+		if !ok {
+			u, err := t.s.GetUserSettings(
+				user.SystemForLocal(ctx),
+				&proto.GetUserSettingsRequest{
+					UserId: uint32(p.UserId),
+				},
+			)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			userEnabled[int(p.UserId)] = u.ReviewPostsInCalendar
+			enabled = u.ReviewPostsInCalendar
+		}
+		if !enabled {
+			continue
+		}
+
 		t.scheduleNext(ctx, p)
 	}
 

@@ -114,6 +114,9 @@ message Settings {
 	// 首页是否按分类展示文章？
 	bool group_posts_by_category = 100;
 
+	// 是否把过往文章按“遗忘曲线（模拟）”添加到日历作为提醒。
+	bool review_posts_in_calendar = 101;
+
 	// 日历链接。
 	// 仅输出参数。
 	string calendar_url = 200;
@@ -123,6 +126,11 @@ message SetUserSettingsRequest {
 	Settings settings = 1;
 
 	bool update_group_posts_by_category = 100;
+	bool update_review_posts_in_calendar = 101;
 }
 
-message GetUserSettingsRequest {}
+message GetUserSettingsRequest {
+	// 如果是系统管理员，此参数可以用来获取任意用户的参数。
+	// 如果不是系统管理员，此参数无效。
+	uint32 user_id = 1;
+}

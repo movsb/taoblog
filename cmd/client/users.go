@@ -96,5 +96,31 @@ func createUsersCommands() *cobra.Command {
 	updateCmd.Flags().String(`avatar`, ``, `头像文件路径。`)
 	usersCmd.AddCommand(updateCmd)
 
+	setCmd := &cobra.Command{
+		Use:   `set`,
+		Short: `更新用户参数。`,
+		Run: func(cmd *cobra.Command, args []string) {
+			v := proto.SetUserSettingsRequest{
+				Settings: &proto.Settings{},
+			}
+			if changed := cmd.Flags().Changed(`review-posts-in-calendar`); changed {
+				v.Settings.ReviewPostsInCalendar = utils.Must1(cmd.Flags().GetBool(`review-posts-in-calendar`))
+				v.UpdateReviewPostsInCalendar = true
+			}
+			utils.Must1(client.Blog.SetUserSettings(client.Context(), &v))
+		},
+	}
+	setCmd.Flags().Bool(`review-posts-in-calendar`, false, `是否在日历中回顾进入文章。`)
+	usersCmd.AddCommand(setCmd)
+
+	getCmd := &cobra.Command{
+		Use:   `get`,
+		Short: `获取用户参数。`,
+		Run: func(cmd *cobra.Command, args []string) {
+			s := utils.Must1(client.Blog.GetUserSettings(client.Context(), &proto.GetUserSettingsRequest{}))
+			yaml.NewEncoder(os.Stdout).Encode(s)
+		},
+	}
+	usersCmd.AddCommand(getCmd)
 	return usersCmd
 }
