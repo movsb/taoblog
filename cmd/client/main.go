@@ -188,22 +188,22 @@ func AddCommands(rootCmd *cobra.Command) {
 	postsCmd.AddCommand(postsCreateStylingPageCmd)
 
 	postsTransferCmd := &cobra.Command{
-		Use:              `transfer <post-id> <user-id>`,
+		Use:              `transfer <to-user-id> <post-ids...>`,
 		Short:            `转移文章给用户。`,
 		PersistentPreRun: preRun,
-		Args:             cobra.ExactArgs(2),
+		Args:             cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			var (
-				postID = utils.Must1(strconv.Atoi(args[0]))
-				userID = utils.Must1(strconv.Atoi(args[1]))
-			)
-			utils.Must1(client.Blog.SetPostUserID(
-				client.Context(),
-				&proto.SetPostUserIDRequest{
-					PostId: int64(postID),
-					UserId: int32(userID),
-				},
-			))
+			var userID = utils.Must1(strconv.Atoi(args[0]))
+			for i := 1; i < len(args); i++ {
+				var postID = utils.Must1(strconv.Atoi(args[i]))
+				utils.Must1(client.Blog.SetPostUserID(
+					client.Context(),
+					&proto.SetPostUserIDRequest{
+						PostId: int64(postID),
+						UserId: int32(userID),
+					},
+				))
+			}
 		},
 	}
 	postsCmd.AddCommand(postsTransferCmd)
