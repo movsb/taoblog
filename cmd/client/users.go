@@ -23,9 +23,11 @@ func createUsersCommands() *cobra.Command {
 		Short: `创建用户命令`,
 		Run: func(cmd *cobra.Command, args []string) {
 			nickname := utils.Must1(cmd.Flags().GetString(`nickname`))
+			hidden := utils.Must1(cmd.Flags().GetBool(`hidden`))
 			u, err := client.Users.CreateUser(client.Context(),
 				&proto.User{
 					Nickname: nickname,
+					Hidden:   hidden,
 				},
 			)
 			if err != nil {
@@ -35,6 +37,8 @@ func createUsersCommands() *cobra.Command {
 		},
 	}
 	createCmd.Flags().StringP(`nickname`, `n`, ``, `昵称（不能为空）`)
+	createCmd.Flags().Bool(`hidden`, false, `归档用户，不对外显示。`)
+	createCmd.Flags().MarkHidden(`hidden`)
 	usersCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{

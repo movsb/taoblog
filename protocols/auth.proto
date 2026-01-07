@@ -85,6 +85,9 @@ message User {
 	// 邮箱
 	string email = 7;
 	string bark_token = 8;
+
+	// 已归档。
+	bool hidden = 9;
 }
 
 message ListUsersRequest {

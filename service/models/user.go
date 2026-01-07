@@ -99,7 +99,7 @@ func (u *User) ToProto() *proto.User {
 
 		Email:     u.Email,
 		BarkToken: u.BarkToken,
-		// hidden
+		Hidden:    u.Hidden,
 		// otp_secret
 	}
 }

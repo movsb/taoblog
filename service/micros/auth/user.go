@@ -63,6 +63,7 @@ func (m *UserManager) CreateUser(ctx context.Context, in *proto.User) (*proto.Us
 		UpdatedAt: now.Unix(),
 		Nickname:  strings.TrimSpace(in.Nickname),
 		Password:  passwordString,
+		Hidden:    in.Hidden,
 	}
 
 	if user.Nickname == `` {
