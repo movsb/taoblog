@@ -1632,6 +1632,9 @@ class PostFormUI {
 					e.preventDefault();
 					this.showFileManager();
 				});
+				this.editor.addEventListener('selection', obj => {
+					this.editor.__selection = obj;
+				});
 			} else {
 				const editor = this._editorContainer.querySelector('textarea[name=source]');
 				editor.style.display = 'block';
@@ -1827,7 +1830,10 @@ class PostFormUI {
 		selected.forEach(fi => {
 			const text = fi.getInsertionText();
 			if (this.editor) {
-				this.editor.paste(text);
+				this.editor.paste(text,
+					this.editor.__selection?.anchor,
+					this.editor.__selection?.focus,
+				);
 			} else {
 				// TODO 插入到选中位置。
 				this.elemSource.value += text;
