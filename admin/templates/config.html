@@ -32,7 +32,7 @@
 	<dl>
 		<dt>网站首页</dt>
 		<dd>
-			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}" pattern="https?://\w+(\.\w+)+/?"></p>
+			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}" pattern="https?://\w+(\.\w+)+(:\d+)?/?"></p>
 			<p>形如：<code>https://blog.twofei.com</code>，暂时不支持带路径。</p>
 		</dd>
 	</dl>
