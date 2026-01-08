@@ -196,8 +196,8 @@ body.admin.editor {
 			min-width: 300px;
 			min-height: 45vh;
 			min-height: 45dvh;
-			max-height: 90vh;
-			max-height: 90dvh;
+			max-height: 88vh;
+			max-height: 88dvh;
 			// 简单限制一下在手机上的高度。
 			@media screen and (max-width: 650px) {
 				max-height: 40vh;
@@ -206,7 +206,7 @@ body.admin.editor {
 		#editor-container {
 			font-family: var(--font-mono);
 
-			.exit-fullscreen {
+			.fullscreen-toolbar {
 				display: none;
 				position: absolute;
 				right: 10px;
@@ -214,8 +214,8 @@ body.admin.editor {
 			}
 		}
 
-		// 小屏幕下直接占满。
-		#editor-container.stretch {
+		// 小屏幕下直接占满 & 强制全屏占满。
+		#editor-container.stretch, &.stretch {
 			position: fixed;
 			inset: 0;
 			background-color: var(--color-bg);
@@ -231,6 +231,17 @@ body.admin.editor {
 				// 防止滚动到末尾时把滚动事件向外传递，
 				// 这会导致滚动时误触发“键盘收起”动作。
 				overscroll-behavior: contain;
+			}
+		}
+		&.stretch {
+			#preview-container, #diff-container, #editor-container {
+				height: 100%;
+				max-height: 100%;
+				border: none;
+				border-radius: unset;
+			}
+			#preview-container {
+				border-left: 1px solid var(--border-color);
 			}
 		}
 

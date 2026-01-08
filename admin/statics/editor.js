@@ -764,6 +764,9 @@ class FileManagerDialog {
 		this._dialog.inert = true;
 		this._dialog.show();
 		this._dialog.inert = false;
+		// 全屏编辑的时候被盖住了。
+		// 全局设置好像问题不大？
+		this._dialog.style.zIndex = 999;
 	}
 	showModal() {
 		this._dialog.showModal();
@@ -1671,15 +1674,18 @@ class PostFormUI {
 
 		/** @type {HTMLInputElement} */
 		const fullscreenCheckbox = this._form.elements['fullscreen'];
-		const exitDiv = this._editorContainer.querySelector('.exit-fullscreen');
+		const fullscreenToolbar = this._editorContainer.querySelector('.fullscreen-toolbar');
 		fullscreenCheckbox.addEventListener('change', e => {
 			const checked = fullscreenCheckbox.checked;
-			this._editorContainer.classList.toggle('stretch', checked);
-			exitDiv.style.display = checked ? 'block' : 'none';
+			this._editorContainer.parentElement.classList.toggle('stretch', checked);
+			fullscreenToolbar.style.display = checked ? 'block' : 'none';
 		});
-		exitDiv.querySelector('button').addEventListener('click', e => {
-			this._editorContainer.classList.remove('stretch');
-			exitDiv.style.display = 'none';
+		fullscreenToolbar.querySelector('button.files').addEventListener('click', e => {
+			this.showFileManager();
+		});
+		fullscreenToolbar.querySelector('button.exit').addEventListener('click', e => {
+			this._editorContainer.parentElement.classList.remove('stretch');
+			fullscreenToolbar.style.display = 'none';
 			fullscreenCheckbox.checked = false;
 		});
 

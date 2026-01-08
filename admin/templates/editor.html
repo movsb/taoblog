@@ -36,8 +36,9 @@ TaoBlog.posts["{{$.Post.Id}}"] = {{ $.Post }};
 			<div id="post-editor">
 				<div id="container">
 					<div id="editor-container">
-						<div class="exit-fullscreen">
-							<button type="button">退出全屏</button>
+						<div class="fullscreen-toolbar">
+							<button type="button" class="files">文件管理</button>
+							<button type="button" class="exit">退出全屏</button>
 						</div>
 						<textarea name="source" style="display: none;">{{$.Post.Source}}</textarea>
 					</div>
