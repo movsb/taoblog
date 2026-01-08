@@ -3,10 +3,13 @@ p > code {
 	white-space: pre-wrap;
 }
 
+.mono, tt, code {
+	font-family: var(--font-mono);
+}
+
 pre > code {
 	// display: inline-block;
 	background: none;
-	font-family: var(--font-mono);
 	text-align: left;
 	word-spacing: normal;
 	word-break: normal;
