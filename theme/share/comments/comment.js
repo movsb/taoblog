@@ -954,8 +954,8 @@ class CommentManager {
 	// 因为文章也是可以在登录后展示编辑按钮的。
 	// 登录操作不再仅限于评论区。
 	async login() {
-		let wa = new WebAuthn();
 		try {
+			let wa = new WebAuthn();
 			await wa.login();
 			document.body.classList.add('signed-in');
 			this.updateLoginName();

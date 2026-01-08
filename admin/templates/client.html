@@ -59,8 +59,8 @@
 </div>
 <script>
 document.querySelector('.nickname').addEventListener('click', async () => {
-	let wa = new WebAuthn();
 	try {
+		let wa = new WebAuthn();
 		await wa.login();
 		location.reload();
 	} catch(e) {

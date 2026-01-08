@@ -134,8 +134,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (edit) { vim.bind('e', edit.click.bind(edit)); }
 
 	vim.bind('a', async ()=>{
-		let wa = new WebAuthn();
 		try {
+			let wa = new WebAuthn();
 			await wa.login();
 			location.reload();
 		} catch(e) {

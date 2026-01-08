@@ -5,8 +5,8 @@
 const userID = TaoBlog.getUserID();
 
 async function register() {
-	let wa = new WebAuthn();
 	try {
+		let wa = new WebAuthn();
 		await wa.register();
 		alert('新的通行密钥注册成功。');
 	} catch(e) {
@@ -18,8 +18,8 @@ async function register() {
 	}
 }
 async function switchUser() {
-	let wa = new WebAuthn();
 	try {
+		let wa = new WebAuthn();
 		await wa.login();
 		location.reload();
 	} catch(e) {

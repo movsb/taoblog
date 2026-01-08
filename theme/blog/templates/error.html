@@ -13,8 +13,8 @@
 	<a onclick="login()" style="cursor: pointer;">未登录？点击登录</a>
 	<script>
 		async function login() {
-			let wa = new WebAuthn();
 			try {
+				let wa = new WebAuthn();
 				await wa.login();
 				document.body.classList.add('signed-in');
 				location.reload();

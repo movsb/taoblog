@@ -38,8 +38,8 @@ function redirect(to) {
 	<p><a style="color: inherit; font-size: 80%; cursor: pointer;" onclick="toggleOthers();">其它登录方式</a></p>
 	<script>
 		async function webauthn() {
-			let wa = new WebAuthn();
 			try {
+				let wa = new WebAuthn();
 				await wa.login();
 				// alert('登录成功。');
 				redirect();

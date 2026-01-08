@@ -1,5 +1,10 @@
 class WebAuthnAPI {
-	constructor(){}
+	constructor(){
+		// 非 HTTPS 页面这个类没有被导出（localhost除外）。
+		if(typeof PublicKeyCredential == 'undefined' && location.protocol == 'http:' && location.hostname != 'localhost') {
+			throw new Error('只能在 HTTPS 安全连接下完成此操作。');
+		}
+	}
 
 	async beginRegistration() {
 		let path = `/admin/login/webauthn/register:begin`;
@@ -73,6 +78,9 @@ class WebAuthn {
 	async login() {
 		let { options, challenge } = await this.api.beginLogin();
 		console.log('开始登录返回：', options);
+		if(options?.publicKey?.rpId != location.host) {
+			throw new Error('站点配置的主页域名与当前访问域名不匹配。\n\n请使用用户名和密码登录后，修改站点主页地址后再尝试操作。');
+		}
 		let credential = await navigator.credentials.get(options);
 		console.log('本地获取凭证：', credential);
 		await this.api.finishLogin(credential.toJSON(), challenge);
