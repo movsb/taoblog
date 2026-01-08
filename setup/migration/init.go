@@ -120,7 +120,7 @@ func initPosts(db *sql.DB) {
 			Password:  fmt.Sprintf(`%x`, r),
 		}
 		tx.Model(&user).MustCreate()
-		log.Println(`管理员密码：`, user.Password)
+		log.Printf(`管理员用户名和密码：%d %s（仅首次运行出现）`, user.ID, user.Password)
 	})
 }
 

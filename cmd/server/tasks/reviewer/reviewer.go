@@ -87,7 +87,10 @@ func (t *_ReviewerTask) run(ctx context.Context) {
 		t.scheduleNext(ctx, p)
 	}
 
-	log.Println(`Reviewer Task: Done.`)
+	// 1: 不重要，排除 hello world 后。
+	if len(listRsp.GetPosts()) > 1 {
+		log.Println(`Reviewer Task: Done.`)
+	}
 }
 
 // 为文章 p 安排下次审阅时间。

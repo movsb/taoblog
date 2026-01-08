@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -289,7 +288,7 @@ func (s *Service) mustInitCrypto() {
 	if taorm.IsNotFoundError(err) {
 		key := crypto.NewSecret()
 		utils.Must(s.options.SetString(`aes_key`, key.String()))
-		log.Println(`加密密钥：`, key.String())
+		// log.Println(`加密密钥：`, key.String())
 		aesKey = key.String()
 	}
 	s.aesGCM = utils.Must1(crypto.NewAesGcm(utils.Must1(crypto.SecretFromString(aesKey))))

@@ -89,7 +89,7 @@ type Server struct {
 	initMonitorDomain      bool
 	initMonitorDomainDelay bool
 
-	configOverride func(cfg *config.Config)
+	configOverride func(cfg *config.Config) bool
 
 	authFrontend       *auth.Auth
 	userManager        *auth.UserManager
@@ -274,8 +274,9 @@ func (s *Server) initConfigFromDatabase(cfg *config.Config, db *taorm.DB) error 
 
 	// 加载覆盖配置。
 	if s.configOverride != nil {
-		s.configOverride(cfg)
-		log.Println(`加载覆盖配置`)
+		if s.configOverride(cfg) {
+			log.Println(`加载覆盖配置`)
+		}
 	}
 
 	return nil
@@ -631,7 +632,7 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 	if s.testing {
 		s.Main().TestingSetHTTPAddr(s.JoinPath())
 	}
-	log.Println(`HTTP:`, s.httpAddr)
+	log.Printf(`HTTP: http://%s`, s.httpAddr)
 
 	go func() {
 		if err := server.Serve(l); err != nil {

@@ -40,13 +40,6 @@ func AddCommands(rootCmd *cobra.Command) {
 				}
 				cfg = cfg2
 			}
-			configOverride := func(cfg *config.Config) {
-				if err := config.ApplyFromFile(cfg, dir, `taoblog.override.yml`); err != nil {
-					if !os.IsNotExist(err) {
-						log.Fatalln(err)
-					}
-				}
-			}
 
 			s := NewServer(
 				WithRequestThrottler(throttler.New()),
@@ -55,12 +48,23 @@ func AddCommands(rootCmd *cobra.Command) {
 				WithRSS(true),
 				WithMonitorCerts(true),
 				WithMonitorDomain(true, monitorDomainInitialDelay),
-				WithConfigOverride(configOverride),
 				WithYearProgress(),
 				WithLiveCheck(),
 				WithReviewerTask(),
 				WithGitSyncTask(true),
 			)
+
+			if !demo {
+				s.AddOptions(WithConfigOverride(func(c *config.Config) bool {
+					if err := config.ApplyFromFile(cfg, dir, `taoblog.override.yml`); err != nil {
+						if !os.IsNotExist(err) {
+							log.Fatalln(err)
+						}
+						return false
+					}
+					return true
+				}))
+			}
 
 			s.Serve(context.Background(), false, cfg, nil)
 		},

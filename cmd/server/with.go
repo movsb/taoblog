@@ -65,7 +65,7 @@ func WithMonitorCerts(b bool) With {
 }
 
 // WithConfigOverride 设置一个函数来覆盖配置加载后的配置。
-func WithConfigOverride(fn func(*config.Config)) With {
+func WithConfigOverride(fn func(*config.Config) bool) With {
 	return func(s *Server) {
 		s.configOverride = fn
 	}

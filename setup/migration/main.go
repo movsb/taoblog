@@ -15,7 +15,7 @@ func Migrate(gdb, files, cache *sql.DB) {
 
 	var sVer string
 	gdb.QueryRow(`SELECT sqlite_version()`).Scan(&sVer)
-	log.Println(`SQLite Version:`, sVer)
+	log.Println(` SQLite Version:`, sVer)
 
 	row := gdb.QueryRow(`SELECT value FROM options WHERE name='db_ver'`)
 	strDBVer := ""
