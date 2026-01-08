@@ -980,7 +980,9 @@ class CommentManager {
 	}
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// 有些扩展脚本会同时处理评论内容中的数据，需要尽早（在 DOMContentLoaded 之前）完成。
+// 在主题模板渲染函数里面被调用。
+window.__initComments = () => {
 	const articles = document.getElementsByTagName('article');
 	// 只在单篇文章页显示的时候启用评论功能。
 	if(articles.length != 1) {
@@ -993,4 +995,4 @@ document.addEventListener('DOMContentLoaded', () => {
 	let comment = new CommentManager(TaoBlog.post_id);
 	window.comment = comment; // 全局变量，供 HTML 事件处理器使用
 	comment.init();
-}, {once: true});
+};

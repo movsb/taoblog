@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/models"
@@ -136,6 +137,27 @@ func (t *Theme) funcs() map[string]any {
 				}, nil
 			}
 			return "", fmt.Errorf(`不知道如何列集：%v`, reflect.TypeOf(obj).String())
+		},
+		`comments`: func(d *data.Data) template.HTML {
+			switch typed := d.Data.(type) {
+			case *data.PostData:
+				if len(typed.Comments) <= 0 {
+					return `<script>TaoBlog.comments=[];__initComments();</script>`
+				}
+				buf := bytes.NewBuffer(nil)
+				// PB 的 json 序列化是不支持数组的。
+				buf.WriteString("<script>\nTaoBlog.comments = [\n")
+				// NOTE: 这个  marshaller 会把 < > 给转义了，其实没必要。
+				encoder := jsonpb.Marshaler{OrigName: true}
+				for _, c := range typed.Comments {
+					encoder.Marshal(buf, c)
+					buf.WriteString(",\n")
+				}
+				buf.WriteString("];\n")
+				buf.WriteString("__initComments();\n</script>")
+				return template.HTML(buf.String())
+			}
+			return ``
 		},
 	}
 }

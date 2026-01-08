@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/movsb/taoblog/modules/globals"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
@@ -46,33 +45,6 @@ func (d *PostData) TOC() template.HTML {
 	return template.HTML(d.Post.Toc)
 }
 
-func (d *PostData) CommentsAsJsonArray() template.JS {
-	if d.Comments == nil {
-		d.Comments = make([]*proto.Comment, 0)
-	}
-
-	buf := bytes.NewBuffer(nil)
-
-	// 简单格式化一下。
-	// [
-	//      {...},
-	//      {...},
-	//      {...},
-	// ]
-	buf.WriteString("[\n")
-	// NOTE: 这个  marshaller 会把 < > 给转义了，其实没必要。
-	encoder := jsonpb.Marshaler{
-		OrigName: true,
-	}
-	for _, c := range d.Comments {
-		encoder.Marshal(buf, c)
-		buf.WriteString(",\n")
-	}
-	buf.WriteString("]")
-	return template.JS(buf.String())
-}
-
-// NewDataForPost ...
 func NewDataForPost(ctx context.Context, service proto.TaoBlogServer, post *proto.Post) *Data {
 	d := &Data{
 		Context: ctx,

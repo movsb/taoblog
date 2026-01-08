@@ -72,7 +72,7 @@ TaoBlog.post_id = +"{{.Data.Post.Id}}";
 	{{end}}
 
 	{{ end }}{{/* end with post */}}
-	<script>TaoBlog.comments = {{ $.Data.CommentsAsJsonArray }};</script>
+	{{ comments $ }}
 </article>
 
 {{- if $dot.ShowAsideRight }}
