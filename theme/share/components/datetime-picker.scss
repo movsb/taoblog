@@ -1,0 +1,28 @@
+dialog.datetime-picker {
+	position: fixed;
+	margin: unset;
+	table {
+		margin: unset;
+	}
+	th, td {
+		text-align: center;
+		padding: 6px 0 5px;
+	}
+	th {
+		font-weight: bold;
+	}
+	td[data-day] {
+		cursor: pointer;
+	}
+	td.active {
+		background-color: var(--accent-color, red);
+	}
+	select.tz {
+		width: 150px;
+	}
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+}

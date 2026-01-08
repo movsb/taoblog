@@ -1356,6 +1356,8 @@ class PostFormUI {
 		this._previewCallbackReturned = true;
 		/** @type {HTMLInputElement} */
 		this._files = this._form.querySelector('#files');
+		/** @type {HTMLButtonElement} */
+		this._time = this._form.elements['time'];
 		this._users = [];
 		this._contentChanged = false;
 
@@ -1685,6 +1687,18 @@ class PostFormUI {
 			e.preventDefault();
 			this._handleSelectFiles(e.dataTransfer.files);
 		});
+
+		this._form.elements['time'].addEventListener('click', e => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			/** @type {HTMLButtonElement} */
+			const btn = e.target;
+			const tvz = this._getTime();
+			new DateTimePicker(btn, tvz.time, tvz.zone, ({unix, timezone})=>{
+				this._setTime(new TimeWithZone(unix, timezone));
+			});
+		});
 	}
 
 	_handleSourceChanged = (content) => {
@@ -1709,7 +1723,7 @@ class PostFormUI {
 	}
 
 	initFrom(p) {
-		this.time = p.date * 1000;
+		this._setTime(new TimeWithZone(p.date, p.date_timezone));
 		this.status = p.status;
 		this.type = p.type;
 		if (p.metas && p.metas.geo) {
@@ -1756,7 +1770,8 @@ class PostFormUI {
 
 		const newPost = {
 			id: TaoBlog.post_id,
-			date: this.time,
+			date: this._getTime().time,
+			date_timezone: this._getTime().zone,
 			modified: p.modified,
 			modified_timezone: TimeWithZone.getTimezone(),
 			type: this.type,
@@ -2002,16 +2017,12 @@ class PostFormUI {
 	get source()    {
 		return this.elemSource.value;
 	}
-	get time()      {
-		let t = this.elemTime.value;
-		let d = new Date(t).getTime() / 1000;
-		if (!d) {
-			d = new Date().getTime() / 1000;
-		}
-		d = Math.floor(d);
-		return d;
-	}
-	set time(t)      {
+
+	/**
+	 * 
+	 * @param {TimeWithZone} tvz 
+	 */
+	_setTime(tvz)      {
 		const convertToDateTimeLocalString = (date) => {
 			const year = date.getFullYear();
 			const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -2020,10 +2031,25 @@ class PostFormUI {
 			const minutes = date.getMinutes().toString().padStart(2, "0");
 			const seconds = date.getSeconds().toString().padStart(2, "0");
 		  
-			return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+			return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 		};
-		this.elemTime.value = convertToDateTimeLocalString(new Date(t));
+
+		const d = new Date(tvz.time*1000);
+		let v = `${convertToDateTimeLocalString(d)}`;
+		if(tvz.zone != TimeWithZone.getTimezone()) {
+			v = `${v} ${tvz.zone}`;
+		}
+		this._time.textContent = v;
+		this._time._tvz = tvz;
 	}
+	/**
+	 * 
+	 * @returns {TimeWithZone}
+	 */
+	_getTime() {
+		return this._time._tvz;
+	}
+
 	get type() { return this.elemType.value; }
 	set type(t) { this.elemType.value = t; }
 	get status() { return this.elemStatus.value; }

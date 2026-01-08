@@ -91,6 +91,7 @@ class PostManagementAPI
 		let obj = {
 			post: {
 				date: p.date,
+				date_timezone: p.date_timezone,
 				modified: p.modified,
 				modified_timezone: p.modified_timezone,
 				type: p.type ?? 'tweet',
@@ -101,7 +102,7 @@ class PostManagementAPI
 				top: p.top,
 				category: p.category ?? 0,
 			},
-			update_mask: 'source,sourceType,date,type,status,modifiedTimezone,metas',
+			update_mask: 'source,sourceType,date,dateTimezone,type,status,modifiedTimezone,metas',
 			get_post_options: {
 				with_user_perms: true,
 			},
