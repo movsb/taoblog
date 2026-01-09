@@ -23,7 +23,6 @@ type MediaSize struct {
 	web gold_utils.WebFileSystem
 
 	localOnly bool
-	filter    gold_utils.NodeFilter
 }
 
 type Option func(*MediaSize)
@@ -34,18 +33,11 @@ func WithLocalOnly() Option {
 	}
 }
 
-func WithNodeFilter(f gold_utils.NodeFilter) Option {
-	return func(ms *MediaSize) {
-		ms.filter = f
-	}
-}
-
 // localOnly: 只处理本地图片，不处理网络图片。
 // NOTE: 本地文件直接用相对路径指定，不要用 file://。
 func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
 	ms := &MediaSize{
-		web:    web,
-		filter: func(node *goquery.Selection) bool { return true },
+		web: web,
 	}
 	for _, opt := range options {
 		opt(ms)
@@ -54,9 +46,8 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaSize {
 }
 
 func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
-	doc.Find(`img,video`).FilterFunction(func(i int, s *goquery.Selection) bool {
-		return ms.filter(s)
-	}).Each(func(i int, s *goquery.Selection) {
+	isStatic := func(_ int, s *goquery.Selection) bool { return s.HasClass(`static`) }
+	doc.Find(`img,video`).NotFunction(isStatic).Each(func(i int, s *goquery.Selection) {
 		url := s.AttrOr(`src`, ``)
 		if url == "" {
 			return
@@ -130,7 +121,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 
 		// aspect-ratio 对图片无效。
 	})
-	doc.Find(`svg`).Each(func(i int, s *goquery.Selection) {
+	doc.Find(`svg`).NotFunction(isStatic).Each(func(i int, s *goquery.Selection) {
 		buf := bytes.NewBuffer(nil)
 		// TODO 这里效率可能有点低，直接检测根元素即可。
 		goquery.Render(buf, s)
@@ -149,7 +140,7 @@ func (ms *MediaSize) TransformHtml(doc *goquery.Document) error {
 		// aspect-ratio 对 svg 无效。
 		// 它是响应式的。
 	})
-	doc.Find(`iframe`).Each(func(i int, s *goquery.Selection) {
+	doc.Find(`iframe`).NotFunction(isStatic).Each(func(i int, s *goquery.Selection) {
 		// 目前只能处理这种大小：<iframe width="560" height="315" ...
 		width := utils.DropLast1(strconv.Atoi(s.AttrOr(`width`, `0`)))
 		height := utils.DropLast1(strconv.Atoi(s.AttrOr(`height`, `0`)))

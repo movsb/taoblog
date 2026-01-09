@@ -18,14 +18,6 @@ import (
 	gold_html "github.com/yuin/goldmark/renderer/html"
 )
 
-type NodeFilter = func(node *goquery.Selection) bool
-
-func NegateNodeFilter(f NodeFilter) NodeFilter {
-	return func(node *goquery.Selection) bool {
-		return !f(node)
-	}
-}
-
 func AddClass(node ast.Node, classes ...string) {
 	var class string
 	if any, ok := node.AttributeString(`class`); ok {

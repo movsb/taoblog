@@ -23,7 +23,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	"github.com/movsb/taoblog/service/modules/renderers/gallery"
 	"github.com/movsb/taoblog/service/modules/renderers/genealogy"
-	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/graph_viz"
 	"github.com/movsb/taoblog/service/modules/renderers/hashtags"
 	"github.com/movsb/taoblog/service/modules/renderers/highlight"
@@ -116,10 +115,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 	var renderMarkdown func(markdown string) (string, error)
 
 	options = append(options,
-		media_size.New(assets,
-			media_size.WithLocalOnly(),
-			media_size.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter)),
-		),
+		media_size.New(assets, media_size.WithLocalOnly()),
 		image.New(assets),
 		caption.New(assets),
 		gallery.New(),
@@ -129,7 +125,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		list_markers.New(),
 		iframe.New(!co.NoIframePreview),
 		math.New(),
-		exif.New(assets, s.exifTask, int(postId), exif.WithNodeFilter(gold_utils.NegateNodeFilter(withEmojiFilter))),
+		exif.New(assets, s.exifTask, int(postId)),
 		live_photo.New(ctx, assets),
 		emojis.New(emojis.BaseURLForDynamic),
 		wikitable.New(),

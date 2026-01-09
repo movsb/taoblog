@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
@@ -335,10 +334,6 @@ func (s *Service) deletePostContentCacheFor(id int64) {
 	s.cache.Delete(fmt.Sprintf(`post_source:%d`, id))
 	s.cache.Delete(fmt.Sprintf(`post_toc:%d`, id))
 	s.cache.Delete(fmt.Sprintf(`post_tags:%d`, id))
-}
-
-func withEmojiFilter(node *goquery.Selection) bool {
-	return node.HasClass(`emoji`)
 }
 
 func (s *Service) hashtagResolver(tag string) string {
