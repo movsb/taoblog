@@ -25,13 +25,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
 		const anchorFixedOffset = 14.14;
 		// 默认位置：a的正上方（左边对齐）。
 		let left = rca.left+rca.width/2, top = rca.top-rcd.height-10;
-		// 如果超出屏幕，向左挪。锚点向右挪。
+		// 如果超出屏幕右边界，向左挪。锚点向右挪。
 		let leftOffset = 0;
 		if(left + rcd.width > window.innerWidth) {
 			// - 10: 任意量，右边不要太靠近屏幕边界。
 			const newLeft = window.innerWidth - rcd.width - 10;
 			leftOffset = newLeft - left;
 			left = newLeft;
+		}
+		// 默认是在上方的，但是如果上方超出屏幕边界，展示在下方。
+		if(top < 10 /* 留点儿边界 */) {
+			top = rca.bottom + 20;
+			div.classList.add('down');
 		}
 		div.style.left = `${left-anchorFixedOffset}px`;
 		div.style.top = `${top}px`;

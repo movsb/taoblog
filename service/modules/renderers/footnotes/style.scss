@@ -80,10 +80,20 @@ div.footnote-preview {
 		box-sizing: border-box;
 		border-left: 2px solid var(--accent-color);
 		border-bottom: 2px solid var(--accent-color);
-		transform: rotateZ(-45deg);
 		position: absolute;
-		bottom: -6px;
 		left: var(--anchor-left);
 		background-color: var(--color-bg);
+	}
+	// 锚点默认在下方。
+	&::after {
+		transform: rotateZ(-45deg);
+		top: unset;
+		bottom: -6px;
+	}
+	// 上方不够就放下方。
+	&.down::after {
+		transform: rotateZ(135deg);
+		bottom: unset;
+		top: -6px;
 	}
 }
