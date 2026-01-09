@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
+	"github.com/movsb/taoblog/cmd/server/maintenance"
 	"github.com/movsb/taoblog/gateway/handlers/favicon"
 	"github.com/movsb/taoblog/gateway/handlers/roots"
 	"github.com/movsb/taoblog/modules/crypto"
@@ -59,6 +60,9 @@ type Service struct {
 
 	// 计划重启。
 	scheduledUpdate atomic.Bool
+
+	// 维护模式。
+	maintenanceMode maintenance.MaintenanceMode
 
 	// 配置文件中写的站点地址。
 	// 可以被测试环境修改成临时地址。
@@ -138,8 +142,6 @@ type Service struct {
 	searcher         atomic.Pointer[search.Engine]
 	onceInitSearcher sync.Once
 
-	maintenance *utils.Maintenance
-
 	// 网站图标，临时放这儿。
 	favicon *favicon.Favicon
 
@@ -196,10 +198,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		postCaches:           cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
 		commentContentCaches: lru.NewTTLCache[_PostContentCacheKey, string](10240),
 		commentCaches:        cache.NewRelativeCacheKeys[int64, _PostContentCacheKey](),
-
-		maintenance: utils.NewMaintenance(),
-
-		favicon: favicon.NewFavicon(),
+		favicon:              favicon.NewFavicon(),
 	}
 
 	for _, opt := range options {
@@ -327,14 +326,6 @@ func (s *Service) TxCall(callback func(s *Service) error) error {
 		}
 		return callback(&txs)
 	})
-}
-
-// 是否在维护模式。
-// 1. 手动进入。
-// 2. 自动升级过程中。
-// https://github.com/movsb/taoblog/commit/c4428d7
-func (s *Service) MaintenanceMode() *utils.Maintenance {
-	return s.maintenance
 }
 
 func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto.GetInfoResponse, error) {

@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"sync"
 
+	"github.com/movsb/taoblog/cmd/server/maintenance"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/storage"
@@ -55,5 +56,17 @@ func WithCancel(cancel func()) With {
 func WithFileCache(cache *cache.FileCache) With {
 	return func(s *Service) {
 		s.fileCache = cache
+	}
+}
+
+// 进入维护模式。对外部 HTTP 请求有效。
+//
+// 是否在维护模式。
+// 1. 手动进入。
+// 2. 自动升级过程中。
+// https://github.com/movsb/taoblog/commit/c4428d7
+func WithMaintenanceHandler(handler maintenance.MaintenanceMode) With {
+	return func(s *Service) {
+		s.maintenanceMode = handler
 	}
 }

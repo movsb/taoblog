@@ -23,6 +23,7 @@ import (
 	"github.com/movsb/taoblog/admin"
 	"github.com/movsb/taoblog/cmd/config"
 	server_auth "github.com/movsb/taoblog/cmd/server/auth"
+	"github.com/movsb/taoblog/cmd/server/maintenance"
 	"github.com/movsb/taoblog/cmd/server/tasks/expiration"
 	"github.com/movsb/taoblog/cmd/server/tasks/git_repo"
 	"github.com/movsb/taoblog/cmd/server/tasks/live_check"
@@ -75,6 +76,8 @@ type Server struct {
 	// 请求节流器。
 	throttler        grpc.UnaryServerInterceptor
 	throttlerEnabled atomic.Bool
+	// 维护模式。
+	maintenanceMode maintenance.MaintenanceMode
 
 	createFirstPost  bool
 	initialTimezone  *time.Location
@@ -108,7 +111,9 @@ type Server struct {
 }
 
 func NewServer(with ...With) *Server {
-	s := &Server{}
+	s := &Server{
+		maintenanceMode: maintenance.New(),
+	}
 	for _, w := range with {
 		w(s)
 	}
@@ -237,7 +242,7 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 	}
 
 	log.Println("server shutting down")
-	s.Main().MaintenanceMode().Enter(`服务关闭中...`, time.Second*30)
+	s.maintenanceMode.Enter(`服务关闭中...`, time.Second*30)
 	s.httpServer.Shutdown(context.Background())
 	log.Println("server shut down")
 
@@ -477,6 +482,7 @@ func (s *Server) createMainServices(
 		service.WithNotifier(s.notifyServer),
 		service.WithCancel(cancel),
 		service.WithFileCache(fileCache),
+		service.WithMaintenanceHandler(s.maintenanceMode),
 	}
 
 	s.main = service.New(ctx, sr, cfg, db, rc, mux, s.Auth(), serviceOptions...)
@@ -615,7 +621,7 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 			// 无法传递给 server，会再次用 auth.NewContextForRequestAsGateway 再度解析并传递。
 			s.authMiddleware.UserFromCookieHandler,
 			logs.NewRequestLoggerHandler(`access.log`),
-			s.main.MaintenanceMode().Handler(func(ctx context.Context, r *http.Request) bool {
+			s.maintenanceMode.Handler(func(ctx context.Context, r *http.Request) bool {
 				return user.Context(ctx).User.IsAdmin() || strings.HasPrefix(r.URL.Path, `/debug/`)
 			}),
 		),
@@ -749,7 +755,7 @@ func (oss _OssWithCountry) GetCountry() string {
 
 func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStore *storage.SQLite) {
 	if s.initLiveCheck {
-		go live_check.LiveCheck(ctx, s.Main(), s.sendNotify)
+		go live_check.LiveCheck(ctx, s.Main(), s.maintenanceMode, s.sendNotify)
 	}
 
 	if s.initRssTasks {

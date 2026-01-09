@@ -1,4 +1,4 @@
-package utils
+package maintenance
 
 import (
 	"context"
@@ -8,9 +8,20 @@ import (
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/movsb/taoblog/modules/utils"
 )
 
-func NewMaintenance() *Maintenance {
+type MaintenanceMode interface {
+	Enter(reason string, duration time.Duration)
+	Leave()
+	// 如果正值维护模式，返回 true 的 exception 将可以正确请求。
+	Handler(exception func(ctx context.Context, r *http.Request) bool) func(http.Handler) http.Handler
+}
+
+var _ MaintenanceMode = (*Maintenance)(nil)
+
+func New() *Maintenance {
 	// 为了测试不重复注册，特地注册为全局。
 	// TODO 解决测试重复注册的问题
 	// if version.DevMode() {
@@ -63,7 +74,7 @@ func (m *Maintenance) EstimatedString() string {
 
 func (m *Maintenance) Handler(exception func(ctx context.Context, r *http.Request) bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
-		tmpl := Must1(template.New("").Parse(`网站不可用，请稍候再试。
+		tmpl := utils.Must1(template.New("").Parse(`网站不可用，请稍候再试。
 
 原因：{{.MessageString}}
 时间：{{.EstimatedString}}
