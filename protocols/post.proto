@@ -304,7 +304,9 @@ message CreateStylingPageRequest {
 	// 如果为空，使用 styling/index.md.
 	string source = 1;
 }
-message CreateStylingPageResponse {}
+message CreateStylingPageResponse {
+	string url = 1;
+}
 
 message CheckTaskListItemsRequest {
 	// 文章/评论编号

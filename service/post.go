@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/db"
-	"github.com/movsb/taoblog/modules/version"
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
@@ -205,12 +204,12 @@ func (s *Service) GetPost(ctx context.Context, in *proto.GetPostRequest) (_ *pro
 	return p.ToProto(s.setPostExtraFields(ctx, in.GetPostOptions))
 }
 
-func (s *Service) setPostLink(p *proto.Post, k proto.LinkKind) {
+func (s *Service) getPostLink(pid int, k proto.LinkKind) string {
 	switch k {
 	case proto.LinkKind_LinkKindRooted:
-		p.Link = s.GetPlainLink(p.Id)
+		return s.GetPlainLink(int64(pid))
 	case proto.LinkKind_LinkKindFull:
-		p.Link = utils.Must1(url.Parse(s.getHome())).JoinPath(s.GetPlainLink(p.Id)).String()
+		return utils.Must1(url.Parse(s.getHome())).JoinPath(s.GetPlainLink(int64(pid))).String()
 	default:
 		panic(`unknown link kind`)
 	}
@@ -1297,7 +1296,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 		}
 
 		if opts.WithLink != proto.LinkKind_LinkKindNone {
-			s.setPostLink(p, opts.WithLink)
+			p.Link = s.getPostLink(int(p.Id), opts.WithLink)
 		}
 
 		if opts.WithRelates {
@@ -1313,7 +1312,7 @@ func (s *Service) setPostExtraFields(ctx context.Context, opts *proto.GetPostOpt
 			}
 			if opts.WithLink != proto.LinkKind_LinkKindNone {
 				for _, p := range p.Relates {
-					s.setPostLink(p, opts.WithLink)
+					p.Link = s.getPostLink(int(p.Id), opts.WithLink)
 				}
 			}
 		}
@@ -1484,11 +1483,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 
 	source := in.Source
 	if source == `` {
-		if version.DevMode() {
-			source = string(utils.Must1(os.ReadFile(styling.Dir.Join(`index.md`))))
-		} else {
-			source = string(styling.Index)
-		}
+		source = string(utils.Must1(fs.ReadFile(styling.Root(), `index.md`)))
 	}
 
 	id, err := s.options.GetInteger(`styling_page_id`)
@@ -1507,7 +1502,8 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 		})
 		if err == nil {
 			s.options.SetInteger(`styling_page_id`, p.Id)
-			s.postDataFS.Register(int(p.Id), styling.Root)
+			s.postDataFS.Register(int(p.Id), styling.Root())
+			id = p.Id
 		}
 	} else {
 		var p *proto.Post
@@ -1534,7 +1530,7 @@ func (s *Service) CreateStylingPage(ctx context.Context, in *proto.CreateStyling
 			},
 		})
 	}
-	return &proto.CreateStylingPageResponse{}, err
+	return &proto.CreateStylingPageResponse{Url: s.getPostLink(int(id), proto.LinkKind_LinkKindFull)}, err
 }
 
 func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (*proto.SetPostACLResponse, error) {

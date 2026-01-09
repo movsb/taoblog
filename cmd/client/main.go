@@ -179,9 +179,10 @@ func AddCommands(rootCmd *cobra.Command) {
 			} else if source != `` {
 				source = string(utils.Must1(os.ReadFile(source)))
 			}
-			utils.Must1(client.Blog.CreateStylingPage(client.Context(), &proto.CreateStylingPageRequest{
+			rsp := utils.Must1(client.Blog.CreateStylingPage(client.Context(), &proto.CreateStylingPageRequest{
 				Source: source,
 			}))
+			log.Println(rsp.Url)
 		},
 	}
 	postsCreateStylingPageCmd.Flags().StringP(`source`, `s`, ``, `文章源内容路径，支持指定网页。`)

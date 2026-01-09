@@ -272,7 +272,7 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, cfg *config.Config, db *
 		}
 	}
 	if value, err := s.options.GetInteger(`styling_page_id`); err == nil {
-		s.postDataFS.Register(int(value), styling.Root)
+		s.postDataFS.Register(int(value), styling.Root())
 	}
 
 	proto.RegisterTaoBlogServer(sr, s)
