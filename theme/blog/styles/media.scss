@@ -119,4 +119,8 @@ div.image-scroll-outer {
 		// 调试时打开可观察具体区域。
 		// background-color: red;
 	}
+	// 实况照片的左边有图标用于处理鼠标事件，会被盖住。
+	&:has(div.live-photo)::after {
+		top: 45px;
+	}
 }
