@@ -60,6 +60,7 @@ func (d *LoginData) HasSocialLogins() bool {
 }
 
 type Admin struct {
+	cfg    *config.Config
 	rootFS fs.FS
 	tmplFS fs.FS
 
@@ -73,8 +74,6 @@ type Admin struct {
 	svc        proto.TaoBlogServer
 	gateway    *gateway.Gateway
 
-	customTheme *config.ThemeConfig
-
 	templates *utils.TemplateLoader
 
 	getName func() string
@@ -85,7 +84,7 @@ type Admin struct {
 	clientLogin     *client_login.ClientLoginService
 }
 
-func NewAdmin(gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, userManager *auth.UserManager, authFrontend *auth.Auth, clientLogin *client_login.ClientLoginService, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
+func NewAdmin(cfg *config.Config, gateway *gateway.Gateway, management proto.ManagementServer, svc proto.TaoBlogServer, userManager *auth.UserManager, authFrontend *auth.Auth, clientLogin *client_login.ClientLoginService, prefix string, getHome func() string, getName func() string, options ...Option) *Admin {
 	if !strings.HasSuffix(prefix, "/") {
 		panic("前缀应该以 / 结束。")
 	}
@@ -103,6 +102,7 @@ func NewAdmin(gateway *gateway.Gateway, management proto.ManagementServer, svc p
 	}
 
 	a := &Admin{
+		cfg:     cfg,
 		rootFS:  rootFS,
 		tmplFS:  tmplFS,
 		svc:     svc,
@@ -225,15 +225,7 @@ func (a *Admin) getRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Admin) loadTemplates() {
-	var customTheme string
-	if a.customTheme != nil {
-		customTheme = a.customTheme.Stylesheets.Render()
-	}
-	funcs := template.FuncMap{
-		"apply_site_theme_customs": func() template.HTML {
-			return template.HTML(customTheme)
-		},
-	}
+	funcs := template.FuncMap{}
 	a.templates = utils.NewTemplateLoader(a.tmplFS, funcs, nil)
 }
 
@@ -282,7 +274,8 @@ type ConfigData struct {
 
 	IconSize int
 
-	SiteConfig *proto.SiteConfig
+	SiteConfig  *proto.SiteConfig
+	ThemeConfig *config.ThemeVariablesConfig
 }
 
 func (c ConfigData) IconDataURL() template.URL {
@@ -291,11 +284,12 @@ func (c ConfigData) IconDataURL() template.URL {
 
 func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
 	ac := user.MustBeAdmin(r.Context())
-	d := &ConfigData{
-		Name:       a.getName(),
-		User:       ac.User,
-		IconSize:   service.IconSize,
-		SiteConfig: utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
+	d := ConfigData{
+		Name:        a.getName(),
+		User:        ac.User,
+		IconSize:    service.IconSize,
+		SiteConfig:  utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
+		ThemeConfig: &a.cfg.Theme.Variables,
 	}
 	a.executeTemplate(w, `config.html`, &d)
 }

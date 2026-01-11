@@ -36,9 +36,6 @@ func (c *Config) String() string {
 	if v := c.Font.Size; v != `` {
 		fmt.Fprintf(buf, `--font-size: %s;`, v)
 	}
-	if v := c.Font.Adjust; v != `` {
-		fmt.Fprintf(buf, `--font-size-adjust: %s;`, v)
-	}
 	buf.WriteString(`}`)
 	return buf.String()
 }

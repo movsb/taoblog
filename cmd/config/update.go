@@ -65,6 +65,10 @@ func NewUpdater(ptr any) *Updater {
 }
 
 func (u *Updater) MustApply(path string, value string, save func(path string, value string)) {
+	if path == `` {
+		panic(`invalid config path`)
+	}
+
 	segments := u.parse(path)
 	saver, saveSegmentIndex, settable, settableSegments, p := u.find(u.obj, segments, 0, nil, -1, nil, -1)
 

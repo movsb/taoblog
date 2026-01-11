@@ -45,10 +45,18 @@
 --selection-background-color: var(--highlight-color);
 }
 
+// 有些地方需要混用：比如夜间模式的时候查看日间模式效果。
+:root {
+	--color-bg-light:           white;
+	--color-fg-light:           #292929;
+	--color-bg-dark:            rgb(13,17,23); // from github dark
+	--color-fg-dark:            #a4a4a4;
+}
+
 @media (prefers-color-scheme: light) {
 :root {
---color-bg:                 white;
---color-fg:                 #292929;
+--color-bg:                 var(--color-bg-light);
+--color-fg:                 var(--color-fg-light);
 --code-bg:                  #f7f7f7;
 --code-border-color:        #e6e6e6;
 --border-color:             #ddd;
@@ -63,8 +71,8 @@
 
 @media (prefers-color-scheme: dark) {
 :root {
---color-bg:                 rgb(13,17,23); // from github dark
---color-fg:                 #a4a4a4;
+--color-bg:                 var(--color-bg-dark);
+--color-fg:                 var(--color-fg-dark);
 --code-bg:                  #1a1a1a;
 --code-border-color:        transparent;
 --border-color:             #444;

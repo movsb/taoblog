@@ -5,22 +5,34 @@
 <title>网站管理</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
 <link rel="stylesheet" type="text/css" href="/style.css">
-{{ apply_site_theme_customs }}
 <script src="/script.js"></script>
 <style>
-	input {
-		margin: 0;
-	}
-	input[type="text"] {
-		width: 30ch;
-	}
+input {
+	margin: 0;
+}
+input[type="text"] {
+	width: 30ch;
+}
+div.color-boxes {
+	display: flex;
+	gap: 5px;
+	margin-left: 2em;
+}
+div.color-boxes p {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	padding: 1em;
+}
+dl p.notes {
+	font-size: 80%;
+}
 </style>
 </head>
 <body class="admin config">
 <div id="wrapper">
 
 <h2>基本信息</h2>
-<form id="form-basic">
+<form id="form-basic" autocomplete="off">
 	<dl>
 		<dt>网站名字</dt>
 		<dd><input type="text" id="name" value="{{ .SiteConfig.Name }}" pattern="[^ ]+.*[^ ]+"></dd>
@@ -47,6 +59,72 @@
 	<p>
 		<input type="submit" class="bold" value="保存">
 		<span id="save-basic-icon"></span>
+	</p>
+</form>
+
+<hr>
+
+<h2>主题配置</h2>
+{{ $t := .ThemeConfig }}
+<form id="form-theme" autocomplete="off">
+	<dl>
+		<dt>普通字体</dt>
+		<dd>
+			<p>
+				<label for="font_custom">font-family：</label>
+				<input type="text" name="font_custom" class="font-pattern" value="{{$t.Font.Family}}">
+			</p>
+			<p class="notes">
+				输入逗号分隔的字体名，带空格的字体需要用英文双引号包起来。
+			</p>
+		</dd>
+	</dl>
+	<dl>
+		<dt>等宽字体</dt>
+		<dd>
+			<p>
+				<label for="mono_custom">font-family：</label>
+				<input type="text" name="mono_custom" class="font-pattern" value="{{$t.Font.Mono}}">
+			</p>
+			<p class="notes">
+				输入逗号分隔的字体名，带空格的字体需要用英文双引号包起来。
+			</p>
+		</dd>
+	</dl>
+	<dl>
+		<dt>字体大小</dt>
+		<dd>
+			<p>
+				<label for="font_size">font-size：</label>
+				<input type="text" name="font_size" value="{{$t.Font.Size}}" pattern="|\d+px">
+			</p>
+			<p class="notes">
+				形如：“<code>18px</code>”。
+			</p>
+		</dd>
+	</dl>
+	<dl id="accent_color">
+		<dt>主题颜色</dt>
+		<dd>
+			<p>
+				<label for="accent_color_text">color：</label>
+				<input type="text" name="accent_color_text" value="{{$t.Colors.Accent}}" pattern="#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{4}|[a-fA-F0-9]{6}|[a-fA-F0-9]{8})">
+				<input type="button" name="accent_color_button" value="…">
+				<input type="color" name="accent_color_color" value="{{$t.Colors.Accent}}" style="display: none;">
+			</p>
+			<p class="notes">
+				标准的CSS十六进制颜色值。比如：<code>#RGB</code>、<code>#RGBA</code>、<code>#RRGGBB</code>、<code>#RRGGBBAA</code>。
+			</p>
+			<div class="color-boxes">
+				<p style="color: var(--color-fg-light); background-color: var(--color-bg-light);">日间模式</p>
+				<p style="color: var(--color-fg-dark); background-color: var(--color-bg-dark);">夜间模式</p>
+			</div>
+			<p class="notes">选区颜色以及部分其它高亮色会基于主题颜色，并按60%的不透明度作为相对颜色。</p>
+		</dd>
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-theme-icon"></span>
 	</p>
 </form>
 

@@ -2,11 +2,11 @@
  * 
  * @param {Response} rsp 
  */
-async function throwAPIError(rsp) {
+async function decodeAPIError(rsp) {
 	let exception = await rsp.text();
 	try { exception = JSON.parse(exception); }
 	catch {}
-	throw new Error(
+	return new Error(
 		exception.message ?? exception,
 		{ cause: rsp },
 	);
@@ -19,7 +19,7 @@ async function throwAPIError(rsp) {
  */
 async function decodeResponse(rsp) {
 	if(!rsp.ok) {
-		await throwAPIError(rsp);
+		throw await decodeAPIError(rsp);
 	}
 	return rsp.json();
 }

@@ -1,9 +1,6 @@
 package config
 
 import (
-	"bytes"
-	"fmt"
-	"html/template"
 	"time"
 
 	"github.com/movsb/taoblog/modules/globals"
@@ -52,7 +49,6 @@ func (s *SiteConfig) BeforeSet(paths Segments, obj any) error {
 	return nil
 }
 
-// DefaultSiteConfig ...
 func DefaultSiteConfig() SiteConfig {
 	return SiteConfig{
 		Home:        `http://localhost:2564/`,
@@ -63,50 +59,20 @@ func DefaultSiteConfig() SiteConfig {
 }
 
 type ThemeConfig struct {
-	Stylesheets ThemeStylesheetsConfig `json:"stylesheets" yaml:"stylesheets"`
-	Variables   ThemeVariablesConfig   `json:"variables" yaml:"variables"`
+	Variables ThemeVariablesConfig `json:"variables" yaml:"variables"`
 }
 
 func DefaultThemeConfig() ThemeConfig {
 	return ThemeConfig{
-		Stylesheets: DefaultThemeStylesheetsConfig(),
-		Variables:   DefaultThemeVariablesConfig(),
+		Variables: DefaultThemeVariablesConfig(),
 	}
-}
-
-type ThemeStylesheetsConfig struct {
-	Template    string `json:"template" yaml:"template"`
-	Stylesheets []struct {
-		Source string `json:"source" yaml:"source"`
-	} `json:"stylesheets" yaml:"stylesheets"`
-}
-
-func (ThemeStylesheetsConfig) CanSave() {}
-
-func DefaultThemeStylesheetsConfig() ThemeStylesheetsConfig {
-	return ThemeStylesheetsConfig{
-		Template: `<link rel="stylesheet" type="text/css" href="{{.Source}}">`,
-	}
-}
-
-func (c *ThemeStylesheetsConfig) Render() string {
-	t := template.Must(template.New(`stylesheet`).Parse(c.Template))
-	w := bytes.NewBuffer(nil)
-	for _, ss := range c.Stylesheets {
-		t.Execute(w, ss)
-		fmt.Fprintln(w)
-	}
-	return w.String()
 }
 
 type ThemeVariablesConfig struct {
 	Font struct {
 		Family string `json:"family" yaml:"family"`
 		Mono   string `json:"mono" yaml:"mono"`
-		// font-size: 1.2rem;
-		Size string `json:"size" yaml:"size"`
-		// font-size-adjust: 0.5;
-		Adjust string `json:"adjust" yaml:"adjust"`
+		Size   string `json:"size" yaml:"size"`
 	} `json:"font" yaml:"font"`
 	Colors struct {
 		Accent    string `json:"accent" yaml:"accent"`
@@ -135,7 +101,7 @@ func (c *ThemeVariablesConfig) ClearStruct() {
 func (c ThemeVariablesConfig) AfterSet(paths Segments, obj any) {
 	select {
 	case c.changed <- struct{}{}:
-	default:
+	case <-time.After(time.Second * 5):
 		panic(`无法发送 changed 通道。可能是因为没有人监听。`)
 	}
 }

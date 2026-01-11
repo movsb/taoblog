@@ -62,3 +62,78 @@ formBasic.onsubmit = async (e) => {
 		saveBasicIcon.classList.remove('icon-loading');
 	}
 };
+
+const fontFamilyPattern = '|\\s*(?:[a-zA-Z0-9]+|"[^"]+")\\s*(,\\s*(?:[a-zA-Z0-9]+|"[^"]+")\\s*)*';
+/** @type {HTMLInputElement[]} */
+document.querySelectorAll('.font-pattern').forEach(input => input.setAttribute('pattern', fontFamilyPattern));
+
+/** @type {HTMLFormElement} */
+const themeForm = document.getElementById('form-theme');
+/** @type {HTMLInputElement} */
+const accentColorText = themeForm.elements['accent_color_text'];
+/** @type {HTMLInputElement} */
+const accentColorButton = themeForm.elements['accent_color_button'];
+/** @type {HTMLInputElement} */
+const accentColorColor = themeForm.elements['accent_color_color'];
+/** @type {HTMLParagraphElement[]} */
+const accentColorBoxes = themeForm.querySelectorAll('.color-boxes p');
+const syncAccentColor = () => {
+	accentColorBoxes[0].style.color = accentColorText.value;
+	accentColorBoxes[1].style.color = accentColorText.value;
+	accentColorColor.value = accentColorText.value;
+};
+syncAccentColor();
+accentColorText.addEventListener('input', ()=>{
+	syncAccentColor();
+});
+accentColorButton.addEventListener('click', () =>{
+	accentColorColor.click();
+});
+accentColorColor.addEventListener('input', ()=>{
+	accentColorText.value = accentColorColor.value;
+	syncAccentColor();
+});
+
+/** @type {HTMLFormElement} */
+themeForm.onsubmit = async(e) => {
+	e.preventDefault();
+
+	const request = async (path, value) => {
+		try {
+			const pod = typeof value == 'boolean' || typeof value == 'number' || typeof value == 'string';
+			const rsp = await fetch('/v3/configs', {
+				method: 'PATCH',
+				body: JSON.stringify({
+					path: path,
+					yaml: pod ? value : JSON.stringify(value),
+				}),
+			});
+			return await decodeResponse(rsp);
+		} catch (e) {
+			alert(`path: ${path}\nerror: ${e}`);
+			throw e;
+		}
+	};
+
+	/** @type {string} */
+	const accentColorValue = themeForm.elements['accent_color_text'].value;
+
+	const saveIcon = document.getElementById('save-theme-icon');
+	saveIcon.classList.add('icon-loading');
+
+	const requests = [
+		request('theme.variables.font.family', themeForm.elements['font_custom'].value),
+		request('theme.variables.font.mono', themeForm.elements['mono_custom'].value),
+		request('theme.variables.font.size', themeForm.elements['font_size'].value),
+		request('theme.variables.colors.accent', accentColorValue),
+	];
+
+	if(accentColorValue != '') {
+		requests.push(request('theme.variables.colors.highlight', `rgb(from ${accentColorValue} r g b / 60%)`));
+		requests.push(request('theme.variables.colors.selection', `rgb(from ${accentColorValue} r g b / 60%)`));
+	}
+
+	const responses = await Promise.allSettled(requests);
+
+	saveIcon.classList.remove('icon-loading');
+};

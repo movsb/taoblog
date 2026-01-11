@@ -380,10 +380,10 @@ func (s *Server) createAdmin(ctx context.Context, cfg *config.Config, theService
 	prefix := `/admin/`
 
 	a := admin.NewAdmin(
+		cfg,
 		s.gateway, theService, theService, s.Auth(),
 		s.authFrontend, s.clientLoginService,
 		prefix, cfg.Site.GetHome, cfg.Site.GetName,
-		admin.WithCustomThemes(&cfg.Theme),
 		admin.WithWebAuthnHandler(s.authFrontend.GetWebAuthnHandler),
 	)
 

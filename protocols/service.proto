@@ -104,6 +104,10 @@ service Management {
 		};
 	};
 	rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {
+		option (google.api.http) = {
+			patch: "/v3/configs";
+			body: "*";
+		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "设置配置。";
 		};

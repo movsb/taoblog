@@ -1,6 +1,8 @@
 package config_test
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 	"testing/fstest"
 
@@ -43,4 +45,11 @@ func TestLoad(t *testing.T) {
 	if c.Site.Home != h {
 		t.Fatal(`error home after second load`)
 	}
+}
+
+func TestPrint(t *testing.T) {
+	v := config.ThemeVariablesConfig{}
+	j := json.NewEncoder(os.Stdout)
+	j.SetIndent(``, "  ")
+	j.Encode(v)
 }

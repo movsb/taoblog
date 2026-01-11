@@ -35,7 +35,6 @@ var tmplOpenGraph = sync.OnceValue(func() *template.Template {
 
 func (t *Theme) funcs() map[string]any {
 	menustr := createMenus(t.cfg.Menus, false)
-	customTheme := t.cfg.Theme.Stylesheets.Render()
 
 	return map[string]any{
 		// https://githut.com/golang/go/issues/14256
@@ -54,9 +53,6 @@ func (t *Theme) funcs() map[string]any {
 			}
 			// TODO 找不到应该报错。
 			return nil
-		},
-		"apply_site_theme_customs": func() template.HTML {
-			return template.HTML(customTheme)
 		},
 		// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
 		"friendlyDateTime": func(s int32) template.HTML {
