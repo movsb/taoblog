@@ -48,7 +48,7 @@ func encode(s string) string {
 	return mime.BEncoding.Encode(`utf-8`, string(s))
 }
 
-func (c *Mailer) Send(subject, body string, fromName string, tos []User) error {
+func (c Mailer) Send(subject, body string, fromName string, tos []User) error {
 	mailBody := writeBody(subject, body, User{Name: fromName, Address: c.username}, tos)
 	to := utils.Map(tos, func(u User) string { return u.Address })
 	err := smtp.SendMail(c.server, c.auth, c.username, to, mailBody)
@@ -83,14 +83,14 @@ func writeBody(subject, body string, from User, tos []User) []byte {
 type MailerLogger struct {
 	store logs.Logger
 
-	mailer       Mailer
+	sender       func() MailSender
 	pullInterval time.Duration
 }
 
-func NewMailerLogger(store logs.Logger, mailer Mailer) *MailerLogger {
+func NewMailerLogger(store logs.Logger, getMailer func() MailSender) *MailerLogger {
 	n := &MailerLogger{
 		store:  store,
-		mailer: mailer,
+		sender: getMailer,
 	}
 	n.SetPullInterval(time.Minute)
 	go n.process(context.Background())
@@ -133,7 +133,13 @@ func (n *MailerLogger) process(ctx context.Context) {
 		l := n.store.FindLog(ctx, ty, sty, &msg)
 		if l != nil {
 			log.Println(`找到日志：`, l.ID)
-			if err := n.mailer.Send(msg.Subject, msg.Body, msg.FromName, msg.Tos); err != nil {
+			mailer := n.sender()
+			if mailer == nil {
+				log.Println(`没有邮件配置，无法发送。`)
+				time.Sleep(n.pullInterval)
+				continue
+			}
+			if err := mailer.Send(msg.Subject, msg.Body, msg.FromName, msg.Tos); err != nil {
 				log.Println(`MailError:`, err)
 
 				// 有些错误不可重试

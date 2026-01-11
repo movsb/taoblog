@@ -518,18 +518,24 @@ func (s *Server) createAuthServices(ctx context.Context, cfg *config.Config, sr 
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {
-	var options []notify.With
-
-	if ch := cfg.Notify.Bark; ch.Token != `` {
-		options = append(options, notify.WithDefaultToken(ch.Token))
+	options := []notify.With{
+		// 总是包含，因为可以动态修改。
+		notify.WithDefaultToken(func() string {
+			return cfg.Notify.Bark.Token
+		}),
 	}
 
-	// TODO 移动到内部实现。
-	if m := cfg.Notify.Mailer; m.Account != `` && m.Server != `` {
-		mail := mailer.NewMailer(m.Server, m.Account, m.Password)
-		stored := mailer.NewMailerLogger(logs.NewLogStore(db), mail)
-		options = append(options, notify.WithMailer(stored))
-	}
+	mailLogger := mailer.NewMailerLogger(logs.NewLogStore(db), func() mailer.MailSender {
+		m := cfg.Notify.Mailer
+		if m.Server == `` || m.Account == `` {
+			return nil
+		}
+		return mailer.NewMailer(m.Server, m.Account, m.Password)
+	})
+	options = append(options, notify.WithMailer(func() mailer.MailSender {
+		// 始终返回“有效”的邮件发送器———会先放到队列中。
+		return mailLogger
+	}))
 
 	n := notify.New(ctx, sr, db, options...)
 

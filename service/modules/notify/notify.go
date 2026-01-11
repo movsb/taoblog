@@ -20,10 +20,10 @@ type Notify struct {
 	proto.UnimplementedNotifyServer
 
 	db           *taorm.DB
-	mailer       mailer.MailSender
 	storedNotify *instant.NotifyLogger
 
-	defaultBarkToken string
+	mailer           func() mailer.MailSender
+	defaultBarkToken func() string
 }
 
 var _ proto.NotifyServer = (*Notify)(nil)
@@ -32,8 +32,9 @@ type With func(n *Notify)
 
 func New(ctx context.Context, sr grpc.ServiceRegistrar, db *taorm.DB, options ...With) *Notify {
 	n := Notify{
-		db:           db,
-		storedNotify: instant.NewNotifyLogger(logs.NewLogStore(db)),
+		db:               db,
+		storedNotify:     instant.NewNotifyLogger(logs.NewLogStore(db)),
+		defaultBarkToken: func() string { return "" },
 	}
 
 	for _, opt := range options {
@@ -48,7 +49,8 @@ func New(ctx context.Context, sr grpc.ServiceRegistrar, db *taorm.DB, options ..
 func (n *Notify) SendEmail(ctx context.Context, in *proto.SendEmailRequest) (*proto.SendEmailResponse, error) {
 	user.MustNotBeGuest(ctx)
 
-	if n.mailer == nil {
+	m := n.mailer()
+	if m == nil {
 		return nil, status.Error(codes.Unimplemented, `未实现邮件服务。`)
 	}
 
@@ -59,15 +61,15 @@ func (n *Notify) SendEmail(ctx context.Context, in *proto.SendEmailRequest) (*pr
 		}
 	})
 
-	n.mailer.Send(in.Subject, in.Body, in.FromName, users)
+	err := m.Send(in.Subject, in.Body, in.FromName, users)
 
-	return &proto.SendEmailResponse{}, nil
+	return &proto.SendEmailResponse{}, err
 }
 
 func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) (*proto.SendInstantResponse, error) {
 	user.MustNotBeGuest(ctx)
 
-	if n.defaultBarkToken == `` && in.BarkToken == `` {
+	if n.defaultBarkToken() == `` && in.BarkToken == `` {
 		return nil, status.Error(codes.Unimplemented, `未实现即时通知服务。`)
 	}
 
@@ -83,7 +85,7 @@ func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) 
 		level = instant.Passive
 	}
 
-	err := n.storedNotify.Notify(cmp.Or(in.BarkToken, n.defaultBarkToken), instant.Message{
+	err := n.storedNotify.Notify(cmp.Or(in.BarkToken, n.defaultBarkToken()), instant.Message{
 		Title: in.Title,
 		Body:  in.Body,
 
@@ -95,13 +97,13 @@ func (n *Notify) SendInstant(ctx context.Context, in *proto.SendInstantRequest) 
 	return &proto.SendInstantResponse{}, err
 }
 
-func WithMailer(mail mailer.MailSender) With {
+func WithMailer(mail func() mailer.MailSender) With {
 	return func(n *Notify) {
 		n.mailer = mail
 	}
 }
 
-func WithDefaultToken(t string) With {
+func WithDefaultToken(t func() string) With {
 	return func(n *Notify) {
 		n.defaultBarkToken = t
 	}
