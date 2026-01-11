@@ -157,3 +157,24 @@ formOthers.onsubmit = async(e) => {
 		saveIcon.classList.remove('icon-loading');
 	}
 };
+
+/** @type {HTMLFormElement} */
+const formNotify = document.getElementById('notify-config');
+formNotify.onsubmit = async(e) => {
+	e.preventDefault();
+
+	const saveIcon = document.getElementById('save-notify-icon');
+	saveIcon.classList.add('icon-loading');
+
+	try {
+		const requests = [
+			updateConfig('notify.bark.token', formNotify.elements['bark_token'].value),
+			updateConfig('notify.mailer.server', formNotify.elements['mail_server'].value),
+			updateConfig('notify.mailer.account', formNotify.elements['mail_account'].value),
+			updateConfig('notify.mailer.password', formNotify.elements['mail_password'].value),
+		];
+		const responses = await Promise.allSettled(requests);
+	} finally {
+		saveIcon.classList.remove('icon-loading');
+	}
+};

@@ -26,6 +26,10 @@ div.color-boxes p {
 dl p.notes {
 	font-size: 80%;
 }
+div#mail_group label {
+	display: inline-block;
+	min-width: 80px;
+}
 </style>
 </head>
 <body class="admin config">
@@ -45,7 +49,7 @@ dl p.notes {
 		<dt>网站首页</dt>
 		<dd>
 			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}" pattern="https?://\w+(\.\w+)+(:\d+)?/?"></p>
-			<p>形如：<code>https://blog.twofei.com</code>，暂时不支持带路径。</p>
+			<p class="notes">形如：<code>https://blog.twofei.com</code>，暂时不支持带路径。</p>
 		</dd>
 	</dl>
 	<dl>
@@ -53,7 +57,7 @@ dl p.notes {
 		<dd>
 			<img id="icon" style="cursor: pointer; width: 100px; height: 100px;" class="static" src="{{ .IconDataURL }}">
 			<input type="file" id="icon-file" accept="image/jpeg, image/png" style="display: none;">
-			<p>点击以替换图标。太大的图标会被裁剪到 {{.IconSize}}x{{.IconSize}} 大小。</p>
+			<p class="notes">点击以替换图标。太大的图标会被裁剪到 {{.IconSize}}x{{.IconSize}} 大小。</p>
 		</dd>
 	</dl>
 	<p>
@@ -64,7 +68,7 @@ dl p.notes {
 
 <hr>
 
-<h2>主题配置</h2>
+<h2>主题设置</h2>
 {{ $t := .ThemeConfig }}
 <form id="form-theme" autocomplete="off">
 	<dl>
@@ -131,7 +135,55 @@ dl p.notes {
 
 <hr>
 
-<h2>其它配置</h2>
+<h2>通知设置</h2>
+{{ $n := .NotifyConfig }}
+<form id="notify-config" autocomplete="off">
+	<dl>
+		<dt>手机即时通知设置</dt>
+		<dd>
+			<p class="notes">
+				用于即时向手机发送通知信息。
+			</p>
+			<p>
+				<label for="bark_token">Bark Token:</label>
+				<input type="text" name="bark_token" id="bark_token" value="{{$n.Bark.Token}}">
+			</p>
+			<p class="notes">
+				由<a target="_blank" href="https://bark.day.app/">Bark</a>提供的免费手机即时通知服务（仅苹果设备适用）。
+			</p>
+		</dd>
+	</dl>
+	<dl>
+		<dt>邮件通知设置</dt>
+		<dd>
+			<p class="notes">
+				邮件通知用于向评论者发送邮件回复通知。收到评论时也会向此邮箱（即管理员）发送通知。
+			</p>
+			<div id="mail_group">
+				<p>
+					<label for="mail_server">服务器：</label>
+					<input type="text" name="mail_server" id="mail_server" placeholder="smtp.example.com:465" value="{{$n.Mailer.Server}}">
+				</p>
+				<p>
+					<label for="mail_account">账号：</label>
+					<input type="text" name="mail_account" id="mail_account" placeholder="momo@example.com" value="{{$n.Mailer.Account}}">
+				</p>
+				<p>
+					<label for="mail_password">密码：</label>
+					<input type="text" name="mail_password" id="mail_password" value="{{$n.Mailer.Password}}">
+				</p>
+			</div>
+		</dd>
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-notify-icon"></span>
+	</p>
+</form>
+
+<hr>
+
+<h2>其它设置</h2>
 {{ $c := .OthersConfig }}
 <form id="others-config" autocomplete="off">
 	<dl>

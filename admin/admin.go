@@ -277,6 +277,7 @@ type ConfigData struct {
 	SiteConfig   *proto.SiteConfig
 	ThemeConfig  *config.ThemeVariablesConfig
 	OthersConfig *config.OthersConfig
+	NotifyConfig *config.NotificationConfig
 }
 
 func (c ConfigData) IconDataURL() template.URL {
@@ -292,6 +293,7 @@ func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
 		SiteConfig:   utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
 		ThemeConfig:  &a.cfg.Theme.Variables,
 		OthersConfig: &a.cfg.Others,
+		NotifyConfig: &a.cfg.Notify,
 	}
 	a.executeTemplate(w, `config.html`, &d)
 }
