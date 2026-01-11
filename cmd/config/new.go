@@ -33,6 +33,7 @@ func (c *WhoisApiLayerConfig) BeforeSet(paths Segments, obj any) error {
 }
 
 type GeoConfig struct {
+	// TODO 名字写错了。
 	GeoDe GaoDe `json:"gaode" yaml:"gaode"`
 }
 

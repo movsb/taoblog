@@ -115,6 +115,7 @@ dl p.notes {
 			<p class="notes">
 				标准的CSS十六进制颜色值。比如：<code>#RGB</code>、<code>#RGBA</code>、<code>#RRGGBB</code>、<code>#RRGGBBAA</code>。
 			</p>
+			<p>效果预览：</p>
 			<div class="color-boxes">
 				<p style="color: var(--color-fg-light); background-color: var(--color-bg-light);">日间模式</p>
 				<p style="color: var(--color-fg-dark); background-color: var(--color-bg-dark);">夜间模式</p>
@@ -125,6 +126,47 @@ dl p.notes {
 	<p>
 		<input type="submit" class="bold" value="保存">
 		<span id="save-theme-icon"></span>
+	</p>
+</form>
+
+<hr>
+
+<h2>其它配置</h2>
+{{ $c := .OthersConfig }}
+<form id="others-config" autocomplete="off">
+	<dl>
+		<dt>Whois配置</dt>
+		<dd>
+			<p class="notes">
+				Whois配置用于定时监控站点域名是否有效。
+			</p>
+			<p>
+				<label for="api_layer">APILayer API Key:</label>
+				<input type="text" name="api_layer_key" value="{{$c.Whois.ApiLayer.Key}}">
+			</p>
+			<p class="notes">
+				由<a target="_blank" href="https://marketplace.apilayer.com/whois-api">Whois API - APILayer</a>提供的API服务。
+			</p>
+		</dd>
+	</dl>
+	<dl>
+		<dt>地理位置解析</dt>
+		<dd>
+			<p class="notes">
+				用于自动把文章编写时的数值地理坐标转换成周边兴趣点名字列表以供候选。
+			</p>
+			<p>
+				<label for="gaode_api_key">高德地图 API Key:</label>
+				<input type="text" name="gaode_api_key" value="{{$c.Geo.GeoDe.Key}}">
+			</p>
+			<p class="notes">
+				详情查看高德地址官方文档：<a target="_blank" href="https://lbs.amap.com/api/webservice/guide/api/georegeo">地理/逆地理编码-基础 API 文档-开发指南-Web服务 API | 高德地图API</a>。
+			</p>
+		</dd>
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-others-icon"></span>
 	</p>
 </form>
 

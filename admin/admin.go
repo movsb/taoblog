@@ -274,8 +274,9 @@ type ConfigData struct {
 
 	IconSize int
 
-	SiteConfig  *proto.SiteConfig
-	ThemeConfig *config.ThemeVariablesConfig
+	SiteConfig   *proto.SiteConfig
+	ThemeConfig  *config.ThemeVariablesConfig
+	OthersConfig *config.OthersConfig
 }
 
 func (c ConfigData) IconDataURL() template.URL {
@@ -285,11 +286,12 @@ func (c ConfigData) IconDataURL() template.URL {
 func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
 	ac := user.MustBeAdmin(r.Context())
 	d := ConfigData{
-		Name:        a.getName(),
-		User:        ac.User,
-		IconSize:    service.IconSize,
-		SiteConfig:  utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
-		ThemeConfig: &a.cfg.Theme.Variables,
+		Name:         a.getName(),
+		User:         ac.User,
+		IconSize:     service.IconSize,
+		SiteConfig:   utils.Must1(a.management.GetSiteConfig(r.Context(), &proto.GetSiteConfigRequest{})).GetConfig(),
+		ThemeConfig:  &a.cfg.Theme.Variables,
+		OthersConfig: &a.cfg.Others,
 	}
 	a.executeTemplate(w, `config.html`, &d)
 }

@@ -94,26 +94,26 @@ accentColorColor.addEventListener('input', ()=>{
 	syncAccentColor();
 });
 
+const updateConfig = async (path, value) => {
+	try {
+		const pod = typeof value == 'boolean' || typeof value == 'number' || typeof value == 'string';
+		const rsp = await fetch('/v3/configs', {
+			method: 'PATCH',
+			body: JSON.stringify({
+				path: path,
+				yaml: pod ? value : JSON.stringify(value),
+			}),
+		});
+		return await decodeResponse(rsp);
+	} catch (e) {
+		alert(`path: ${path}\nerror: ${e}`);
+		throw e;
+	}
+};
+
 /** @type {HTMLFormElement} */
 themeForm.onsubmit = async(e) => {
 	e.preventDefault();
-
-	const request = async (path, value) => {
-		try {
-			const pod = typeof value == 'boolean' || typeof value == 'number' || typeof value == 'string';
-			const rsp = await fetch('/v3/configs', {
-				method: 'PATCH',
-				body: JSON.stringify({
-					path: path,
-					yaml: pod ? value : JSON.stringify(value),
-				}),
-			});
-			return await decodeResponse(rsp);
-		} catch (e) {
-			alert(`path: ${path}\nerror: ${e}`);
-			throw e;
-		}
-	};
 
 	/** @type {string} */
 	const accentColorValue = themeForm.elements['accent_color_text'].value;
@@ -122,18 +122,38 @@ themeForm.onsubmit = async(e) => {
 	saveIcon.classList.add('icon-loading');
 
 	const requests = [
-		request('theme.variables.font.family', themeForm.elements['font_custom'].value),
-		request('theme.variables.font.mono', themeForm.elements['mono_custom'].value),
-		request('theme.variables.font.size', themeForm.elements['font_size'].value),
-		request('theme.variables.colors.accent', accentColorValue),
+		updateConfig('theme.variables.font.family', themeForm.elements['font_custom'].value),
+		updateConfig('theme.variables.font.mono', themeForm.elements['mono_custom'].value),
+		updateConfig('theme.variables.font.size', themeForm.elements['font_size'].value),
+		updateConfig('theme.variables.colors.accent', accentColorValue),
 	];
 
 	if(accentColorValue != '') {
-		requests.push(request('theme.variables.colors.highlight', `rgb(from ${accentColorValue} r g b / 60%)`));
-		requests.push(request('theme.variables.colors.selection', `rgb(from ${accentColorValue} r g b / 60%)`));
+		requests.push(updateConfig('theme.variables.colors.highlight', `rgb(from ${accentColorValue} r g b / 60%)`));
+		requests.push(updateConfig('theme.variables.colors.selection', `rgb(from ${accentColorValue} r g b / 60%)`));
 	}
 
 	const responses = await Promise.allSettled(requests);
 
 	saveIcon.classList.remove('icon-loading');
+};
+
+/** @type {HTMLFormElement} */
+const formOthers = document.getElementById('others-config');
+formOthers.onsubmit = async(e) => {
+	e.preventDefault();
+
+	const saveIcon = document.getElementById('save-others-icon');
+	saveIcon.classList.add('icon-loading');
+
+	try {
+		const requests = [
+			updateConfig('others.whois.api_layer.key', formOthers.elements['api_layer_key'].value),
+			updateConfig('others.geo.gaode.key', formOthers.elements['gaode_api_key'].value),
+		];
+
+		const responses = await Promise.allSettled(requests);
+	} finally {
+		saveIcon.classList.remove('icon-loading');
+	}
 };
