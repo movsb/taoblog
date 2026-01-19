@@ -43,10 +43,8 @@ type Debouncer struct {
 func (d *Debouncer) Enter() {
 	d.l.Lock()
 	d.remain = d.interval
-	// log.Println("重置倒计时")
 	if d.t == nil {
 		d.t = time.NewTicker(d.resolution)
-		// log.Println("启动倒计时")
 		go d.wait()
 	}
 	d.l.Unlock()
@@ -56,21 +54,23 @@ func (d *Debouncer) wait() {
 	d.l.Lock()
 	c := d.t.C
 	d.l.Unlock()
-	for {
-		func() {
-			<-c
-			d.l.Lock()
-			defer d.l.Unlock()
-			d.remain -= d.resolution
-			// log.Println("剩余-1")
-			if d.remain <= 0 {
-				// log.Println("触发")
-				d.t.Stop()
-				d.t = nil
-				d.f()
-			}
-		}()
+
+	for range c {
+		d.l.Lock()
+		d.remain -= d.resolution
+		if d.remain > 0 {
+			d.l.Unlock()
+			continue
+		}
+		// 没解锁。
+		break
 	}
+
+	d.t.Stop()
+	d.t = nil
+	d.l.Unlock()
+
+	d.f()
 }
 
 type BatchDebouncer[K comparable] struct {
