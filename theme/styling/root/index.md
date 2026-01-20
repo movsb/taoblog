@@ -248,6 +248,24 @@ $$
 x = {-b \pm \sqrt{b^2-4ac} \over 2a}.
 $$
 
+另一个块级公式（Linear Mandarin）：
+
+$$
+\begin{pmatrix}
+金 \\
+木 \\
+水 \\
+火 \\
+土
+\end{pmatrix}(金木水火土)=\begin{pmatrix}
+鍂 & 鈢 & 淦 & 鈥 & 钍 \\
+鈢 & 林 & 沐 & 炑 & 杜 \\
+淦 & 沐 & 沝 & 淡 & 汢 \\
+鈥 & 炑 & 淡 & 炎 & 灶 \\
+钍 & 杜 & 汢 & 灶 & 圭
+\end{pmatrix}
+$$
+
 化学式：
 
 $$
