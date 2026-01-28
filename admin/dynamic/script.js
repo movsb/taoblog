@@ -132,12 +132,7 @@ class PostManagementAPI
 			},
 			body: JSON.stringify(obj),
 		});
-		if (!rsp.ok) {
-			return await throwAPIError(rsp);
-		}
-		let c = await rsp.json();
-		console.log(c);
-		return c;
+		return await decodeResponse(rsp);
 	}
 
 	// 文章预览
@@ -171,10 +166,7 @@ class PostManagementAPI
 				modified_at: modifiedAt ?? 0,
 			})
 		});
-		if (!rsp.ok) {
-			return await throwAPIError(rsp);
-		}
-		return await rsp.json();
+		return await decodeResponse(rsp);
 	}
 
 	// 任务列表/待办事项列表更新
