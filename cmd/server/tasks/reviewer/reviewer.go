@@ -140,12 +140,12 @@ func (t *_ReviewerTask) scheduleNext(ctx context.Context, p *proto.Post) {
 	})
 
 	for tt := range func(yield func(time.Time) bool) {
-		if !last.IsZero() && latest(last, now, 3) {
+		if !last.IsZero() && latest(last, now, 2) {
 			if !yield(last) {
 				return
 			}
 		}
-		if !next.IsZero() && latest(now, next, 7) {
+		if !next.IsZero() && latest(now, next, 2) {
 			if !yield(next) {
 				return
 			}
