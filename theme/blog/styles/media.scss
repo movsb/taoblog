@@ -120,7 +120,9 @@ div.image-scroll-outer {
 		// background-color: red;
 	}
 	// 实况照片的左边有图标用于处理鼠标事件，会被盖住。
+	// 实况照片的按钮会在电脑上显示在上方、手机上显示在下方。
 	&:has(div.live-photo)::after {
 		top: 45px;
+		bottom: 45px;
 	}
 }
