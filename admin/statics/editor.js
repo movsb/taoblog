@@ -1833,18 +1833,18 @@ class PostFormUI {
 	 * @param {NodeListOf<FileItem>} selected 
 	 */
 	_handleInsertFiles(selected) {
-		selected.forEach(fi => {
-			const text = fi.getInsertionText();
-			if (this.editor) {
-				this.editor.paste(text,
-					this.editor.__selection?.anchor,
-					this.editor.__selection?.focus,
-				);
-			} else {
-				// TODO 插入到选中位置。
-				this.elemSource.value += text;
-			}
-		});
+		// 一次性插入，避免多次插入时多次改变选区焦点导致插入位置/覆盖错误。
+		let insertion = '';
+		selected.forEach(fi => { insertion += fi.getInsertionText(); });
+		if (this.editor) {
+			this.editor.paste(insertion,
+				this.editor.__selection?.anchor,
+				this.editor.__selection?.focus,
+			);
+		} else {
+			// TODO 插入到选中位置。
+			this.elemSource.value += insertion;
+		}
 		this._fileManager.clearSelection();
 	}
 
