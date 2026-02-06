@@ -23,9 +23,10 @@ func (ObjectTag) TableName() string {
 }
 
 type Category struct {
-	ID     int32
-	UserID int32
-	Name   string
+	ID       int32
+	UserID   int32
+	ParentID int32
+	Name     string
 }
 
 func (Category) TableName() string {
@@ -34,9 +35,10 @@ func (Category) TableName() string {
 
 func (c *Category) ToProto() (*proto.Category, error) {
 	return &proto.Category{
-		Id:     c.ID,
-		UserId: c.UserID,
-		Name:   c.Name,
+		Id:       c.ID,
+		UserId:   c.UserID,
+		ParentId: c.ParentID,
+		Name:     c.Name,
 	}, nil
 }
 

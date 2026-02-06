@@ -6,13 +6,17 @@ message Category {
 	int32 id = 1;
 	// 输出参数。
 	int32 user_id = 2;
+	// 父分类编号。
+	int32 parent_id = 3;
 	// 分类的显示名称。
-	string name = 3;
+	string name = 4;
 }
 
 // 获取当前用户的分类列表。
 message ListCategoriesRequest {}
 
+// 表示“未分类”的编号为“0”的分类不在结果集中，
+// 展示的时候需要手动显示。
 message ListCategoriesResponse {
 	repeated Category categories = 1;
 }

@@ -922,3 +922,9 @@ func v68(posts, files, cache *taorm.DB) {
 func v69(posts, files, cache *taorm.DB) {
 	posts.MustExec("CREATE INDEX `files_updated_at` on `files` (`updated_at`)")
 }
+
+func v70(posts, files, cache *taorm.DB) {
+	posts.MustExec("ALTER TABLE categories ADD COLUMN parent_id INTEGER NOT NULL DEFAULT 0")
+	posts.MustExec(`DROP INDEX uix_cat_user_id__name`)
+	posts.MustExec(`CREATE UNIQUE INDEX uix__cat__user_id__parent_id__name ON categories (user_id,parent_id,name)`)
+}

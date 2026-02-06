@@ -106,10 +106,11 @@ CREATE TABLE IF NOT EXISTS acl (
 CREATE TABLE categories (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,
     `user_id` INTEGER NOT NULL,
+    `parent_id` INTEGER NOT NULL,
     `name` TEXT  NOT NULL COLLATE NOCASE
 );
 
-CREATE UNIQUE INDEX `uix_cat_user_id__name` ON `categories` (`user_id`,`name`);
+CREATE UNIQUE INDEX `uix_cat_user_id__parent_id__name` ON `categories` (`user_id`,`parent_id`,`name`);
 
 CREATE TABLE IF NOT EXISTS `files` (
     `id` INTEGER  PRIMARY KEY AUTOINCREMENT,

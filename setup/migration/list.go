@@ -1,6 +1,5 @@
 package migration
 
-// VersionUpdater is
 type VersionUpdater struct {
 	version int
 	update  any
@@ -77,9 +76,9 @@ var gVersions = [...]VersionUpdater{
 	{67, v67},
 	{68, v68},
 	{69, v69},
+	{70, v70},
 }
 
-// MaxVersionNumber ...
 func MaxVersionNumber() int {
 	return gVersions[len(gVersions)-1].version
 }
