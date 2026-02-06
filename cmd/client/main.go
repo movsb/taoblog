@@ -403,6 +403,17 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 	rootCmd.AddCommand(enterDebugCmd)
+
+	daemonCmd := &cobra.Command{
+		Use:              `daemon`,
+		Short:            `守护进程（更新镜像等）`,
+		Args:             cobra.NoArgs,
+		PersistentPreRun: preRun,
+		Run: func(cmd *cobra.Command, args []string) {
+			update(client)
+		},
+	}
+	rootCmd.AddCommand(daemonCmd)
 }
 
 func edit(value string, fileSuffix string) (string, bool) {

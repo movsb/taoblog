@@ -138,6 +138,17 @@ func (info _Info) StorageStatus() string {
 	return `存储状态：` + strings.Join(a, `，`) + `。`
 }
 
+func (info _Info) SystemStatus() string {
+	ss := info.proto.GetSystemStates()
+	if ss == nil || !ss.Valid {
+		return ``
+	}
+	var a []string
+	a = append(a, fmt.Sprintf(`可用内存：%s/%s`, utils.ByteCountIEC(ss.MemoryAvail), utils.ByteCountIEC(ss.MemoryTotal)))
+	a = append(a, fmt.Sprintf(`可用空间：%s/%s`, utils.ByteCountIEC(ss.FilesystemAvail), utils.ByteCountIEC(ss.FilesystemTotal)))
+	return `系统状态：` + strings.Join(a, `，`) + `。`
+}
+
 func (d *Data) Info() *_Info {
 	if d.Context == nil {
 		d.Context = user.GuestForLocal(context.Background())

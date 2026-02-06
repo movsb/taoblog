@@ -159,6 +159,12 @@ type Service struct {
 	// 存储状态报告。
 	postsStorageSize atomic.Int64
 	filesStorageSize atomic.Int64
+	// 操作系统状态报告。
+	// valid 且 updatedAt < 5min 有效。
+	sysStatesUpdatedAt atomic.Value
+	sysStatesValid     atomic.Bool
+	fsTotal, fsAvail   atomic.Int64
+	memTotal, memAvail atomic.Int64
 
 	proto.TaoBlogServer
 	proto.ManagementServer
@@ -354,6 +360,14 @@ func (s *Service) GetInfo(ctx context.Context, in *proto.GetInfoRequest) (*proto
 			Posts: s.postsStorageSize.Load(),
 			Files: s.filesStorageSize.Load(),
 		},
+
+		SystemStates: &proto.GetInfoResponse_SystemStates{
+			Valid:           s.sysStatesValid.Load() && time.Since(s.sysStatesUpdatedAt.Load().(time.Time)) < time.Minute*5,
+			MemoryTotal:     s.memTotal.Load(),
+			MemoryAvail:     s.memAvail.Load(),
+			FilesystemTotal: s.fsTotal.Load(),
+			FilesystemAvail: s.fsAvail.Load(),
+		},
 	}
 
 	return out, nil
@@ -422,6 +436,17 @@ func (s *Service) SetPostsStorageSize(size int64) {
 }
 func (s *Service) SetFilesStorageSize(size int64) {
 	s.filesStorageSize.Store(size)
+}
+
+func (s *Service) SetHostStates(ctx context.Context, in *proto.SetHostStatesRequest) (*proto.SetHostStatesResponse, error) {
+	user.MustBeAdmin(ctx)
+	s.sysStatesUpdatedAt.Store(time.Now())
+	s.memTotal.Store(in.Memory.Total)
+	s.memAvail.Store(in.Memory.Avail)
+	s.fsTotal.Store(in.Filesystem.Total)
+	s.fsAvail.Store(in.Filesystem.Avail)
+	s.sysStatesValid.Store(in.Memory.Total > 0 && in.Filesystem.Total > 0)
+	return &proto.SetHostStatesResponse{}, nil
 }
 
 func (s *Service) CalenderService() *calendar.CalenderService {

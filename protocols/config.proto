@@ -71,6 +71,16 @@ message GetInfoResponse {
 		int64 files = 2;
 	}
 	StorageStatus storage = 16;
+
+	// 系统状态。
+	message SystemStates {
+		bool valid = 1;
+		int64 memory_total = 5;
+		int64 memory_avail = 6;
+		int64 filesystem_total = 10;
+		int64 filesystem_avail = 11;
+	}
+	SystemStates system_states = 17;
 }
 
 message RestartRequest {
@@ -125,3 +135,19 @@ message EnterDebugRequest {}
 message EnterDebugResponse {
 	string url = 1;
 }
+
+message SetHostStatesRequest {
+	message Memory {
+		int64 total = 1;
+		int64 avail = 2;
+	}
+	// 仅在的文件系统用量。
+	message Filesystem {
+		int64 total = 1;
+		int64 avail = 2;
+	}
+	Memory memory = 1;
+	Filesystem filesystem = 2;
+}
+
+message SetHostStatesResponse { }

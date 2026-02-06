@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/movsb/taoblog/cmd/client"
-	"github.com/movsb/taoblog/cmd/daemon"
 	"github.com/movsb/taoblog/cmd/imports"
 	"github.com/movsb/taoblog/cmd/server"
 	"github.com/movsb/taoblog/cmd/tools"
@@ -31,7 +30,6 @@ func main() {
 
 	server.AddCommands(rootCmd)
 	client.AddCommands(rootCmd)
-	daemon.AddCommands(rootCmd)
 	imports.AddCommands(rootCmd)
 	tools.AddCommands(rootCmd)
 	conv.AddCommands(rootCmd)
