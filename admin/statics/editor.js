@@ -1721,7 +1721,7 @@ class PostFormUI {
 		/** @type {HTMLDivElement} */
 		const ec = this._editorContainer;
 		wv?.addEventListener('resize', ()=> {
-			if(wv.width < 500 && wv.height < 500) {
+			if(wv.width < 500 && wv.height < 500 && document.activeElement?.closest('#editor-container')) {
 				ec.classList.add('stretch');
 				ec.style.height = `${wv.height}px`;
 			} else {
