@@ -136,12 +136,27 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		if err := json.NewDecoder(rsp.Body).Decode(&result); err != nil {
 			return err
 		}
-		t, err := time.Parse(time.DateTime+`-07:00`, result.Result.ExpirationDate)
-		if err != nil {
-			t, err = time.Parse(time.DateTime, result.Result.ExpirationDate)
-			if err != nil {
-				return err
+
+		var (
+			t        time.Time
+			parseErr error
+		)
+		for _, layout := range []string{
+			`2006-01-02 15:04:05-07:00`,
+			`2006-01-02 15:04:05`,
+			`2006-01-02T15:04:05-07:00`,
+			`2006-01-02T15:04:05`,
+		} {
+			t2, err := time.Parse(layout, result.Result.ExpirationDate)
+			if err == nil {
+				t = t2
+				parseErr = nil
+				break
 			}
+			parseErr = errors.Join(parseErr, err)
+		}
+		if parseErr != nil {
+			return parseErr
 		}
 
 		daysLeft := int(time.Until(t) / time.Hour / 24)
