@@ -225,11 +225,14 @@ func (s *Service) CreateCategory(ctx context.Context, in *proto.Category) (_ *pr
 	cdb := db.FromContextDefault(ctx, s.tdb)
 	cdb.MustTxCall(func(tx *taorm.DB) {
 		ctx := db.WithContext(ctx, tx)
-		// 父分类必须存在。
-		parent := utils.Must1(s.getCatByID(ctx, in.ParentId))
-		// 父分类必须属于当前用户。
-		if parent.UserID != int32(ac.User.ID) {
-			panic(`父分类不存在或不属于当前用户。`)
+
+		if in.ParentId != 0 {
+			// 父分类必须存在。
+			parent := utils.Must1(s.getCatByID(ctx, in.ParentId))
+			// 父分类必须属于当前用户。
+			if parent.UserID != int32(ac.User.ID) {
+				panic(`父分类不存在或不属于当前用户。`)
+			}
 		}
 
 		tx.Model(&cat).MustCreate()
