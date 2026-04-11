@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/cmd/server"
+	"github.com/movsb/taoblog/cmd/server/throttler"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
@@ -588,5 +589,47 @@ func TestUpdateTitle(t *testing.T) {
 	// 文章原来的标题被删除，采用自动生成的。
 	if p1.Title != `no title` {
 		t.Fatal(`标题不正确`)
+	}
+}
+
+func TestCreatePostThrottler(t *testing.T) {
+	r := Serve(t.Context(),
+		server.WithCreateFirstPost(),
+		server.WithRequestThrottler(throttler.New()),
+	)
+	r.server.TestEnableRequestThrottler(true)
+	defer r.server.TestEnableRequestThrottler(false)
+
+	count := 1
+	for range 4 {
+		rsp, err := r.client.Blog.CreatePost(r.admin,
+			&proto.Post{
+				Source: `# Title`,
+			},
+		)
+		switch count {
+		case 1:
+			if err != nil {
+				t.Fatalf(`第一次不应该错`)
+			}
+		case 2:
+			if err == nil {
+				t.Fatalf(`第二次应该错`)
+			}
+			if !strings.Contains(err.Error(), `过于频繁`) {
+				t.Fatalf(`错误内容不正确。`)
+			}
+			time.Sleep(time.Second * 3)
+		case 3:
+			if err != nil {
+				t.Fatalf(`第三次应该不错误。`)
+			}
+		case 4:
+			if err == nil {
+				t.Fatalf(`第四次应该错`)
+			}
+		}
+		count++
+		_ = rsp
 	}
 }

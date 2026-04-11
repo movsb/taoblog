@@ -26,6 +26,7 @@ type _Throttler struct {
 func (t *_Throttler) throttlerGatewayInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	// ac := auth.Context(ctx)
 	key := throttlerKeyOf(ctx)
+	// log.Println(`节流器：`, key)
 	ti, ok := methodThrottlerInfo[info.FullMethod]
 	if ok {
 		if ti.Interval > 0 {
@@ -53,6 +54,12 @@ var methodThrottlerInfo = map[string]struct {
 	// 如果接口返回错误，不更新。
 	OnSuccess bool
 }{
+	// 现在是按快捷键 N 发表文章，出现过没有跳转成功导致死循环，一次性创建了几十篇草稿。
+	`/protocols.TaoBlog/CreatePost`: {
+		Interval:  time.Second * 3,
+		Message:   `文章发表过于频繁，请稍等几秒后再试。`,
+		OnSuccess: true,
+	},
 	`/protocols.TaoBlog/CreateComment`: {
 		Interval:  time.Second * 10,
 		Message:   `评论发表过于频繁，请稍等几秒后再试。`,
