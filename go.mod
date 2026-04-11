@@ -11,9 +11,9 @@ require (
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/goldmark v1.7.13
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
-	google.golang.org/grpc v1.68.1
+	google.golang.org/grpc v1.80.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
-	google.golang.org/protobuf v1.35.2
+	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
@@ -57,7 +57,7 @@ require (
 	go.abhg.dev/goldmark/toc v0.11.0
 	go.n16f.net/thumbhash v1.1.0
 	golang.org/x/image v0.33.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1
+	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516
 )
 
 require (
@@ -113,7 +113,7 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/time v0.4.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260406210006-6f92a3bedf2d // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
@@ -137,7 +137,7 @@ require (
 	github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.52.0
+	golang.org/x/net v0.53.0
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
