@@ -70,7 +70,7 @@ func AddCommands(rootCmd *cobra.Command) {
 		},
 	}
 
-	serveCommand.Flags().Bool(`demo`, false, `运行演示实例。该实例：强制完全使用内存数据库、强制关闭本地环境、不加强配置文件。`)
+	serveCommand.Flags().Bool(`demo`, false, `运行演示实例。该实例：强制完全使用内存数据库、强制关闭本地环境、不加载配置文件。`)
 	serveCommand.Flags().BoolVar(&monitorDomainInitialDelay, `test-monitor-domain-initial-delay`, true, `是否启用首次域名检测延时等待。`)
 
 	serveCommand.Flags().SortFlags = false
