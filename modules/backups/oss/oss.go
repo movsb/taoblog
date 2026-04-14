@@ -1,18 +1,19 @@
 package oss
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	cc "github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/utils"
 
@@ -26,7 +27,15 @@ type Client interface {
 	Upload(ctx context.Context, path string, size int64, r io.Reader, contentType string, digest []byte) error
 	// 返回：GET URL / HEAD URL
 	GetFileURL(ctx context.Context, path string, digest []byte, ttl time.Duration) (string, string, error)
+	// 返回指定前缀的所有文件列表。
+	// 结果包含前缀本身。
+	ListFiles(ctx context.Context, prefix string) ([]FileMeta, error)
 	DeleteByPrefix(ctx context.Context, prefix string)
+}
+
+type FileMeta struct {
+	Path   string
+	Digest Digest
 }
 
 func New(provider string, c *cc.OSSConfig) (Client, error) {
@@ -42,12 +51,18 @@ func New(provider string, c *cc.OSSConfig) (Client, error) {
 	}
 }
 
+// 文件的MD5值。
+// 16字节长。
 type Digest []byte
 
 func NewDigestFromString(s string) Digest {
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		s = s[1 : len(s)-1]
+	}
 	if len(s) != 32 {
 		panic(`bad digest:` + s)
 	}
+	s = strings.ToLower(s)
 	var b []byte
 	if _, err := fmt.Sscanf(s, `%x`, &b); err != nil {
 		panic(`bad digest:` + s)
@@ -68,6 +83,10 @@ func (d Digest) ToETag(upperCase bool) string {
 		f = `"%X"`
 	}
 	return fmt.Sprintf(f, []byte(d))
+}
+
+func (d Digest) Equals(other Digest) bool {
+	return bytes.Equal(d, other)
 }
 
 type S3Compatible struct {
@@ -165,8 +184,8 @@ func (oss *S3Compatible) GetFileURL(ctx context.Context, path string, digest []b
 	return getOutput.URL, headOutput.URL, nil
 }
 
-func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
-	var toDelete []types.ObjectIdentifier
+func (oss *S3Compatible) ListFiles(ctx context.Context, prefix string) ([]FileMeta, error) {
+	var files []FileMeta
 
 	paginator := s3.NewListObjectsV2Paginator(oss.client, &s3.ListObjectsV2Input{
 		Bucket: aws.String(oss.bucketName),
@@ -176,12 +195,23 @@ func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			log.Println("ListObjectsV2 error:", err)
-			return
+			return nil, fmt.Errorf(`oss.ListFiles: %w`, err)
 		}
 		for _, obj := range page.Contents {
-			toDelete = append(toDelete, types.ObjectIdentifier{Key: obj.Key})
+			files = append(files, FileMeta{
+				Path:   *obj.Key,
+				Digest: NewDigestFromString(*obj.ETag),
+			})
 		}
+	}
+	return files, nil
+}
+
+func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
+	toDelete, err := oss.ListFiles(ctx, prefix)
+	if err != nil {
+		log.Println("ListFiles error:", err)
+		return
 	}
 
 	if len(toDelete) == 0 {
@@ -193,12 +223,12 @@ func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
 	for _, del := range toDelete {
 		_, err := oss.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(oss.bucketName),
-			Key:    del.Key,
+			Key:    &del.Path,
 		})
 		if err != nil {
 			log.Println("DeleteObject error:", err)
 		} else {
-			log.Println(`DeleteObject:`, *del.Key)
+			log.Println(`DeleteObject:`, del.Path)
 		}
 	}
 }
@@ -232,7 +262,7 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 	_, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
-		IfMatch: alioss.Ptr(Digest(digest).ToETag(true)),
+		IfMatch: new(Digest(digest).ToETag(true)),
 	})
 	if err == nil {
 		log.Println(`oss.Upload:`, path, `already exists. Won't upload.`)
@@ -259,7 +289,7 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 }
 
 func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte, ttl time.Duration) (string, string, error) {
-	ifMatch := alioss.Ptr(Digest(digest).ToETag(true))
+	ifMatch := new(Digest(digest).ToETag(true))
 	_, err := oss.client.HeadObject(ctx, &alioss.HeadObjectRequest{
 		Bucket:  &oss.bucketName,
 		Key:     &path,
@@ -287,8 +317,8 @@ func (oss *Aliyun) GetFileURL(ctx context.Context, path string, digest []byte, t
 	return getOutput.URL, headOutput.URL, nil
 }
 
-func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
-	var toDelete []string
+func (oss *Aliyun) ListFiles(ctx context.Context, prefix string) ([]FileMeta, error) {
+	var files []FileMeta
 
 	listInput := &alioss.ListObjectsRequest{
 		Bucket: &oss.bucketName,
@@ -298,12 +328,14 @@ func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
 	for {
 		resp, err := oss.client.ListObjects(ctx, listInput)
 		if err != nil {
-			log.Println("ListObjects error:", err)
-			return
+			return nil, fmt.Errorf(`oss.ListFiles: %w`, err)
 		}
 
 		for _, obj := range resp.Contents {
-			toDelete = append(toDelete, *obj.Key)
+			files = append(files, FileMeta{
+				Path:   *obj.Key,
+				Digest: NewDigestFromString(*obj.ETag),
+			})
 		}
 
 		if !resp.IsTruncated || resp.NextMarker == nil {
@@ -313,20 +345,30 @@ func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
 		listInput.Marker = resp.NextMarker
 	}
 
-	if len(toDelete) == 0 {
+	return files, nil
+}
+
+func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
+	files, err := oss.ListFiles(ctx, prefix)
+	if err != nil {
+		log.Println("ListFiles error:", err)
+		return
+	}
+
+	if len(files) == 0 {
 		log.Println("No objects to delete.")
 		return
 	}
 
-	_, err := oss.client.DeleteMultipleObjects(ctx, &alioss.DeleteMultipleObjectsRequest{
+	_, err = oss.client.DeleteMultipleObjects(ctx, &alioss.DeleteMultipleObjectsRequest{
 		Bucket: &oss.bucketName,
-		Objects: utils.Map(toDelete, func(key string) alioss.DeleteObject {
-			return alioss.DeleteObject{Key: &key}
+		Objects: utils.Map(files, func(file FileMeta) alioss.DeleteObject {
+			return alioss.DeleteObject{Key: &file.Path}
 		}),
 	})
 	if err != nil {
 		log.Println("DeleteMultipleObjects error:", err)
 	} else {
-		log.Printf("Deleted %d objects with prefix %s\n", len(toDelete), prefix)
+		log.Printf("Deleted %d objects with prefix %s\n", len(files), prefix)
 	}
 }

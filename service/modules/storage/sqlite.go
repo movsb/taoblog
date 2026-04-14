@@ -257,7 +257,7 @@ func (fs *SQLiteForPost) ListFiles() ([]*proto.FileSpec, error) {
 	if err := fs.s.meta.Select(fileFields).Where(`post_id=?`, fs.pid).Find(&files); err != nil {
 		return nil, err
 	}
-	// TODO 为了前端显示方便，这里临时按时间排序。
+	// NOTE 为了前端显示方便，这里临时按时间排序。
 	slices.SortFunc(files, func(a, b *models.File) int {
 		return -int(a.UpdatedAt - b.UpdatedAt)
 	})

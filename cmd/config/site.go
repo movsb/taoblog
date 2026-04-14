@@ -20,6 +20,8 @@ type SiteConfig struct {
 	// 初始化时写入数据库，表示建站时间。
 	Since Since `json:"since" yaml:"since,omitempty"`
 
+	// 用于加速文件/图片访问的同步配置。
+	// 后台会在文章被保存时触发同步操作。
 	Sync SiteSyncConfig `yaml:"sync"`
 }
 
