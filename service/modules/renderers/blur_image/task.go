@@ -146,12 +146,12 @@ func calcHash(info *models.File, fp fs.File) (string, error) {
 		defer fp.Close()
 		data, err = png.Decode(fp)
 	default:
-		log.Println(`不知道如何处理：`, info)
+		log.Println(`不知道如何处理：`, *info)
 		return ``, nil
 	}
 
 	if err != nil {
-		log.Println(err, info)
+		log.Println(err, *info)
 		return ``, err
 	}
 

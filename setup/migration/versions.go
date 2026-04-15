@@ -700,7 +700,7 @@ func v53(posts, files, cache *taorm.DB) {
 	for _, file := range list {
 		var model v53File
 		files.Raw(`SELECT meta,data FROM files WHERE id=?`, file.ID).MustFind(&model)
-		models.Encrypt(&model.Meta.Encryption, []byte(model.Data))
+		models.InitEncrypt(&model.Meta.Encryption, []byte(model.Data))
 		files.MustExec(`UPDATE files SET meta=? WHERE id=?`, model.Meta, file.ID)
 		log.Println(`文件摘要：`, file.ID, model.Meta.Encryption)
 	}
@@ -927,4 +927,11 @@ func v70(posts, files, cache *taorm.DB) {
 	posts.MustExec("ALTER TABLE categories ADD COLUMN parent_id INTEGER NOT NULL DEFAULT 0")
 	posts.MustExec(`DROP INDEX uix_cat_user_id__name`)
 	posts.MustExec(`CREATE UNIQUE INDEX uix__cat__user_id__parent_id__name ON categories (user_id,parent_id,name)`)
+}
+
+func v71(posts, files, cache *taorm.DB) {
+	posts.MustExec(`DELETE FROM options where name = 'site.sync.aliyun:last'`)
+	posts.MustExec(`DELETE FROM options where name = 'site.sync.cos:last'`)
+	posts.MustExec(`DELETE FROM options where name = 'site.sync.r2:last'`)
+	posts.MustExec(`DELETE FROM options where name = 'site.sync.minio:last'`)
 }

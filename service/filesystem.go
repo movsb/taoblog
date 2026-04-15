@@ -383,26 +383,15 @@ func (s *Service) getFasterFileURL(r *http.Request, pfs fs.FS, p *models.Post, f
 
 		postIsPublic := p.Status == models.PostStatusPublic
 
-		// 文件摘要。
-		remoteFileDigest := utils.IIF(postIsPublic,
-			file.Digest,
-			file.Meta.Encryption.Digest,
-		)
-		// 文件在远程服务器的路径。
-		remotePath := utils.IIF(postIsPublic,
-			path.Join(`files`, fmt.Sprint(file.PostID), file.Path),
-			path.Join(`objects`, fmt.Sprint(file.PostID), remoteFileDigest),
-		)
-
 		s.fileURLGetters.Range(func(_, value any) bool {
 			val := &_FileURLCacheValue{
 				Time: time.Now(),
 			}
 			getter := value.(theme_fs.FileURLGetter)
-			if get, head, err := getter.GetFileURL(remotePath, remoteFileDigest, ttl); err == nil {
+			if get, head, encrypted, err := getter.GetFileURL(postIsPublic, file, ttl); err == nil {
 				val.Get = get
 				val.Head = head
-				val.Encrypted = !postIsPublic
+				val.Encrypted = encrypted
 				if val.Encrypted {
 					val.Nonce = file.Meta.Encryption.Nonce
 					val.Key = file.Meta.Encryption.Key

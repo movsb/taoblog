@@ -30,11 +30,13 @@ type Client interface {
 	// 返回指定前缀的所有文件列表。
 	// 结果包含前缀本身。
 	ListFiles(ctx context.Context, prefix string) ([]FileMeta, error)
-	DeleteByPrefix(ctx context.Context, prefix string)
+	DeleteFile(ctx context.Context, path string) error
 }
 
 type FileMeta struct {
-	Path   string
+	// 文件在对象存储中的完整路径（不以 / 开头）。
+	Path string
+	// 文件的 MD5 值。
 	Digest Digest
 }
 
@@ -71,6 +73,10 @@ func NewDigestFromString(s string) Digest {
 		panic(`bad digest:` + s)
 	}
 	return Digest(b)
+}
+
+func (d Digest) String() string {
+	return fmt.Sprintf(`%x`, []byte(d))
 }
 
 func (d Digest) ToContentMD5() string {
@@ -207,30 +213,15 @@ func (oss *S3Compatible) ListFiles(ctx context.Context, prefix string) ([]FileMe
 	return files, nil
 }
 
-func (oss *S3Compatible) DeleteByPrefix(ctx context.Context, prefix string) {
-	toDelete, err := oss.ListFiles(ctx, prefix)
+func (oss *S3Compatible) DeleteFile(ctx context.Context, path string) error {
+	_, err := oss.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(oss.bucketName),
+		Key:    &path,
+	})
 	if err != nil {
-		log.Println("ListFiles error:", err)
-		return
+		log.Println("DeleteObject error:", err)
 	}
-
-	if len(toDelete) == 0 {
-		log.Println("No objects to delete.")
-		return
-	}
-
-	// 批量删除会报缺少 ContentMD5，不知道怎么传。
-	for _, del := range toDelete {
-		_, err := oss.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-			Bucket: aws.String(oss.bucketName),
-			Key:    &del.Path,
-		})
-		if err != nil {
-			log.Println("DeleteObject error:", err)
-		} else {
-			log.Println(`DeleteObject:`, del.Path)
-		}
-	}
+	return err
 }
 
 type Aliyun struct {
@@ -274,9 +265,9 @@ func (oss *Aliyun) Upload(ctx context.Context, path string, size int64, r io.Rea
 		Key:           &path,
 		Body:          r,
 		ContentLength: &size,
-		ContentMD5:    alioss.Ptr(Digest(digest).ToContentMD5()),
+		ContentMD5:    new(Digest(digest).ToContentMD5()),
 		ContentType:   &contentType,
-		CacheControl:  alioss.Ptr(privateCache),
+		CacheControl:  new(privateCache),
 		ProgressFn: func(increment, transferred, total int64) {
 			log.Printf(`oss.Upload: progress: %s (%.2f%%)`, path, float64(transferred)/float64(total)*100)
 		},
@@ -348,27 +339,13 @@ func (oss *Aliyun) ListFiles(ctx context.Context, prefix string) ([]FileMeta, er
 	return files, nil
 }
 
-func (oss *Aliyun) DeleteByPrefix(ctx context.Context, prefix string) {
-	files, err := oss.ListFiles(ctx, prefix)
-	if err != nil {
-		log.Println("ListFiles error:", err)
-		return
-	}
-
-	if len(files) == 0 {
-		log.Println("No objects to delete.")
-		return
-	}
-
-	_, err = oss.client.DeleteMultipleObjects(ctx, &alioss.DeleteMultipleObjectsRequest{
+func (oss *Aliyun) DeleteFile(ctx context.Context, path string) error {
+	_, err := oss.client.DeleteObject(ctx, &alioss.DeleteObjectRequest{
 		Bucket: &oss.bucketName,
-		Objects: utils.Map(files, func(file FileMeta) alioss.DeleteObject {
-			return alioss.DeleteObject{Key: &file.Path}
-		}),
+		Key:    &path,
 	})
 	if err != nil {
-		log.Println("DeleteMultipleObjects error:", err)
-	} else {
-		log.Printf("Deleted %d objects with prefix %s\n", len(files), prefix)
+		log.Println("DeleteFile error:", err)
 	}
+	return err
 }

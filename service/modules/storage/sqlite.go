@@ -401,7 +401,7 @@ func (fs *SQLiteForPost) Write(spec *proto.FileSpec, r io.Reader) error {
 	now := time.Now()
 
 	meta := models.FileMetaFromProto(spec.Meta)
-	models.Encrypt(&meta.Encryption, data)
+	models.InitEncrypt(&meta.Encryption, data)
 
 	var old models.File
 

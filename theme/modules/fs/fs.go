@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
 )
 
 // 用于对外隐藏存储结构。
@@ -35,5 +36,5 @@ func (Empty) ForPost(id int) fs.FS {
 
 type FileURLGetter interface {
 	GetCountry() string
-	GetFileURL(path string, digest string, ttl time.Duration) (string, string, error)
+	GetFileURL(publicPost bool, file *models.File, ttl time.Duration) (string, string, bool, error)
 }

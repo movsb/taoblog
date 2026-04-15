@@ -15,15 +15,15 @@ const (
 )
 
 // 同步方向：本地→远程，远程→本地。
-type Dir int
+type Direction int
 
 const (
-	LocalToRemote Dir = 1
-	RemoteToLocal Dir = 2
+	LocalToRemote Direction = 1
+	RemoteToLocal Direction = 2
 )
 
 type Element[E any] interface {
-	Compare(to E) int    // 比较大小
+	Compare(to E) int    // 文件名排序
 	DeepEqual(to E) bool // 修改时间、权限也相同
 }
 
@@ -43,7 +43,7 @@ func New[S ~[]E, E Element[E]](options ...Option[S, E]) *Syncer[S, E] {
 	return s
 }
 
-func (s *Syncer[S, E]) Sync(locals S, remotes S, dir Dir) error {
+func (s *Syncer[S, E]) Sync(locals S, remotes S, dir Direction) error {
 	l, r := s.sortAndUniq(locals, remotes)
 	return s.sync(l, r, dir)
 }
@@ -61,7 +61,7 @@ func (s *Syncer[S, E]) sortAndUniq(locals S, remotes S) (S, S) {
 }
 
 // 会自动排序、去重。
-func (s *Syncer[S, E]) sync(locals S, remotes S, dir Dir) (err error) {
+func (s *Syncer[S, E]) sync(locals S, remotes S, dir Direction) (err error) {
 	i, j := len(locals)-1, len(remotes)-1
 	forward := dir == LocalToRemote
 

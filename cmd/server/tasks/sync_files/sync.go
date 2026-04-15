@@ -3,19 +3,19 @@ package sync_files
 import (
 	"bytes"
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
 	"io"
 	"io/fs"
 	"log"
 	"mime"
 	pathpkg "path"
+	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/modules/backups/oss"
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/syncer"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
@@ -72,20 +72,17 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 		},
 	)).GetPosts()
 
-	for _, up := range updated {
-		pfs := s.pfs.ForPost(int(up.Id))
+	for _, post := range updated {
+		pfs := s.pfs.ForPost(int(post.Id))
 		specs := utils.Must1(utils.ListFiles(pfs))
-		for _, spec := range specs {
-			utils.Must(s.upload(ctx, up, pfs, int(up.Id), spec.Path))
+		existed, err := s.oss.ListFiles(ctx, fmt.Sprintf(`objects/%d/`, post.Id))
+		if err != nil {
+			log.Println(`列出文件失败：`, err)
+			return err
 		}
-		// 删除不再需要的文件：
-		// - 公开后，以前加密的
-		// - 私密后，以前公开的
-		//
-		if up.Status == models.PostStatusPublic {
-			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`objects/%d/`, up.Id))
-		} else {
-			s.oss.DeleteByPrefix(ctx, fmt.Sprintf(`files/%d/`, up.Id))
+		if err := s.syncPostFiles(ctx, post, pfs, specs, existed); err != nil {
+			log.Println(`同步文章文件失败：`, post.Id, err)
+			return err
 		}
 	}
 
@@ -97,58 +94,97 @@ func (s *SyncToOSS) run(ctx context.Context) (outErr error) {
 	return
 }
 
-func (s *SyncToOSS) upload(ctx context.Context, post *proto.Post, pfs fs.FS, pid int, path string) error {
-	fp := utils.Must1(pfs.Open(path))
-	defer fp.Close()
-
-	info := utils.Must1(fp.Stat())
-	sysFile, ok := info.Sys().(*models.File)
-	// 不是用户上传的普通文件。
-	if !ok {
-		return nil
-	}
-
-	log.Println(`正在上传文件到对象存储:`, pid, path)
-
-	var digest string
-	var fullPath string
-	var size int
-	var reader io.Reader
-
-	// TODO: 公开文章的私有文件（以 _ 和 . 开头的那些）也应该加密保存。
-	if post.Status == models.PostStatusPublic {
-		// files/文章编号/文件路径，没有前缀 /。
-		fullPath = pathpkg.Join(`files`, fmt.Sprint(pid), path)
-		digest = sysFile.Digest
-		size = int(info.Size())
-		reader = fp
-	} else {
-		digest = sysFile.Meta.Encryption.Digest
-		fullPath = fmt.Sprintf(`objects/%d/%s`, pid, digest)
-		size = sysFile.Meta.Encryption.Size
-
-		aes := utils.Must1(aes.NewCipher(sysFile.Meta.Encryption.Key))
-		aead := utils.Must1(cipher.NewGCM(aes))
-		data := make([]byte, 0, size)
-		data = aead.Seal(data, sysFile.Meta.Encryption.Nonce, utils.Must1(io.ReadAll(fp)), nil)
-		if len(data) != size {
-			panic(`加密数据长度不一样`)
-		}
-		reader = bytes.NewReader(data)
-	}
-
-	if err := s.oss.Upload(
-		ctx, fullPath, int64(size), reader,
-		mime.TypeByExtension(pathpkg.Ext(fullPath)),
-		oss.NewDigestFromString(digest),
-	); err != nil {
-		log.Println(`上传失败：`, fullPath, err)
-		return err
-	}
-
-	return nil
+type SyncerFileMeta struct {
+	PostFilePath string
+	oss.FileMeta
 }
 
-func (s *SyncToOSS) GetFileURL(path string, digest string, ttl time.Duration) (string, string, error) {
-	return s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest), ttl)
+func (m SyncerFileMeta) Compare(other SyncerFileMeta) int {
+	return strings.Compare(m.Path, other.Path)
+}
+func (m SyncerFileMeta) DeepEqual(other SyncerFileMeta) bool {
+	return m.Digest.Equals(other.Digest)
+}
+
+func (s *SyncToOSS) syncPostFiles(ctx context.Context, post *proto.Post, pfs fs.FS, specs []*proto.FileSpec, existed []oss.FileMeta) error {
+	newFiles := utils.Map(specs, func(spec *proto.FileSpec) SyncerFileMeta {
+		digest := oss.NewDigestFromString(spec.Digest)
+		return SyncerFileMeta{
+			PostFilePath: spec.Path,
+			FileMeta: oss.FileMeta{
+				Path: fmt.Sprintf(`objects/%d/%s`, post.Id, digest.String()),
+				// 这里始终是文件本身的摘要（而非加密后的）。
+				Digest: digest,
+			},
+		}
+	})
+
+	oldFiles := utils.Map(existed, func(meta oss.FileMeta) SyncerFileMeta {
+		return SyncerFileMeta{
+			PostFilePath: ``, // 远程文件没有原始路径了。
+			FileMeta:     meta,
+		}
+	})
+
+	sync := syncer.New(
+		syncer.WithCopyLocalToRemote[[]SyncerFileMeta](func(f SyncerFileMeta) error {
+			log.Println(`上传文件到远程：`, f.PostFilePath, f.Digest)
+
+			fp := utils.Must1(pfs.Open(f.PostFilePath))
+			defer fp.Close()
+
+			info := utils.Must1(fp.Stat())
+			sysFile, ok := info.Sys().(*models.File)
+			// 不是用户上传的普通文件。
+			if !ok {
+				return nil
+			}
+
+			var digest string
+			var size int
+			var reader io.Reader
+
+			// NOTE: 公开文章的私有文件（以 _ 和 . 开头的那些）也应该加密保存。
+			if post.Status == models.PostStatusPublic && !strings.HasPrefix(f.PostFilePath, `_`) && !strings.HasPrefix(f.PostFilePath, `.`) {
+				digest = sysFile.Digest
+				size = int(info.Size())
+				reader = fp
+			} else {
+				digest = sysFile.Meta.Encryption.Digest
+				size = sysFile.Meta.Encryption.Size
+				encrypted := sysFile.Meta.Encryption.EncryptData(utils.Must1(io.ReadAll(fp)))
+				if len(encrypted) != size {
+					panic(`加密数据长度不一样`)
+				}
+				reader = bytes.NewReader(encrypted)
+			}
+
+			// TODO: 如果不同目录有相同文件，会出错。
+			if err := s.oss.Upload(ctx,
+				f.Path,
+				int64(size), reader,
+				mime.TypeByExtension(pathpkg.Ext(f.PostFilePath)),
+				oss.NewDigestFromString(digest),
+			); err != nil {
+				log.Println(`上传失败：`, f.PostFilePath, f.Path, err)
+				return err
+			}
+			return nil
+		}),
+		syncer.WithDeleteRemote[[]SyncerFileMeta](func(f SyncerFileMeta) error {
+			log.Println(`删除远程文件：`, f.Path, f.Digest)
+			// 注意：这里的 f.Path 是对象存储返回的路径，≠ 原始文件名。
+			return s.oss.DeleteFile(ctx, f.Path)
+		}),
+	)
+
+	return sync.Sync(newFiles, oldFiles, syncer.LocalToRemote)
+}
+
+func (s *SyncToOSS) GetFileURL(publicPost bool, file *models.File, ttl time.Duration) (string, string, bool, error) {
+	path := fmt.Sprintf(`objects/%d/%s`, file.PostID, file.Digest)
+	plain := publicPost && !strings.HasPrefix(file.Path, `_`) && !strings.HasPrefix(file.Path, `.`)
+	digest := utils.IIF(plain, file.Digest, file.Meta.Encryption.Digest)
+	get, head, err := s.oss.GetFileURL(context.Background(), path, oss.NewDigestFromString(digest), ttl)
+	return get, head, !plain, err
 }

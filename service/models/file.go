@@ -69,17 +69,22 @@ type FileEncryptionMeta struct {
 	Size   int    // 加密后的大小
 }
 
-func Encrypt(m *FileEncryptionMeta, data []byte) {
+func InitEncrypt(m *FileEncryptionMeta, data []byte) {
 	m.Key = make([]byte, 32)
 	m.Nonce = make([]byte, 12)
 	rand.Read(m.Key)
 	rand.Read(m.Nonce)
+
+	encrypted := m.EncryptData(data)
+	m.Size = len(encrypted)
+	m.Digest = Digest(encrypted)
+}
+
+func (m FileEncryptionMeta) EncryptData(data []byte) []byte {
 	aes := utils.Must1(aes.NewCipher(m.Key[:]))
 	aead := utils.Must1(cipher.NewGCM(aes))
 	buf := make([]byte, 0, len(data)+aead.Overhead())
-	encrypted := aead.Seal(buf, m.Nonce[:], data, nil)
-	m.Size = len(encrypted)
-	m.Digest = Digest(encrypted)
+	return aead.Seal(buf, m.Nonce[:], data, nil)
 }
 
 func Digest(data []byte) string {
