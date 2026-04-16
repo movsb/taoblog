@@ -85,6 +85,12 @@ func (c *Canonical) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			postID := utils.Must1(strconv.Atoi(matches[1]))
 			file := matches[2]
 
+			// 不确定访问目录有什么意义，不允许。
+			if strings.HasSuffix(file, "/") {
+				utils.HTTPError(w, http.StatusForbidden)
+				return
+			}
+
 			localOnly := false
 
 			// 如果是编辑器页面，暂时不处理文件加速服务。
