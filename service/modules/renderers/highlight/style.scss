@@ -67,6 +67,18 @@ table.lntable {
 	}
 }
 
+div.code-scroll-synchronizer.gutter-3 {
+	// 3列的 gutter。
+	table.lntable {
+		> tbody {
+			margin-left: calc(60px - $gutter_gap);
+		}
+		td.lntd:nth-child(1) {
+			width: calc(60px - calc($gutter_gap - 2px));
+		}
+	}
+}
+
 // 以下是用 formatter.WriteCSS 自动生成的。
 // 加上几个注释掉的。
 // TODO 改成接口，方便后台直接选配色。

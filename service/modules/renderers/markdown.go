@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"embed"
 	_ "embed"
+	"fmt"
 	"log"
 	"net/url"
+	"runtime/debug"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -178,7 +180,13 @@ func (me *_Markdown) AddHtmlTransformers(trs ...gold_utils.HtmlTransformer) {
 // TODO 只是不渲染的话，其实不需要加载插件？
 // TODO 把 parse、检查、渲染过程分开。
 func (me *_Markdown) Render(source string) (_ string, outErr error) {
-	defer utils.CatchAsError(&outErr)
+	defer func() {
+		if err := recover(); err != nil {
+			stack := debug.Stack()
+			log.Println(`Markdown renderer error:`, err, string(stack))
+			outErr = fmt.Errorf(`markdown renderer panic: %v`, err)
+		}
+	}()
 
 	options := []goldmark.Option{
 		goldmark.WithRendererOptions(
