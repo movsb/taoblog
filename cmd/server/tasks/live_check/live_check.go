@@ -67,7 +67,14 @@ func (l *_LiveCheck) checkPost() bool {
 		// 正式环境时打印完整的栈信息。
 		if !version.DevMode() {
 			buf := make([]byte, 1<<20)
-			runtime.Stack(buf, true)
+			for {
+				n := runtime.Stack(buf, true)
+				if n < len(buf) {
+					buf = buf[:n]
+					break
+				}
+				buf = make([]byte, 2*len(buf))
+			}
 			stack.Set(string(buf))
 			last = time.Now()
 		}
