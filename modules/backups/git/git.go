@@ -253,6 +253,8 @@ func (g *GitSync) push(repo *git.Repository) error {
 }
 
 // 根据日期创建文章对应的目录。
+//
+// 格式：年/月/ID/
 func (g *GitSync) createPostDir(t int32, id int64) (string, error) {
 	createdAt := time.Unix(int64(t), 0).Local()
 	dir := createdAt.Format(`2006/01`)
@@ -264,6 +266,10 @@ func (g *GitSync) createPostDir(t int32, id int64) (string, error) {
 	return dir, nil
 }
 
+// TODO 同时需要保存纯文件文件。
+// 判断规则：
+//  1. 有 parent_id 的不是，它们属于自动生成的文件；
+//  2. 其它文件可以判断是否包含无效UTF-8字符，或者控制字符，来判断是否是纯文件文件。
 func (g *GitSync) syncSingle(wt *git.Worktree, p *proto.Post) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 

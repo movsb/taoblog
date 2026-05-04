@@ -200,7 +200,7 @@ func (d *DataStore) CreateData(postID int, digest string, data []byte) error {
 }
 
 // 删除文件。
-// 不存在的问题不会报错。
+// 不存在的文件不会报错。
 func (d *DataStore) DeleteData(postID int, digest string) error {
 	return d.data.From(models.FileData{}).Where(`post_id=? AND digest=?`, postID, digest).Delete()
 }
