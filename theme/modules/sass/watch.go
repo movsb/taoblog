@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/gofsnotify/fsnotify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 )
@@ -63,7 +63,7 @@ func Watch(dir string, input, output string) {
 		events, close := utils.Must2(watchFS.Watch())
 		defer close()
 		for event := range events {
-			if event.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
+			if event.Op.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
 				// 只关心 .scss 文件
 				if path.Ext(event.Name) != `.scss` {
 					continue

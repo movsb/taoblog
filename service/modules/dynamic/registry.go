@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/gofsnotify/fsnotify"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/theme/modules/sass"
@@ -94,7 +94,7 @@ func WithStyles(module string, paths ...string) {
 				defer close()
 				for e := range events {
 					name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
-					if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
+					if slices.Contains(paths, name) && e.Op.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
 						// log.Println(`需要重新加载样式`, e)
 						reloadAll.Store(true)
 					}
@@ -126,7 +126,7 @@ func WithScripts(module string, paths ...string) {
 			defer close()
 			for e := range events {
 				name := strings.TrimPrefix(strings.TrimPrefix(e.Name, root), `/`)
-				if slices.Contains(paths, name) && e.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
+				if slices.Contains(paths, name) && e.Op.Has(fsnotify.Create|fsnotify.Write|fsnotify.Rename|fsnotify.Remove) {
 					log.Println(`需要重新加载脚本`, e)
 					reloadAll.Store(true)
 				}

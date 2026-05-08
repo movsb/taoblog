@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/gofsnotify/fsnotify"
 )
 
 type TemplateLoader struct {
@@ -51,7 +51,7 @@ func NewTemplateLoader(fsys fs.FS, funcs template.FuncMap, refreshed func()) *Te
 				}
 			})
 			for event := range events {
-				if event.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
+				if event.Op.Has(fsnotify.Create | fsnotify.Remove | fsnotify.Write) {
 					if !strings.HasSuffix(event.Name, `.html`) {
 						continue
 					}

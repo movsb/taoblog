@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/gofsnotify/fsnotify"
 	"github.com/movsb/taoblog/protocols/go/proto"
 )
 
@@ -84,7 +84,7 @@ func (fsys *OSDirFS) Watch() (<-chan fsnotify.Event, func(), error) {
 		}
 	}()
 
-	if err := watcher.Add(fsys.root); err != nil {
+	if err := watcher.Add(fsys.root, fsnotify.All); err != nil {
 		return nil, nil, err
 	}
 
