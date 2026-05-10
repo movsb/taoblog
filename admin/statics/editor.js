@@ -955,7 +955,7 @@ class TableEditor extends HTMLElement {
 		this.appendChild(cloned.firstElementChild);
 
 		if(typeof JavaScriptTableEditor == 'undefined') {
-			const url = 'https://unpkg.com/javascript-table-editor@1.0.8/dist/table.iife.min.js';
+			const url = 'https://unpkg.com/javascript-table-editor@1.0.9/dist/table.iife.min.js';
 			const script = document.createElement('script');
 			script.src = url;
 			document.head.appendChild(script);
@@ -1900,7 +1900,7 @@ class PostFormUI {
 		const buttonsParent = document.querySelector('#command-container');
 		buttonsParent.querySelectorAll('.file').forEach(b => b.remove());
 
-		// note: 路径是有重复的，需要拖动去重
+		// note: 路径是有重复的，需要手动去重
 		[...new Set(paths)].forEach(path => {
 			if(path.endsWith('.table')) {
 				const btn = document.createElement('button');
