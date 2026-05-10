@@ -2,7 +2,6 @@ package qq
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -26,8 +25,12 @@ func Get(ctx context.Context, email string) (*http.Response, error) {
 		return nil, err
 	}
 	rsp, err := http.DefaultClient.Do(req)
-	if err != nil || rsp.StatusCode != 200 {
-		return nil, errors.Join(err, fmt.Errorf(`status=%v`, rsp.Status))
+	if err != nil {
+		return nil, err
+	}
+	if rsp.StatusCode != http.StatusOK {
+		rsp.Body.Close()
+		return nil, fmt.Errorf(`status=%v`, rsp.Status)
 	}
 	return rsp, nil
 }
