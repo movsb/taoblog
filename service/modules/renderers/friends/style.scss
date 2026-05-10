@@ -1,13 +1,17 @@
 .friends {
+	--radius: 8px;
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--border-radius);
+	gap: var(--radius);
+	text-align: left;
 	.friend {
-		border: 1px solid var(--border-color);
 		box-sizing: border-box;
-		border-radius: var(--border-radius);
+		border-radius: var(--radius);
 		display: flex;
-		flex: 1 0 calc((100% - 2 * var(--border-radius)) / 3);
+		flex: 1 0 calc((100% - 2 * var(--radius)) / 3);
+		max-width: calc((100% - 2 * var(--radius)) / 3);
+		background-color: #0000000A;
+		box-shadow: 0 0 3px -1px;
 		.left {
 			width: 70px;
 			height: 70px;
@@ -29,6 +33,9 @@
 			flex-direction: column;
 			align-self: center;
 			margin-right: .5rem;
+			a {
+				color: inherit;
+			}
 			p {
 				margin: 0;
 				&:not(:nth-child(1)) {

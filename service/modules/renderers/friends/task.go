@@ -126,6 +126,8 @@ func (t *Task) get(faviconURL string) (string, []byte, error) {
 		log.Println(`头像请求失败：`, err)
 		return ``, nil, err
 	}
+	// 有些网站禁止了 curl 和 go。
+	req.Header.Set(`User-Agent`, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:150.0) Gecko/20100101 Firefox/150.0")
 	rsp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println(`头像请求失败：`, err)
