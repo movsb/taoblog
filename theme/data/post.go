@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/movsb/taoblog/modules/globals"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
@@ -120,8 +121,7 @@ func (p *Post) CommentString() string {
 
 func (p *Post) ShortDateString() string {
 	t := time.Unix(int64(p.Date), 0).In(globals.LoadTimezoneOrDefault(p.DateTimezone, time.Local))
-	y, m, d := t.Date()
-	return fmt.Sprintf(`%d年%02d月%02d日`, y, m, d)
+	return utils.RelativeDate(t)
 }
 
 func (p *Post) DateString() string {

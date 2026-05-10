@@ -2,9 +2,8 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"github.com/xeonx/timeago"
 )
 
 type CurrentTimezoneGetter interface {
@@ -39,31 +38,41 @@ func AtMiddleNight(ctx context.Context, fn func()) {
 	}
 }
 
-var _friendlyChineseDateFormat = timeago.Config{
-	PastPrefix:   "",
-	PastSuffix:   "前",
-	FuturePrefix: "于",
-	FutureSuffix: "",
-
-	Periods: []timeago.FormatPeriod{
-		{D: time.Second, One: "1秒", Many: "%d秒"},
-		{D: time.Minute, One: "1分钟", Many: "%d分钟"},
-		{D: time.Hour, One: "1小时", Many: "%d小时"},
-		{D: timeago.Day, One: "1天", Many: "%d天"},
-		{D: timeago.Month, One: "1月", Many: "%d月"},
-		{D: timeago.Year, One: "1年", Many: "%d年"},
-	},
-
-	Zero: "1秒",
-
-	Max:           73 * time.Hour,
-	DefaultLayout: "2006-01-02",
-}
-
 func RelativeDateFrom(t time.Time, from time.Time) string {
-	return _friendlyChineseDateFormat.FormatReference(t, from)
+	diff := from.Sub(t)
+	// 未来的时间，直接格式化。
+	if diff < 0 {
+		return t.Format(time.DateOnly)
+	}
+	switch {
+	case diff < time.Minute:
+		return "刚刚"
+	case diff < time.Hour:
+		return fmt.Sprintf("%d分钟前", int(diff.Minutes()))
+	case diff < time.Hour*48 && t.Day() == from.Day():
+		return fmt.Sprintf("%d小时前", int(diff.Hours()))
+	}
+
+	tt := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	ff := time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, time.UTC)
+	diff = ff.Sub(tt)
+
+	days := int(diff / time.Hour / 24)
+	switch days {
+	case 1:
+		return "昨天"
+	case 2:
+		return "前天"
+	}
+	if days <= 30 {
+		return fmt.Sprintf("%d天前", days)
+	}
+	if tt.Year() == ff.Year() {
+		return t.Format(`01月02日`)
+	}
+	return t.Format(`2006年01月02日`)
 }
 
 func RelativeDate(t time.Time) string {
-	return _friendlyChineseDateFormat.FormatReference(t, time.Now())
+	return RelativeDateFrom(t, time.Now())
 }

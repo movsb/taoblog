@@ -8,7 +8,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0
 	github.com/movsb/taorm v0.0.0-20251017130818-570067a98e77
 	github.com/spf13/cobra v1.0.0
-	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/goldmark v1.7.13
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/grpc v1.80.0
