@@ -22,6 +22,10 @@ type Payload struct {
 		Status     string `json:"status"`
 		Conclusion string `json:"conclusion"`
 	} `json:"workflow_run"`
+	Workflow struct {
+		Name string `json:"name"`
+		Path string `json:"path"`
+	} `json:"workflow"`
 }
 
 func decode(r io.Reader, secret string, sum string) (*Payload, error) {

@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -40,6 +41,10 @@ func (g *_GitHub) onRecv(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
+		return
+	}
+	if strings.HasPrefix(payload.Workflow.Path, `dynamic/dependabot`) {
+		log.Println(`ignoring dependabot updates`)
 		return
 	}
 	if w := payload.WorkflowRun; w.Status == `completed` {
