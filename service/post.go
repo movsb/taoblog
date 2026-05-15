@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"slices"
 	"strconv"
@@ -214,28 +213,40 @@ func (s *Service) getPostLink(pid int, k proto.LinkKind) string {
 	}
 }
 
-func (s *Service) OpenAsset(id int64) gold_utils.WebFileSystem {
+func (s *Service) openAsset(id int64) gold_utils.WebFileSystem {
 	return gold_utils.NewWebFileSystem(
-		_OpenPostFile{s: s},
+		_WebRootOpener{s: s},
+		// TODO 这里不知道为什么当时需要用到 Home，按理说应该使用相对路径。
 		utils.Must1(url.Parse(s.getHome())).JoinPath(fmt.Sprintf("/%d/", id)),
 	)
 }
 
-type _OpenPostFile struct {
+type _WebRootOpener struct {
 	s *Service
 }
 
-// 只支持打开 /123/a.txt 这种 URL 对应的文件。
-func (f _OpenPostFile) Open(name string) (fs.File, error) {
+// 理论上支持打开所有网站根目录下的文件。
+func (f _WebRootOpener) Open(name string) (fs.File, error) {
 	before, after, found := strings.Cut(name, `/`)
-	if !found {
-		return nil, os.ErrNotExist
+	// 尝试解析成文章文件。
+	if found {
+		id, err := strconv.Atoi(before)
+		if err == nil {
+			return f.s.postDataFS.ForPost(id).Open(after)
+		}
+		// 可能不是 /id/path，降级为直接请求根服务器。
 	}
-	id, err := strconv.Atoi(before)
-	if err != nil {
-		return nil, err
+	// 其它不认识的路径，尝试直接用网站根服务器打开。
+	// NOTE 这里可以包装成一个独立的方法，其它地方仍然可能用到。
+	if rootURL := f.s.httpServerAddr.Load(); rootURL != nil {
+		url := rootURL.JoinPath(name).String()
+		file, err := utils.OpenURLAsFile(url)
+		if err != nil {
+			return nil, err
+		}
+		return file, nil
 	}
-	return f.s.postDataFS.ForPost(id).Open(after)
+	return nil, fmt.Errorf(`无法打开文件：%s: %w`, name, fs.ErrInvalid)
 }
 
 func (s *Service) getPostContentCached(ctx context.Context, p *proto.Post, co *proto.PostContentOptions) (string, error) {
@@ -1823,7 +1834,7 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 						if img.Parent() != nil && img.Parent().Kind() == ast.KindParagraph && img.NextSibling() == nil && img.PreviousSibling() == nil {
 							u, _ := url.Parse(string(img.Destination))
 							if u != nil && !u.IsAbs() && u.Host == `` && u.Query().Has(`og`) {
-								fp, _ := s.OpenAsset(p.ID).OpenURL(u.String())
+								fp, _ := s.openAsset(p.ID).OpenURL(u.String())
 								if fp != nil {
 									bg = fp
 								}

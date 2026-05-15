@@ -641,6 +641,7 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 	// defer l.Close()
 	s.httpAddr = l.Addr().String()
 	s.httpServer = server
+	s.Main().SetHTTPServerAddr(utils.Must1(url.Parse(`http://` + s.httpAddr)))
 	if s.testing {
 		s.Main().TestingSetHTTPAddr(s.JoinPath())
 	}

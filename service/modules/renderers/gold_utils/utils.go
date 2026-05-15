@@ -38,13 +38,16 @@ func AddClass(node ast.Node, classes ...string) {
 // 场景：前端相对路径链接。
 type WebFileSystem interface {
 	// 比如页面地址是：/page/
-	// 如果 url 是：1.txt，则打开 /page/1.txt
-	// 如果 url 是：/other/2.txt，则打开 /other/2.txt
+	//  * 如果 url 是：1.txt，则打开 /page/1.txt
+	//  * 如果 url 是：sub/2.txt，则打开 /page/sub/2.txt
+	//  * 如果 url 是：/other/2.txt，则打开 /other/2.txt
 	OpenURL(url string) (fs.File, error)
 	// relative: 结果是否只保留相对路径（前提是同源的情况下）。
 	Resolve(url string, relative bool) (*url.URL, error)
 }
 
+// root: 应该为网站根目录。
+// base: 当前页面的 URL。
 func NewWebFileSystem(root fs.FS, base *url.URL) WebFileSystem {
 	return &_WebFileSystem{
 		root: root,

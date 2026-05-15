@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -91,7 +92,13 @@ type Service struct {
 
 	db  *sql.DB
 	tdb *taorm.DB
+
+	// 网站根路由器。
 	mux *http.ServeMux
+	// 网站HTTP服务器地址。
+	// 由于GRPC服务和HTTP服务是独立运行的，有可能GRPC在独立运行但HTTP没有运行，
+	// 所以不能假定HTTP服务器总是存在。
+	httpServerAddr atomic.Pointer[url.URL]
 
 	notifier    proto.NotifyServer
 	userManager *auth.UserManager
@@ -447,6 +454,10 @@ func (s *Service) SetHostStates(ctx context.Context, in *proto.SetHostStatesRequ
 	s.fsAvail.Store(in.Filesystem.Avail)
 	s.sysStatesValid.Store(in.Memory.Total > 0 && in.Filesystem.Total > 0)
 	return &proto.SetHostStatesResponse{}, nil
+}
+
+func (s *Service) SetHTTPServerAddr(addr *url.URL) {
+	s.httpServerAddr.Store(addr)
 }
 
 func (s *Service) CalenderService() *calendar.CalenderService {

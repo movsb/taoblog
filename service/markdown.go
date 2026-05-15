@@ -82,7 +82,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		return ``, fmt.Errorf(`unknown source type`)
 	}
 
-	assets := s.OpenAsset(postId)
+	assets := s.openAsset(postId)
 
 	options := []renderers.Option2{}
 	if postId > 0 {
