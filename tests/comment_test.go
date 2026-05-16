@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -8,6 +9,9 @@ import (
 	"github.com/movsb/taoblog/cmd/server/throttler"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
+	"github.com/movsb/taoblog/service/models"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestPreviewComment(t *testing.T) {
@@ -35,6 +39,70 @@ func TestCreateComment(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), `不能包含`) {
 		t.Fatal(rsp2, err)
 	}
+}
+
+func TestCreateCommentRequiresReadablePost(t *testing.T) {
+	r := Serve(t.Context())
+
+	publicPost := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		Source:     `# public`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusPublic,
+	}))
+	privatePost := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		Source:     `# private`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusPrivate,
+	}))
+	draftPost := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		Source:     `# draft`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusDraft,
+	}))
+	partialPost := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		Source:     `# partial`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusPartial,
+	}))
+
+	comment := func(postID int64) *proto.Comment {
+		return &proto.Comment{
+			PostId:     postID,
+			Author:     `昵称`,
+			Email:      fakeEmailAddress,
+			SourceType: `markdown`,
+			Source:     `test`,
+		}
+	}
+	expectNotFound := func(name string, postID int64, ctx context.Context) {
+		t.Helper()
+		_, err := r.client.Blog.CreateComment(ctx, comment(postID))
+		if status.Code(err) != codes.NotFound {
+			t.Fatalf(`%s: got %v, want NotFound`, name, err)
+		}
+	}
+
+	utils.Must1(r.client.Blog.CreateComment(r.guest, comment(publicPost.Id)))
+	utils.Must1(r.client.Blog.CreateComment(r.user1, comment(privatePost.Id)))
+	utils.Must1(r.client.Blog.CreateComment(r.user1, comment(draftPost.Id)))
+
+	expectNotFound(`guest private`, privatePost.Id, r.guest)
+	expectNotFound(`guest draft`, draftPost.Id, r.guest)
+	expectNotFound(`guest partial`, partialPost.Id, r.guest)
+	expectNotFound(`other private`, privatePost.Id, r.user2)
+	expectNotFound(`other draft`, draftPost.Id, r.user2)
+	expectNotFound(`other partial`, partialPost.Id, r.user2)
+	expectNotFound(`missing post`, 999999, r.guest)
+
+	utils.Must1(r.client.Blog.SetPostACL(r.admin, &proto.SetPostACLRequest{
+		PostId: partialPost.Id,
+		Users: map[int32]*proto.UserPerm{
+			int32(r.user2ID): {
+				Perms: []proto.Perm{proto.Perm_PermRead},
+			},
+		},
+	}))
+	utils.Must1(r.client.Blog.CreateComment(r.user2, comment(partialPost.Id)))
 }
 
 func TestThrottler(t *testing.T) {

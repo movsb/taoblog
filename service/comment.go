@@ -424,6 +424,12 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		c.Modified = int32(now.Unix())
 	}
 
+	post, err := s.GetPost(ctx, &proto.GetPostRequest{Id: int32(c.PostID)})
+	if err != nil {
+		return nil, err
+	}
+	postIsPublic := post.Status == models.PostStatusPublic
+
 	if c.Author == "" {
 		return nil, status.Error(codes.InvalidArgument, `昵称不能为空`)
 	}
@@ -467,7 +473,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	}
 
 	if c.SourceType == `markdown` {
-		if _, err := s.renderMarkdown(ctx, ac.User.IsAdmin(), c.PostID, 0, c.SourceType, c.Source, models.PostMeta{}, co.For(co.CreateCommentCheck), s.isPostPublic(ctx, int(in.PostId))); err != nil {
+		if _, err := s.renderMarkdown(ctx, ac.User.IsAdmin(), c.PostID, 0, c.SourceType, c.Source, models.PostMeta{}, co.For(co.CreateCommentCheck), postIsPublic); err != nil {
 			return nil, err
 		}
 	}
