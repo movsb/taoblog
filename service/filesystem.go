@@ -31,7 +31,7 @@ import (
 func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	user.MustNotBeGuest(srv.Context())
+	ac := user.MustNotBeGuest(srv.Context())
 
 	initialized := false
 
@@ -60,7 +60,10 @@ func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr erro
 		} else if initReq != nil {
 			initialized = true
 			if init := initReq.GetPost(); init != nil {
-				// TODO 没鉴权。
+				// 权限：此接口仅管理员/系统/本人可操作。
+				if !(ac.User.IsAdmin() || ac.User.IsSystem() || utils.Must1(s.getPostCached(srv.Context(), int(init.Id))).UserID == int32(ac.User.ID)) {
+					return status.Error(codes.PermissionDenied, "permission denied")
+				}
 				pfs = s.postDataFS.ForPost(int(init.Id))
 				err = nil
 			}
