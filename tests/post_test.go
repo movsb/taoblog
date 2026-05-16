@@ -193,6 +193,43 @@ func TestListPosts(t *testing.T) {
 	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
 }
 
+func TestSetPostACLDoesNotDeleteOtherPostACL(t *testing.T) {
+	r := Serve(t.Context())
+
+	p1 := utils.Must1(r.client.Blog.CreatePost(r.admin, &proto.Post{
+		Source:     `# p1`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusPartial,
+	}))
+	p2 := utils.Must1(r.client.Blog.CreatePost(r.admin, &proto.Post{
+		Source:     `# p2`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusPartial,
+	}))
+
+	shareToUser1 := map[int32]*proto.UserPerm{
+		int32(r.user1ID): {
+			Perms: []proto.Perm{proto.Perm_PermRead},
+		},
+	}
+	utils.Must1(r.client.Blog.SetPostACL(r.admin, &proto.SetPostACLRequest{
+		PostId: p1.Id,
+		Users:  shareToUser1,
+	}))
+	utils.Must1(r.client.Blog.SetPostACL(r.admin, &proto.SetPostACLRequest{
+		PostId: p2.Id,
+		Users:  shareToUser1,
+	}))
+
+	utils.Must1(r.client.Blog.SetPostACL(r.admin, &proto.SetPostACLRequest{
+		PostId: p1.Id,
+		Users:  map[int32]*proto.UserPerm{},
+	}))
+
+	eq := listPostsEq(r, t)
+	eq(`移除 p1 分享不应影响 p2 分享`, r.user1, proto.Ownership_OwnershipShared, []int64{p2.Id})
+}
+
 // 测试只可访问公开的文章。
 func TestSitemaps(t *testing.T) {
 	r := Serve(t.Context())

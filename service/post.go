@@ -608,6 +608,7 @@ func (s *Service) CreateUntitledPost(ctx context.Context, in *proto.CreateUntitl
 
 // 缓存的是数据库中的完整原始文章数据。
 // 不鉴权。
+// ctx 未使用。
 func (s *Service) getPostCached(ctx context.Context, id int) (*models.Post, error) {
 	p, err, _ := s.postFullCaches.GetOrLoad(ctx, int64(id), func(ctx context.Context, i int64) (*models.Post, time.Duration, error) {
 		var post models.Post
@@ -1596,7 +1597,7 @@ func (s *Service) SetPostACL(ctx context.Context, in *proto.SetPostACLRequest) (
 
 		for _, a := range old {
 			if !slices.Contains(new, a) {
-				s.tdb.From(models.AccessControlEntry{}).Where(`user_id=? AND permission=?`, a.UserID, ps(a.Perm)).MustDelete()
+				s.tdb.From(models.AccessControlEntry{}).Where(`post_id=? AND user_id=? AND permission=?`, in.PostId, a.UserID, ps(a.Perm)).MustDelete()
 			}
 		}
 		for _, b := range new {
