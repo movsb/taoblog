@@ -191,6 +191,19 @@ func TestListPosts(t *testing.T) {
 	eq(`管理员看所有自己有权限看的`, r.admin, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
 	eq(`用户1看所有自己有权限看的`, r.user1, proto.Ownership_OwnershipAll, []int64{pa.Id, p1.Id})
 	eq(`用户2看所有自己有权限看的`, r.user2, proto.Ownership_OwnershipAll, []int64{p1.Id, p2.Id})
+
+	p4 := create(r.user2, &proto.Post{
+		Source:     `# user2 public without ACL`,
+		SourceType: `markdown`,
+		Status:     models.PostStatusPublic,
+	})
+
+	// 当前权限：
+	//
+	// pa → u1, p1 → 公开且曾分享给 u2, p2 → 私有, p4 → 公开且无 ACL
+	eq(`管理员看别人公开和分享的（含无 ACL 公开文章）`, r.admin, proto.Ownership_OwnershipTheir, []int64{p1.Id, p4.Id})
+	eq(`用户1看别人公开和分享的（含无 ACL 公开文章）`, r.user1, proto.Ownership_OwnershipTheir, []int64{pa.Id, p4.Id})
+	eq(`用户2看别人公开和分享的（含无 ACL 公开文章）`, r.user2, proto.Ownership_OwnershipTheir, []int64{p1.Id})
 }
 
 func TestSetPostACLDoesNotDeleteOtherPostACL(t *testing.T) {

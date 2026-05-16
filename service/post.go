@@ -101,7 +101,7 @@ func (s *Service) ListPosts(ctx context.Context, in *proto.ListPostsRequest) (*p
 			)
 		case proto.Ownership_OwnershipTheir:
 			stmt.Select(`distinct posts.*`)
-			stmt.InnerJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
+			stmt.LeftJoin(models.AccessControlEntry{}, `posts.id = acl.post_id`)
 			stmt.Where(
 				`posts.user_id!=? AND (posts.status=? OR (acl.user_id=? AND posts.status = ?))`,
 				ac.User.ID, models.PostStatusPublic, ac.User.ID, models.PostStatusPartial,
