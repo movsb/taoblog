@@ -243,7 +243,10 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 	if !user.Context(r.Context()).User.IsGuest() {
 		to := a.prefixed(`/profile`)
 		if u := r.URL.Query().Get(`u`); u != "" {
-			to = u
+			// 只允许重定向到本站的路径，防止被利用进行钓鱼攻击。
+			if pu, err := urlpkg.Parse(u); err == nil && pu.Scheme == `` && pu.Host == `` {
+				to = u
+			}
 		}
 		http.Redirect(w, r, to, http.StatusFound)
 		return
@@ -539,6 +542,7 @@ func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 		catsRsp, err := a.svc.ListCategories(r.Context(), &proto.ListCategoriesRequest{})
 		if err != nil {
 			utils.HTTPError(w, 400)
+			return
 		}
 		d := EditorData{
 			User: ac.User,
