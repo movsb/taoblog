@@ -36,6 +36,7 @@ func Get(ctx context.Context, email string) (_ *http.Response, outErr error) {
 	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodGet, u, nil))
 	resp := utils.Must1(http.DefaultClient.Do(req))
 	if resp.StatusCode != 200 {
+		resp.Body.Close()
 		return nil, errors.New(`statusCode != 200`)
 	}
 	defer resp.Body.Close()
@@ -54,6 +55,7 @@ func Get(ctx context.Context, email string) (_ *http.Response, outErr error) {
 	case 200:
 		return resp, nil
 	default:
+		resp.Body.Close()
 		return nil, errors.New(`statusCode != 200`)
 	}
 }

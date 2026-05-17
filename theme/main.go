@@ -292,7 +292,6 @@ func (t *Theme) QueryByID(w http.ResponseWriter, r *http.Request, id int64) {
 			http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
 			return
 		}
-		return
 	}
 
 	t.incViewDebouncer.Increase(int(p.Id))

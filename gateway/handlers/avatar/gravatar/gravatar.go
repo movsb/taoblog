@@ -100,6 +100,7 @@ func get(ctx context.Context, endpoint string, hash string) (*http.Response, err
 	case 200:
 		return resp, nil
 	default:
+		resp.Body.Close()
 		return nil, fmt.Errorf(`statusCode != 200: %s, %s`, u, resp.Status)
 	}
 }

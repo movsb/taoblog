@@ -50,7 +50,7 @@ func (s *Space) replace(root *html.Node) {
 			// 简单只处理空格(0x20)和换行。
 			allSpaces := func(s string) bool {
 				for i := 0; i < len(s); i++ {
-					if s[i] != 0x20 && s[i] != 0x10 {
+					if s[i] != 0x20 && s[i] != 0x0a {
 						return false
 					}
 				}

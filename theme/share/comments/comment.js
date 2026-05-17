@@ -633,7 +633,7 @@ class CommentManager {
 			const inputs = (selectors => selectors.map(selector => document.querySelector(`#comment-form .fields ${selector}`)))([
 				'input[name=author]',
 				'input[name=email]',
-				'input[name=url',
+				'input[name=url]',
 			]);
 			let allowEditingInfo = options.allowEditingInfo ?? true;
 			inputs.forEach(input => input.style.display = allowEditingInfo ? 'block' : 'none');

@@ -160,6 +160,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 	// 1. 同 IP 的游客五分钟内允许
 	// 2. 管理员允许
 	// 3. 其它登录用户五分钟内
+	// BUG 任意登录用户可修改任意游客评论。
 	allowEdit := (ac.User.IsGuest() && ac.RemoteAddr.String() == cmtOld.IP && in5min(cmtOld.Date)) ||
 		ac.User.IsAdmin() ||
 		!ac.User.IsGuest() && in5min(cmtOld.Date)
@@ -168,6 +169,7 @@ func (s *Service) UpdateComment(ctx context.Context, req *proto.UpdateCommentReq
 	}
 
 	// 其他已登录用户只能改自己创建的
+	// BUG 任意登录用户可修改任意游客评论。
 	if !ac.User.IsGuest() && !ac.User.IsAdmin() && cmtOld.UserID > 0 && ac.User.ID != int64(cmtOld.UserID) {
 		return nil, status.Error(codes.PermissionDenied, `不能编辑非由自己创建的评论`)
 	}
@@ -433,14 +435,14 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	if c.Author == "" {
 		return nil, status.Error(codes.InvalidArgument, `昵称不能为空`)
 	}
-	if utf8.RuneCountInString(c.Author) >= maxNicknameLen {
+	if utf8.RuneCountInString(c.Author) > maxNicknameLen {
 		return nil, status.Errorf(codes.InvalidArgument, `昵称太长（最长 %d 个字符）`, maxNicknameLen)
 	}
 
 	if !utils.IsEmail(c.Email) {
 		return nil, status.Errorf(codes.InvalidArgument, `邮箱格式不正确`)
 	}
-	if utf8.RuneCountInString(c.Email) >= maxEmailLen {
+	if utf8.RuneCountInString(c.Email) > maxEmailLen {
 		return nil, status.Errorf(codes.InvalidArgument, `邮箱太长（最长 %d 个字符）`, maxEmailLen)
 	}
 
@@ -452,7 +454,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 			return nil, status.Errorf(codes.InvalidArgument, `网址格式不正确`)
 		}
 	}
-	if utf8.RuneCountInString(c.URL) >= maxUrlLen {
+	if utf8.RuneCountInString(c.URL) > maxUrlLen {
 		return nil, status.Errorf(codes.InvalidArgument, `网址太长（最长 %d 个字符）`, maxUrlLen)
 	}
 
@@ -462,7 +464,7 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	if strings.TrimSpace(c.Source) == "" {
 		return nil, status.Error(codes.InvalidArgument, `评论内容不能为空`)
 	}
-	if utf8.RuneCountInString(c.Source) >= maxContentLen {
+	if utf8.RuneCountInString(c.Source) > maxContentLen {
 		return nil, status.Error(codes.InvalidArgument, `评论内容太长`)
 	}
 

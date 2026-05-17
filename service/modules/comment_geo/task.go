@@ -175,6 +175,7 @@ func fetch(ctx context.Context, ip string) (*Resp, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rsp.Body.Close()
 	if rsp.StatusCode != 200 {
 		return nil, fmt.Errorf(`status code = %d != 200`, rsp.StatusCode)
 	}

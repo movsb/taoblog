@@ -44,7 +44,7 @@ class GeoLink extends HTMLElement {
 		} else if (isAndroid) {
 			a.href = `geo:${lat},${lon}`;
 		} else {
-			const url = china
+			const url = maybeChina
 				? `https://uri.amap.com/marker?position=${lon},${lat}`
 				// t=k：卫星图，ChatGPT 说的，谷歌官方没找到文档。
 				: `https://www.google.com/maps?q=${lat},${lon}&t=k`

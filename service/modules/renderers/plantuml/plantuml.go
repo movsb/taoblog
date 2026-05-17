@@ -38,6 +38,7 @@ func fetch(ctx context.Context, server, format, compressed string, darkMode bool
 	if err != nil {
 		return nil, err
 	}
+	defer rsp.Body.Close()
 	// 就算是错，也有错误的 body as svg
 	// if rsp.StatusCode != 200 {
 	// 	return nil, err
