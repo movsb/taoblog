@@ -1049,8 +1049,16 @@ class DrawioEditor extends HTMLElement {
 	 * @returns 
 	 */
 	_messageHandler = async (e) => {
+		if (e.origin !== 'https://embed.diagrams.net') {
+			return;
+		}
 		console.log('收到消息：', e);
-		const m = JSON.parse(e.data);
+		let m;
+		try {
+			m = JSON.parse(e.data);
+		} catch {
+			return;
+		}
 		if(m.event == 'configure') {
 			e.source.postMessage(JSON.stringify({
 				action: 'configure',
@@ -1751,7 +1759,7 @@ class PostFormUI {
 				name: 'dirty',
 				id: TaoBlog.post_id,
 				dirty: b,
-			}, '*');
+			}, window.location.origin);
 		}
 	}
 
@@ -1885,7 +1893,7 @@ class PostFormUI {
 					id: id,
 					title: post.title,
 					updatedAt: post.modified,
-				}, '*');
+				}, window.location.origin);
 			}
 		} catch (e) {
 			this.setPreview(e, false);
