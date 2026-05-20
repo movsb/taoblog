@@ -45,7 +45,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/movsb/taoblog/service/modules/renderers/tables"
 	"github.com/movsb/taoblog/service/modules/renderers/task_list"
-	"github.com/movsb/taoblog/service/modules/renderers/typesetting"
 
 	assetsParser "github.com/movsb/taoblog/service/modules/renderers/assets"
 
@@ -137,7 +136,9 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		colors.New(),
 		blur_image.New(assets),
 		auto_image_border.New(assets),
-		typesetting.NewSpace(),
+		// 测试起来没问题，但是目前只支持了空格处理，所以暂时先关闭。
+		// 等到“Han.js”多数兼容了再说。
+		// typesetting.NewSpace(),
 
 		page_link.New(ctx, s.getPostTitle, nil),
 
