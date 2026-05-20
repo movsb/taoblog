@@ -538,6 +538,8 @@ func (s *Service) SetCommentPostID(ctx context.Context, in *proto.SetCommentPost
 			})
 		txs.updatePostCommentCount(cmt.PostID, time.Now())
 		txs.updatePostCommentCount(in.PostId, time.Now())
+		txs.deletePostContentCacheFor(in.PostId)
+		txs.deletePostContentCacheFor(cmt.PostID)
 		log.Printf("Transferred comments %d to post %d", cmt.ID, in.PostId)
 		return nil
 	})

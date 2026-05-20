@@ -95,7 +95,7 @@ func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 		}
 	}
 
-	rows.Close()
+	defer rows.Close()
 
 	rows, err = s.tdb.Query(sql2, sids)
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *Service) getAliasTagsAll(ids []int64) []int64 {
 		ids = append(ids, id)
 	}
 
-	rows.Close()
+	defer rows.Close()
 
 	return ids
 }

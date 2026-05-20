@@ -192,6 +192,7 @@ func (s *Service) backupSQLite3(ctx context.Context, progress func(percentage fl
 					}
 				}
 
+				// 数据库不会为空，所以 total 不会是 0。
 				if err := progress(1 - float32(remaining)/float32(total)); err != nil {
 					return err
 				}

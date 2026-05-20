@@ -268,6 +268,7 @@ func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64
 	// 仅系统和本人可以访问特殊文件：以 . 或者 _ 开头的文件或目录。
 	// 注意：分享用户也无法访问。
 	if !(ac.User.IsSystem() || ac.User.ID == int64(p.UserID)) {
+		// file：不为空，且可以认为是 Clean 过的，不包含 // 等无效的东西。
 		for part := range strings.SplitSeq(file, `/`) {
 			if part[0] == '.' || part[0] == '_' {
 				http.Error(w, `尝试访问不允许访问的文件。`, http.StatusForbidden)
