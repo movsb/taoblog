@@ -94,10 +94,10 @@ type _Info struct {
 func (info _Info) ExpiryStatus() string {
 	var a []string
 	if d := info.proto.CertDaysLeft; d > 0 {
-		a = append(a, fmt.Sprintf(`证书有效期剩余%d天`, d))
+		a = append(a, fmt.Sprintf(`证书有效期%d天`, d))
 	}
 	if d := info.proto.DomainDaysLeft; d > 0 {
-		a = append(a, fmt.Sprintf(`域名有效期剩余%d天`, d))
+		a = append(a, fmt.Sprintf(`域名有效期%d天`, d))
 	}
 	if len(a) == 0 {
 		return ``

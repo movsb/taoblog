@@ -29,10 +29,11 @@ function redirect(to) {
 </head>
 <body class="admin login">
 <div id="wrapper">
-<h1><a href="/">{{ .Name }} - 登录</a></h1>
+<div><img id=logo src="/favicon.ico"></div>
+<h1><a href="/">{{ .Name }}</a></h1>
 <div class="passkeys">
 	<button onclick="webauthn()">
-		通行密钥 / WebAuthn
+		使用通行密钥登录
 	</button>
 	<p><a style="color: inherit; font-size: 80%; cursor: pointer;" onclick="toggleOthers();">其它登录方式</a></p>
 	<script>

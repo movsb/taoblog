@@ -6,9 +6,9 @@
 	> img, > div {
 		box-sizing: border-box;
 		border: 1px solid var(--border-color);
-		border-radius: var(--border-radius);
-		object-fit: cover; // 针对 img
-		margin: unset; // 针对 live photo
+		border-radius: unset;   // 看起来不太好看，先去掉。
+		object-fit: cover;      // 针对 img
+		margin: unset;          // 针对 live photo
 	}
 
 	// 内部的，比如实况，不应该加圆角。

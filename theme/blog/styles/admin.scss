@@ -74,6 +74,13 @@ body.admin.login {
 	@media (prefers-color-scheme: dark) {
 		background-color: var(--color-bg);
 	}
+	#logo {
+		display: block;
+		width: 80px;
+		height: 80px;
+		border-radius: 50%;
+		margin: 0 auto 1em;
+	}
 	#wrapper {
 		background-color: var(--color-bg);
 		border: 1px solid var(--border-color);
