@@ -111,7 +111,7 @@ func (b *Backup) BackupPosts(ctx context.Context) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 	bb := begin.NewBackupClient(b.client)
 	wc := utils.Must1(b.createWriter())
-	utils.Must(bb.Backup(wc.Writer()))
+	utils.Must(bb.BackupDatabase(wc.Writer()))
 	r, di := utils.Must2(wc.Close())
 
 	// 1, 2, 3... 循环命名。

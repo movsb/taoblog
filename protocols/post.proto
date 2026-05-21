@@ -428,55 +428,30 @@ message ListPostFilesResponse {
 	repeated FileSpec files = 1;
 }
 
-message FileSystemRequest {
-	message InitRequest {
-		message Post {
-			int64 id = 1;
-		}
-		oneof For {
-			Post post = 1;
-		}
-	}
+// 获取指定路径的文件内容。
+// 
+// 文件元数据理论上已经由其它接口获取到了。
+message GetPostFileStreamRequest {
+	int32 post_id = 1;
+	string path = 2;
+}
 
-	InitRequest init = 1;
+message GetPostFileStreamResponse {
+	// 文件内容。
+	// 当 data 为空时，表示文件结束。
+	bytes data = 1;
+}
 
-	message ListFilesRequest {}
-	message ReadFileRequest {
-		string path = 1;
+message CreatePostFileStreamRequest {
+	message PostFileSpec {
+		int32 post_id = 1;
+		FileSpec spec = 2;
 	}
-	message WriteFileRequest {
-		FileSpec spec = 1;
-		bytes data = 2;
-	}
-	message DeleteFileRequest {
-		string path = 1;
-	}
-	oneof Request {
-		ListFilesRequest list_files = 10;
-		WriteFileRequest write_file = 11;
-		DeleteFileRequest delete_file = 12;
-		ReadFileRequest read_file = 13;
+	oneof Payload {
+		PostFileSpec post_file_spec = 1;
+		// 当 data 为空时表示文件结束。
+		bytes data = 7;
 	}
 }
 
-message FileSystemResponse {
-	message InitResponse{}
-	
-	InitResponse init = 1;
-	
-	message ListFilesResponse {
-		repeated FileSpec files = 1;
-	}
-	message WriteFileResponse { }
-	message DeleteFileResponse { }
-	message ReadFileResponse {
-		bytes data = 1;
-	}
-
-	oneof Response {
-		ListFilesResponse list_files = 10;
-		WriteFileResponse write_file = 11;
-		DeleteFileResponse delete_file = 12;
-		ReadFileResponse read_file = 13;
-	}
-}
+message CreatePostFileStreamResponse {}

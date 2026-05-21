@@ -3,6 +3,7 @@ package assets
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"mime"
@@ -35,12 +36,12 @@ var jsonPB = &runtime.JSONPb{
 
 func CreateFile(client *clients.ProtoClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		spec, options, data, fsc, ok := readRequest(client, w, r)
+		pid, spec, options, reader, fsc, ok := readRequest(client, w, r)
 		if !ok {
 			return
 		}
 
-		spec, err := single(fsc, spec, data, options)
+		spec, err := single(fsc, pid, spec, reader, options)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -52,7 +53,7 @@ func CreateFile(client *clients.ProtoClient) http.Handler {
 	})
 }
 
-func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Request) (_ *proto.FileSpec, _ Options, _ io.ReadCloser, _ proto.Management_FileSystemClient, _ bool) {
+func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Request) (_ int32, _ *proto.FileSpec, _ Options, _ io.ReadCloser, _ proto.TaoBlog_CreatePostFileStreamClient, _ bool) {
 	ac := user.Context(r.Context())
 	id := utils.Must1(strconv.Atoi(r.PathValue(`id`)))
 	po, err := client.Blog.GetPost(
@@ -76,22 +77,11 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	fsc, err := client.Management.FileSystem(user.ForwardRequestContext(r))
+	fsc, err := client.Blog.CreatePostFileStream(user.ForwardRequestContext(r))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	utils.Must(fsc.Send(&proto.FileSystemRequest{
-		Init: &proto.FileSystemRequest_InitRequest{
-			For: &proto.FileSystemRequest_InitRequest_Post_{
-				Post: &proto.FileSystemRequest_InitRequest_Post{
-					Id: int64(id),
-				},
-			},
-		},
-	}))
-	utils.Must1(fsc.Recv())
 
 	r.Body = http.MaxBytesReader(w, r.Body, 101<<20)
 
@@ -115,16 +105,16 @@ func readRequest(client *clients.ProtoClient, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	data, _, err := r.FormFile(`data`)
+	reader, _, err := r.FormFile(`data`)
 	if err != nil {
 		utils.HTTPError(w, http.StatusBadRequest)
 		return
 	}
 
-	return spec, options, data, fsc, true
+	return int32(id), spec, options, reader, fsc, true
 }
 
-func single(fsc proto.Management_FileSystemClient, spec *proto.FileSpec, data io.ReadCloser, options Options) (*proto.FileSpec, error) {
+func single(fsc proto.TaoBlog_CreatePostFileStreamClient, pid int32, spec *proto.FileSpec, data io.ReadCloser, options Options) (*proto.FileSpec, error) {
 	if spec.Type == `` {
 		spec.Type = mime.TypeByExtension(path.Ext(spec.Path))
 		if spec.Type == `` {
@@ -175,15 +165,38 @@ func single(fsc proto.Management_FileSystemClient, spec *proto.FileSpec, data io
 
 	defer data.Close()
 
-	utils.Must(fsc.Send(&proto.FileSystemRequest{
-		Request: &proto.FileSystemRequest_WriteFile{
-			WriteFile: &proto.FileSystemRequest_WriteFileRequest{
-				Spec: spec,
-				Data: utils.Must1(io.ReadAll(data)),
+	// 先写元数据，再写数据流。
+	if err := fsc.Send(&proto.CreatePostFileStreamRequest{
+		Payload: &proto.CreatePostFileStreamRequest_PostFileSpec_{
+			PostFileSpec: &proto.CreatePostFileStreamRequest_PostFileSpec{
+				PostId: pid,
+				Spec:   spec,
 			},
 		},
-	}))
-	if _, err := fsc.Recv(); err != nil {
+	}); err != nil {
+		return nil, err
+	}
+	buf := make([]byte, 32<<10)
+	for {
+		n, err := data.Read(buf)
+		if n > 0 || errors.Is(err, io.EOF) {
+			if err := fsc.Send(&proto.CreatePostFileStreamRequest{
+				Payload: &proto.CreatePostFileStreamRequest_Data{Data: buf[:n]},
+			}); err != nil {
+				fsc.CloseSend()
+				return nil, err
+			}
+		}
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			fsc.CloseSend()
+			return nil, err
+		}
+	}
+
+	if _, err := fsc.CloseAndRecv(); err != nil {
 		return nil, err
 	}
 

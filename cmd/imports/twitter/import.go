@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/movsb/taoblog/cmd/client"
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -101,13 +100,14 @@ func (i *Importer) Execute(withoutAssets bool) error {
 			images, videos := tweet.Assets(true)
 
 			hi := HiResImages{backend: tweetsMedia, found: map[string]string{}}
-			client.UploadPostFiles(i.client, post.Id, &hi, images)
+			_, _ = hi, images
+			panic("client.UploadPostFiles(i.client, post.Id, &hi, images)")
 
 			videoNames := make([]string, 0, len(videos))
 			for _, v := range videos {
 				videoNames = append(videoNames, v.FileName)
 			}
-			client.UploadPostFiles(i.client, post.Id, tweetsMedia, videoNames)
+			panic("client.UploadPostFiles(i.client, post.Id, tweetsMedia, videoNames)")
 		}
 	}
 

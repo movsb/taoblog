@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -28,112 +26,85 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) FileSystem(srv proto.Management_FileSystemServer) (outErr error) {
+func (s *Service) CreatePostFileStream(srv proto.TaoBlog_CreatePostFileStreamServer) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+	ac := user.MustNotBeGuest(srv.Context())
+	first, err := srv.Recv()
+	if err != nil {
+		return err
+	}
+	spec := first.GetPostFileSpec()
+	if spec == nil {
+		return status.Error(codes.InvalidArgument, `missing file spec`)
+	}
+	po := utils.Must1(s.getPostCached(srv.Context(), int(spec.PostId)))
+	if !(ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+		panic(noPerm)
+	}
+
+	utils.Must(utils.Write(s.postDataFS.ForPost(int(spec.PostId)), spec.Spec, &_FileReader{s: srv}))
+
+	return nil
+}
+
+type _FileReader struct {
+	s   proto.TaoBlog_CreatePostFileStreamServer
+	d   []byte
+	eof bool
+}
+
+func (r *_FileReader) Read(p []byte) (outN int, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	ac := user.MustNotBeGuest(srv.Context())
+	if len(r.d) == 0 {
+		if r.eof {
+			return 0, io.EOF
+		}
+		rsp := utils.Must1(r.s.Recv())
+		// 可以保留指针吗？
+		r.d = rsp.GetData()
+		r.eof = len(r.d) == 0
+	}
 
-	initialized := false
+	if r.eof {
+		r.s.SendAndClose(&proto.CreatePostFileStreamResponse{})
+		return 0, io.EOF
+	}
 
-	var pfs fs.FS
+	n := copy(p, r.d)
+	r.d = r.d[n:]
+	return n, nil
+}
 
+func (s *Service) GetPostFileStream(in *proto.GetPostFileStreamRequest, stream proto.TaoBlog_GetPostFileStreamServer) (outErr error) {
+	defer utils.CatchAsError(&outErr)
+
+	ac := user.MustNotBeGuest(stream.Context())
+	po := utils.Must1(s.getPostCached(stream.Context(), int(in.PostId)))
+	if !(ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+		panic(noPerm)
+	}
+
+	pfs := s.postDataFS.ForPost(int(in.PostId))
+	f := utils.Must1(pfs.Open(in.Path))
+	defer f.Close()
+
+	buf := make([]byte, 32<<10)
 	for {
-		req, err := srv.Recv()
+		n, err := f.Read(buf)
+		// EOF 写空表示结束。
+		if n > 0 || errors.Is(err, io.EOF) {
+			if err := stream.Send(&proto.GetPostFileStreamResponse{
+				Data: buf[:n],
+			}); err != nil {
+				return err
+			}
+		}
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
-			if st, ok := status.FromError(err); ok && st.Code() == codes.Canceled {
-				return nil
-			}
-			log.Println(`接收消息失败：`, err)
 			return err
-		}
-
-		initReq := req.GetInit()
-		if !initialized && initReq == nil {
-			log.Println(`没收到初始化消息。`)
-			return status.Error(codes.FailedPrecondition, "not init")
-		} else if initialized && initReq != nil {
-			log.Println(`重复初始化。`)
-			return status.Error(codes.Aborted, "re-init")
-		} else if initReq != nil {
-			initialized = true
-			if init := initReq.GetPost(); init != nil {
-				// 权限：此接口仅管理员/系统/本人可操作。
-				if !(ac.User.IsAdmin() || ac.User.IsSystem() || utils.Must1(s.getPostCached(srv.Context(), int(init.Id))).UserID == int32(ac.User.ID)) {
-					return status.Error(codes.PermissionDenied, "permission denied")
-				}
-				pfs = s.postDataFS.ForPost(int(init.Id))
-				err = nil
-			}
-			if err != nil {
-				return status.Error(codes.Internal, err.Error())
-			}
-			if pfs == nil {
-				return status.Error(codes.InvalidArgument, "unknown file system to operate")
-			}
-			if err := srv.Send(&proto.FileSystemResponse{
-				Init: &proto.FileSystemResponse_InitResponse{},
-			}); err != nil {
-				return err
-			}
-			continue
-		}
-
-		if pfs == nil {
-			return status.Error(codes.Internal, "not init")
-		}
-
-		if list := req.GetListFiles(); list != nil {
-			files, err := utils.ListFiles(pfs)
-			if err != nil {
-				if !errors.Is(err, fs.ErrNotExist) {
-					return err
-				}
-			}
-			if err = srv.Send(&proto.FileSystemResponse{
-				Response: &proto.FileSystemResponse_ListFiles{
-					ListFiles: &proto.FileSystemResponse_ListFilesResponse{
-						Files: files,
-					},
-				},
-			}); err != nil {
-				return err
-			}
-		} else if write := req.GetWriteFile(); write != nil {
-			if err := utils.Write(pfs, write.Spec, bytes.NewReader(write.Data)); err != nil {
-				log.Println(err)
-				return err
-			}
-			if err = srv.Send(&proto.FileSystemResponse{
-				Response: &proto.FileSystemResponse_WriteFile{
-					WriteFile: &proto.FileSystemResponse_WriteFileResponse{},
-				},
-			}); err != nil {
-				log.Println(err)
-				return err
-			}
-		} else if delete := req.GetDeleteFile(); delete != nil {
-			if err := utils.Delete(pfs, delete.Path); err != nil {
-				return err
-			}
-			if err = srv.Send(&proto.FileSystemResponse{
-				Response: &proto.FileSystemResponse_DeleteFile{
-					DeleteFile: &proto.FileSystemResponse_DeleteFileResponse{},
-				},
-			}); err != nil {
-				return err
-			}
-		} else if read := req.GetReadFile(); read != nil {
-			r := utils.Must1(pfs.Open(read.Path))
-			utils.Must(srv.Send(&proto.FileSystemResponse{
-				Response: &proto.FileSystemResponse_ReadFile{
-					ReadFile: &proto.FileSystemResponse_ReadFileResponse{
-						Data: utils.Must1(io.ReadAll(r)),
-					},
-				},
-			}))
 		}
 	}
 }
@@ -143,7 +114,7 @@ func (s *Service) DeletePostFile(ctx context.Context, in *proto.DeletePostFileRe
 
 	ac := user.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
-	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+	if !(ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		panic(noPerm)
 	}
 
@@ -163,7 +134,7 @@ func (s *Service) UpdateFileCaption(ctx context.Context, in *proto.UpdateFileCap
 
 	ac := user.MustNotBeGuest(ctx)
 	po := utils.Must1(s.getPostCached(ctx, int(in.PostId)))
-	if !(ac.User.IsAdmin() || ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
+	if !(ac.User.IsSystem() || ac.User.ID == int64(po.UserID)) {
 		panic(noPerm)
 	}
 
@@ -241,7 +212,7 @@ func (s *Service) RegisterFileURLGetter(name string, g theme_fs.FileURLGetter) {
 }
 
 func (s *Service) ServeFile(w http.ResponseWriter, r *http.Request, postID int64, file string, localOnly bool) {
-	// 此处没有鉴权。
+	// 此处不鉴权。
 	p := utils.Must1(s.getPostCached(r.Context(), int(postID)))
 
 	// 此处鉴权。

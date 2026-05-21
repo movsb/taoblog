@@ -133,14 +133,6 @@ service Management {
 		};
 	}
 
-	// 文件系统管理：期允许管理的对象：文章附件、评论附件、备份文件、根目录等。
-	// TODO：合并上述 BackupFiles 接口、Backup 接口。
-	rpc FileSystem(stream FileSystemRequest) returns (stream FileSystemResponse) {
-		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-			description: "文件管理。";
-		};
-	}
-
 	// 启动重启任务。
 	// NOTE：实际上只是退出，借助于 docker 的自动重启容器，所以相当于重启。
 	rpc Restart(RestartRequest) returns (RestartResponse) {}
@@ -311,6 +303,9 @@ service TaoBlog {
 			description: "删除文件。";
 		};
 	}
+	// 列举文章附件列表。
+	//
+	// 如果文件系统被重载/不支持列表，可能会返回空列表。
 	rpc ListPostFiles (ListPostFilesRequest) returns (ListPostFilesResponse) {
 		option (google.api.http) = {
 			get: "/v3/posts/{post_id=*}/files";
@@ -326,6 +321,17 @@ service TaoBlog {
 		};
 		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
 			description: "更新文件说明。";
+		};
+	}
+	// 因为HTTP对流式支持不好（grpc-gateway 支持），所以暂时没有HTTP接口。
+	rpc GetPostFileStream (GetPostFileStreamRequest) returns (stream GetPostFileStreamResponse) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "流式获取文件内容。";
+		};
+	}
+	rpc CreatePostFileStream (stream CreatePostFileStreamRequest) returns (CreatePostFileStreamResponse) {
+		option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+			description: "流式创建文件。";
 		};
 	}
 

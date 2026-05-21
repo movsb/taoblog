@@ -1,10 +1,7 @@
 package begin
 
 import (
-	"bytes"
 	"io"
-	"log"
-	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -22,7 +19,7 @@ func NewBackupClient(cc *clients.ProtoClient) *BackupClient {
 	}
 }
 
-func (b *BackupClient) Backup(w io.Writer) (outErr error) {
+func (b *BackupClient) BackupDatabase(w io.Writer) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
 	client := utils.Must1(b.cc.Management.Backup(
@@ -62,57 +59,53 @@ func (r *_BackupProgressReader) Read(p []byte) (outN int, outErr error) {
 func (b *BackupClient) BackupFiles(postID int, writeFile func(spec *proto.FileSpec, r io.Reader) error) (outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	client := utils.Must1(b.cc.Management.FileSystem(b.cc.Context()))
-	defer client.CloseSend()
-
-	utils.Must(client.Send(&proto.FileSystemRequest{
-		Init: &proto.FileSystemRequest_InitRequest{
-			For: &proto.FileSystemRequest_InitRequest_Post_{
-				Post: &proto.FileSystemRequest_InitRequest_Post{
-					Id: int64(postID),
-				},
-			},
+	fileList := utils.Must1(b.cc.Blog.ListPostFiles(
+		b.cc.Context(),
+		&proto.ListPostFilesRequest{
+			PostId:             int32(postID),
+			WithGenerated:      true,
+			WithLivePhotoVideo: true,
 		},
-	}))
-	if utils.Must1(client.Recv()).GetInit() == nil {
-		log.Panicln(`文件系统初始化失败。`)
-	}
+	)).GetFiles()
 
-	utils.Must(client.Send(&proto.FileSystemRequest{
-		Request: &proto.FileSystemRequest_ListFiles{
-			ListFiles: &proto.FileSystemRequest_ListFilesRequest{},
-		},
-	}))
-
-	rsp, err := client.Recv()
-	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), `unimplemented`) {
-			return nil
-		}
-		log.Panicln(`请求文件列表失败：`, err)
-	}
-
-	files := rsp.GetListFiles().GetFiles()
-	for _, file := range files {
-		utils.Must(writeFile(file, utils.Must1(_NewFileRead(client, file.Path))))
+	for _, spec := range fileList {
+		func(spec *proto.FileSpec) {
+			client := utils.Must1(b.cc.Blog.GetPostFileStream(b.cc.Context(), &proto.GetPostFileStreamRequest{
+				PostId: int32(postID),
+				Path:   spec.Path,
+			}))
+			defer client.CloseSend()
+			utils.Must(writeFile(spec, &_FileReader{c: client}))
+		}(spec)
 	}
 
 	return nil
 }
 
 type _FileReader struct {
-	io.Reader
+	c   proto.TaoBlog_GetPostFileStreamClient
+	d   []byte
+	eof bool
 }
 
-func _NewFileRead(client proto.Management_FileSystemClient, path string) (_ *_FileReader, outErr error) {
+func (r *_FileReader) Read(p []byte) (outN int, outErr error) {
 	defer utils.CatchAsError(&outErr)
-	utils.Must(client.Send(&proto.FileSystemRequest{
-		Request: &proto.FileSystemRequest_ReadFile{
-			ReadFile: &proto.FileSystemRequest_ReadFileRequest{
-				Path: path,
-			},
-		},
-	}))
-	data := utils.Must1(client.Recv()).GetReadFile().Data
-	return &_FileReader{Reader: bytes.NewReader(data)}, nil
+
+	if len(r.d) == 0 {
+		if r.eof {
+			return 0, io.EOF
+		}
+		rsp := utils.Must1(r.c.Recv())
+		// 可以保留指针吗？
+		r.d = rsp.GetData()
+		r.eof = len(r.d) == 0
+	}
+
+	if r.eof {
+		return 0, io.EOF
+	}
+
+	n := copy(p, r.d)
+	r.d = r.d[n:]
+	return n, nil
 }

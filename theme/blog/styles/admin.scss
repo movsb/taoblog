@@ -317,7 +317,7 @@ body.admin.editor {
 		}
 	}
 	dialog[name="file-manager"] {
-		$buttons-width: 80px;
+		$buttons-width: 90px;
 
 		// 边框*2 + 边距*2 + gap + .buttons + img*4 + img-padding*2*4 + img-margin*2*4
 		width: calc(1px*2 + 10px*2 + 10px + $buttons-width + 80px*4 + 4px*2*4 + 2px*2*4);
