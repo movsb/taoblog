@@ -165,13 +165,7 @@ func (c *MaintenanceBackupsSyncConfig) BeforeSet(paths Segments, obj any) error 
 	return nil
 }
 
-type MaintenanceBackupsRemoteConfig struct {
-}
-
 type MaintenanceBackupsRemoteR2Config struct {
-	// 临时放这儿。
-	AgeKey string `yaml:"age_key"`
-
 	OSSConfigWithEnabled `yaml:",inline"`
 }
 

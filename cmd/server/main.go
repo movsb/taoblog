@@ -416,7 +416,6 @@ func (s *Server) createBackupTasks(
 		b := utils.Must1(backups.New(
 			ctx, s.main.GetPluginStorage(`backups.r2`), client,
 			backups.WithRemoteOSS(`r2`, &r2.OSSConfig),
-			backups.WithEncoderAge(r2.AgeKey),
 		))
 
 		execute := func() {

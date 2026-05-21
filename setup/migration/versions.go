@@ -935,3 +935,21 @@ func v71(posts, files, cache *taorm.DB) {
 	posts.MustExec(`DELETE FROM options where name = 'site.sync.r2:last'`)
 	posts.MustExec(`DELETE FROM options where name = 'site.sync.minio:last'`)
 }
+
+func v72(posts, files, cache *taorm.DB) {
+	var value string
+	if err := posts.Raw(`SELECT value FROM options WHERE name='maintenance.backups.r2'`).Find(&value); err != nil && !taorm.IsNotFoundError(err) {
+		panic(err)
+	}
+	if value != `` {
+		m := map[string]any{}
+		utils.Must(json.Unmarshal([]byte(value), &m))
+		ageKey, _ := m[`AgeKey`].(string)
+		delete(m, `AgeKey`)
+		by := utils.Must1(json.Marshal(m))
+		posts.MustExec(`UPDATE options SET value=? WHERE name='maintenance.backups.r2'`, string(by))
+		if ageKey != `` {
+			posts.MustExec(`INSERT INTO options (name,value) VALUES (?,?)`, `backups.r2:age_key`, ageKey)
+		}
+	}
+}

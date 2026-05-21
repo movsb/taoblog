@@ -23,3 +23,9 @@ func NewAge(identity string, w io.Writer) (_ EncodeDecoder, outErr error) {
 	ew := utils.Must1(age.Encrypt(w, ident.Recipient()))
 	return &Age{WriteCloser: ew}, nil
 }
+
+// 生成一个全新的 Age Key，类型为 X25519。
+func NewAgeKey() string {
+	id := utils.Must1(age.GenerateX25519Identity())
+	return id.String()
+}

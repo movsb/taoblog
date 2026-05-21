@@ -42,12 +42,6 @@ func WithRemoteOSS(provider string, cfg *config.OSSConfig) Option {
 	}
 }
 
-func WithEncoderAge(identity string) Option {
-	return func(b *Backup) {
-		b.identity = identity
-	}
-}
-
 // NOTE: grpc stream 无法直接使用 Server，只能从地址注册 client 使用
 // NOTE：然而 storage 又是本地进程的。
 func New(ctx context.Context, store utils.PluginStorage, client *clients.ProtoClient, options ...Option) (outB *Backup, outErr error) {
@@ -67,8 +61,11 @@ func New(ctx context.Context, store utils.PluginStorage, client *clients.ProtoCl
 		panic(`没有指定存储后端。`)
 	}
 
+	// 首行运行时自动生成。
+	b.identity = utils.Must1(store.GetStringDefault(`age_key`, ``))
 	if b.identity == `` {
-		panic(`没有指定私钥。`)
+		b.identity = backups_crypto.NewAgeKey()
+		utils.Must(store.SetString(`age_key`, b.identity))
 	}
 
 	return &b, nil
