@@ -8,7 +8,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/dynamic"
 )
 
-//go:embed time.js
+//go:embed *.js
 var _embed embed.FS
 var _root = utils.NewOSDirFS(string(dir.SourceAbsoluteDir()))
 
@@ -16,6 +16,6 @@ func init() {
 	dynamic.RegisterInit(func() {
 		const module = `supplementary`
 		dynamic.WithRoots(module, nil, nil, _embed, _root)
-		dynamic.WithScripts(module, `time.js`)
+		dynamic.WithScripts(module, `time.js`, `indent.js`)
 	})
 }
