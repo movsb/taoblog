@@ -33,9 +33,14 @@ button,input[type=button],input[type=submit],input[type=reset] {
 	padding: var(--button-padding);
 	&:not(:disabled):hover {
 		cursor: pointer;
+		background-color: var(--accent-color);
 	}
 	&:disabled {
 		color: var(--border-color);
+	}
+	// 按压是颜色变深。
+	&:active {
+		filter: brightness(0.9);
 	}
 }
 input {

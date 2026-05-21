@@ -2,51 +2,56 @@
 
 本页源码：[index.md](index.md)。
 
-这是段落。
-
-## 二号标题
-
-这是段落。
-
-## 二号标题2
-
-### 三号标题
-
-这是段落。
-
-#### 四号标题
-
-这是段落。
-
-##### 五号标题
-
-这是段落。
-
-###### 六号标题
-
-这是段落。
+注意：本页面的容易并未覆盖所有支持的功能。
 
 ---
 
-## 文本
-
-### 样式
-
-**加粗** *斜体* ***加粗斜体*** ~~删除线~~
-
-<ins>插入的文本</ins> 和 <del>删除的文本</del>
-
-## 颜色
-
-<colors></colors>
-
-### 段落
+## 段落
 
 这是段落。
+换行符不会自动换行，而是自动拼接到前一行，这样可以把长的段落分成多行写，也即软回车。
+如果想要达到硬回车效果，可以在最后添加一个反斜杠`\`\
+这样就会产生新的段落内换行（但是要注意他不属于新的段落）。
 
-这是第二段。
+空一行继续写新的内容则会另起一个段落。
 
-### 引用
+---
+
+## 二号标题
+
+标题字号测试。
+
+注意，因为一号标题已被用作本文的标题、且语义上来说一篇文章只应出现一次一号标题，所以这里不做测试。
+
+### 三号标题
+
+#### 四号标题
+
+##### 五号标题
+
+###### 六号标题
+
+---
+
+## 代码
+
+* 键盘：<kbd>Ctrl</kbd> + <kbd>C</kbd>
+* 行内代码：`<div>code</div>`
+* 块级代码：
+
+  ```go
+  package main
+  
+  import "fmt"
+  
+  func main() {
+  	fmt.Println("Hello, 世界")
+  }
+  ```
+
+---
+
+## 引用
 
 普通文本引用内容。
 
@@ -71,7 +76,9 @@ GitHub 的 Alerts。
 > [!CAUTION]
 > Advises about risks or negative outcomes of certain actions.
 
-### 列表
+---
+
+## 列表
 
 有序列表：
 
@@ -106,7 +113,23 @@ GitHub 的 Alerts。
 1) 111
 2) 222
 
-### 详细/展开
+---
+
+## 样式
+
+**加粗** *斜体* ***加粗斜体*** ~~删除线~~
+
+<ins>插入的文本</ins> 和 <del>删除的文本</del>
+
+## 链接
+
+[这是一个链接](https://example.com)。
+
+## 颜色
+
+<colors></colors>
+
+## 详细/展开
 
 * 鼠标放在“总结”上面应该有箭头指示展开方向。
 
@@ -119,67 +142,40 @@ GitHub 的 Alerts。
 
 </details>
 
-### 水平分隔线
+## 水平分隔线
 
 ---
 
 --- 自定义 ---
 
-### 表格
+## 表格
 
-* 表头应该是 sticky 的。
+* 普通的表格
 
-| Tables   |      Are      |  Cool |
-|----------|:-------------:|------:|
-| col 1 is |  left-aligned | $1600 |
-| col 2 is |    centered   |   $12 |
-| col 3 is | right-aligned |    $1 |
+  | Tables   |      Are      |  Cool |
+  |----------|:-------------:|------:|
+  | col 1 is |  left-aligned | $1600 |
+  | col 2 is |    centered   |   $12 |
+  | col 3 is | right-aligned |    $1 |
 
-CSV 表格：
+* CSV 表格
 
-```csv
-Year,Make,Model,Description,Price
-1997,Ford,E350,"ac, abs, moon",3000.00
-1999,Chevy,"Venture ""Extended Edition""","",4900.00
-1999,Chevy,"Venture ""Extended Edition, Very Large""","",5000.00
-1996,Jeep,Grand Cherokee,"MUST SELL!,,""
-air, moon roof, loaded",4799.0
-```
-
-### 代码
-
-* 键盘：<kbd>Ctrl</kbd> + <kbd>C</kbd>
-* 行内代码：`<div>code</div>`
-* 块级代码：
-
-  ```go
-  // You can edit this code!
-  // Click here and start typing.
-  package main
-  
-  import "fmt"
-  
-  func main() {
-  	fmt.Println("Hello, 世界")
-  }
+  ```csv
+  Year,Make,Model,Description,Price
+  1997,Ford,E350,"ac, abs, moon",3000.00
+  1999,Chevy,"Venture ""Extended Edition""","",4900.00
+  1999,Chevy,"Venture ""Extended Edition, Very Large""","",5000.00
+  1996,Jeep,Grand Cherokee,"MUST SELL!,,""
+  air, moon roof, loaded",4799.0
   ```
 
-### 行内元素
+## 图片
 
-[这是一个链接](https://example.com)。
-**这是粗体文本**，*这是斜体文本*，~~这是删除线文本~~。
+![](桂花.avif)
 
-## 嵌入元素
+敏感内容可以模糊显示，需要鼠标放上去、手指按压才会显示：
 
-### 图片
-
-不存在的图片：
-
-![](https://not-found/a.jpg)
-
-不存在、带 alt 的图片：
-
-![不存在的图片文本](https://not-found/a.jpg)
+![](/favicon.ico?blur)
 
 ## 表单
 
@@ -215,6 +211,13 @@ air, moon roof, loaded",4799.0
 <label><input type=radio name="r">选项二</label>
 <label><input type=radio name="r">选项三</label>
 
+### 任务列表
+
+- [x] 吾日三省吾身
+- [ ] 早上吃什么，
+- [x] 中午吃什么，
+- [ ] 晚上吃什么？
+
 ## 其它
 
 ### 对话框
@@ -231,6 +234,12 @@ air, moon roof, loaded",4799.0
 ### 话题
 
 这里包含一个#话题。
+
+### 引用站内文章
+
+可以通过 `[[编号]]` 的方式引用，会自动嵌入标题。
+
+比如：你看过我的《[[1]]》文章吗？
 
 ## 渲染
 
@@ -275,6 +284,28 @@ $$
 ### 实况照片
 
 ![](桂花.avif)
+
+### 提醒事项
+
+提醒事项会添加到日历中，可以在手机上查看。
+
+可以提供的功能：备忘录、倒数日、行程提醒、课程表等。
+
+```reminder
+title: 记得去看音乐剧！
+dates:
+  start: 2026-05-20
+```
+
+### 音乐播放器
+
+插入语法和插入图片一样，内部会自动识别。
+
+```markdown
+![](音乐文件路径)
+```
+
+![](Falcom%20Sound%20Team%20J.D.K.%20-%20おやすみ.mp3)
 
 ### PlantUML
 
