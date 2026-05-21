@@ -412,7 +412,7 @@ func (s *Server) createBackupTasks(
 ) {
 	client := clients.NewFromAddress(s.GRPCAddr(), user.SystemTokenValue())
 	ctx = user.SystemForGateway(ctx)
-	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled && !version.DevMode() {
+	if r2 := cfg.Maintenance.Backups.R2; r2.Enabled {
 		b := utils.Must1(backups.New(
 			ctx, s.main.GetPluginStorage(`backups.r2`), client,
 			backups.WithRemoteOSS(`r2`, &r2.OSSConfig),

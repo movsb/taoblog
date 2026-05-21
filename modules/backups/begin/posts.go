@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -83,10 +84,19 @@ func (b *BackupClient) BackupFiles(postID int, writeFile func(spec *proto.FileSp
 		},
 	}))
 
-	files := utils.Must1(client.Recv()).GetListFiles().GetFiles()
+	rsp, err := client.Recv()
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), `unimplemented`) {
+			return nil
+		}
+		log.Panicln(`请求文件列表失败：`, err)
+	}
+
+	files := rsp.GetListFiles().GetFiles()
 	for _, file := range files {
 		utils.Must(writeFile(file, utils.Must1(_NewFileRead(client, file.Path))))
 	}
+
 	return nil
 }
 
