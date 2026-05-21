@@ -74,44 +74,28 @@ div#mail_group label {
 	<dl>
 		<dt>普通字体</dt>
 		<dd>
-			<p>
-				<label for="font_custom">font-family：</label>
-				<input type="text" name="font_custom" class="font-pattern" value="{{$t.Font.Family}}">
-			</p>
-			<p class="notes">
-				输入逗号分隔的字体名，带空格的字体需要用英文双引号包起来。
-			</p>
+			<p><input type="text" name="font_custom" class="font-pattern" value="{{$t.Font.Family}}"></p>
+			<p class="notes">输入逗号分隔的字体名，带空格的字体需要用英文双引号包起来。</p>
 		</dd>
 	</dl>
 	<dl>
 		<dt>等宽字体</dt>
 		<dd>
-			<p>
-				<label for="mono_custom">font-family：</label>
-				<input type="text" name="mono_custom" class="font-pattern" value="{{$t.Font.Mono}}">
-			</p>
-			<p class="notes">
-				输入逗号分隔的字体名，带空格的字体需要用英文双引号包起来。
-			</p>
+			<p><input type="text" name="mono_custom" class="font-pattern" value="{{$t.Font.Mono}}"></p>
+			<p class="notes">输入逗号分隔的字体名，带空格的字体需要用英文双引号包起来。</p>
 		</dd>
 	</dl>
 	<dl>
 		<dt>字体大小</dt>
 		<dd>
-			<p>
-				<label for="font_size">font-size：</label>
-				<input type="text" name="font_size" value="{{$t.Font.Size}}" pattern="|\d+px">
-			</p>
-			<p class="notes">
-				形如：“<code>18px</code>”。
-			</p>
+			<p><input type="text" name="font_size" value="{{$t.Font.Size}}" pattern="|\d+px"></p>
+			<p class="notes">形如：“<code>18px</code>”。</p>
 		</dd>
 	</dl>
 	<dl id="accent_color">
 		<dt>主题颜色</dt>
 		<dd>
 			<p>
-				<label for="accent_color_text">color：</label>
 				<input type="text" name="accent_color_text" value="{{$t.Colors.Accent}}" pattern="#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{4}|[a-fA-F0-9]{6}|[a-fA-F0-9]{8})">
 				<input type="button" name="accent_color_button" value="…">
 				<input type="color" name="accent_color_color" value="{{$t.Colors.Accent}}" style="display: none;">
@@ -124,7 +108,7 @@ div#mail_group label {
 				<p style="color: var(--color-fg-light); background-color: var(--color-bg-light);">日间模式</p>
 				<p style="color: var(--color-fg-dark); background-color: var(--color-bg-dark);">夜间模式</p>
 			</div>
-			<p class="notes">选区颜色以及部分其它高亮色会基于主题颜色，并按60%的不透明度作为相对颜色。</p>
+			<p class="notes">说明：选区颜色以及部分其它高亮色会基于主题颜色，并按固定比例的不透明度作为相对颜色。</p>
 		</dd>
 	</dl>
 	<p>
@@ -219,6 +203,26 @@ div#mail_group label {
 	<p>
 		<input type="submit" class="bold" value="保存">
 		<span id="save-others-icon"></span>
+	</p>
+</form>
+
+<h2>维护模式</h2>
+{{ $mc := .MaintenanceConfig }}
+<form id="maintenance-config" autocomplete="off">
+	<dl>
+		<dt>自动部署新镜像</dt>
+		<dd>
+			<p>
+				<label for="webhook_secret">GitHub WebHook Secret:</label>
+				<input type="text" name="webhook_secret" value="{{$mc.Webhook.GitHub.Secret}}">
+			</p>
+			<p class="notes">接收到 GitHub Actions 的推送通知后，守护进程会在后台自动更新镜像并重新部署系统。</p>
+			<p class="notes">详情请参看文档：<code>https://github.com/用户名/项目名/settings/hooks</code>。</p>
+		</dd>
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-maintenance-icon"></span>
 	</p>
 </form>
 

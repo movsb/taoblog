@@ -7,7 +7,6 @@ import (
 	search_config "github.com/movsb/taoblog/service/modules/search/config"
 )
 
-// Config ...
 type Config struct {
 	Database    DatabaseConfig       `yaml:"database"`
 	Server      ServerConfig         `yaml:"server"`
@@ -57,7 +56,6 @@ func DefaultServerConfig() ServerConfig {
 	}
 }
 
-// MaintenanceConfig ...
 type MaintenanceConfig struct {
 	Webhook struct {
 		GitHub struct {

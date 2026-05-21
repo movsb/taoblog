@@ -178,3 +178,21 @@ formNotify.onsubmit = async(e) => {
 		saveIcon.classList.remove('icon-loading');
 	}
 };
+
+/** @type {HTMLFormElement} */
+const formMaintenance = document.getElementById('maintenance-config');
+formMaintenance.onsubmit = async(e) => {
+	e.preventDefault();
+
+	const saveIcon = document.getElementById('save-maintenance-icon');
+	saveIcon.classList.add('icon-loading');
+
+	try {
+		const requests = [
+			updateConfig('maintenance.webhook.github.secret', formMaintenance.elements['webhook_secret'].value),
+		];
+		const responses = await Promise.allSettled(requests);
+	} finally {
+		saveIcon.classList.remove('icon-loading');
+	}
+};
