@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"image/png"
@@ -282,11 +283,15 @@ type ConfigData struct {
 	OthersConfig *config.OthersConfig
 	NotifyConfig *config.NotificationConfig
 
+	MenusConfig       config.Menus
 	MaintenanceConfig *config.MaintenanceConfig
 }
 
 func (c ConfigData) IconDataURL() template.URL {
 	return template.URL(c.SiteConfig.Icon)
+}
+func (c ConfigData) MenusJSON() template.JS {
+	return template.JS(string(utils.Must1(json.Marshal(c.MenusConfig))))
 }
 
 func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
@@ -300,6 +305,7 @@ func (a *Admin) getConfig(w http.ResponseWriter, r *http.Request) {
 		OthersConfig: &a.cfg.Others,
 		NotifyConfig: &a.cfg.Notify,
 
+		MenusConfig:       a.cfg.Menus,
 		MaintenanceConfig: &a.cfg.Maintenance,
 	}
 	a.executeTemplate(w, `config.html`, &d)

@@ -112,6 +112,116 @@ const updateConfig = async (path, value) => {
 };
 
 /** @type {HTMLFormElement} */
+const formMenus = document.getElementById('menus-config');
+/** @type {HTMLDivElement} */
+const menusList = document.getElementById('menus-list');
+/** @type {HTMLInputElement} */
+const addMenuItemButton = document.getElementById('add-menu-item');
+const menuRows = () => Array.from(menusList.querySelectorAll('.menu-row'));
+const updateMenuMoveButtons = () => {
+	const rows = menuRows();
+	rows.forEach((row, index) => {
+		row.querySelector('[data-action="up"]').disabled = index == 0;
+		row.querySelector('[data-action="down"]').disabled = index == rows.length-1;
+	});
+};
+const createMenuRow = (item) => {
+	const row = document.createElement('div');
+	row.className = 'menu-row';
+	row.dataset.items = JSON.stringify(Object.prototype.hasOwnProperty.call(item, 'items') ? item.items : null);
+
+	const nameLabel = document.createElement('label');
+	nameLabel.textContent = '名称';
+	const nameInput = document.createElement('input');
+	nameInput.type = 'text';
+	nameInput.name = 'menu_name';
+	nameInput.required = true;
+	nameInput.placeholder = '名称';
+	nameInput.value = item.name ?? '';
+	nameLabel.append(nameInput);
+
+	const linkLabel = document.createElement('label');
+	linkLabel.textContent = '链接';
+	const linkInput = document.createElement('input');
+	linkInput.type = 'text';
+	linkInput.name = 'menu_link';
+	linkInput.required = true;
+	linkInput.placeholder = '/path/';
+	linkInput.value = item.link ?? '';
+	linkLabel.append(linkInput);
+
+	const blankLabel = document.createElement('label');
+	blankLabel.textContent = '新窗口';
+	blankLabel.className = 'menu-blank';
+	const blankInput = document.createElement('input');
+	blankInput.type = 'checkbox';
+	blankInput.name = 'menu_blank';
+	blankInput.checked = !!item.blank;
+	blankLabel.append(blankInput);
+
+	const actions = document.createElement('span');
+	actions.className = 'menu-actions';
+	for(const [action, text] of [['up', '上移'], ['down', '下移'], ['delete', '删除']]) {
+		const button = document.createElement('input');
+		button.type = 'button';
+		button.value = text;
+		button.dataset.action = action;
+		button.addEventListener('click', () => {
+			if(action == 'up') {
+				const previous = row.previousElementSibling;
+				if(previous) {
+					menusList.insertBefore(row, previous);
+				}
+			} else if(action == 'down') {
+				const next = row.nextElementSibling;
+				if(next) {
+					menusList.insertBefore(next, row);
+				}
+			} else {
+				row.remove();
+			}
+			updateMenuMoveButtons();
+		});
+		actions.append(button);
+	}
+
+	row.append(nameLabel, linkLabel, blankLabel, actions);
+	return row;
+};
+const appendMenuRow = (item) => {
+	menusList.append(createMenuRow(item));
+	updateMenuMoveButtons();
+};
+(JSON.parse(document.getElementById('menus-data').textContent) ?? []).forEach(appendMenuRow);
+addMenuItemButton.addEventListener('click', () => appendMenuRow({
+	name: '',
+	link: '',
+	blank: false,
+	items: [],
+}));
+formMenus.onsubmit = async(e) => {
+	e.preventDefault();
+	if(!formMenus.reportValidity()) {
+		return;
+	}
+
+	const saveIcon = document.getElementById('save-menus-icon');
+	saveIcon.classList.add('icon-loading');
+
+	try {
+		const menus = menuRows().map(row => ({
+			name: row.querySelector('[name="menu_name"]').value,
+			link: row.querySelector('[name="menu_link"]').value,
+			blank: row.querySelector('[name="menu_blank"]').checked,
+			items: JSON.parse(row.dataset.items),
+		}));
+		await updateConfig('menus', menus);
+	} finally {
+		saveIcon.classList.remove('icon-loading');
+	}
+};
+
+/** @type {HTMLFormElement} */
 themeForm.onsubmit = async(e) => {
 	e.preventDefault();
 

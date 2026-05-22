@@ -47,6 +47,44 @@ div#backup_r2_group input[type="text"] {
 	box-sizing: border-box;
 	width: 100%;
 }
+div#menus-list {
+	display: grid;
+	gap: .5em;
+	margin: 1em 0;
+	overflow-x: auto;
+	padding: 1em;
+}
+div.menu-row {
+	display: grid;
+	grid-template-columns: minmax(20em, 0fr) max-content;
+	gap: .5em;
+	align-items: center;
+	min-width: 20em;
+}
+div.menu-row label {
+	display: grid;
+	grid-template-columns: 5em minmax(0, 1fr);
+	gap: .25em;
+	align-items: center;
+	font-size: 80%;
+	grid-column: 1;
+}
+div.menu-row input[type="text"] {
+	box-sizing: border-box;
+	width: min(30ch, 100%);
+}
+div.menu-row input[type="checkbox"] {
+	justify-self: start;
+}
+div.menu-row .menu-blank {
+	white-space: nowrap;
+}
+div.menu-row .menu-actions {
+	display: flex;
+	gap: .25em;
+	grid-column: 2;
+	grid-row: 1 / span 3;
+}
 @media (max-width: 480px) {
 	div#backup_r2_group {
 		display: block;
@@ -95,6 +133,27 @@ div#backup_r2_group input[type="text"] {
 		<span id="save-basic-icon"></span>
 	</p>
 </form>
+
+<hr>
+
+<h2>菜单设置</h2>
+<form id="menus-config" autocomplete="off">
+	<dl>
+		<dt>顶部菜单</dt>
+		<dd>
+			<p class="notes">目前只支持编辑顶层菜单。</p>
+			<div id="menus-list" class="border"></div>
+			<p>
+				<input type="button" id="add-menu-item" value="新增菜单项">
+			</p>
+		</dd>
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-menus-icon"></span>
+	</p>
+</form>
+<script type="application/json" id="menus-data">{{.MenusJSON}}</script>
 
 <hr>
 

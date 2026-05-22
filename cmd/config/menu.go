@@ -4,7 +4,6 @@ type Menus []MenuItem
 
 func (m *Menus) CanSave() {}
 
-// MenuItem ...
 type MenuItem struct {
 	Name  string     `json:"name" yaml:"name"`
 	Link  string     `json:"link" yaml:"link"`
@@ -12,7 +11,6 @@ type MenuItem struct {
 	Items []MenuItem `json:"items" yaml:"items"`
 }
 
-// DefaultMenuConfig ...
 func DefaultMenuConfig() []MenuItem {
 	return []MenuItem{
 		{
