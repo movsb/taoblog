@@ -26,9 +26,39 @@ div.color-boxes p {
 dl p.notes {
 	font-size: 80%;
 }
-div#mail_group label {
+div#mail_group label,
+div#backup_r2_group label {
 	display: inline-block;
 	min-width: 80px;
+}
+div#backup_r2_group {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 30ch);
+	gap: .75em .5em;
+	align-items: center;
+}
+div#backup_r2_group p {
+	display: contents;
+}
+div#backup_r2_group label {
+	min-width: 0;
+}
+div#backup_r2_group input[type="text"] {
+	box-sizing: border-box;
+	width: 100%;
+}
+@media (max-width: 480px) {
+	div#backup_r2_group {
+		display: block;
+	}
+	div#backup_r2_group p {
+		display: block;
+		margin: 0 0 .75em;
+	}
+	div#backup_r2_group label {
+		display: block;
+		margin-bottom: .25em;
+	}
 }
 </style>
 </head>
@@ -223,6 +253,47 @@ div#mail_group label {
 	<p>
 		<input type="submit" class="bold" value="保存">
 		<span id="save-maintenance-icon"></span>
+	</p>
+</form>
+
+<h2>备份设置</h2>
+<form id="backup-r2-config" autocomplete="off">
+	<dl>
+		<dt>自动备份到 R2/S3</dt>
+		<dd>
+			<div id="backup_r2_group">
+				<p>
+					<label for="backup_r2_enabled">启用：</label>
+					<input type="checkbox" name="backup_r2_enabled" id="backup_r2_enabled" {{if $mc.Backups.R2.Enabled}}checked{{end}}>
+				</p>
+				<p>
+					<label for="backup_r2_endpoint">Endpoint：</label>
+					<input type="text" name="backup_r2_endpoint" id="backup_r2_endpoint" placeholder="https://<account_id>.r2.cloudflarestorage.com" value="{{$mc.Backups.R2.Endpoint}}">
+				</p>
+				<p>
+					<label for="backup_r2_region">Region：</label>
+					<input type="text" name="backup_r2_region" id="backup_r2_region" placeholder="auto" value="{{$mc.Backups.R2.Region}}">
+				</p>
+				<p>
+					<label for="backup_r2_access_key_id">Access Key ID：</label>
+					<input type="text" name="backup_r2_access_key_id" id="backup_r2_access_key_id" value="{{$mc.Backups.R2.AccessKeyID}}">
+				</p>
+				<p>
+					<label for="backup_r2_access_key_secret">Access Key Secret：</label>
+					<input type="text" name="backup_r2_access_key_secret" id="backup_r2_access_key_secret" value="{{$mc.Backups.R2.AccessKeySecret}}">
+				</p>
+				<p>
+					<label for="backup_r2_bucket_name">Bucket Name：</label>
+					<input type="text" name="backup_r2_bucket_name" id="backup_r2_bucket_name" value="{{$mc.Backups.R2.BucketName}}">
+				</p>
+			</div>
+			<p class="notes">Cloudflare R2 的 Endpoint 形如 <code>https://&lt;account_id&gt;.r2.cloudflarestorage.com</code>，Region 通常填写 <code>auto</code>。</p>
+			<p class="notes">该配置会在服务启动时用于加密备份上传；变更后，已运行的备份任务通常需要重启服务才会生效。</p>
+		</dd>
+	</dl>
+	<p>
+		<input type="submit" class="bold" value="保存">
+		<span id="save-backup-r2-icon"></span>
 	</p>
 </form>
 

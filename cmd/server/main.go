@@ -634,7 +634,7 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 
 	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp", server.Addr)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	// 总是会被 http.Server 关闭。
 	// defer l.Close()

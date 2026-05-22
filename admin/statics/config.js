@@ -196,3 +196,25 @@ formMaintenance.onsubmit = async(e) => {
 		saveIcon.classList.remove('icon-loading');
 	}
 };
+
+/** @type {HTMLFormElement} */
+const formBackupR2 = document.getElementById('backup-r2-config');
+formBackupR2.onsubmit = async(e) => {
+	e.preventDefault();
+
+	const saveIcon = document.getElementById('save-backup-r2-icon');
+	saveIcon.classList.add('icon-loading');
+
+	try {
+		await updateConfig('maintenance.backups.r2', {
+			enabled: formBackupR2.elements['backup_r2_enabled'].checked,
+			endpoint: formBackupR2.elements['backup_r2_endpoint'].value,
+			region: formBackupR2.elements['backup_r2_region'].value,
+			access_key_id: formBackupR2.elements['backup_r2_access_key_id'].value,
+			access_key_secret: formBackupR2.elements['backup_r2_access_key_secret'].value,
+			bucket_name: formBackupR2.elements['backup_r2_bucket_name'].value,
+		});
+	} finally {
+		saveIcon.classList.remove('icon-loading');
+	}
+};
