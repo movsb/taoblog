@@ -61,15 +61,30 @@ func (m *Maintenance) Leave() {
 	m.enabled.Set(0)
 }
 
-func (m *Maintenance) MessageString() string {
-	return m.Message
+type _Snapshot struct {
+	Message   string
+	Estimated time.Duration
+	In        bool
 }
 
-func (m *Maintenance) EstimatedString() string {
-	if m.Estimated < 0 {
+func (s _Snapshot) MessageString() string {
+	return s.Message
+}
+func (s _Snapshot) EstimatedString() string {
+	if s.Estimated < 0 {
 		return `(未知)`
 	}
-	return time.Now().Add(m.Estimated).Format(time.RFC3339)
+	return time.Now().Add(s.Estimated).Format(time.RFC3339)
+}
+
+func (m *Maintenance) snapshot() _Snapshot {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return _Snapshot{
+		Message:   m.Message,
+		Estimated: m.Estimated,
+		In:        m.in(),
+	}
 }
 
 func (m *Maintenance) Handler(exception func(ctx context.Context, r *http.Request) bool) func(http.Handler) http.Handler {
@@ -80,15 +95,13 @@ func (m *Maintenance) Handler(exception func(ctx context.Context, r *http.Reques
 时间：{{.EstimatedString}}
 `))
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			m.lock.RLock()
-			copy := *m //no warn
-			m.lock.RUnlock()
-			if copy.in() && (exception == nil || !exception(r.Context(), r)) {
-				if m.Estimated > 0 {
-					w.Header().Add(`Retry-After`, fmt.Sprint(int32(m.Estimated.Seconds())))
+			snapshot := m.snapshot()
+			if snapshot.In && (exception == nil || !exception(r.Context(), r)) {
+				if snapshot.Estimated > 0 {
+					w.Header().Add(`Retry-After`, fmt.Sprint(int32(snapshot.Estimated.Seconds())))
 				}
 				w.WriteHeader(http.StatusServiceUnavailable)
-				tmpl.Execute(w, m)
+				tmpl.Execute(w, snapshot)
 				return
 			}
 			h.ServeHTTP(w, r)
