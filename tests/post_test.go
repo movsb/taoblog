@@ -642,6 +642,55 @@ func TestUpdateTitle(t *testing.T) {
 	}
 }
 
+func TestUpdatePageSlug(t *testing.T) {
+	r := Serve(t.Context())
+
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		Type:   `page`,
+		Slug:   `page`,
+		Source: `# Page`,
+	}))
+
+	_, err := r.client.Blog.UpdatePost(r.user1, &proto.UpdatePostRequest{
+		Post: &proto.Post{
+			Id:       p.Id,
+			Modified: p.Modified,
+			Slug:     ``,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{`slug`},
+		},
+	})
+	if err == nil {
+		t.Fatal(`清空页面路径应该报错`)
+	}
+}
+
+func TestUpdatePageToPostWithoutSlug(t *testing.T) {
+	r := Serve(t.Context())
+
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		Type:   `page`,
+		Slug:   `page`,
+		Source: `# Page`,
+	}))
+
+	updated := utils.Must1(r.client.Blog.UpdatePost(r.user1, &proto.UpdatePostRequest{
+		Post: &proto.Post{
+			Id:       p.Id,
+			Modified: p.Modified,
+			Type:     `post`,
+			Slug:     ``,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: []string{`type`, `slug`},
+		},
+	}))
+	if updated.Type != `post` || updated.Slug != `` {
+		t.Fatalf(`更新结果不正确：type=%q slug=%q`, updated.Type, updated.Slug)
+	}
+}
+
 func TestCreatePostThrottler(t *testing.T) {
 	r := Serve(t.Context(),
 		server.WithCreateFirstPost(),

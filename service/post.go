@@ -714,46 +714,41 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 		m[`metas`] = models.PostMetaFrom(in.Post.Metas)
 	}
 
+	// 两者必须同时指定。
 	if hasSourceType != hasSource {
 		return nil, status.Error(codes.InvalidArgument, `source type and source must be specified`)
 	}
 
-	derived, err := s.parseDerived(ctx, in.Post.SourceType, in.Post.Source)
-	if err != nil {
-		return nil, err
-	}
-
-	if hasSource && hasSourceType {
-		if derived.Title != `` {
-			// 文章中的一级标题优先级大于配置文件。
-			m[`title`] = derived.Title
-		}
-	}
-	if hasTitle || (hasSource && hasSourceType) {
-		var ty string
-		if t, ok := m[`type`].(string); ok {
-			ty = t
-		} else {
-			var p models.Post
-			if err := s.tdb.Select(`type`).Where(`id=?`, in.Post.Id).Find(&p); err != nil {
+	var optDerived *_Derived
+	if hasTitle || hasSource {
+		if hasSource {
+			derived, err := s.parseDerived(ctx, in.Post.SourceType, in.Post.Source)
+			if err != nil {
 				return nil, err
 			}
-			ty = p.Type
-		}
-		if derived.Title != `` {
-			// 文章中的一级标题优先级大于参数。
-			m[`title`] = derived.Title
-		} else {
-			if !hasTitle {
+			optDerived = derived
+			// 文章中的一级标题优先级更高。
+			// 如果新的正文不包含标题，则清空。
+			if derived.Title != `` {
+				m[`title`] = derived.Title
+			} else if !hasTitle {
 				m[`title`] = ``
 			}
 		}
+		ty := oldPost.Type
+		if t, ok := m[`type`].(string); ok {
+			ty = t
+		}
 		// 除碎碎念外，文章不允许空标题
-		if ty != `tweet` && (derived.Title == "" && !hasTitle) {
+		if ty != `tweet` && (!hasTitle && (hasSource && optDerived.Title == ``)) {
 			return nil, status.Error(codes.InvalidArgument, "文章必须要有标题。")
 		}
 	}
-	if hasType && in.Post.Type == `page` && (hasSlug && in.Post.Slug == `` || oldPost.Slug == ``) {
+
+	// 如果是page，一定要有slug。
+	dstType := utils.IIF(hasType, in.Post.Type, oldPost.Type)
+	dstSlug := utils.IIF(hasSlug, in.Post.Slug, oldPost.Slug)
+	if dstType == `page` && dstSlug == `` {
 		return nil, status.Error(codes.InvalidArgument, `页面必须要有路径名（slug）。`)
 	}
 
@@ -774,8 +769,10 @@ func (s *Service) UpdatePost(ctx context.Context, in *proto.UpdatePostRequest) (
 			return status.Errorf(codes.Aborted, "update failed, modified conflict: %v (modified: %v)", err, op.Modified)
 		}
 
-		txs.updateObjectTags(p.ID, derived.Tags)
-		txs.updateReferences(ctx, int32(p.ID), &oldPost.Citations, derived.References)
+		if optDerived != nil {
+			txs.updateObjectTags(p.ID, optDerived.Tags)
+			txs.updateReferences(ctx, int32(p.ID), &oldPost.Citations, optDerived.References)
+		}
 		txs.updateLastPostTime(time.Now())
 
 		txs.deletePostContentCacheFor(p.ID)
