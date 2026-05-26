@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/movsb/taoblog/modules/utils"
-	search_config "github.com/movsb/taoblog/service/modules/search/config"
+	search_config "github.com/movsb/taoblog/service/modules/search/inverted/config"
 )
 
 type Config struct {

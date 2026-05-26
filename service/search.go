@@ -9,7 +9,7 @@ import (
 	co "github.com/movsb/taoblog/protocols/go/handy/content_options"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
-	"github.com/movsb/taoblog/service/modules/search"
+	"github.com/movsb/taoblog/service/modules/search/inverted"
 )
 
 func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest) (*proto.SearchPostsResponse, error) {
@@ -56,7 +56,7 @@ func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest)
 }
 
 func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
-	engine, err := search.NewEngine(&s.cfg.Search)
+	engine, err := inverted.NewEngine(&s.cfg.Search)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -86,7 +86,7 @@ func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 	}
 }
 
-func (s *Service) reIndex(ctx context.Context, engine *search.Engine, lastCheck *int64) {
+func (s *Service) reIndex(ctx context.Context, engine *inverted.Engine, lastCheck *int64) {
 	now := time.Now()
 	rsp, err := s.ListPosts(user.SystemForLocal(ctx), &proto.ListPostsRequest{
 		GetPostOptions: &proto.GetPostOptions{

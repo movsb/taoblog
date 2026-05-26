@@ -32,7 +32,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/genealogy"
 	"github.com/movsb/taoblog/service/modules/renderers/reminders"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
-	"github.com/movsb/taoblog/service/modules/search"
+	"github.com/movsb/taoblog/service/modules/search/inverted"
 	"github.com/movsb/taoblog/service/modules/storage"
 	"github.com/movsb/taoblog/setup/migration"
 	theme_fs "github.com/movsb/taoblog/theme/modules/fs"
@@ -146,7 +146,7 @@ type Service struct {
 
 	// 搜索引擎启动需要时间，所以如果网站一运行即搜索，则可能出现引擎不可用
 	// 的情况，此时此值为空。
-	searcher         atomic.Pointer[search.Engine]
+	searcher         atomic.Pointer[inverted.Engine]
 	onceInitSearcher sync.Once
 
 	// 网站图标，临时放这儿。
