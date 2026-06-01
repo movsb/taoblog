@@ -170,7 +170,9 @@ func (*_ContentPrettifier) PrettifyHtml(doc *html.Node) ([]byte, error) {
 
 	walk(buf, doc)
 
-	return buf.Bytes(), nil
+	// 默认总是踢除前后的空白字符。
+	bytes := bytes.TrimSpace(buf.Bytes())
+	return bytes, nil
 }
 
 // 简化并美化 Markdown 的展示。

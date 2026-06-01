@@ -74,7 +74,7 @@
 			<a href="/{{.Post.ID}}/">{{.Post.Title}}</a>
 			<ul class="comment-list post-comment-list">
 			{{- range .Comments}}
-				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span><a class="goto" href="/{{$comment.Post.ID}}/#comment-{{.Id}}"> #</a></p></li>
+				<li><p><b>{{.Author}}</b>：<span>{{.Content}}</span>&nbsp;<a class="goto" href="/{{$comment.Post.ID}}/#comment-{{.Id}}">#</a></p></li>
 			{{- end }}
 			</ul>
 		</li>
