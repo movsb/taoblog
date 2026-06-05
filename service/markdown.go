@@ -19,6 +19,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	"github.com/movsb/taoblog/service/modules/renderers/encrypted"
 	"github.com/movsb/taoblog/service/modules/renderers/exif"
+	"github.com/movsb/taoblog/service/modules/renderers/fenced_blockquote"
 	"github.com/movsb/taoblog/service/modules/renderers/footnotes"
 	"github.com/movsb/taoblog/service/modules/renderers/friends"
 	"github.com/movsb/taoblog/service/modules/renderers/gallery"
@@ -169,6 +170,8 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 	if !publicContent {
 		options = append(options, encrypted.New())
 	}
+
+	options = append(options, fenced_blockquote.New())
 
 	tr := renderers.NewMarkdown(options...)
 
