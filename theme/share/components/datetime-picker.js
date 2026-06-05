@@ -1,9 +1,17 @@
 class DateTimePicker {
+	/**
+	 * 
+	 * @param {HTMLElement} anchor 相对位置的元素。
+	 * @param {number} ts Unix秒数。
+	 * @param {string} tz 时区字符串，如 "Asia/Shanghai"。默认为浏览器时区。
+	 * @param {function} confirm 
+	 */
 	constructor(anchor, ts, tz, confirm) {
 		const outer = document.createElement('div');
 		outer.innerHTML = DateTimePicker._template;
 		this._dialog = outer.querySelector('dialog');
 		this._dialog.remove();
+
 		/** @type {HTMLFormElement} */
 		this._form = this._dialog.querySelector('form');
 		/** @type {HTMLSelectElement} */
@@ -41,7 +49,7 @@ class DateTimePicker {
 
 		const t = new Date(ts*1000);
 
-		this._select(t.getFullYear(), t.getMonth()+1, t.getDate());
+		this._setDate(t.getFullYear(), t.getMonth()+1, t.getDate());
 		this._setTime(ts, tz);
 
 		document.body.appendChild(this._dialog);
@@ -87,11 +95,11 @@ class DateTimePicker {
 		});
 
 		this._year.addEventListener('change', ()=>{
-			this._select(+this._year.value, this._curMonth, this._curDay);
+			this._setDate(+this._year.value, this._curMonth, this._curDay);
 		});
 
 		this._month.addEventListener('change', ()=>{
-			this._select(this._curYear, +this._month.value, this._curDay);
+			this._setDate(this._curYear, +this._month.value, this._curDay);
 		});
 
 		this._form.querySelector('.now').addEventListener('click', (e)=>{
@@ -99,7 +107,7 @@ class DateTimePicker {
 			e.stopPropagation();
 			const t = new Date();
 			const z = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			this._select(t.getFullYear(), t.getMonth()+1, t.getDate());
+			this._setDate(t.getFullYear(), t.getMonth()+1, t.getDate());
 			this._setTime(t.getTime()/1000, z);
 		});
 
@@ -135,7 +143,7 @@ class DateTimePicker {
 		this._dialog.remove();
 	}
 
-	_select(year, month, day) {
+	_setDate(year, month, day) {
 		const maxDays = new Date(year, month-1+1, 0).getDate();
 		const t = new Date(year, month-1, Math.min(maxDays, day));
 		this._buildTable(t.getTime()/1000);
@@ -186,14 +194,18 @@ class DateTimePicker {
 
 	_buildTable(ts) {
 		const now = new Date(ts*1000);
+
+		// 月份没变，不需要重建。
 		if(now.getFullYear() == this._curYear && now.getMonth()+1==this._curMonth) {
 			return;
 		}
 
+		// 清空所有已有日期。
 		while(this._table.rows.length>1) {
 			this._table.rows[this._table.rows.length-1].remove();
 		}
 
+		// 取得当月1号是周几，来决定第一行空几个格子。
 		let firstDayOfWeek = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
 		if(firstDayOfWeek==0) {firstDayOfWeek = 7;}
 
@@ -202,20 +214,24 @@ class DateTimePicker {
 			tr.insertCell();
 		}
 
+		// 本月某天是周几，[1,7]。
+		const dayOfWeek = day => (day-1+firstDayOfWeek) % 7 || 7;
+
+		// 当月有多少天，就插入多少个格子。
 		const daysOfMonth = new Date(now.getFullYear(), now.getMonth()+1,0).getDate();
 		for(let i=1; i<=daysOfMonth; i++) {
 			const td = tr.insertCell();
 			td.textContent = `${i}`;
 			td.dataset.day = i;
-			if((i-1+firstDayOfWeek)%7 == 0) {
+			// 每7天换一行，但最后一天不需要换行。
+			if(dayOfWeek(i) == 7 && i != daysOfMonth) {
 				tr = this._table.insertRow();
 			}
 		}
-		for(let i=daysOfMonth+1;;i++) {
+
+		// 最后一行填充空格子，保持表格整齐。
+		for(let i=daysOfMonth+1; dayOfWeek(i) != 1; i++) {
 			tr.insertCell();
-			if((i-1+firstDayOfWeek)%7==0) {
-				break;
-			}
 		}
 
 		this._curYear = now.getFullYear();

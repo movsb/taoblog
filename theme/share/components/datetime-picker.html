@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>日期时间选择器</title>
+	<link rel="stylesheet" href="./style.css">
+	<script src="./datetime-picker.js"></script>
+</head>
+<body>
+	<button id="btn">选择日期时间</button>
+	<script>
+		const btn = document.getElementById('btn');
+		btn.addEventListener('click', () => {
+			const picker = new DateTimePicker(btn, Date.now() / 1000, 'Asia/Shanghai', (ts) => {
+				alert(ts);
+			});
+		});
+	</script>
+</body>
+</html>
