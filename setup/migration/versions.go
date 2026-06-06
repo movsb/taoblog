@@ -953,3 +953,7 @@ func v72(posts, files, cache *taorm.DB) {
 		}
 	}
 }
+
+func v73(posts, files, cache *taorm.DB) {
+	posts.MustExec(`DELETE FROM options where name = 'others.whois.api_layer'`)
+}

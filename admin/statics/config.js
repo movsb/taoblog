@@ -258,7 +258,6 @@ formOthers.onsubmit = async(e) => {
 
 	try {
 		const requests = [
-			updateConfig('others.whois.api_layer.key', formOthers.elements['api_layer_key'].value),
 			updateConfig('others.geo.gaode.key', formOthers.elements['gaode_api_key'].value),
 		];
 

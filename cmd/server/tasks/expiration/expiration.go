@@ -3,17 +3,16 @@ package expiration
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/movsb/taoblog/modules/utils"
+	"github.com/movsb/taoblog/modules/utils/whois"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 )
@@ -77,7 +76,7 @@ func MonitorCert(ctx context.Context, getHome func() string, notifier proto.Noti
 // 同步函数，除非 ctx 结束，否则不会返回。
 //
 // notifier 可以为空。
-func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.NotifyServer, apiKey string, initialDelay bool, update func(days int)) {
+func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.NotifyServer, initialDelay bool, update func(days int)) {
 	getDomainSuffix := func() string {
 		u := utils.Must1(url.Parse(getHome()))
 		hostname := strings.ToLower(u.Hostname())
@@ -97,66 +96,14 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 	}
 
 	check := func() error {
-		// curl --request GET \
-		// --url 'https://api.apilayer.com/whois/query?domain=apilayer.com' \
-		// --header 'apikey: YOUR API KEY HERE'
-		u, err := url.Parse(`https://api.apilayer.com/whois/query?domain=`)
-		if err != nil {
-			return err
-		}
-		q := u.Query()
-		q.Set(`domain`, getDomainSuffix())
-		u.RawQuery = q.Encode()
-		req, err := http.NewRequestWithContext(context.Background(),
-			http.MethodGet, u.String(), nil)
-		if err != nil {
-			return err
+		suffix := getDomainSuffix()
+		if suffix == `` {
+			return errors.New(`无法获取域名后缀`)
 		}
 
-		// 可以线上更改，所以总是重新取值。
-		if apiKey == "" {
-			return errors.New(`no key specified`)
-		}
-
-		req.Header.Add(`apikey`, apiKey)
-		rsp, err := http.DefaultClient.Do(req)
+		t, err := whois.QueryDomainExpiration(suffix)
 		if err != nil {
-			return err
-		}
-		defer rsp.Body.Close()
-		if rsp.StatusCode != 200 {
-			return fmt.Errorf(`status != 200: %d`, rsp.StatusCode)
-		}
-		var result struct {
-			Result struct {
-				DomainName     string `json:"domain_name"`
-				ExpirationDate string `json:"expiration_date"`
-			} `json:"result"`
-		}
-		if err := json.NewDecoder(rsp.Body).Decode(&result); err != nil {
-			return err
-		}
-
-		var (
-			t        time.Time
-			parseErr error
-		)
-		for _, layout := range []string{
-			`2006-01-02 15:04:05-07:00`,
-			`2006-01-02 15:04:05`,
-			`2006-01-02T15:04:05-07:00`,
-			`2006-01-02T15:04:05`,
-		} {
-			t2, err := time.Parse(layout, result.Result.ExpirationDate)
-			if err == nil {
-				t = t2
-				parseErr = nil
-				break
-			}
-			parseErr = errors.Join(parseErr, err)
-		}
-		if parseErr != nil {
-			return parseErr
+			return fmt.Errorf(`查询域名过期时间错误：%v`, err)
 		}
 
 		daysLeft := int(time.Until(t) / time.Hour / 24)
@@ -179,10 +126,9 @@ func MonitorDomain(ctx context.Context, getHome func() string, notifier proto.No
 		return nil
 	}
 
-	// ApiLayer 限制是一个月 3000 次，这样可以做到
 	// 即便由于代码问题程序不断重启，也不会超过请求限制。
 	if initialDelay {
-		time.Sleep(time.Minute * 15)
+		time.Sleep(time.Minute)
 	}
 
 	if err := check(); err != nil {

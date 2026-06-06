@@ -260,21 +260,6 @@ div.menu-row .menu-actions {
 {{ $c := .OthersConfig }}
 <form id="others-config" autocomplete="off">
 	<dl>
-		<dt>Whois配置</dt>
-		<dd>
-			<p class="notes">
-				Whois配置用于定时监控站点域名是否有效。
-			</p>
-			<p>
-				<label for="api_layer">APILayer API Key:</label>
-				<input type="text" name="api_layer_key" value="{{$c.Whois.ApiLayer.Key}}">
-			</p>
-			<p class="notes">
-				由<a target="_blank" href="https://marketplace.apilayer.com/whois-api">Whois API - APILayer</a>提供的API服务。
-			</p>
-		</dd>
-	</dl>
-	<dl>
 		<dt>地理位置解析</dt>
 		<dd>
 			<p class="notes">

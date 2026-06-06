@@ -782,7 +782,7 @@ func (s *Server) initSubTasks(ctx context.Context, cfg *config.Config, filesStor
 	if s.initMonitorDomain {
 		s.Main().SetDomainDays(-1)
 		go expiration.MonitorDomain(
-			ctx, cfg.Site.GetHome, s.notifyServer, cfg.Others.Whois.ApiLayer.Key, s.initMonitorDomainDelay,
+			ctx, cfg.Site.GetHome, s.notifyServer, s.initMonitorDomainDelay,
 			s.Main().SetDomainDays,
 		)
 	}
