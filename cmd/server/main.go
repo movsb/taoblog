@@ -41,7 +41,6 @@ import (
 	"github.com/movsb/taoblog/service"
 	"github.com/movsb/taoblog/service/micros/auth"
 	"github.com/movsb/taoblog/service/micros/auth/client_login"
-	"github.com/movsb/taoblog/service/micros/auth/passkeys"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	micros_utils "github.com/movsb/taoblog/service/micros/utils"
 	"github.com/movsb/taoblog/service/models"
@@ -513,7 +512,6 @@ func (s *Server) createAuthServices(ctx context.Context, cfg *config.Config, sr 
 	s.userManager = auth.NewUsersService(ctx, db, sr)
 	s.authFrontend = auth.NewAuth(db, cfg.Site.GetHome, cfg.Site.GetName, s.userManager)
 	s.authMiddleware.SetAuth(s.authFrontend)
-	passkeys.NewPasskeysService(ctx, sr, s.authFrontend.GetWA, s.authFrontend.GetUserByID)
 }
 
 func (s *Server) createNotifyService(ctx context.Context, db *taorm.DB, cfg *config.Config, sr grpc.ServiceRegistrar) {
