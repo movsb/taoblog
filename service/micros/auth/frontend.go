@@ -115,7 +115,8 @@ func (o *Auth) AuthRequest(w http.ResponseWriter, req *http.Request) *user.User 
 
 	login := loginCookie.Value
 	userAgent := req.Header.Get(`User-Agent`)
-	user, refresh := o.AuthCookie(login, userAgent)
+	remoteAddr := cookies.ParseRemoteAddrFromRequest(req).String()
+	user, refresh := o.AuthCookie(login, userAgent, remoteAddr)
 
 	// 只在 home 的时候检测并刷新 cookies，避免太频繁。
 	if refresh && req.URL.Path == `/` {
@@ -125,10 +126,10 @@ func (o *Auth) AuthRequest(w http.ResponseWriter, req *http.Request) *user.User 
 	return user
 }
 
-func (o *Auth) AuthCookie(login string, userAgent string) (*user.User, bool) {
+func (o *Auth) AuthCookie(login string, userAgent string, ip string) (*user.User, bool) {
 	var uu *user.User
 
-	valid, refresh := cookies.ValidateCookieValue(login, userAgent, func(userID int) (password string) {
+	valid, refresh := cookies.ValidateCookieValue(login, userAgent, ip, func(userID int) (password string) {
 		u, err := o.userManager.GetUserByID(context.TODO(), userID)
 		if err != nil {
 			return ``

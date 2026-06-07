@@ -150,7 +150,7 @@ func MustBeAdmin(ctx context.Context) *AuthContext {
 func TestingUserContextForClient(uu *User) context.Context {
 	const userAgent = `go_test`
 	md := metadata.Pairs()
-	md.Append(GatewayCookie, cookies.CookieValue(userAgent, int(uu.ID), uu.Password))
+	md.Append(GatewayCookie, cookies.CookieValue(userAgent, `127.0.0.1`, int(uu.ID), uu.Password))
 	md.Append(GatewayUserAgent, userAgent)
 	md.Append(`Authorization`, uu.AuthorizationValue())
 	return metadata.NewOutgoingContext(context.TODO(), md)

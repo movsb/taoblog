@@ -3,6 +3,9 @@ package cookies
 import (
 	"fmt"
 	"log"
+	"net"
+	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 )
@@ -39,4 +42,27 @@ func ParseAuthorization(a string) (int, string, bool) {
 	}
 
 	return id, token, true
+}
+
+// NOTE x-forwarded-for 可能是伪造的
+// 但是我现在只有一层nginx，且在nginx那边配置了 proxy_set_headers 来覆盖掉用户伪造的 x-forwarded-for，所以这里就不再验证了。
+func ParseRemoteAddrFromRequest(r *http.Request) netip.Addr {
+	var f string
+	if fs := r.Header.Values(`x-forwarded-for`); len(fs) > 0 {
+		f = fs[0]
+	}
+	if f == "" {
+		f, _, _ = net.SplitHostPort(r.RemoteAddr)
+	}
+	return ParseRemoteAddr(f)
+}
+
+func ParseRemoteAddr(f string) netip.Addr {
+	if f == "" {
+		panic(`缺少 X-Forwarded-For / RemoteAddr / Peer 字段。`)
+	}
+	if p := strings.IndexByte(f, ','); p != -1 {
+		f = f[:p]
+	}
+	return netip.MustParseAddr(f)
 }

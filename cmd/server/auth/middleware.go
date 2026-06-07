@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
-	"strings"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/movsb/taoblog/service/micros/auth/cookies"
@@ -19,7 +18,7 @@ import (
 
 type Auth interface {
 	AuthRequest(w http.ResponseWriter, r *http.Request) *user.User
-	AuthCookie(login, userAgent string) (*user.User, bool)
+	AuthCookie(login, userAgent string, ip string) (*user.User, bool)
 	GetUserByToken(id int, token string) (*user.User, error)
 }
 
@@ -46,7 +45,7 @@ type Middleware struct {
 func (m *Middleware) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u := m.a.AuthRequest(w, r)
-		remoteAddr := parseRemoteAddrFromHeader(r.Header, r.RemoteAddr)
+		remoteAddr := cookies.ParseRemoteAddrFromRequest(r)
 		userAgent := r.Header.Get(`User-Agent`)
 		ac := user.NewContext(r.Context(), u, remoteAddr, userAgent)
 		h.ServeHTTP(w, r.WithContext(ac))
@@ -111,9 +110,8 @@ func (m *Middleware) addUserContextToInterceptorForGateway(ctx context.Context) 
 		userAgent = userAgents[0]
 	}
 
-	u, _ := m.a.AuthCookie(login, userAgent)
-
 	remoteAddr := parseRemoteAddrFromMetadata(ctx, md)
+	u, _ := m.a.AuthCookie(login, userAgent, remoteAddr.String())
 
 	return user.NewContext(ctx, u, remoteAddr, userAgent)
 }
@@ -202,27 +200,5 @@ func parseRemoteAddrFromMetadata(ctx context.Context, md metadata.MD) netip.Addr
 			f, _, _ = net.SplitHostPort(peer.Addr.String())
 		}
 	}
-	return parseRemoteAddr(f)
-}
-
-// TODO x-forwarded-for 可能是伪造的
-func parseRemoteAddrFromHeader(hdr http.Header, remoteAddr string) netip.Addr {
-	var f string
-	if fs := hdr.Values(`x-forwarded-for`); len(fs) > 0 {
-		f = fs[0]
-	}
-	if f == "" {
-		f, _, _ = net.SplitHostPort(remoteAddr)
-	}
-	return parseRemoteAddr(f)
-}
-
-func parseRemoteAddr(f string) netip.Addr {
-	if f == "" {
-		panic(`缺少 X-Forwarded-For / RemoteAddr / Peer 字段。`)
-	}
-	if p := strings.IndexByte(f, ','); p != -1 {
-		f = f[:p]
-	}
-	return netip.MustParseAddr(f)
+	return cookies.ParseRemoteAddr(f)
 }

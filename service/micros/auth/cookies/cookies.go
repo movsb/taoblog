@@ -3,6 +3,7 @@ package cookies
 import (
 	"crypto/sha1"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,12 +25,12 @@ func shasum(in string) string {
 }
 
 // 生成一个与当前时间相关的 Cookie 值。
-func CookieValue(userAgent string, userID int, password string) string {
-	return cookieValue(userAgent, userID, password, time.Now())
+func CookieValue(userAgent, ip string, userID int, password string) string {
+	return cookieValue(userAgent, ip, userID, password, time.Now())
 }
 
-func cookieValue(userAgent string, userID int, password string, t time.Time) string {
-	data := fmt.Sprintf(`%s,%s,%d`, userAgent, password, t.Unix())
+func cookieValue(userAgent string, ip string, userID int, password string, t time.Time) string {
+	data := fmt.Sprintf(`%s,%s,%s,%d`, userAgent, ip, password, t.Unix())
 	sum := shasum(data)
 	return fmt.Sprintf(`%d:%s:%d`, userID, sum, t.Unix())
 }
@@ -46,14 +47,14 @@ func parseCookieValue(value string) (userID int, sum string, tm time.Time) {
 }
 
 // 返回是否有效，是否应该刷新。
-func ValidateCookieValue(value string, userAgent string, getUser func(userID int) (password string)) (bool, bool) {
+func ValidateCookieValue(value string, userAgent string, ip string, getUser func(userID int) (password string)) (bool, bool) {
 	if userAgent == `` {
 		return false, false
 	}
 	userID, _, tm := parseCookieValue(value)
 	password := getUser(userID)
 
-	expect := cookieValue(userAgent, userID, password, tm)
+	expect := cookieValue(userAgent, ip, userID, password, tm)
 	refresh := time.Since(tm) > maxAge/2
 	return value == expect, refresh
 }
@@ -72,7 +73,12 @@ func isHTTPS(r *http.Request) bool {
 
 func MakeCookie(w http.ResponseWriter, r *http.Request, userID int, password string, nickname string) {
 	agent := r.Header.Get("User-Agent")
-	cookie := CookieValue(agent, userID, password)
+	ip := ParseRemoteAddrFromRequest(r)
+	cookie := CookieValue(agent, ip.String(), userID, password)
+	if (ip.IsLoopback() || ip.IsPrivate()) && !version.DevMode() {
+		log.Println(`生成登录凭证：`, nickname, userID, ip)
+		log.Printf("警告：登录 IP %s 是内网地址，部署可能有误。", ip)
+	}
 	secure := !version.DevMode() && isHTTPS(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieNameLogin,
