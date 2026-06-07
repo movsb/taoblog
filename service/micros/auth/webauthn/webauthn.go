@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/phuslu/lru"
@@ -141,8 +142,35 @@ func (a *WebAuthn) finishRegistration(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+type BeginLoginRequest struct {
+	UserID int `json:"user_id"`
+}
+
 func (a *WebAuthn) beginLogin(w http.ResponseWriter, r *http.Request) {
-	options, session, err := a.wa.BeginDiscoverableLogin()
+	var req BeginLoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loginOptions := []webauthn.LoginOption{}
+	if req.UserID > 0 {
+		u, err := a.authBackend.GetUserByID(r.Context(), req.UserID)
+		if err != nil {
+			http.Error(w, "用户不存在", http.StatusBadRequest)
+			return
+		}
+		loginOptions = append(loginOptions, webauthn.WithAllowedCredentials(
+			utils.Map(
+				[]webauthn.Credential(u.Credentials),
+				func(cred webauthn.Credential) protocol.CredentialDescriptor {
+					return cred.Descriptor()
+				},
+			),
+		))
+	}
+
+	options, session, err := a.wa.BeginDiscoverableLogin(loginOptions...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -150,6 +178,7 @@ func (a *WebAuthn) beginLogin(w http.ResponseWriter, r *http.Request) {
 	if err := writeJsonBody(w, options); err != nil {
 		return
 	}
+
 	a.loginSessions.Set(session.Challenge, session, webAuthnSessionTTL)
 }
 

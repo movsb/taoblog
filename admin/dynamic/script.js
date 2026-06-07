@@ -28,10 +28,11 @@ class WebAuthnAPI {
 			throw new Error('结束注册失败：' + await rsp.text());
 		}
 	}
-	async beginLogin() {
+	async beginLogin(loginOptions) {
 		let path = `/admin/login/webauthn/login:begin`;
 		let rsp = await fetch(path, {
 			method: 'POST',
+			body: JSON.stringify(loginOptions || {}),
 		});
 		if (!rsp.ok) {
 			throw new Error('开始登录失败：' + await rsp.text());
@@ -75,8 +76,8 @@ class WebAuthn {
 		console.log('注册成功。');
 	}
 
-	async login() {
-		let { options, challenge } = await this.api.beginLogin();
+	async login(loginOptions) {
+		let { options, challenge } = await this.api.beginLogin(loginOptions);
 		console.log('开始登录返回：', options);
 		if(options?.publicKey?.rpId != location.host) {
 			throw new Error('站点配置的主页域名与当前访问域名不匹配。\n\n请使用用户名和密码登录后，修改站点主页地址后再尝试操作。');

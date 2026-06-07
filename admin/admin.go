@@ -134,6 +134,7 @@ func (a *Admin) Handler() http.Handler {
 	})
 	m.Handle(`GET /{$}`, a.requireLogin(a.getRoot))
 
+	m.HandleFunc(`GET /session`, a.getSession)
 	m.HandleFunc(`GET /login`, a.getLogin)
 	m.HandleFunc(`GET /logout`, a.getLogout)
 	m.HandleFunc(`POST /logout`, a.postLogout)
@@ -203,6 +204,20 @@ func (a *Admin) executeTemplate(w io.Writer, name string, data any) {
 	if err := t2.Execute(w, data); err != nil {
 		log.Println(err)
 	}
+}
+
+// 返回登录状态。
+func (a *Admin) getSession(w http.ResponseWriter, r *http.Request) {
+	ac := user.Context(r.Context())
+	if !ac.User.IsGuest() {
+		json.NewEncoder(w).Encode(struct {
+			UserID int64 `json:"user_id"`
+		}{
+			UserID: ac.User.ID,
+		})
+		return
+	}
+	w.WriteHeader(http.StatusUnauthorized)
 }
 
 func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
