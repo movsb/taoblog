@@ -17,8 +17,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync/atomic"
-	"time"
 
 	"github.com/movsb/taoblog/cmd/config"
 	"github.com/movsb/taoblog/gateway"
@@ -51,13 +49,7 @@ func init() {
 }
 
 type LoginData struct {
-	Name           string
-	GoogleClientID string
-	GitHubClientID string
-}
-
-func (d *LoginData) HasSocialLogins() bool {
-	return d.GoogleClientID != `` || d.GitHubClientID != ``
+	Name string
 }
 
 type Admin struct {
@@ -66,8 +58,6 @@ type Admin struct {
 	tmplFS fs.FS
 
 	prefix string
-
-	canGoogle atomic.Bool
 
 	// NOTE：这是进程内直接调用的。
 	// 如果改成连接，需要考虑 metadata 转发问题。
@@ -122,12 +112,6 @@ func NewAdmin(cfg *config.Config, gateway *gateway.Gateway, management proto.Man
 	}
 
 	a.loadTemplates()
-	go func() {
-		for {
-			a.detectNetwork()
-			time.Sleep(time.Minute * 10)
-		}
-	}()
 	return a
 }
 
@@ -137,23 +121,6 @@ func (a *Admin) handleWebAuthn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.NotFound(w, r)
-}
-
-// 下面的网址在中国已经能访问，不能再用它来判断是否可以访问 Google 主站。
-//
-//	https://www.gstatic.com/generate_204
-//
-// 换：<https://google.com/generate_204>
-// https://x.com/kholinchan/status/1638515221643026432
-func (a *Admin) detectNetwork() {
-	resp, err := http.Get(`https://www.google.com/favicon.ico`)
-	if err == nil {
-		resp.Body.Close()
-	}
-	// 无需判断状态码，只需保证能访问（证书正确）即可。
-	yes := err == nil
-	// log.Println(`google accessible: `, yes)
-	a.canGoogle.Store(yes)
 }
 
 // fs 可以传 nil，表示使用 embed 文件系统。
@@ -183,8 +150,6 @@ func (a *Admin) Handler() http.Handler {
 	m.Handle(`GET /category`, a.requireLogin(a.getCategory))
 
 	m.HandleFunc(`POST /login/basic`, a.loginByPassword)
-	m.HandleFunc(`GET /login/github`, a.loginByGithub)
-	m.HandleFunc(`POST /login/google`, a.loginByGoogle)
 	m.HandleFunc(`/login/client`, a.loginByClient)
 
 	const webAuthnPrefix = `/login/webauthn/`
@@ -256,10 +221,6 @@ func (a *Admin) getLogin(w http.ResponseWriter, r *http.Request) {
 	d := LoginData{
 		Name: a.getName(),
 	}
-	if a.canGoogle.Load() {
-		// d.GoogleClientID = a.auth.Config().Google.ClientID
-	}
-	// d.GitHubClientID = a.auth.Config().Github.ClientID
 
 	a.executeTemplate(w, `login.html`, &d)
 }

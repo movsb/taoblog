@@ -56,14 +56,6 @@ function redirect(to) {
 			form.style.display = form.style.display == 'none' ? 'block' : 'none';
 			let passkeys = document.getElementsByClassName('passkeys')[0];
 			passkeys.style.display = passkeys.style.display == 'none' ? 'block' : 'none';
-			{{ with .GoogleClientID }}
-				if (!window._google_initialized) {
-					let gapisrc = document.getElementById('gapisrc');
-					gapisrc.src = gapisrc.getAttribute('data-src');
-					window._google_initialized = true;
-					gapisrc.onload = google;
-				}
-			{{ end }}
 		}
 	</script>
 </div>
@@ -129,78 +121,6 @@ function redirect(to) {
 		})();
 	</script>
 </form>
-{{ if .HasSocialLogins }}
-<hr style="margin: 1em auto; width: 80%;">
-<div id="social-logins" style="text-align: center;">
-	{{ with .GitHubClientID }}
-	<div>
-	<button onclick="github()">
-		GitHub
-	</button>
-	<script>
-		function github() {
-			location.href = "https://github.com/login/oauth/authorize?client_id={{ . }}";
-		}
-	</script>
-	</div>
-	{{ end }}
-	{{ if .GoogleClientID }}
-	<div id="google" style="display: none;">
-	<button id="google-signin-button">
-		Google
-	</button>
-	<button style="display: none;" id="google-signin-button-hidden">hidden sign-in button</button>
-	<script id="gapisrc" data-src="https://apis.google.com/js/api:client.js"></script>
-	<script>
-		let google = function() {
-			document.getElementById('google').style.display = 'block';
-			let btn = document.getElementById('google-signin-button');
-			let btnHidden = document.getElementById('google-signin-button-hidden');
-			btn.addEventListener('click', function(e) {
-				e.stopPropagation();
-				e.preventDefault();
-				btnHidden.click();
-			});
-
-			let googleUser = {};
-			gapi.load('auth2', function(){
-				// Retrieve the singleton for the GoogleAuth library and set up the client.
-				auth2 = gapi.auth2.init({
-					client_id: '{{.GoogleClientID}}.apps.googleusercontent.com',
-					cookiepolicy: 'single_host_origin',
-				});
-				auth2.attachClickHandler(btnHidden, {},
-					async function(googleUser) {
-						var id_token = googleUser.getAuthResponse().id_token;
-						console.log("ID Token: " + id_token);
-						let resp = await fetch(location.pathname + "/google", {
-							method: 'POST',
-							credentials: 'include',
-							body: JSON.stringify({
-								token: id_token,
-							}),
-						});
-						if (resp.status == 200) {
-							var auth2 = gapi.auth2.getAuthInstance();
-							auth2.disconnect().then(function () {
-								redirect();
-							});
-						} else {
-							alert('Error: ' + await resp.text());
-						}
-					},
-					function(error) {
-						alert(JSON.stringify(error, undefined, 2));
-					}
-				);
-			});
-		};
-		// google();
-	</script>
-	</div>
-	{{end}}
-</div>
-{{ end }}
 <p style="text-align: center;">
 	<a style="color: inherit; font-size: 80%; cursor: pointer;" onclick="toggleOthers()">
 		返回通行密钥登录

@@ -101,34 +101,3 @@ func (a *Admin) loginByClient(w http.ResponseWriter, r *http.Request) {
 
 	a.redirectToLogin(w, r, u.String())
 }
-
-func (a *Admin) loginByGithub(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
-	user := a.authFrontend.AuthGitHub(code)
-	if user.IsAdmin() {
-		cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
-		http.Redirect(w, r, `/`, http.StatusFound)
-	} else {
-		http.Redirect(w, r, a.prefixed(`/login`), http.StatusFound)
-	}
-}
-
-func (a *Admin) loginByGoogle(w http.ResponseWriter, r *http.Request) {
-	var t struct {
-		Token string `json:"token"`
-	}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&t); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, `invalid body: %v`, err)
-		return
-	}
-	user := a.authFrontend.AuthGoogle(t.Token)
-	if user.IsAdmin() {
-		cookies.MakeCookie(w, r, int(user.ID), user.Password, user.Nickname)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-}

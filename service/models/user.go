@@ -27,6 +27,7 @@ type User struct {
 	// Passkeys 凭证。
 	Credentials Credentials
 
+	// Google 和 GitHub 暂时不再使用。
 	GoogleUserID string
 
 	// 小写 GitHub 是为了使默认数据库字段名为：github_user_id
