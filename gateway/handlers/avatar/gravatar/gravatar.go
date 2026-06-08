@@ -24,11 +24,8 @@ import (
 // - WeAvatar <https://blog.twofei.com/902/#comment-1593>
 var gravatarHosts = []string{
 	`https://www.gravatar.com/avatar`,
-	`https://sdn.geekzu.org/avatar`,
 	`https://cdn.v2ex.com/gravatar`,
 	`https://gravatar.loli.net/avatar`,
-	`https://cdn.sep.cc/avatar`,
-	`https://cravatar.eallion.com/avatar`,
 }
 
 type _Result struct {

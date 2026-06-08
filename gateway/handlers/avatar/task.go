@@ -73,7 +73,7 @@ func (t *Task) Get(email string, force bool) (lastModified time.Time, content []
 		func() (any, error) {
 			l, c, err := get(context.Background(), email)
 			if err != nil {
-				log.Println(err, email)
+				log.Println("获取头像失败：", email)
 				return CacheValue{}, err
 			}
 			return CacheValue{
@@ -119,7 +119,7 @@ func (t *Task) refreshLoop(ctx context.Context) {
 
 			l, c, err := get(ctx, k.Email)
 			if err != nil {
-				log.Println(err, k.Email)
+				log.Println("获取头像失败：", k.Email)
 				continue
 			}
 			if val.LastModified.Equal(l) {
@@ -150,7 +150,6 @@ const maxBodySize = 100 << 10
 func get(ctx context.Context, email string) (_ time.Time, _ []byte, outErr error) {
 	rsp, err := get2(ctx, email)
 	if err != nil {
-		log.Println(`头像获取失败：`, err)
 		outErr = err
 		return
 	}
