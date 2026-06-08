@@ -32,6 +32,8 @@ async function onPageActive() {
 
 	// 触发得太快容易导致登录界面被频繁弹出，等页面稳定后再检查。
 	setTimeout(async ()=>{
+		if(document.visibilityState != 'visible') return;
+
 		if(checkingSession) return;
 		checkingSession = true;
 
