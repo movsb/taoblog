@@ -18,16 +18,24 @@ func TestHashTags(t *testing.T) {
 		HTML     string
 	}{
 		{
+			Markdown: `A #A`,
+			HTML:     `<p>A <span class="hashtag"><a href="A">#A</a></span></p>`,
+		},
+		{
 			Markdown: `#A`,
-			HTML:     `<p><span class="hashtag"><a href="A">#A</a></span></p>`,
+			HTML:     ``,
 		},
 		{
-			Markdown: `#L100`,
-			HTML:     `<p><span class="hashtag">#L100</span></p>`,
+			Markdown: `#A  #B #C`,
+			HTML:     ``,
 		},
 		{
-			Markdown: `#L100-L200`,
-			HTML:     `<p><span class="hashtag">#L100-L200</span></p>`,
+			Markdown: `A #L100`,
+			HTML:     `<p>A <span class="hashtag">#L100</span></p>`,
+		},
+		{
+			Markdown: `A #L100-L200`,
+			HTML:     `<p>A <span class="hashtag">#L100-L200</span></p>`,
 		},
 	} {
 		html, err := md.Render(tc.Markdown)

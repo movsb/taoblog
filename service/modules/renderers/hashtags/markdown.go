@@ -1,8 +1,11 @@
 package hashtags
 
 import (
+	"bytes"
 	"regexp"
 	"sync"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -41,25 +44,60 @@ func (t *_HashTags) ResolveHashtag(n *hashtag.Node) ([]byte, error) {
 }
 
 func (t *_HashTags) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
-	if t.out == nil {
-		return
+	if t.out != nil {
+		tags := map[string]struct{}{}
+		ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+			if entering && n.Kind() == hashtag.Kind {
+				tags[string(n.(*hashtag.Node).Tag)] = struct{}{}
+			}
+			return ast.WalkContinue, nil
+		})
+		list := make([]string, 0, len(tags))
+		for tag := range tags {
+			if shouldDrop(tag) {
+				continue
+			}
+			list = append(list, tag)
+		}
+		*t.out = list
 	}
 
-	tags := map[string]struct{}{}
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-		if entering && n.Kind() == hashtag.Kind {
-			tags[string(n.(*hashtag.Node).Tag)] = struct{}{}
+	removeParagraphs(node, reader.Source())
+}
+
+// 移除所有只包含HashTags的段落。
+func removeParagraphs(doc *ast.Document, source []byte) {
+	ps := []ast.Node{}
+
+	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if entering && n.Kind() == ast.KindParagraph {
+			p := n.(*ast.Paragraph)
+			allTagsOrWhitespaces := true
+			for c := p.FirstChild(); c != nil; c = c.NextSibling() {
+				if c.Kind() == hashtag.Kind {
+					continue
+				}
+				if c.Kind() == ast.KindText {
+					t := c.(*ast.Text).Value(source)
+					r, _ := utf8.DecodeRune(t)
+					if unicode.IsSpace(r) && len(bytes.TrimSpace(t)) == 0 {
+						continue
+					}
+				}
+				allTagsOrWhitespaces = false
+				break
+			}
+			if allTagsOrWhitespaces {
+				ps = append(ps, p)
+			}
+			return ast.WalkSkipChildren, nil
 		}
 		return ast.WalkContinue, nil
 	})
-	list := make([]string, 0, len(tags))
-	for tag := range tags {
-		if shouldDrop(tag) {
-			continue
-		}
-		list = append(list, tag)
+
+	for _, p := range ps {
+		p.Parent().RemoveChild(p.Parent(), p)
 	}
-	*t.out = list
 }
 
 var getRegexps = sync.OnceValue(func() []*regexp.Regexp {
