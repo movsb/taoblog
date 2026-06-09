@@ -29,8 +29,12 @@ func CookieValue(userAgent, ip string, userID int, password string) string {
 	return cookieValue(userAgent, ip, userID, password, time.Now())
 }
 
+// TODO 临时禁用IP参数校验。
+// 获取真正的外部IP太麻烦、太不准确了。
+// 有可能来自nginx、有可能来自直接访问、有可能来自内网访问，有可能来自docker proxy等等等。
 func cookieValue(userAgent string, ip string, userID int, password string, t time.Time) string {
-	data := fmt.Sprintf(`%s,%s,%s,%d`, userAgent, ip, password, t.Unix())
+	_ = ip
+	data := fmt.Sprintf(`%s,%s,%s,%d`, userAgent, "", password, t.Unix())
 	sum := shasum(data)
 	return fmt.Sprintf(`%d:%s:%d`, userID, sum, t.Unix())
 }

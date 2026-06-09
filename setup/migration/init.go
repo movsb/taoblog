@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -109,17 +110,23 @@ func initPosts(db *sql.DB) {
 	})
 
 	tdb.MustTxCall(func(tx *taorm.DB) {
-		var r [16]byte
-		utils.Must1(rand.Read(r[:]))
+		var password string
+		if p := os.Getenv(`TAOBLOG_INITIAL_ADMIN_PASSWORD`); p != `` {
+			password = p
+		} else {
+			var r [16]byte
+			utils.Must1(rand.Read(r[:]))
+			password = fmt.Sprintf(`%x`, r)
+		}
 		user := models.User{
 			ID:        2,
 			CreatedAt: int64(now),
 			UpdatedAt: int64(now),
 			Nickname:  `管理员`,
-			Password:  fmt.Sprintf(`%x`, r),
+			Password:  password,
 		}
 		tx.Model(&user).MustCreate()
-		log.Printf(`管理员用户名和密码：%d %s（仅首次运行出现）`, user.ID, user.Password)
+		log.Printf(`管理员用户名和密码：%d %s （仅首次运行出现）`, user.ID, user.Password)
 	})
 }
 

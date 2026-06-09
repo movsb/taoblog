@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"runtime/debug"
 	"strings"
 
 	"github.com/movsb/taoblog/modules/utils"
@@ -182,7 +181,8 @@ func (me *_Markdown) AddHtmlTransformers(trs ...gold_utils.HtmlTransformer) {
 func (me *_Markdown) Render(source string) (_ string, outErr error) {
 	defer func() {
 		if err := recover(); err != nil {
-			stack := debug.Stack()
+			// stack := debug.Stack()
+			stack := `(stack trace is omitted)`
 			log.Println(`Markdown renderer error:`, err, string(stack))
 			outErr = fmt.Errorf(`markdown renderer panic: %v`, err)
 		}
