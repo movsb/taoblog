@@ -856,6 +856,8 @@ func (s *Service) parseDerived(ctx context.Context, sourceType, source string) (
 			References: refs,
 		}
 		return d, nil
+	case `html`:
+		return &_Derived{}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "no renderer was found for: %q", sourceType)
 	}
