@@ -116,7 +116,7 @@ div.menu-row .menu-actions {
 	<dl>
 		<dt>网站首页</dt>
 		<dd>
-			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}" pattern="https?://\w+(\.\w+)+(:\d+)?/?"></p>
+			<p><input type="text" id="home" value="{{ .SiteConfig.Home }}" pattern="https?://(\w+(\.\w+)+|localhost)(:\d+)?/?"></p>
 			<p class="notes">形如：<code>https://blog.twofei.com</code>，暂时不支持带路径。</p>
 		</dd>
 	</dl>
