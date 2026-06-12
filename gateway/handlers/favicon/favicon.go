@@ -9,7 +9,7 @@ import (
 	"github.com/movsb/taoblog/modules/utils"
 )
 
-// //go:embed favicon.ico
+//go:embed favicon.png
 var _default []byte
 
 type Favicon struct {
