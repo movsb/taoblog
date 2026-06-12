@@ -630,7 +630,7 @@ func (s *Server) serveHTTP(ctx context.Context, addr string, h http.Handler) {
 		),
 	}
 
-	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp", server.Addr)
+	l, err := (&net.ListenConfig{}).Listen(ctx, "tcp4", server.Addr)
 	if err != nil {
 		log.Fatalln(err)
 	}
