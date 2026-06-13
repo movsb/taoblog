@@ -194,6 +194,8 @@ GitHub 的 Alerts。
 * 重置：<input type=reset value="重置按钮">
 * 按钮：<input type=button value="输入按钮">
 * 按钮：<button>普通按钮</button><button disabled="">禁用</button>
+* 切换：<ios-toggle label="打开与关闭">
+* 切换：<ios-toggle label="禁用状态" disabled>
 
 ### 选择
 

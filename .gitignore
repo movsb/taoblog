@@ -25,3 +25,5 @@ xcuserdata
 /article/
 /access.log
 /katex
+
+*.css.map

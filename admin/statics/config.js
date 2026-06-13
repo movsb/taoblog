@@ -150,14 +150,14 @@ const createMenuRow = (item) => {
 	linkInput.value = item.link ?? '';
 	linkLabel.append(linkInput);
 
-	const blankLabel = document.createElement('label');
-	blankLabel.textContent = '新窗口';
-	blankLabel.className = 'menu-blank';
-	const blankInput = document.createElement('input');
-	blankInput.type = 'checkbox';
-	blankInput.name = 'menu_blank';
-	blankInput.checked = !!item.blank;
-	blankLabel.append(blankInput);
+	const blankField = document.createElement('span');
+	blankField.className = 'menu-blank';
+	const blankText = document.createElement('span');
+	blankText.textContent = '新窗口';
+	const blankToggle = document.createElement('ios-toggle');
+	blankToggle.name = 'menu_blank';
+	blankToggle.checked = !!item.blank;
+	blankField.append(blankText, blankToggle);
 
 	const actions = document.createElement('span');
 	actions.className = 'menu-actions';
@@ -185,7 +185,7 @@ const createMenuRow = (item) => {
 		actions.append(button);
 	}
 
-	row.append(nameLabel, linkLabel, blankLabel, actions);
+	row.append(nameLabel, linkLabel, blankField, actions);
 	return row;
 };
 const appendMenuRow = (item) => {
