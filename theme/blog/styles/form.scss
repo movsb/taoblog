@@ -38,7 +38,7 @@ button,input[type=button],input[type=submit],input[type=reset] {
 	&:disabled {
 		color: var(--border-color);
 	}
-	// 按压是颜色变深。
+	// 按压时颜色变深。
 	&:active {
 		filter: brightness(0.9);
 	}
