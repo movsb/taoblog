@@ -217,7 +217,7 @@ message ListPostsRequest {
 	string order_by = 3;
 	repeated string kinds = 4;
 
-	// 如果 > 0，则只会列出从这个时间点开始、结束的文章。
+	// 如果 > 0，则只会列出从这个时间点开始、结束的文章（修改时间）。
 	// 以后有过更新的文章，适用于备份用。
 	// 时间范围：[NotBefore, NotAfter)。
 	int32 modified_not_before = 5;
@@ -230,6 +230,11 @@ message ListPostsRequest {
 
 	// 分类编号。
 	repeated int32 categories = 8;
+
+	// 如果 > 0，则只会列出从这个时间点开始、结束的文章（创建时间）。
+	// 时间范围：[NotBefore, NotAfter)。
+	int32 created_not_before = 9;
+	int32 created_not_after = 10;
 }
 
 message ListPostsResponse {

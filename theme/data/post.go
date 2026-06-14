@@ -116,7 +116,7 @@ func (p *Post) CommentString() string {
 	if p.Comments == 0 {
 		return `没有评论`
 	}
-	return fmt.Sprintf(`%d 条评论`, p.Comments)
+	return fmt.Sprintf(`%d条评论`, p.Comments)
 }
 
 func (p *Post) ShortDateString() string {

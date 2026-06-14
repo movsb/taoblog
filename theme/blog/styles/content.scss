@@ -219,3 +219,11 @@ article {
 // 		max-width: unset;
 // 	}
 // }
+
+.pagination {
+	margin: 1em auto;
+	a.disabled {
+		color: inherit;
+		cursor:not-allowed;
+	}
+}

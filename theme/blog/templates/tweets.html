@@ -37,4 +37,8 @@ TaoBlog.posts["{{$p.ID}}"] = {{ strip $p }};
 	{{ template "_tweet" . }}
 {{ end }}
 </div>
+<nav class="pagination">
+	<a class="button prev{{with not .Data.HasPrev}} disabled{{end}}" {{if .Data.HasPrev}}href="/tweets?before={{.Data.NewestTime}}"{{end}}>上一页</a>
+	<a class="button next{{with not .Data.HasNext}} disabled{{end}}" {{if .Data.HasNext}}href="/tweets?after={{.Data.OldestTime}}"{{end}}>下一页</a>
+</nav>
 {{ render "footer" . }}

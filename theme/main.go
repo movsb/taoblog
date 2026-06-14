@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -243,7 +244,10 @@ func (t *Theme) queryPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Theme) queryTweets(w http.ResponseWriter, r *http.Request) {
-	d := data.NewDataForTweets(r.Context(), t.service)
+	q := r.URL.Query()
+	before, _ := strconv.Atoi(q.Get(`before`))
+	after, _ := strconv.Atoi(q.Get(`after`))
+	d := data.NewDataForTweets(r.Context(), t.service, before, after)
 	t.executeTemplate(`tweets.html`, w, d)
 }
 
