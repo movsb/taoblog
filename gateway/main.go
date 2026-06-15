@@ -18,12 +18,11 @@ import (
 	"github.com/movsb/taoblog/gateway/handlers/debug"
 	"github.com/movsb/taoblog/gateway/handlers/favicon"
 	"github.com/movsb/taoblog/gateway/handlers/features"
-	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
+	"github.com/movsb/taoblog/gateway/handlers/grpc_proxy"
 	"github.com/movsb/taoblog/gateway/handlers/robots"
 	"github.com/movsb/taoblog/gateway/handlers/rss"
 	"github.com/movsb/taoblog/gateway/handlers/sitemap"
 	"github.com/movsb/taoblog/gateway/handlers/webhooks/github"
-	"github.com/movsb/taoblog/gateway/handlers/webhooks/grafana"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/version"
 	"github.com/movsb/taoblog/protocols/clients"
@@ -123,9 +122,6 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 			g.service.Config().Maintenance.Webhook.GitHub.Secret,
 			g.notify, `/v3/webhooks/github`,
 		))
-
-		// Grafana 监控告警通知。
-		mc.Handle(`POST /v3/webhooks/grafana/notify`, grafana.New(g.client.Notify))
 
 		// GRPC 走 HTTP 通信。少暴露一个端口，降低架构复杂性。
 		mc.Handle(`GET /v3/grpc`, grpc_proxy.New(serverAddr))

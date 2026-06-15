@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/movsb/http2tcp"
-	grpc_proxy "github.com/movsb/taoblog/gateway/handlers/grpc"
+	"github.com/movsb/taoblog/gateway/handlers/grpc_proxy"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/cookies"
