@@ -35,10 +35,10 @@ const commentHTML = function(){/*
 			<input type="url" name="url" placeholder="网站(可不填)">
 			<input type="submit" id="comment-submit" value="发表评论">
 			<div class="field">
-				<label><input type="checkbox" id="comment-wrap-lines" checked>自动折行</label>
+				<ios-toggle id="comment-wrap-lines" checked label="自动折行"></ios-toggle>
 			</div>
 			<div class="field">
-				<label><input type="checkbox" id="comment-show-preview">显示预览</label>
+				<ios-toggle id="comment-show-preview" label="显示预览"</ios-toggle>
 			</div>
 		</div>
 	</form>
