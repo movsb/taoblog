@@ -1,4 +1,4 @@
-package media_tags
+package audio_player
 
 import (
 	"bytes"
@@ -42,21 +42,21 @@ func init() {
 	})
 }
 
-type MediaTags struct {
+type AudioPlayer struct {
 	web  gold_utils.WebFileSystem
 	tmpl *utils.TemplateLoader
 }
 
 var _gTmpl *utils.TemplateLoader
 
-type Option func(*MediaTags)
+type Option func(*AudioPlayer)
 
 var t = sync.OnceValue(func() *utils.TemplateLoader {
 	return utils.NewTemplateLoader(utils.IIF(version.DevMode(), _root, fs.FS(_embed)), nil, dynamic.Reload)
 })
 
-func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
-	tag := &MediaTags{
+func New(web gold_utils.WebFileSystem, options ...Option) *AudioPlayer {
+	tag := &AudioPlayer{
 		web: web,
 	}
 
@@ -69,13 +69,13 @@ func New(web gold_utils.WebFileSystem, options ...Option) *MediaTags {
 		_gTmpl = t()
 	}
 
-	return &MediaTags{
+	return &AudioPlayer{
 		web:  web,
 		tmpl: _gTmpl,
 	}
 }
 
-func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
+func (t *AudioPlayer) TransformHtml(doc *goquery.Document) error {
 	doc.Find(`audio`).EachWithBreak(func(_ int, s *goquery.Selection) bool {
 		src := t.getSrc(s)
 		if src == "" {
@@ -132,7 +132,7 @@ func (t *MediaTags) TransformHtml(doc *goquery.Document) error {
 	return nil
 }
 
-func (t *MediaTags) getSrc(s *goquery.Selection) string {
+func (t *AudioPlayer) getSrc(s *goquery.Selection) string {
 	src := s.AttrOr(`src`, "")
 	if src == "" {
 		s.Find(`source`).EachWithBreak(func(i int, s *goquery.Selection) bool {
@@ -146,7 +146,7 @@ func (t *MediaTags) getSrc(s *goquery.Selection) string {
 	return src
 }
 
-func (t *MediaTags) parse(src string) (tag.Metadata, error) {
+func (t *AudioPlayer) parse(src string) (tag.Metadata, error) {
 	fp, err := t.web.OpenURL(src)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func (d *Metadata) PictureAsImage() template.HTML {
 	return ""
 }
 
-func (t *MediaTags) render(md tag.Metadata, source string) (string, error) {
+func (t *AudioPlayer) render(md tag.Metadata, source string) (string, error) {
 	buf := bytes.NewBuffer(nil)
 	var name string
 	if u, err := url.Parse(source); err == nil {

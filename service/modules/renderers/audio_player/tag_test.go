@@ -1,4 +1,4 @@
-package media_tags
+package audio_player
 
 import (
 	"embed"

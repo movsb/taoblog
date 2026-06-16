@@ -10,6 +10,7 @@ import (
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/alerts"
+	"github.com/movsb/taoblog/service/modules/renderers/audio_player"
 	"github.com/movsb/taoblog/service/modules/renderers/auto_image_border"
 	"github.com/movsb/taoblog/service/modules/renderers/blur_image"
 	"github.com/movsb/taoblog/service/modules/renderers/caption"
@@ -36,7 +37,6 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
-	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/page_link"
 	"github.com/movsb/taoblog/service/modules/renderers/pikchr"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
@@ -93,7 +93,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 			options = append(options, renderers.WithRemoveTitleHeading())
 		}
 
-		options = append(options, media_tags.New(assets))
+		options = append(options, audio_player.New(assets))
 		options = append(options, scoped_css.New(fmt.Sprintf(`article.post-%d .entry .content`, postId)))
 	}
 	if !secure {

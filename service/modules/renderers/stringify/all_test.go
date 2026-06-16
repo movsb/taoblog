@@ -10,12 +10,12 @@ import (
 
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/audio_player"
 	"github.com/movsb/taoblog/service/modules/renderers/emojis"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
-	"github.com/movsb/taoblog/service/modules/renderers/media_tags"
 	"github.com/movsb/taoblog/service/modules/renderers/pikchr"
 	"github.com/movsb/taoblog/service/modules/renderers/stringify"
 	"github.com/yuin/goldmark/extension"
@@ -129,7 +129,7 @@ func TestPrettifier(t *testing.T) {
 		{
 			ID: 11.0,
 			Options: []any{
-				media_tags.New(gold_utils.NewWebFileSystem(os.DirFS(`../media_tags/testdata`), &url.URL{Path: `/`})),
+				audio_player.New(gold_utils.NewWebFileSystem(os.DirFS(`../audio_player/testdata`), &url.URL{Path: `/`})),
 			},
 			Markdown: `
 万物死
