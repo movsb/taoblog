@@ -35,9 +35,6 @@ const commentHTML = function(){/*
 			<input type="url" name="url" placeholder="网站(可不填)">
 			<input type="submit" id="comment-submit" value="发表评论">
 			<div class="field">
-				<ios-toggle id="comment-wrap-lines" checked label="自动折行"></ios-toggle>
-			</div>
-			<div class="field">
 				<ios-toggle id="comment-show-preview" label="显示预览"</ios-toggle>
 			</div>
 		</div>
@@ -438,7 +435,6 @@ class CommentManager {
 			}
 		});
 
-		document.getElementById('comment-wrap-lines').addEventListener('click', self.wrapLines.bind(self));
 		this.preview.on(this.showPreview.bind(this));
 
 		self.init_drag(document.getElementById('comment-form-div'));
@@ -830,11 +826,6 @@ class CommentManager {
 		this.form.save();
 
 		return cmt;
-	}
-	wrapLines() {
-		let checkBox = document.getElementById('comment-wrap-lines');
-		let textarea = document.getElementById('comment-content');
-		textarea.wrap = checkBox.checked ? "on" : "off";
 	}
 	async showPreview() {
 		let source = document.getElementById('comment-form')['source'].value;
