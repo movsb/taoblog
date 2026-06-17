@@ -66,7 +66,17 @@ import (
 //
 // NOTE: 创建评论、预览评论、创建文章等一些地方可能是没有 postID 和 commentID 的。
 // 严格情况下，不能光靠这两个字段来区别是文章还是评论。
-func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, commentID int64, sourceType, source string, metas models.PostMeta, co *proto.PostContentOptions, publicContent bool) (string, error) {
+func (s *Service) renderMarkdown(
+	ctx context.Context,
+	secure bool, // Markdown 内容是否被认定是安全的。如果安全，将会允许HTML等内容，游客评论则不允许。
+	postId,
+	commentID int64,
+	sourceType,
+	source string,
+	_ models.PostMeta,
+	co *proto.PostContentOptions,
+	postIsPublic bool, // postIsPublic: 是否为公开文章。非公开文章会处理图片等资源的加密/解密。
+) (string, error) {
 	switch sourceType {
 	case `html`:
 		tr := &renderers.HTML{}
@@ -167,7 +177,7 @@ func (s *Service) renderMarkdown(ctx context.Context, secure bool, postId, comme
 		lazy.New(),
 	)
 
-	if !publicContent {
+	if !postIsPublic {
 		options = append(options, encrypted.New())
 	}
 

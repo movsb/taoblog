@@ -25,7 +25,7 @@ import (
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/models"
-	open_graph "github.com/movsb/taoblog/service/modules/opengraph"
+	"github.com/movsb/taoblog/service/modules/open_graph"
 	"github.com/movsb/taoblog/service/modules/renderers"
 	"github.com/movsb/taoblog/service/modules/renderers/assets"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
