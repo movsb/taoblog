@@ -268,8 +268,9 @@ class DateTimePicker {
 	<form autocomplete="off" method="dialog">
 		<div style="display: flex; justify-content: space-between;">
 			<div>
-				年：<select class="year"></select>
-				月：<select class="month"></select>
+				日期：
+				<select class="year"></select>
+				<select class="month"></select>
 			</div>
 			<button class="now">现在</button>
 		</div>
