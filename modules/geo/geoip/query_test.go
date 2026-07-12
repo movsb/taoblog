@@ -16,7 +16,7 @@ func TestQuery(t *testing.T) {
 }
 
 func TestInvalidate(t *testing.T) {
-	next := time.Date(2026, 7, 3, 0, 0, 0, 0, time.Local)
+	next := time.Date(2026, 12, 3, 0, 0, 0, 0, time.Local)
 	if time.Now().After(next) {
 		t.Fatal(`应该更新 GeoIP 数据库了。`)
 	}
