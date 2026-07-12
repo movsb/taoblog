@@ -45,7 +45,7 @@ require (
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/go-image-avif-size v0.0.0-20251204153653-47851b126de5
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
-	github.com/ncruces/go-sqlite3 v0.33.3
+	github.com/ncruces/go-sqlite3 v0.35.2
 	github.com/phuslu/lru v1.0.18
 	github.com/pquerna/otp v1.4.1-0.20241231231527-5971b1ef1d66
 	github.com/sergi/go-diff v1.4.0
@@ -101,6 +101,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/ncruces/go-sqlite3-wasm v1.1.1-0.20260409221933-87e4b35a38d0 // indirect
+	github.com/ncruces/go-sqlite3-wasm/v3 v3.2.35303 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -108,7 +109,7 @@ require (
 	github.com/tetratelabs/wazero v1.10.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/time v0.4.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260406210006-6f92a3bedf2d // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
@@ -134,9 +135,9 @@ require (
 	github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.54.0
-	golang.org/x/sys v0.44.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/net v0.55.0
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.39.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
