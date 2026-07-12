@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/movsb/taoblog/protocols/clients"
 	"github.com/movsb/taoblog/protocols/go/proto"
 	"github.com/movsb/taoblog/service"
+	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"github.com/movsb/taoblog/service/micros/auth/user"
 	"github.com/movsb/taoblog/service/modules/cache"
 	"github.com/movsb/taoblog/service/modules/dynamic"
@@ -104,6 +106,9 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 	// 无需鉴权的部分
 	// 可跨进程使用。
 	{
+		// 调试请求
+		mc.HandleFunc(`/v3/dump`, dumpRequest)
+
 		// 博客功能集
 		mc.Handle(`GET /v3/features/{theme}`, features.New())
 
@@ -176,3 +181,16 @@ func (g *Gateway) lastPostTimeHandler(h http.Handler) http.Handler {
 }
 
 type AuthFunc func(g *Gateway, r *http.Request) *user.User
+
+func dumpRequest(w http.ResponseWriter, r *http.Request) {
+	body := http.MaxBytesReader(w, r.Body, 1<<20)
+	defer body.Close()
+	r.Body = body
+	data, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	fmt.Fprintln(w, `Remote:`, cookies.ParseRemoteAddrFromRequest(r))
+	w.Write(data)
+}
