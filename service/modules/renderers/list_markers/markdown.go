@@ -34,7 +34,7 @@ var knownListItemMarkers = map[byte]string{
 	')': `parenthesis`,
 }
 
-func (*_ReserveListItemMarkerStyle) WalkEntering(n ast.Node) (ast.WalkStatus, error) {
+func (*_ReserveListItemMarkerStyle) WalkEntering(n ast.Node, source []byte) (ast.WalkStatus, error) {
 	switch typed := n.(type) {
 	case *ast.List:
 		if class, ok := knownListItemMarkers[typed.Marker]; ok {

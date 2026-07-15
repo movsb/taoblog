@@ -283,14 +283,6 @@ func (me *_Markdown) Render(source string) (_ string, outErr error) {
 		if walker, ok := opt.(EnteringWalker); ok {
 			utils.Must(ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 				if entering {
-					return walker.WalkEntering(n)
-				}
-				return ast.WalkContinue, nil
-			}))
-		}
-		if walker, ok := opt.(EnteringWalkerWithSource); ok {
-			utils.Must(ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-				if entering {
 					return walker.WalkEntering(n, sourceBytes)
 				}
 				return ast.WalkContinue, nil

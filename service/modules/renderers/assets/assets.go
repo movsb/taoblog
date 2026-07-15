@@ -45,7 +45,7 @@ func FromContext(ctx context.Context) *AssetsParser {
 }
 
 // 有些文件会被渲染，光从 html 结果不一定找得到，但是它们确实被引用过。
-func (p *AssetsParser) WalkEntering(n ast.Node) (ast.WalkStatus, error) {
+func (p *AssetsParser) WalkEntering(n ast.Node, source []byte) (ast.WalkStatus, error) {
 	if p.paths == nil {
 		return ast.WalkContinue, nil
 	}
