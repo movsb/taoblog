@@ -213,20 +213,29 @@ var numberOfAvifProcesses atomic.Int32
 // 自动加上版权信息（方法一）：
 // https://chatgpt.com/share/6880633e-4858-8008-9b01-ba02bdd8c245
 // 输出的临时文件需要调用方删除。
+//
+// rawPath: 相对于文章本身的短路径。因为转换格式后可能会修改扩展名，所以要求传入。
+// inputPath: rawPath 对应的文件在当前文件系统的路径。
+//
+// 总是会拷贝元数据信息（包含位置），如果转换过程中出错，会逐步丢弃元数据。
 func convertToAVIF(rawPath string, inputPath string) (_ string, _ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
-	newPath, tmpOutputPath := utils.Must2(ConvertToAVIF(context.Background(), rawPath, inputPath, true))
-
-	output := utils.Must1(CopyTags(inputPath, tmpOutputPath))
-	// Warning: Error rebuilding maker notes (may be corrupt)
-	if strings.Contains(output, `Error rebuilding maker notes`) {
-		// utils.Must(DropMakerNotes(tmpOutputPath))
-		// 如果拷贝原始文件的元数据失败，可能是因为 MakerNotes 有问题。
-		// 直接重新转换，并不拷贝。
+	newPath, tmpOutputPath, err := ConvertToAVIF(context.Background(), rawPath, inputPath, false, false)
+	if err != nil {
 		os.Remove(tmpOutputPath)
-		newPath, tmpOutputPath = utils.Must2(ConvertToAVIF(context.Background(), rawPath, inputPath, false))
+		newPath, tmpOutputPath, err = ConvertToAVIF(context.Background(), rawPath, inputPath, false, true)
+		if err != nil {
+			os.Remove(tmpOutputPath)
+			newPath, tmpOutputPath, err = ConvertToAVIF(context.Background(), rawPath, inputPath, true, true)
+			if err != nil {
+				os.Remove(tmpOutputPath)
+				log.Panicln(`多次转换失败：`, rawPath, inputPath, err)
+			}
+		}
 	}
+
+	CopyTags(inputPath, tmpOutputPath)
 
 	return newPath, tmpOutputPath, nil
 }

@@ -35,7 +35,7 @@ func isImageFile(path string) bool {
 //	格式转换后的文件路径。
 //
 // 由使用者负责删除临时文件。
-func ConvertToAVIF(ctx context.Context, path string, input string, keepTags bool) (_ string, _ string, outErr error) {
+func ConvertToAVIF(ctx context.Context, path string, input string, ignoreExif, ignoreXMP bool) (_ string, _ string, outErr error) {
 	defer utils.CatchAsError(&outErr)
 
 	if !shouldConvertImage(path) {
@@ -53,11 +53,13 @@ func ConvertToAVIF(ctx context.Context, path string, input string, keepTags bool
 	log.Println(`转换成 AVIF 格式：`, input, "->", tmpOutputFile.Name())
 
 	var args []string
-	if keepTags {
-		args = []string{input, tmpOutputFile.Name()}
-	} else {
-		args = []string{`--ignore-exif`, `--ignore-xmp`, `--ignore-icc`, input, tmpOutputFile.Name()}
+	if ignoreExif {
+		args = append(args, `--ignore-exif`)
 	}
+	if ignoreXMP {
+		args = append(args, `--ignore-xmp`)
+	}
+	args = append(args, input, tmpOutputFile.Name())
 
 	cmd := exec.CommandContext(ctx, `avifenc`, args...)
 	cmd.Stdout = os.Stdout
@@ -68,10 +70,13 @@ func ConvertToAVIF(ctx context.Context, path string, input string, keepTags bool
 }
 
 // copyTags 从源文件复制元数据到目标文件。
-func CopyTags(src, dst string) (string, error) {
+// 忽略错误。
+func CopyTags(src, dst string) {
 	cmd := exec.Command("exiftool", "-overwrite_original", "-tagsFromFile", src, dst)
 	output, err := cmd.CombinedOutput()
-	return string(output), err
+	if err != nil {
+		log.Println(`复制元数据失败：`, err, src, dst, string(output))
+	}
 }
 
 // 有些图像可能把 GPS 信息嵌在 XMP、ICC_Profile、MakerNotes 里（尤其是手机拍摄图）。
@@ -84,11 +89,3 @@ func DropGPSTags(file string) (string, error) {
 	output, err := cmd.CombinedOutput()
 	return string(output), err
 }
-
-// func DropMakerNotes(file string) error {
-// 	log.Println(`remove MakerNotes from`, file)
-// 	cmd := exec.Command("exiftool", "-overwrite_original", "-MakerNotes=", file)
-// 	cmd.Stdout = os.Stdout
-// 	cmd.Stderr = os.Stderr
-// 	return cmd.Run()
-// }
