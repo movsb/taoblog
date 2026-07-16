@@ -1,4 +1,6 @@
 class __Vim {
+	static isMac = navigator.platform.includes('Mac');
+
 	constructor() {
 		this.maps  = {};    // 按键绑定映射
 		this.tree  = {};    // TRIE 搜索树
@@ -9,7 +11,8 @@ class __Vim {
 	}
 
 	init() {
-		document.body.addEventListener('keypress', (function (e) {
+		// 'keypress' 事件被废弃了，改用 'keydown' 事件。
+		document.body.addEventListener('keydown', (function (e) {
 			if (this.timer) {
 				clearInterval(this.timer);
 				this.timer = null;
@@ -21,7 +24,7 @@ class __Vim {
 			}
 
 			this.stack.push(e.key);
-			this.trigger();
+			this.trigger(e);
 
 			if (this.stack.length) {
 				this.timer = setInterval(() => {
@@ -82,7 +85,39 @@ class __Vim {
 		}
 	}
 
+	/**
+	 * 绑定按键映射。
+	 * 
+	 * 格式：`[ca]q`，表示：ctrl + alt + q。
+	 * 
+	 * 中括号内的可以省略；大小写直接用大、小写字母表示。
+	 * 
+	 * @param {string} keys 
+	 * @param {function} handler 
+	 */
 	bind(keys, handler) {
+		let ctrl = false, alt = false;
+
+		if(keys[0] == '[') {
+			let i = keys.indexOf(']');
+			if(i == -1) {
+				throw new Error('Invalid key binding: ' + keys);
+			}
+			for(let j = 1; j < i; j++) {
+				switch(keys[j]) {
+					case 'c':
+						ctrl = true;
+						break;
+					case 'a':
+						alt = true;
+						break;
+					default:
+						throw new Error('Invalid key binding: ' + keys);
+				}
+			}
+			keys = keys.slice(i + 1);
+		}
+
 		let node = this.tree;
 		for (let i in keys) {
 			if (!node[keys[i]]) {
@@ -90,10 +125,17 @@ class __Vim {
 			}
 			node = node[keys[i]];
 		}
-		node.__handler = handler;
+		node._handler = handler;
+		node._ctrl = ctrl;
+		node._alt = alt;
 	}
 
-	trigger() {
+	/**
+	 * 
+	 * @param {KeyboardEvent} e 
+	 * @returns 
+	 */
+	trigger(e) {
 		let node = this.tree;
 		console.log('stack:', this.stack);
 
@@ -116,13 +158,19 @@ class __Vim {
 		}
 
 		// 按键组合还没有到达最后一个按键。
-		 if (!node.__handler) {
+		 if (!node._handler) {
 			return;
 		}
 
-		// console.log(node);
-		console.log('triggering:', node);
-		node.__handler.call(this);
+		// 修饰键需要匹配，否则清空。
+		if(node._ctrl == e.ctrlKey && (__Vim.isMac ? node._alt == e.metaKey : node._alt == e.altKey)) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			console.log('triggering:', node);
+			node._handler.call(this);
+		}
+
 		this.stack = [];
 	}
 }

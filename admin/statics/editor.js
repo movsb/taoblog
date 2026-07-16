@@ -1779,6 +1779,17 @@ class PostFormUI {
 		}
 	}
 
+	/**
+	 * 快捷键触发的保存按钮。
+	 */
+	async triggerSubmit() {
+		/** @type {HTMLInputElement} */
+		const submit = this._form.querySelector('input[type=submit]');
+		if(submit.disabled) { return; }
+
+		await this._handleSubmit(submit);
+	}
+
 	async _updatePost() {
 		let p = TaoBlog.posts[TaoBlog.post_id];
 		p.metas.geo = this.geo;
@@ -2258,4 +2269,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const form = new PostFormUI();
 	form.initFrom(post);
 	console.log('form', form);
+
+	TaoBlog.vim.bind('[a]s', async ()=>{
+		await form.triggerSubmit();
+	});
 }, {once: true});
