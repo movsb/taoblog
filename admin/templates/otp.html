@@ -39,7 +39,7 @@
 	<p>
 		<input type="hidden" name="validate" value="1">
 		<input type="hidden" name="url" value="{{.URL}}">
-		<input type="text" name="password" placeholder="动态密码" pattern="\d{6}" required>
+		<input type="text" name="password" placeholder="动态密码" pattern="\d{6}" required autocomplete="one-time-code">
 	</p>
 	<p>
 		<input type="submit" value="验证并保存">
