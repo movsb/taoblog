@@ -64,11 +64,16 @@ setTimeout(update, 3000);
 // 不知道为什么 Firefox On iOS 会会长数字解析成电话号码，但是 Safari 并不会。
 // 按照网上所有人说的添加 `<meta name="format-detection" content="telephone=no">` 也无济于事。
 // 草草草🌿️🌿️🌿️！！！
-setTimeout(()=>{
-	document.querySelectorAll('a[x-apple-data-detectors]').forEach(a => {
-		a.replaceWith(a.textContent);
-	});
-}, 1000);
+//
+// 原始HTML是没有这些a的，不知道浏览器是什么时候悄悄增加的。
+// 出现过页面加载完成但是没有被替换的情况，所以延迟1秒再替换。
+document.addEventListener('DOMContentLoaded', () => {
+	setTimeout(()=>{
+		document.querySelectorAll('a[x-apple-data-detectors]').forEach(a => {
+			a.replaceWith(a.textContent);
+		});
+	}, 1000);
+}, {once: true});
 
 // 草稿管理时嵌入页面，总是以宽屏显示。
 document.addEventListener('DOMContentLoaded', () => {
