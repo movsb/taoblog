@@ -7,7 +7,6 @@ import (
 	"fmt"
 	std_html "html"
 	"html/template"
-	"io"
 	"log"
 	"mime"
 	"net/url"
@@ -16,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/service/modules/dynamic"
@@ -61,6 +61,12 @@ func (e *Image) Extend(m goldmark.Markdown) {
 
 func (e *Image) RegisterFuncs(r renderer.NodeRendererFuncRegisterer) {
 	r.Register(ast.KindImage, e.renderImage)
+}
+
+func (e *Image) TransformHtml(doc *goquery.Document) error {
+	makeImageScrollable(doc)
+	fixImageTable(doc)
+	return nil
 }
 
 func (e *Image) renderImage(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -176,7 +182,7 @@ func (e *Image) renderTable(w util.BufWriter, url *url.URL) {
 		return
 	}
 	defer fp.Close()
-	io.Copy(w, fp)
+	renderTableFromJSON(w, fp)
 }
 
 func renderVideo(w util.BufWriter, url *url.URL) {

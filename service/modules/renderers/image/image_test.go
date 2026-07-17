@@ -1,15 +1,20 @@
 package image_test
 
 import (
+	"net/url"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/movsb/taoblog/service/modules/renderers"
+	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
 	"github.com/movsb/taoblog/service/modules/renderers/image"
 )
 
 func TestRenderByType(t *testing.T) {
-	i := image.New(nil)
+	i := image.New(gold_utils.NewWebFileSystem(fstest.MapFS{
+		`1.table`: &fstest.MapFile{Data: []byte(`{"version":1,"rows":[{"cols":[{"data":"A"}]}]}`)},
+	}, &url.URL{Path: `/`}))
 	i.DoNotAddTime()
 	m := renderers.NewMarkdown(i)
 
@@ -54,6 +59,10 @@ func TestRenderByType(t *testing.T) {
 		{
 			Markdown: `![](1.jpg?border)`,
 			HTML:     `<div class="image-scroll-outer"><p><img src="1.jpg" alt="" class="border"/></p></div>`,
+		},
+		{
+			Markdown: `![](1.table)`,
+			HTML:     `<table class="editor"><tbody><tr><td>A</td></tr></tbody></table>`,
 		},
 	}
 

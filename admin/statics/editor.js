@@ -955,7 +955,8 @@ class TableEditor extends HTMLElement {
 		this.appendChild(cloned.firstElementChild);
 
 		if(typeof JavaScriptTableEditor == 'undefined') {
-			const url = 'https://unpkg.com/javascript-table-editor@1.0.9/dist/table.iife.min.js';
+			// 任何时候修改了此版本号都要记得同步 service/modules/renderers/image/table.go 文件的后端渲染代码。
+			const url = 'https://unpkg.com/javascript-table-editor@1.0.12/dist/table.iife.min.js';
 			const script = document.createElement('script');
 			script.src = url;
 			document.head.appendChild(script);
@@ -979,7 +980,7 @@ class TableEditor extends HTMLElement {
 		this._table = table;
 
 		this._table.addEventListener('change', () => {
-			this._onChange?.(this._table.getContent());
+			this._onChange?.(this._table.getJSON());
 		});
 
 		this.querySelector('.toolbar').addEventListener('click', (e) => {

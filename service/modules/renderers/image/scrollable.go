@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-func (e *Image) TransformHtml(doc *goquery.Document) error {
+func makeImageScrollable(doc *goquery.Document) {
 	doc.Find(`p > img:only-child, p > picture:only-child`).Each(func(i int, s *goquery.Selection) {
 		// 可能有文本节点，排除。
 		elem := s.Nodes[0]
@@ -28,5 +28,4 @@ func (e *Image) TransformHtml(doc *goquery.Document) error {
 
 		s.Parent().WrapNode(div)
 	})
-	return nil
 }
