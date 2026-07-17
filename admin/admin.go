@@ -491,6 +491,9 @@ type EditorData struct {
 	Cats []*proto.Category
 }
 
+// 任何时候修改了此版本号都要记得同步 service/modules/renderers/image/table.go 文件的后端渲染代码。
+//go:generate bash -c "curl -L 'https://unpkg.com/javascript-table-editor@1.0.12/dist/table.iife.min.js' > statics/table.iife.min.js"
+
 func (a *Admin) getEditor(w http.ResponseWriter, r *http.Request) {
 	ac := user.Context(r.Context())
 
