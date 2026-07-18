@@ -8,21 +8,21 @@ import (
 	"github.com/movsb/taorm"
 )
 
-func Migrate(gdb, files, cache *sql.DB) {
-	if err := gdb.Ping(); err != nil {
+func Migrate(posts, files, cache *sql.DB) {
+	if err := posts.Ping(); err != nil {
 		panic(err)
 	}
 
 	var sVer string
-	gdb.QueryRow(`SELECT sqlite_version()`).Scan(&sVer)
+	posts.QueryRow(`SELECT sqlite_version()`).Scan(&sVer)
 	log.Println(` SQLite Version:`, sVer)
 
-	row := gdb.QueryRow(`SELECT value FROM options WHERE name='db_ver'`)
+	row := posts.QueryRow(`SELECT value FROM options WHERE name='db_ver'`)
 	strDBVer := ""
 	dbVer := 0
 	if err := row.Scan(&strDBVer); err != nil {
 		if err == sql.ErrNoRows {
-			gdb.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',?)`, 0)
+			posts.Exec(`INSERT INTO options (name,value) VALUES ('db_ver',?)`, 0)
 		} else {
 			panic(err)
 		}
@@ -46,7 +46,7 @@ func Migrate(gdb, files, cache *sql.DB) {
 		return
 	}
 
-	taorm.NewDB(gdb).MustTxCall(func(txPosts *taorm.DB) {
+	taorm.NewDB(posts).MustTxCall(func(txPosts *taorm.DB) {
 		taorm.NewDB(files).MustTxCall(func(txFiles *taorm.DB) {
 			taorm.NewDB(cache).MustTxCall(func(txCache *taorm.DB) {
 				for ; begin < len(gVersions); begin++ {

@@ -135,9 +135,12 @@ func (c *Client) BackupFiles() {
 	}
 	defer client.CloseSend()
 
-	localDB := migration.InitFiles(`files.db`)
-	postsDB := migration.InitPosts(`posts.db`, true, false)
-	dataStore := storage.NewDataStore(taorm.NewDB(localDB))
+	filesDB := migration.InitFiles(`files.db`)
+	postsDB := migration.InitPosts(`posts.db`, false)
+	cacheDB := migration.InitCache(`cache.db`)
+	migration.Migrate(postsDB, filesDB, cacheDB)
+
+	dataStore := storage.NewDataStore(taorm.NewDB(filesDB))
 	postsStore := storage.NewSQLite(taorm.NewDB(postsDB), dataStore, nil)
 
 	var localSpecs, remoteSpecs []SpecWithPostID

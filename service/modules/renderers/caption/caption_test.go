@@ -53,7 +53,7 @@ func TestRender(t *testing.T) {
 		},
 	}
 
-	db1 := taorm.NewDB(migration.InitPosts(``, false, false))
+	db1 := taorm.NewDB(migration.InitPosts(``, false))
 	db2 := taorm.NewDB(migration.InitFiles(``))
 	dbFS := storage.NewSQLite(db1, storage.NewDataStore(db2), nil)
 	utils.Must(utils.Write(

@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,9 +22,9 @@ import (
 )
 
 // 初始化文章数据库。
-func InitPosts(path string, testCompat bool, createFirstPost bool) *sql.DB {
+func InitPosts(path string, createFirstPost bool) *sql.DB {
 	db := createDatabase(path)
-	testPosts(db, testCompat, createFirstPost)
+	testPosts(db, createFirstPost)
 	return db
 }
 
@@ -160,7 +159,7 @@ func _initSQL(db *sql.DB, file string) {
 	_ = result
 }
 
-func testPosts(db *sql.DB, testCompat bool, createFirstPost bool) {
+func testPosts(db *sql.DB, createFirstPost bool) {
 	var ver string
 	row := db.QueryRow(`select value from options where name='db_ver'`)
 	if err := row.Scan(&ver); err != nil {
@@ -195,13 +194,6 @@ func testPosts(db *sql.DB, testCompat bool, createFirstPost bool) {
 			}
 		}
 		panic(err)
-	}
-
-	if testCompat {
-		n, _ := strconv.Atoi(ver)
-		if n != MaxVersionNumber() {
-			log.Fatalln(`不兼容的数据库版本。`)
-		}
 	}
 }
 

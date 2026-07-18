@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"expvar"
 	"fmt"
 	"log"
@@ -277,7 +276,7 @@ func (s *Server) initDatabases(ctx context.Context, cfg *config.Config) (
 	statsFunc func(func(posts int64, files int64)),
 	closer func(),
 ) {
-	postsDBRaw := migration.InitPosts(cfg.Database.Posts, false, s.createFirstPost)
+	postsDBRaw := migration.InitPosts(cfg.Database.Posts, s.createFirstPost)
 	filesDBRaw := migration.InitFiles(cfg.Database.Files)
 	cacheDBRaw := migration.InitCache(cfg.Database.Cache)
 

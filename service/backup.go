@@ -52,7 +52,7 @@ func (s *Service) Backup(req *proto.BackupRequest, srv proto.Management_BackupSe
 
 	if req.RemoveLogs {
 		func() {
-			db := migration.InitPosts(path, true, false)
+			db := migration.InitPosts(path, false)
 			defer db.Close()
 			logs := logs.NewLogStore(taorm.NewDB(db))
 			logs.DeleteAllLogs(context.Background())
