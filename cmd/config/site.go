@@ -103,8 +103,10 @@ func (c *ThemeVariablesConfig) ClearStruct() {
 func (c ThemeVariablesConfig) AfterSet(paths Segments, obj any) {
 	select {
 	case c.changed <- struct{}{}:
-	case <-time.After(time.Second * 5):
-		panic(`无法发送 changed 通道。可能是因为没有人监听。`)
+	case <-time.After(time.Second * 1):
+		// 刚启动时从数据库加载配置也会执行到这里，但是没有人监听。
+		// 所以暂时屏蔽掉这段。启动后 dynamic 那边会监听。
+		// panic(`无法发送 changed 通道。可能是因为没有人监听。`)
 	}
 }
 

@@ -80,6 +80,8 @@ var gVersions = [...]VersionUpdater{
 	{71, v71},
 	{72, v72},
 	{73, v73},
+	{74, v74},
+	{75, v75},
 }
 
 func MaxVersionNumber() int {

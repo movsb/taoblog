@@ -142,8 +142,9 @@ func (s *Service) SetConfig(ctx context.Context, req *proto.SetConfigRequest) (*
 	}
 
 	u := config.NewUpdater(s.cfg)
+	o := s.GetPluginStorage(`config`)
 	u.MustApply(req.Path, req.Yaml, func(path, value string) {
-		utils.Must(s.options.SetString(path, value))
+		utils.Must(o.SetString(path, value))
 		log.Println(`保存：`, path, value)
 	})
 	return &proto.SetConfigResponse{}, nil

@@ -251,21 +251,6 @@ func (s *Server) Serve(ctx context.Context, testing bool, cfg *config.Config, re
 
 func (s *Server) initConfigFromDatabase(cfg *config.Config, db *taorm.DB) error {
 	updater := config.NewUpdater(cfg)
-	updater.EachSaver(func(path string, obj any) {
-		// TODO 改成 grpc 配置服务。
-		var option models.Option
-		err := db.Model(option).Where(`name=?`, path).Find(&option)
-		if err != nil {
-			if !taorm.IsNotFoundError(err) {
-				panic(err)
-			}
-			return
-		}
-		if err := json.Unmarshal([]byte(option.Value), obj); err != nil {
-			panic(err)
-		}
-		log.Println(`加载配置：`, path)
-	})
 
 	var options []*models.Option
 	db.Where(`name LIKE 'config:%'`).MustFind(&options)

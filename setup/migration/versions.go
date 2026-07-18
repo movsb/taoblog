@@ -957,3 +957,34 @@ func v72(posts, files, cache *taorm.DB) {
 func v73(posts, files, cache *taorm.DB) {
 	posts.MustExec(`DELETE FROM options where name = 'others.whois.api_layer'`)
 }
+
+func v74(posts, files, cache *taorm.DB) {
+	queries := []string{
+		`database`,
+		`server`,
+		`maintenance.%`,
+		`menus`,
+		`site.%`,
+		`others.%`,
+		`theme.%`,
+		`notify.%`,
+	}
+
+	for _, q := range queries {
+		var configs []*models.Option
+		posts.Where(`name like ?`, q).MustFind(&configs)
+		for _, c := range configs {
+			if strings.Contains(c.Name, `:`) {
+				continue
+			}
+			posts.Model(models.Option{}).Where(`name = ?`, c.Name).MustUpdateMap(taorm.M{
+				`name`: taorm.Expr(`'config:' || name`),
+			})
+		}
+	}
+}
+
+func v75(posts, files, cache *taorm.DB) {
+	posts.MustExec(`DELETE FROM options WHERE name='author'`)
+	posts.MustExec(`DELETE FROM options WHERE name='rss:posts'`)
+}

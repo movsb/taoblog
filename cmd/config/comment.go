@@ -19,11 +19,22 @@ type NotificationBarkConfig struct {
 func (NotificationBarkConfig) CanSave() {}
 
 func (c *NotificationBarkConfig) BeforeSet(paths Segments, obj any) error {
-	switch paths.At(0).Key {
-	case `token`:
-		return nil
+	var new NotificationBarkConfig
+	if len(paths) == 0 {
+		new = obj.(NotificationBarkConfig)
+	} else {
+		switch paths.At(0).Key {
+		case `token`:
+			new.Token = obj.(string)
+		}
 	}
-	return fmt.Errorf(`不存在的设置字段：%s`, paths)
+
+	// 随意检测一下。
+	if new.Token != `` && len(new.Token) > 128 {
+		return fmt.Errorf(`invalid bark token`)
+	}
+
+	return nil
 }
 
 type NotificationMailerConfig struct {

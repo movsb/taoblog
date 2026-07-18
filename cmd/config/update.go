@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -356,10 +357,28 @@ func (*Updater) set(p any, value string) {
 			vpe.SetZero()
 		}
 
-		a := vpe.Interface()
-		_ = a
-		if err := yaml.UnmarshalWithOptions([]byte(value), vpe.Addr().Interface(), yaml.Strict()); err != nil {
-			panic(err)
+		addr := vpe.Addr().Interface()
+
+		// Apply 的 saver 处使用的是 json.Marshal，这里也优先尝试用 JSON。
+		// 并且，YAML 应该废弃，因为 cli 的 config set 不常用了，前端已经
+		// 有配置页面，并且使用的是 JSON。
+		// 另：官方的 JSON 是不区分字段大小写的，目前的 Config 类型有些写了 json: 有些只写了 yaml:，
+		// 已经出现了混乱局面。
+
+		tryYAML := true
+		if strings.HasPrefix(value, `{`) {
+			dec := json.NewDecoder(strings.NewReader(value))
+			dec.DisallowUnknownFields()
+			if err := dec.Decode(addr); err != nil {
+				log.Println(`尝试用JSON设置失败：`, err)
+			} else {
+				tryYAML = false
+			}
+		}
+		if tryYAML {
+			if err := yaml.UnmarshalWithOptions([]byte(value), vpe.Addr().Interface(), yaml.Strict()); err != nil {
+				panic(err)
+			}
 		}
 	default:
 		panic(`unknown value type`)
