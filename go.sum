@@ -301,8 +301,8 @@ github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575 h1:pMe8e
 github.com/movsb/goldmark-wiki-table v0.0.0-20231120060153-11f5865ff575/go.mod h1:qryy4AEogyw8d+zR2jGs4QnN4OFIsAVmoe6dglyjjJM=
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd h1:m6UqxMUSn3LdkI6qmXa4Wwel3hhPBiXfktzk+A36fAk=
 github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd/go.mod h1:72PHqKHSMlJ0v209MIb1m4kpXf8NpMtygwDm1O8pPsA=
-github.com/movsb/taorm v0.0.0-20251017130818-570067a98e77 h1:zCQ/+ZolI23a5KNrgxZYRpzG+L7Ojeaib+Vyf3D5EGA=
-github.com/movsb/taorm v0.0.0-20251017130818-570067a98e77/go.mod h1:Y9dP0nNLY+5t5Zlx4WyNVI8LKQDl4Fk/I8hP/LBtd0I=
+github.com/movsb/taorm v0.0.0-20260719154116-543998429b46 h1:7h6WVlYbNl/AkOtmn2qI9aQYYSjS1ueXXEMQkoUU7q4=
+github.com/movsb/taorm v0.0.0-20260719154116-543998429b46/go.mod h1:C/QVKQp5XOUbEypKkEAcyeA53Ukuo0OcFzBk2Qwi6xk=
 github.com/mschoch/smat v0.2.0 h1:8imxQsjDm8yFEAVBe7azKmKSgzSkZXDuKkSq9374khM=
 github.com/mschoch/smat v0.2.0/go.mod h1:kc9mz7DoBKqDyiRL7VZN8KvXQMWeTaVnttLRXOlotKw=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
