@@ -58,7 +58,7 @@ var initEmojis = sync.OnceFunc(func() {
 		}
 	}
 
-	weixin(`doge.png`, `doge`, `旺柴`, `狗头`)
+	weixin(`doge.png`, `doge`, `旺柴`, `狗头`, `dog`)
 	weixin(`机智.png`, `机智`)
 	weixin(`捂脸.png`, `捂脸`)
 	weixin(`耶.png`, `耶`)
