@@ -42,16 +42,6 @@
 			margin: auto;
 			max-width: unset;
 		}
-		.play {
-			position: absolute;
-			background-color: #f0ffffab;
-			left: 50%;
-			bottom: 10%;
-			transform: translateX(-50%);
-			border: none;
-			color: #00000045;
-			text-shadow: 0 0 .5px;
-		}
 	}
 	// 不知道为什么多出来一丢丢 y 滚动。
 	// https://blog.twofei.com/1862/

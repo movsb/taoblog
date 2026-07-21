@@ -6,6 +6,7 @@
  */
 const livePhotoBindEvents = (livePhoto, eventElement) => {
 	const container = livePhoto.querySelector('.container');
+	// 对于 lightbox，可能为空。
 	const icon = livePhoto.querySelector('.icon');
 	const video = container.querySelector('video');
 	// const image = container.querySelector('img');
@@ -24,11 +25,13 @@ const livePhotoBindEvents = (livePhoto, eventElement) => {
 	let within = false;
 
 	/**
-	 * @param {MouseEvent | TouchEvent} e 
+	 * @param {MouseEvent | TouchEvent | null} e 
 	 */
 	const start = async (e) => {
-		e.stopPropagation();
-		e.preventDefault();
+		if(e) {
+			e.stopPropagation();
+			e.preventDefault();
+		}
 
 		within = true;
 
@@ -52,7 +55,7 @@ const livePhotoBindEvents = (livePhoto, eventElement) => {
 		}
 	};
 
-	const leave = (e) => {
+	const leave = () => {
 		livePhoto.classList.remove('zoom');
 
 		warning.classList.remove('show');
@@ -68,15 +71,19 @@ const livePhotoBindEvents = (livePhoto, eventElement) => {
 	};
 
 	const isMobile = 'ontouchstart' in window;
-	if(isMobile) {
-		const touch = eventElement ?? icon;
-		touch.addEventListener('touchstart',  start);
-		touch.addEventListener('touchend',    leave);
-		touch.addEventListener('touchcancel', leave);
+	const elem = eventElement ?? icon;
+	if(elem) {
+		if(isMobile) {
+			elem.addEventListener('touchstart',  start);
+			elem.addEventListener('touchend',    leave);
+			elem.addEventListener('touchcancel', leave);
+		} else {
+			elem.addEventListener('mouseenter',   start);
+			elem.addEventListener('mouseleave',   leave);
+		}
 	} else {
-		const hover = eventElement ?? icon;
-		hover.addEventListener('mouseenter',   start);
-		hover.addEventListener('mouseleave',   leave);
+		livePhoto.__start = start;
+		livePhoto.__leave = leave;
 	}
 
 	video.addEventListener('ended', () => {

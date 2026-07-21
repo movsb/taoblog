@@ -24,8 +24,21 @@ class LightBox {
 		this._placeLivePhotos();
 
 		this._keydownHandlerBound = this._keydownHandler.bind(this);
+
+		this._prevViewingLivePhoto = null;
+		this.root.addEventListener('scrollend', () => {
+			console.log('滚动结束');
+			this._prevViewingLivePhoto?.__leave?.();
+			const index = Math.round(this.root.scrollLeft / this.root.clientWidth);
+			const item = this.root.children[index];
+			if(item && item.classList?.contains('live-photo-wrapper')) {
+				const live = item.querySelector('div.live-photo');
+				live?.__start();
+				this._prevViewingLivePhoto = live;
+			}
+		});
 	}
-	
+
 	/**
 	 * 
 	 * @param {HTMLElement} obj 主体对象元素。
@@ -69,18 +82,10 @@ class LightBox {
 			/** @type {HTMLDivElement} */
 			const icon = clone.querySelector('.icon');
 			icon.remove();
-			
-			const button = document.createElement('button');
-			button.classList.add('play');
-			button.textContent = '播放实况照片';
-			button.onclick = function(e) {
-				e.stopPropagation();
-				e.preventDefault();
-			};
-			div.appendChild(button);
 
 			// 一定是在 DOMContentLoaded 里面执行的，执行时脚本已经执行完成，所以函数一定存在。
-			livePhotoBindEvents(clone, button);
+			// 不指定事件元素，此事会把事件方法绑定把元素本身上。
+			livePhotoBindEvents(clone, null);
 
 			clone = div;
 		}
@@ -157,8 +162,10 @@ class LightBox {
 
 		if(obj.querySelector('div.live-photo')) {
 			/** @type {HTMLVideoElement} */
-			const video = obj.querySelector('video');
-			video.load();
+			const live = obj.querySelector('div.live-photo');
+			// 如果第一张是实况，可能没有滚动结束事件，不会自动播放。
+			index == 0 && live.__start();
+			console.log('播放');
 		}
 
 		document.addEventListener('keydown', this._keydownHandlerBound);

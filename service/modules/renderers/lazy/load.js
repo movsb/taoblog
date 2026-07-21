@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 	const observer = new IntersectionObserver(events=> {
 		events.forEach(event=>{
+			/** @type {HTMLVideoElement} */
 			const video = event.target;
 			if (event.isIntersecting) {
 				observer.unobserve(video);
@@ -14,7 +15,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
 					video.preload = 'metadata';
 				}
 
-				video.load();
+				// 有可能实况照片那边已经主动play过了，再次load会导致异常并abort之前的play
+				if(video.networkState == HTMLMediaElement.NETWORK_EMPTY) {
+					video.load();
+				}
 
 				console.log('进入视野：', video);
 			}
