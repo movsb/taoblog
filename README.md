@@ -53,7 +53,6 @@ $ docker run -it --rm --name=taoblog -p 2564:2564 taocker/taoblog:amd64-latest
 
 |工具|描述|地址|
 |---|---|---|
-|`make`|用于执行 make 命令||
 |`go`|Go语言编译工具链|[All releases - The Go Programming Language](https://go.dev/dl/)。<br>安装完后记得把`$HOME/go/bin`添加到`$PATH`。|
 |`protoc`|用来编译Protocol Buffers。|[Protocol Buffer Compiler Installation \| Protocol Buffers Documentation](https://protobuf.dev/installation/)|
 |`bun`|Bun JavaScript运行时，用来打包。|[Bun — A fast all-in-one JavaScript runtime](https://bun.sh/)|
@@ -74,7 +73,7 @@ $ git clone https://github.com/movsb/taoblog
 建议完整跑一遍：
 
 ```bash
-$ make tools protos generate test build
+$ ./make tools protos generate test build
 ```
 
 ### 日常开发

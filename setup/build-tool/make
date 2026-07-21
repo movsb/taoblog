@@ -1,6 +1,13 @@
-.PHONY: build
-build:
+#!/bin/bash
+
+build() {
 	docker buildx build --platform linux/amd64 -t taocker/taoblog-build-tool:latest .
-.PHONY: push
-push:
+}
+
+push() {
 	docker push taocker/taoblog-build-tool:latest
+}
+
+for cmd in "${@}"; do
+	$cmd
+done
