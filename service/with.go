@@ -59,6 +59,12 @@ func WithFileCache(cache *cache.FileCache) With {
 	}
 }
 
+func WithTwitterPostPublisher(publisher TwitterPostPublisher) With {
+	return func(s *Service) {
+		s.twitterPostPublisher = publisher
+	}
+}
+
 // 进入维护模式。对外部 HTTP 请求有效。
 //
 // 是否在维护模式。

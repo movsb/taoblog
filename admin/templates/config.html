@@ -275,6 +275,32 @@ div.menu-row .menu-actions {
 			</p>
 		</dd>
 	</dl>
+	<dl>
+		<dt>Twitter 同步</dt>
+		<dd>
+			<p class="notes">用于在碎碎念查看页预览并手动发布到 Twitter。Access Token 需要具有 Read and write 权限。</p>
+			<p>
+				<label for="twitter_enabled">启用：</label>
+				<ios-toggle name="twitter_enabled" id="twitter_enabled" {{if $c.Twitter.Enabled}}checked{{end}}></ios-toggle>
+			</p>
+			<p>
+				<label for="twitter_consumer_key">Consumer Key：</label>
+				<input type="text" name="twitter_consumer_key" id="twitter_consumer_key" value="{{$c.Twitter.ConsumerKey}}">
+			</p>
+			<p>
+				<label for="twitter_consumer_secret">Consumer Secret：</label>
+				<input type="password" name="twitter_consumer_secret" id="twitter_consumer_secret" value="{{$c.Twitter.ConsumerSecret}}">
+			</p>
+			<p>
+				<label for="twitter_access_token">Access Token：</label>
+				<input type="password" name="twitter_access_token" id="twitter_access_token" value="{{$c.Twitter.AccessToken}}">
+			</p>
+			<p>
+				<label for="twitter_access_token_secret">Access Token Secret：</label>
+				<input type="password" name="twitter_access_token_secret" id="twitter_access_token_secret" value="{{$c.Twitter.AccessTokenSecret}}">
+			</p>
+		</dd>
+	</dl>
 	<p>
 		<input type="submit" class="bold" value="保存">
 		<span id="save-others-icon"></span>

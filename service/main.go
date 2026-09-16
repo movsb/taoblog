@@ -125,6 +125,9 @@ type Service struct {
 	// 族谱图任务
 	genealogyTask *genealogy.Task
 
+	twitterPostPublisher TwitterPostPublisher
+	twitterPostMutex     sync.Mutex
+
 	calendar *calendar.CalenderService
 	aesGCM   *crypto.AesGcm
 

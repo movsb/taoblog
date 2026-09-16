@@ -57,8 +57,9 @@ type PostMeta struct {
 	Geo    *Geo                `json:"geo,omitempty" yaml:"geo,omitempty"`
 	Origin *proto.Metas_Origin `json:"origin,omitempty" yaml:"origin,omitempty"`
 
-	Weixin     string `json:"weixin,omitempty" yaml:"weixin,omitempty"`
-	TextIndent bool   `json:"text_indent,omitempty" yaml:"text_indent,omitempty"`
+	Weixin        string `json:"weixin,omitempty" yaml:"weixin,omitempty"`
+	TextIndent    bool   `json:"text_indent,omitempty" yaml:"text_indent,omitempty"`
+	TwitterPostID string `json:"twitter_post_id,omitempty" yaml:"twitter_post_id,omitempty"`
 }
 
 // 本来想用 GeoJSON 的，但是感觉标准化程度还不高。
@@ -94,13 +95,14 @@ func (m *PostMeta) Scan(value any) error {
 
 func (m *PostMeta) ToProto() *proto.Metas {
 	p := &proto.Metas{
-		Header:     m.Header,
-		Footer:     m.Footer,
-		Outdated:   m.Outdated,
-		Wide:       m.Wide,
-		Weixin:     m.Weixin,
-		Toc:        m.Toc,
-		TextIndent: m.TextIndent,
+		Header:        m.Header,
+		Footer:        m.Footer,
+		Outdated:      m.Outdated,
+		Wide:          m.Wide,
+		Weixin:        m.Weixin,
+		Toc:           m.Toc,
+		TextIndent:    m.TextIndent,
+		TwitterPostId: m.TwitterPostID,
 	}
 	if g := m.Geo; g != nil {
 		p.Geo = &proto.Metas_Geo{
@@ -122,7 +124,8 @@ func (m *PostMeta) IsEmpty() bool {
 		!m.Wide &&
 		m.Weixin == "" &&
 		(m.Geo == nil || (m.Geo.Longitude == 0 && m.Geo.Latitude == 0)) &&
-		!m.Toc
+		!m.Toc &&
+		m.TwitterPostID == ""
 }
 
 func PostMetaFrom(p *proto.Metas) *PostMeta {
@@ -130,13 +133,14 @@ func PostMetaFrom(p *proto.Metas) *PostMeta {
 		p = &proto.Metas{}
 	}
 	m := PostMeta{
-		Header:     p.Header,
-		Footer:     p.Footer,
-		Outdated:   p.Outdated,
-		Wide:       p.Wide,
-		Weixin:     p.Weixin,
-		Toc:        p.Toc,
-		TextIndent: p.TextIndent,
+		Header:        p.Header,
+		Footer:        p.Footer,
+		Outdated:      p.Outdated,
+		Wide:          p.Wide,
+		Weixin:        p.Weixin,
+		Toc:           p.Toc,
+		TextIndent:    p.TextIndent,
+		TwitterPostID: p.TwitterPostId,
 	}
 	if g := p.Geo; g != nil {
 		m.Geo = &Geo{

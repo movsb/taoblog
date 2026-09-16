@@ -29,6 +29,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.61
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.0
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
+	github.com/dghubble/oauth1 v0.7.3
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/dop251/goja_nodejs v0.0.0-20250325151027-56d2092bee9a
 	github.com/fogleman/gg v1.3.0

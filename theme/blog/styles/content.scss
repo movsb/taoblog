@@ -92,6 +92,34 @@ body:not(.wide) {
 	}
 }
 
+#twitter-post-dialog {
+	width: min(32em, calc(100vw - 3em));
+	textarea {
+		width: 100%;
+		min-height: 10em;
+		resize: vertical;
+		margin: 0;
+	}
+	.twitter-post-media {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 4px;
+		margin: .5em 2px;
+		img, video {
+			width: 100%;
+			max-height: 14em;
+			object-fit: contain;
+		}
+	}
+	.twitter-post-error {
+		color: var(--color-error, #c33);
+		white-space: pre-wrap;
+	}
+	form {
+		text-align: right;
+	}
+}
+
 .entry {
     display: block;
 	color: var(--post-fg);

@@ -259,6 +259,13 @@ formOthers.onsubmit = async(e) => {
 	try {
 		const requests = [
 			updateConfig('others.geo.gaode.key', formOthers.elements['gaode_api_key'].value),
+			updateConfig('others.twitter', {
+				enabled: formOthers.elements['twitter_enabled'].checked,
+				consumer_key: formOthers.elements['twitter_consumer_key'].value,
+				consumer_secret: formOthers.elements['twitter_consumer_secret'].value,
+				access_token: formOthers.elements['twitter_access_token'].value,
+				access_token_secret: formOthers.elements['twitter_access_token_secret'].value,
+			}),
 		];
 
 		const responses = await Promise.allSettled(requests);

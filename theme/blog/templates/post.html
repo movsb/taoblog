@@ -68,6 +68,7 @@ TaoBlog.post_id = +"{{.Data.Post.Id}}";
 		<a class="origin" title="{{.Description}}" href="{{.URL}}" target="_blank">来源</a>
 		{{- end }}
 		{{ editLinkHTML $ }}
+		{{ twitterPostActionHTML $ }}
 	</div>
 	{{end}}
 
@@ -88,4 +89,82 @@ TaoBlog.post_id = +"{{.Data.Post.Id}}";
 {{ render "footer" . }}
 
 {{define "custom_footer"}}
+{{if canSyncTwitterPost $}}
+<dialog id="twitter-post-dialog">
+	<h3>同步到推特</h3>
+	<textarea readonly aria-label="推特内容预览"></textarea>
+	<div class="twitter-post-media"></div>
+	<p class="twitter-post-error" role="alert"></p>
+	<form method="dialog">
+		<button value="cancel">取消</button>
+		<button type="button" class="confirm">确认同步</button>
+	</form>
+</dialog>
+<script>
+(() => {
+	const action = document.querySelector('[data-twitter-post-id]');
+	if (!action) return;
+	const dialog = document.querySelector('#twitter-post-dialog');
+	const preview = dialog.querySelector('textarea');
+	const media = dialog.querySelector('.twitter-post-media');
+	const error = dialog.querySelector('.twitter-post-error');
+	const confirm = dialog.querySelector('.confirm');
+	const postID = action.dataset.twitterPostId;
+
+	async function decode(rsp) {
+		if (rsp.ok) return rsp.json();
+		let message = await rsp.text();
+		try { message = JSON.parse(message).message ?? message; } catch (_) {}
+		throw new Error(message);
+	}
+
+	action.addEventListener('click', async event => {
+		event.preventDefault();
+		error.textContent = '';
+		preview.value = '正在生成预览…';
+		media.replaceChildren();
+		confirm.disabled = true;
+		dialog.showModal();
+		try {
+			const data = await decode(await fetch(`/v3/posts/${postID}:previewForTwitter`));
+			preview.value = data.text ?? '';
+			for (const src of data.media_urls ?? []) {
+				const element = /\.(mp4|mov|webm)$/i.test(src)
+					? document.createElement('video')
+					: document.createElement('img');
+				element.src = src;
+				if (element.tagName === 'VIDEO') element.controls = true;
+				media.append(element);
+			}
+			confirm.disabled = false;
+		} catch (e) {
+			preview.value = '';
+			error.textContent = e.message;
+		}
+	});
+
+	confirm.addEventListener('click', async () => {
+		confirm.disabled = true;
+		error.textContent = '';
+		try {
+			const data = await decode(await fetch(`/v3/posts/${postID}:publishToTwitter`, {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({id: Number(postID)}),
+			}));
+			const link = document.createElement('a');
+			link.href = data.url;
+			link.target = '_blank';
+			link.className = 'no-external';
+			link.textContent = '推特';
+			action.closest('.twitter-post-action').replaceChildren(link);
+			dialog.close();
+		} catch (e) {
+			error.textContent = e.message;
+			confirm.disabled = false;
+		}
+	});
+})();
+</script>
+{{end}}
 {{end}}

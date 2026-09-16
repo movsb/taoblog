@@ -35,6 +35,14 @@ var tmplOpenGraph = sync.OnceValue(func() *template.Template {
 
 func (t *Theme) funcs() map[string]any {
 	menustr := createMenus(t.cfg.Menus, false)
+	canSyncTwitterPost := func(d *data.Data) bool {
+		p, ok := d.Data.(*data.PostData)
+		return ok &&
+			t.cfg.Others.Twitter.Valid() &&
+			p.Post.UserId == int32(d.User.ID) &&
+			p.Post.Type == "tweet" &&
+			p.Post.IsPublic()
+	}
 
 	return map[string]any{
 		// https://githut.com/golang/go/issues/14256
@@ -120,6 +128,21 @@ func (t *Theme) funcs() map[string]any {
 			}
 			return ``
 		},
+		`twitterPostActionHTML`: func(d *data.Data) template.HTML {
+			if !canSyncTwitterPost(d) {
+				return ``
+			}
+			p := d.Data.(*data.PostData)
+			if id := p.Post.GetMetas().GetTwitterPostId(); id != "" {
+				return template.HTML(fmt.Sprintf(
+					`<span class="twitter-post-action"><a class="no-external" href="https://twitter.com/i/web/status/%s" target="_blank">推特</a></span>`,
+					template.URLQueryEscaper(id),
+				))
+			}
+			return template.HTML(fmt.Sprintf(
+				`<span class="twitter-post-action"><a href="#" data-twitter-post-id="%d">同步到推特</a></span>`, p.Post.Id))
+		},
+		`canSyncTwitterPost`: canSyncTwitterPost,
 		// TODO 这个函数好像已经没有存在的意义？
 		`strip`: func(obj any) (any, error) {
 			// user := auth.Context(d.Context).User

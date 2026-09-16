@@ -258,6 +258,17 @@ service TaoBlog {
 			description: "文章预览。";
 		};
 	}
+	rpc PreviewPostForTwitter (PreviewTwitterPostRequest) returns (TwitterPostPreview) {
+		option (google.api.http) = {
+			get: "/v3/posts/{id=*}:previewForTwitter";
+		};
+	}
+	rpc PublishPostToTwitter (PublishPostToTwitterRequest) returns (PublishPostToTwitterResponse) {
+		option (google.api.http) = {
+			post: "/v3/posts/{id=*}:publishToTwitter";
+			body: "*";
+		};
+	}
 	rpc CheckPostTaskListItems (CheckTaskListItemsRequest) returns (CheckTaskListItemsResponse) {
 		option (google.api.http) = {
 			patch: "/v3/posts/{id=*}/tasks:check";

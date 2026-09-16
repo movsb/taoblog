@@ -49,6 +49,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/auto_image_border"
 	runtime_config "github.com/movsb/taoblog/service/modules/runtime"
 	"github.com/movsb/taoblog/service/modules/storage"
+	twitter_sync "github.com/movsb/taoblog/service/modules/twitter"
 	"github.com/movsb/taoblog/setup/migration"
 	"github.com/movsb/taoblog/theme"
 	"github.com/movsb/taoblog/theme/modules/canonical"
@@ -465,6 +466,16 @@ func (s *Server) createMainServices(
 		service.WithCancel(cancel),
 		service.WithFileCache(fileCache),
 		service.WithMaintenanceHandler(s.maintenanceMode),
+		service.WithTwitterPostPublisher(twitter_sync.NewPublisher(func() twitter_sync.Config {
+			config := cfg.Others.Twitter
+			return twitter_sync.Config{
+				Enabled:           config.Enabled,
+				ConsumerKey:       config.ConsumerKey,
+				ConsumerSecret:    config.ConsumerSecret,
+				AccessToken:       config.AccessToken,
+				AccessTokenSecret: config.AccessTokenSecret,
+			}
+		}, filesStore)),
 	}
 
 	s.main = service.New(ctx, sr, cfg, db, rc, mux, s.Auth(), serviceOptions...)
