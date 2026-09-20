@@ -157,20 +157,9 @@ func (c *Client) UploadImage(ctx context.Context, contentType string, data []byt
 	return out.id(), nil
 }
 
-func (c *Client) form(ctx context.Context, method, endpoint string, values url.Values, out any) error {
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+endpoint, strings.NewReader(values.Encode()))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	return c.do(req, out)
-}
-
 func (c *Client) appendChunk(ctx context.Context, mediaID string, index int, data []byte) error {
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
-	_ = w.WriteField("command", "APPEND")
-	_ = w.WriteField("media_id", mediaID)
 	_ = w.WriteField("segment_index", strconv.Itoa(index))
 	part, err := w.CreateFormFile("media", "chunk")
 	if err != nil {
@@ -182,7 +171,8 @@ func (c *Client) appendChunk(ctx context.Context, mediaID string, index int, dat
 	if err := w.Close(); err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/2/media/upload", &body)
+	endpoint := "/2/media/upload/" + url.PathEscape(mediaID) + "/append"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+endpoint, &body)
 	if err != nil {
 		return err
 	}
@@ -192,11 +182,10 @@ func (c *Client) appendChunk(ctx context.Context, mediaID string, index int, dat
 
 func (c *Client) UploadChunked(ctx context.Context, contentType, category string, data []byte) (string, error) {
 	var init mediaResponse
-	err := c.form(ctx, http.MethodPost, "/2/media/upload", url.Values{
-		"command":        {"INIT"},
-		"total_bytes":    {strconv.Itoa(len(data))},
-		"media_type":     {contentType},
-		"media_category": {category},
+	err := c.json(ctx, http.MethodPost, "/2/media/upload/initialize", map[string]any{
+		"total_bytes":    len(data),
+		"media_type":     contentType,
+		"media_category": category,
 	}, &init)
 	if err != nil {
 		return "", err
@@ -213,10 +202,12 @@ func (c *Client) UploadChunked(ctx context.Context, contentType, category string
 		}
 	}
 	var final mediaResponse
-	if err := c.form(ctx, http.MethodPost, "/2/media/upload", url.Values{
-		"command":  {"FINALIZE"},
-		"media_id": {mediaID},
-	}, &final); err != nil {
+	endpoint := "/2/media/upload/" + url.PathEscape(mediaID) + "/finalize"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+	if err := c.do(req, &final); err != nil {
 		return "", err
 	}
 	info := final.Data.ProcessingInfo
