@@ -36,7 +36,7 @@ func LiveCheck(ctx context.Context, svc *service.Service, maintenanceMode mainte
 	}
 	for {
 		if !l.checkPost() || !l.checkHome() {
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Minute)
 			continue
 		}
 
@@ -82,7 +82,7 @@ func (l *_LiveCheck) checkPost() bool {
 		return false
 	}
 	if err != nil {
-		l.sendNotify(`获取文章时出错。`, `在线状态检测`)
+		l.sendNotify(`在线状态检测`, `获取文章时出错。`)
 		return false
 	}
 
@@ -107,12 +107,12 @@ func (l *_LiveCheck) checkHome() bool {
 	rsp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println(err)
-		l.sendNotify(`获取首页数据失败：`+err.Error(), `在线状态检测`)
+		l.sendNotify(`在线状态检测`, `获取首页数据失败：`+err.Error())
 		return false
 	}
 	defer rsp.Body.Close()
 	if rsp.StatusCode != 200 {
-		l.sendNotify(`获取首页数据状态码不正确：`+rsp.Status, `在线状态检测`)
+		l.sendNotify(`在线状态检测`, `获取首页数据状态码不正确：`+rsp.Status)
 		return false
 	}
 	return true
