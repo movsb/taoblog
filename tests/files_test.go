@@ -90,7 +90,8 @@ func createFile(t *testing.T, r *R, pid int64, spec *proto.FileSpec, data []byte
 	utils.Must(parts.WriteField(
 		`spec`, string(utils.Must1(jsonPB.Marshal(spec))),
 	))
-	_ = utils.Must1(parts.CreateFormFile(`data`, spec.Path))
+	fw := utils.Must1(parts.CreateFormFile(`data`, spec.Path))
+	utils.Must1(fw.Write(data))
 	utils.Must(parts.Close())
 
 	endpoint := r.server.JoinPath(`/v3/posts`, fmt.Sprint(pid), `files`)
@@ -106,6 +107,56 @@ func createFile(t *testing.T, r *R, pid int64, spec *proto.FileSpec, data []byte
 	if rsp.StatusCode != 200 {
 		t.Fatalf(`文件上传错误：status=%s`, rsp.Status)
 	}
+}
+
+// https://github.com/grpc-ecosystem/grpc-gateway/issues/5771
+func TestFileHTTPRoutes(t *testing.T) {
+	r := Serve(t.Context())
+
+	p := utils.Must1(r.client.Blog.CreatePost(r.user1, &proto.Post{
+		SourceType: `markdown`,
+		Source:     `# 123`,
+	}))
+	const (
+		fileName = `route-test.txt`
+		fileData = `route test`
+	)
+	createFile(t, r, p.Id, &proto.FileSpec{
+		Path: fileName,
+		Size: uint32(len(fileData)),
+	}, []byte(fileData))
+
+	get := func(t *testing.T, path string) *http.Response {
+		t.Helper()
+		req := utils.Must1(http.NewRequestWithContext(t.Context(), http.MethodGet, r.server.JoinPath(path), nil))
+		r.addAuth(req, r.user1ID)
+		return utils.Must1(http.DefaultClient.Do(req))
+	}
+
+	t.Run(`list`, func(t *testing.T) {
+		rsp := get(t, fmt.Sprintf(`/v3/posts/%d/files`, p.Id))
+		defer rsp.Body.Close()
+		if rsp.StatusCode != http.StatusOK {
+			t.Fatalf(`status = %s, want 200 OK`, rsp.Status)
+		}
+
+		var list proto.ListPostFilesResponse
+		utils.Must(jsonPB.Unmarshal(utils.Must1(io.ReadAll(rsp.Body)), &list))
+		if len(list.Files) != 1 || list.Files[0].Path != fileName {
+			t.Fatalf(`files = %v, want %q`, list.Files, fileName)
+		}
+	})
+
+	t.Run(`download`, func(t *testing.T) {
+		rsp := get(t, fmt.Sprintf(`/v3/posts/%d/files/%s`, p.Id, fileName))
+		defer rsp.Body.Close()
+		if rsp.StatusCode != http.StatusOK {
+			t.Fatalf(`status = %s, want 200 OK`, rsp.Status)
+		}
+		if got := string(utils.Must1(io.ReadAll(rsp.Body))); got != fileData {
+			t.Fatalf(`body = %q, want %q`, got, fileData)
+		}
+	})
 }
 
 func TestListFilesOptions(t *testing.T) {
