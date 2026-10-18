@@ -229,10 +229,7 @@ func (m *UserManager) SetUserOTPSecret(user *user.User, secret string) {
 
 func (m *UserManager) AddWebAuthnCredential(user *user.User, cred *webauthn.Credential) {
 	existed := slices.IndexFunc(user.Credentials, func(c webauthn.Credential) bool {
-		return bytes.Equal(c.PublicKey, cred.PublicKey) ||
-			// 不允许为同一认证器添加多个凭证。
-			// TODO 认证器为了隐私会使 AAGUID 全部为零，这里的判断无效。
-			bytes.Equal(c.Authenticator.AAGUID, cred.Authenticator.AAGUID)
+		return bytes.Equal(c.ID, cred.ID)
 	})
 	if existed >= 0 {
 		user.Credentials[existed] = *cred

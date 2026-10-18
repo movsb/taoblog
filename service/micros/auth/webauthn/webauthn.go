@@ -191,16 +191,19 @@ func (a *WebAuthn) finishLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	defer a.loginSessions.Delete(challenge)
 
-	var outUser *user.User
-
-	credential, err := a.wa.FinishDiscoverableLogin(
+	verifiedUser, credential, err := a.wa.FinishPasskeyLogin(
 		func(rawID, userHandle []byte) (webauthn.User, error) {
+			if len(userHandle) != 4 {
+				return nil, fmt.Errorf("invalid user handle length: %d", len(userHandle))
+			}
 			id := binary.LittleEndian.Uint32(userHandle)
+			if id == 0 || id > math.MaxInt32 {
+				return nil, fmt.Errorf("invalid user id: %d", id)
+			}
 			u, err := a.authBackend.GetUserByID(r.Context(), int(id))
 			if err != nil {
 				return nil, err
 			}
-			outUser = u
 			return ToWebAuthnUser(u), nil
 		},
 		*session, r)
@@ -209,6 +212,7 @@ func (a *WebAuthn) finishLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	outUser := verifiedUser.(*WebAuthnUser).User
 	a.authBackend.AddWebAuthnCredential(outUser, credential)
 	log.Println("登录成功，凭证已更新")
 
