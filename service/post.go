@@ -264,7 +264,7 @@ func (s *Service) getPostContentCached(ctx context.Context, p *proto.Post, co *p
 		func(ctx context.Context, key _PostContentCacheKey) (string, time.Duration, error) {
 			var p models.Post
 			s.posts().Where("id = ?", id).MustFind(&p)
-			content, err := s.renderMarkdown(ctx, true, id, 0, p.SourceType, p.Source, p.Metas, co, key.Public)
+			content, err := s.renderMarkdown(ctx, markdownPost, true, id, 0, p.SourceType, p.Source, p.Metas, co, key.Public)
 			if err != nil {
 				return ``, 0, err
 			}
@@ -897,7 +897,7 @@ func (s *Service) PreviewPost(ctx context.Context, in *proto.PreviewPostRequest)
 
 	ctx = assets.With(ctx, &out.Paths, fmt.Sprintf(`/%d/`, in.Id))
 
-	content, err := s.renderMarkdown(ctx, true, int64(in.Id), 0, in.Type, in.Source, models.PostMeta{}, co.For(co.PreviewPost), s.isPostPublic(ctx, int(in.Id)))
+	content, err := s.renderMarkdown(ctx, markdownPost, true, int64(in.Id), 0, in.Type, in.Source, models.PostMeta{}, co.For(co.PreviewPost), s.isPostPublic(ctx, int(in.Id)))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

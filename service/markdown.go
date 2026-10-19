@@ -37,6 +37,7 @@ import (
 	"github.com/movsb/taoblog/service/modules/renderers/live_photo"
 	"github.com/movsb/taoblog/service/modules/renderers/math"
 	"github.com/movsb/taoblog/service/modules/renderers/media_size"
+	"github.com/movsb/taoblog/service/modules/renderers/mermaid"
 	"github.com/movsb/taoblog/service/modules/renderers/page_link"
 	"github.com/movsb/taoblog/service/modules/renderers/pikchr"
 	"github.com/movsb/taoblog/service/modules/renderers/plantuml"
@@ -58,6 +59,14 @@ import (
 	_ "github.com/movsb/taoblog/theme/share/vim"
 )
 
+// 渲染用途独立于 secure：评论预览时可能尚无 ID，缓存展示时 secure 为 true。
+type markdownKind uint8
+
+const (
+	markdownPost markdownKind = iota
+	markdownComment
+)
+
 // 发表/更新评论时：普通用户不能发表 HTML 评论，管理员可以。
 // 一旦发表/更新成功：始终认为评论是合法的。
 //
@@ -68,6 +77,7 @@ import (
 // 严格情况下，不能光靠这两个字段来区别是文章还是评论。
 func (s *Service) renderMarkdown(
 	ctx context.Context,
+	kind markdownKind,
 	secure bool, // Markdown 内容是否被认定是安全的。如果安全，将会允许HTML等内容，游客评论则不允许。
 	postId,
 	commentID int64,
@@ -176,6 +186,11 @@ func (s *Service) renderMarkdown(
 		// 其它选项可能会插入图片/音视频，所以放后面。
 		lazy.New(),
 	)
+
+	// 普通用户的评论检查/预览遇到 Mermaid 时返回错误；管理员允许使用。
+	// 已保存的评论按可信内容展示，不使用当前阅读者的权限重新限制。
+	options = append(options, renderers.WithFencedCodeBlockRenderer(`mermaid`,
+		mermaid.New(mermaid.WithDisabled(kind == markdownComment && !secure))))
 
 	if !postIsPublic {
 		options = append(options, encrypted.New())

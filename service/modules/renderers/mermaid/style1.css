@@ -1,0 +1,14 @@
+.mermaid { overflow-x: auto; margin: 1em 0; }
+.mermaid > svg { display: block; margin: 0 auto; }
+@media (prefers-color-scheme: dark) {
+	.mermaid {
+		--pele-bg: #1e1e1e;
+		--pele-fg: #e0e0e0;
+		--pele-muted: #aaa;
+		--pele-line: #ccc;
+		--pele-surface: #292929;
+		--pele-surface-alt: #363636;
+		--pele-border: #666;
+		--pele-accent: #8ab4f8;
+	}
+}
