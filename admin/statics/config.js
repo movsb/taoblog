@@ -13,11 +13,15 @@ iconImg.addEventListener('click', () => {
 			return;
 		}
 
-		const url = await readFileAsDataURL(file.files[0]);
-		console.log(url);
+		try {
+			const url = await readFileAsDataURL(file.files[0]);
+			console.log(url);
 
-		iconImg.src = url;
-		iconImg.dataset.changed = '1';
+			iconImg.src = url;
+			iconImg.dataset.changed = '1';
+		} catch (error) {
+			alert('读取图标失败：' + error);
+		}
 	};
 	file.click();
 });

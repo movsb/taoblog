@@ -93,14 +93,14 @@ avatarImg.addEventListener('click', () => {
 			alert('文件太小或太大。');
 			return;
 		}
-		const url = await readFileAsDataURL(f0);
-		console.log(url);
-
 		/** @type {HTMLParagraphElement} */
 		const status = document.querySelector('#avatar-wrapper .uploading');
 		status.style.display = 'block';
 
 		try {
+			const url = await readFileAsDataURL(f0);
+			console.log(url);
+
 			const rsp = await fetch(`/v3/users/${userID}`, {
 				method: `PATCH`,
 				body: JSON.stringify({

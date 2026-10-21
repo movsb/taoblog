@@ -102,25 +102,34 @@ class FilesManager {
 			let xhr = new XMLHttpRequest();
 			xhr.open('POST', `/v3/posts/${this._post_id}/files`);
 			xhr.addEventListener('abort', ()=>{
-				failure('xhr: aborted');
+				failure(new DOMException('上传已取消。', 'AbortError'));
 			});
 			xhr.addEventListener('error', ()=>{
-				failure('上传失败。');
+				failure(new Error('上传失败。', { cause: xhr }));
+			});
+			xhr.addEventListener('timeout', ()=>{
+				failure(new Error('上传超时。', { cause: xhr }));
 			});
 			xhr.addEventListener('load', ()=> {
 				if(xhr.readyState != XMLHttpRequest.DONE) {
-					failure('readystate error');
+					failure(new Error('上传响应状态异常。', { cause: xhr }));
 					return;
 				}
 				if(xhr.status >= 200 && xhr.status < 300) {
-					success(JSON.parse(xhr.responseText));
+					try {
+						success(JSON.parse(xhr.responseText));
+					} catch (error) {
+						failure(new Error('上传响应格式错误。', { cause: error }));
+					}
 					return;
 				}
 				console.log(xhr);
-				failure(`HTTP: ${xhr.status}`);
+				failure(new Error(`上传失败：HTTP ${xhr.status}`, { cause: xhr }));
 			});
 			xhr.upload.addEventListener('progress', (e)=> {
-				progress((e.loaded / e.total * 100).toFixed(0));
+				if (e.lengthComputable && e.total > 0) {
+					progress?.(Math.round(e.loaded / e.total * 100));
+				}
 			});
 			xhr.send(form);
 		});

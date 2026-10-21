@@ -52,6 +52,8 @@ encodeURI 会保留 `#`、`?`，适合处理整个 URI，不适合直接编码�
 
 ### 4. 手写 Promise 缺少失败出口
 
+后续处理（2026-10-22）：FileReader 已补齐 error/abort 拒绝出口，图标和头像调用处捕获读取失败，头像加载状态通过 finally 恢复。XHR 上传已捕获 JSON 解析异常，abort/error/timeout/异常响应状态和 HTTP 错误均返回错误对象；上传进度忽略无法计算或总量为零的事件。decodeAPIError 对 null、空响应和非字符串 message 使用 HTTP 状态回退，并保留原响应为 cause。通过 25 项新增本地测试，覆盖读取成功/失败/取消、损坏上传响应、重试入口、HTTP 错误和头像加载恢复；测试文件仅保留本地，不纳入提交。未新增固定上传超时，timeout 处理用于收到该事件的情况。尚未做真实浏览器回归。以下保留最初的问题说明。
+
 位置：[readFileAsDataURL](/Users/tao/code/taoblog/admin/dynamic/utils.js:32)、[XHR 上传](/Users/tao/code/taoblog/admin/statics/editor.js:92)。
 
 FileReader 只处理 onload，没有 onerror、onabort，读取失败后 Promise 永远 pending。XHR 的 load 回调直接 JSON.parse；响应格式异常时，回调抛错不会自动 reject 外面的 Promise。

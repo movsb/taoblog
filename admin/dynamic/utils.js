@@ -6,8 +6,10 @@ async function decodeAPIError(rsp) {
 	let exception = await rsp.text();
 	try { exception = JSON.parse(exception); }
 	catch {}
+	const message = typeof exception?.message === 'string' ? exception.message
+		: typeof exception === 'string' ? exception : '';
 	return new Error(
-		exception.message ?? exception,
+		message.trim() || `HTTP ${rsp.status}${rsp.statusText ? ' ' + rsp.statusText : ''}`,
 		{ cause: rsp },
 	);
 }
@@ -31,9 +33,15 @@ async function decodeResponse(rsp) {
  */
 async function readFileAsDataURL(f) {
 	const r = new FileReader();
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		r.onload = () => {
 			resolve(r.result);
+		};
+		r.onerror = () => {
+			reject(r.error ?? new Error('文件读取失败。'));
+		};
+		r.onabort = () => {
+			reject(new DOMException('文件读取已取消。', 'AbortError'));
 		};
 		r.readAsDataURL(f);
 	});
