@@ -5,8 +5,16 @@
 async function decryptFile(img) {
 	const decrypt = async src => {
 		try {
-			const spec = await (await fetch(src)).json();
-			const data = await (await fetch(spec.src)).arrayBuffer();
+			const specResponse = await fetch(src);
+			if (!specResponse.ok) {
+				throw new Error(`获取解密信息失败：HTTP ${specResponse.status}`);
+			}
+			const spec = await specResponse.json();
+			const dataResponse = await fetch(spec.src);
+			if (!dataResponse.ok) {
+				throw new Error(`获取加密文件失败：HTTP ${dataResponse.status}`);
+			}
+			const data = await dataResponse.arrayBuffer();
 			const key = await crypto.subtle.importKey(
 				'raw', Uint8Array.fromBase64(spec.key),
 				{ name: 'AES-GCM'},
@@ -23,7 +31,7 @@ async function decryptFile(img) {
 			const contentType = spec.content_type ?? '';
 			return URL.createObjectURL(new Blob([decrypted], { type: contentType }));
 		} catch(e) {
-			throw new Error('图片解码失败。');
+			throw new Error('图片解码失败。', { cause: e });
 		}
 	};
 
@@ -41,31 +49,24 @@ async function decryptFile(img) {
 		 */
 		const parseSrcset = (srcset) => {
 			return srcset.split(",").map(item => {
-				const [url, descriptor] = item.trim().split(/\s+/, 2)
-				return { url, descriptor }
-			})
-		}
+				const [url, descriptor] = item.trim().split(/\s+/, 2);
+				return { url, descriptor };
+			});
+		};
 		const sources = img.parentElement.querySelectorAll('source');
-		sources.forEach(async source => {
+		await Promise.all(Array.from(sources, async source => {
 			const parsedSrcset = parseSrcset(source.srcset);
-			/** @type {Array<Promise<string> | string} */
-			const promises = [];
-			parsedSrcset.forEach(async set => {
+			const updated = await Promise.all(parsedSrcset.map(async set => {
+				let url;
 				try {
-					promises.push(decrypt(set.url));
+					url = await decrypt(set.url);
 				} catch {
-					promises.push(set.url);
+					url = set.url;
 				}
-			});
-			const urls = await Promise.all(promises);
-			const updated = [];
-			parsedSrcset.forEach((set, index) => {
-				let single = `${urls[index]}`;
-				if(set.descriptor) single += ` ${set.descriptor}`;
-				updated.push(single);
-			});
+				return set.descriptor ? `${url} ${set.descriptor}` : url;
+			}));
 			source.srcset = updated.join(', ');
-		});
+		}));
 	}
 }
 

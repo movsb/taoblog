@@ -26,6 +26,8 @@
 
 ### 2. 图片解密中的异步错误没有被正确等待或捕获
 
+后续处理（2026-10-22）：已用两层 Promise.all 等待全部 source 及其候选地址；候选解密使用 await，使失败能被 catch 捕获并回退原 URL，同时保留描述符和顺序。获取元信息与加密文件时先检查 HTTP 状态，主文件错误保留 cause。通过 8 项本地回归测试，使用真实 AES-GCM 验证解密，并覆盖延迟候选、部分失败、HTTP 错误和认证失败；测试文件仅保留本地，不纳入提交。另通过 JavaScript 语法检查，尚未做真实浏览器回归。以下保留最初的问题说明。
+
 位置：[encrypted/script.js](/Users/tao/code/taoblog/service/modules/renderers/encrypted/script.js:49)。
 
 外层 `sources.forEach(async ...)` 不会被 decryptFile 等待。内层 `try { promises.push(decrypt(set.url)); }` 也捕获不到 decrypt 返回的 Promise 的异步拒绝，预期的原 URL 回退不会执行。
