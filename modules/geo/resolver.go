@@ -1,12 +1,14 @@
 package geo
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	urlpkg "net/url"
 
@@ -43,6 +45,8 @@ type Response struct {
 // https://lbs.amap.com/api/webservice/guide/api/georegeo#t5
 func (g *GaoDe) ResolveGeoLocation(ctx context.Context, latitude, longitude float32) (_ []string, outErr error) {
 	defer utils.CatchAsError(&outErr)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 
 	gcjLatitude, gcjLongitude := wgs2gcj.WGStoGCJ(float64(latitude), float64(longitude))
 
@@ -54,10 +58,10 @@ func (g *GaoDe) ResolveGeoLocation(ctx context.Context, latitude, longitude floa
 	req := utils.Must1(http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil))
 	req.Header.Add(`User-Agent`, version.Name)
 	rsp := utils.Must1(http.DefaultClient.Do(req))
+	defer rsp.Body.Close()
 	if rsp.StatusCode != 200 {
 		panic(fmt.Sprintf(`failed to resolve: %s`, rsp.Status))
 	}
-	defer rsp.Body.Close()
 
 	var geoRsp Response
 	utils.Must(json.NewDecoder(rsp.Body).Decode(&geoRsp))
@@ -79,7 +83,7 @@ func (g *GaoDe) ResolveGeoLocation(ctx context.Context, latitude, longitude floa
 	})
 	// 然后把距离排序。
 	slices.SortFunc(locations, func(a, b Location) int {
-		return int(a.Distance - b.Distance)
+		return cmp.Compare(a.Distance, b.Distance)
 	})
 
 	return utils.Map(locations, func(loc Location) string {

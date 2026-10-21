@@ -172,6 +172,8 @@ ch 是无缓冲 channel。调用方等 30 次后退出；若初始化更慢，�
 
 ### 15. Go HTTP 错误路径与比较器
 
+后续处理（2026-10-22）：高德请求取得响应后立即注册 Body.Close，距离排序改用 cmp.Compare，并增加 10 秒上限。OpenURLAsFile 改为显式接收 context，文章渲染及 OpenGraph 调用传入当前请求上下文；专用 HTTP 客户端提供覆盖响应头和正文读取的 30 秒总时限，返回文件后不会提前取消正文读取。PlantUML 底层请求增加 10 秒上限；其 Markdown 渲染器原本已有两种主题合计 10 秒限制，本次复用该常量并增加 WithContext 传递请求取消。功能页同时传递请求上下文，为两次主题请求设置合计 10 秒上限。保留 PlantUML 非 200 响应中错误 SVG 的既有行为。新增 14 项本地 Go 测试（另含状态与取消子用例）及竞态检查通过，覆盖正文关闭、浮点排序、请求/正文超时、取消、返回后的正文可读性及渲染上下文；相关服务和网关包验证通过，服务包测试因问题 9 的既有复制锁值诊断使用 -vet=off。测试只使用本地模拟传输与虚拟时钟，未访问真实高德或 PlantUML 服务；*_local_test.go 仅保留本地，不纳入提交。以下保留最初的问题说明。
+
 位置：[高德请求](/Users/tao/code/taoblog/modules/geo/resolver.go:56)。
 
 非 200 响应先 panic，再注册 defer rsp.Body.Close，错误路径不会关闭 Body。应在成功取得响应后立刻 defer 关闭。距离比较器 `int(a.Distance-b.Distance)` 会把小于 1 的差截为 0，建议用 cmp.Compare 比较浮点数。

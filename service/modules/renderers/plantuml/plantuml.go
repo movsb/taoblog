@@ -13,15 +13,20 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+const fetchTimeout = 10 * time.Second
 
 func Fetch(ctx context.Context, server, format, compressed string, darkMode bool) ([]byte, error) {
 	return fetch(ctx, server, format, compressed, darkMode)
 }
 
 func fetch(ctx context.Context, server, format, compressed string, darkMode bool) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	defer cancel()
 	u, err := url.Parse(server)
 	if err != nil {
 		return nil, err

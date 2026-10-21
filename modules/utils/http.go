@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/fs"
@@ -105,10 +106,15 @@ func IsLocalPathURL(u *urlpkg.URL) bool {
 	return u.Scheme == `` && u.Opaque == `` && u.Host == ``
 }
 
-// 把HTTP响应打开为文件。
-// 该文件不支持 Stat 调用。
-func OpenURLAsFile(url string) (fs.File, error) {
-	rsp, err := http.Get(url)
+var httpFileClient = &http.Client{Timeout: 30 * time.Second}
+
+// 把 HTTP 响应打开为文件，调用方负责关闭；请求和正文读取的总时限为 30 秒。
+func OpenURLAsFile(ctx context.Context, url string) (fs.File, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	rsp, err := httpFileClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -32,6 +32,7 @@ func init() {
 }
 
 type _PlantUMLRenderer struct {
+	ctx    context.Context
 	server string // 可以是 api 前缀
 	format string
 
@@ -44,6 +45,7 @@ func NewDefaultSVG(options ...Option) *_PlantUMLRenderer {
 
 func New(server string, format string, options ...Option) *_PlantUMLRenderer {
 	p := &_PlantUMLRenderer{
+		ctx:    context.Background(),
 		server: server,
 		format: format,
 
@@ -70,7 +72,7 @@ func (p *_PlantUMLRenderer) RenderFencedCodeBlock(w io.Writer, _ string, _ parse
 		CacheKey{compressed}, time.Hour*24*7, &value,
 		func() (any, error) {
 			log.Println(`未使用缓存渲染 PlantUML`)
-			light, dark, err := p.fetch(context.Background(), compressed)
+			light, dark, err := p.fetch(p.ctx, compressed)
 			if err != nil {
 				return nil, err
 			}
@@ -99,7 +101,7 @@ func (p *_PlantUMLRenderer) fetch(ctx context.Context, compressed string) ([]byt
 	)
 
 	wg := &sync.WaitGroup{}
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 	wg.Add(2)
 	go func() {

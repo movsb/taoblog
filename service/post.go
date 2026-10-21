@@ -215,16 +215,17 @@ func (s *Service) getPostLink(pid int, k proto.LinkKind) string {
 	}
 }
 
-func (s *Service) openAsset(id int64) gold_utils.WebFileSystem {
+func (s *Service) openAsset(ctx context.Context, id int64) gold_utils.WebFileSystem {
 	return gold_utils.NewWebFileSystem(
-		_WebRootOpener{s: s},
+		_WebRootOpener{s: s, ctx: ctx},
 		// TODO 这里不知道为什么当时需要用到 Home，按理说应该使用相对路径。
 		utils.Must1(url.Parse(s.getHome())).JoinPath(fmt.Sprintf("/%d/", id)),
 	)
 }
 
 type _WebRootOpener struct {
-	s *Service
+	s   *Service
+	ctx context.Context
 }
 
 // 理论上支持打开所有网站根目录下的文件。
@@ -242,7 +243,7 @@ func (f _WebRootOpener) Open(name string) (fs.File, error) {
 	// NOTE 这里可以包装成一个独立的方法，其它地方仍然可能用到。
 	if rootURL := f.s.httpServerAddr.Load(); rootURL != nil {
 		url := rootURL.JoinPath(name).String()
-		file, err := utils.OpenURLAsFile(url)
+		file, err := utils.OpenURLAsFile(f.ctx, url)
 		if err != nil {
 			return nil, err
 		}
@@ -1836,7 +1837,7 @@ func (s *Service) ServePostOpenGraphImage(w http.ResponseWriter, r *http.Request
 						if img.Parent() != nil && img.Parent().Kind() == ast.KindParagraph && img.NextSibling() == nil && img.PreviousSibling() == nil {
 							u, _ := url.Parse(string(img.Destination))
 							if u != nil && !u.IsAbs() && u.Host == `` && u.Query().Has(`og`) {
-								fp, _ := s.openAsset(p.ID).OpenURL(u.String())
+								fp, _ := s.openAsset(r.Context(), p.ID).OpenURL(u.String())
 								if fp != nil {
 									bg = fp
 								}

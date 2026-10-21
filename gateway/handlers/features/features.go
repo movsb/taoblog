@@ -31,7 +31,7 @@ func New() http.Handler {
 func features(w http.ResponseWriter, r *http.Request) {
 	lock.Lock()
 	if len(light) == 0 || len(dark) == 0 {
-		if err := prepare(); err != nil {
+		if err := prepare(r.Context()); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			lock.Unlock()
 			return
@@ -44,7 +44,9 @@ func features(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, `features.svg`, featuresTime, bytes.NewReader(content))
 }
 
-func prepare() error {
+func prepare(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	reFeaturesPlantUML := regexp.MustCompile("```plantuml((?sU).+)```")
 	matches := reFeaturesPlantUML.FindSubmatch(featuresMd)
 	if len(matches) != 2 {
@@ -54,11 +56,11 @@ func prepare() error {
 	if err != nil {
 		return err
 	}
-	light, err = plantuml.Fetch(context.Background(), `https://www.plantuml.com/plantuml`, `svg`, compressed, false)
+	light, err = plantuml.Fetch(ctx, `https://www.plantuml.com/plantuml`, `svg`, compressed, false)
 	if err != nil {
 		return err
 	}
-	dark, err = plantuml.Fetch(context.Background(), `https://www.plantuml.com/plantuml`, `svg`, compressed, true)
+	dark, err = plantuml.Fetch(ctx, `https://www.plantuml.com/plantuml`, `svg`, compressed, true)
 	if err != nil {
 		return err
 	}

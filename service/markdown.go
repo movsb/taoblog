@@ -102,7 +102,7 @@ func (s *Service) renderMarkdown(
 		return ``, fmt.Errorf(`unknown source type`)
 	}
 
-	assets := s.openAsset(postId)
+	assets := s.openAsset(ctx, postId)
 
 	options := []renderers.Option2{}
 	if postId > 0 {
@@ -165,7 +165,7 @@ func (s *Service) renderMarkdown(
 
 		renderers.WithFencedCodeBlockRenderer(`friends`, friends.New(s.friendsTask, int(postId))),
 		renderers.WithFencedCodeBlockRenderer(`reminder`, reminders.New()),
-		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.NewDefaultSVG(plantuml.WithFileCache(s.fileCache.GetOrLoad))),
+		renderers.WithFencedCodeBlockRenderer(`plantuml`, plantuml.NewDefaultSVG(plantuml.WithContext(ctx), plantuml.WithFileCache(s.fileCache.GetOrLoad))),
 		renderers.WithFencedCodeBlockRenderer(`pikchr`, pikchr.New()),
 		renderers.WithFencedCodeBlockRenderer(`dot`, graph_viz.New()),
 		renderers.WithFencedCodeBlockRenderer(`genealogy`, genealogy.New()),
