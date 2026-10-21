@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tldraw, getSnapshot, useEditor } from 'tldraw'
 import 'tldraw/tldraw.css'
 import './App.css'
@@ -44,19 +44,19 @@ function SnapshotToolbar() {
 		return await close();
 	}, [editor]);
 
-	const [showCheckMark, setShowCheckMark] = useState(false)
+	const [saveState, setSaveState] = useState('idle')
+	const saving = useRef(false)
+	const showCheckMark = saveState === 'saved'
+	const showSaving = saveState === 'saving'
 	useEffect(() => {
-		if (showCheckMark) {
+		if (saveState === 'saved') {
 			const timeout = setTimeout(() => {
-				setShowCheckMark(false)
+				setSaveState('idle')
 			}, 1000)
 			return () => clearTimeout(timeout)
 		}
 		return
-	})
-
-	const [showSaving, setShowSaving] = useState(false)
-	const [displaySaving, setDisplayShowSaving] = useState(false)
+	}, [saveState])
 
 	return (
 		<div className='share-buttons'>
@@ -70,22 +70,26 @@ function SnapshotToolbar() {
 			>✅ 已保存</span>
 			<span
 				style={{
-					display: 'inline-block',
 					transition: 'transform 0.2s ease, opacity 0.2s ease',
 					transform: showSaving ? `scale(1)` : `scale(0.5)`,
 					opacity: showSaving ? 1 : 0,
-					display: displaySaving ? 'inline-block' : 'none',
+					display: showSaving ? 'inline-block' : 'none',
 				}}
 			>保存中...</span>
-			<button type='button' disabled={displaySaving}
+			<button type='button' disabled={showSaving}
 				onClick={async () => {
-					setDisplayShowSaving(true);
-					setShowSaving(true);
-					if(await save()) {
-						setShowCheckMark(true)
+					if (saving.current) { return; }
+					saving.current = true;
+					setSaveState('saving');
+					let saved = false;
+					try {
+						saved = await save();
+					} catch (error) {
+						alert('保存失败：' + (error?.message ?? error));
+					} finally {
+						saving.current = false;
+						setSaveState(saved ? 'saved' : 'idle');
 					}
-					setShowSaving(false);
-					setDisplayShowSaving(false);
 				}}
 			>保存</button>
 			<button type='button' onClick={async () => {

@@ -74,6 +74,8 @@ FileReader 只处理 onload，没有 onerror、onabort，读取失败后 Promise
 
 ### 6. Tldraw 保存异常后按钮无法恢复
 
+后续处理（2026-10-22）：保存状态已收敛为 idle/saving/saved，保存流程通过 try/catch/finally 展示错误并恢复按钮；增加同步互斥防止快速重复点击并发保存。成功提示计时器仅在状态变化时重建，并清理重复的 display 字段。现有 ESLint 与生产构建通过，已同步 admin/statics/tldraw.min.js，生成 CSS 无变化。通过 10 项本地 JSX 组件逻辑测试，使用轻量 Hook/元素模拟覆盖导出、快照、上传异常后的重试，保存返回 false、空画布、重复点击和提示计时器；测试文件仅保留本地，不纳入提交。尚未做真实浏览器回归。以下保留最初的问题说明。
+
 位置：[App.jsx](/Users/tao/code/taoblog/admin/tldraw/src/App.jsx:81)。
 
 `await save()` 抛错时，后续两个状态重置都被跳过，按钮会继续 disabled。建议用 try/catch/finally 恢复保存状态并展示错误。保存状态可收敛为 idle/saving/saved/error，减少两个布尔值互相矛盾的机会。
