@@ -280,21 +280,26 @@ class CommentFormUI {
 		this.url = c.url ?? '';
 	}
 
-	// 点击“发表评论”时要做的事儿。
+	// 点击按钮或通过键盘提交评论时要做的事儿。
 	// NOTE：如果表单内容不合法，不会触发 callback。
 	submit(callback) {
 		let submit = document.querySelector('#comment-submit');
-		submit.addEventListener('click', (e) => {
+		this._form.addEventListener('submit', async (e) => {
 			e.preventDefault();
 			e.stopPropagation();
+			if (submit.disabled) { return; }
 			if (this._form.reportValidity && !this._form.reportValidity()) {
 				console.log('表单内容不合法。');
 				return;
 			}
 			submit.disabled = true;
-			callback(()=>{
+			try {
+				await callback();
+			} catch (error) {
+				alert(error);
+			} finally {
 				submit.disabled = false;
-			});
+			}
 		});
 	}
 
@@ -419,7 +424,7 @@ class CommentManager {
 	init() {
 		let self = this;
 
-		this.form.submit(async (done) => {
+		this.form.submit(async () => {
 			try {
 				self.setStates({ submitting: true });
 				if (self.being_edited > 0) {
@@ -431,7 +436,6 @@ class CommentManager {
 				alert(e);
 			} finally {
 				self.setStates({ submitted: true });
-				done();
 			}
 		});
 
@@ -722,46 +726,36 @@ class CommentManager {
 		div.style.left = `${left}px`;
 		div.style.top = `${top}px`;
 	}
-	// https://www.w3schools.com/howto/howto_js_draggable.asp
 	init_drag(elmnt) {
-		// console.log('init_drag');
-		let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-		let dragElem = elmnt.getElementsByClassName("drag-header");
-		if (!dragElem) { dragElem = elmnt; }
-		else { dragElem = dragElem[0]; }
-		dragElem.onmousedown = dragMouseDown.bind(this);
-		// console.log(dragElem);
-
-		function dragMouseDown(e) {
-			e = e || window.event;
+		const dragElem = elmnt.querySelector('.drag-header') ?? elmnt;
+		dragElem.style.touchAction = 'none';
+		let pointerID = null;
+		let x = 0, y = 0;
+		dragElem.addEventListener('pointerdown', e => {
+			if (pointerID !== null || e.button !== 0 || e.isPrimary === false) { return; }
+			if (e.target.closest('a, button, input, textarea, select, .close')) { return; }
 			e.preventDefault();
-			// get the mouse cursor position at startup:
-			pos3 = e.clientX;
-			pos4 = e.clientY;
-			document.onmouseup = closeDragElement.bind(this);
-			// call a function whenever the cursor moves:
-			document.onmousemove = elementDrag.bind(this);
-		}
-
-		function elementDrag(e) {
-			e = e || window.event;
+			pointerID = e.pointerId;
+			x = e.clientX;
+			y = e.clientY;
+			dragElem.setPointerCapture(pointerID);
+		});
+		dragElem.addEventListener('pointermove', e => {
+			if (e.pointerId !== pointerID) { return; }
 			e.preventDefault();
-			// calculate the new cursor position:
-			pos1 = pos3 - e.clientX;
-			pos2 = pos4 - e.clientY;
-			pos3 = e.clientX;
-			pos4 = e.clientY;
-			// set the element's new position:
-			elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-			elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-		}
-
-		function closeDragElement() {
-			// stop moving when mouse button is released:
-			document.onmouseup = null;
-			document.onmousemove = null;
-
+			elmnt.style.top = `${elmnt.offsetTop + e.clientY - y}px`;
+			elmnt.style.left = `${elmnt.offsetLeft + e.clientX - x}px`;
+			x = e.clientX;
+			y = e.clientY;
+		});
+		const finish = e => {
+			if (e.pointerId !== pointerID) { return; }
+			pointerID = null;
+			if (dragElem.hasPointerCapture(e.pointerId)) { dragElem.releasePointerCapture(e.pointerId); }
 			this.keepInside();
+		};
+		for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+			dragElem.addEventListener(name, finish);
 		}
 	}
 	async delete_me(id) {

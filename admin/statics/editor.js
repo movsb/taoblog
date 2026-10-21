@@ -1710,12 +1710,7 @@ class PostFormUI {
 			this._handleSelectFiles(this._files.files);
 		});
 
-		const submit = this._form.querySelector('input[type=submit]');
-		submit.addEventListener('click', async (e)=>{
-			e.preventDefault();
-			e.stopPropagation();
-			await this._handleSubmit(submit);
-		});
+		this._bindSubmit();
 
 		/** @type {HTMLInputElement} */
 		const fullscreenCheckbox = this._form.elements['fullscreen'];
@@ -1801,9 +1796,18 @@ class PostFormUI {
 		}
 	}
 
+	_bindSubmit() {
+		const submit = this._form.querySelector('input[type=submit]');
+		this._form.addEventListener('submit', async e => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (submit.disabled || !this._form.reportValidity()) { return; }
+			await this._handleSubmit(submit);
+		});
+	}
+
 	/**
-	 * 
-	 * @param {HTMLInputElement} submitButton 
+	 * @param {HTMLInputElement} submitButton
 	 */
 	async _handleSubmit(submitButton) {
 		try {
@@ -1825,7 +1829,7 @@ class PostFormUI {
 		const submit = this._form.querySelector('input[type=submit]');
 		if(submit.disabled) { return; }
 
-		await this._handleSubmit(submit);
+		this._form.requestSubmit(submit);
 	}
 
 	async _updatePost() {

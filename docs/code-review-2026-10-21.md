@@ -148,6 +148,8 @@ ch 是无缓冲 channel。调用方等 30 次后退出；若初始化更慢，�
 
 ### 12. 统一交互事件与表单提交
 
+后续处理（2026-10-22）：评论拖动与音频进度条已改用 Pointer Events、指针捕获及 pointerup/pointercancel/lostpointercapture 收尾，不再覆盖 document 的全局鼠标处理器；交互区域设置 touch-action，忽略其他指针和非主按钮。音频拖动保留播放/暂停状态，结束交互或 change 时提交最终位置并清除旧计时器，播放失败被捕获。评论和文章统一监听 form submit，校验表单并阻止重复提交；文章快捷键使用 requestSubmit，工具栏等非保存按钮显式设置 type=button。评论提交通过 finally 恢复按钮。通过 20 项新增本地交互模拟测试、全部 182 项本地 JS 回归、文章表单 HTML 结构检查、音频渲染器既有 Go 测试及语法检查。测试仅保留本地，不纳入提交；尚未做真实浏览器的触摸、原生 range 与键盘回归。以下保留最初的问题说明。
+
 位置：[评论拖动](/Users/tao/code/taoblog/theme/share/comments/comment.js:726)、[音频进度](/Users/tao/code/taoblog/service/modules/renderers/audio_player/script.js:28)。
 
 旧的 document.onmousemove/onmouseup 会占用全局单一事件槽；音频仅处理鼠标事件，拖出控件释放时也可能漏掉结束。可改为 Pointer Events，使用 pointer capture 和 pointercancel 做完整收尾。

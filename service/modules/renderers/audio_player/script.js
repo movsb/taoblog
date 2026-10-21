@@ -24,32 +24,56 @@ function handleAudio(img) {
 		time.setAttribute('title', `总时长：${value}`);
 	});
 	let progress = player.querySelector('.progress');
-	let capturing = false;
-	progress.addEventListener('mousedown', e=>{
-		capturing = true;
-	}, true);
-	progress.addEventListener('mouseup', e=>{
-		capturing = false;
-		audio.play();
-	}, true);
-	let progressDebouncing = undefined;
-	progress.addEventListener('input', e=> {
-		let tracking = +progress.value / +progress.max * audio.duration;
-		time.innerText = displaySeconds(tracking);
-		let set = () => audio.currentTime = tracking;
-		if (audio.paused) { set(); return; }
+	progress.style.touchAction = 'none';
+	let pointerID = null;
+	let progressDebouncing = null;
+	const trackingTime = () => {
+		if (!Number.isFinite(audio.duration) || audio.duration <= 0 || +progress.max <= 0) { return NaN; }
+		return +progress.value / +progress.max * audio.duration;
+	};
+	const seek = () => {
 		clearTimeout(progressDebouncing);
-		progressDebouncing = setTimeout(set, 250);
+		progressDebouncing = null;
+		const tracking = trackingTime();
+		if (!Number.isFinite(tracking)) { return; }
+		audio.currentTime = tracking;
+		time.innerText = displaySeconds(tracking);
+	};
+	progress.addEventListener('pointerdown', e => {
+		if (pointerID !== null || e.button !== 0 || e.isPrimary === false) { return; }
+		pointerID = e.pointerId;
+		progress.setPointerCapture(pointerID);
+	});
+	const finish = e => {
+		if (e.pointerId !== pointerID) { return; }
+		pointerID = null;
+		seek();
+		if (progress.hasPointerCapture(e.pointerId)) { progress.releasePointerCapture(e.pointerId); }
+	};
+	for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+		progress.addEventListener(name, finish);
+	}
+	progress.addEventListener('change', seek);
+	progress.addEventListener('input', e=> {
+		const tracking = trackingTime();
+		if (!Number.isFinite(tracking)) { return; }
+		time.innerText = displaySeconds(tracking);
+		clearTimeout(progressDebouncing);
+		if (audio.paused) { seek(); return; }
+		progressDebouncing = setTimeout(seek, 250);
 	});
 	audio.addEventListener('timeupdate', e => {
-		if (!capturing) {
+		if (pointerID === null && progressDebouncing === null && Number.isFinite(audio.duration) && audio.duration > 0) {
 			progress.value = audio.currentTime / audio.duration * 100;
 			time.innerText = displaySeconds(audio.currentTime);
 		}
 	});
 	let play =player.querySelector('.play');
 	let pause = player.querySelector('.pause');
-	play.addEventListener('click', e=>{ audio.play(); })
+	play.addEventListener('click', async () => {
+		try { await audio.play(); }
+		catch (error) { console.error('音频播放失败：', error); }
+	});
 	pause.addEventListener('click', e=>{ audio.pause(); })
 	img.remove();
 }
