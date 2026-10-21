@@ -1042,7 +1042,12 @@ class DrawioEditor extends HTMLElement {
 	}
 
 	async connectedCallback() {
+		if (this._iframe) {
+			window.addEventListener('message', this._messageHandler);
+			return;
+		}
 		const frame = document.createElement('iframe');
+		this._iframe = frame;
 
 		// embed drawio 有个 bug，即便当前是 dark 模式，进入 iframe 仍然是 light，但是切日夜切换却是正常的。
 		// 这里通过媒体查询设定一个初始值，设定后仍然能自动日夜切换。
@@ -1067,7 +1072,9 @@ class DrawioEditor extends HTMLElement {
 	 * @returns 
 	 */
 	_messageHandler = async (e) => {
-		if (e.origin !== 'https://embed.diagrams.net') {
+		if (e.origin !== 'https://embed.diagrams.net'
+			|| !this._iframe || !e.source || e.source !== this._iframe.contentWindow
+			|| typeof e.data !== 'string') {
 			return;
 		}
 		console.log('收到消息：', e);
@@ -1075,6 +1082,9 @@ class DrawioEditor extends HTMLElement {
 		try {
 			m = JSON.parse(e.data);
 		} catch {
+			return;
+		}
+		if (!m || typeof m !== 'object' || Array.isArray(m) || typeof m.event !== 'string') {
 			return;
 		}
 		if(m.event == 'configure') {
@@ -1104,14 +1114,20 @@ class DrawioEditor extends HTMLElement {
 			return;
 		}
 		if(m.event == 'export') {
-			// console.log(m.data);
+			if (typeof m.xml !== 'string' || typeof m.data !== 'string') { return; }
+			const index = m.data.indexOf(';base64,');
+			if (index < 0 || !m.data.startsWith('data:image/svg+xml')) { return; }
+			const base64Content = m.data.slice(index + ';base64,'.length);
+			let bytes;
+			try {
+				bytes = Uint8Array.fromBase64(base64Content);
+			} catch {
+				return;
+			}
 			const xmlName = this._file.name;
 			const xmlFile = new File([m.xml], xmlName);
 
 			const svgName = xmlName + '.svg';
-			const index = m.data.indexOf(';base64,');
-			const base64Content = m.data.slice(index + ';base64,'.length);
-			const bytes = Uint8Array.fromBase64(base64Content);
 			const svgFile = new File([bytes], svgName);
 
 			e.source.postMessage(JSON.stringify({

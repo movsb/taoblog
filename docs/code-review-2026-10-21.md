@@ -84,6 +84,8 @@ FileReader 只处理 onload，没有 onerror、onabort，读取失败后 Promise
 
 ### 7. DrawIO 消息只检查 origin，没有检查具体 iframe
 
+后续处理（2026-10-22）：DrawioEditor 已保存 iframe 引用，同时检查消息 origin 和 source，并校验 JSON 消息及导出字段，忽略无效 Base64；组件重新连接时复用原 iframe。草稿页同时检查同源、编号与对应 iframe 的 contentWindow，校验 dirty 布尔值及 saved 标题/时间字段，忽略未知或已移除窗口的消息。通过 38 项新增本地模拟测试，覆盖两个 DrawIO 实例的配置、加载、保存、关闭隔离，以及草稿消息伪造和字段异常。全部 162 项本地回归测试及语法检查通过；测试文件仅保留本地，不纳入提交。尚未使用真实浏览器与 DrawIO 服务回归。以下保留最初的问题说明。
+
 位置：[DrawioEditor](/Users/tao/code/taoblog/admin/statics/editor.js:1051)。
 
 同时打开两个 DrawIO 文件时，两个实例都监听 window message；二者 origin 相同，因此一个 iframe 的 init/export/exit 消息会被多个实例处理，存在保存到错误文件或关闭多个标签的风险。

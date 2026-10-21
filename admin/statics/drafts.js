@@ -192,14 +192,23 @@ document.addEventListener('DOMContentLoaded', () => {
 	sidebarManager.init(drafts);
 
 	window.addEventListener('message', (e) => {
-		if(e.data.name == 'saved') {
-			const { id, title, updatedAt } = e.data;
+		if (e.origin !== window.location.origin || !e.source) { return; }
+		const data = e.data;
+		if (!data || typeof data !== 'object' || Array.isArray(data)
+			|| !Number.isSafeInteger(data.id) || data.id <= 0) { return; }
+		const frame = editorAreaManager._find(data.id);
+		if (!frame || e.source !== frame.contentWindow) { return; }
+		if(data.name === 'saved') {
+			if (typeof data.title !== 'string'
+				|| !Number.isSafeInteger(data.updatedAt) || data.updatedAt < 0) { return; }
+			const { id, title, updatedAt } = data;
 			sidebarManager.handleSaved(id, title, updatedAt);
 			editorAreaManager.handleSaved(id, title, updatedAt);
 			return;
 		}
-		if(e.data.name == 'dirty') {
-			const { id, dirty } = e.data;
+		if(data.name === 'dirty') {
+			if (typeof data.dirty !== 'boolean') { return; }
+			const { id, dirty } = data;
 			sidebarManager.handleDirty(id, dirty);
 			editorAreaManager.handleDirty(id, dirty);
 		}
