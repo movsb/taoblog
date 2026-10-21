@@ -9,6 +9,15 @@ class FilesManager {
 		if (!id) { throw new Error('无效文章编号。'); }
 		this._post_id = +id;
 	}
+
+	/**
+	 * 编码每一级文件名，保留目录分隔符，避免 #、? 等字符变成 URL 片段或查询。
+	 * @param {string} path
+	 */
+	_fileURL(path) {
+		const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+		return `/v3/posts/${this._post_id}/files/${encodedPath}`;
+	}
 	// 列举所有的文件列表。
 	// NOTE: 返回的文件用 path 代表 name。
 	// 因为后端其实是支持目录的，只是前端上传的时候暂不允许。
@@ -24,7 +33,7 @@ class FilesManager {
 	}
 
 	async delete(path) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
+		const url = this._fileURL(path);
 		let rsp = await fetch(url, {
 			method: 'DELETE',
 		});
@@ -32,7 +41,7 @@ class FilesManager {
 	}
 
 	async updateCaption(path, caption) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}:caption`;
+		const url = `${this._fileURL(path)}:caption`;
 		let rsp = await fetch(url, {
 			method: 'PATCH',
 			body: JSON.stringify({ caption }),
@@ -47,7 +56,7 @@ class FilesManager {
 	 * @param {string} path 
 	 */
 	async get(path) {
-		const url = `/v3/posts/${this._post_id}/files/${encodeURI(path)}`;
+		const url = this._fileURL(path);
 		let rsp = await fetch(url);
 		if (!rsp.ok) {
 			throw rsp;

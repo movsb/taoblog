@@ -40,6 +40,8 @@
 
 ### 3. 文件路径使用 encodeURI，特殊字符改变了请求含义
 
+后续处理（2026-10-22）：已新增 FilesManager._fileURL，按 `/` 分段进行 encodeURIComponent 编码，读取、删除和修改注释统一使用该地址构造方法，`:caption` 后缀在文件路径编码后追加。通过 27 项本地 JavaScript 测试，并用本地 Go 路由测试验证同样 27 组 GET/DELETE/PATCH 路径匹配；覆盖目录、中文、emoji、`#`、`?`、`%`、`+`、反斜杠、字面量 `%2F` 和文件名中的 `:caption`。当前网关默认解码行为可正确还原这些路径，无需改后端。测试文件仅保留本地，不纳入提交。尚未做真实浏览器回归。以下保留最初的问题说明。
+
 位置：[FilesManager](/Users/tao/code/taoblog/admin/statics/editor.js:27)，同文件第 35、50 行也有。
 
 encodeURI 会保留 `#`、`?`，适合处理整个 URI，不适合直接编码任意文件路径。文件名 `a#b?.png` 拼接后，服务器收到的 pathname 只有 `/v3/posts/1/files/a`。
