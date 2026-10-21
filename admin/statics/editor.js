@@ -1364,7 +1364,10 @@ class PostFormUI {
 		this._form = document.querySelector('#main');
 		/** @type {HTMLDivElement} */
 		this._editorContainer = document.querySelector('#editor-container');
-		this._previewCallbackReturned = true;
+		this._previewRequestID = 0;
+		this._sourceVersion = 0;
+		// 自动保存串行执行，下一次请求必须使用上一次返回的 modified。
+		this._autoSaveQueue = Promise.resolve();
 		/** @type {HTMLInputElement} */
 		this._files = this._form.querySelector('#files');
 		/** @type {HTMLButtonElement} */
@@ -1752,6 +1755,7 @@ class PostFormUI {
 	}
 
 	_setContentChanged(b) {
+		if (b) { this._sourceVersion++; }
 		this._contentChanged = b;
 
 		if(window.parent != window) {
@@ -1879,25 +1883,25 @@ class PostFormUI {
 	async updatePreview(content, autoSave) {
 		const id = TaoBlog.post_id;
 		const post = TaoBlog.posts[id];
+		const requestID = ++this._previewRequestID;
+		const sourceVersion = this._sourceVersion;
+		const isCurrentSource = () => sourceVersion === this._sourceVersion && content === this.source;
+		const isCurrentPreview = () => requestID === this._previewRequestID && isCurrentSource();
 
 		autoSave = autoSave && window.parent != window;
 
-		try {
-			let rsp = await PostManagementAPI.previewPost(
+		const update = async () => {
+			const rsp = await PostManagementAPI.previewPost(
 				id, post.source_type, content, autoSave, post.modified,
 			);
 
-			this.setPreview(rsp.html, true);
-			this.setDiff(rsp.diff);
-			this._updateReferencedFiles(rsp.paths || []);
-			this._pathsInUse = rsp.paths || [];
-			this._fileManager.updateUsedFilesList();
-
 			if(autoSave) {
-				this._setContentChanged(false);
-
+				// 即使用户已继续输入，也要记住这次保存的版本，供下一次保存使用。
 				post.modified = rsp.updated_at;
-				post.title = rsp.title
+				post.title = rsp.title;
+				if (isCurrentSource()) {
+					this._setContentChanged(false);
+				}
 
 				window.parent.postMessage({
 					name: 'saved',
@@ -1906,8 +1910,27 @@ class PostFormUI {
 					updatedAt: post.modified,
 				}, window.location.origin);
 			}
+
+			// 新请求或新输入都能使旧响应失效，包括尚处于防抖等待中的输入。
+			if (!isCurrentPreview()) { return; }
+			this.setPreview(rsp.html, true);
+			this.setDiff(rsp.diff);
+			this._updateReferencedFiles(rsp.paths || []);
+			this._pathsInUse = rsp.paths || [];
+			this._fileManager.updateUsedFilesList();
+		};
+
+		try {
+			if (autoSave) {
+				const pending = this._autoSaveQueue.then(update);
+				// 单次失败不阻塞后续保存；错误仍由下面的 catch 展示。
+				this._autoSaveQueue = pending.catch(() => {});
+				await pending;
+			} else {
+				await update();
+			}
 		} catch (e) {
-			this.setPreview(e, false);
+			if (isCurrentPreview()) { this.setPreview(e, false); }
 		}
 	};
 
@@ -2107,7 +2130,6 @@ class PostFormUI {
 			this.elemPreviewContainer.innerHTML = v;
 			this.elemPreviewContainer.style.whiteSpace = '';
 		}
-		this._previewCallbackReturned = true;
 	}
 	setDiff(v)  {
 		this.elemDiffContainer.innerHTML = v;
@@ -2123,7 +2145,6 @@ class PostFormUI {
 		if (this.editor) { // tinymde
 			this.editor.addEventListener('change', (e)=>{
 				this._setContentChanged(true);
-				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
 					callback(e.content);
@@ -2133,7 +2154,6 @@ class PostFormUI {
 			// textarea
 			this.elemSource.addEventListener('input', ()=>{
 				this._setContentChanged(true);
-				if (this._previewCallbackReturned == false) { return; }
 				clearTimeout(debouncing);
 				debouncing = setTimeout(() => {
 					callback(this.elemSource.value);

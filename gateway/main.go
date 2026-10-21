@@ -141,6 +141,7 @@ func (g *Gateway) register(ctx context.Context, serverAddr string, mux *http.Ser
 				// 接收不到这个不带 / 结尾的请求。会被重定向到 files/。
 				// 所以这里注册到 api 里面。
 				// https://github.com/grpc-ecosystem/grpc-gateway/issues/5771
+				// 上述问题已经修复了，但是还没有发布新版本，需要版本 > 2.32.0
 				mux.HandlePath(`GET`, `/v3/posts/{id}/files/{path=**}`, func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 					pid := utils.Must1(strconv.Atoi(pathParams[`id`]))
 					path := pathParams[`path`]
