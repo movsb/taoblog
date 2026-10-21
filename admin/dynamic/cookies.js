@@ -3,14 +3,25 @@
  */
 
 __TaoBlog.prototype.parseCookies = function() {
-	return Object.fromEntries(
-	  document.cookie
-		.split('; ')
-		.map(cookie => cookie.split('=').map(decodeURIComponent))
-	);
+	const entries = [];
+	for (const part of document.cookie.split(';')) {
+		const cookie = part.trim();
+		const separator = cookie.indexOf('=');
+		if (separator <= 0) { continue; }
+		try {
+			entries.push([
+				decodeURIComponent(cookie.slice(0, separator)),
+				decodeURIComponent(cookie.slice(separator + 1)),
+			]);
+		} catch {
+			// 单个 Cookie 编码异常时，仍继续解析其他 Cookie。
+		}
+	}
+	return Object.fromEntries(entries);
 }
 __TaoBlog.prototype.getUserID = function() {
-	return +(TaoBlog.parseCookies()['taoblog.user_id'] || 0);
+	const id = Number(TaoBlog.parseCookies()['taoblog.user_id'] || 0);
+	return Number.isSafeInteger(id) && id > 0 ? id : 0;
 };
 __TaoBlog.prototype.getNickname = function() {
 	return TaoBlog.parseCookies()['taoblog.nickname'] || '';
@@ -22,30 +33,44 @@ if (TaoBlog.getUserID() > 0) {
 	}, {once: true});
 }
 
-// Cookie 已绑定到具体的登录IP地址，可能会经常变。
-// 所以在文档激活后，定期检查Cookie是否有效，若无效，则提示登录。
+// 页面重新激活后检查会话，确认失效时才提示登录。
 let checkingSession = false;
-async function onPageActive() {
-	if(document.visibilityState != 'visible') return;
-	if(!location.pathname.startsWith('/admin/')) return;
-	if(location.pathname.startsWith('/admin/login') || location.pathname.startsWith('/admin/logout')) return;
+let sessionCheckTimer = null;
+function onPageActive() {
+	clearTimeout(sessionCheckTimer);
+	sessionCheckTimer = null;
+	const canCheck = () => document.visibilityState === 'visible'
+		&& location.pathname.startsWith('/admin/')
+		&& !location.pathname.startsWith('/admin/login')
+		&& !location.pathname.startsWith('/admin/logout');
+	if (!canCheck() || checkingSession) { return; }
 
 	// 触发得太快容易导致登录界面被频繁弹出，等页面稳定后再检查。
-	setTimeout(async ()=>{
-		if(document.visibilityState != 'visible') return;
-
-		if(checkingSession) return;
+	sessionCheckTimer = setTimeout(async ()=>{
+		sessionCheckTimer = null;
+		if (!canCheck() || checkingSession) { return; }
 		checkingSession = true;
 
-		// 当前登录的用户ID，如果没有登录，则为0。
-		const userID = TaoBlog.getUserID();
-
 		try {
-			const response = await fetch('/admin/session');
-			const badSession = response.status === 401;
-			const serverUserID = response.ok ? (await response.json()).user_id : 0;
+			// 当前登录的用户ID，如果没有登录，则为0。
+			const userID = TaoBlog.getUserID();
+			const response = await fetch('/admin/session', { cache: 'no-store' });
+			let badSession = response.status === 401;
+			if (!badSession) {
+				if (!response.ok) {
+					throw new Error(`会话检查失败：HTTP ${response.status}`);
+				}
+				const session = await response.json();
+				const serverUserID = session?.user_id;
+				if (!Number.isSafeInteger(serverUserID) || serverUserID <= 0) {
+					throw new Error('会话检查返回了无效的用户编号。');
+				}
+				badSession = userID === 0 || serverUserID !== userID;
+			}
 
-			if (badSession || userID == 0 || serverUserID !== userID) {
+			// 请求期间可能切换了页面、标签页或登录用户，不使用过时的结果提示登录。
+			if (!canCheck() || TaoBlog.getUserID() !== userID) { return; }
+			if (badSession) {
 				// 登录状态无效，提示用户重新登录。
 				try {
 					let wa = new WebAuthn();
@@ -61,7 +86,7 @@ async function onPageActive() {
 				return;
 			}
 		} catch (error) {
-			// 网络错误，暂时无法验证登录状态，不做任何处理。
+			// 网络、服务端或响应格式异常时，暂时无法验证登录状态。
 			console.error('无法验证登录状态:', error);
 		} finally {
 			checkingSession = false;
