@@ -151,6 +151,8 @@ type Service struct {
 	// 的情况，此时此值为空。
 	searcher         atomic.Pointer[inverted.Engine]
 	onceInitSearcher sync.Once
+	searcherReady    chan struct{}
+	searcherInitErr  error // 在关闭 searcherReady 前写入，等待方通过该 channel 同步读取。
 
 	// 网站图标，临时放这儿。
 	favicon *favicon.Favicon

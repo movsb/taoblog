@@ -37,13 +37,14 @@ type SearchResult struct {
 func (e *Engine) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	writer, err := e.getWriter()
-	if err != nil {
-		return err
+	if e.closed {
+		return nil
 	}
-	writer.Close()
 	e.closed = true
-	return nil
+	if e.writer == nil {
+		return nil
+	}
+	return e.writer.Close()
 }
 
 func (e *Engine) IndexPosts(ctx context.Context, posts []*proto.Post) (err error) {
@@ -85,6 +86,10 @@ func (e *Engine) IndexPosts(ctx context.Context, posts []*proto.Post) (err error
 
 func (e *Engine) getWriter() (*bluge.Writer, error) {
 	e.mu.RLock()
+	if e.closed {
+		e.mu.RUnlock()
+		return nil, fmt.Errorf(`closed`)
+	}
 	if e.writer != nil {
 		e.mu.RUnlock()
 		return e.writer, nil

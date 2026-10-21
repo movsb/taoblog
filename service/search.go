@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/blugelabs/bluge/search/highlight"
@@ -13,27 +15,12 @@ import (
 )
 
 func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest) (*proto.SearchPostsResponse, error) {
-	searcher := s.searcher.Load()
+	searcher, err := s.waitForSearchEngine(ctx)
+	if err != nil {
+		return nil, err
+	}
 	if searcher == nil {
-		// 首次搜索时初始化搜索引擎。
-		s.onceInitSearcher.Do(func() {
-			ch := make(chan struct{})
-			go s.runSearchEngine(s.ctx, ch)
-			for i := range 30 {
-				select {
-				case <-time.After(time.Second):
-					log.Println(`等待搜索引擎初始化完成：`, i+1)
-				case <-ch:
-					return
-				}
-			}
-		})
-		searcher = s.searcher.Load()
-		if searcher == nil {
-			return &proto.SearchPostsResponse{
-				Initialized: false,
-			}, nil
-		}
+		return &proto.SearchPostsResponse{Initialized: false}, nil
 	}
 
 	posts, err := searcher.SearchPosts(ctx, in.Search)
@@ -55,21 +42,69 @@ func (s *Service) SearchPosts(ctx context.Context, in *proto.SearchPostsRequest)
 	}, nil
 }
 
+func (s *Service) waitForSearchEngine(ctx context.Context) (*inverted.Engine, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if err := s.ctx.Err(); err != nil {
+		return nil, err
+	}
+	if searcher := s.searcher.Load(); searcher != nil {
+		return searcher, nil
+	}
+
+	// sync.Once 只负责启动，所有请求各自等待就绪、超时或取消。
+	s.onceInitSearcher.Do(func() {
+		s.searcherReady = make(chan struct{})
+		go s.runSearchEngine(s.ctx, s.searcherReady)
+	})
+	timer := time.NewTimer(30 * time.Second)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-s.ctx.Done():
+		return nil, s.ctx.Err()
+	case <-timer.C:
+		return nil, nil
+	case <-s.searcherReady:
+		if err := s.ctx.Err(); err != nil {
+			return nil, err
+		}
+		return s.searcher.Load(), s.searcherInitErr
+	}
+}
+
 func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
+	// 关闭 channel 广播结果，调用方已超时或取消也不会阻塞后台任务。
+	notifyReady := sync.OnceFunc(func() { close(ch) })
+	defer notifyReady()
 	engine, err := inverted.NewEngine(&s.cfg.Search)
 	if err != nil {
-		log.Fatalln(err)
+		s.searcherInitErr = fmt.Errorf("搜索引擎初始化失败：%w", err)
+		log.Println(s.searcherInitErr)
+		return
 	}
 	defer func() {
-		engine.Close()
 		s.searcher.Store(nil)
+		if err := engine.Close(); err != nil {
+			log.Println(`关闭搜索引擎失败：`, err)
+		}
 	}()
 
 	var lastCheck int64
-	s.reIndex(ctx, engine, &lastCheck)
+	if err := s.reIndex(ctx, engine, &lastCheck); err != nil {
+		s.searcherInitErr = fmt.Errorf("搜索引擎初次索引失败：%w", err)
+		log.Println(s.searcherInitErr)
+		return
+	}
+	if err := ctx.Err(); err != nil {
+		s.searcherInitErr = err
+		return
+	}
 
 	s.searcher.Store(engine)
-	ch <- struct{}{}
+	notifyReady()
 
 	const scanInterval = time.Minute * 1
 
@@ -79,14 +114,19 @@ func (s *Service) runSearchEngine(ctx context.Context, ch chan<- struct{}) {
 	for loop := true; loop; {
 		select {
 		case <-ticker.C:
-			s.reIndex(ctx, engine, &lastCheck)
+			if err := s.reIndex(ctx, engine, &lastCheck); err != nil {
+				log.Println(`更新搜索索引失败：`, err)
+			}
 		case <-ctx.Done():
 			loop = false
 		}
 	}
 }
 
-func (s *Service) reIndex(ctx context.Context, engine *inverted.Engine, lastCheck *int64) {
+func (s *Service) reIndex(ctx context.Context, engine *inverted.Engine, lastCheck *int64) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	now := time.Now()
 	rsp, err := s.ListPosts(user.SystemForLocal(ctx), &proto.ListPostsRequest{
 		GetPostOptions: &proto.GetPostOptions{
@@ -96,18 +136,17 @@ func (s *Service) reIndex(ctx context.Context, engine *inverted.Engine, lastChec
 		ModifiedNotBefore: int32(*lastCheck),
 	})
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	posts := rsp.Posts
 	if len(posts) <= 0 {
-		return
+		return nil
 	}
 	err = engine.IndexPosts(ctx, posts)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	log.Printf("indexed %d posts\n", len(posts))
 	*lastCheck = now.Unix()
+	return nil
 }

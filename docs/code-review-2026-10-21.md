@@ -96,6 +96,8 @@ FileReader 只处理 onload，没有 onerror、onabort，读取失败后 Promise
 
 ### 8. 搜索引擎启动超过 30 秒后会卡住后台刷新
 
+后续处理（2026-10-22）：sync.Once 仅启动后台任务，各请求独立等待就绪、30 秒超时或请求/服务取消；通过关闭 channel 广播初始化结果，发送方不再依赖仍有接收者。初始化失败记录并返回错误，不再使用 log.Fatalln 结束整站；首次索引失败也会被传递，不会报告初始化成功。失败结果保留至服务重启，暂未增加自动重试策略。检查退出路径时另发现 Engine.Close 持写锁调用 getWriter 再取读锁会死锁，已改为直接关闭已有 writer，支持重复关闭，关闭后拒绝搜索/索引。9 项本地单测、竞态检查、现有 2 项搜索引擎测试，以及 1 项真实本地服务端到端测试（8 个并发首次搜索）通过；超时路径使用 testing/synctest 虚拟时钟验证。Go 测试使用 -vet=off，跳过问题 9 已记录的既有复制锁值诊断，未宣称 vet 通过。测试文件使用 *_local_test.go，仅保留本地，不纳入提交。以下保留最初的问题说明。
+
 位置：[search.go](/Users/tao/code/taoblog/service/search.go:20)、[通知发送](/Users/tao/code/taoblog/service/search.go:72)。
 
 ch 是无缓冲 channel。调用方等 30 次后退出；若初始化更慢，后台执行到 `ch <- struct{}{}` 时已没有接收者，将永久阻塞，无法进入定期索引循环或处理 ctx.Done。引擎指针此前已经发布，所以表现可能是可以搜索，但后续修改不再被索引。
