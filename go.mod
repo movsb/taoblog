@@ -18,6 +18,7 @@ require (
 
 require (
 	filippo.io/age v1.2.1
+	github.com/Calcium-Ion/moejs v0.1.0-alpha.9
 	github.com/Lofanmi/chinese-calendar-golang v0.0.0-20241124100822-1cf51e767c9f
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/alecthomas/chroma/v2 v2.13.0
@@ -30,8 +31,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.0
 	github.com/dghubble/oauth1 v0.7.3
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
-	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
-	github.com/dop251/goja_nodejs v0.0.0-20250325151027-56d2092bee9a
 	github.com/fogleman/gg v1.3.0
 	github.com/gen2brain/avif v0.4.4
 	github.com/go-git/go-git/v5 v5.19.0
@@ -91,13 +90,11 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
-	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/go-webauthn/x v0.3.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
-	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.6.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect

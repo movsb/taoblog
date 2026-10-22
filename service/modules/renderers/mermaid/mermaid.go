@@ -4,6 +4,7 @@ package mermaid
 //go:generate curl -fL https://cdn.jsdelivr.net/npm/pele@1.6.0/dist/pele.global.js -o pele.global.js
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"fmt"
@@ -12,11 +13,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dop251/goja"
+	"github.com/Calcium-Ion/moejs"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/modules/utils/dir"
 	"github.com/movsb/taoblog/service/modules/dynamic"
 	"github.com/movsb/taoblog/service/modules/renderers/gold_utils"
+	"github.com/movsb/taoblog/service/modules/renderers/internal/jsruntime"
 	"github.com/yuin/goldmark/parser"
 )
 
@@ -64,25 +66,24 @@ func (m *Mermaid) RenderFencedCodeBlock(w io.Writer, _ string, _ parser.Attribut
 }
 
 type runtime struct {
-	mu sync.Mutex
-	vm *goja.Runtime
-	fn goja.Callable
+	vm     *jsruntime.Runtime
+	script *moejs.Script
 }
 
 var loadRuntime = sync.OnceValues(func() (*runtime, error) {
-	vm := goja.New()
-	script, err := assets.ReadFile(`pele.global.js`)
+	lib, err := assets.ReadFile(`pele.global.js`)
 	if err != nil {
 		return nil, err
 	}
-	if _, err = vm.RunString(string(script)); err != nil {
+	vm, err := jsruntime.New(context.Background(), false, lib)
+	if err != nil {
 		return nil, err
 	}
-	fn, ok := goja.AssertFunction(vm.Get(`pele`).ToObject(vm).Get(`render`))
-	if !ok {
-		return nil, fmt.Errorf("Pele render function unavailable")
+	script, err := moejs.CompileScript("pele-render.js", `pele.render(source, options).svg`)
+	if err != nil {
+		return nil, err
 	}
-	return &runtime{vm: vm, fn: fn}, nil
+	return &runtime{vm: vm, script: script}, nil
 })
 
 var diagramID atomic.Uint64
@@ -92,29 +93,10 @@ func render(source string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rt.mu.Lock()
-	defer rt.mu.Unlock()
-
-	// Goja permits Interrupt from another goroutine. Wait for the timer callback
-	// before clearing it, so a late timeout cannot interrupt the next diagram.
-	done := make(chan struct{})
-	timer := time.AfterFunc(3*time.Second, func() {
-		rt.vm.Interrupt("Mermaid rendering timed out")
-		close(done)
-	})
-	defer func() {
-		if !timer.Stop() {
-			<-done
-		}
-		rt.vm.ClearInterrupt()
-	}()
-
-	options := rt.vm.ToValue(map[string]any{
-		"idPrefix": fmt.Sprintf("mermaid-%d-", diagramID.Add(1)),
-	})
-	result, err := rt.fn(goja.Undefined(), rt.vm.ToValue(source), options)
-	if err != nil {
-		return "", err
-	}
-	return result.ToObject(rt.vm).Get("svg").String(), nil
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	return rt.vm.Run(ctx, rt.script,
+		jsruntime.Argument{Name: "source", Value: source},
+		jsruntime.Argument{Name: "options", Value: map[string]any{"idPrefix": fmt.Sprintf("mermaid-%d-", diagramID.Add(1))}},
+	)
 }

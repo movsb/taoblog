@@ -92,8 +92,10 @@ let chart = echarts.init(null,null, {
 	width: %d,
 	height: %d,
 });
+try {
 typeof option != 'undefined' && chart.setOption(option);
 return chart.renderToSVGString();
+} finally { chart.dispose(); }
 })();
 `, option, width, height)
 
@@ -102,7 +104,7 @@ return chart.renderToSVGString();
 		return ``, err
 	}
 
-	return val.Export().(string), nil
+	return val, nil
 }
 
 var runtime = sync.OnceValue(func() *Runtime {

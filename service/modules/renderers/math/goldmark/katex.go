@@ -127,5 +127,5 @@ func Render(r *Runtime, equation string, displayMode bool) (_ string, outErr err
 		Argument{Name: `output`, Value: `mathml`},
 	))
 
-	return value.Export().(string), nil
+	return value, nil
 }
