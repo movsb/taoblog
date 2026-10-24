@@ -34,6 +34,25 @@ type Middleware struct {
 	a Auth
 }
 
+const conflictingCredentials = "不能同时使用登录 Cookie 和 Authorization。"
+
+func hasConflictingCredentials(header http.Header) bool {
+	_, err := (&http.Request{Header: header}).Cookie(cookies.CookieNameLogin)
+	return err == nil && len(header.Values("Authorization")) > 0
+}
+
+func gatewayCredentialsConflict(ctx context.Context) bool {
+	md, _ := metadata.FromIncomingContext(ctx)
+	header := http.Header{}
+	for _, value := range md.Get(user.GatewayCookie) {
+		header.Add("Cookie", value)
+	}
+	for _, value := range md.Get("Authorization") {
+		header.Add("Authorization", value)
+	}
+	return hasConflictingCredentials(header)
+}
+
 // 把 Cookie/Authorization 转换成已登录用户。
 //
 // 适用于浏览器登录的用户。
@@ -44,6 +63,10 @@ type Middleware struct {
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (m *Middleware) UserFromCookieHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if hasConflictingCredentials(r.Header) {
+			http.Error(w, conflictingCredentials, http.StatusBadRequest)
+			return
+		}
 		u := m.a.AuthRequest(w, r)
 		remoteAddr := cookies.ParseRemoteAddrFromRequest(r)
 		userAgent := r.Header.Get(`User-Agent`)
@@ -61,6 +84,9 @@ func (m *Middleware) UserFromCookieHandler(h http.Handler) http.Handler {
 // 但是这样违背设计原则的使用场景并不被推崇。如果后期有计划拆分成微服务，则会导致改动较多。
 func (m *Middleware) UserFromGatewayUnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if gatewayCredentialsConflict(ctx) {
+			return nil, status.Error(codes.InvalidArgument, conflictingCredentials)
+		}
 		ctx = m.addUserContextToInterceptorForGateway(ctx)
 		return handler(ctx, req)
 	}
@@ -68,6 +94,9 @@ func (m *Middleware) UserFromGatewayUnaryInterceptor() grpc.UnaryServerIntercept
 
 func (m *Middleware) UserFromGatewayStreamInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if gatewayCredentialsConflict(ss.Context()) {
+			return status.Error(codes.InvalidArgument, conflictingCredentials)
+		}
 		wss := grpc_middleware.WrappedServerStream{
 			ServerStream:   ss,
 			WrappedContext: m.addUserContextToInterceptorForGateway(ss.Context()),

@@ -7,7 +7,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/movsb/taoblog/modules/geo/geoip"
-	"github.com/movsb/taoblog/service/micros/auth/cookies"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -150,8 +149,7 @@ func MustBeAdmin(ctx context.Context) *AuthContext {
 func TestingUserContextForClient(uu *User) context.Context {
 	const userAgent = `go_test`
 	md := metadata.Pairs()
-	md.Append(GatewayCookie, cookies.CookieValue(userAgent, `127.0.0.1`, int(uu.ID), uu.Password))
-	md.Append(GatewayUserAgent, userAgent)
+	md.Append(`User-Agent`, userAgent)
 	md.Append(`Authorization`, uu.AuthorizationValue())
 	return metadata.NewOutgoingContext(context.TODO(), md)
 }
