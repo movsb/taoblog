@@ -56,11 +56,17 @@ func ValidateCookieValue(value string, userAgent string, ip string, getUser func
 		return false, false
 	}
 	userID, _, tm := parseCookieValue(value)
+	age := time.Since(tm)
+	if age < 0 || age >= maxAge {
+		return false, false
+	}
 	password := getUser(userID)
 
 	expect := cookieValue(userAgent, ip, userID, password, tm)
-	refresh := time.Since(tm) > maxAge/2
-	return value == expect, refresh
+	if value != expect {
+		return false, false
+	}
+	return true, age > maxAge/2
 }
 
 var maxAge = time.Hour * 24
