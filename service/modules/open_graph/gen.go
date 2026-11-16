@@ -19,7 +19,6 @@ import (
 
 	"github.com/anthonynsimon/bild/adjust"
 	"github.com/anthonynsimon/bild/blur"
-	"github.com/anthonynsimon/bild/transform"
 	"github.com/fogleman/gg"
 	"github.com/gen2brain/avif"
 	"github.com/golang/freetype/truetype"
@@ -33,7 +32,7 @@ import (
 // 生成器当前的版本号。
 //
 // 修改内部算法时外部应该失效，外部缓存时同时记录版本号。
-const Version = 1
+const Version = 2
 
 const (
 	padding          = 80   // 整体内边距
@@ -122,7 +121,7 @@ func drawBackground(dc *gg.Context, background io.Reader) {
 	if background != nil {
 		img := utils.Must1(decodeImage(background))
 
-		scaled := transform.Resize(img, fullWidth, fullHeight, transform.Lanczos)
+		scaled := utils.ResizeRGBA(img, fullWidth, fullHeight)
 		dimmed := adjust.Contrast(scaled, -.6)
 		blurred := blur.Gaussian(dimmed, 4)
 
@@ -140,7 +139,7 @@ func drawBackground(dc *gg.Context, background io.Reader) {
 func drawAvatar(dc *gg.Context, avatar io.Reader) {
 	if avatar != nil {
 		img := utils.Must1(decodeImageWithCache(avatar))
-		scaled := transform.Resize(img, avatarRadius*2, avatarRadius*2, transform.Lanczos)
+		scaled := utils.ResizeRGBA(img, avatarRadius*2, avatarRadius*2)
 		dc.Push()
 		dc.DrawCircle(fullWidth-padding-avatarRadius, padding+avatarRadius, avatarRadius)
 		dc.Clip()

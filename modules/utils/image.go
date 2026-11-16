@@ -9,8 +9,8 @@ import (
 	"image/png"
 	"io"
 
-	"github.com/anthonynsimon/bild/transform"
 	"github.com/gen2brain/avif"
+	"golang.org/x/image/draw"
 )
 
 // DecodeImage 用原有的 AVIF 解码器处理 AVIF，其他格式走标准库。
@@ -42,6 +42,16 @@ func isAVIF(r *bufio.Reader) bool {
 	return string(b[4:]) == "ftypavif" || string(b[4:]) == "ftypavis"
 }
 
+// ResizeRGBA 将图片缩放到指定尺寸。
+func ResizeRGBA(src image.Image, width, height int) *image.RGBA {
+	if width <= 0 || height <= 0 || src.Bounds().Empty() {
+		return image.NewRGBA(image.Rectangle{})
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, width, height))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), draw.Src, nil)
+	return dst
+}
+
 // 调整图片的大小。
 //
 // 支持 JPEG/PNG/AVIF。
@@ -66,7 +76,7 @@ func ResizeImage(mimeType string, r io.Reader, width, height int) (*DataURL, err
 		return nil, err
 	}
 
-	img = transform.Resize(img, width, height, transform.Lanczos)
+	img = ResizeRGBA(img, width, height)
 
 	buf := bytes.NewBuffer(nil)
 	if err := png.Encode(buf, img); err != nil {
