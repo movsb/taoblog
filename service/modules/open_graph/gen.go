@@ -235,7 +235,7 @@ func decodeImageWithCache(r io.Reader) (image.Image, error) {
 
 func decodeImage(r io.Reader) (image.Image, error) {
 	dup := utils.MemDupReader(r)
-	img, _, err1 := image.Decode(dup())
+	img, err1 := utils.DecodeImage(dup())
 	if err1 != nil {
 		var err2 error
 		img, err2 = avif.Decode(dup())

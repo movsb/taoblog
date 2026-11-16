@@ -1,8 +1,10 @@
 package blur_image
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -10,12 +12,11 @@ import (
 	"io/fs"
 	"log"
 	"mime"
-	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/gen2brain/gav1d/avif"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/movsb/taoblog/service/models"
 	"github.com/movsb/taoblog/service/modules/storage"
@@ -119,32 +120,7 @@ func calcHash(info *models.File, fp fs.File) (string, error) {
 	case `.png`:
 		data, err = png.Decode(fp)
 	case `.avif`:
-		tmp, err2 := os.CreateTemp(``, ``)
-		if err2 != nil {
-			return ``, err2
-		}
-		defer os.Remove(tmp.Name())
-		if _, err := io.Copy(tmp, fp); err != nil {
-			return ``, err
-		}
-		tmp.Close()
-		tmp2, err2 := os.CreateTemp(``, `*.png`)
-		if err2 != nil {
-			return ``, err2
-		}
-		defer os.Remove(tmp2.Name())
-		cmd := exec.Command(`avifdec`, tmp.Name(), tmp2.Name())
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return ``, err
-		}
-		fp, err2 := os.Open(tmp2.Name())
-		if err2 != nil {
-			return ``, err2
-		}
-		defer fp.Close()
-		data, err = png.Decode(fp)
+		data, err = decodeAVIF(fp)
 	default:
 		log.Println(`不知道如何处理：`, *info)
 		return ``, nil
@@ -157,4 +133,22 @@ func calcHash(info *models.File, fp fs.File) (string, error) {
 
 	hash := thumbhash.EncodeImage(data)
 	return base64.StdEncoding.EncodeToString(hash), nil
+}
+
+func decodeAVIF(r io.Reader) (image.Image, error) {
+	const (
+		maxBytes  = 101 << 20 // 与附件上传的请求体上限一致。
+		maxPixels = 50_000_000
+	)
+
+	buf, err := io.ReadAll(io.LimitReader(r, maxBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(buf) > maxBytes {
+		return nil, fmt.Errorf("AVIF 超过 %d 字节", maxBytes)
+	}
+
+	// 保留 avifdec 生成 PNG 时的像素方向，不应用容器的旋转或裁剪。
+	return avif.Decode(bytes.NewReader(buf), avif.Options{FrameSizeLimit: maxPixels})
 }

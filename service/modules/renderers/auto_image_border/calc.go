@@ -8,7 +8,7 @@ import (
 	"log"
 	"math"
 
-	_ "github.com/gen2brain/avif"
+	"github.com/movsb/taoblog/modules/utils"
 	_ "golang.org/x/image/webp"
 )
 
@@ -16,7 +16,7 @@ import (
 // https://www.w3.org/TR/WCAG21/#contrast-minimum
 // 返回值：表示多少个边缘点符合高对比度（范围：[0,1]）。
 func BorderContrastRatio(f io.Reader, r, g, b byte, ratio float64) float32 {
-	img, _, err := image.Decode(f)
+	img, err := utils.DecodeImage(f)
 	if err != nil {
 		log.Println(err)
 		return 0

@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"image"
 	_ "image/gif" // shut up
 	_ "image/jpeg"
 	_ "image/png"
@@ -12,6 +11,7 @@ import (
 	"strings"
 
 	_ "github.com/movsb/go-image-avif-size"
+	"github.com/movsb/taoblog/modules/utils"
 )
 
 type Metadata struct {
@@ -20,7 +20,7 @@ type Metadata struct {
 
 // 常见文件格式（GIF/JPG/JPEG/PNG）支持，用标准库解析。
 func normal(r io.Reader) (*Metadata, error) {
-	config, _, err := image.DecodeConfig(r)
+	config, err := utils.DecodeImageConfig(r)
 	if err != nil {
 		return nil, err
 	}

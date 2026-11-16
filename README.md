@@ -57,7 +57,7 @@ $ docker run -it --rm --name=taoblog -p 2564:2564 taocker/taoblog:amd64-latest
 |`protoc`|用来编译Protocol Buffers。|[Protocol Buffer Compiler Installation \| Protocol Buffers Documentation](https://protobuf.dev/installation/)|
 |`bun`|Bun JavaScript运行时，用来打包。|[Bun — A fast all-in-one JavaScript runtime](https://bun.sh/)|
 |`sass`|用来预编译 SCSS 样式文件。|[Sass: Install Sass](https://sass-lang.com/install/)|
-|`avifenc`<br>`avifdec`|AVIF编码/解码工具。|[AOMediaCodec/libavif: libavif - Library for encoding and decoding .avif files](https://github.com/AOMediaCodec/libavif)|
+|`avifenc`|AVIF编码工具。|[AOMediaCodec/libavif: libavif - Library for encoding and decoding .avif files](https://github.com/AOMediaCodec/libavif)|
 |`exiftool`|图片元数据标签处理工具。|[ExifTool by Phil Harvey](https://exiftool.org/index.html)|
 
 不依赖 cgo。

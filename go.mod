@@ -33,6 +33,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/fogleman/gg v1.3.0
 	github.com/gen2brain/avif v0.4.4
+	github.com/gen2brain/gav1d v0.2.7
 	github.com/go-git/go-git/v5 v5.19.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/goccy/go-graphviz v0.2.9
@@ -140,7 +141,7 @@ require (
 	golang.org/x/text v0.43.0 // indirect
 )
 
-go 1.26.0
+go 1.26.4
 
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
 
