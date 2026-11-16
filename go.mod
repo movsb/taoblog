@@ -23,7 +23,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/alecthomas/chroma/v2 v2.13.0
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.2.1
-	github.com/anthonynsimon/bild v0.14.0
 	github.com/arran4/golang-ical v0.3.2
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.8

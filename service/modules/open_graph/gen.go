@@ -17,8 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anthonynsimon/bild/adjust"
-	"github.com/anthonynsimon/bild/blur"
 	"github.com/fogleman/gg"
 	"github.com/gen2brain/avif"
 	"github.com/golang/freetype/truetype"
@@ -122,10 +120,8 @@ func drawBackground(dc *gg.Context, background io.Reader) {
 		img := utils.Must1(decodeImage(background))
 
 		scaled := utils.ResizeRGBA(img, fullWidth, fullHeight)
-		dimmed := adjust.Contrast(scaled, -.6)
-		blurred := blur.Gaussian(dimmed, 4)
-
-		dc.DrawImage(blurred, 0, 0)
+		filterBackground(scaled)
+		dc.DrawImage(scaled, 0, 0)
 	}
 
 	// 调试：内边距
