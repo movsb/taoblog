@@ -6,6 +6,7 @@ __debug_bin*
 /root
 
 node_modules/
+/admin/statics/editor.js
 /eslint.config.mjs
 /package-lock.json
 /package.json

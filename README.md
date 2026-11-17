@@ -80,6 +80,8 @@ $ ./make tools protos generate test build
 
 直接`go build`就行，或者直接运行：`go run main.go server`。
 
+后台编辑器源码位于 `admin/editor/`，生成的 `admin/statics/editor.js` 不入库。首次检出后如果跳过上面的完整构建，或修改编辑器源码后，请在编译前运行 `go generate -run 'editor/index.mjs' ./admin`。
+
 开箱即用，不需要任何配置文件。
 
 ## 目录结构
