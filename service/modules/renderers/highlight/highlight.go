@@ -74,11 +74,13 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 		),
 		highlighting.WithWrapperRenderer(func(w util.BufWriter, context highlighting.CodeBlockContext, entering bool) {
 			if entering {
-				var hasGutter3 bool
+				var hasGutter3, wrap bool
 				if attrs := context.Attributes(); attrs != nil {
 					anyClass, _ := attrs.GetString(`class`)
 					strClass, _ := anyClass.(string)
 					hasGutter3 = slices.Contains(strings.Fields(strClass), `gutter-3`)
+					wrapAttr, _ := attrs.GetString(`wrap`)
+					wrap = wrapAttr == true
 				}
 
 				if context.Highlighted() {
@@ -87,6 +89,9 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 					classes := []string{`code-scroll-synchronizer`}
 					if hasGutter3 {
 						classes = append(classes, `gutter-3`)
+					}
+					if wrap {
+						classes = append(classes, `code-wrap`)
 					}
 					fmt.Fprintf(w, ` class="%s"`, strings.Join(classes, ` `))
 
@@ -102,6 +107,9 @@ var backend = sync.OnceValue(func() goldmark.Extender {
 					}
 					if hasGutter3 {
 						classes = append(classes, `gutter-3`)
+					}
+					if wrap {
+						classes = append(classes, `code-wrap`)
 					}
 					if len(classes) > 0 {
 						fmt.Fprintf(w, ` class="%s"`, strings.Join(classes, ` `))

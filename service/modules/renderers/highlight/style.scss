@@ -17,6 +17,11 @@ div.chroma {
 	background: unset;
 }
 
+.code-wrap pre > code,
+pre > code.code-wrap {
+	white-space: pre-wrap;
+}
+
 div.chroma {
 	pre.chroma {
 		line-height: 1.5 !important;
