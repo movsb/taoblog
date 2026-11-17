@@ -28,6 +28,16 @@ func TestRender(t *testing.T) {
 			HTML:     `<p><a href="/123/1.avif?a=b"></a></p>`,
 		},
 		{
+			Base:     `https://blog.twofei.com/123/`,
+			Markdown: `[本页章节](#section)`,
+			HTML:     `<p><a href="/123/#section">本页章节</a></p>`,
+		},
+		{
+			Base:     `https://blog.twofei.com/123/`,
+			Markdown: `[文档章节](guide.html?lang=zh#part%2Fone)`,
+			HTML:     `<p><a href="/123/guide.html?lang=zh#part%2Fone">文档章节</a></p>`,
+		},
+		{
 			Base:     `/123/`,
 			Markdown: `<a href="1.avif"></a>`,
 			HTML:     `<p><a href="/123/1.avif"></a></p>`,

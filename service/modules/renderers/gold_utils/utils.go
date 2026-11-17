@@ -68,8 +68,10 @@ func (fs *_WebFileSystem) Resolve(url_ string, relative bool) (*url.URL, error) 
 	ref := fs.base.ResolveReference(u)
 	if relative && ref.Host == fs.base.Host {
 		ref = &url.URL{
-			Path:     ref.Path,
-			RawQuery: ref.RawQuery,
+			Path:        ref.Path,
+			RawQuery:    ref.RawQuery,
+			Fragment:    ref.Fragment,
+			RawFragment: ref.RawFragment,
 		}
 	}
 	return ref, nil
