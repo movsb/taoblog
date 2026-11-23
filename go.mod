@@ -18,8 +18,8 @@ require (
 
 require (
 	filippo.io/age v1.2.1
-	github.com/Calcium-Ion/moejs v0.1.0-alpha.9
 	github.com/Lofanmi/chinese-calendar-golang v0.0.0-20241124100822-1cf51e767c9f
+	github.com/MoeForge/moejs v0.1.1
 	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/alecthomas/chroma/v2 v2.13.0
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.2.1
@@ -62,6 +62,7 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/MoeForge/moego v0.1.0-alpha.3 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.10 // indirect
