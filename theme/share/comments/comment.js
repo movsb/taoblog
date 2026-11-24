@@ -3,7 +3,7 @@ const commentHTML = `<div id="comments">
 <div id="comment-title">
 	文章评论
 	<span class="item"><span class="total">0</span></span>
-	<a class="post-comment item pointer" onclick="comment.reply_to(0)">发表评论</a>
+	<a class="post-comment item pointer" aria-expanded="false" aria-controls="comment-form-div" onclick="comment.toggle_reply(0)">发表评论</a>
 	<span class="right item login-panel">
 		<a class="sign-in pointer" onclick="comment.login()">登录</a>
 		<span class="sign-out"><span class="login-name"></span>(<a class="pointer" onclick="comment.logout()">登出</a>)</span>
@@ -13,29 +13,29 @@ const commentHTML = `<div id="comments">
 <ol id="comment-list"></ol>
 <!-- 评论功能区  -->
 <div class="comment-func">
-	<div>还没有用户发表过评论，我要<a class="post-comment pointer" onclick="comment.reply_to(0)">发表评论</a>。</div>
+	<div>还没有用户发表过评论，我要<a class="post-comment pointer" aria-expanded="false" aria-controls="comment-form-div" onclick="comment.toggle_reply(0)">发表评论</a>。</div>
 </div>
 <!-- 评论框 -->
 <div id="comment-form-div">
-	<div class="no-sel nc drag-header">
-		<div title="隐藏" class="close" onclick="comment.hide();">×</div>
-		<div class="comment-title">
-			<span id="comment-title-status">编辑评论</span>
-		</div>
-	</div>
 	<form id="comment-form">
 		<div class="content-area">
-			<textarea class="overlay" id="comment-content" name="source" wrap="on" required></textarea>
+			<textarea class="overlay" id="comment-content" rows="3" name="source" wrap="on" aria-label="评论内容" placeholder="写下你的评论…" required></textarea>
 			<div class="overlay" id="comment-preview" style="display: none;"></div>
 		</div>
-		<div class="fields">
-			<input type="text" name="author" placeholder="昵称" required>
-			<input type="email" name="email" placeholder="邮箱(不公开)" required>
-			<input type="url" name="url" placeholder="网站(可不填)">
-			<input type="submit" id="comment-submit" value="发表评论">
-			<div class="field">
-				<ios-toggle id="comment-show-preview" label="显示预览"></ios-toggle>
+		<div class="editor-footer">
+			<button type="button" class="editor-identity" aria-label="编辑评论者信息" aria-expanded="false" aria-controls="comment-fields" onclick="comment.toggleIdentity();">
+				<span class="editor-avatar"><img src="/v3/avatar/0" width="32" height="32" alt=""><span class="avatar-edit">编辑</span></span>
+				<span class="editor-name">昵称</span>
+			</button>
+			<div class="editor-actions">
+				<button type="button" id="comment-show-preview" aria-pressed="false" aria-controls="comment-preview">预览</button>
+				<input type="submit" id="comment-submit" value="发表">
 			</div>
+		</div>
+		<div class="fields" id="comment-fields" hidden>
+			<input type="text" name="author" aria-label="昵称" placeholder="昵称" required>
+			<input type="email" name="email" aria-label="邮箱（不公开）" placeholder="邮箱（不公开）" required>
+			<input type="url" name="url" aria-label="网站（选填）" placeholder="网站（选填）">
 		</div>
 	</form>
 </div>
@@ -198,14 +198,14 @@ class CommentPreviewUI {
 		this._toggleContent = toggleContent;
 	}
 
-	get checkBox()      { return document.getElementById('comment-show-preview'); }
+	get button()        { return document.getElementById('comment-show-preview'); }
 	get container()     { return document.getElementById('comment-preview'); }
 
-	get checked()       { return this.checkBox.checked; }
+	get checked()       { return this.button.getAttribute('aria-pressed') === 'true'; }
 	
 	on(callback) {
-		this.checkBox.addEventListener('click', function() {
-			if (this.checked) {
+		this.button.addEventListener('click', function() {
+			if (!this.checked) {
 				this.clear();
 				this.show(true);
 				return callback();
@@ -238,7 +238,8 @@ class CommentPreviewUI {
 	show(yes) {
 		this._toggleContent(!yes);
 		this.container.style.display = yes ? 'block' : 'none';
-		this.checkBox.checked = yes;
+		this.button.setAttribute('aria-pressed', String(yes));
+		this.button.textContent = yes ? '编辑' : '预览';
 	}
 }
 
@@ -440,13 +441,30 @@ class CommentManager {
 		});
 
 		this.preview.on(this.showPreview.bind(this));
+		const source = this.form.elemSource;
+		source.addEventListener('input', () => this.resizeEditor());
+		// Tab 和自动缩进的回退路径可能只修改 value，不触发 input。
+		source.addEventListener('keydown', () => requestAnimationFrame(() => this.resizeEditor()));
+		let editorWidth = 0;
+		new ResizeObserver(([entry]) => {
+			if (entry.contentRect.width === editorWidth) return;
+			editorWidth = entry.contentRect.width;
+			this.resizeEditor();
+		}).observe(source);
 
-		self.init_drag(document.getElementById('comment-form-div'));
+		let avatarTimer;
+		this.form.elemEmail.addEventListener('input', () => {
+			clearTimeout(avatarTimer);
+			avatarTimer = setTimeout(() => this.updateIdentity(), 350);
+		});
+		this.form.elemAuthor.addEventListener('input', () => this.updateIdentity(false));
+		this.form._form.addEventListener('invalid', e => {
+			if (e.target.closest('.fields')) this.toggleIdentity(true);
+		}, true);
 
-		let debouncing = undefined;
-		window.addEventListener('resize', () => {
-			clearTimeout(debouncing);
-			debouncing = setTimeout(this.keepInside, 100);
+
+		window.addEventListener('keyup', e => {
+			if (e.key === 'Escape') this.hide();
 		});
 
 		this.preload();
@@ -477,6 +495,13 @@ class CommentManager {
 	setContent(value) {
 		let content = document.querySelector('#comment-content');
 		content.value = value;
+		this.resizeEditor();
+	}
+	resizeEditor() {
+		const source = this.form.elemSource;
+		if (!source.getClientRects().length) return;
+		source.style.height = 'auto';
+		source.style.height = `${source.scrollHeight}px`;
 	}
 	clearContent() {
 		this.setContent("");
@@ -484,7 +509,10 @@ class CommentManager {
 	showContent(yes) {
 		let elem = document.querySelector('#comment-content');
 		elem.style.display = yes ? 'block' : 'none';
-		if (yes) elem.focus();
+		if (yes) {
+			this.resizeEditor();
+			elem.focus();
+		}
 	}
 
 	hide() {
@@ -495,16 +523,43 @@ class CommentManager {
 	// options
 	//      allowEditingInfo    是否允许编辑评论者的信息
 	showCommentBox(show, callback, options) {
-		let self = this;
-
 		let box = document.getElementById('comment-form-div');
 		if (!show && (box.style.display == '' || box.style.display == 'none')) {
 			return;
 		}
 
+		document.querySelectorAll('#comments .post-comment').forEach(link => {
+			link.textContent = '发表评论';
+			link.setAttribute('aria-expanded', 'false');
+		});
+		document.querySelectorAll('#comment-list .reply-comment').forEach(link => {
+			link.textContent = '回复';
+			link.setAttribute('aria-expanded', 'false');
+		});
+
+		document.querySelectorAll('#comment-list .edit-comment').forEach(link => {
+			link.textContent = '编辑';
+			link.setAttribute('aria-expanded', 'false');
+		});
+
 		if(show) {
+			const targetID = this.being_edited > 0 ? this.being_edited : this.being_replied;
+			const target = targetID > 0
+				? document.querySelector(`#comment-${targetID} > .comment-replies`)
+				: document.getElementById('comment-list');
+			target.before(box);
+			if (targetID > 0) {
+				const action = this.being_edited > 0 ? '.edit-comment' : '.reply-comment';
+				const link = document.querySelector(`#comment-${targetID} > .toolbar ${action}`);
+				link.textContent = '收起';
+				link.setAttribute('aria-expanded', 'true');
+			} else {
+				document.querySelectorAll('#comments .post-comment').forEach(link => {
+					link.textContent = '收起';
+					link.setAttribute('aria-expanded', 'true');
+				});
+			}
 			box.style.display = 'block';
-			this.focus();
 		} else {
 			box.style.display = 'none';
 		}
@@ -513,16 +568,6 @@ class CommentManager {
 			if (typeof options != 'object') {
 				options = {};
 			}
-
-			// 标题框
-			let status = document.getElementById('comment-title-status');
-			status.innerText = this.being_replied == 0
-				? '发表评论'
-				: this.being_replied > 0
-					? '回复评论'
-					: this.being_edited > 0
-						? '编辑评论'
-						: '（？？？）';
 
 			// 编辑框是否可编辑？
 			const inputs = (selectors => selectors.map(selector => document.querySelector(`#comment-form .fields ${selector}`)))([
@@ -538,19 +583,20 @@ class CommentManager {
 			{
 				this.form.restore();
 
-				inputs[0].disabled = false;
+				inputs.forEach(input => input.disabled = !allowEditingInfo);
 
 				// 新发表，使用登录用户信息。
 				if (this.being_edited <= 0) {
 					const userID = TaoBlog.getUserID();
 					const nickname = TaoBlog.getNickname();
-					if (userID > 0 && nickname != ``) {
+					if (userID > 0) {
 						this.form.author = nickname;
-						this.form.email = 'unused@example.com';
+						this.form.email = '';
 						this.form.url = '';
-						inputs[1].style.display = 'none';
-						inputs[2].style.display = 'none';
-						inputs[0].disabled= true;
+						inputs.forEach(input => {
+							input.style.display = 'none';
+							input.disabled = true;
+						});
 					}
 				}
 
@@ -560,17 +606,45 @@ class CommentManager {
 				}
 			}
 
-			let onEsc = function (e) {
-				if (e.key === 'Escape') {
-					self.hide();
-					window.removeEventListener('keyup', onEsc);
-				}
-			};
-
-			// 按 ESC 关闭（隐藏）窗口。
-			window.addEventListener('keyup', onEsc);
+			box.querySelector('.editor-identity').disabled = !allowEditingInfo || TaoBlog.getUserID() > 0;
+			this.toggleIdentity(false);
+			this.updateIdentity();
+			this.resizeEditor();
+			this.focus();
+			box.scrollIntoView({ block: 'nearest' });
 		}
 	}
+	toggleIdentity(show) {
+		const fields = document.getElementById('comment-fields');
+		fields.hidden = !(show ?? fields.hidden);
+		document.querySelector('.editor-identity').setAttribute('aria-expanded', String(!fields.hidden));
+	}
+	async updateIdentity(updateAvatar = true) {
+		const edited = this.being_edited > 0 ? this.list.comments[this.being_edited] : null;
+		document.querySelector('.editor-name').textContent = (edited?.author ?? this.form.author).trim() || '昵称';
+		if (!updateAvatar) return;
+		if (edited) {
+			this._avatarVersion = (this._avatarVersion ?? 0) + 1;
+			document.querySelector('.editor-avatar img').src = this.api.avatarURLOf(edited.avatar);
+			return;
+		}
+		const email = this.form.email.trim();
+		const version = this._avatarVersion = (this._avatarVersion ?? 0) + 1;
+		const avatar = document.querySelector('.editor-avatar img');
+		avatar.src = '/v3/avatar/0';
+		if (email && !this.form.elemEmail.validity.valid) return;
+		try {
+			const response = await fetch('/v3/avatar:resolve', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email }),
+			});
+			if (!response.ok) return;
+			const result = await response.json();
+			if (version === this._avatarVersion) avatar.src = result.url;
+		} catch (_) { /* 保留默认头像，信息编辑不受网络影响。 */ }
+	}
+
 	toggle_post_comment_button(show) {
 		let root = document.querySelector('#comments');
 		if (this.list.count > 0) {
@@ -650,8 +724,8 @@ class CommentManager {
 				? `<div class="comment-content html-content reset-list-style-type">${cmt.content}</div>`
 				: `<div class="comment-content reset-list-style-type">${h2t(cmt.content)}</div>`}
 	<div class="toolbar no-sel">
-		<a class="" onclick="comment.reply_to(${cmt.id});return false;">回复</a>
-		<a class="edit-comment ${cmt.can_edit ? 'can-edit' : ''}" onclick="comment.edit(${cmt.id});return false;">编辑</a>
+		<a class="reply-comment" aria-expanded="false" aria-controls="comment-form-div" onclick="comment.toggle_reply(${cmt.id});return false;">回复</a>
+		<a class="edit-comment ${cmt.can_edit ? 'can-edit' : ''}" aria-expanded="false" aria-controls="comment-form-div" onclick="comment.edit(${cmt.id});return false;">编辑</a>
 		<a class="delete-comment" onclick="confirm('确定要删除？') && comment.delete_me(${cmt.id});">删除</a>
 	</div>
 	<ol class="comment-replies" id="comment-reply-${cmt.id}"></ol>
@@ -660,25 +734,38 @@ class CommentManager {
 
 		return html;
 	}
+	toggle_reply(id) {
+		const link = id > 0
+			? document.querySelector(`#comment-${id} > .toolbar .reply-comment`)
+			: document.querySelector('#comments .post-comment');
+		if (link.getAttribute('aria-expanded') === 'true') {
+			this.hide();
+		} else {
+			this.reply_to(id);
+		}
+	}
 	reply_to(p) {
 		if (this.being_edited > 0) {
 			this.being_edited = -1;
 			this.form.popContent();
 		}
 		this.being_replied = +p;
-		this.move_to_center();
 		this.preview.show(false);
 		this.showCommentBox(true, () => this.focus(), {
 			allowEditingInfo: true,
 		});
 	}
 	edit(c) {
+		const link = document.querySelector(`#comment-${c} > .toolbar .edit-comment`);
+		if (link.getAttribute('aria-expanded') === 'true') {
+			this.hide();
+			return;
+		}
 		if (this.being_replied > -1) {
 			this.being_replied = -1;
 			this.form.stashContent();
 		}
 		this.being_edited = c;
-		this.move_to_center();
 		this.preview.show(false);
 		this.showCommentBox(true, ()=>this.focus(), {
 			allowEditingInfo: false,
@@ -687,80 +774,14 @@ class CommentManager {
 	focus() {
 		document.querySelector('#comment-content').focus();
 	}
-	move_to_center() {
-		let div = document.querySelector('#comment-form-div');
-		let ww = window.innerWidth;
-		let wh = window.innerHeight;
-		let cw = getComputedStyle(div)['width'];
-		let ch = getComputedStyle(div)['height'];
-		let ew = /\d+%/.test(cw) ? parseInt(cw) / 100 * ww : parseInt(cw);
-		let eh = /\d+%/.test(ch) ? parseInt(ch) / 100 * wh : parseInt(ch);
-		let left = (ww - ew) / 2, top = (wh - eh) / 2;
-		div.style.left = `${left}px`;
-		div.style.top = `${top}px`;
-		console.log({ ww, wh, cw, ch, ew, eh, left, top });
-	}
-	keepInside() {
-		let div = document.querySelector('#comment-form-div');
-		let ww = window.innerWidth;
-		let wh = window.innerHeight;
-		let cw = getComputedStyle(div)['width'];
-		let ch = getComputedStyle(div)['height'];
-
-		// 移动设备谁没事儿拖来拖去？🤔
-		if (/\d+%/.test(cw) || /\d+%/.test(ch)) { return; }
-		let ew = parseInt(cw), eh = parseInt(ch);
-		let left = parseInt(div.style.left), top = parseInt(div.style.top);
-
-		if (!(left<0 || top<0 || left+ew>ww || top+eh>wh)) {
-			return;
-		}
-
-		// NOTE：left & top 两次被调整，仍然可能超出。
-		const padding = 10;
-		left = Math.max(left,   padding          );
-		top  = Math.max(top,    padding          );
-		left = Math.min(left,   ww - ew - padding);
-		top  = Math.min(top,    wh - eh - padding);
-		
-		div.style.left = `${left}px`;
-		div.style.top = `${top}px`;
-	}
-	init_drag(elmnt) {
-		const dragElem = elmnt.querySelector('.drag-header') ?? elmnt;
-		dragElem.style.touchAction = 'none';
-		let pointerID = null;
-		let x = 0, y = 0;
-		dragElem.addEventListener('pointerdown', e => {
-			if (pointerID !== null || e.button !== 0 || e.isPrimary === false) { return; }
-			if (e.target.closest('a, button, input, textarea, select, .close')) { return; }
-			e.preventDefault();
-			pointerID = e.pointerId;
-			x = e.clientX;
-			y = e.clientY;
-			dragElem.setPointerCapture(pointerID);
-		});
-		dragElem.addEventListener('pointermove', e => {
-			if (e.pointerId !== pointerID) { return; }
-			e.preventDefault();
-			elmnt.style.top = `${elmnt.offsetTop + e.clientY - y}px`;
-			elmnt.style.left = `${elmnt.offsetLeft + e.clientX - x}px`;
-			x = e.clientX;
-			y = e.clientY;
-		});
-		const finish = e => {
-			if (e.pointerId !== pointerID) { return; }
-			pointerID = null;
-			if (dragElem.hasPointerCapture(e.pointerId)) { dragElem.releasePointerCapture(e.pointerId); }
-			this.keepInside();
-		};
-		for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-			dragElem.addEventListener(name, finish);
-		}
-	}
 	async delete_me(id) {
 		try {
 			await this.api.deleteComment(id);
+			const box = document.getElementById('comment-form-div');
+			if (document.getElementById(`comment-${id}`).contains(box)) {
+				this.hide();
+				document.getElementById('comment-list').before(box);
+			}
 			this.list.remove(id);
 			this.toggle_post_comment_button();
 		} catch (e) {
@@ -773,8 +794,10 @@ class CommentManager {
 			post_id: this.post_id,
 			source_type: 'markdown',
 			parent: this.being_replied, // 更新时没用这个字段
-			author: this.form.author,
-			email: this.form.email,
+			...(TaoBlog.getUserID() > 0 ? {} : {
+				author: this.form.author,
+				email: this.form.email,
+			}),
 			url: this.form.url,
 			source: this.form.source,
 		};
@@ -801,7 +824,7 @@ class CommentManager {
 			submitButton.value = '提交中...';
 		}
 		if (states.submitted) {
-			submitButton.value = '发表评论';
+			submitButton.value = '发表';
 			submitButton.removeAttribute('disabled');
 		}
 	}
@@ -817,7 +840,7 @@ class CommentManager {
 		this.hide();
 		this.clearContent();
 		this.preview.show(false);
-		this.form.save();
+		if (TaoBlog.getUserID() <= 0) this.form.save();
 
 		return cmt;
 	}

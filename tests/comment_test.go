@@ -41,6 +41,49 @@ func TestCreateComment(t *testing.T) {
 	}
 }
 
+func TestCreateCommentIdentity(t *testing.T) {
+	r := Serve(t.Context(), server.WithCreateFirstPost())
+	u := utils.Must1(r.client.Users.CreateUser(r.admin, &proto.User{
+		Nickname: "账号昵称", Email: "account@example.com",
+	}))
+	loggedIn := onBehalfOf(r, u.Id)
+	request := func(author, email string) *proto.Comment {
+		return &proto.Comment{PostId: 1, SourceType: "markdown", Source: "test", Author: author, Email: email}
+	}
+	for _, tc := range []struct {
+		name          string
+		ctx           context.Context
+		author, email string
+	}{
+		{"logged in author", loggedIn, "伪造昵称", ""},
+		{"logged in email", loggedIn, "", fakeEmailAddress},
+		{"logged in both", loggedIn, "伪造昵称", fakeEmailAddress},
+		{"logged in whitespace", loggedIn, " ", ""},
+		{"guest missing author", r.guest, "", fakeEmailAddress},
+		{"guest missing email", r.guest, "游客", ""},
+		{"guest invalid email", r.guest, "游客", "invalid"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := r.client.Blog.CreateComment(tc.ctx, request(tc.author, tc.email))
+			if status.Code(err) != codes.InvalidArgument {
+				t.Fatalf("got %v, want InvalidArgument", err)
+			}
+		})
+	}
+	created := utils.Must1(r.client.Blog.CreateComment(loggedIn, request("", "")))
+	if created.Author != u.Nickname || created.Email != u.Email || created.UserId != int32(u.Id) {
+		t.Fatalf("comment did not use account identity: %v", created)
+	}
+	withoutEmail := utils.Must1(r.client.Blog.CreateComment(r.user1, request("", "")))
+	if withoutEmail.Author != "用户1" || withoutEmail.Email != "" {
+		t.Fatalf("account without email: %v", withoutEmail)
+	}
+	guest := utils.Must1(r.client.Blog.CreateComment(r.guest, request("游客", fakeEmailAddress)))
+	if guest.Author != "游客" || guest.UserId != 0 {
+		t.Fatalf("guest identity: %v", guest)
+	}
+}
+
 func TestCreateCommentRequiresReadablePost(t *testing.T) {
 	r := Serve(t.Context())
 
@@ -68,21 +111,25 @@ func TestCreateCommentRequiresReadablePost(t *testing.T) {
 	comment := func(postID int64) *proto.Comment {
 		return &proto.Comment{
 			PostId:     postID,
-			Author:     `昵称`,
-			Email:      fakeEmailAddress,
 			SourceType: `markdown`,
 			Source:     `test`,
 		}
 	}
 	expectNotFound := func(name string, postID int64, ctx context.Context) {
 		t.Helper()
-		_, err := r.client.Blog.CreateComment(ctx, comment(postID))
+		request := comment(postID)
+		if ctx == r.guest {
+			request.Author, request.Email = "昵称", fakeEmailAddress
+		}
+		_, err := r.client.Blog.CreateComment(ctx, request)
 		if status.Code(err) != codes.NotFound {
 			t.Fatalf(`%s: got %v, want NotFound`, name, err)
 		}
 	}
 
-	utils.Must1(r.client.Blog.CreateComment(r.guest, comment(publicPost.Id)))
+	guestComment := comment(publicPost.Id)
+	guestComment.Author, guestComment.Email = "昵称", fakeEmailAddress
+	utils.Must1(r.client.Blog.CreateComment(r.guest, guestComment))
 	utils.Must1(r.client.Blog.CreateComment(r.user1, comment(privatePost.Id)))
 	utils.Must1(r.client.Blog.CreateComment(r.user1, comment(draftPost.Id)))
 
@@ -191,8 +238,6 @@ func TestDeleteCommentsRecursively(t *testing.T) {
 		return utils.Must1(r.client.Blog.CreateComment(r.admin, &proto.Comment{
 			PostId:     post.Id,
 			Parent:     parent,
-			Author:     `author`,
-			Email:      fakeEmailAddress,
 			SourceType: `markdown`,
 			Source:     `test`,
 		}))

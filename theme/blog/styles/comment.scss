@@ -4,10 +4,6 @@
 	}
 }
 
-#comment-title-status {
-	font-size: 130%;
-}
-
 /* 评论标题 */
 #comment-title {
 	font-size: 1.2em;
@@ -131,155 +127,158 @@ body.signed-in {
 }
 
 #comment-form-div {
-	position: fixed;
-	left: 0px;
-	top: 0px;
-	padding: 10px;
-	padding-top: 0;
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
+	width: 100%;
+	margin: 1em 0;
 	box-sizing: border-box;
 	display: none;
-	resize: both;
-	overflow: auto; /* this is to enable resize area */
-	opacity: 0.95;
 
-	.nc {
-		height: 38px;
-		margin: 0 -10px 0;
-		cursor: move;
-		.close {
-			position: absolute;
-			right: 0;
-			display: flex;
-			justify-content: center;
-			width: 30px;
-			height: 30px;
-			align-items: center;
-			font-size: 24px;
-			cursor: pointer;
-		}
-	}
-
-	.comment-title {
-		text-align: center;
-		height: 100%;
-		padding-top: 7px;
-		box-sizing: border-box;
-		@media screen and (min-width: 551px) {
-			margin-right: 150px;
-		}
-	}
-
-	#comment-form {
-		overflow: hidden;
-		display: flex;
-		position: absolute;
-		left: 10px;
-		top: 38px;
-		right: 10px;
-		bottom: 10px;
-
-		@media screen and (max-width: 500px) {
-			flex-direction: column;
-		}
-
-		.fields {
-			overflow: auto;
-			@media screen and (min-width: 501px) {
-				width: 150px;
-				max-width: 150px;
-				padding: 0px 0px 0px 10px;
-				box-sizing: border-box;
-			}
-			@media screen and (max-width: 500px) {
-				padding-top: 10px;
-				box-sizing: border-box;
-			}
-
-			> input[type=text], input[type=submit],input[type=email],input[type=url], .field {
-				margin: 0 0 8px 0;
-				display: block;
-				box-sizing: border-box;
-				width: 100%;
-				max-width: 100%;
-			}
-		}
-	}
-}
-
-#comment-form-div {
-	width: 550px;
-	height: 350px;
-}
-@media screen and (max-width: 570px) {
-	#comment-form-div {
-		left: 0 !important;
-		width: 100%;
-	}
-}
-@media screen and (max-height: 450px) {
-	#comment-form-div {
-		top: 0 !important;
-		height: 100%;
-	}
-}
-@media screen and ((max-width: 570px) and (max-height: 450px)) {
-	#comment-form-div {
-		left: 0 !important;
-		top: 0 !important;
-		width: 100%;
-		height: 100%;
-		padding: 0;
-		border: none;
-	}
 }
 
 #comment-form {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+
 	.content-area {
-		flex: 1;
-		min-width: 50px;
-		min-height: 100px;
-		overflow: auto;
+		min-width: 0;
 		.overlay {
+			display: block;
 			width: 100%;
-			height: 100%;
-			margin: 0px;
-			resize: none;
-			font-family: inherit;
-			font-size: inherit;
+			margin: 0;
+			padding: 12px;
+			border: none;
+			border-radius: 0;
+			font: inherit;
+			line-height: inherit;
+			color: inherit;
 			background: transparent;
 			box-sizing: border-box;
 		}
 		textarea {
-			line-height: inherit;
-			font-family: var(--font-mono, monospace) !important;
+			resize: none;
+			max-height: calc(15lh + 24px);
+			overflow-y: auto;
 			tab-size: 4;
+			transition: none;
+			&:focus, &:focus-visible { outline: none; }
+			&:not(:disabled):hover { border: none; }
 		}
 		#comment-preview {
-			padding: var(--textarea-padding);
-			border: 1px solid var(--border-color);
-			border-radius: var(--border-radius);
-			overflow: auto;
-		}
-		// 为了使段落等元素预览时看起来高度和输入框一致。
-		#comment-preview {
-			> :first-child {
-				margin-top: 0;
-				> :first-child {
-					margin-top: 0;
-				}
-			}
+			min-height: calc(3lh + 24px);
+			min-height: round(up, calc(3lh + 24px), 1px);
+			max-height: calc(15lh + 24px);
+			overflow-y: auto;
+			overflow-wrap: anywhere;
+			> :first-child { margin-top: 0; }
+			> :last-child { margin-bottom: 0; }
 		}
 	}
-}
 
-#comment-form-div {
-	background-color: rgb(255,255,255);
-}
-@media (prefers-color-scheme: dark) {
-	#comment-form-div {
-		background-color: var(--color-bg);
+	.editor-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 10px;
+		padding: 12px;
+		padding-top: 0;
+	}
+
+	.editor-identity {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+		max-width: 100%;
+		margin: 0;
+		padding: 0;
+		border: none;
+		background: transparent;
+		font: inherit;
+		line-height: 1.4;
+		&:not(:disabled):hover { border: none; background: transparent; }
+	}
+
+	.editor-avatar {
+		position: relative;
+		flex: 0 0 32px;
+		width: 32px;
+		height: 32px;
+		img { display: block; border-radius: var(--border-radius); }
+	}
+
+	.avatar-edit {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--border-radius);
+		background: rgb(0 0 0 / .6);
+		color: white;
+		font-size: 11px;
+		opacity: 0;
+	}
+
+	.editor-identity:not(:disabled) {
+		&:hover .avatar-edit, &:focus-visible .avatar-edit { opacity: 1; }
+	}
+
+	.editor-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: .85em;
+	}
+
+	.editor-actions {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-left: auto;
+		font-size: .85em;
+	}
+
+	.editor-actions > button, .editor-actions > input {
+		margin: 0;
+		padding: 4px 14px;
+		font: inherit;
+		line-height: 1.5;
+	}
+
+	.fields {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		padding: 0 12px 12px;
+		&[hidden] { display: none; }
+		> input {
+			flex: 1 1 140px;
+			min-width: 0;
+			width: 0;
+			margin: 0;
+			max-width: 100%;
+			box-sizing: border-box;
+			font: inherit;
+			font-size: .85em;
+			line-height: 1.6;
+			padding: 7px 2px;
+			border: none;
+			border-bottom: 1px solid var(--border-color);
+			border-radius: 0;
+			background: transparent;
+			color: inherit;
+			transition: none;
+
+			&:not(:disabled):hover {
+				border: none;
+				border-bottom: 1px solid var(--border-color);
+			}
+			&:focus, &:not(:disabled):focus:hover {
+				outline: none;
+				border: none;
+				border-bottom: 1px solid var(--accent-color);
+			}
+		}
 	}
 }
 
@@ -316,6 +315,11 @@ li:target > .comment-content {
 	
 	.toolbar {
 		margin: .5em 0 1em 60px;
+	}
+
+	.comment-li > #comment-form-div {
+		margin-left: 60px;
+		width: calc(100% - 60px);
 	}
 }
 

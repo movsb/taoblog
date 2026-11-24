@@ -2,11 +2,14 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"net/mail"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "embed"
@@ -89,6 +92,33 @@ func (g *Gateway) SetAvatar(ctx context.Context, cache *cache.FileCache, resolve
 	task := avatar.NewTask(ctx, cache)
 	a := avatar.New(task, resolve)
 	g.mc.Handle(`GET /v3/avatar/{id}`, a.Handler())
+	// TODO 此接口未做限流，会持续增大哈希空间占用。
+	g.mc.HandleFunc(`POST /v3/avatar:resolve`, func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			Email string `json:"email"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&request); err != nil {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
+		email := strings.TrimSpace(request.Email)
+		if email != "" {
+			address, err := mail.ParseAddress(email)
+			if err != nil || address.Address != email {
+				http.Error(w, "invalid email", http.StatusBadRequest)
+				return
+			}
+		}
+		uid := int(user.Context(r.Context()).User.ID)
+		avatarURL := "/v3/avatar/0"
+		if uid > 0 || email != "" {
+			id := g.service.UserAvatarEphemeral(r.Context(), uid, email)
+			avatarURL = fmt.Sprintf("/v3/avatar/%d", id)
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"url": avatarURL})
+	})
 }
 
 // 文章 Open Graph 背景图。

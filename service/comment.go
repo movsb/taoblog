@@ -356,8 +356,8 @@ const (
 //
 // 前期验证项：
 //
-// Author 不为空、长度不超限
-// Email 不为空、长度不超限
+// 游客：Author 和 Email 必填，且长度、邮箱格式合法。
+// 登录用户：禁止传入 Author 和 Email，使用账号昵称和邮箱。
 // URL 可为空，若不为空，需要为正确的 URL，可不加 http 前缀，自动加
 // SourceType 只能为 markdown
 // Source 不为空且不超限。
@@ -378,6 +378,9 @@ const (
 // NOTE: 带节流。
 func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.Comment, error) {
 	ac := user.Context(ctx)
+	if !ac.User.IsGuest() && (in.Author != "" || in.Email != "") {
+		return nil, status.Error(codes.InvalidArgument, `登录用户不能传入昵称和邮箱`)
+	}
 
 	// 尽早查询地理信息
 	s.cmtgeo.Get(ac.RemoteAddr.String())
@@ -397,11 +400,9 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 		Source:     strings.TrimSpace(in.Source),
 	}
 
-	if ac.User.ID > 0 {
+	if !ac.User.IsGuest() {
 		c.Author = ac.User.Nickname
-		if ac.User.Email != `` {
-			c.Email = ac.User.Email
-		}
+		c.Email = ac.User.Email
 		c.URL = ``
 	}
 
@@ -432,18 +433,20 @@ func (s *Service) CreateComment(ctx context.Context, in *proto.Comment) (*proto.
 	}
 	postIsPublic := post.Status == models.PostStatusPublic
 
-	if c.Author == "" {
-		return nil, status.Error(codes.InvalidArgument, `昵称不能为空`)
-	}
-	if utf8.RuneCountInString(c.Author) > maxNicknameLen {
-		return nil, status.Errorf(codes.InvalidArgument, `昵称太长（最长 %d 个字符）`, maxNicknameLen)
-	}
+	if ac.User.IsGuest() {
+		if c.Author == "" {
+			return nil, status.Error(codes.InvalidArgument, `昵称不能为空`)
+		}
+		if utf8.RuneCountInString(c.Author) > maxNicknameLen {
+			return nil, status.Errorf(codes.InvalidArgument, `昵称太长（最长 %d 个字符）`, maxNicknameLen)
+		}
 
-	if !utils.IsEmail(c.Email) {
-		return nil, status.Errorf(codes.InvalidArgument, `邮箱格式不正确`)
-	}
-	if utf8.RuneCountInString(c.Email) > maxEmailLen {
-		return nil, status.Errorf(codes.InvalidArgument, `邮箱太长（最长 %d 个字符）`, maxEmailLen)
+		if !utils.IsEmail(c.Email) {
+			return nil, status.Errorf(codes.InvalidArgument, `邮箱格式不正确`)
+		}
+		if utf8.RuneCountInString(c.Email) > maxEmailLen {
+			return nil, status.Errorf(codes.InvalidArgument, `邮箱太长（最长 %d 个字符）`, maxEmailLen)
+		}
 	}
 
 	if c.URL != "" {

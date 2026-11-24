@@ -38,6 +38,12 @@ func (h *_Avatar) Handler() http.Handler {
 			return
 		}
 
+		if id == 0 {
+			w.Header().Set(`Content-Type`, defaultContentType)
+			http.ServeContent(w, r, `avatar.avif`, time.Time{}, bytes.NewReader(defaultAvatar))
+			return
+		}
+
 		forceQuery := r.URL.Query().Get(`force`)
 		force := forceQuery == `1` && user.Context(r.Context()).User.IsAdmin()
 
