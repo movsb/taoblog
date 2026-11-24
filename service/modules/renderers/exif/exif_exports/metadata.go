@@ -140,7 +140,7 @@ func (m *Metadata) SwapSizes() bool {
 		return true
 	}
 	switch m.Rotation {
-	case `90`, `270`, `Rotate 90`, `Rotate 270`:
+	case `90`, `270`, `Rotate 90`, `Rotate 270`, `Rotate 90 CW`, `Rotate 270 CW`:
 		return true
 	}
 	return false

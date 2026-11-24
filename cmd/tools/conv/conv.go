@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/movsb/taoblog/modules/exiftool"
 	"github.com/movsb/taoblog/modules/utils"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,6 @@ func AddCommands(parent *cobra.Command) {
 		Short: `图片/视频格式转换。`,
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			utils.Must1(exec.LookPath(`exiftool`))
 			utils.Must1(exec.LookPath(`avifenc`))
 			utils.Must1(exec.LookPath(`sips`))
 			utils.Must1(exec.LookPath(`ffmpeg`))
@@ -81,8 +81,9 @@ func convertImage(ctx context.Context, input string, outputDir string, q int) (s
 		return ``, err
 	}
 
-	defer os.Remove(output + `_original`)
-	if err := run(ctx, `exiftool`, `-tagsFromFile`, input, output); err != nil {
+	tagsOutput, err := exiftool.CommandContext(ctx, nil, `-overwrite_original`, `-tagsFromFile`, input, output)
+	fmt.Print(string(tagsOutput))
+	if err != nil {
 		return ``, err
 	}
 

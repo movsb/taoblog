@@ -53,14 +53,15 @@ $ docker run -it --rm --name=taoblog -p 2564:2564 taocker/taoblog:amd64-latest
 
 |工具|描述|地址|
 |---|---|---|
-|`go`|Go语言编译工具链|[All releases - The Go Programming Language](https://go.dev/dl/)。<br>安装完后记得把`$HOME/go/bin`添加到`$PATH`。|
+|`go`|Go语言编译工具链（1.27 或更高版本）|[All releases - The Go Programming Language](https://go.dev/dl/)。<br>安装完后记得把`$HOME/go/bin`添加到`$PATH`。|
 |`protoc`|用来编译Protocol Buffers。|[Protocol Buffer Compiler Installation \| Protocol Buffers Documentation](https://protobuf.dev/installation/)|
 |`bun`|Bun JavaScript运行时，用来打包。|[Bun — A fast all-in-one JavaScript runtime](https://bun.sh/)|
 |`sass`|用来预编译 SCSS 样式文件。|[Sass: Install Sass](https://sass-lang.com/install/)|
 |`avifenc`|AVIF编码工具。|[AOMediaCodec/libavif: libavif - Library for encoding and decoding .avif files](https://github.com/AOMediaCodec/libavif)|
-|`exiftool`|图片元数据标签处理工具。|[ExifTool by Phil Harvey](https://exiftool.org/index.html)|
 
 不依赖 cgo。
+
+图片元数据通过内嵌的 ExifTool 处理，无需单独安装 Perl 或 `exiftool`。
 
 ### 克隆项目到本地
 
@@ -92,7 +93,6 @@ $ ./make tools protos generate test build
 |------|--------|
 |admin/      | 后台目录|
 |cmd/        | 客户端/服务端命令/配置|
-|docker/     | 容器镜像|
 |gateway/    | 网关接口层|
 |modules/    | 公共模块|
 |protocols/  | 协议定义|

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/movsb/taoblog/modules/exiftool"
 	"github.com/movsb/taoblog/modules/utils"
 )
 
@@ -69,11 +70,10 @@ func ConvertToAVIF(ctx context.Context, path string, input string, ignoreExif, i
 	return newPath, tmpOutputFile.Name(), nil
 }
 
-// copyTags 从源文件复制元数据到目标文件。
+// CopyTags 从源文件复制元数据到目标文件。
 // 忽略错误。
 func CopyTags(src, dst string) {
-	cmd := exec.Command("exiftool", "-overwrite_original", "-tagsFromFile", src, dst)
-	output, err := cmd.CombinedOutput()
+	output, err := exiftool.Command(nil, "-overwrite_original", "-tagsFromFile", src, dst)
 	if err != nil {
 		log.Println(`复制元数据失败：`, err, src, dst, string(output))
 	}
@@ -85,7 +85,6 @@ func CopyTags(src, dst string) {
 //   - [How do you delete GPS information in XMP metadata?](https://exiftool.org/forum/index.php?topic=4686.0)
 //   - [Deleting Exif GPS Tags](https://exiftool.org/forum/index.php?topic=7868.0)
 func DropGPSTags(file string) (string, error) {
-	cmd := exec.Command("exiftool", "-overwrite_original", "-gps*=", file)
-	output, err := cmd.CombinedOutput()
+	output, err := exiftool.Command(nil, "-overwrite_original", "-gps*=", file)
 	return string(output), err
 }

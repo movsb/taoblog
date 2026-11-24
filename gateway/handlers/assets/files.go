@@ -123,6 +123,8 @@ func single(fsc proto.TaoBlog_CreatePostFileStreamClient, pid int32, spec *proto
 	}
 
 	if shouldConvertImage(spec.Path) || options.DropGPSTags {
+		// TODO: ExifTool 支持可写 WASI 内存文件系统后，评估仅删除 GPS 时免落盘。
+		// AVIF 转换仍调用外部 avifenc，无法直接访问 WASI 内存文件。
 		// 仅在必要的时候把数据写到临时文件，避免不必要的开销。
 		tmpInputFile := utils.Must1(os.CreateTemp("", "*"+path.Ext(spec.Path)))
 		defer os.Remove(tmpInputFile.Name())

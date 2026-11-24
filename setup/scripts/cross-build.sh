@@ -11,6 +11,7 @@ gitAuthor=$(git show -s --format='format:%aN <%ae>' HEAD)
 gitCommit=$(git rev-parse --short HEAD)
 
 ldflags="\
+-s -w \
 -X 'github.com/movsb/taoblog/modules/version.BuiltOn=$builtOn' \
 -X 'github.com/movsb/taoblog/modules/version.BuiltAt=$builtAt' \
 -X 'github.com/movsb/taoblog/modules/version.GoVersion=$goVersion' \
@@ -21,4 +22,4 @@ ldflags="\
 # nodynamic 是 	"github.com/gen2brain/avif" 库要求的。移除后可以去掉
 tags="nodynamic"
 
-CGO_ENABLED=0 go build -ldflags "$ldflags" -tags "$tags" -v -o "$OUTPUT"
+CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags "$ldflags" -tags "$tags" -v -o "$OUTPUT"

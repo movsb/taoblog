@@ -42,6 +42,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/googollee/eviltransform v0.0.0-20231101174306-03ba58d92dfd
 	github.com/gopikchr/gopikchr v0.0.0-20250314012004-d91844ad85ba
+	github.com/lbe/go-exiftool-wasm v0.6.0
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f
 	github.com/movsb/go-image-avif-size v0.0.0-20251204153653-47851b126de5
 	github.com/movsb/http2tcp v0.0.0-20241128200121-beabe90474bd
@@ -99,9 +100,12 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.6.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/lbe/cfsread v0.1.0 // indirect
+	github.com/lbe/wasm2go-wasi-host v0.0.0-20260607151207-5e095ad9072e // indirect
 	github.com/ncruces/go-sqlite3-wasm/v3 v3.2.35303 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.33 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
@@ -137,11 +141,12 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.61.0
-	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
 
-go 1.26.4
+go 1.27.0
 
 // replace github.com/movsb/taorm => /Users/tao/code/taorm
 
