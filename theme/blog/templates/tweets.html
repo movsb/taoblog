@@ -8,10 +8,11 @@ TaoBlog.posts["{{$p.ID}}"] = {{ strip $p }};
 <h1 class="title">{{$p.StatusString}}{{ $p.Title }}</h1>
 {{ end }}
 <div class="entry">
-	<div class="content">
+	<div class="content" id="tweet-content-{{$p.ID}}">
 	{{ $p.Content }}
 	</div>
 	<div class="meta2">
+		<a href="#tweet-content-{{$p.ID}}" class="tweet-toggle" aria-expanded="false" aria-controls="tweet-content-{{$p.ID}}" hidden>展开剩余内容</a>
 		<span class="status">{{$p.StatusString}}</span>
 		{{ friendlyDateTime $p.Date }}
 		{{ with $p.GeoElement }}

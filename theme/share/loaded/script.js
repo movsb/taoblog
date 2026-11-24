@@ -1,3 +1,43 @@
+// 按一级子元素的完整边界折叠长碎念。
+document.addEventListener('DOMContentLoaded', () => {
+	document.querySelectorAll('.tweets article').forEach(article => {
+		const content = article.querySelector('.content');
+		const toggle = article.querySelector('.tweet-toggle');
+		if (!content || !toggle) { return; }
+		let expanded = false;
+		const update = () => {
+			const children = Array.from(content.children);
+			children.forEach(child => child.classList.remove('tweet-overflow'));
+			const top = content.getBoundingClientRect().top;
+			const limit = document.documentElement.clientHeight * .7;
+			// 用实际位置累计高度，包含段落之间折叠后的 margin。
+			const cutoff = children.findIndex(child => {
+				if (!child.getClientRects().length) { return false; }
+				return child.getBoundingClientRect().bottom - top > limit;
+			});
+			toggle.hidden = cutoff < 0;
+			if (!expanded && cutoff >= 0) {
+				children.slice(cutoff).forEach(child => child.classList.add('tweet-overflow'));
+			}
+			toggle.setAttribute('aria-expanded', String(expanded));
+			toggle.textContent = expanded ? '收起' : '展开剩余内容';
+		};
+		toggle.addEventListener('click', event => {
+			event.preventDefault();
+			expanded = !expanded;
+			update();
+			if (!expanded && article.getBoundingClientRect().top < 0) {
+				article.scrollIntoView({ block: 'start' });
+			}
+		});
+		update();
+		new ResizeObserver(update).observe(content);
+		content.addEventListener('load', update, true);
+		window.addEventListener('resize', update);
+		document.fonts.ready.then(update);
+	});
+}, {once: true});
+
 // 自动更新时间相对时间。
 (function() {
 
