@@ -96,7 +96,7 @@ export class FilesManager {
 			parent_path: f.parentPath ?? '',
 		}));
 
-		form.set(`data`, f)
+		form.set(`data`, f);
 
 		form.set(`options`, options ? JSON.stringify(options) : '{}');
 

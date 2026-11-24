@@ -92,14 +92,14 @@ $ ./make tools protos generate test build
 |文件名|文件描述|
 |------|--------|
 |admin/      | 后台目录|
-|cmd/        | 客户端/服务端命令/配置|
-|gateway/    | 网关接口层|
+|cmd/        | 命令入口|
+|gateway/    | 网关接口|
 |modules/    | 公共模块|
 |protocols/  | 协议定义|
 |service/    | 服务实现|
 |setup/      | 安装管理|
 |theme/      | 主题目录|
-|tests/      | 端到端测试|
+|tests/      | 集成测试|
 |main.go     | 入口程序|
 
 运行时目录结构：

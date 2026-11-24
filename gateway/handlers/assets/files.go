@@ -27,10 +27,8 @@ import (
 )
 
 var jsonPB = &runtime.JSONPb{
-	MarshalOptions: protojson.MarshalOptions{
-		UseProtoNames:   true,
-		EmitUnpopulated: true,
-	},
+	UseProtoNames:    true,
+	EmitUnpopulated:  true,
 	UnmarshalOptions: protojson.UnmarshalOptions{},
 }
 
@@ -153,7 +151,8 @@ func single(fsc proto.TaoBlog_CreatePostFileStreamClient, pid int32, spec *proto
 			defer os.Remove(nextPath)
 		}
 
-		if isImageFile(nextPath) && options.DropGPSTags {
+		// 转换后的临时文件没有扩展名，使用实际文件名判断图片类型。
+		if isImageFile(spec.Path) && options.DropGPSTags {
 			_ = utils.Must1(DropGPSTags(nextPath))
 		}
 
